@@ -1,13 +1,17 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
 import { useToast } from './ui/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const RegistrationForm: React.FC = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const { signUp } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -16,6 +20,7 @@ const RegistrationForm: React.FC = () => {
     agreeTerms: false
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -62,8 +67,8 @@ const RegistrationForm: React.FC = () => {
     
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
     }
     
     if (formData.password !== formData.confirmPassword) {
@@ -78,28 +83,43 @@ const RegistrationForm: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (validateForm()) {
-      // Form is valid, submit it
-      console.log('Form submitted:', formData);
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      const { error } = await signUp(
+        formData.email, 
+        formData.password, 
+        formData.name
+      );
       
-      // Show success toast
-      toast({
-        title: "Registration successful!",
-        description: "Welcome to The Puzzle Boss. Get ready to solve and win!",
-        duration: 5000,
-      });
-      
-      // Reset form
-      setFormData({
-        name: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        agreeTerms: false
-      });
+      if (!error) {
+        // Clear form
+        setFormData({
+          name: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          agreeTerms: false
+        });
+        
+        toast({
+          title: "Registration successful!",
+          description: "Check your email to verify your account.",
+          duration: 5000,
+        });
+        
+        // Redirect to auth page for login
+        navigate('/auth');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -170,8 +190,12 @@ const RegistrationForm: React.FC = () => {
         </div>
         {errors.agreeTerms && <p className="text-red-500 text-sm">{errors.agreeTerms}</p>}
         
-        <Button type="submit" className="w-full bg-puzzle-gold text-puzzle-black hover:bg-puzzle-gold/90">
-          Create Account
+        <Button 
+          type="submit" 
+          className="w-full bg-puzzle-gold text-puzzle-black hover:bg-puzzle-gold/90"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Creating Account...' : 'Create Account'}
         </Button>
       </form>
     </div>
