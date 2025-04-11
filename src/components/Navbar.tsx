@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, User } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,7 +13,6 @@ const Navbar = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Get initials for avatar fallback
   const getInitials = () => {
     if (profile?.username) {
       return profile.username.charAt(0).toUpperCase();
@@ -32,7 +30,6 @@ const Navbar = () => {
             </Link>
           </div>
           
-          {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-8">
             <Link to="/" className="nav-link">Home</Link>
             <a href="#categories" className="nav-link">Categories</a>
@@ -71,7 +68,6 @@ const Navbar = () => {
             )}
           </div>
           
-          {/* Mobile Menu Button */}
           <div className="md:hidden">
             <button onClick={toggleMenu} className="text-puzzle-white hover:text-puzzle-aqua">
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -79,7 +75,6 @@ const Navbar = () => {
           </div>
         </div>
         
-        {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden mt-4 py-4 space-y-4 flex flex-col items-center">
             <Link to="/" className="nav-link py-2" onClick={() => setIsMenuOpen(false)}>Home</Link>

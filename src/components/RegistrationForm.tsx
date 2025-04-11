@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
@@ -6,7 +5,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
 import { useToast } from './ui/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth';
 
 const RegistrationForm: React.FC = () => {
   const navigate = useNavigate();
@@ -29,7 +28,6 @@ const RegistrationForm: React.FC = () => {
       [name]: value
     });
     
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -100,7 +98,6 @@ const RegistrationForm: React.FC = () => {
       );
       
       if (!error) {
-        // Clear form
         setFormData({
           name: '',
           email: '',
@@ -115,7 +112,6 @@ const RegistrationForm: React.FC = () => {
           duration: 5000,
         });
         
-        // Redirect to auth page for login
         navigate('/auth');
       }
     } finally {
