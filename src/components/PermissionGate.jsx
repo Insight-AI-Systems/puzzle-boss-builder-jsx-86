@@ -19,6 +19,12 @@ const PermissionGate = ({
 }) => {
   const { profile } = useAuth();
   
+  // If no profile exists yet, show a loading state or fallback
+  if (!profile) {
+    console.log('PermissionGate: No profile found, rendering fallback');
+    return fallback;
+  }
+  
   // If neither permission nor role specified, render children
   if (!permission && !role) {
     return children;
@@ -34,6 +40,7 @@ const PermissionGate = ({
     return children;
   }
   
+  console.log(`PermissionGate: Access denied - Role: ${profile.role}, Required: ${role}, Permission: ${permission}`);
   // Return fallback content if user doesn't have required permission/role
   return fallback;
 };
