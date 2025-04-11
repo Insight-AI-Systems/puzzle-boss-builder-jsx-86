@@ -5,11 +5,6 @@ import { hasPermission, hasRole } from '@/utils/permissions';
 
 /**
  * Component that conditionally renders content based on user permissions
- * @param {Object} props - Component props
- * @param {string} [props.permission] - Required permission to render content
- * @param {string|string[]} [props.role] - Required role(s) to render content
- * @param {React.ReactNode} props.children - Content to render if authorized
- * @param {React.ReactNode} [props.fallback] - Content to render if unauthorized
  */
 const PermissionGate = ({ 
   permission, 
@@ -19,9 +14,8 @@ const PermissionGate = ({
 }) => {
   const { profile } = useAuth();
   
-  // If no profile exists yet, show a loading state or fallback
+  // If no profile exists yet, show fallback
   if (!profile) {
-    console.log('PermissionGate: No profile found, rendering fallback');
     return fallback;
   }
   
@@ -40,7 +34,6 @@ const PermissionGate = ({
     return children;
   }
   
-  console.log(`PermissionGate: Access denied - Role: ${profile.role}, Required: ${role}, Permission: ${permission}`);
   // Return fallback content if user doesn't have required permission/role
   return fallback;
 };

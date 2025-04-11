@@ -29,7 +29,7 @@ const RoleBasedNavigation = ({ className = "" }) => {
   // Cannot render navigation without profile info
   if (!profile) return null;
 
-  // Define navigation items based on permissions - simplified for better performance
+  // Define navigation items based on permissions
   const navItems = [];
   
   // Admin dashboard - for all admin roles

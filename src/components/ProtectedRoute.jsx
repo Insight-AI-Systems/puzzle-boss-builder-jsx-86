@@ -10,17 +10,8 @@ const DEV_MODE = true;
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, loading, profile } = useAuth();
 
-  // Simplified logging to reduce payload size
-  console.log('ProtectedRoute state:', { 
-    loading, 
-    userPresent: !!user,
-    profileLoaded: !!profile,
-    requiredRole
-  });
-
   // In development mode, bypass authentication checks
   if (DEV_MODE) {
-    console.log('ProtectedRoute: DEV MODE - bypassing auth checks');
     return children;
   }
 

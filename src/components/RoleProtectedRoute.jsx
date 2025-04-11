@@ -10,10 +10,6 @@ const DEV_MODE = true;
 
 /**
  * Component that protects routes based on user role
- * @param {Object} props - Component props
- * @param {React.ReactNode} props.children - Child components to render if authorized
- * @param {string|string[]} props.allowedRoles - Role or array of roles that are allowed to access this route
- * @param {string} [props.redirectTo="/"] - Path to redirect to if unauthorized
  */
 const RoleProtectedRoute = ({ 
   children, 
@@ -25,17 +21,8 @@ const RoleProtectedRoute = ({
   // Convert allowedRoles to array if it's a string
   const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
   
-  // Simplified logging to reduce payload size
-  console.log('RoleProtectedRoute state:', { 
-    loading, 
-    userPresent: !!user,
-    profileLoaded: !!profile,
-    roleCount: roles.length
-  });
-  
   // In development mode, bypass role checks
   if (DEV_MODE) {
-    console.log('RoleProtectedRoute: DEV MODE - bypassing role checks');
     return children;
   }
   
