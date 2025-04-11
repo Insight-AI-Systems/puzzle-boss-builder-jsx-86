@@ -1,11 +1,12 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Checkbox } from './ui/checkbox';
 import { useToast } from './ui/use-toast';
 import { useAuth } from '@/contexts/auth';
+import FormField from './form/FormField';
+import TermsCheckbox from './form/TermsCheckbox';
+import { validateRegistrationForm } from '@/utils/formValidation';
 
 const RegistrationForm: React.FC = () => {
   const navigate = useNavigate();
@@ -51,34 +52,9 @@ const RegistrationForm: React.FC = () => {
   };
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-    
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-    
-    if (!formData.agreeTerms) {
-      newErrors.agreeTerms = 'You must agree to the terms and conditions';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const validationErrors = validateRegistrationForm(formData);
+    setErrors(validationErrors);
+    return Object.keys(validationErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,69 +98,50 @@ const RegistrationForm: React.FC = () => {
   return (
     <div className="w-full max-w-md mx-auto">
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="name">Full Name</Label>
-          <Input
-            id="name"
-            name="name"
-            type="text"
-            value={formData.name}
-            onChange={handleChange}
-            className={errors.name ? 'border-red-500' : ''}
-          />
-          {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
-        </div>
+        <FormField
+          id="name"
+          label="Full Name"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          error={errors.name}
+        />
         
-        <div className="space-y-2">
-          <Label htmlFor="email">Email Address</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            className={errors.email ? 'border-red-500' : ''}
-          />
-          {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
-        </div>
+        <FormField
+          id="email"
+          label="Email Address"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleChange}
+          error={errors.email}
+        />
         
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            className={errors.password ? 'border-red-500' : ''}
-          />
-          {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
-        </div>
+        <FormField
+          id="password"
+          label="Password"
+          name="password"
+          type="password"
+          value={formData.password}
+          onChange={handleChange}
+          error={errors.password}
+        />
         
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm Password</Label>
-          <Input
-            id="confirmPassword"
-            name="confirmPassword"
-            type="password"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            className={errors.confirmPassword ? 'border-red-500' : ''}
-          />
-          {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword}</p>}
-        </div>
+        <FormField
+          id="confirmPassword"
+          label="Confirm Password"
+          name="confirmPassword"
+          type="password"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          error={errors.confirmPassword}
+        />
         
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="agreeTerms"
-            checked={formData.agreeTerms}
-            onCheckedChange={handleCheckboxChange}
-          />
-          <Label htmlFor="agreeTerms" className="text-sm">
-            I agree to the Terms & Conditions and Privacy Policy
-          </Label>
-        </div>
-        {errors.agreeTerms && <p className="text-red-500 text-sm">{errors.agreeTerms}</p>}
+        <TermsCheckbox
+          checked={formData.agreeTerms}
+          onCheckedChange={handleCheckboxChange}
+          error={errors.agreeTerms}
+        />
         
         <Button 
           type="submit" 
