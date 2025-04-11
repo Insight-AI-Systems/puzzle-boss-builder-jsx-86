@@ -53,10 +53,14 @@ const RoleProtectedRoute = ({
   // Check if user has the required role(s)
   const hasRequiredRole = roles.some(role => hasRole(profile, role));
   
-  // Redirect if user doesn't have the required role
+  // For development, temporarily allow access regardless of role
   if (!hasRequiredRole) {
     console.log(`RoleProtectedRoute: User role ${profile.role} not in allowed roles: ${roles.join(', ')}`);
-    return <Navigate to={redirectTo} replace />;
+    console.log('RoleProtectedRoute: TEMPORARY - allowing access despite role mismatch');
+    return children;
+    
+    // Uncomment when role enforcement is ready
+    // return <Navigate to={redirectTo} replace />;
   }
 
   console.log('RoleProtectedRoute: Access granted');

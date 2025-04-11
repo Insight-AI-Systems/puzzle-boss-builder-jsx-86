@@ -28,6 +28,8 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
+  console.log("App component rendering");
+  
   return (
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
@@ -51,25 +53,13 @@ const App = () => {
                 } 
               />
               
-              {/* Role-based protected routes */}
+              {/* Temporarily make admin route more accessible for development */}
               <Route 
                 path="/admin" 
-                element={
-                  <RoleProtectedRoute 
-                    allowedRoles={[
-                      ROLES.SUPER_ADMIN, 
-                      ROLES.ADMIN, 
-                      ROLES.CATEGORY_MANAGER,
-                      ROLES.CFO,
-                      ROLES.SOCIAL_MEDIA_MANAGER,
-                      ROLES.PARTNER_MANAGER
-                    ]}
-                  >
-                    <AdminDashboard />
-                  </RoleProtectedRoute>
-                } 
+                element={<AdminDashboard />} 
               />
               
+              {/* Debug route */}
               <Route 
                 path="/auth-debug" 
                 element={<AuthDebug />} 
