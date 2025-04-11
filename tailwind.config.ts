@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,13 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Custom colors for The Puzzle Boss
+				"puzzle-aqua": "#00b3b3",
+				"puzzle-gold": "#ffd700",
+				"puzzle-burgundy": "#800020",
+				"puzzle-black": "#121212",
+				"puzzle-white": "#f8f8f8",
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -84,11 +91,33 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-gentle': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.8' },
+				},
+				'float': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-10px)' },
+				},
+				'rotate-slow': {
+					'0%': { transform: 'rotate(0deg)' },
+					'100%': { transform: 'rotate(360deg)' },
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-gentle': 'pulse-gentle 3s infinite ease-in-out',
+				'float': 'float 6s infinite ease-in-out',
+				'rotate-slow': 'rotate-slow 12s linear infinite',
+			},
+			fontFamily: {
+				'game': ['Orbitron', 'sans-serif'],
+			},
+			backgroundImage: {
+				'puzzle-gradient': 'linear-gradient(135deg, #121212 0%, #1a1a1a 100%)',
+				'hero-pattern': 'url("/hero-bg.png")',
 			}
 		}
 	},
