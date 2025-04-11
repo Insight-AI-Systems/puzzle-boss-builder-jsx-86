@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * Component for viewing and editing profile information
@@ -15,9 +16,26 @@ const ProfileForm = ({ profile, user, onUpdateProfile }) => {
     avatar_url: profile?.avatar_url || '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  
+  // Character limit constants
+  const MAX_USERNAME_LENGTH = 50;
+  const MAX_AVATAR_URL_LENGTH = 500;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Check if value exceeds the maximum allowed length
+    if ((name === 'username' && value.length > MAX_USERNAME_LENGTH) || 
+        (name === 'avatar_url' && value.length > MAX_AVATAR_URL_LENGTH)) {
+      toast({
+        title: "Input too long",
+        description: `The ${name === 'username' ? 'username' : 'avatar URL'} cannot exceed ${name === 'username' ? MAX_USERNAME_LENGTH : MAX_AVATAR_URL_LENGTH} characters.`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setFormData({
       ...formData,
       [name]: value
@@ -26,14 +44,51 @@ const ProfileForm = ({ profile, user, onUpdateProfile }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form data lengths before submission
+    if (formData.username.length > MAX_USERNAME_LENGTH) {
+      toast({
+        title: "Username too long",
+        description: `Username cannot exceed ${MAX_USERNAME_LENGTH} characters.`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (formData.avatar_url.length > MAX_AVATAR_URL_LENGTH) {
+      toast({
+        title: "Avatar URL too long",
+        description: `Avatar URL cannot exceed ${MAX_AVATAR_URL_LENGTH} characters.`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
       const { error } = await onUpdateProfile(formData);
       
-      if (!error) {
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to update profile",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Profile updated successfully",
+        });
         setIsEditing(false);
       }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+      console.error("Profile update error:", error);
     } finally {
       setIsSubmitting(false);
     }

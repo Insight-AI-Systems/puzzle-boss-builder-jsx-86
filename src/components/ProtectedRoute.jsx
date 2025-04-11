@@ -11,7 +11,7 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   console.log('ProtectedRoute rendering with:', { 
     loading, 
     user: user ? 'Present' : 'Not present', 
-    profile: profile || 'No profile',
+    profile: profile ? 'Profile loaded' : 'No profile',
     requiredRole
   });
 
