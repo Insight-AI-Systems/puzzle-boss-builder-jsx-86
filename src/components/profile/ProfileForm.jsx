@@ -8,12 +8,13 @@ import { useToast } from '@/hooks/use-toast';
 
 /**
  * Component for viewing and editing profile information
+ * With optimizations to prevent excessive data being generated
  */
 const ProfileForm = ({ profile, user, onUpdateProfile }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    username: profile?.username || '',
-    avatar_url: profile?.avatar_url || '',
+    username: profile?.username?.substring(0, 50) || '',
+    avatar_url: profile?.avatar_url?.substring(0, 500) || '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -25,26 +26,7 @@ const ProfileForm = ({ profile, user, onUpdateProfile }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Strictly enforce character limits to prevent large messages
-    if (name === 'username' && value.length > MAX_USERNAME_LENGTH) {
-      toast({
-        title: "Input too long",
-        description: `Username cannot exceed ${MAX_USERNAME_LENGTH} characters.`,
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (name === 'avatar_url' && value.length > MAX_AVATAR_URL_LENGTH) {
-      toast({
-        title: "Input too long",
-        description: `Avatar URL cannot exceed ${MAX_AVATAR_URL_LENGTH} characters.`,
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Truncate value if it somehow exceeds the limit
+    // Truncate value if it exceeds the limit
     const truncatedValue = name === 'username' 
       ? value.substring(0, MAX_USERNAME_LENGTH)
       : value.substring(0, MAX_AVATAR_URL_LENGTH);
@@ -59,24 +41,20 @@ const ProfileForm = ({ profile, user, onUpdateProfile }) => {
     e.preventDefault();
     
     // Final validation before submission
-    if (formData.username.length > MAX_USERNAME_LENGTH || formData.avatar_url.length > MAX_AVATAR_URL_LENGTH) {
-      toast({
-        title: "Input data too long",
-        description: "Please shorten your inputs and try again.",
-        variant: "destructive"
-      });
-      return;
-    }
+    const sanitizedData = {
+      username: formData.username.substring(0, MAX_USERNAME_LENGTH),
+      avatar_url: formData.avatar_url.substring(0, MAX_AVATAR_URL_LENGTH)
+    };
     
     setIsSubmitting(true);
 
     try {
-      const { error } = await onUpdateProfile(formData);
+      const { error } = await onUpdateProfile(sanitizedData);
       
       if (error) {
         toast({
           title: "Error",
-          description: error.message || "Failed to update profile",
+          description: "Failed to update profile",
           variant: "destructive"
         });
       } else {
@@ -92,7 +70,6 @@ const ProfileForm = ({ profile, user, onUpdateProfile }) => {
         description: "An unexpected error occurred",
         variant: "destructive"
       });
-      console.error("Profile update error:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -120,6 +97,7 @@ const ProfileForm = ({ profile, user, onUpdateProfile }) => {
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
+                maxLength={MAX_USERNAME_LENGTH}
               />
             </div>
             
@@ -130,6 +108,7 @@ const ProfileForm = ({ profile, user, onUpdateProfile }) => {
                 name="avatar_url"
                 value={formData.avatar_url}
                 onChange={handleChange}
+                maxLength={MAX_AVATAR_URL_LENGTH}
               />
             </div>
           </form>
@@ -137,18 +116,22 @@ const ProfileForm = ({ profile, user, onUpdateProfile }) => {
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div className="font-medium text-muted-foreground">Username</div>
-              <div className="col-span-2 text-puzzle-white">{profile.username || 'Not set'}</div>
+              <div className="col-span-2 text-puzzle-white">
+                {profile.username?.substring(0, MAX_USERNAME_LENGTH) || 'Not set'}
+              </div>
             </div>
             
             <div className="grid grid-cols-3 gap-4">
               <div className="font-medium text-muted-foreground">Email</div>
-              <div className="col-span-2 text-puzzle-white">{user.email}</div>
+              <div className="col-span-2 text-puzzle-white">
+                {user.email?.substring(0, 100) || 'Not available'}
+              </div>
             </div>
             
             <div className="grid grid-cols-3 gap-4">
               <div className="font-medium text-muted-foreground">Member Since</div>
               <div className="col-span-2 text-puzzle-white">
-                {new Date(profile.created_at).toLocaleDateString()}
+                {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Not available'}
               </div>
             </div>
           </div>

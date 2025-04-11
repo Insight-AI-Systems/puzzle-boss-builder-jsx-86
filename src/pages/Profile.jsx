@@ -47,8 +47,12 @@ const Profile = () => {
   }
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      // Silent failure, don't log large objects
+    }
   };
   
   return (

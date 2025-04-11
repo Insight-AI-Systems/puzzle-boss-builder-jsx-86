@@ -11,9 +11,8 @@ import {
 import {
   Shield,
   ShieldCheck,
-  LayoutDashboard,
-  PuzzlePiece,
   Users,
+  PuzzlePiece,
   DollarSign,
   Share2,
   Package,
@@ -30,77 +29,73 @@ const RoleBasedNavigation = ({ className = "" }) => {
   // Cannot render navigation without profile info
   if (!profile) return null;
 
-  // Define navigation items based on permissions
-  const navItems = [
-    // Admin dashboard - for all admin roles
-    ...(hasPermission(profile, PERMISSIONS.MANAGE_USERS) ? [
-      {
-        name: 'Admin Dashboard',
-        path: '/admin',
-        icon: <ShieldCheck size={18} />,
-      }
-    ] : []),
+  // Define navigation items based on permissions - simplified for better performance
+  const navItems = [];
+  
+  // Admin dashboard - for all admin roles
+  if (hasPermission(profile, PERMISSIONS.MANAGE_USERS)) {
+    navItems.push({
+      name: 'Admin Dashboard',
+      path: '/admin',
+      icon: <ShieldCheck size={18} />,
+    });
     
-    // User management - for super admins and admins
-    ...(hasPermission(profile, PERMISSIONS.MANAGE_USERS) ? [
-      {
-        name: 'Users',
-        path: '/admin/users',
-        icon: <Users size={18} />,
-      }
-    ] : []),
-    
-    // Puzzle management - for admins and category managers
-    ...(hasPermission(profile, PERMISSIONS.MANAGE_PUZZLES) || 
-        hasPermission(profile, PERMISSIONS.MANAGE_CATEGORIES) ? [
-      {
-        name: 'Puzzles',
-        path: '/admin/puzzles',
-        icon: <PuzzlePiece size={18} />,
-      }
-    ] : []),
-    
-    // Financial management - for CFOs
-    ...(hasPermission(profile, PERMISSIONS.MANAGE_FINANCES) ? [
-      {
-        name: 'Finances',
-        path: '/admin/finances',
-        icon: <DollarSign size={18} />,
-      }
-    ] : []),
-    
-    // Marketing management - for social media managers
-    ...(hasPermission(profile, PERMISSIONS.MANAGE_MARKETING) ? [
-      {
-        name: 'Marketing',
-        path: '/admin/marketing',
-        icon: <Share2 size={18} />,
-      }
-    ] : []),
-    
-    // Partner management - for partner managers
-    ...(hasPermission(profile, PERMISSIONS.MANAGE_PARTNERS) ? [
-      {
-        name: 'Partners',
-        path: '/admin/partners',
-        icon: <Package size={18} />,
-      }
-    ] : []),
-    
-    // My profile - for all users
-    {
-      name: 'My Profile',
-      path: '/profile',
-      icon: <User size={18} />,
-    },
-    
-    // Settings - for all users
-    {
-      name: 'Settings',
-      path: '/settings',
-      icon: <Settings size={18} />,
-    },
-  ];
+    navItems.push({
+      name: 'Users',
+      path: '/admin/users',
+      icon: <Users size={18} />,
+    });
+  }
+  
+  // Puzzle management - for admins and category managers
+  if (hasPermission(profile, PERMISSIONS.MANAGE_PUZZLES) || 
+      hasPermission(profile, PERMISSIONS.MANAGE_CATEGORIES)) {
+    navItems.push({
+      name: 'Puzzles',
+      path: '/admin/puzzles',
+      icon: <PuzzlePiece size={18} />,
+    });
+  }
+  
+  // Financial management - for CFOs
+  if (hasPermission(profile, PERMISSIONS.MANAGE_FINANCES)) {
+    navItems.push({
+      name: 'Finances',
+      path: '/admin/finances',
+      icon: <DollarSign size={18} />,
+    });
+  }
+  
+  // Marketing management - for social media managers
+  if (hasPermission(profile, PERMISSIONS.MANAGE_MARKETING)) {
+    navItems.push({
+      name: 'Marketing',
+      path: '/admin/marketing',
+      icon: <Share2 size={18} />,
+    });
+  }
+  
+  // Partner management - for partner managers
+  if (hasPermission(profile, PERMISSIONS.MANAGE_PARTNERS)) {
+    navItems.push({
+      name: 'Partners',
+      path: '/admin/partners',
+      icon: <Package size={18} />,
+    });
+  }
+  
+  // Always add these for all users
+  navItems.push({
+    name: 'My Profile',
+    path: '/profile',
+    icon: <User size={18} />,
+  });
+  
+  navItems.push({
+    name: 'Settings',
+    path: '/settings',
+    icon: <Settings size={18} />,
+  });
 
   return (
     <div className={`role-based-navigation ${className}`}>
