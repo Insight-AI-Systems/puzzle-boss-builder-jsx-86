@@ -10,13 +10,12 @@ const DEV_MODE = true;
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, loading, profile } = useAuth();
 
-  // Add more detailed logging for debugging
-  console.log('ProtectedRoute rendering with:', { 
+  // Simplified logging to reduce payload size
+  console.log('ProtectedRoute state:', { 
     loading, 
-    user: user ? 'Present' : 'Not present', 
-    profile: profile ? 'Profile loaded' : 'No profile',
-    requiredRole,
-    DEV_MODE
+    userPresent: !!user,
+    profileLoaded: !!profile,
+    requiredRole
   });
 
   // In development mode, bypass authentication checks
@@ -26,22 +25,18 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   }
 
   if (loading) {
-    console.log('ProtectedRoute: Loading auth state');
     return <Loading color="aqua" />;
   }
 
   if (!user) {
-    console.log('ProtectedRoute: User not logged in, redirecting to /auth');
     return <Navigate to="/auth" replace />;
   }
 
   // If a specific role is required, check if the user has that role
   if (requiredRole && profile?.role !== requiredRole) {
-    console.log(`ProtectedRoute: Role mismatch - Current: ${profile?.role}, Required: ${requiredRole}`);
     return <Navigate to="/" replace />;
   }
 
-  console.log('ProtectedRoute: Access granted');
   return children;
 };
 

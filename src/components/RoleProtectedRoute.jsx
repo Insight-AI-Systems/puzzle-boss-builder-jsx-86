@@ -1,6 +1,6 @@
 
-import React, { useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
 import Loading from '@/components/ui/loading';
 import { hasRole } from '@/utils/permissions';
@@ -21,20 +21,17 @@ const RoleProtectedRoute = ({
   redirectTo = "/"
 }) => {
   const { user, loading, profile } = useAuth();
-  const navigate = useNavigate();
   
   // Convert allowedRoles to array if it's a string
   const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
   
-  useEffect(() => {
-    console.log('RoleProtectedRoute: Current state', { 
-      loading, 
-      user: user ? 'Logged in' : 'Not logged in', 
-      profile: profile || 'No profile',
-      allowedRoles: roles,
-      DEV_MODE
-    });
-  }, [loading, user, profile, roles]);
+  // Simplified logging to reduce payload size
+  console.log('RoleProtectedRoute state:', { 
+    loading, 
+    userPresent: !!user,
+    profileLoaded: !!profile,
+    roleCount: roles.length
+  });
   
   // In development mode, bypass role checks
   if (DEV_MODE) {
@@ -44,19 +41,16 @@ const RoleProtectedRoute = ({
   
   // Show loading while checking auth state
   if (loading) {
-    console.log('RoleProtectedRoute: Loading auth state');
     return <Loading />;
   }
   
   // Redirect to auth page if not logged in
   if (!user) {
-    console.log('RoleProtectedRoute: User not logged in, redirecting to /auth');
     return <Navigate to="/auth" replace />;
   }
   
   // If we have a user but no profile yet, show loading
   if (!profile) {
-    console.log('RoleProtectedRoute: User logged in but profile not loaded yet');
     return <Loading />;
   }
   
@@ -64,11 +58,9 @@ const RoleProtectedRoute = ({
   const hasRequiredRole = roles.some(role => hasRole(profile, role));
   
   if (!hasRequiredRole) {
-    console.log(`RoleProtectedRoute: User role ${profile.role} not in allowed roles: ${roles.join(', ')}`);
     return <Navigate to={redirectTo} replace />;
   }
 
-  console.log('RoleProtectedRoute: Access granted');
   // User is authenticated and has the required role, render children
   return children;
 };

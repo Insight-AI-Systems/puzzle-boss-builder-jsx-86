@@ -25,40 +25,44 @@ const ProfileForm = ({ profile, user, onUpdateProfile }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Check if value exceeds the maximum allowed length
-    if ((name === 'username' && value.length > MAX_USERNAME_LENGTH) || 
-        (name === 'avatar_url' && value.length > MAX_AVATAR_URL_LENGTH)) {
+    // Strictly enforce character limits to prevent large messages
+    if (name === 'username' && value.length > MAX_USERNAME_LENGTH) {
       toast({
         title: "Input too long",
-        description: `The ${name === 'username' ? 'username' : 'avatar URL'} cannot exceed ${name === 'username' ? MAX_USERNAME_LENGTH : MAX_AVATAR_URL_LENGTH} characters.`,
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Validate form data lengths before submission
-    if (formData.username.length > MAX_USERNAME_LENGTH) {
-      toast({
-        title: "Username too long",
         description: `Username cannot exceed ${MAX_USERNAME_LENGTH} characters.`,
         variant: "destructive"
       });
       return;
     }
     
-    if (formData.avatar_url.length > MAX_AVATAR_URL_LENGTH) {
+    if (name === 'avatar_url' && value.length > MAX_AVATAR_URL_LENGTH) {
       toast({
-        title: "Avatar URL too long",
+        title: "Input too long",
         description: `Avatar URL cannot exceed ${MAX_AVATAR_URL_LENGTH} characters.`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Truncate value if it somehow exceeds the limit
+    const truncatedValue = name === 'username' 
+      ? value.substring(0, MAX_USERNAME_LENGTH)
+      : value.substring(0, MAX_AVATAR_URL_LENGTH);
+    
+    setFormData({
+      ...formData,
+      [name]: truncatedValue
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Final validation before submission
+    if (formData.username.length > MAX_USERNAME_LENGTH || formData.avatar_url.length > MAX_AVATAR_URL_LENGTH) {
+      toast({
+        title: "Input data too long",
+        description: "Please shorten your inputs and try again.",
         variant: "destructive"
       });
       return;
