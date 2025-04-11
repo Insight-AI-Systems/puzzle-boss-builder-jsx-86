@@ -4,6 +4,9 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
 import Loading from '@/components/ui/loading';
 
+// Development mode flag - set to true to bypass protection during development
+const DEV_MODE = true;
+
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, loading, profile } = useAuth();
 
@@ -12,8 +15,15 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     loading, 
     user: user ? 'Present' : 'Not present', 
     profile: profile ? 'Profile loaded' : 'No profile',
-    requiredRole
+    requiredRole,
+    DEV_MODE
   });
+
+  // In development mode, bypass authentication checks
+  if (DEV_MODE) {
+    console.log('ProtectedRoute: DEV MODE - bypassing auth checks');
+    return children;
+  }
 
   if (loading) {
     console.log('ProtectedRoute: Loading auth state');
@@ -28,13 +38,7 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   // If a specific role is required, check if the user has that role
   if (requiredRole && profile?.role !== requiredRole) {
     console.log(`ProtectedRoute: Role mismatch - Current: ${profile?.role}, Required: ${requiredRole}`);
-    
-    // For now, let's be more permissive during development
-    console.log('ProtectedRoute: TEMPORARY - allowing access despite role mismatch');
-    return children;
-    
-    // Uncomment this when role enforcement is ready
-    // return <Navigate to="/" replace />;
+    return <Navigate to="/" replace />;
   }
 
   console.log('ProtectedRoute: Access granted');

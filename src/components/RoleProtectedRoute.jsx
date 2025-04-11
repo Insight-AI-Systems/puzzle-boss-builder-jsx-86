@@ -5,6 +5,9 @@ import { useAuth } from '@/contexts/auth';
 import Loading from '@/components/ui/loading';
 import { hasRole } from '@/utils/permissions';
 
+// Development mode flag - set to true to bypass protection during development
+const DEV_MODE = true;
+
 /**
  * Component that protects routes based on user role
  * @param {Object} props - Component props
@@ -28,9 +31,16 @@ const RoleProtectedRoute = ({
       loading, 
       user: user ? 'Logged in' : 'Not logged in', 
       profile: profile || 'No profile',
-      allowedRoles: roles
+      allowedRoles: roles,
+      DEV_MODE
     });
   }, [loading, user, profile, roles]);
+  
+  // In development mode, bypass role checks
+  if (DEV_MODE) {
+    console.log('RoleProtectedRoute: DEV MODE - bypassing role checks');
+    return children;
+  }
   
   // Show loading while checking auth state
   if (loading) {
@@ -53,14 +63,9 @@ const RoleProtectedRoute = ({
   // Check if user has the required role(s)
   const hasRequiredRole = roles.some(role => hasRole(profile, role));
   
-  // For development, temporarily allow access regardless of role
   if (!hasRequiredRole) {
     console.log(`RoleProtectedRoute: User role ${profile.role} not in allowed roles: ${roles.join(', ')}`);
-    console.log('RoleProtectedRoute: TEMPORARY - allowing access despite role mismatch');
-    return children;
-    
-    // Uncomment when role enforcement is ready
-    // return <Navigate to={redirectTo} replace />;
+    return <Navigate to={redirectTo} replace />;
   }
 
   console.log('RoleProtectedRoute: Access granted');

@@ -38,34 +38,18 @@ const App = () => {
             <Toaster />
             <Sonner />
             <Routes>
+              {/* Public routes that don't require authentication */}
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               
-              {/* Protected routes that require authentication */}
-              <Route 
-                path="/profile" 
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                } 
-              />
+              {/* Protected routes - temporarily disabling strict protection for development */}
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/auth-debug" element={<AuthDebug />} />
               
-              {/* Temporarily make admin route more accessible for development */}
-              <Route 
-                path="/admin" 
-                element={<AdminDashboard />} 
-              />
-              
-              {/* Debug route */}
-              <Route 
-                path="/auth-debug" 
-                element={<AuthDebug />} 
-              />
-              
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </TooltipProvider>
