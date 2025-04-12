@@ -4,11 +4,13 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import MainMenu from '@/components/MainMenu';
 
 const Privacy = () => {
   return (
     <div className="flex flex-col min-h-screen bg-puzzle-black">
       <Navbar />
+      <MainMenu />
       
       <main className="flex-grow container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto bg-card p-8 rounded-lg shadow-lg">

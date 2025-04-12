@@ -4,6 +4,7 @@ import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import MainMenu from "@/components/MainMenu";
 
 const NotFound = () => {
   const location = useLocation();
@@ -18,6 +19,7 @@ const NotFound = () => {
   return (
     <div className="min-h-screen bg-puzzle-black flex flex-col">
       <Navbar />
+      <MainMenu />
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center px-4">
           <h1 className="text-6xl font-bold mb-4 text-puzzle-gold">404</h1>

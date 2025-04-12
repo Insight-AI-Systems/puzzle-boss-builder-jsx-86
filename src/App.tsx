@@ -47,6 +47,14 @@ const App = () => {
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/auth-debug" element={<AuthDebug />} />
               
+              {/* Future routes (need to be created) */}
+              <Route path="/puzzles" element={<NotFound />} />
+              <Route path="/leaderboard" element={<NotFound />} />
+              <Route path="/shop" element={<NotFound />} />
+              <Route path="/settings" element={<NotFound />} />
+              <Route path="/help" element={<NotFound />} />
+              <Route path="/about" element={<NotFound />} />
+              
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
