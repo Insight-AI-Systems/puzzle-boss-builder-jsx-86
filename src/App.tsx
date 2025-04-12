@@ -35,31 +35,39 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <TooltipProvider>
+            <Toaster />
+            <Sonner />
             <Routes>
-              {/* Public routes that don't require authentication */}
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               
-              {/* Protected routes - temporarily disabling strict protection for development */}
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/auth-debug" element={<AuthDebug />} />
+              {/* Protected routes that require authentication */}
+              <Route 
+                path="/profile" 
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                } 
+              />
               
-              {/* Future routes (need to be created) */}
-              <Route path="/puzzles" element={<NotFound />} />
-              <Route path="/leaderboard" element={<NotFound />} />
-              <Route path="/shop" element={<NotFound />} />
-              <Route path="/settings" element={<NotFound />} />
-              <Route path="/help" element={<NotFound />} />
-              <Route path="/about" element={<NotFound />} />
+              {/* Temporarily make admin route more accessible for development */}
+              <Route 
+                path="/admin" 
+                element={<AdminDashboard />} 
+              />
               
-              {/* Catch-all route */}
+              {/* Debug route */}
+              <Route 
+                path="/auth-debug" 
+                element={<AuthDebug />} 
+              />
+              
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-            <Toaster />
-            <Sonner />
           </TooltipProvider>
         </AuthProvider>
       </QueryClientProvider>

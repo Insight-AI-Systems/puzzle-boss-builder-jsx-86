@@ -10,13 +10,11 @@ import Testimonials from '@/components/Testimonials';
 import Benefits from '@/components/Benefits';
 import RegistrationCTA from '@/components/RegistrationCTA';
 import Footer from '@/components/Footer';
-import MainMenu from '@/components/MainMenu';
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-puzzle-black">
       <Navbar />
-      <MainMenu />
       
       <main>
         <Hero />

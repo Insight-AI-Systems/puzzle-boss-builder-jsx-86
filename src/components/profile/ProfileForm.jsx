@@ -4,72 +4,36 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 
 /**
  * Component for viewing and editing profile information
- * With optimizations to prevent excessive data being generated
  */
 const ProfileForm = ({ profile, user, onUpdateProfile }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    username: profile?.username?.substring(0, 50) || '',
-    avatar_url: profile?.avatar_url?.substring(0, 500) || '',
+    username: profile?.username || '',
+    avatar_url: profile?.avatar_url || '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-  
-  // Character limit constants
-  const MAX_USERNAME_LENGTH = 50;
-  const MAX_AVATAR_URL_LENGTH = 500;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
-    // Truncate value if it exceeds the limit
-    const truncatedValue = name === 'username' 
-      ? value.substring(0, MAX_USERNAME_LENGTH)
-      : value.substring(0, MAX_AVATAR_URL_LENGTH);
-    
     setFormData({
       ...formData,
-      [name]: truncatedValue
+      [name]: value
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Final validation before submission
-    const sanitizedData = {
-      username: formData.username.substring(0, MAX_USERNAME_LENGTH),
-      avatar_url: formData.avatar_url.substring(0, MAX_AVATAR_URL_LENGTH)
-    };
-    
     setIsSubmitting(true);
 
     try {
-      const { error } = await onUpdateProfile(sanitizedData);
+      const { error } = await onUpdateProfile(formData);
       
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to update profile",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Profile updated successfully",
-        });
+      if (!error) {
         setIsEditing(false);
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
     } finally {
       setIsSubmitting(false);
     }
@@ -97,7 +61,6 @@ const ProfileForm = ({ profile, user, onUpdateProfile }) => {
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
-                maxLength={MAX_USERNAME_LENGTH}
               />
             </div>
             
@@ -108,7 +71,6 @@ const ProfileForm = ({ profile, user, onUpdateProfile }) => {
                 name="avatar_url"
                 value={formData.avatar_url}
                 onChange={handleChange}
-                maxLength={MAX_AVATAR_URL_LENGTH}
               />
             </div>
           </form>
@@ -116,22 +78,18 @@ const ProfileForm = ({ profile, user, onUpdateProfile }) => {
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div className="font-medium text-muted-foreground">Username</div>
-              <div className="col-span-2 text-puzzle-white">
-                {profile.username?.substring(0, MAX_USERNAME_LENGTH) || 'Not set'}
-              </div>
+              <div className="col-span-2 text-puzzle-white">{profile.username || 'Not set'}</div>
             </div>
             
             <div className="grid grid-cols-3 gap-4">
               <div className="font-medium text-muted-foreground">Email</div>
-              <div className="col-span-2 text-puzzle-white">
-                {user.email?.substring(0, 100) || 'Not available'}
-              </div>
+              <div className="col-span-2 text-puzzle-white">{user.email}</div>
             </div>
             
             <div className="grid grid-cols-3 gap-4">
               <div className="font-medium text-muted-foreground">Member Since</div>
               <div className="col-span-2 text-puzzle-white">
-                {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Not available'}
+                {new Date(profile.created_at).toLocaleDateString()}
               </div>
             </div>
           </div>

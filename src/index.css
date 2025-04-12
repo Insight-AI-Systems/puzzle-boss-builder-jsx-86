@@ -1,125 +1,105 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-    --card: 0 0% 3%;
-    --card-foreground: 0 0% 100%;
-    --popover: 0 0% 3%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 180 100% 50%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 50 100% 42%;
-    --secondary-foreground: 0 0% 0%;
-    --muted: 0 0% 20%;
-    --muted-foreground: 0 0% 70%;
-    --accent: 330 100% 12%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 100% 50%;
-    --destructive-foreground: 0 0% 100%;
+    --background: 0 0% 7%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 180 100% 35%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 45 100% 50%;
+    --secondary-foreground: 0 0% 9%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 345 100% 25%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
     --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 180 100% 50%;
+    --input: 0 0% 15%;
+    --ring: 180 100% 35%;
+
     --radius: 0.5rem;
   }
-}
- 
-@layer base {
+
   * {
     @apply border-border;
   }
-  html {
-    @apply scroll-smooth;
-  }
+
   body {
-    @apply bg-puzzle-black text-white;
+    @apply bg-puzzle-black text-puzzle-white;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
+
   h1, h2, h3, h4, h5, h6 {
-    @apply text-puzzle-white;
+    @apply font-game;
+  }
+
+  .puzzle-container {
+    @apply grid grid-cols-3 gap-1 w-full max-w-[300px] aspect-square mx-auto;
+  }
+
+  .puzzle-piece {
+    @apply bg-puzzle-aqua/80 border border-puzzle-aqua rounded-md transition-all duration-300 hover:brightness-110 cursor-move;
+  }
+
+  .puzzle-piece.empty {
+    @apply bg-transparent border-dashed border-puzzle-aqua/30;
+  }
+
+  .puzzle-solved {
+    @apply animate-pulse-gentle;
   }
 }
 
 @layer components {
-  .card-highlight {
-    @apply bg-puzzle-black/40 backdrop-blur-md border border-puzzle-aqua/20 rounded-xl transition-all duration-300 hover:border-puzzle-aqua/40 shadow-lg;
+  .glow-text {
+    text-shadow: 0 0 5px theme('colors.puzzle-aqua'), 0 0 10px theme('colors.puzzle-aqua/50');
   }
   
+  .gold-gradient {
+    background: linear-gradient(135deg, theme('colors.puzzle-gold') 0%, #e6b800 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .card-highlight {
+    @apply bg-gradient-to-br from-puzzle-black to-puzzle-black/90 border border-puzzle-aqua/30 rounded-xl shadow-lg shadow-puzzle-aqua/10 backdrop-blur-sm hover:border-puzzle-aqua/60 transition-all duration-300;
+  }
+  
+  .btn-primary {
+    @apply bg-puzzle-aqua text-puzzle-black font-bold py-3 px-6 rounded-md hover:bg-puzzle-aqua/90 transition-all duration-300 shadow-md shadow-puzzle-aqua/20;
+  }
+  
+  .btn-secondary {
+    @apply bg-puzzle-gold text-puzzle-black font-bold py-3 px-6 rounded-md hover:bg-puzzle-gold/90 transition-all duration-300 shadow-md shadow-puzzle-gold/20;
+  }
+  
+  .nav-link {
+    @apply text-puzzle-white hover:text-puzzle-aqua transition-colors duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-puzzle-aqua after:transition-all after:duration-300 hover:after:w-full;
+  }
+
   .section-title {
     @apply text-3xl md:text-4xl font-bold mb-6 text-center;
   }
   
-  .nav-link {
-    @apply text-muted-foreground hover:text-puzzle-aqua transition-colors duration-200;
-  }
-  
-  .btn-primary {
-    @apply bg-puzzle-aqua text-puzzle-black hover:bg-puzzle-aqua/90 px-6 py-3 rounded-md font-medium transition-colors inline-block;
-  }
-  
-  .btn-secondary {
-    @apply border border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold/10 px-6 py-3 rounded-md font-medium transition-colors inline-block;
-  }
-  
-  .font-game {
-    @apply font-bold tracking-wide;
-  }
-}
-
-/* Theme color variables for easy access */
-@layer utilities {
-  .text-puzzle-aqua {
-    @apply text-[#00FFFF];
-  }
-  
-  .text-puzzle-gold {
-    @apply text-[#FFD700];
-  }
-  
-  .text-puzzle-burgundy {
-    @apply text-[#800020];
-  }
-  
-  .text-puzzle-black {
-    @apply text-[#000000];
-  }
-  
-  .text-puzzle-white {
-    @apply text-[#FFFFFF];
-  }
-  
-  .bg-puzzle-aqua {
-    @apply bg-[#00FFFF];
-  }
-  
-  .bg-puzzle-gold {
-    @apply bg-[#FFD700];
-  }
-  
-  .bg-puzzle-burgundy {
-    @apply bg-[#800020];
-  }
-  
-  .bg-puzzle-black {
-    @apply bg-[#000000];
-  }
-  
-  .bg-puzzle-white {
-    @apply bg-[#FFFFFF];
-  }
-  
-  .border-puzzle-aqua {
-    @apply border-[#00FFFF];
-  }
-  
-  .border-puzzle-gold {
-    @apply border-[#FFD700];
-  }
-  
-  .border-puzzle-burgundy {
-    @apply border-[#800020];
+  .section-subtitle {
+    @apply text-xl md:text-2xl font-semibold mb-4;
   }
 }

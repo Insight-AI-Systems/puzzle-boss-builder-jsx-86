@@ -1,13 +1,20 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Accordion, 
+  AccordionContent, 
+  AccordionItem, 
+  AccordionTrigger 
+} from "@/components/ui/accordion";
 import { Clock, Medal, Award, TrendingUp, PlayCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 
 /**
  * Component that displays the user's game history and statistics
- * Optimized to prevent large content generation
  */
 const GameHistory = ({ user, profile }) => {
   const [activeTab, setActiveTab] = useState("recent");
@@ -56,19 +63,51 @@ const GameHistory = ({ user, profile }) => {
       
       <CardContent>
         <TabsContent value="recent" className="mt-0">
-          {renderEmptyState("No recent games found", Clock)}
+          {recentGames.length > 0 ? (
+            <div className="space-y-4">
+              {recentGames.map((game, index) => (
+                <div key={index} className="flex justify-between items-center p-3 border border-puzzle-aqua/20 rounded-md">
+                  <div>Game data would appear here</div>
+                </div>
+              ))}
+            </div>
+          ) : renderEmptyState("No recent games found", Clock)}
         </TabsContent>
         
         <TabsContent value="records" className="mt-0">
-          {renderEmptyState("No personal records yet", Medal)}
+          {personalRecords.length > 0 ? (
+            <div className="space-y-4">
+              {personalRecords.map((record, index) => (
+                <div key={index} className="flex justify-between items-center p-3 border border-puzzle-aqua/20 rounded-md">
+                  <div>Records data would appear here</div>
+                </div>
+              ))}
+            </div>
+          ) : renderEmptyState("No personal records yet", Medal)}
         </TabsContent>
         
         <TabsContent value="achievements" className="mt-0">
-          {renderEmptyState("No achievements earned yet", Award)}
+          {achievements.length > 0 ? (
+            <div className="space-y-4">
+              {achievements.map((achievement, index) => (
+                <div key={index} className="flex justify-between items-center p-3 border border-puzzle-aqua/20 rounded-md">
+                  <div>Achievement data would appear here</div>
+                </div>
+              ))}
+            </div>
+          ) : renderEmptyState("No achievements earned yet", Award)}
         </TabsContent>
         
         <TabsContent value="incomplete" className="mt-0">
-          {renderEmptyState("No incomplete puzzles", PlayCircle)}
+          {incompleteGames.length > 0 ? (
+            <div className="space-y-4">
+              {incompleteGames.map((game, index) => (
+                <div key={index} className="flex justify-between items-center p-3 border border-puzzle-aqua/20 rounded-md">
+                  <div>Incomplete game data would appear here</div>
+                </div>
+              ))}
+            </div>
+          ) : renderEmptyState("No incomplete puzzles", PlayCircle)}
         </TabsContent>
         
         <div className="mt-6 pt-4 border-t border-puzzle-aqua/20">
