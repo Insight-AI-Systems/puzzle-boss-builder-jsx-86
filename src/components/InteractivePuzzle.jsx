@@ -3,8 +3,23 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Shuffle, Check, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Demo puzzle image (would be replaced with admin-uploaded images in a full implementation)
-const defaultPuzzleImage = 'https://images.unsplash.com/photo-1500673922987-e212871fec22?auto=format&fit=crop&w=300&h=300&q=80';
+// Get puzzle configuration from localStorage or use defaults
+const getPuzzleConfig = () => {
+  try {
+    const savedConfig = localStorage.getItem('puzzleConfig');
+    if (savedConfig) {
+      return JSON.parse(savedConfig);
+    }
+  } catch (error) {
+    console.error('Error loading puzzle config:', error);
+  }
+  
+  // Default configuration
+  return {
+    image: 'https://images.unsplash.com/photo-1500673922987-e212871fec22?auto=format&fit=crop&w=300&h=300&q=80',
+    gridSize: 4
+  };
+};
 
 const InteractivePuzzle = () => {
   const [pieces, setPieces] = useState([]);
@@ -13,10 +28,19 @@ const InteractivePuzzle = () => {
   const [muted, setMuted] = useState(true);
   const containerRef = useRef(null);
   const [draggedPiece, setDraggedPiece] = useState(null);
-  const [puzzleImage, setPuzzleImage] = useState(defaultPuzzleImage);
+  const [puzzleImage, setPuzzleImage] = useState('');
+  
+  // Initialize puzzle with configuration
+  useEffect(() => {
+    const config = getPuzzleConfig();
+    setPuzzleImage(config.image);
+    setGridSize(config.gridSize || 4);
+  }, []);
   
   // Initialize puzzle pieces
   useEffect(() => {
+    if (!puzzleImage) return;
+    
     const initializePieces = () => {
       const newPieces = [];
       const totalPieces = gridSize * gridSize;
