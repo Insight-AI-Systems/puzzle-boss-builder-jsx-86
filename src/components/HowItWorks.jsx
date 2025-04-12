@@ -7,14 +7,7 @@ import {
   Trophy
 } from 'lucide-react';
 
-interface StepProps {
-  number: number;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-}
-
-const Step: React.FC<StepProps> = ({ number, title, description, icon }) => {
+const Step = ({ number, title, description, icon }) => {
   return (
     <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
       <div className="flex-shrink-0">
@@ -32,7 +25,7 @@ const Step: React.FC<StepProps> = ({ number, title, description, icon }) => {
   );
 };
 
-const HowItWorks: React.FC = () => {
+const HowItWorks = () => {
   const steps = [
     {
       number: 1,

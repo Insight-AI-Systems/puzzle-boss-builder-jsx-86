@@ -1,13 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 
-interface PuzzlePiece {
-  id: number;
-  position: number;
-}
-
-const InteractivePuzzle: React.FC = () => {
-  const [pieces, setPieces] = useState<PuzzlePiece[]>([]);
+const InteractivePuzzle = () => {
+  const [pieces, setPieces] = useState([]);
   const [emptyPosition, setEmptyPosition] = useState(8); // Bottom right is empty initially
   const [isSolved, setIsSolved] = useState(false);
   
@@ -18,7 +13,7 @@ const InteractivePuzzle: React.FC = () => {
   
   const resetPuzzle = () => {
     // Create ordered pieces (1-8 in positions 0-7, empty at position 8)
-    const initialPieces: PuzzlePiece[] = Array.from({ length: 8 }, (_, i) => ({
+    const initialPieces = Array.from({ length: 8 }, (_, i) => ({
       id: i + 1,
       position: i
     }));
@@ -31,7 +26,7 @@ const InteractivePuzzle: React.FC = () => {
   };
   
   // Fisher-Yates shuffle algorithm
-  const shufflePieces = (piecesToShuffle: PuzzlePiece[]): PuzzlePiece[] => {
+  const shufflePieces = (piecesToShuffle) => {
     for (let i = piecesToShuffle.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [piecesToShuffle[i], piecesToShuffle[j]] = [piecesToShuffle[j], piecesToShuffle[i]];
@@ -39,7 +34,7 @@ const InteractivePuzzle: React.FC = () => {
     return piecesToShuffle;
   };
   
-  const isAdjacent = (position: number): boolean => {
+  const isAdjacent = (position) => {
     // Check if the piece is adjacent to the empty position
     const row = Math.floor(position / 3);
     const col = position % 3;
@@ -52,7 +47,7 @@ const InteractivePuzzle: React.FC = () => {
     );
   };
   
-  const movePiece = (position: number) => {
+  const movePiece = (position) => {
     if (!isAdjacent(position)) return;
     
     // Move the piece to the empty position

@@ -4,15 +4,6 @@ import { Trophy, Clock, Users } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 
-interface PuzzleCardProps {
-  title: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard' | 'Expert';
-  prizePool: string;
-  timeLeft: string;
-  players: number;
-  imageUrl: string;
-}
-
 const difficultyColors = {
   Easy: 'bg-green-500',
   Medium: 'bg-yellow-500',
@@ -20,7 +11,7 @@ const difficultyColors = {
   Expert: 'bg-purple-500'
 };
 
-const PuzzleCard: React.FC<PuzzleCardProps> = ({ 
+const PuzzleCard = ({ 
   title, difficulty, prizePool, timeLeft, players, imageUrl 
 }) => {
   return (
@@ -56,11 +47,11 @@ const PuzzleCard: React.FC<PuzzleCardProps> = ({
   );
 };
 
-const FeaturedPuzzles: React.FC = () => {
+const FeaturedPuzzles = () => {
   const puzzles = [
     {
       title: "Space Explorer",
-      difficulty: "Medium" as const,
+      difficulty: "Medium",
       prizePool: "$5,000",
       timeLeft: "2 days left",
       players: 1247,
@@ -68,7 +59,7 @@ const FeaturedPuzzles: React.FC = () => {
     },
     {
       title: "Ancient Ruins",
-      difficulty: "Hard" as const,
+      difficulty: "Hard",
       prizePool: "$10,000",
       timeLeft: "5 days left",
       players: 823,
@@ -76,7 +67,7 @@ const FeaturedPuzzles: React.FC = () => {
     },
     {
       title: "Ocean Depths",
-      difficulty: "Easy" as const,
+      difficulty: "Easy",
       prizePool: "$2,500",
       timeLeft: "1 day left",
       players: 2156,
@@ -84,7 +75,7 @@ const FeaturedPuzzles: React.FC = () => {
     },
     {
       title: "Cosmic Challenge",
-      difficulty: "Expert" as const,
+      difficulty: "Expert",
       prizePool: "$25,000",
       timeLeft: "7 days left",
       players: 541,

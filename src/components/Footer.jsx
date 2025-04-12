@@ -2,7 +2,7 @@
 import React from 'react';
 import { Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
 
-const Footer: React.FC = () => {
+const Footer = () => {
   return (
     <footer className="bg-puzzle-black border-t border-puzzle-aqua/20 pt-12 pb-6">
       <div className="container mx-auto px-4">

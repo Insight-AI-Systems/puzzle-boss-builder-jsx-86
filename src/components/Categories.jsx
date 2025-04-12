@@ -1,14 +1,7 @@
 
 import React from 'react';
 
-interface CategoryProps {
-  title: string;
-  description: string;
-  icon: string;
-  color: string;
-}
-
-const CategoryCard: React.FC<CategoryProps> = ({ title, description, icon, color }) => {
+const CategoryCard = ({ title, description, icon, color }) => {
   return (
     <div className="card-highlight p-6 hover:translate-y-[-5px] transition-all duration-300">
       <div className={`w-16 h-16 ${color} rounded-full flex items-center justify-center mx-auto mb-4`}>
@@ -20,7 +13,7 @@ const CategoryCard: React.FC<CategoryProps> = ({ title, description, icon, color
   );
 };
 
-const Categories: React.FC = () => {
+const Categories = () => {
   const categories = [
     {
       title: "Jigsaw",

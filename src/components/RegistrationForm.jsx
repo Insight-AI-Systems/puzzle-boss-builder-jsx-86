@@ -8,7 +8,7 @@ import FormField from './form/FormField';
 import TermsCheckbox from './form/TermsCheckbox';
 import { validateRegistrationForm } from '@/utils/formValidation';
 
-const RegistrationForm: React.FC = () => {
+const RegistrationForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signUp } = useAuth();
@@ -19,10 +19,10 @@ const RegistrationForm: React.FC = () => {
     confirmPassword: '',
     agreeTerms: false
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
@@ -37,7 +37,7 @@ const RegistrationForm: React.FC = () => {
     }
   };
 
-  const handleCheckboxChange = (checked: boolean) => {
+  const handleCheckboxChange = (checked) => {
     setFormData({
       ...formData,
       agreeTerms: checked
@@ -57,7 +57,7 @@ const RegistrationForm: React.FC = () => {
     return Object.keys(validationErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {

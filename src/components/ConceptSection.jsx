@@ -2,13 +2,7 @@
 import React from 'react';
 import { MoveHorizontal, Clock, Award } from 'lucide-react';
 
-interface ConceptItemProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}
-
-const ConceptItem: React.FC<ConceptItemProps> = ({ icon, title, description }) => {
+const ConceptItem = ({ icon, title, description }) => {
   return (
     <div className="flex flex-col items-center md:items-start text-center md:text-left">
       <div className="text-puzzle-aqua mb-4">
@@ -20,7 +14,7 @@ const ConceptItem: React.FC<ConceptItemProps> = ({ icon, title, description }) =
   );
 };
 
-const ConceptSection: React.FC = () => {
+const ConceptSection = () => {
   return (
     <section className="py-16 bg-puzzle-black/50">
       <div className="container mx-auto px-4">

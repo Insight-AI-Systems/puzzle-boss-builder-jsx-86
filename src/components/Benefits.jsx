@@ -2,13 +2,7 @@
 import React from 'react';
 import { Award, Calendar, Gift, Shield, Brain, Zap } from 'lucide-react';
 
-interface BenefitProps {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-}
-
-const Benefit: React.FC<BenefitProps> = ({ title, description, icon }) => {
+const Benefit = ({ title, description, icon }) => {
   return (
     <div className="flex flex-col items-center text-center p-6 card-highlight">
       <div className="w-14 h-14 rounded-full bg-puzzle-aqua/10 border border-puzzle-aqua/30 flex items-center justify-center mb-4 text-puzzle-aqua">
@@ -20,7 +14,7 @@ const Benefit: React.FC<BenefitProps> = ({ title, description, icon }) => {
   );
 };
 
-const Benefits: React.FC = () => {
+const Benefits = () => {
   const benefits = [
     {
       title: "Premium Prizes",

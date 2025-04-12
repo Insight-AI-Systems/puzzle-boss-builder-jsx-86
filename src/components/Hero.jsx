@@ -4,7 +4,7 @@ import InteractivePuzzle from './InteractivePuzzle';
 import { Button } from './ui/button';
 import { ArrowRight } from 'lucide-react';
 
-const Hero: React.FC = () => {
+const Hero = () => {
   return (
     <section className="py-12 md:py-20">
       <div className="container mx-auto px-4">

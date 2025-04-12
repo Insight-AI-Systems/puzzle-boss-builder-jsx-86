@@ -3,15 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardFooter } from './ui/card';
 import { Star } from 'lucide-react';
 
-interface TestimonialProps {
-  quote: string;
-  name: string;
-  prize: string;
-  avatar: string;
-  stars: number;
-}
-
-const Testimonial: React.FC<TestimonialProps> = ({ quote, name, prize, avatar, stars }) => {
+const Testimonial = ({ quote, name, prize, avatar, stars }) => {
   return (
     <Card className="card-highlight">
       <CardContent className="pt-6">
@@ -43,7 +35,7 @@ const Testimonial: React.FC<TestimonialProps> = ({ quote, name, prize, avatar, s
   );
 };
 
-const Testimonials: React.FC = () => {
+const Testimonials = () => {
   const testimonials = [
     {
       quote: "I never thought solving puzzles could be so rewarding! I won a brand new iPad and the competition was so much fun.",

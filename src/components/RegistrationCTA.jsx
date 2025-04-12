@@ -2,7 +2,7 @@
 import React from 'react';
 import RegistrationForm from './RegistrationForm';
 
-const RegistrationCTA: React.FC = () => {
+const RegistrationCTA = () => {
   return (
     <section className="py-20 relative">
       <div className="absolute inset-0 bg-puzzle-aqua/5 z-0"></div>
