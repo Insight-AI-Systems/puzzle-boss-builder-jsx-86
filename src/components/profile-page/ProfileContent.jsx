@@ -5,7 +5,7 @@ import ProfileForm from '@/components/profile/ProfileForm';
 import GameHistory from '@/components/profile/GameHistory';
 import AvailablePuzzles from '@/components/profile/AvailablePuzzles';
 import RewardsReferrals from '@/components/profile/RewardsReferrals';
-import AccountSettings from '@/components/profile/AccountSettings';
+import AccountSettings from '@/components/profile/account/AccountSettings';
 import { useAuth } from '@/contexts/auth';
 
 const ProfileContent = ({ user, profile }) => {
