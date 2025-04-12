@@ -12,7 +12,8 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react({
-      tsconfig: "./tsconfig.ext.json" // Use our extended TypeScript config
+      tsDecorators: true,
+      jsxImportSource: undefined
     }),
     mode === 'development' &&
     componentTagger(),
