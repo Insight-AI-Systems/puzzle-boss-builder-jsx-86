@@ -9,23 +9,22 @@ import UserDetailsSidebar from './UserDetailsSidebar';
 
 /**
  * Component to manage the Users tab in the admin dashboard
- * Optimized to minimize data processing and rendering
+ * Optimized to absolutely minimize data handling
  */
 const UsersPanel = ({ users, profile, onRoleChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   
-  // Only pass minimal required data to child components
+  // Extract only minimal data needed for display
   const minimalUsers = useMemo(() => {
     return users.map(user => ({
       id: user.id,
       username: user.username || 'No username',
-      role: user.role,
-      created_at: user.created_at
+      role: user.role
     }));
   }, [users]);
   
-  // Use useMemo for filtering to reduce unnecessary processing
+  // Use useMemo for filtering
   const filteredUsers = useMemo(() => {
     if (!searchTerm.trim()) {
       return minimalUsers;
@@ -38,18 +37,13 @@ const UsersPanel = ({ users, profile, onRoleChange }) => {
     );
   }, [searchTerm, minimalUsers]);
 
-  // Handle user selection with only required data
+  // Handle user selection with minimal data
   const handleSelectUser = (user) => {
-    // Find full user data but only extract needed fields
-    const fullUser = users.find(u => u.id === user.id);
-    if (fullUser) {
-      setSelectedUser({
-        id: fullUser.id,
-        username: fullUser.username,
-        role: fullUser.role,
-        created_at: fullUser.created_at
-      });
-    }
+    setSelectedUser({
+      id: user.id,
+      username: user.username,
+      role: user.role
+    });
   };
   
   const clearFilters = () => {

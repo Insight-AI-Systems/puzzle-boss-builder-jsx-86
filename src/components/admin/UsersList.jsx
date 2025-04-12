@@ -20,13 +20,13 @@ import {
 } from "@/components/ui/pagination";
 
 /**
- * Component to display the list of users in the admin dashboard
- * Heavily optimized to reduce data payload
+ * Extremely optimized component to display the list of users
+ * Designed to minimize data displayed to prevent message size issues
  */
 const UsersList = ({ users, selectedUser, onSelectUser }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  // Further reduced items per page to limit data displayed at once
-  const itemsPerPage = 5;
+  // Further reduced to just 3 items per page to minimize data
+  const itemsPerPage = 3;
   
   // Calculate pagination values
   const totalPages = Math.ceil(users.length / itemsPerPage);
@@ -45,7 +45,6 @@ const UsersList = ({ users, selectedUser, onSelectUser }) => {
     }
   };
 
-  // Simplified table with only critical information
   return (
     <div className="space-y-4">
       <div className="overflow-x-auto">

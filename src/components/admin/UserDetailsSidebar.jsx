@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -13,10 +12,11 @@ import {
 import { ROLES, PERMISSIONS, hasPermission } from '@/utils/permissions';
 
 /**
- * Minimal component to display user details sidebar
- * Drastically reduced to prevent excessive message size
+ * Optimized user details sidebar with minimal data usage
+ * to prevent excessive message size
  */
 const UserDetailsSidebar = ({ selectedUser, profile, onRoleChange, onClose }) => {
+  // If no user is selected, show empty state
   if (!selectedUser) {
     return (
       <Card className="bg-puzzle-black border-puzzle-aqua/30 h-full flex flex-col justify-center items-center py-8">
@@ -29,9 +29,10 @@ const UserDetailsSidebar = ({ selectedUser, profile, onRoleChange, onClose }) =>
       </Card>
     );
   }
-
-  // Truncate ID to reduce message size
-  const truncatedId = selectedUser.id?.substring(0, 8) + '...';
+  
+  // Keep only minimal data needed for display - ID is never displayed fully
+  const userId = selectedUser?.id || '';
+  const displayId = userId ? `${userId.substring(0, 6)}...` : '';
   
   return (
     <Card className="bg-puzzle-black border-puzzle-aqua/30">
@@ -55,7 +56,7 @@ const UserDetailsSidebar = ({ selectedUser, profile, onRoleChange, onClose }) =>
             </label>
             <Select
               defaultValue={selectedUser.role}
-              onValueChange={(value) => onRoleChange(selectedUser.id, value)}
+              onValueChange={(value) => onRoleChange(userId, value)}
               disabled={!hasPermission(profile, PERMISSIONS.MANAGE_ROLES)}
             >
               <SelectTrigger className="w-full">

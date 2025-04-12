@@ -14,7 +14,7 @@ import RolePermissionsTable from '@/components/admin/RolePermissionsTable';
 
 /**
  * Admin dashboard for user management and role assignments
- * Optimized to reduce render size and improve performance
+ * Extremely optimized to prevent message size issues
  */
 const AdminDashboard = () => {
   const { profile } = useAuth();
@@ -30,31 +30,23 @@ const AdminDashboard = () => {
       try {
         setLoading(true);
         
-        // Further limit initial fetch to just 25 users to reduce payload size
+        // Drastically limit initial fetch to just 10 users
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, username, role, created_at')
+          .select('id, username, role')
           .order('created_at', { ascending: false })
-          .limit(25); // Reduced from 50 to 25
+          .limit(10);
           
         if (error) {
           throw error;
         }
         
-        // Ensure we only store necessary fields
-        const streamlinedData = data?.map(user => ({
-          id: user.id,
-          username: user.username,
-          role: user.role,
-          created_at: user.created_at
-        })) || [];
-        
-        setUsers(streamlinedData);
+        setUsers(data || []);
       } catch (error) {
-        console.error('Error fetching users:', error.message?.substring(0, 200) || 'Unknown error');
+        console.error('Error fetching users:', error.message);
         toast({
           title: 'Error',
-          description: 'Failed to load users. Please try again.',
+          description: 'Failed to load users',
           variant: 'destructive'
         });
       } finally {
@@ -67,7 +59,7 @@ const AdminDashboard = () => {
     }
   }, [toast, activeTab]);
   
-  // Lazy load tab content to prevent loading all components at once
+  // Lazy load tab content
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     if (!loadedTabs.includes(tab)) {
@@ -75,10 +67,9 @@ const AdminDashboard = () => {
     }
   };
   
-  // Handle role change with optimized update approach
+  // Handle role change
   const handleRoleChange = async (userId, newRole) => {
     try {
-      // Streamline data update by only selecting essential fields
       const { error } = await supabase
         .from('profiles')
         .update({ role: newRole })
@@ -88,7 +79,7 @@ const AdminDashboard = () => {
         throw error;
       }
       
-      // Update local state
+      // Update local state with minimal data
       setUsers(prevUsers => 
         prevUsers.map(user => 
           user.id === userId ? { ...user, role: newRole } : user
@@ -97,13 +88,13 @@ const AdminDashboard = () => {
       
       toast({
         title: 'Role Updated',
-        description: `User role has been updated to ${getRoleDisplayName(newRole)}`,
+        description: `Role updated to ${getRoleDisplayName(newRole)}`,
       });
     } catch (error) {
-      console.error('Error updating role:', error.message?.substring(0, 200) || 'Unknown error');
+      console.error('Error updating role:', error.message);
       toast({
         title: 'Error',
-        description: 'Failed to update user role. Please try again.',
+        description: 'Failed to update role',
         variant: 'destructive'
       });
     }
@@ -135,7 +126,7 @@ const AdminDashboard = () => {
             </TabsTrigger>
           </TabsList>
           
-          {/* Users Tab - Only render when active */}
+          {/* Users Tab */}
           <TabsContent value="users">
             {loadedTabs.includes('users') && (
               <UsersPanel 
@@ -146,7 +137,7 @@ const AdminDashboard = () => {
             )}
           </TabsContent>
           
-          {/* Roles Tab - Only render when active */}
+          {/* Roles Tab */}
           <TabsContent value="roles">
             {loadedTabs.includes('roles') && (
               <Card className="bg-puzzle-black border-puzzle-aqua/30">
