@@ -1,6 +1,5 @@
 
 import React, { useEffect } from 'react';
-import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import ConceptSection from '@/components/ConceptSection';
 import FeaturedPuzzles from '@/components/FeaturedPuzzles';
@@ -20,10 +19,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <ErrorBoundary>
-        <Navbar />
-      </ErrorBoundary>
-      
       <main>
         <ErrorBoundary>
           <Hero />
