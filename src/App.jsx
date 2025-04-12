@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/auth";
+import { ThemeProvider } from "@/contexts/theme";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MainHeader from "@/components/header";
 import Index from "./pages/Index";
@@ -33,36 +34,38 @@ const App = () => {
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <MainHeader />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              
-              {/* Protected routes that require authentication */}
-              <Route 
-                path="/profile" 
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                } 
-              />
-              
-              {/* Admin route */}
-              <Route path="/admin" element={<AdminDashboard />} />
-              
-              {/* Debug route */}
-              <Route path="/auth-debug" element={<AuthDebug />} />
-              
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </TooltipProvider>
+          <ThemeProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <MainHeader />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
+                
+                {/* Protected routes that require authentication */}
+                <Route 
+                  path="/profile" 
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                {/* Admin route */}
+                <Route path="/admin" element={<AdminDashboard />} />
+                
+                {/* Debug route */}
+                <Route path="/auth-debug" element={<AuthDebug />} />
+                
+                {/* Catch-all route */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </TooltipProvider>
+          </ThemeProvider>
         </AuthProvider>
       </QueryClientProvider>
     </BrowserRouter>

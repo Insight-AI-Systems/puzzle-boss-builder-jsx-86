@@ -38,6 +38,36 @@
     --radius: 0.5rem;
   }
 
+  .dark {
+    --background: 0 0% 5%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 180 100% 38%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 45 100% 55%;
+    --secondary-foreground: 0 0% 9%;
+
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 63%;
+
+    --accent: 345 100% 28%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84.2% 65.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 13%;
+    --ring: 180 100% 38%;
+  }
+
   * {
     @apply border-border;
   }
@@ -80,15 +110,15 @@
   }
   
   .card-highlight {
-    @apply bg-gradient-to-br from-puzzle-black to-puzzle-black/90 border border-puzzle-aqua/30 rounded-xl shadow-lg shadow-puzzle-aqua/10 backdrop-blur-sm hover:border-puzzle-aqua/60 transition-all duration-300;
+    @apply bg-gradient-to-br from-puzzle-black to-puzzle-black/90 border border-puzzle-aqua/30 rounded-xl shadow-lg shadow-puzzle-aqua/10 backdrop-blur-sm hover:border-puzzle-aqua/60 transition-all duration-300 dark:from-black dark:to-black/90 dark:shadow-puzzle-aqua/5;
   }
   
   .btn-primary {
-    @apply bg-puzzle-aqua text-puzzle-black font-bold py-3 px-6 rounded-md hover:bg-puzzle-aqua/90 transition-all duration-300 shadow-md shadow-puzzle-aqua/20;
+    @apply bg-puzzle-aqua text-puzzle-black font-bold py-3 px-6 rounded-md hover:bg-puzzle-aqua/90 transition-all duration-300 shadow-md shadow-puzzle-aqua/20 dark:shadow-puzzle-aqua/10;
   }
   
   .btn-secondary {
-    @apply bg-puzzle-gold text-puzzle-black font-bold py-3 px-6 rounded-md hover:bg-puzzle-gold/90 transition-all duration-300 shadow-md shadow-puzzle-gold/20;
+    @apply bg-puzzle-gold text-puzzle-black font-bold py-3 px-6 rounded-md hover:bg-puzzle-gold/90 transition-all duration-300 shadow-md shadow-puzzle-gold/20 dark:shadow-puzzle-gold/10;
   }
   
   .nav-link {

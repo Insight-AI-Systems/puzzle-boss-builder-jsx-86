@@ -103,6 +103,10 @@ export default {
 				'rotate-slow': {
 					'0%': { transform: 'rotate(0deg)' },
 					'100%': { transform: 'rotate(360deg)' },
+				},
+				'fade-in': {
+					'0%': { opacity: '0', transform: 'translateY(10px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' }
 				}
 			},
 			animation: {
@@ -111,6 +115,7 @@ export default {
 				'pulse-gentle': 'pulse-gentle 3s infinite ease-in-out',
 				'float': 'float 6s infinite ease-in-out',
 				'rotate-slow': 'rotate-slow 12s linear infinite',
+				'fade-in': 'fade-in 0.3s ease-out'
 			},
 			fontFamily: {
 				'game': ['Orbitron', 'sans-serif'],

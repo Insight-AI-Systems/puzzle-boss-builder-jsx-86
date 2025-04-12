@@ -6,6 +6,7 @@ import MainHeaderLogo from './MainHeaderLogo';
 import MainHeaderLinks from './MainHeaderLinks';
 import MainHeaderUserMenu from './MainHeaderUserMenu';
 import MainHeaderMobile from './MainHeaderMobile';
+import ThemeToggle from './ThemeToggle';
 
 const MainHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -40,7 +41,7 @@ const MainHeader = () => {
   
   return (
     <header 
-      className={`sticky top-0 z-50 w-full border-b border-cyan-500/20 backdrop-blur-sm bg-black/80 transition-all duration-300 ${
+      className={`sticky top-0 z-50 w-full border-b border-cyan-500/20 backdrop-blur-sm bg-black/80 dark:bg-black/90 transition-all duration-300 ${
         isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
       }`}
     >
@@ -56,17 +57,21 @@ const MainHeader = () => {
           </nav>
           
           <div className="hidden md:flex items-center gap-4">
+            <ThemeToggle />
             <MainHeaderUserMenu />
           </div>
           
           {/* Mobile menu button */}
-          <button 
-            className="md:hidden text-white hover:text-cyan-400 transition-colors" 
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          <div className="md:hidden flex items-center gap-2">
+            <ThemeToggle />
+            <button 
+              className="text-white hover:text-cyan-400 transition-colors" 
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+            >
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
       </div>
       
