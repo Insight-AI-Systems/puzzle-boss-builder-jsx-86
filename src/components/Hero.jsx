@@ -35,7 +35,7 @@ const Hero = () => {
           <div className="w-full md:w-1/2 flex justify-center">
             <div className="relative">
               <div className="absolute inset-0 bg-puzzle-aqua/30 blur-[100px] rounded-full"></div>
-              <div className="card-highlight p-8 relative">
+              <div className="card-highlight p-6 relative">
                 <h3 className="text-xl font-bold text-center mb-4 text-puzzle-white">Try a Mini Puzzle</h3>
                 <InteractivePuzzle />
               </div>

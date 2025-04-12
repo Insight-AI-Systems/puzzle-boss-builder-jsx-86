@@ -25,6 +25,7 @@ import Careers from "./pages/Careers";
 import Press from "./pages/Press";
 import ContentAdmin from "./pages/ContentAdmin";
 import AuthDebug from "./pages/AuthDebug";
+import AdminPuzzleConfig from "./pages/AdminPuzzleConfig";
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient({
@@ -87,6 +88,11 @@ const App = () => {
                       <ContentAdmin />
                     </RoleProtectedRoute>
                   }
+                />
+                
+                <Route 
+                  path="/admin/puzzle-config" 
+                  element={<AdminPuzzleConfig />}
                 />
                 
                 {/* Debug route */}
