@@ -17,37 +17,44 @@ const MainHeaderLinks = ({ isMobile = false, onItemClick = () => {} }) => {
   const gapClass = isMobile ? 'gap-2' : 'gap-1';
   const paddingClass = isMobile ? 'py-2' : '';
   
+  // Animation classes for links
+  const linkBaseClass = `transition-all duration-300 ${paddingClass}`;
+  const linkActiveClass = 'text-cyan-400 scale-105';
+  const linkInactiveClass = 'text-white hover:text-cyan-400 hover:scale-105';
+  const adminLinkActiveClass = 'text-yellow-400 scale-105';
+  const adminLinkInactiveClass = 'text-white hover:text-yellow-400 hover:scale-105';
+  
   return (
     <>
       <Link 
         to="/" 
-        className={`transition-colors ${isActive('/') ? 'text-cyan-400' : 'text-white hover:text-cyan-400'} ${paddingClass}`}
+        className={`${linkBaseClass} ${isActive('/') ? linkActiveClass : linkInactiveClass}`}
         onClick={onItemClick}
       >
         <span className={`flex items-center ${gapClass}`}>
-          <Home size={iconSize} />
+          <Home size={iconSize} className="transition-transform group-hover:rotate-3" />
           <span>Home</span>
         </span>
       </Link>
       
       <Link 
         to="/terms" 
-        className={`transition-colors ${isActive('/terms') ? 'text-cyan-400' : 'text-white hover:text-cyan-400'} ${paddingClass}`}
+        className={`${linkBaseClass} ${isActive('/terms') ? linkActiveClass : linkInactiveClass}`}
         onClick={onItemClick}
       >
         <span className={`flex items-center ${gapClass}`}>
-          <FileText size={iconSize} />
+          <FileText size={iconSize} className="transition-transform group-hover:rotate-3" />
           <span>Terms</span>
         </span>
       </Link>
       
       <Link 
         to="/privacy" 
-        className={`transition-colors ${isActive('/privacy') ? 'text-cyan-400' : 'text-white hover:text-cyan-400'} ${paddingClass}`}
+        className={`${linkBaseClass} ${isActive('/privacy') ? linkActiveClass : linkInactiveClass}`}
         onClick={onItemClick}
       >
         <span className={`flex items-center ${gapClass}`}>
-          <InfoIcon size={iconSize} />
+          <InfoIcon size={iconSize} className="transition-transform group-hover:rotate-3" />
           <span>Privacy</span>
         </span>
       </Link>
@@ -65,11 +72,11 @@ const MainHeaderLinks = ({ isMobile = false, onItemClick = () => {} }) => {
       >
         <Link 
           to="/admin" 
-          className={`transition-colors ${isActive('/admin') ? 'text-yellow-400' : 'text-white hover:text-yellow-400'} ${paddingClass}`}
+          className={`${linkBaseClass} ${isActive('/admin') ? adminLinkActiveClass : adminLinkInactiveClass}`}
           onClick={onItemClick}
         >
           <span className={`flex items-center ${gapClass}`}>
-            <LayoutDashboard size={iconSize} />
+            <LayoutDashboard size={iconSize} className="transition-transform group-hover:rotate-3" />
             <span>Admin Dashboard</span>
           </span>
         </Link>

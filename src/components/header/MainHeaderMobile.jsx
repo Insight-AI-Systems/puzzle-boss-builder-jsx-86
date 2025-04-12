@@ -7,7 +7,7 @@ const MainHeaderMobile = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="md:hidden bg-black border-b border-cyan-500/20">
+    <div className="md:hidden bg-black border-b border-cyan-500/20 animate-fade-in">
       <div className="container mx-auto px-4 py-4">
         <nav className="flex flex-col gap-4">
           <MainHeaderLinks isMobile={true} onItemClick={onClose} />
