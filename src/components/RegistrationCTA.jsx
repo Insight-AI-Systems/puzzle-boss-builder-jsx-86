@@ -1,47 +1,38 @@
 
 import React from 'react';
-import RegistrationForm from './RegistrationForm';
+import { Link } from 'react-router-dom';
+import { Button } from './ui/button';
+import { Trophy } from 'lucide-react';
 
 const RegistrationCTA = () => {
   return (
-    <section className="py-20 relative">
-      <div className="absolute inset-0 bg-puzzle-aqua/5 z-0"></div>
-      <div className="absolute inset-0 z-0 opacity-30 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-puzzle-aqua/20 via-transparent to-transparent"></div>
-      
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6 text-puzzle-white">
-                Join <span className="text-puzzle-gold">The Puzzle Boss</span> <br/>
-                Community Today
-              </h2>
-              
-              <p className="text-muted-foreground mb-8">
-                Create your free account and start competing for amazing prizes. No entry fees required. We reward skill, not luck.
-              </p>
-              
-              <ul className="space-y-4">
-                {[
-                  "Access to all puzzle competitions",
-                  "Track your progress and ranking",
-                  "Qualify for exclusive prize draws",
-                  "Connect with fellow puzzle enthusiasts"
-                ].map((item, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-puzzle-gold mr-2">✓</span>
-                    <span className="text-puzzle-white">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            
-            <div className="card-highlight p-6 md:p-8">
-              <h3 className="text-xl font-bold mb-6 text-center text-puzzle-white">
-                Create Your Free Account
-              </h3>
-              <RegistrationForm />
-            </div>
+    <section className="py-16 bg-gradient-to-br from-puzzle-black to-puzzle-black/80 border-t border-b border-puzzle-aqua/20">
+      <div className="container mx-auto px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="bg-puzzle-aqua/20 p-1 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
+            <Trophy size={32} className="text-puzzle-aqua" />
+          </div>
+          
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-puzzle-white">
+            Ready to <span className="text-puzzle-gold">Win</span> Amazing Prizes?
+          </h2>
+          
+          <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
+            Join thousands of puzzle enthusiasts competing in skill-based challenges. 
+            Create your free account today and start playing for premium brand-name prizes!
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/auth?tab=register">
+              <Button className="bg-puzzle-gold text-puzzle-black hover:bg-puzzle-gold/90 text-lg px-8 py-3 h-auto">
+                Sign Up Now
+              </Button>
+            </Link>
+            <Link to="/#how-it-works">
+              <Button variant="outline" className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10 text-lg px-8 py-3 h-auto">
+                Learn More
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

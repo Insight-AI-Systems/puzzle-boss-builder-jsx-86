@@ -1,5 +1,6 @@
 
 import React, { useEffect } from 'react';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import ConceptSection from '@/components/ConceptSection';
@@ -19,20 +20,47 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-puzzle-black">
-      <Navbar />
-      
-      <main>
-        <Hero />
-        <ConceptSection />
-        <FeaturedPuzzles />
-        <Categories />
-        <HowItWorks />
-        <Testimonials />
-        <Benefits />
-        <RegistrationCTA />
-      </main>
-      
-      <Footer />
+      <ErrorBoundary>
+        <Navbar />
+        
+        <main>
+          <ErrorBoundary>
+            <Hero />
+          </ErrorBoundary>
+          
+          <ErrorBoundary>
+            <ConceptSection />
+          </ErrorBoundary>
+          
+          <ErrorBoundary>
+            <FeaturedPuzzles />
+          </ErrorBoundary>
+          
+          <ErrorBoundary>
+            <Categories />
+          </ErrorBoundary>
+          
+          <ErrorBoundary>
+            <HowItWorks />
+          </ErrorBoundary>
+          
+          <ErrorBoundary>
+            <Testimonials />
+          </ErrorBoundary>
+          
+          <ErrorBoundary>
+            <Benefits />
+          </ErrorBoundary>
+          
+          <ErrorBoundary>
+            <RegistrationCTA />
+          </ErrorBoundary>
+        </main>
+        
+        <ErrorBoundary>
+          <Footer />
+        </ErrorBoundary>
+      </ErrorBoundary>
     </div>
   );
 };

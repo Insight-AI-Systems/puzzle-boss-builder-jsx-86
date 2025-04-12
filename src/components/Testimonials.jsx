@@ -1,62 +1,59 @@
 
 import React from 'react';
-import { Card, CardContent, CardFooter } from './ui/card';
 import { Star } from 'lucide-react';
 
-const Testimonial = ({ quote, name, prize, avatar, stars }) => {
+const Testimonial = ({ name, location, text, rating, image }) => {
   return (
-    <Card className="card-highlight">
-      <CardContent className="pt-6">
-        <div className="flex mb-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Star 
-              key={i} 
-              size={16} 
-              className={i < stars ? "fill-puzzle-gold text-puzzle-gold" : "text-muted-foreground"} 
-            />
-          ))}
-        </div>
-        <p className="italic text-puzzle-white mb-4">"{quote}"</p>
-      </CardContent>
-      <CardFooter className="flex items-center gap-4 border-t border-puzzle-aqua/20 pt-4">
-        <div className="flex-shrink-0">
-          <img 
-            src={avatar} 
-            alt={name}
-            className="w-12 h-12 rounded-full object-cover border-2 border-puzzle-aqua" 
-          />
+    <div className="card-highlight p-6 flex flex-col h-full">
+      <div className="flex items-center gap-4 mb-4">
+        <div className="w-14 h-14 rounded-full overflow-hidden">
+          <img src={image} alt={name} className="w-full h-full object-cover" />
         </div>
         <div>
-          <h4 className="font-bold text-puzzle-white">{name}</h4>
-          <p className="text-sm text-puzzle-gold">Won: {prize}</p>
+          <h4 className="text-puzzle-white font-bold">{name}</h4>
+          <p className="text-sm text-muted-foreground">{location}</p>
         </div>
-      </CardFooter>
-    </Card>
+      </div>
+      
+      <div className="flex mb-3">
+        {[...Array(5)].map((_, i) => (
+          <Star 
+            key={i} 
+            size={16} 
+            className={i < rating ? "text-puzzle-gold fill-puzzle-gold" : "text-muted-foreground"} 
+          />
+        ))}
+      </div>
+      
+      <blockquote className="text-muted-foreground flex-grow">
+        "{text}"
+      </blockquote>
+    </div>
   );
 };
 
 const Testimonials = () => {
   const testimonials = [
     {
-      quote: "I never thought solving puzzles could be so rewarding! I won a brand new iPad and the competition was so much fun.",
-      name: "Sarah Johnson",
-      prize: "Apple iPad Pro",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1287&auto=format&fit=crop",
-      stars: 5
+      name: "Sarah J.",
+      location: "New York, USA",
+      text: "I've won two premium prizes already! The puzzle competitions are challenging but so much fun. Definitely worth joining!",
+      rating: 5,
+      image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=1288&auto=format&fit=crop"
     },
     {
-      quote: "The puzzles are challenging but fair. I spent a weekend solving and ended up winning premium headphones!",
-      name: "David Chen",
-      prize: "Sony WH-1000XM4",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1287&auto=format&fit=crop",
-      stars: 5
+      name: "Michael T.",
+      location: "London, UK",
+      text: "The Puzzle Boss has the best UI of any puzzle competition site I've used. The challenges are creative and the prizes are amazing.",
+      rating: 5,
+      image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1287&auto=format&fit=crop"
     },
     {
-      quote: "Puzzle Boss has the best selection of logic puzzles. The timed competitions are addictive and the prizes are amazing.",
-      name: "Emma Rodriguez",
-      prize: "Nintendo Switch",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=1470&auto=format&fit=crop",
-      stars: 4
+      name: "Aisha R.",
+      location: "Toronto, Canada",
+      text: "I'm addicted to these puzzle challenges! The competition is fierce but fair, and I've improved my puzzle skills so much.",
+      rating: 4,
+      image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=1361&auto=format&fit=crop"
     }
   ];
 
@@ -64,13 +61,13 @@ const Testimonials = () => {
     <section className="py-16 bg-puzzle-black/50">
       <div className="container mx-auto px-4">
         <h2 className="section-title text-puzzle-white">
-          Winner <span className="text-puzzle-aqua">Testimonials</span>
+          What Our <span className="text-puzzle-gold">Players</span> Say
         </h2>
         <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-12">
-          Hear from real players who have won prizes on The Puzzle Boss platform.
+          Join our community of puzzle enthusiasts and experience the thrill of competition.
         </p>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {testimonials.map((testimonial, index) => (
             <Testimonial key={index} {...testimonial} />
           ))}
