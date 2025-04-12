@@ -1,25 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Shuffle, Check, Volume2, VolumeX } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-
-// Get puzzle configuration from localStorage or use defaults
-const getPuzzleConfig = () => {
-  try {
-    const savedConfig = localStorage.getItem('puzzleConfig');
-    if (savedConfig) {
-      return JSON.parse(savedConfig);
-    }
-  } catch (error) {
-    console.error('Error loading puzzle config:', error);
-  }
-  
-  // Default configuration
-  return {
-    image: 'https://images.unsplash.com/photo-1500673922987-e212871fec22?auto=format&fit=crop&w=300&h=300&q=80',
-    gridSize: 4
-  };
-};
+import PuzzlePiece from './puzzle/PuzzlePiece';
+import SuccessOverlay from './puzzle/SuccessOverlay';
+import PuzzleControls from './puzzle/PuzzleControls';
+import { getPuzzleConfig, playSound } from './puzzle/PuzzleUtils';
 
 const InteractivePuzzle = () => {
   const [pieces, setPieces] = useState([]);
@@ -81,30 +65,11 @@ const InteractivePuzzle = () => {
     
     // If newly solved, play success sound
     if (isSolved && !solved && !muted) {
-      playSound('success');
+      playSound('success', muted);
     }
     
     setSolved(isSolved);
   }, [pieces, muted, solved]);
-  
-  // Play sound effects
-  const playSound = (type) => {
-    if (muted) return;
-    
-    const sounds = {
-      pick: new Audio('/sounds/pick.mp3'),
-      place: new Audio('/sounds/place.mp3'),
-      success: new Audio('/sounds/success.mp3')
-    };
-    
-    // Fallback to prevent errors when sound files aren't available in development
-    try {
-      sounds[type].volume = 0.3;
-      sounds[type].play().catch(error => console.log('Audio play prevented:', error));
-    } catch (error) {
-      console.log('Sound playback error:', error);
-    }
-  };
   
   // Shuffle the puzzle pieces
   const shufflePuzzle = () => {
@@ -144,17 +109,6 @@ const InteractivePuzzle = () => {
     setSolved(true);
   };
   
-  // Handle dragging piece
-  const handleDragStart = (e, piece) => {
-    setDraggedPiece(piece);
-    playSound('pick');
-    
-    // Set ghost drag image (empty for better UX)
-    const img = new Image();
-    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-    e.dataTransfer.setDragImage(img, 0, 0);
-  };
-  
   // Handle dropping piece
   const handleDrop = (e, targetRow, targetCol) => {
     e.preventDefault();
@@ -180,28 +134,8 @@ const InteractivePuzzle = () => {
     });
     
     setPieces(updatedPieces);
-    playSound('place');
+    playSound('place', muted);
     setDraggedPiece(null);
-  };
-  
-  // Calculate positioning for puzzle pieces
-  const getPieceStyle = (piece) => {
-    const pieceWidth = 100 / gridSize;
-    const pieceHeight = 100 / gridSize;
-    
-    // Correct background position to show the right part of the image
-    const backgroundX = -(piece.correctPosition.col * 100) / gridSize;
-    const backgroundY = -(piece.correctPosition.row * 100) / gridSize;
-    
-    return {
-      width: `${pieceWidth}%`,
-      height: `${pieceHeight}%`,
-      top: `${piece.currentPosition.row * pieceHeight}%`,
-      left: `${piece.currentPosition.col * pieceWidth}%`,
-      backgroundImage: `url(${puzzleImage})`,
-      backgroundSize: `${gridSize * 100}%`,
-      backgroundPosition: `${backgroundX}% ${backgroundY}%`
-    };
   };
   
   // Allow dropping by preventing default behavior
@@ -219,58 +153,30 @@ const InteractivePuzzle = () => {
         >
           {/* Puzzle pieces */}
           {pieces.map((piece) => (
-            <div
+            <PuzzlePiece
               key={piece.id}
-              className="absolute transition-all duration-200 cursor-move hover:brightness-110 hover:scale-[1.02] active:scale-105 active:z-10"
-              style={getPieceStyle(piece)}
-              draggable
-              onDragStart={(e) => handleDragStart(e, piece)}
+              piece={piece}
+              puzzleImage={puzzleImage}
+              gridSize={gridSize}
+              draggedPiece={draggedPiece}
+              setDraggedPiece={setDraggedPiece}
+              playSound={(type) => playSound(type, muted)}
               onDrop={(e) => handleDrop(e, piece.currentPosition.row, piece.currentPosition.col)}
             />
           ))}
           
           {/* Success overlay */}
-          {solved && (
-            <div className="absolute inset-0 flex items-center justify-center bg-puzzle-black/30 backdrop-blur-[1px] animate-fade-in">
-              <div className="text-puzzle-gold flex items-center gap-2 font-bold text-2xl">
-                <Check className="w-6 h-6" />
-                Complete!
-              </div>
-            </div>
-          )}
+          {solved && <SuccessOverlay />}
         </div>
       </div>
       
       {/* Controls */}
-      <div className="flex justify-center gap-2 w-full max-w-xs">
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10"
-          onClick={shufflePuzzle}
-        >
-          <Shuffle className="mr-1 w-4 h-4" />
-          Shuffle
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10"
-          onClick={resetPuzzle}
-        >
-          Reset
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10 ml-auto"
-          onClick={() => setMuted(!muted)}
-        >
-          {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-        </Button>
-      </div>
+      <PuzzleControls 
+        shufflePuzzle={shufflePuzzle}
+        resetPuzzle={resetPuzzle}
+        muted={muted}
+        setMuted={setMuted}
+      />
     </div>
   );
 };
