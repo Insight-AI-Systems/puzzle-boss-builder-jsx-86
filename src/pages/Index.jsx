@@ -19,7 +19,7 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-puzzle-black">
+    <div className="min-h-screen bg-black text-white">
       <ErrorBoundary>
         <Navbar />
         
