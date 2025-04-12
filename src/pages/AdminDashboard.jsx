@@ -14,6 +14,7 @@ import RolePermissionsTable from '@/components/admin/RolePermissionsTable';
 
 /**
  * Admin dashboard for user management and role assignments
+ * Optimized to reduce render size and improve performance
  */
 const AdminDashboard = () => {
   const { profile } = useAuth();
@@ -21,6 +22,7 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [loadedTabs, setLoadedTabs] = useState(['users']);
 
   // Fetch users from the database
   useEffect(() => {
@@ -28,10 +30,12 @@ const AdminDashboard = () => {
       try {
         setLoading(true);
         
+        // Limit initial fetch to 50 users to reduce payload size
         const { data, error } = await supabase
           .from('profiles')
-          .select('*')
-          .order('created_at', { ascending: false });
+          .select('id, username, role, created_at')
+          .order('created_at', { ascending: false })
+          .limit(50);
           
         if (error) {
           throw error;
@@ -39,7 +43,7 @@ const AdminDashboard = () => {
         
         setUsers(data || []);
       } catch (error) {
-        console.error('Error fetching users:', error);
+        console.error('Error fetching users:', error.message);
         toast({
           title: 'Error',
           description: 'Failed to load users. Please try again.',
@@ -50,8 +54,18 @@ const AdminDashboard = () => {
       }
     };
     
-    fetchUsers();
-  }, [toast]);
+    if (activeTab === 'users') {
+      fetchUsers();
+    }
+  }, [toast, activeTab]);
+  
+  // Lazy load tab content
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (!loadedTabs.includes(tab)) {
+      setLoadedTabs([...loadedTabs, tab]);
+    }
+  };
   
   // Handle role change
   const handleRoleChange = async (userId, newRole) => {
@@ -78,7 +92,7 @@ const AdminDashboard = () => {
         description: `User role has been updated to ${getRoleDisplayName(newRole)}`,
       });
     } catch (error) {
-      console.error('Error updating role:', error);
+      console.error('Error updating role:', error.message);
       toast({
         title: 'Error',
         description: 'Failed to update user role. Please try again.',
@@ -101,7 +115,7 @@ const AdminDashboard = () => {
           </Badge>
         </div>
         
-        <Tabs defaultValue="users" onValueChange={setActiveTab} className="w-full">
+        <Tabs defaultValue="users" onValueChange={handleTabChange} className="w-full">
           <TabsList className="mb-8 bg-puzzle-black border border-puzzle-aqua/30">
             <TabsTrigger value="users" className="text-puzzle-white data-[state=active]:bg-puzzle-aqua/20">
               <Users className="mr-2 h-4 w-4" />
@@ -113,26 +127,30 @@ const AdminDashboard = () => {
             </TabsTrigger>
           </TabsList>
           
-          {/* Users Tab */}
+          {/* Users Tab - Only render when active */}
           <TabsContent value="users">
-            <UsersPanel 
-              users={users}
-              profile={profile}
-              onRoleChange={handleRoleChange}
-            />
+            {loadedTabs.includes('users') && (
+              <UsersPanel 
+                users={users}
+                profile={profile}
+                onRoleChange={handleRoleChange}
+              />
+            )}
           </TabsContent>
           
-          {/* Roles Tab */}
+          {/* Roles Tab - Only render when active */}
           <TabsContent value="roles">
-            <Card className="bg-puzzle-black border-puzzle-aqua/30">
-              <CardHeader>
-                <CardTitle className="text-puzzle-white">Role Permissions</CardTitle>
-                <CardDescription>View permissions for each role</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <RolePermissionsTable />
-              </CardContent>
-            </Card>
+            {loadedTabs.includes('roles') && (
+              <Card className="bg-puzzle-black border-puzzle-aqua/30">
+                <CardHeader>
+                  <CardTitle className="text-puzzle-white">Role Permissions</CardTitle>
+                  <CardDescription>View permissions for each role</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RolePermissionsTable />
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>

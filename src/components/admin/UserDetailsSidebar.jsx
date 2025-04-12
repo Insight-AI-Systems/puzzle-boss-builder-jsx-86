@@ -15,6 +15,7 @@ import { ROLES, PERMISSIONS, hasPermission } from '@/utils/permissions';
 
 /**
  * Component to display user details sidebar in the admin dashboard
+ * Optimized to reduce render size and improve performance
  */
 const UserDetailsSidebar = ({ selectedUser, profile, onRoleChange, onClose }) => {
   if (!selectedUser) {
@@ -29,6 +30,14 @@ const UserDetailsSidebar = ({ selectedUser, profile, onRoleChange, onClose }) =>
       </Card>
     );
   }
+
+  // Only render required user data to reduce payload
+  const userDetails = [
+    { label: "User ID", value: selectedUser.id },
+    { label: "Credits", value: selectedUser.credits || 0 },
+    { label: "Joined", value: new Date(selectedUser.created_at).toLocaleDateString() },
+    { label: "Last Updated", value: new Date(selectedUser.updated_at || selectedUser.created_at).toLocaleDateString() }
+  ];
 
   return (
     <Card className="bg-puzzle-black border-puzzle-aqua/30">
@@ -55,49 +64,18 @@ const UserDetailsSidebar = ({ selectedUser, profile, onRoleChange, onClose }) =>
         </div>
         
         <div className="space-y-4">
-          <div>
-            <label className="text-muted-foreground text-sm mb-1 block">
-              User ID
-            </label>
-            <Input 
-              value={selectedUser.id} 
-              disabled 
-              className="bg-puzzle-black/50"
-            />
-          </div>
-          
-          <div>
-            <label className="text-muted-foreground text-sm mb-1 block">
-              Credits
-            </label>
-            <Input 
-              value={selectedUser.credits || 0} 
-              disabled 
-              className="bg-puzzle-black/50"
-            />
-          </div>
-          
-          <div>
-            <label className="text-muted-foreground text-sm mb-1 block">
-              Joined
-            </label>
-            <Input 
-              value={new Date(selectedUser.created_at).toLocaleString()} 
-              disabled 
-              className="bg-puzzle-black/50"
-            />
-          </div>
-          
-          <div>
-            <label className="text-muted-foreground text-sm mb-1 block">
-              Last Updated
-            </label>
-            <Input 
-              value={new Date(selectedUser.updated_at).toLocaleString()} 
-              disabled 
-              className="bg-puzzle-black/50"
-            />
-          </div>
+          {userDetails.map((detail, index) => (
+            <div key={index}>
+              <label className="text-muted-foreground text-sm mb-1 block">
+                {detail.label}
+              </label>
+              <Input 
+                value={detail.value} 
+                disabled 
+                className="bg-puzzle-black/50"
+              />
+            </div>
+          ))}
           
           <div>
             <label className="text-muted-foreground text-sm mb-1 block">

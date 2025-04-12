@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,25 +9,23 @@ import UserDetailsSidebar from './UserDetailsSidebar';
 
 /**
  * Component to manage the Users tab in the admin dashboard
+ * With optimized filtering to prevent excessive rendering
  */
 const UsersPanel = ({ users, profile, onRoleChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredUsers, setFilteredUsers] = useState(users);
   const [selectedUser, setSelectedUser] = useState(null);
-
-  // Filter users based on search term
-  useEffect(() => {
+  
+  // Use useMemo to optimize filtering and prevent unnecessary rerenders
+  const filteredUsers = useMemo(() => {
     if (!searchTerm.trim()) {
-      setFilteredUsers(users);
-      return;
+      return users;
     }
     
-    const filtered = users.filter(user => 
-      user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.role?.toLowerCase().includes(searchTerm.toLowerCase())
+    const searchLower = searchTerm.toLowerCase();
+    return users.filter(user => 
+      user.username?.toLowerCase().includes(searchLower) ||
+      user.role?.toLowerCase().includes(searchLower)
     );
-    
-    setFilteredUsers(filtered);
   }, [searchTerm, users]);
 
   // Handle user selection for detailed view
@@ -38,7 +36,6 @@ const UsersPanel = ({ users, profile, onRoleChange }) => {
   // Clear search and filters
   const clearFilters = () => {
     setSearchTerm('');
-    setFilteredUsers(users);
   };
 
   return (
