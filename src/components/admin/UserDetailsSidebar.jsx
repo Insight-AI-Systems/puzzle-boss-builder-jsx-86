@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { User } from 'lucide-react';
@@ -14,8 +13,8 @@ import {
 import { ROLES, PERMISSIONS, hasPermission } from '@/utils/permissions';
 
 /**
- * Component to display user details sidebar in the admin dashboard
- * Optimized to reduce render size and improve performance
+ * Minimal component to display user details sidebar
+ * Drastically reduced to prevent excessive message size
  */
 const UserDetailsSidebar = ({ selectedUser, profile, onRoleChange, onClose }) => {
   if (!selectedUser) {
@@ -31,17 +30,13 @@ const UserDetailsSidebar = ({ selectedUser, profile, onRoleChange, onClose }) =>
     );
   }
 
-  // Only render required user data to reduce payload
-  const userDetails = [
-    { label: "User ID", value: selectedUser.id?.substring(0, 15) + '...' },
-    { label: "Joined", value: new Date(selectedUser.created_at).toLocaleDateString() }
-  ];
-
+  // Truncate ID to reduce message size
+  const truncatedId = selectedUser.id?.substring(0, 8) + '...';
+  
   return (
     <Card className="bg-puzzle-black border-puzzle-aqua/30">
       <CardHeader>
         <div className="text-puzzle-white text-xl font-semibold">User Details</div>
-        <div className="text-sm text-muted-foreground">View and edit user information</div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-col items-center space-y-2 mb-4">
@@ -54,19 +49,6 @@ const UserDetailsSidebar = ({ selectedUser, profile, onRoleChange, onClose }) =>
         </div>
         
         <div className="space-y-3">
-          {userDetails.map((detail, index) => (
-            <div key={index}>
-              <label className="text-muted-foreground text-sm mb-1 block">
-                {detail.label}
-              </label>
-              <Input 
-                value={detail.value} 
-                disabled 
-                className="bg-puzzle-black/50"
-              />
-            </div>
-          ))}
-          
           <div>
             <label className="text-muted-foreground text-sm mb-1 block">
               Role

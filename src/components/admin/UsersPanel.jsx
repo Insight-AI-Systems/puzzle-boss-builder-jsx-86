@@ -9,32 +9,49 @@ import UserDetailsSidebar from './UserDetailsSidebar';
 
 /**
  * Component to manage the Users tab in the admin dashboard
- * With optimized filtering to prevent excessive rendering
+ * Optimized to minimize data processing and rendering
  */
 const UsersPanel = ({ users, profile, onRoleChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   
-  // Use useMemo to optimize filtering and prevent unnecessary rerenders
+  // Only pass minimal required data to child components
+  const minimalUsers = useMemo(() => {
+    return users.map(user => ({
+      id: user.id,
+      username: user.username || 'No username',
+      role: user.role,
+      created_at: user.created_at
+    }));
+  }, [users]);
+  
+  // Use useMemo for filtering to reduce unnecessary processing
   const filteredUsers = useMemo(() => {
     if (!searchTerm.trim()) {
-      return users;
+      return minimalUsers;
     }
     
     const searchLower = searchTerm.toLowerCase();
-    // Only filter by essential fields
-    return users.filter(user => 
-      user.username?.toLowerCase().includes(searchLower) ||
-      user.role?.toLowerCase().includes(searchLower)
+    return minimalUsers.filter(user => 
+      (user.username && user.username.toLowerCase().includes(searchLower)) ||
+      (user.role && user.role.toLowerCase().includes(searchLower))
     );
-  }, [searchTerm, users]);
+  }, [searchTerm, minimalUsers]);
 
-  // Handle user selection for detailed view
+  // Handle user selection with only required data
   const handleSelectUser = (user) => {
-    setSelectedUser(user);
+    // Find full user data but only extract needed fields
+    const fullUser = users.find(u => u.id === user.id);
+    if (fullUser) {
+      setSelectedUser({
+        id: fullUser.id,
+        username: fullUser.username,
+        role: fullUser.role,
+        created_at: fullUser.created_at
+      });
+    }
   };
   
-  // Clear search and filters
   const clearFilters = () => {
     setSearchTerm('');
   };
