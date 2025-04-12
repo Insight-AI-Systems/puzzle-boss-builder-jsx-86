@@ -35,8 +35,6 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <TooltipProvider>
-            <Toaster />
-            <Sonner />
             <Routes>
               {/* Public routes that don't require authentication */}
               <Route path="/" element={<Index />} />
@@ -52,6 +50,8 @@ const App = () => {
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <Toaster />
+            <Sonner />
           </TooltipProvider>
         </AuthProvider>
       </QueryClientProvider>
