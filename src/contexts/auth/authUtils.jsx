@@ -1,6 +1,6 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
-import { ROLES } from '@/utils/permissions';
 
 /**
  * Fetches a user's profile from the database
@@ -63,8 +63,7 @@ export const signUp = async (email, password, username) => {
       password,
       options: {
         data: {
-          username,
-          role: ROLES.PLAYER // Default role for new users
+          username
         }
       }
     });

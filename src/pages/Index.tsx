@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import ConceptSection from '@/components/ConceptSection';
@@ -12,11 +12,6 @@ import RegistrationCTA from '@/components/RegistrationCTA';
 import Footer from '@/components/Footer';
 
 const Index = () => {
-  // Add debug log to verify component mounting
-  useEffect(() => {
-    console.log('Index page mounted');
-  }, []);
-
   return (
     <div className="min-h-screen bg-puzzle-black">
       <Navbar />

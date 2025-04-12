@@ -1,23 +1,9 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, User, Shield } from 'lucide-react';
+import { Menu, X, User } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/auth';
-import { Badge } from '@/components/ui/badge';
-import { getRoleDisplayName } from '@/utils/permissions';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import PermissionGate from './PermissionGate';
-import { ROLES, PERMISSIONS } from '@/utils/permissions';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -49,22 +35,6 @@ const Navbar = () => {
             <a href="#categories" className="nav-link">Categories</a>
             <a href="#how-it-works" className="nav-link">How It Works</a>
             <a href="#prizes" className="nav-link">Prizes</a>
-            
-            {/* Admin links based on permissions */}
-            <PermissionGate
-              role={[
-                ROLES.SUPER_ADMIN,
-                ROLES.ADMIN,
-                ROLES.CATEGORY_MANAGER,
-                ROLES.CFO,
-                ROLES.SOCIAL_MEDIA_MANAGER,
-                ROLES.PARTNER_MANAGER
-              ]}
-            >
-              <Link to="/admin" className="nav-link text-puzzle-gold">
-                Admin
-              </Link>
-            </PermissionGate>
           </div>
           
           <div className="hidden md:flex items-center space-x-4">
@@ -73,78 +43,14 @@ const Navbar = () => {
                 <div className="text-puzzle-aqua text-sm">
                   {profile?.credits || 0} <span className="text-muted-foreground">credits</span>
                 </div>
-                
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <div className="flex items-center space-x-2 cursor-pointer">
-                      <Avatar>
-                        <AvatarImage src={profile?.avatar_url} alt={profile?.username || 'User'} />
-                        <AvatarFallback className="bg-puzzle-aqua text-puzzle-black">
-                          {getInitials()}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      {profile?.role && profile.role !== ROLES.PLAYER && (
-                        <Badge className="bg-puzzle-gold/90 text-puzzle-black text-xs">
-                          {getRoleDisplayName(profile.role)}
-                        </Badge>
-                      )}
-                    </div>
-                  </DropdownMenuTrigger>
-                  
-                  <DropdownMenuContent className="w-56 bg-puzzle-black border border-puzzle-aqua/30">
-                    <DropdownMenuLabel className="text-puzzle-white">
-                      <div className="flex flex-col">
-                        <span>{profile?.username || 'User'}</span>
-                        <span className="text-xs text-muted-foreground">{user.email}</span>
-                      </div>
-                    </DropdownMenuLabel>
-                    
-                    <DropdownMenuSeparator className="bg-puzzle-aqua/20" />
-                    
-                    <DropdownMenuGroup>
-                      <DropdownMenuItem 
-                        className="text-puzzle-white hover:bg-puzzle-aqua/10 cursor-pointer"
-                        asChild
-                      >
-                        <Link to="/profile">
-                          <User className="mr-2 h-4 w-4 text-puzzle-aqua" />
-                          <span>Profile</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      
-                      <PermissionGate
-                        role={[
-                          ROLES.SUPER_ADMIN,
-                          ROLES.ADMIN,
-                          ROLES.CATEGORY_MANAGER,
-                          ROLES.CFO,
-                          ROLES.SOCIAL_MEDIA_MANAGER,
-                          ROLES.PARTNER_MANAGER
-                        ]}
-                      >
-                        <DropdownMenuItem 
-                          className="text-puzzle-white hover:bg-puzzle-aqua/10 cursor-pointer"
-                          asChild
-                        >
-                          <Link to="/admin">
-                            <Shield className="mr-2 h-4 w-4 text-puzzle-gold" />
-                            <span>Admin Dashboard</span>
-                          </Link>
-                        </DropdownMenuItem>
-                      </PermissionGate>
-                    </DropdownMenuGroup>
-                    
-                    <DropdownMenuSeparator className="bg-puzzle-aqua/20" />
-                    
-                    <DropdownMenuItem 
-                      className="text-puzzle-white hover:bg-puzzle-burgundy/80 cursor-pointer"
-                      onClick={signOut}
-                    >
-                      <span>Log out</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Link to="/profile">
+                  <Avatar className="cursor-pointer">
+                    <AvatarImage src={profile?.avatar_url} alt={profile?.username || 'User'} />
+                    <AvatarFallback className="bg-puzzle-aqua text-puzzle-black">
+                      {getInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Link>
               </div>
             ) : (
               <>
@@ -176,36 +82,8 @@ const Navbar = () => {
             <a href="#how-it-works" className="nav-link py-2" onClick={() => setIsMenuOpen(false)}>How It Works</a>
             <a href="#prizes" className="nav-link py-2" onClick={() => setIsMenuOpen(false)}>Prizes</a>
             
-            {/* Admin link for mobile */}
-            <PermissionGate
-              role={[
-                ROLES.SUPER_ADMIN,
-                ROLES.ADMIN,
-                ROLES.CATEGORY_MANAGER,
-                ROLES.CFO,
-                ROLES.SOCIAL_MEDIA_MANAGER,
-                ROLES.PARTNER_MANAGER
-              ]}
-            >
-              <Link 
-                to="/admin" 
-                className="nav-link py-2 text-puzzle-gold"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Admin Dashboard
-              </Link>
-            </PermissionGate>
-            
             {user ? (
               <div className="flex flex-col space-y-3 w-full pt-4">
-                {profile?.role && profile.role !== ROLES.PLAYER && (
-                  <div className="text-center">
-                    <Badge className="bg-puzzle-gold/90 text-puzzle-black">
-                      {getRoleDisplayName(profile.role)}
-                    </Badge>
-                  </div>
-                )}
-              
                 <div className="text-puzzle-aqua text-center">
                   {profile?.credits || 0} <span className="text-muted-foreground">credits</span>
                 </div>
