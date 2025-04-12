@@ -32,12 +32,12 @@ const InteractivePuzzle = () => {
   };
   
   return (
-    <div className={`grid grid-cols-3 gap-1 w-full max-w-xs mx-auto ${solved ? 'border-2 border-green-500' : ''}`}>
+    <div className="grid grid-cols-3 gap-1 w-full max-w-xs mx-auto">
       {pieces.map((piece, index) => (
         <div 
           key={index}
           className={`aspect-square flex items-center justify-center text-xl font-bold 
-            ${piece === null ? 'bg-gray-800' : 'bg-puzzle-aqua text-puzzle-black cursor-pointer'} 
+            ${piece === null ? 'bg-gray-800' : 'bg-cyan-400 text-black cursor-pointer'} 
             rounded transition-all`}
           onClick={() => piece !== null && movePiece(index)}
         >

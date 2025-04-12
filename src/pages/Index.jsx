@@ -1,6 +1,5 @@
 
 import React, { useEffect } from 'react';
-import ErrorBoundary from '@/components/ErrorBoundary';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import ConceptSection from '@/components/ConceptSection';
@@ -11,6 +10,7 @@ import Testimonials from '@/components/Testimonials';
 import Benefits from '@/components/Benefits';
 import RegistrationCTA from '@/components/RegistrationCTA';
 import Footer from '@/components/Footer';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const Index = () => {
   // Add debug log to verify component mounting
@@ -22,44 +22,44 @@ const Index = () => {
     <div className="min-h-screen bg-black text-white">
       <ErrorBoundary>
         <Navbar />
-        
-        <main>
-          <ErrorBoundary>
-            <Hero />
-          </ErrorBoundary>
-          
-          <ErrorBoundary>
-            <ConceptSection />
-          </ErrorBoundary>
-          
-          <ErrorBoundary>
-            <FeaturedPuzzles />
-          </ErrorBoundary>
-          
-          <ErrorBoundary>
-            <Categories />
-          </ErrorBoundary>
-          
-          <ErrorBoundary>
-            <HowItWorks />
-          </ErrorBoundary>
-          
-          <ErrorBoundary>
-            <Testimonials />
-          </ErrorBoundary>
-          
-          <ErrorBoundary>
-            <Benefits />
-          </ErrorBoundary>
-          
-          <ErrorBoundary>
-            <RegistrationCTA />
-          </ErrorBoundary>
-        </main>
+      </ErrorBoundary>
+      
+      <main>
+        <ErrorBoundary>
+          <Hero />
+        </ErrorBoundary>
         
         <ErrorBoundary>
-          <Footer />
+          <ConceptSection />
         </ErrorBoundary>
+        
+        <ErrorBoundary>
+          <FeaturedPuzzles />
+        </ErrorBoundary>
+        
+        <ErrorBoundary>
+          <Categories />
+        </ErrorBoundary>
+        
+        <ErrorBoundary>
+          <HowItWorks />
+        </ErrorBoundary>
+        
+        <ErrorBoundary>
+          <Testimonials />
+        </ErrorBoundary>
+        
+        <ErrorBoundary>
+          <Benefits />
+        </ErrorBoundary>
+        
+        <ErrorBoundary>
+          <RegistrationCTA />
+        </ErrorBoundary>
+      </main>
+      
+      <ErrorBoundary>
+        <Footer />
       </ErrorBoundary>
     </div>
   );

@@ -8,7 +8,7 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-blue-500/20 backdrop-blur-sm bg-black/80">
+    <header className="sticky top-0 z-50 w-full border-b border-cyan-500/20 backdrop-blur-sm bg-black/80">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
@@ -52,7 +52,7 @@ const Navbar = () => {
       
       {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-black border-b border-blue-500/20">
+        <div className="md:hidden bg-black border-b border-cyan-500/20">
           <div className="container mx-auto px-4 py-4">
             <nav className="flex flex-col gap-4">
               <Link to="/" className="text-white hover:text-cyan-400 transition-colors py-2" onClick={() => setIsMenuOpen(false)}>Home</Link>

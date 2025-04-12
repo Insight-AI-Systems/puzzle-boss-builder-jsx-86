@@ -6,8 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/auth";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import RoleProtectedRoute from "@/components/RoleProtectedRoute";
-import { ROLES } from "@/utils/permissions";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
@@ -53,19 +51,13 @@ const App = () => {
                 } 
               />
               
-              {/* Temporarily make admin route more accessible for development */}
-              <Route 
-                path="/admin" 
-                element={<AdminDashboard />} 
-              />
+              {/* Admin route */}
+              <Route path="/admin" element={<AdminDashboard />} />
               
               {/* Debug route */}
-              <Route 
-                path="/auth-debug" 
-                element={<AuthDebug />} 
-              />
+              <Route path="/auth-debug" element={<AuthDebug />} />
               
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </TooltipProvider>
