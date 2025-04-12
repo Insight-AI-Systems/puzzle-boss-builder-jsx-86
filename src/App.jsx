@@ -7,7 +7,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/auth";
 import { ThemeProvider } from "@/contexts/theme";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 import MainHeader from "@/components/header";
+import { ROLES } from "@/utils/permissions";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
@@ -15,6 +17,13 @@ import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import CookiePolicy from "./pages/CookiePolicy";
+import ContestRules from "./pages/ContestRules";
+import Support from "./pages/Support";
+import Partnerships from "./pages/Partnerships";
+import Careers from "./pages/Careers";
+import Press from "./pages/Press";
+import ContentAdmin from "./pages/ContentAdmin";
 import AuthDebug from "./pages/AuthDebug";
 
 // Create a new QueryClient instance
@@ -44,6 +53,12 @@ const App = () => {
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
+                <Route path="/cookie-policy" element={<CookiePolicy />} />
+                <Route path="/contest-rules" element={<ContestRules />} />
+                <Route path="/support" element={<Support />} />
+                <Route path="/partnerships" element={<Partnerships />} />
+                <Route path="/careers" element={<Careers />} />
+                <Route path="/press" element={<Press />} />
                 
                 {/* Protected routes that require authentication */}
                 <Route 
@@ -55,8 +70,24 @@ const App = () => {
                   } 
                 />
                 
-                {/* Admin route */}
-                <Route path="/admin" element={<AdminDashboard />} />
+                {/* Admin routes */}
+                <Route 
+                  path="/admin" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}>
+                      <AdminDashboard />
+                    </RoleProtectedRoute>
+                  }
+                />
+
+                <Route 
+                  path="/admin/content" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}>
+                      <ContentAdmin />
+                    </RoleProtectedRoute>
+                  }
+                />
                 
                 {/* Debug route */}
                 <Route path="/auth-debug" element={<AuthDebug />} />
