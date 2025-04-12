@@ -24,26 +24,34 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const [loadedTabs, setLoadedTabs] = useState(['users']);
 
-  // Fetch users from the database
+  // Fetch users from the database - optimized to limit initial fetch
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
         
-        // Limit initial fetch to 50 users to reduce payload size
+        // Further limit initial fetch to just 25 users to reduce payload size
         const { data, error } = await supabase
           .from('profiles')
           .select('id, username, role, created_at')
           .order('created_at', { ascending: false })
-          .limit(50);
+          .limit(25); // Reduced from 50 to 25
           
         if (error) {
           throw error;
         }
         
-        setUsers(data || []);
+        // Ensure we only store necessary fields
+        const streamlinedData = data?.map(user => ({
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          created_at: user.created_at
+        })) || [];
+        
+        setUsers(streamlinedData);
       } catch (error) {
-        console.error('Error fetching users:', error.message);
+        console.error('Error fetching users:', error.message?.substring(0, 200) || 'Unknown error');
         toast({
           title: 'Error',
           description: 'Failed to load users. Please try again.',
@@ -59,7 +67,7 @@ const AdminDashboard = () => {
     }
   }, [toast, activeTab]);
   
-  // Lazy load tab content
+  // Lazy load tab content to prevent loading all components at once
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     if (!loadedTabs.includes(tab)) {
@@ -67,14 +75,14 @@ const AdminDashboard = () => {
     }
   };
   
-  // Handle role change
+  // Handle role change with optimized update approach
   const handleRoleChange = async (userId, newRole) => {
     try {
-      const { data, error } = await supabase
+      // Streamline data update by only selecting essential fields
+      const { error } = await supabase
         .from('profiles')
         .update({ role: newRole })
-        .eq('id', userId)
-        .select();
+        .eq('id', userId);
         
       if (error) {
         throw error;
@@ -92,7 +100,7 @@ const AdminDashboard = () => {
         description: `User role has been updated to ${getRoleDisplayName(newRole)}`,
       });
     } catch (error) {
-      console.error('Error updating role:', error.message);
+      console.error('Error updating role:', error.message?.substring(0, 200) || 'Unknown error');
       toast({
         title: 'Error',
         description: 'Failed to update user role. Please try again.',

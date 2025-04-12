@@ -12,6 +12,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getRoleDisplayName } from '@/utils/permissions';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 /**
  * Component to display the list of users in the admin dashboard
@@ -19,7 +27,7 @@ import { getRoleDisplayName } from '@/utils/permissions';
  */
 const UsersList = ({ users, selectedUser, onSelectUser }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 7; // Reduced from 10 to further limit data displayed
   
   // Calculate pagination values
   const totalPages = Math.ceil(users.length / itemsPerPage);
@@ -93,36 +101,29 @@ const UsersList = ({ users, selectedUser, onSelectUser }) => {
         </Table>
       </div>
       
-      {/* Pagination Controls */}
+      {/* Enhanced pagination with shadcn/ui components */}
       {users.length > itemsPerPage && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, users.length)} of {users.length} users
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToPreviousPage}
-              disabled={currentPage === 1}
-              className="h-8 w-8 p-0 border-puzzle-aqua/30"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <div className="text-sm text-puzzle-white">
-              Page {currentPage} of {totalPages}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToNextPage}
-              disabled={currentPage === totalPages}
-              className="h-8 w-8 p-0 border-puzzle-aqua/30"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <Pagination className="mt-4">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious 
+                onClick={goToPreviousPage}
+                className={`${currentPage === 1 ? 'pointer-events-none opacity-50' : ''} border-puzzle-aqua/30 text-puzzle-white`}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <span className="text-sm text-puzzle-white mx-2">
+                Page {currentPage} of {totalPages}
+              </span>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext 
+                onClick={goToNextPage}
+                className={`${currentPage === totalPages ? 'pointer-events-none opacity-50' : ''} border-puzzle-aqua/30 text-puzzle-white`}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       )}
     </div>
   );

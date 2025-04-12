@@ -22,6 +22,7 @@ const UsersPanel = ({ users, profile, onRoleChange }) => {
     }
     
     const searchLower = searchTerm.toLowerCase();
+    // Only filter by essential fields
     return users.filter(user => 
       user.username?.toLowerCase().includes(searchLower) ||
       user.role?.toLowerCase().includes(searchLower)

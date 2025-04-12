@@ -24,7 +24,7 @@ const UserDetailsSidebar = ({ selectedUser, profile, onRoleChange, onClose }) =>
         <CardContent className="text-center">
           <User size={48} className="mx-auto text-puzzle-aqua/50 mb-4" />
           <p className="text-muted-foreground">
-            Select a user to view details and manage their role
+            Select a user to view details
           </p>
         </CardContent>
       </Card>
@@ -33,10 +33,8 @@ const UserDetailsSidebar = ({ selectedUser, profile, onRoleChange, onClose }) =>
 
   // Only render required user data to reduce payload
   const userDetails = [
-    { label: "User ID", value: selectedUser.id },
-    { label: "Credits", value: selectedUser.credits || 0 },
-    { label: "Joined", value: new Date(selectedUser.created_at).toLocaleDateString() },
-    { label: "Last Updated", value: new Date(selectedUser.updated_at || selectedUser.created_at).toLocaleDateString() }
+    { label: "User ID", value: selectedUser.id?.substring(0, 15) + '...' },
+    { label: "Joined", value: new Date(selectedUser.created_at).toLocaleDateString() }
   ];
 
   return (
@@ -47,23 +45,15 @@ const UserDetailsSidebar = ({ selectedUser, profile, onRoleChange, onClose }) =>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-col items-center space-y-2 mb-4">
-          <div className="h-20 w-20 rounded-full bg-puzzle-aqua/20 flex items-center justify-center">
-            {selectedUser.avatar_url ? (
-              <img
-                src={selectedUser.avatar_url}
-                alt="User avatar"
-                className="h-full w-full rounded-full object-cover"
-              />
-            ) : (
-              <User size={40} className="text-puzzle-aqua" />
-            )}
+          <div className="h-16 w-16 rounded-full bg-puzzle-aqua/20 flex items-center justify-center">
+            <User size={32} className="text-puzzle-aqua" />
           </div>
           <h3 className="text-lg font-medium text-puzzle-white">
             {selectedUser.username || 'No username'}
           </h3>
         </div>
         
-        <div className="space-y-4">
+        <div className="space-y-3">
           {userDetails.map((detail, index) => (
             <div key={index}>
               <label className="text-muted-foreground text-sm mb-1 block">
