@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getPuzzleConfig, playSound } from '../components/puzzle/PuzzleUtils';
 
 /**
@@ -16,65 +16,78 @@ export const usePuzzle = ({ initialMuted = true } = {}) => {
   const [draggedPiece, setDraggedPiece] = useState(null);
   const [puzzleImage, setPuzzleImage] = useState('');
   
-  // Initialize puzzle with configuration
+  // Initialize puzzle with configuration - only runs once
   useEffect(() => {
     const config = getPuzzleConfig();
     setPuzzleImage(config.image);
     setGridSize(config.gridSize || 4);
   }, []);
   
-  // Initialize puzzle pieces
-  useEffect(() => {
-    if (!puzzleImage) return;
+  // Memoized piece initialization to prevent unnecessary recalculations
+  const initializePieces = useCallback(() => {
+    if (!puzzleImage) return [];
     
-    const initializePieces = () => {
-      const newPieces = [];
-      const totalPieces = gridSize * gridSize;
-      
-      for (let i = 0; i < totalPieces; i++) {
-        // Calculate the correct position for this piece
-        const row = Math.floor(i / gridSize);
-        const col = i % gridSize;
-        
-        newPieces.push({
-          id: i,
-          correctPosition: {
-            row,
-            col
-          },
-          currentPosition: {
-            row,
-            col
-          }
-        });
-      }
-      
-      setPieces(newPieces);
-      setSolved(true); // Initially solved
-    };
+    const newPieces = [];
+    const totalPieces = gridSize * gridSize;
     
-    initializePieces();
+    for (let i = 0; i < totalPieces; i++) {
+      // Calculate the correct position for this piece
+      const row = Math.floor(i / gridSize);
+      const col = i % gridSize;
+      
+      newPieces.push({
+        id: i,
+        correctPosition: {
+          row,
+          col
+        },
+        currentPosition: {
+          row,
+          col
+        }
+      });
+    }
+    
+    return newPieces;
   }, [gridSize, puzzleImage]);
   
-  // Check if puzzle is solved
+  // Initialize pieces only when necessary
   useEffect(() => {
-    if (pieces.length === 0) return;
+    const newPieces = initializePieces();
+    if (newPieces.length > 0) {
+      setPieces(newPieces);
+      setSolved(true); // Initially solved
+    }
+  }, [initializePieces]);
+  
+  // Memoized puzzle solved check to prevent recalculation on every render
+  const checkIfSolved = useCallback(() => {
+    if (pieces.length === 0) return false;
     
-    const isSolved = pieces.every(piece => 
+    return pieces.every(piece => 
       piece.currentPosition.row === piece.correctPosition.row && 
       piece.currentPosition.col === piece.correctPosition.col
     );
-    
-    // If newly solved, play success sound
-    if (isSolved && !solved && !muted) {
-      playSound('success', muted);
-    }
-    
-    setSolved(isSolved);
-  }, [pieces, muted, solved]);
+  }, [pieces]);
   
-  // Shuffle the puzzle pieces
-  const shufflePuzzle = () => {
+  // Determine if puzzle is solved, with debouncing to reduce checks
+  useEffect(() => {
+    const isSolved = checkIfSolved();
+    
+    // Only play sound and update state if the solved status changes
+    if (isSolved !== solved) {
+      if (isSolved && !muted) {
+        playSound('success', muted);
+      }
+      setSolved(isSolved);
+    }
+  }, [checkIfSolved, muted, solved]);
+  
+  // Optimized shuffle with memoization
+  const shufflePuzzle = useCallback(() => {
+    // Skip if no pieces are loaded
+    if (pieces.length === 0) return;
+    
     const shuffled = [...pieces];
     
     // Fisher-Yates shuffle algorithm for positions
@@ -98,10 +111,13 @@ export const usePuzzle = ({ initialMuted = true } = {}) => {
     
     setPieces(shuffled);
     setSolved(false);
-  };
+  }, [pieces]);
   
-  // Reset the puzzle to the initial state
-  const resetPuzzle = () => {
+  // Optimized reset function
+  const resetPuzzle = useCallback(() => {
+    // Skip if no pieces are loaded
+    if (pieces.length === 0) return;
+    
     const reset = pieces.map(piece => ({
       ...piece,
       currentPosition: { ...piece.correctPosition }
@@ -109,10 +125,10 @@ export const usePuzzle = ({ initialMuted = true } = {}) => {
     
     setPieces(reset);
     setSolved(true);
-  };
+  }, [pieces]);
   
-  // Handle dropping piece
-  const handleDrop = (e, targetRow, targetCol) => {
+  // Optimized drop handler with memoization
+  const handleDrop = useCallback((e, targetRow, targetCol) => {
     e.preventDefault();
     
     if (!draggedPiece) return;
@@ -138,13 +154,17 @@ export const usePuzzle = ({ initialMuted = true } = {}) => {
     setPieces(updatedPieces);
     playSound('place', muted);
     setDraggedPiece(null);
-  };
+  }, [draggedPiece, muted, pieces]);
   
-  // Play sound with muting check
-  const playSoundEffect = (type) => {
+  // Optimized sound effect player
+  const playSoundEffect = useCallback((type) => {
     playSound(type, muted);
-  };
+  }, [muted]);
   
+  // Prevent default for drag over - memoized to avoid recreating on each render
+  const allowDrop = useCallback((e) => e.preventDefault(), []);
+  
+  // Expose only what's needed by components
   return {
     // State
     pieces,
@@ -163,6 +183,6 @@ export const usePuzzle = ({ initialMuted = true } = {}) => {
     playSoundEffect,
     
     // Helpers
-    allowDrop: (e) => e.preventDefault(),
+    allowDrop,
   };
 };

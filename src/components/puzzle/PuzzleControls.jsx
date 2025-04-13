@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Shuffle, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const PuzzleControls = ({ shufflePuzzle, resetPuzzle, muted, setMuted }) => {
+// Memoize the controls component to prevent re-renders when the puzzle pieces change
+const PuzzleControls = memo(({ shufflePuzzle, resetPuzzle, muted, setMuted }) => {
   return (
     <div className="flex justify-center gap-2 w-full max-w-xs">
       <Button 
@@ -35,6 +36,9 @@ const PuzzleControls = ({ shufflePuzzle, resetPuzzle, muted, setMuted }) => {
       </Button>
     </div>
   );
-};
+});
+
+// Display name for debugging
+PuzzleControls.displayName = 'PuzzleControls';
 
 export default PuzzleControls;

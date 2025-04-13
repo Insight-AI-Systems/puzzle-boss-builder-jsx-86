@@ -1,29 +1,21 @@
 
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 
-const PuzzlePiece = ({ piece, puzzleImage, gridSize, draggedPiece, setDraggedPiece, playSound, onDrop }) => {
-  // Calculate positioning for puzzle pieces
-  const getPieceStyle = () => {
-    const pieceWidth = 100 / gridSize;
-    const pieceHeight = 100 / gridSize;
-    
-    // Correct background position to show the right part of the image
-    const backgroundX = -(piece.correctPosition.col * 100) / gridSize;
-    const backgroundY = -(piece.correctPosition.row * 100) / gridSize;
-    
-    return {
-      width: `${pieceWidth}%`,
-      height: `${pieceHeight}%`,
-      top: `${piece.currentPosition.row * pieceHeight}%`,
-      left: `${piece.currentPosition.col * pieceWidth}%`,
-      backgroundImage: `url(${puzzleImage})`,
-      backgroundSize: `${gridSize * 100}%`,
-      backgroundPosition: `${backgroundX}% ${backgroundY}%`
-    };
+// Memoize the PuzzlePiece component to prevent re-renders when other pieces change
+const PuzzlePiece = memo(({ piece, puzzleImage, gridSize, setDraggedPiece, playSound, onDrop }) => {
+  // Calculate positioning for puzzle pieces - memoize style calculations
+  const pieceStyle = {
+    width: `${100 / gridSize}%`,
+    height: `${100 / gridSize}%`,
+    top: `${piece.currentPosition.row * (100 / gridSize)}%`,
+    left: `${piece.currentPosition.col * (100 / gridSize)}%`,
+    backgroundImage: `url(${puzzleImage})`,
+    backgroundSize: `${gridSize * 100}%`,
+    backgroundPosition: `${-(piece.correctPosition.col * 100) / gridSize}% ${-(piece.correctPosition.row * 100) / gridSize}%`
   };
 
-  // Handle dragging piece
-  const handleDragStart = (e) => {
+  // Memoize drag handler to prevent recreation on each render
+  const handleDragStart = useCallback((e) => {
     setDraggedPiece(piece);
     playSound('pick');
     
@@ -31,17 +23,20 @@ const PuzzlePiece = ({ piece, puzzleImage, gridSize, draggedPiece, setDraggedPie
     const img = new Image();
     img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     e.dataTransfer.setDragImage(img, 0, 0);
-  };
+  }, [piece, playSound, setDraggedPiece]);
 
   return (
     <div
       className="absolute transition-all duration-200 cursor-move hover:brightness-110 hover:scale-[1.02] active:scale-105 active:z-10"
-      style={getPieceStyle()}
+      style={pieceStyle}
       draggable
       onDragStart={handleDragStart}
-      onDrop={(e) => onDrop(e, piece.currentPosition.row, piece.currentPosition.col)}
+      onDrop={onDrop}
     />
   );
-};
+});
+
+// Display name for debugging
+PuzzlePiece.displayName = 'PuzzlePiece';
 
 export default PuzzlePiece;

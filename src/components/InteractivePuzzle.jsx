@@ -1,11 +1,12 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, memo } from 'react';
 import PuzzlePiece from './puzzle/PuzzlePiece';
 import SuccessOverlay from './puzzle/SuccessOverlay';
 import PuzzleControls from './puzzle/PuzzleControls';
 import { usePuzzle } from '../hooks/usePuzzle';
 
-const InteractivePuzzle = () => {
+// Using memo to prevent unnecessary re-renders
+const InteractivePuzzle = memo(() => {
   const containerRef = useRef(null);
   
   const {
@@ -46,7 +47,7 @@ const InteractivePuzzle = () => {
             />
           ))}
           
-          {/* Success overlay */}
+          {/* Success overlay - only render when solved */}
           {solved && <SuccessOverlay />}
         </div>
       </div>
@@ -60,6 +61,9 @@ const InteractivePuzzle = () => {
       />
     </div>
   );
-};
+});
+
+// Display name for debugging
+InteractivePuzzle.displayName = 'InteractivePuzzle';
 
 export default InteractivePuzzle;
