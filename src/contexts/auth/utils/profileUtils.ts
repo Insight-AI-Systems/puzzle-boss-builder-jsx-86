@@ -1,8 +1,8 @@
 
+import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { AuthResult, Profile } from '../types';
-import { User } from '@supabase/supabase-js';
 
 /**
  * Fetches a user's profile from the database
