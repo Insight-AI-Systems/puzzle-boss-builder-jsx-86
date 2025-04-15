@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import DiagnosticLog from '@/components/DiagnosticLog';
 import { AppModeContext } from './AppModeContext';
@@ -11,21 +12,23 @@ import {
 } from './utils';
 
 /**
- * Provider component for AppMode context
+ * Enhanced AppModeProvider with progressive loading support
  * @param {Object} props - Component props
  * @param {React.ReactNode} props.children - Child components
  */
 export function AppModeProvider({ children }) {
-  // Determine initial app mode from URL and localStorage
+  // Determine initial app mode from URL and localStorage with enhanced fallbacks
   const getInitialMode = () => {
     try {
-      // Check URL parameters first
+      console.log('[APP_MODE] Determining initial mode');
+      
+      // First priority: Check URL parameters
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.has('mode')) {
         const mode = urlParams.get('mode');
-        if (['minimal', 'normal', 'emergency'].includes(mode)) {
+        if (['minimal', 'normal', 'emergency', 'progressive'].includes(mode)) {
           console.log(`[APP_MODE] Using mode from URL parameter: ${mode}`);
-          return mode === 'minimal';
+          return mode === 'minimal' || mode === 'progressive';
         }
       }
       
@@ -34,22 +37,89 @@ export function AppModeProvider({ children }) {
         return true;
       }
       
+      // Second priority: Check for recent successful mode
+      try {
+        const lastSuccessfulMode = localStorage.getItem('app-last-successful-mode');
+        if (lastSuccessfulMode) {
+          console.log(`[APP_MODE] Found last successful mode: ${lastSuccessfulMode}`);
+          return lastSuccessfulMode === 'minimal';
+        }
+      } catch (e) {
+        console.warn('[APP_MODE] Error checking last successful mode:', e);
+      }
+      
       // Fall back to stored preference
       return determineMinimalMode();
     } catch (error) {
       console.error('[APP_MODE] Error determining initial mode:', error);
-      return false; // Default to full mode on error
+      // Default to minimal mode on error for safety
+      return true;
     }
   };
 
-  // App mode state
-  const [isMinimal, setIsMinimal] = useState(getInitialMode);
+  // App mode state with initialization logging
+  const [isMinimal, setIsMinimal] = useState(() => {
+    const mode = getInitialMode();
+    console.log(`[APP_MODE] Initial mode set to: ${mode ? 'minimal' : 'full'}`);
+    return mode;
+  });
+
+  // Loading stage tracking for progressive mode
+  const [loadingStage, setLoadingStage] = useState('initializing');
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingErrors, setLoadingErrors] = useState([]);
+  const [progressiveLoading, setProgressiveLoading] = useState(false);
 
   // Diagnostic settings with configurable timeout
   const [diagnosticSettings, setDiagnosticSettings] = useState(loadSettings);
 
   // ModeTransition state for visual indicators
   const [modeTransition, setModeTransition] = useState(createModeTransition(false, null));
+
+  // Set up progressive loading stages if needed
+  useEffect(() => {
+    // Check if we should use progressive loading
+    const urlParams = new URLSearchParams(window.location.search);
+    const useProgressiveLoading = urlParams.get('mode') === 'progressive';
+    
+    if (useProgressiveLoading) {
+      console.log('[APP_MODE] Using progressive loading mode');
+      setProgressiveLoading(true);
+      
+      // Define progressive loading stages
+      const stages = [
+        { name: 'core', description: 'Loading core application' },
+        { name: 'ui', description: 'Loading user interface' },
+        { name: 'auth', description: 'Initializing authentication' },
+        { name: 'data', description: 'Loading data services' },
+        { name: 'features', description: 'Loading application features' },
+        { name: 'complete', description: 'Finalizing application startup' }
+      ];
+      
+      // Simulate progressive loading - in a real implementation,
+      // you would trigger these when actual components load
+      let currentStage = 0;
+      const progressInterval = setInterval(() => {
+        if (currentStage < stages.length - 1) {
+          currentStage++;
+          setLoadingStage(stages[currentStage].name);
+          setLoadingProgress((currentStage / (stages.length - 1)) * 100);
+          console.log(`[APP_MODE] Progressive loading: ${stages[currentStage].description} (${Math.round((currentStage / (stages.length - 1)) * 100)}%)`);
+        } else {
+          clearInterval(progressInterval);
+          
+          // Once complete, switch to full mode
+          setTimeout(() => {
+            console.log('[APP_MODE] Progressive loading complete, switching to full mode');
+            setIsMinimal(false);
+            setProgressiveLoading(false);
+          }, 500);
+        }
+      }, 800);
+      
+      return () => clearInterval(progressInterval);
+    }
+  }, []);
 
   // Persist mode changes and track successful modes
   useEffect(() => {
@@ -132,6 +202,9 @@ export function AppModeProvider({ children }) {
         setIsMinimal(true);
       } else if (mode === 'normal') {
         setIsMinimal(false);
+      } else if (mode === 'progressive') {
+        setIsMinimal(true);
+        setProgressiveLoading(true);
       }
     }
   };
@@ -144,6 +217,16 @@ export function AppModeProvider({ children }) {
       return newSettings;
     });
   };
+  
+  // Log errors during progressive loading
+  const logLoadingError = (componentName, error) => {
+    console.error(`[APP_MODE] Error loading component "${componentName}":`, error);
+    setLoadingErrors(prev => [...prev, { 
+      component: componentName, 
+      message: error.message, 
+      timestamp: new Date().toISOString() 
+    }]);
+  };
 
   const contextValue = {
     isMinimal,
@@ -153,8 +236,58 @@ export function AppModeProvider({ children }) {
     diagnosticSettings,
     updateDiagnosticSettings,
     dismissWarning,
-    isWarningDismissed
+    isWarningDismissed,
+    // Progressive loading values
+    progressiveLoading,
+    loadingStage,
+    loadingProgress,
+    loadingErrors,
+    logLoadingError
   };
+
+  // Show progressive loading UI if in that mode
+  if (progressiveLoading) {
+    return (
+      <AppModeContext.Provider value={contextValue}>
+        <div className="min-h-screen bg-puzzle-black flex flex-col items-center justify-center">
+          <div className="max-w-md p-6 bg-black/50 border border-puzzle-aqua rounded-lg text-center">
+            <h2 className="text-2xl text-puzzle-gold mb-2">Progressive Loading</h2>
+            <p className="text-puzzle-aqua mb-4">{loadingStage}</p>
+            
+            <div className="w-full bg-gray-900 rounded-full h-2.5 mb-4">
+              <div 
+                className="bg-puzzle-aqua h-2.5 rounded-full transition-all duration-500" 
+                style={{ width: `${loadingProgress}%` }}
+              ></div>
+            </div>
+            
+            <p className="text-white text-sm mb-4">
+              Loading components progressively to ensure stability...
+            </p>
+            
+            {loadingErrors.length > 0 && (
+              <div className="mt-4 p-2 bg-black/50 rounded text-left">
+                <h3 className="text-red-400 text-sm font-bold mb-1">Loading Errors:</h3>
+                <div className="max-h-24 overflow-y-auto">
+                  {loadingErrors.map((error, i) => (
+                    <div key={i} className="text-xs text-red-300 mb-1">
+                      <strong>{error.component}:</strong> {error.message}
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={() => switchToMode('minimal')}
+                  className="w-full mt-2 px-2 py-1 bg-puzzle-gold text-black rounded text-sm"
+                >
+                  Switch to Minimal Mode
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </AppModeContext.Provider>
+    );
+  }
 
   return (
     <AppModeContext.Provider value={contextValue}>
