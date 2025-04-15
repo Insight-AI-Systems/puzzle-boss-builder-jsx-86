@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
+import EmergencyLayout from './recovery/EmergencyLayout';
+import EmergencyRouter from './recovery/EmergencyRouter';
 
 /**
  * Emergency Recovery Application
@@ -29,45 +31,15 @@ const EmergencyApp = () => {
     ui: false
   });
   
-  // Component test definitions
-  const componentTests = {
-    basicReact: {
-      name: 'Basic React',
-      description: 'Tests basic React rendering',
-      component: () => <div className="p-4 bg-black/20 rounded">Hello from React</div>
-    },
-    errorTest: {
-      name: 'Error Boundary Test',
-      description: 'Tests error boundaries',
-      component: () => {
-        // Intentional error component for testing
-        const ErrorComponent = () => {
-          throw new Error('Test error boundary');
-          return null;
-        };
-        
-        return (
-          <div className="p-4 bg-black/20 rounded">
-            <p>This should be caught by error boundary:</p>
-            <Suspense fallback={<div>Loading...</div>}>
-              <ErrorCatcher>
-                <ErrorComponent />
-              </ErrorCatcher>
-            </Suspense>
-          </div>
-        );
-      }
-    }
+  // Determine app mode from URL
+  const getAppMode = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('standalone') === 'true') return 'Standalone';
+    if (urlParams.get('minimal') === 'true') return 'Minimal';
+    if (urlParams.get('recovery') === 'true') return 'Recovery';
+    if (urlParams.get('emergency') === 'true') return 'Emergency';
+    return 'Default';
   };
-  
-  // Route test definitions
-  const routeTests = [
-    { path: '/', name: 'Home' },
-    { path: '/about', name: 'About' },
-    { path: '/auth', name: 'Authentication' },
-    { path: '/profile', name: 'User Profile' },
-    { path: '/admin', name: 'Admin Dashboard' }
-  ];
   
   // Simple error boundary component - properly implemented
   const ErrorCatcher = ({ children }) => {
@@ -103,6 +75,148 @@ const EmergencyApp = () => {
     
     return children;
   };
+  
+  // Component test definitions
+  const componentTests = {
+    basicReact: {
+      name: 'Basic React',
+      description: 'Tests basic React rendering',
+      component: () => <div className="p-4 bg-black/20 rounded">Hello from React</div>
+    },
+    errorTest: {
+      name: 'Error Boundary Test',
+      description: 'Tests error boundaries',
+      component: () => {
+        // Intentional error component for testing
+        const ErrorComponent = () => {
+          throw new Error('Test error boundary');
+          return null;
+        };
+        
+        return (
+          <div className="p-4 bg-black/20 rounded">
+            <p>This should be caught by error boundary:</p>
+            <Suspense fallback={<div>Loading...</div>}>
+              <ErrorCatcher>
+                <ErrorComponent />
+              </ErrorCatcher>
+            </Suspense>
+          </div>
+        );
+      }
+    }
+  };
+  
+  // Route test definitions with component rendering
+  const routeTests = [
+    { 
+      path: '/', 
+      name: 'Home',
+      component: () => (
+        <div className="p-4 bg-black/20 rounded">
+          <h2 className="text-xl text-puzzle-gold mb-2">Home Page</h2>
+          <p>This simulates the home page content.</p>
+        </div>
+      )
+    },
+    { 
+      path: '/about', 
+      name: 'About',
+      component: () => (
+        <div className="p-4 bg-black/20 rounded">
+          <h2 className="text-xl text-puzzle-gold mb-2">About Page</h2>
+          <p>Information about The Puzzle Boss.</p>
+        </div>
+      )
+    },
+    { 
+      path: '/auth', 
+      name: 'Authentication',
+      component: () => (
+        <div className="p-4 bg-black/20 rounded">
+          <h2 className="text-xl text-puzzle-gold mb-2">Authentication</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-3 bg-black/30 rounded">
+              <h3 className="text-puzzle-aqua">Login</h3>
+              <form className="mt-2" onSubmit={(e) => e.preventDefault()}>
+                <input type="email" placeholder="Email" className="w-full p-2 mb-2 bg-black/50 text-white rounded" />
+                <input type="password" placeholder="Password" className="w-full p-2 mb-2 bg-black/50 text-white rounded" />
+                <button className="w-full p-2 bg-puzzle-aqua text-black rounded">Login</button>
+              </form>
+            </div>
+            <div className="p-3 bg-black/30 rounded">
+              <h3 className="text-puzzle-aqua">Register</h3>
+              <form className="mt-2" onSubmit={(e) => e.preventDefault()}>
+                <input type="text" placeholder="Name" className="w-full p-2 mb-2 bg-black/50 text-white rounded" />
+                <input type="email" placeholder="Email" className="w-full p-2 mb-2 bg-black/50 text-white rounded" />
+                <input type="password" placeholder="Password" className="w-full p-2 mb-2 bg-black/50 text-white rounded" />
+                <button className="w-full p-2 bg-puzzle-gold text-black rounded">Register</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    { 
+      path: '/profile', 
+      name: 'User Profile',
+      component: () => (
+        <div className="p-4 bg-black/20 rounded">
+          <h2 className="text-xl text-puzzle-gold mb-2">User Profile</h2>
+          <div className="flex items-start gap-4">
+            <div className="w-20 h-20 bg-puzzle-aqua/20 rounded-full flex items-center justify-center text-2xl">
+              👤
+            </div>
+            <div>
+              <h3 className="text-lg text-puzzle-aqua">John Smith</h3>
+              <p className="text-sm opacity-70">Member since April 2025</p>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                <div className="p-2 bg-black/30 rounded">
+                  <span className="text-puzzle-gold">Credits</span>
+                  <p>1,250</p>
+                </div>
+                <div className="p-2 bg-black/30 rounded">
+                  <span className="text-puzzle-gold">Puzzles</span>
+                  <p>14 completed</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    { 
+      path: '/admin', 
+      name: 'Admin Dashboard',
+      component: () => (
+        <div className="p-4 bg-black/20 rounded">
+          <h2 className="text-xl text-puzzle-gold mb-2">Admin Dashboard</h2>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="p-3 bg-puzzle-burgundy/40 rounded text-center">
+              <div className="text-2xl font-bold">157</div>
+              <div className="text-sm opacity-70">Active Users</div>
+            </div>
+            <div className="p-3 bg-puzzle-gold/20 rounded text-center">
+              <div className="text-2xl font-bold">42</div>
+              <div className="text-sm opacity-70">Active Puzzles</div>
+            </div>
+            <div className="p-3 bg-puzzle-aqua/20 rounded text-center">
+              <div className="text-2xl font-bold">$12,450</div>
+              <div className="text-sm opacity-70">Revenue</div>
+            </div>
+          </div>
+          <div className="p-3 bg-black/30 rounded">
+            <h3 className="text-puzzle-aqua mb-2">Recent Activity</h3>
+            <div className="text-sm space-y-1">
+              <div className="p-2 bg-black/20">User Jane D. completed puzzle "Galaxy S25"</div>
+              <div className="p-2 bg-black/20">New prize added: "Apple AirPods Pro"</div>
+              <div className="p-2 bg-black/20">User Mike T. purchased 2,000 credits</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+  ];
   
   // Run diagnostics on mount
   useEffect(() => {
@@ -200,34 +314,6 @@ const EmergencyApp = () => {
     }
   };
   
-  // Simple navigation handler
-  const navigateTo = (url) => {
-    try {
-      console.log(`[EMERGENCY] Navigating to: ${url}`);
-      setTestResults(prev => ({
-        ...prev,
-        navigation: {
-          lastAttempt: url,
-          timestamp: new Date().toISOString(),
-          status: 'pending'
-        }
-      }));
-      
-      window.location.href = url;
-    } catch (e) {
-      console.error(`[EMERGENCY] Navigation error to ${url}:`, e);
-      setTestResults(prev => ({
-        ...prev,
-        navigation: {
-          lastAttempt: url,
-          timestamp: new Date().toISOString(),
-          status: 'failed',
-          error: e.message
-        }
-      }));
-    }
-  };
-  
   // Run a component test
   const runComponentTest = (testId) => {
     try {
@@ -287,278 +373,96 @@ const EmergencyApp = () => {
     }
   };
   
-  // Render simple emergency UI
-  return (
-    <div style={{
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      maxWidth: '1000px',
-      margin: '0 auto',
-      padding: '20px',
-      backgroundColor: '#000',
-      color: '#00FFFF',
-      minHeight: '100vh'
-    }}>
-      <header style={{
-        borderBottom: '2px solid #FFD700',
-        paddingBottom: '10px',
-        marginBottom: '20px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div>
-          <h1 style={{ color: '#FFD700' }}>The Puzzle Boss - Emergency Recovery</h1>
-          <p>Diagnostic and recovery console for testing application components.</p>
-        </div>
-        <div style={{ 
-          backgroundColor: '#800020', 
-          padding: '8px 16px', 
-          borderRadius: '4px',
-          color: 'white',
-          fontWeight: 'bold'
-        }}>
-          EMERGENCY MODE
-        </div>
-      </header>
-      
-      {/* Tab navigation */}
-      <div style={{ 
-        display: 'flex', 
-        borderBottom: '1px solid #333',
-        marginBottom: '20px',
-        overflowX: 'auto'
-      }}>
-        <button 
-          onClick={() => setActiveTab('info')}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: activeTab === 'info' ? '#333' : 'transparent',
-            border: 'none',
-            color: activeTab === 'info' ? '#00FFFF' : '#888',
-            cursor: 'pointer'
-          }}
-        >
-          System Info
-        </button>
-        <button 
-          onClick={() => setActiveTab('navigation')}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: activeTab === 'navigation' ? '#333' : 'transparent',
-            border: 'none',
-            color: activeTab === 'navigation' ? '#00FFFF' : '#888',
-            cursor: 'pointer'
-          }}
-        >
-          Route Testing
-        </button>
-        <button 
-          onClick={() => setActiveTab('components')}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: activeTab === 'components' ? '#333' : 'transparent',
-            border: 'none',
-            color: activeTab === 'components' ? '#00FFFF' : '#888',
-            cursor: 'pointer'
-          }}
-        >
-          Component Tests
-        </button>
-        <button 
-          onClick={() => setActiveTab('features')}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: activeTab === 'features' ? '#333' : 'transparent',
-            border: 'none',
-            color: activeTab === 'features' ? '#00FFFF' : '#888',
-            cursor: 'pointer'
-          }}
-        >
-          Feature Toggles
-        </button>
-        <button 
-          onClick={() => setActiveTab('recovery')}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: activeTab === 'recovery' ? '#333' : 'transparent',
-            border: 'none',
-            color: activeTab === 'recovery' ? '#00FFFF' : '#888',
-            cursor: 'pointer'
-          }}
-        >
-          Recovery Tools
-        </button>
-        <button 
-          onClick={() => setActiveTab('errors')}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: activeTab === 'errors' ? '#333' : 'transparent',
-            border: 'none',
-            color: activeTab === 'errors' ? '#00FFFF' : '#888',
-            cursor: 'pointer'
-          }}
-        >
-          Error Log ({diagnosticData.errors.length})
-        </button>
-      </div>
-      
-      {/* Tab content */}
-      <div style={{ padding: '10px' }}>
-        {/* System Info Tab */}
-        {activeTab === 'info' && (
+  // Tab content components
+  const TabContent = () => {
+    switch (activeTab) {
+      case 'info':
+        return (
           <div>
-            <h2>System Diagnostics</h2>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <tbody>
-                <tr style={{ borderBottom: '1px solid #333' }}>
-                  <td style={{ padding: '8px', color: '#FFD700' }}>React Version:</td>
-                  <td style={{ padding: '8px' }}>{diagnosticData.reactVersion}</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #333' }}>
-                  <td style={{ padding: '8px', color: '#FFD700' }}>Browser:</td>
-                  <td style={{ padding: '8px' }}>{diagnosticData.browser}</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #333' }}>
-                  <td style={{ padding: '8px', color: '#FFD700' }}>Screen Size:</td>
-                  <td style={{ padding: '8px' }}>{diagnosticData.screenSize}</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #333' }}>
-                  <td style={{ padding: '8px', color: '#FFD700' }}>URL:</td>
-                  <td style={{ padding: '8px' }}>{window.location.href}</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #333' }}>
-                  <td style={{ padding: '8px', color: '#FFD700' }}>Local Storage:</td>
-                  <td style={{ padding: '8px' }}>
-                    {diagnosticData.localStorage ? 'Available' : 'Not Available'}
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #333' }}>
-                  <td style={{ padding: '8px', color: '#FFD700' }}>Session Storage:</td>
-                  <td style={{ padding: '8px' }}>
-                    {diagnosticData.sessionStorage ? 'Available' : 'Not Available'}
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #333' }}>
-                  <td style={{ padding: '8px', color: '#FFD700' }}>Storage Items:</td>
-                  <td style={{ padding: '8px' }}>{diagnosticData.storageItems}</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #333' }}>
-                  <td style={{ padding: '8px', color: '#FFD700' }}>Last Updated:</td>
-                  <td style={{ padding: '8px' }}>{diagnosticData.timestamp}</td>
-                </tr>
-              </tbody>
-            </table>
+            <h2 className="text-2xl mb-4">System Diagnostics</h2>
+            <div className="bg-black/30 rounded overflow-hidden">
+              <table className="w-full border-collapse">
+                <tbody>
+                  <tr className="border-b border-gray-800">
+                    <td className="p-3 text-puzzle-gold">React Version:</td>
+                    <td className="p-3">{diagnosticData.reactVersion}</td>
+                  </tr>
+                  <tr className="border-b border-gray-800">
+                    <td className="p-3 text-puzzle-gold">Browser:</td>
+                    <td className="p-3">{diagnosticData.browser}</td>
+                  </tr>
+                  <tr className="border-b border-gray-800">
+                    <td className="p-3 text-puzzle-gold">Screen Size:</td>
+                    <td className="p-3">{diagnosticData.screenSize}</td>
+                  </tr>
+                  <tr className="border-b border-gray-800">
+                    <td className="p-3 text-puzzle-gold">URL:</td>
+                    <td className="p-3">{window.location.href}</td>
+                  </tr>
+                  <tr className="border-b border-gray-800">
+                    <td className="p-3 text-puzzle-gold">Local Storage:</td>
+                    <td className="p-3">
+                      {diagnosticData.localStorage ? 'Available' : 'Not Available'}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-800">
+                    <td className="p-3 text-puzzle-gold">Session Storage:</td>
+                    <td className="p-3">
+                      {diagnosticData.sessionStorage ? 'Available' : 'Not Available'}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-800">
+                    <td className="p-3 text-puzzle-gold">Storage Items:</td>
+                    <td className="p-3">{diagnosticData.storageItems}</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 text-puzzle-gold">Last Updated:</td>
+                    <td className="p-3">{diagnosticData.timestamp}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
             <button 
               onClick={runDiagnostics}
-              style={{
-                marginTop: '20px',
-                padding: '8px 16px',
-                backgroundColor: '#800020',
-                border: 'none',
-                color: 'white',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
+              className="mt-4 px-4 py-2 bg-puzzle-burgundy text-white rounded hover:bg-puzzle-burgundy/80"
             >
               Refresh Diagnostics
             </button>
           </div>
-        )}
-        
-        {/* Navigation Testing Tab */}
-        {activeTab === 'navigation' && (
+        );
+      
+      case 'navigation':
+        return <EmergencyRouter routes={routeTests} />;
+      
+      case 'components':
+        return (
           <div>
-            <h2>Route Testing</h2>
-            <p style={{ marginBottom: '20px' }}>
-              Test navigation to different routes. Each click logs the attempt and redirects.
-            </p>
-            
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', 
-              gap: '10px',
-              marginBottom: '20px'
-            }}>
-              {routeTests.map((route) => (
-                <button
-                  key={route.path}
-                  onClick={() => navigateTo(route.path)}
-                  style={{
-                    padding: '10px',
-                    background: '#1a1a1a',
-                    border: '1px solid #333',
-                    borderRadius: '4px',
-                    color: '#00FFFF',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {route.name}
-                  <div style={{ fontSize: '10px', color: '#888', marginTop: '4px' }}>
-                    {route.path}
-                  </div>
-                </button>
-              ))}
-            </div>
-            
-            {/* Navigation results */}
-            {testResults.navigation && (
-              <div style={{ 
-                marginTop: '20px',
-                padding: '15px',
-                backgroundColor: '#1a1a1a',
-                borderRadius: '4px'
-              }}>
-                <h3 style={{ color: '#FFD700', marginTop: 0 }}>Last Navigation Attempt</h3>
-                <div style={{ color: 'white' }}>
-                  <div>Path: <span style={{ color: '#00FFFF' }}>{testResults.navigation.lastAttempt}</span></div>
-                  <div>Time: {formatTime(testResults.navigation.timestamp)}</div>
-                  <div>Status: {testResults.navigation.status}</div>
-                  {testResults.navigation.error && (
-                    <div style={{ color: '#FF6B6B' }}>Error: {testResults.navigation.error}</div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        
-        {/* Component Tests Tab */}
-        {activeTab === 'components' && (
-          <div>
-            <h2>Component Tests</h2>
-            <p style={{ marginBottom: '20px' }}>
-              Test individual components in isolation to identify issues.
-            </p>
-            
-            <div style={{ display: 'flex', gap: '20px' }}>
+            <h2 className="text-2xl mb-4">Component Tests</h2>
+            <div className="flex gap-6">
               {/* Test selector */}
-              <div style={{ width: '30%' }}>
-                <h3 style={{ color: '#FFD700' }}>Available Tests</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div className="w-1/3">
+                <h3 className="text-xl text-puzzle-gold mb-3">Available Tests</h3>
+                <div className="space-y-2">
                   {Object.entries(componentTests).map(([id, test]) => (
                     <button
                       key={id}
                       onClick={() => runComponentTest(id)}
-                      style={{
-                        padding: '10px',
-                        background: selectedTest === id ? '#333' : '#1a1a1a',
-                        border: `1px solid ${selectedTest === id ? '#00FFFF' : '#333'}`,
-                        borderRadius: '4px',
-                        color: selectedTest === id ? '#00FFFF' : 'white',
-                        cursor: 'pointer',
-                        textAlign: 'left'
-                      }}
+                      className={`w-full p-3 text-left rounded ${
+                        selectedTest === id
+                          ? 'bg-puzzle-black border border-puzzle-aqua'
+                          : 'bg-black/30 hover:bg-black/50'
+                      }`}
                     >
-                      <div style={{ fontWeight: 'bold' }}>{test.name}</div>
-                      <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                      <div className="font-bold">{test.name}</div>
+                      <div className="text-sm opacity-70 mt-1">
                         {test.description}
                       </div>
                       {testResults[id] && (
-                        <div style={{ 
-                          fontSize: '10px', 
-                          marginTop: '6px',
-                          color: testResults[id].success ? '#4CAF50' : '#FF6B6B'
-                        }}>
+                        <div className={`text-xs mt-2 ${
+                          testResults[id].success 
+                            ? 'text-green-400' 
+                            : 'text-red-400'
+                        }`}>
                           {testResults[id].status} {testResults[id].success ? '✓' : '✗'}
                         </div>
                       )}
@@ -568,27 +472,15 @@ const EmergencyApp = () => {
               </div>
               
               {/* Test result area */}
-              <div style={{
-                width: '70%',
-                backgroundColor: '#0a0a0a',
-                borderRadius: '4px',
-                padding: '15px',
-                minHeight: '300px'
-              }}>
+              <div className="w-2/3 bg-black/40 rounded p-4">
                 {selectedTest ? (
                   <div>
-                    <h3 style={{ color: '#FFD700', marginTop: 0 }}>
+                    <h3 className="text-xl text-puzzle-gold mb-3">
                       {componentTests[selectedTest]?.name || 'Test'} Results
                     </h3>
                     
                     {/* Test component rendering area */}
-                    <div style={{ 
-                      marginBottom: '20px',
-                      padding: '15px',
-                      backgroundColor: '#1a1a1a',
-                      borderRadius: '4px',
-                      minHeight: '100px'
-                    }}>
+                    <div className="mb-4 bg-black/30 p-4 rounded min-h-[150px]">
                       <ErrorCatcher>
                         {componentTests[selectedTest]?.component()}
                       </ErrorCatcher>
@@ -596,19 +488,20 @@ const EmergencyApp = () => {
                     
                     {/* Test details */}
                     {testResults[selectedTest] && (
-                      <div style={{ fontSize: '14px' }}>
+                      <div className="text-sm">
                         <div>Started: {formatTime(testResults[selectedTest].startTime)}</div>
                         {testResults[selectedTest].endTime && (
                           <div>Completed: {formatTime(testResults[selectedTest].endTime)}</div>
                         )}
-                        <div style={{ 
-                          marginTop: '10px',
-                          color: testResults[selectedTest].success ? '#4CAF50' : '#FF6B6B'
-                        }}>
+                        <div className={`mt-2 ${
+                          testResults[selectedTest].success 
+                            ? 'text-green-400' 
+                            : 'text-red-400'
+                        }`}>
                           Status: {testResults[selectedTest].status}
                         </div>
                         {testResults[selectedTest].error && (
-                          <div style={{ color: '#FF6B6B', marginTop: '10px' }}>
+                          <div className="text-red-400 mt-2">
                             Error: {testResults[selectedTest].error}
                           </div>
                         )}
@@ -616,55 +509,37 @@ const EmergencyApp = () => {
                     )}
                   </div>
                 ) : (
-                  <div style={{ color: '#888', textAlign: 'center', marginTop: '50px' }}>
+                  <div className="text-center py-12 opacity-50">
                     Select a test to run
                   </div>
                 )}
               </div>
             </div>
           </div>
-        )}
-        
-        {/* Feature Toggles Tab */}
-        {activeTab === 'features' && (
+        );
+      
+      case 'features':
+        return (
           <div>
-            <h2>Feature Toggles</h2>
-            <p style={{ marginBottom: '20px' }}>
-              Enable or disable specific features to isolate problems.
-            </p>
-            
-            <div style={{ 
-              display: 'grid', 
-              gap: '15px',
-              marginTop: '20px'
-            }}>
+            <h2 className="text-2xl mb-4">Feature Toggles</h2>
+            <div className="grid gap-4 md:grid-cols-2">
               {Object.entries(featureToggles).map(([feature, enabled]) => (
-                <div key={feature} style={{ 
-                  padding: '15px', 
-                  backgroundColor: '#1a1a1a', 
-                  borderRadius: '4px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
+                <div key={feature} className="bg-black/30 p-4 rounded flex justify-between items-center">
                   <div>
-                    <div style={{ fontWeight: 'bold', color: '#FFD700' }}>
+                    <div className="font-bold text-puzzle-gold">
                       {feature.charAt(0).toUpperCase() + feature.slice(1)}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                    <div className="text-sm opacity-70 mt-1">
                       {enabled ? 'Enabled' : 'Disabled'}
                     </div>
                   </div>
                   <button 
                     onClick={() => toggleFeature(feature)}
-                    style={{
-                      padding: '6px 12px',
-                      backgroundColor: enabled ? '#00FFFF' : '#333',
-                      color: enabled ? 'black' : '#888',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
+                    className={`px-4 py-2 rounded ${
+                      enabled 
+                        ? 'bg-puzzle-aqua text-black' 
+                        : 'bg-gray-700 text-gray-300'
+                    }`}
                   >
                     {enabled ? 'Enabled' : 'Disabled'}
                   </button>
@@ -672,205 +547,83 @@ const EmergencyApp = () => {
               ))}
             </div>
           </div>
-        )}
-        
-        {/* Recovery Tools Tab */}
-        {activeTab === 'recovery' && (
+        );
+      
+      case 'recovery':
+        return (
           <div>
-            <h2>Recovery Tools</h2>
-            <div style={{ 
-              display: 'grid', 
-              gap: '20px',
-              marginTop: '20px'
-            }}>
-              <div style={{ 
-                padding: '15px', 
-                backgroundColor: '#1a1a1a', 
-                borderRadius: '4px',
-                borderLeft: '4px solid #FFD700'
-              }}>
-                <h3 style={{ color: '#FFD700', marginTop: 0 }}>Clear Browser Storage</h3>
-                <p>This will clear all localStorage, sessionStorage, and cookies for this site.</p>
+            <h2 className="text-2xl mb-4">Recovery Tools</h2>
+            <div className="grid gap-6">
+              <div className="bg-black/30 p-4 rounded border-l-4 border-puzzle-gold">
+                <h3 className="text-xl text-puzzle-gold mb-2">Clear Browser Storage</h3>
+                <p className="mb-4">This will clear all localStorage, sessionStorage, and cookies for this site.</p>
                 <button 
                   onClick={clearAllStorage}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#800020',
-                    border: 'none',
-                    color: 'white',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
+                  className="px-4 py-2 bg-puzzle-burgundy text-white rounded hover:bg-puzzle-burgundy/80"
                 >
                   Clear All Storage
                 </button>
                 {diagnosticData.message && (
-                  <p style={{ marginTop: '10px', color: '#00FFFF' }}>
+                  <p className="mt-3 text-puzzle-aqua">
                     {diagnosticData.message}
                   </p>
                 )}
               </div>
               
-              <div style={{ 
-                padding: '15px', 
-                backgroundColor: '#1a1a1a', 
-                borderRadius: '4px',
-                borderLeft: '4px solid #00FFFF'
-              }}>
-                <h3 style={{ color: '#00FFFF', marginTop: 0 }}>Application Modes</h3>
-                <p>Launch application in different modes:</p>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  <button 
-                    onClick={() => navigateTo('/')}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: '#333',
-                      border: 'none',
-                      color: '#00FFFF',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
+              <div className="bg-black/30 p-4 rounded border-l-4 border-puzzle-aqua">
+                <h3 className="text-xl text-puzzle-aqua mb-2">Application Modes</h3>
+                <p className="mb-4">Launch application in different modes:</p>
+                <div className="flex flex-wrap gap-2">
+                  <a 
+                    href="/"
+                    className="px-4 py-2 bg-black/50 text-puzzle-aqua rounded hover:bg-black/70"
                   >
                     Normal Mode
-                  </button>
-                  <button 
-                    onClick={() => navigateTo('/?standalone=true')}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: '#333',
-                      border: 'none',
-                      color: '#FFD700',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
+                  </a>
+                  <a 
+                    href="/?standalone=true"
+                    className="px-4 py-2 bg-black/50 text-puzzle-gold rounded hover:bg-black/70"
                   >
                     Standalone Mode
-                  </button>
-                  <button 
-                    onClick={() => navigateTo('/?minimal=true')}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: '#333',
-                      border: 'none',
-                      color: 'white',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
+                  </a>
+                  <a 
+                    href="/?minimal=true"
+                    className="px-4 py-2 bg-black/50 text-white rounded hover:bg-black/70"
                   >
                     Minimal Mode
-                  </button>
-                  <button 
-                    onClick={() => navigateTo('/?recovery=true')}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: '#333',
-                      border: 'none',
-                      color: '#FFA500',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
+                  </a>
+                  <a 
+                    href="/?recovery=true"
+                    className="px-4 py-2 bg-black/50 text-orange-400 rounded hover:bg-black/70"
                   >
                     Recovery Mode
-                  </button>
+                  </a>
                   <button 
                     onClick={() => window.location.reload()}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: '#333',
-                      border: 'none',
-                      color: '#00FFFF',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
+                    className="px-4 py-2 bg-black/50 text-puzzle-aqua rounded hover:bg-black/70"
                   >
                     Reload Page
                   </button>
                 </div>
               </div>
-              
-              <div style={{ 
-                padding: '15px', 
-                backgroundColor: '#1a1a1a', 
-                borderRadius: '4px',
-                borderLeft: '4px solid #FFA500'
-              }}>
-                <h3 style={{ color: '#FFA500', marginTop: 0 }}>Performance Tests</h3>
-                <p>Test application performance and loading times:</p>
-                <button 
-                  onClick={() => {
-                    console.log('[EMERGENCY] Starting performance test...');
-                    const startTime = performance.now();
-                    
-                    // Simulate a performance test
-                    setTimeout(() => {
-                      const endTime = performance.now();
-                      console.log(`[EMERGENCY] Performance test completed in ${endTime - startTime}ms`);
-                      
-                      setTestResults(prev => ({
-                        ...prev,
-                        performance: {
-                          startTime: new Date(Date.now() - (endTime - startTime)).toISOString(),
-                          endTime: new Date().toISOString(),
-                          duration: `${(endTime - startTime).toFixed(2)}ms`,
-                          status: 'completed'
-                        }
-                      }));
-                    }, 1000);
-                  }}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#FFA500',
-                    border: 'none',
-                    color: 'black',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Run Performance Test
-                </button>
-                
-                {testResults.performance && (
-                  <div style={{ 
-                    marginTop: '15px',
-                    padding: '10px',
-                    backgroundColor: 'rgba(255, 165, 0, 0.1)',
-                    borderRadius: '4px'
-                  }}>
-                    <div>Start: {formatTime(testResults.performance.startTime)}</div>
-                    <div>End: {formatTime(testResults.performance.endTime)}</div>
-                    <div>Duration: {testResults.performance.duration}</div>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
-        )}
-        
-        {/* Error Log Tab */}
-        {activeTab === 'errors' && (
+        );
+      
+      case 'errors':
+        return (
           <div>
-            <h2>Error Log</h2>
+            <h2 className="text-2xl mb-4">Error Log</h2>
             {diagnosticData.errors.length === 0 ? (
-              <p style={{ color: '#888' }}>No errors recorded yet.</p>
+              <p className="text-gray-500">No errors recorded yet.</p>
             ) : (
-              <div style={{ 
-                maxHeight: '400px', 
-                overflowY: 'auto',
-                backgroundColor: '#1a1a1a',
-                borderRadius: '4px',
-                padding: '10px'
-              }}>
+              <div className="bg-black/40 rounded p-2 max-h-[400px] overflow-y-auto">
                 {diagnosticData.errors.map((error, index) => (
-                  <div key={index} style={{ 
-                    padding: '10px', 
-                    borderBottom: '1px solid #333',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word'
-                  }}>
-                    <div style={{ color: '#888', fontSize: '0.8em', marginBottom: '5px' }}>
+                  <div key={index} className="p-3 border-b border-gray-800 whitespace-pre-wrap break-words">
+                    <div className="text-xs text-gray-500 mb-1">
                       {error.timestamp}
                     </div>
-                    <div style={{ color: '#FF6B6B' }}>
+                    <div className="text-red-400">
                       {error.message}
                     </div>
                   </div>
@@ -879,33 +632,52 @@ const EmergencyApp = () => {
             )}
             <button 
               onClick={() => setDiagnosticData(prev => ({...prev, errors: []}))}
-              style={{
-                marginTop: '20px',
-                padding: '8px 16px',
-                backgroundColor: '#800020',
-                border: 'none',
-                color: 'white',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
+              className="mt-4 px-4 py-2 bg-puzzle-burgundy text-white rounded hover:bg-puzzle-burgundy/80"
             >
               Clear Error Log
             </button>
           </div>
-        )}
+        );
+      
+      default:
+        return <div>Select a tab</div>;
+    }
+  };
+  
+  // Render the emergency UI with our layout
+  return (
+    <EmergencyLayout appMode={getAppMode()}>
+      {/* Tab navigation */}
+      <div className="mb-6 overflow-x-auto">
+        <div className="flex border-b border-gray-800">
+          {[
+            { id: 'info', label: 'System Info' },
+            { id: 'navigation', label: 'Route Testing' },
+            { id: 'components', label: 'Component Tests' },
+            { id: 'features', label: 'Feature Toggles' },
+            { id: 'recovery', label: 'Recovery Tools' },
+            { id: 'errors', label: `Error Log (${diagnosticData.errors.length})` }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 ${
+                activeTab === tab.id 
+                  ? 'bg-black/30 text-puzzle-aqua border-b-2 border-puzzle-aqua' 
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
       
-      <footer style={{ 
-        marginTop: '40px', 
-        borderTop: '1px solid #333',
-        paddingTop: '20px',
-        fontSize: '0.8rem',
-        color: '#888',
-        textAlign: 'center'
-      }}>
-        The Puzzle Boss - Emergency Recovery System v1.1
-      </footer>
-    </div>
+      {/* Tab content */}
+      <div className="tab-content">
+        <TabContent />
+      </div>
+    </EmergencyLayout>
   );
 };
 

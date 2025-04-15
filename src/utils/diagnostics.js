@@ -50,6 +50,46 @@ export const diagnostics = {
     const errorInfo = this.getErrorInfo(error);
     console.error(`[${context}] Error:`, errorInfo);
     return errorInfo;
+  },
+  
+  checkReactRouterAvailability() {
+    try {
+      // Check if React Router is available by detecting its key components
+      const hasReactRouter = typeof window !== 'undefined' && 
+        window.ReactRouter !== undefined;
+      
+      return {
+        available: hasReactRouter,
+        version: hasReactRouter && window.ReactRouter.version || 'unknown'
+      };
+    } catch (e) {
+      console.error('Error checking React Router:', e);
+      return { available: false, error: e.message };
+    }
+  },
+  
+  getPerformanceMetrics() {
+    try {
+      if (typeof window !== 'undefined' && window.performance) {
+        const navigation = window.performance.getEntriesByType('navigation')[0];
+        const resources = window.performance.getEntriesByType('resource');
+        
+        return {
+          pageLoad: navigation ? navigation.duration : null,
+          domComplete: navigation ? navigation.domComplete : null,
+          resourceCount: resources.length,
+          largestResource: resources.length > 0 ? 
+            resources.reduce((largest, current) => 
+              current.transferSize > largest.transferSize ? current : largest
+            ) : null,
+          timestamp: new Date().toISOString()
+        };
+      }
+      return { error: 'Performance API not available' };
+    } catch (e) {
+      console.error('Error getting performance metrics:', e);
+      return { error: e.message };
+    }
   }
 };
 

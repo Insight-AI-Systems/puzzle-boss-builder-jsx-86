@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import StandaloneApp from '../StandaloneApp';
+import diagnostics from '../utils/diagnostics';
 
 /**
  * StandaloneModeHandler detects if the application should run in standalone mode
@@ -10,6 +11,24 @@ const StandaloneModeHandler = () => {
   // Handle standalone mode from URL
   const urlParams = new URLSearchParams(window.location.search);
   const isStandalone = urlParams.get('standalone') === 'true';
+  
+  useEffect(() => {
+    // Log environment information when component mounts
+    console.log('[StandaloneModeHandler] Initializing in standalone mode');
+    console.log('[StandaloneModeHandler] Environment:', diagnostics.checkEnvironment());
+    
+    // Add to diagnostic log if available
+    if (window.__addDiagnosticLog) {
+      window.__addDiagnosticLog('StandaloneModeHandler mounted');
+    }
+    
+    return () => {
+      console.log('[StandaloneModeHandler] Unmounting');
+      if (window.__addDiagnosticLog) {
+        window.__addDiagnosticLog('StandaloneModeHandler unmounted');
+      }
+    };
+  }, []);
   
   console.log('[StandaloneModeHandler] Standalone mode:', isStandalone);
   
