@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import EmergencyLayout from './recovery/EmergencyLayout';
 import EmergencyRouter from './recovery/EmergencyRouter';
@@ -282,6 +283,23 @@ const EmergencyApp = () => {
     console.log(`[EMERGENCY] Feature ${feature} toggled to: ${!featureToggles[feature]}`);
   };
 
+  // Function to switch app modes
+  const switchAppMode = (mode) => {
+    if (window.appRecovery && window.appRecovery.switchMode) {
+      window.appRecovery.switchMode(mode);
+    } else {
+      // Fallback if appRecovery is not available
+      try {
+        const url = new URL(window.location);
+        url.searchParams.set('mode', mode);
+        window.location = url.toString();
+      } catch (e) {
+        console.error('[EMERGENCY] Error switching mode:', e);
+        alert(`Error switching to ${mode} mode: ${e.message}`);
+      }
+    }
+  };
+
   const tabs = [
     { id: 'info', label: 'System Info' },
     { id: 'navigation', label: 'Route Testing' },
@@ -319,6 +337,35 @@ const EmergencyApp = () => {
 
   return (
     <EmergencyLayout appMode={window.location.search.includes('standalone=true') ? 'Standalone' : 'Emergency'}>
+      {/* Mode switching buttons */}
+      <div className="mb-4 p-3 bg-black/30 border border-puzzle-aqua rounded">
+        <h3 className="text-lg text-puzzle-gold mb-2">Application Mode</h3>
+        <p className="text-sm text-white mb-3">
+          You are currently in <span className="text-puzzle-burgundy font-bold">Emergency Mode</span>. 
+          Try transitioning to another mode:
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button 
+            onClick={() => switchAppMode('minimal')}
+            className="px-4 py-2 bg-puzzle-aqua text-black rounded hover:bg-puzzle-aqua/80"
+          >
+            Try Minimal Mode
+          </button>
+          <button 
+            onClick={() => switchAppMode('normal')}
+            className="px-4 py-2 bg-puzzle-gold text-black rounded hover:bg-puzzle-gold/80"
+          >
+            Try Normal Mode
+          </button>
+          <button 
+            onClick={() => switchAppMode('standalone')}
+            className="px-4 py-2 bg-white/80 text-black rounded hover:bg-white"
+          >
+            Standalone Mode
+          </button>
+        </div>
+      </div>
+      
       <TabNav activeTab={activeTab} onTabChange={setActiveTab} tabs={tabs} />
       <div className="tab-content">
         {renderTabContent()}

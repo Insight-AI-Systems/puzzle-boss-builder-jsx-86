@@ -165,12 +165,20 @@ const MinimalApp = ({ isStandalone = false }) => {
             {isStandalone ? 'Standalone' : (appMode.isMinimal ? 'Minimal' : 'Full')}
           </span>
         </div>
-        <button
-          onClick={appMode.toggleMode}
-          className="px-4 py-2 bg-puzzle-burgundy text-white rounded hover:bg-puzzle-burgundy/80"
-        >
-          {buttonText}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={appMode.toggleMode}
+            className="px-4 py-2 bg-puzzle-burgundy text-white rounded hover:bg-puzzle-burgundy/80"
+          >
+            {buttonText}
+          </button>
+          <button
+            onClick={() => window.appRecovery.switchMode('emergency')}
+            className="px-4 py-2 bg-puzzle-gold text-black rounded hover:bg-puzzle-gold/80"
+          >
+            Emergency Mode
+          </button>
+        </div>
       </div>
       
       <p className="text-xl mb-2">Minimal Application Testing</p>

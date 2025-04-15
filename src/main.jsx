@@ -3,14 +3,16 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import EmergencyApp from './EmergencyApp.jsx';
+import MinimalApp from './MinimalApp.jsx';
+import App from './App.jsx';
 import StandaloneModeHandler from './components/StandaloneModeHandler.jsx';
 import './index.css';
 
-console.log('[EMERGENCY] Starting emergency application initialization', new Date().toISOString());
+console.log('[STARTUP] Starting application initialization', new Date().toISOString());
 
 // Function to log errors to DOM for visibility
 const logErrorToDOM = (error, source = 'Unknown') => {
-  console.error(`[EMERGENCY:${source}] Error:`, error);
+  console.error(`[STARTUP:${source}] Error:`, error);
   
   try {
     const errorDisplay = document.createElement('div');
@@ -26,14 +28,14 @@ const logErrorToDOM = (error, source = 'Unknown') => {
     `;
     
     // Try to add to diagnostics container first, fallback to body
-    const diagnosticsEl = document.getElementById('emergency-diagnostics');
+    const diagnosticsEl = document.getElementById('startup-diagnostics');
     if (diagnosticsEl) {
       diagnosticsEl.appendChild(errorDisplay);
     } else {
       document.body.appendChild(errorDisplay);
     }
   } catch (displayError) {
-    console.error('[EMERGENCY] Failed to display error:', displayError);
+    console.error('[STARTUP] Failed to display error:', displayError);
   }
 };
 
@@ -49,9 +51,9 @@ window.addEventListener('unhandledrejection', function(event) {
 
 // Create a diagnostic container as fallback
 try {
-  if (!document.getElementById('emergency-diagnostics')) {
+  if (!document.getElementById('startup-diagnostics')) {
     const diagnosticsContainer = document.createElement('div');
-    diagnosticsContainer.id = 'emergency-diagnostics';
+    diagnosticsContainer.id = 'startup-diagnostics';
     diagnosticsContainer.style.margin = '20px';
     diagnosticsContainer.style.padding = '10px';
     diagnosticsContainer.style.backgroundColor = 'rgba(0,0,0,0.8)';
@@ -60,11 +62,11 @@ try {
     document.body.appendChild(diagnosticsContainer);
   }
 } catch (e) {
-  console.error('[EMERGENCY] Failed to create diagnostics container:', e);
+  console.error('[STARTUP] Failed to create diagnostics container:', e);
 }
 
-// Simple recovery utility
-window.emergencyRecovery = {
+// Enhanced recovery utilities
+window.appRecovery = {
   clearStorage: function() {
     try {
       localStorage.clear();
@@ -76,33 +78,71 @@ window.emergencyRecovery = {
   },
   reloadPage: function() {
     window.location.reload();
+  },
+  switchMode: function(mode) {
+    try {
+      // Save the last mode attempt to localStorage
+      localStorage.setItem('app-last-mode', mode);
+      
+      // Set URL parameter and reload
+      const url = new URL(window.location);
+      url.searchParams.set('mode', mode);
+      window.location = url.toString();
+    } catch (e) {
+      console.error('[STARTUP] Error switching mode:', e);
+      return 'Error switching mode: ' + e.message;
+    }
   }
 };
 
-// Handle different application modes
+// Determine which app mode to use
 const determineAppMode = () => {
   // Get URL parameters
   const urlParams = new URLSearchParams(window.location.search);
-  const isStandalone = urlParams.get('standalone') === 'true';
-  const isMinimal = urlParams.get('minimal') === 'true';
-  const isRecovery = urlParams.get('recovery') === 'true' || urlParams.get('debug') === 'true';
   
-  console.log('[EMERGENCY] App mode detection:', { isStandalone, isMinimal, isRecovery });
+  // Check URL parameters first
+  const modeParam = urlParams.get('mode');
+  if (modeParam) {
+    if (['emergency', 'minimal', 'normal', 'standalone'].includes(modeParam)) {
+      console.log(`[STARTUP] Using mode from URL parameter: ${modeParam}`);
+      return modeParam;
+    }
+  }
   
-  // Force emergency mode if there are specific error parameters
-  const forceEmergency = urlParams.get('emergency') === 'true' || urlParams.get('force-emergency') === 'true';
+  // Check specific flags
+  if (urlParams.get('emergency') === 'true') return 'emergency';
+  if (urlParams.get('minimal') === 'true') return 'minimal';
+  if (urlParams.get('standalone') === 'true') return 'standalone';
   
-  return {
-    isStandalone,
-    isMinimal,
-    isRecovery,
-    forceEmergency
-  };
+  // Check localStorage for last successful mode
+  try {
+    const lastMode = localStorage.getItem('app-last-successful-mode');
+    if (lastMode && lastMode !== 'emergency') {
+      console.log(`[STARTUP] Using last successful mode from localStorage: ${lastMode}`);
+      return lastMode;
+    }
+  } catch (e) {
+    console.error('[STARTUP] Error reading from localStorage:', e);
+  }
+  
+  // Default to emergency mode during development for safety
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (!isProduction) {
+    console.log('[STARTUP] Development environment detected, defaulting to emergency mode for safety');
+    return 'emergency';
+  }
+  
+  // Default to normal mode for production
+  return 'normal';
 };
+
+// Track render timing for diagnostics
+let renderStartTime = Date.now();
+let hasLogged = false;
 
 // Main app execution in try/catch
 try {
-  console.log('[EMERGENCY] Looking for root element...');
+  console.log('[STARTUP] Looking for root element...');
   const rootElement = document.getElementById('root');
   
   if (!rootElement) {
@@ -110,40 +150,118 @@ try {
   }
   
   // Determine which mode to run in
-  const { isStandalone, isMinimal, isRecovery, forceEmergency } = determineAppMode();
+  const appMode = determineAppMode();
+  console.log(`[STARTUP] Starting in ${appMode} mode`);
   
-  console.log('[EMERGENCY] Creating root and rendering application...');
+  console.log('[STARTUP] Creating root and rendering application...');
   try {
     const root = createRoot(rootElement);
     
-    // Decide what to render based on mode
-    if (forceEmergency) {
-      console.log('[EMERGENCY] Forcing emergency mode due to URL parameter');
-      root.render(<EmergencyApp />);
-    } else if (isStandalone) {
-      console.log('[EMERGENCY] Rendering in standalone mode');
-      root.render(<StandaloneModeHandler />);
-    } else {
-      console.log('[EMERGENCY] Rendering emergency app as default recovery path');
-      root.render(<EmergencyApp />);
+    // Render the appropriate component based on mode
+    switch (appMode) {
+      case 'emergency':
+        console.log('[STARTUP] Rendering in emergency mode');
+        root.render(<EmergencyApp />);
+        break;
+        
+      case 'minimal':
+        console.log('[STARTUP] Rendering in minimal mode');
+        root.render(<MinimalApp />);
+        break;
+        
+      case 'standalone':
+        console.log('[STARTUP] Rendering in standalone mode');
+        root.render(<StandaloneModeHandler />);
+        break;
+        
+      case 'normal':
+      default:
+        console.log('[STARTUP] Rendering in normal mode');
+        
+        // Set up a safety timeout for normal mode
+        const timeoutId = setTimeout(() => {
+          if (!hasLogged) {
+            hasLogged = true;
+            const renderTime = Date.now() - renderStartTime;
+            console.error(`[STARTUP] Normal mode render timeout after ${renderTime}ms`);
+            
+            // Create a UI widget to allow switching to emergency mode
+            try {
+              const timeoutMsg = document.createElement('div');
+              timeoutMsg.style.position = 'fixed';
+              timeoutMsg.style.bottom = '20px';
+              timeoutMsg.style.right = '20px';
+              timeoutMsg.style.backgroundColor = '#800020';
+              timeoutMsg.style.color = 'white';
+              timeoutMsg.style.padding = '15px';
+              timeoutMsg.style.borderRadius = '5px';
+              timeoutMsg.style.zIndex = '9999';
+              timeoutMsg.className = 'minimal-app-timeout-message';
+              
+              timeoutMsg.innerHTML = `
+                <h3 style="margin-top:0">Rendering Timeout</h3>
+                <p>The application is taking longer than expected to load.</p>
+                <div>
+                  <button onclick="window.appRecovery.switchMode('emergency')" 
+                    style="background:#FFD700;color:black;border:none;padding:5px 10px;margin-right:5px;cursor:pointer;border-radius:3px">
+                    Switch to Emergency Mode
+                  </button>
+                  <button onclick="window.appRecovery.switchMode('minimal')" 
+                    style="background:#00FFFF;color:black;border:none;padding:5px 10px;margin-right:5px;cursor:pointer;border-radius:3px">
+                    Try Minimal Mode
+                  </button>
+                  <button onclick="this.parentNode.parentNode.remove()" 
+                    style="background:transparent;color:white;border:1px solid white;padding:5px 10px;cursor:pointer;border-radius:3px">
+                    Dismiss
+                  </button>
+                </div>
+              `;
+              
+              document.body.appendChild(timeoutMsg);
+            } catch (e) {
+              console.error('[STARTUP] Failed to create timeout message:', e);
+            }
+          }
+        }, 7000); // 7 second timeout
+        
+        // Render the normal app
+        root.render(<App />);
+        
+        // Set up success callback
+        setTimeout(() => {
+          clearTimeout(timeoutId);
+          if (!hasLogged) {
+            hasLogged = true;
+            const renderTime = Date.now() - renderStartTime;
+            console.log(`[STARTUP] Normal mode rendered successfully in ${renderTime}ms`);
+            
+            // Mark this mode as successful
+            try {
+              localStorage.setItem('app-last-successful-mode', 'normal');
+            } catch (e) {
+              console.error('[STARTUP] Failed to save successful mode:', e);
+            }
+          }
+        }, 1000);
+        break;
     }
     
-    console.log('[EMERGENCY] Application rendered successfully');
+    console.log('[STARTUP] Application render started');
   } catch (renderError) {
-    console.error('[EMERGENCY] Failed to render with createRoot:', renderError);
+    console.error('[STARTUP] Failed to render with createRoot:', renderError);
     
     // Legacy fallback if createRoot fails
     try {
-      console.log('[EMERGENCY] Attempting legacy render fallback...');
+      console.log('[STARTUP] Attempting legacy render fallback...');
       const ReactDOM = require('react-dom');
       if (ReactDOM.render) {
         ReactDOM.render(<EmergencyApp />, rootElement);
-        console.log('[EMERGENCY] Legacy render successful');
+        console.log('[STARTUP] Legacy render successful');
       } else {
         throw new Error('Neither createRoot nor legacy render available');
       }
     } catch (legacyError) {
-      console.error('[EMERGENCY] All React rendering methods failed:', legacyError);
+      console.error('[STARTUP] All React rendering methods failed:', legacyError);
       
       // Pure JS fallback if all React methods fail
       try {
@@ -153,24 +271,24 @@ try {
             <p style="color: #00FFFF;">React rendering failed completely. Using HTML fallback.</p>
             <div style="margin: 20px; padding: 15px; background: #111; text-align: left;">
               <h2 style="color: white;">Recovery Options:</h2>
-              <button onclick="window.emergencyRecovery.clearStorage()" style="margin: 5px; padding: 8px; background: #800020; color: white; border: none; cursor: pointer;">
+              <button onclick="window.appRecovery.clearStorage()" style="margin: 5px; padding: 8px; background: #800020; color: white; border: none; cursor: pointer;">
                 Clear Storage
               </button>
-              <button onclick="window.emergencyRecovery.reloadPage()" style="margin: 5px; padding: 8px; background: #00FFFF; color: black; border: none; cursor: pointer;">
+              <button onclick="window.appRecovery.reloadPage()" style="margin: 5px; padding: 8px; background: #00FFFF; color: black; border: none; cursor: pointer;">
                 Reload Page
               </button>
-              <button onclick="window.location.href='/?standalone=true'" style="margin: 5px; padding: 8px; background: #FFD700; color: black; border: none; cursor: pointer;">
-                Standalone Mode
+              <button onclick="window.appRecovery.switchMode('emergency')" style="margin: 5px; padding: 8px; background: #FFD700; color: black; border: none; cursor: pointer;">
+                Emergency Mode
               </button>
             </div>
           </div>
         `;
       } catch (htmlError) {
-        console.error('[EMERGENCY] Even HTML fallback failed:', htmlError);
+        console.error('[STARTUP] Even HTML fallback failed:', htmlError);
       }
     }
   }
 } catch (criticalError) {
-  console.error('[EMERGENCY] Critical error during initialization:', criticalError);
+  console.error('[STARTUP] Critical error during initialization:', criticalError);
   logErrorToDOM(criticalError, 'Initialization');
 }
