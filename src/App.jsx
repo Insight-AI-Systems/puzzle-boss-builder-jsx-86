@@ -26,6 +26,7 @@ import Press from "./pages/Press";
 import ContentAdmin from "./pages/ContentAdmin";
 import AuthDebug from "./pages/AuthDebug";
 import AdminPuzzleConfig from "./pages/AdminPuzzleConfig";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient({
@@ -38,75 +39,106 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  console.log("App component rendering");
+  console.log("App component rendering with detailed logging");
   
-  return (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <ThemeProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <MainHeader />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/cookie-policy" element={<CookiePolicy />} />
-                <Route path="/contest-rules" element={<ContestRules />} />
-                <Route path="/support" element={<Support />} />
-                <Route path="/partnerships" element={<Partnerships />} />
-                <Route path="/careers" element={<Careers />} />
-                <Route path="/press" element={<Press />} />
-                
-                {/* Protected routes that require authentication */}
-                <Route 
-                  path="/profile" 
-                  element={
-                    <ProtectedRoute>
-                      <Profile />
-                    </ProtectedRoute>
-                  } 
-                />
-                
-                {/* Admin routes */}
-                <Route 
-                  path="/admin" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}>
-                      <AdminDashboard />
-                    </RoleProtectedRoute>
-                  }
-                />
+  // Add additional error handling and debugging
+  try {
+    console.log("App: Setting up providers");
+    return (
+      <ErrorBoundary>
+        <BrowserRouter>
+          <QueryClientProvider client={queryClient}>
+            <ErrorBoundary>
+              <AuthProvider>
+                <ErrorBoundary>
+                  <ThemeProvider>
+                    <ErrorBoundary>
+                      <TooltipProvider>
+                        <Toaster />
+                        <Sonner />
+                        <MainHeader />
+                        <ErrorBoundary>
+                          <Routes>
+                            <Route path="/" element={
+                              <ErrorBoundary>
+                                <Index />
+                              </ErrorBoundary>
+                            } />
+                            <Route path="/auth" element={<Auth />} />
+                            <Route path="/terms" element={<Terms />} />
+                            <Route path="/privacy" element={<Privacy />} />
+                            <Route path="/cookie-policy" element={<CookiePolicy />} />
+                            <Route path="/contest-rules" element={<ContestRules />} />
+                            <Route path="/support" element={<Support />} />
+                            <Route path="/partnerships" element={<Partnerships />} />
+                            <Route path="/careers" element={<Careers />} />
+                            <Route path="/press" element={<Press />} />
+                            
+                            {/* Protected routes that require authentication */}
+                            <Route 
+                              path="/profile" 
+                              element={
+                                <ProtectedRoute>
+                                  <Profile />
+                                </ProtectedRoute>
+                              } 
+                            />
+                            
+                            {/* Admin routes */}
+                            <Route 
+                              path="/admin" 
+                              element={
+                                <RoleProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}>
+                                  <AdminDashboard />
+                                </RoleProtectedRoute>
+                              }
+                            />
 
-                <Route 
-                  path="/admin/content" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}>
-                      <ContentAdmin />
-                    </RoleProtectedRoute>
-                  }
-                />
-                
-                <Route 
-                  path="/admin/puzzle-config" 
-                  element={<AdminPuzzleConfig />}
-                />
-                
-                {/* Debug route */}
-                <Route path="/auth-debug" element={<AuthDebug />} />
-                
-                {/* Catch-all route */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </TooltipProvider>
-          </ThemeProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
-  );
+                            <Route 
+                              path="/admin/content" 
+                              element={
+                                <RoleProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}>
+                                  <ContentAdmin />
+                                </RoleProtectedRoute>
+                              }
+                            />
+                            
+                            <Route 
+                              path="/admin/puzzle-config" 
+                              element={<AdminPuzzleConfig />}
+                            />
+                            
+                            {/* Debug route */}
+                            <Route path="/auth-debug" element={<AuthDebug />} />
+                            
+                            {/* Catch-all route */}
+                            <Route path="*" element={<NotFound />} />
+                          </Routes>
+                        </ErrorBoundary>
+                      </TooltipProvider>
+                    </ErrorBoundary>
+                  </ThemeProvider>
+                </ErrorBoundary>
+              </AuthProvider>
+            </ErrorBoundary>
+          </QueryClientProvider>
+        </BrowserRouter>
+      </ErrorBoundary>
+    );
+  } catch (error) {
+    console.error("Critical error in App component:", error);
+    return (
+      <div className="min-h-screen bg-puzzle-black text-white flex items-center justify-center">
+        <div className="max-w-md p-6 text-center">
+          <h1 className="text-2xl font-bold text-red-500 mb-4">App Initialization Error</h1>
+          <p className="mb-4">{error.message || "Unknown error occurred"}</p>
+          <pre className="text-xs bg-gray-900 p-4 rounded overflow-auto max-h-48 text-left">
+            {error.stack}
+          </pre>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default App;

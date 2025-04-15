@@ -2,6 +2,7 @@
 import { createRoot } from 'react-dom/client';
 import { StrictMode } from 'react';
 import App from './App.jsx';
+import AppWrapper from './AppWrapper.jsx';
 import './index.css';
 
 // Enhanced initialization logging
@@ -25,18 +26,15 @@ try {
     // Check if anything is already rendered in the root
     console.log('Root element current content:', rootElement.innerHTML);
     
-    // Clear any loading indicators that might be in the root
-    if (rootElement.innerHTML.includes('Loading The Puzzle Boss')) {
-      console.log('Clearing loading message...');
-    }
-    
     // Create and render the app
     const root = createRoot(rootElement);
     console.log('Root created, rendering app...');
     
     root.render(
       <StrictMode>
-        <App />
+        <AppWrapper>
+          <App />
+        </AppWrapper>
       </StrictMode>
     );
     
