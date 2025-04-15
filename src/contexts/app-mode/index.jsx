@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { DiagnosticLog } from '@/components/DiagnosticLog';
+import DiagnosticLog from '@/components/DiagnosticLog';
 
 const AppModeContext = createContext(null);
 

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppMode } from '@/contexts/app-mode';
 import ReactErrorBoundary from './components/ReactErrorBoundary';
 import ReactTester from './components/ReactTester';
+import DiagnosticLog from './components/DiagnosticLog';
 
 const MinimalApp = () => {
   const { toggleMode } = useAppMode();
@@ -171,9 +172,6 @@ const MinimalApp = () => {
           
           {/* React feature tests */}
           <ReactTester />
-          
-          {/* Diagnostic log */}
-          <DiagnosticLog />
         </ReactErrorBoundary>
       </div>
     </div>

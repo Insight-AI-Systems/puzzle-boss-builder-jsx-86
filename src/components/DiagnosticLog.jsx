@@ -54,4 +54,6 @@ const DiagnosticLog = ({ maxEntries = 10 }) => {
   );
 };
 
+// Export both as default and named export for compatibility
+export { DiagnosticLog };
 export default DiagnosticLog;
