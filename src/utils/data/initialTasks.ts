@@ -1,130 +1,122 @@
+
 import { ProjectTask, ProjectTest } from '../types/projectTypes';
 
 export const getInitialTasks = (): ProjectTask[] => [
   {
-    id: 'setup-project',
+    id: 'auth-setup',
     phase: 1,
-    name: 'Project Setup',
-    description: 'Initialize the project with React, Tailwind CSS, and Supabase',
-    status: 'completed'
-  },
-  {
-    id: 'landing-page',
-    phase: 1,
-    name: 'Landing Page Components',
-    description: 'Set up basic landing page structure',
-    status: 'completed'
-  },
-  {
-    id: 'supabase-connection',
-    phase: 1,
-    name: 'Supabase Connection',
-    description: 'Connect the project to Supabase backend',
-    status: 'completed'
-  },
-  {
-    id: 'auth-signup',
-    phase: 2,
-    name: 'Signup Flow',
-    description: 'Implement user registration with email verification',
+    name: 'User Authentication Setup',
+    description: 'Implement email and social login (Google/Apple) with Supabase Auth',
     status: 'pending',
-    testIds: ['test-signup-flow']
-  },
-  {
-    id: 'auth-login',
-    phase: 2,
-    name: 'Login Flow',
-    description: 'Implement user login and session management',
-    status: 'pending',
-    dependsOn: ['auth-signup'],
-    testIds: ['test-login-flow']
+    testIds: ['test-auth']
   },
   {
     id: 'user-profiles',
-    phase: 2,
-    name: 'User Profiles',
-    description: 'Implement user profiles with roles',
+    phase: 1,
+    name: 'User Profiles & Achievements',
+    description: 'Create profile customization, achievement badges, and player history tracking',
     status: 'pending',
-    dependsOn: ['auth-signup'],
-    testIds: ['test-user-profile']
+    dependsOn: ['auth-setup']
   },
   {
-    id: 'puzzle-schema',
-    phase: 2,
-    name: 'Puzzle Database Schema',
-    description: 'Set up database tables for puzzles and categories',
-    status: 'pending',
-    testIds: ['test-puzzle-schema']
+    id: 'puzzle-engine',
+    phase: 1,
+    name: 'Core Puzzle Engine',
+    description: 'Implement timed puzzle completion and fair competition mechanics',
+    status: 'pending'
   },
   {
-    id: 'game-engine',
+    id: 'category-system',
     phase: 2,
-    name: 'Puzzle Game Engine',
-    description: 'Create basic puzzle gameplay mechanics',
+    name: 'Prize Categories',
+    description: 'Set up 25 prize categories with proper organization and management',
+    status: 'pending'
+  },
+  {
+    id: 'credit-system',
+    phase: 2,
+    name: 'Credit System',
+    description: 'Implement credit/token purchase system with Stripe integration',
     status: 'pending',
-    testIds: ['test-puzzle-rendering', 'test-puzzle-interaction']
+    testIds: ['test-payments']
+  },
+  {
+    id: 'membership-tiers',
+    phase: 2,
+    name: 'Membership System',
+    description: 'Create membership tiers with benefits and referral rewards',
+    status: 'pending',
+    dependsOn: ['credit-system']
   },
   {
     id: 'prize-management',
     phase: 3,
     name: 'Prize Management',
-    description: 'Set up prize categories and inventory',
+    description: 'Implement prize fulfillment workflow and winner verification system',
     status: 'pending',
-    testIds: ['test-prize-management']
+    dependsOn: ['category-system']
   },
   {
-    id: 'credit-system',
+    id: 'content-management',
     phase: 3,
-    name: 'Credit System',
-    description: 'Implement credit purchase and management',
-    status: 'pending',
-    testIds: ['test-credit-transactions']
+    name: 'Content Management',
+    description: 'Create puzzle upload, category organization, and promotion scheduling',
+    status: 'pending'
   },
   {
-    id: 'leaderboards',
-    phase: 3,
-    name: 'Leaderboards',
-    description: 'Build real-time leaderboards',
-    status: 'pending',
-    dependsOn: ['game-engine'],
-    testIds: ['test-leaderboard']
-  },
-  {
-    id: 'admin-dashboard',
+    id: 'analytics-dashboard',
     phase: 4,
-    name: 'Admin Dashboard',
-    description: 'Create interfaces for each admin role type',
-    status: 'pending',
-    dependsOn: ['user-profiles'],
-    testIds: ['test-admin-access']
-  },
-  {
-    id: 'analytics',
-    phase: 4,
-    name: 'Analytics & Reporting',
-    description: 'Build tracking for key metrics',
+    name: 'Analytics System',
+    description: 'Implement user engagement metrics, revenue tracking, and puzzle popularity stats',
     status: 'pending',
     testIds: ['test-analytics']
   },
+  {
+    id: 'admin-roles',
+    phase: 4,
+    name: 'Admin Dashboard',
+    description: 'Create interfaces for all admin roles (Super Admin, Category Managers, etc)',
+    status: 'pending',
+    testIds: ['test-admin-access']
+  }
 ];
 
 export const getInitialTests = (): ProjectTest[] => [
   {
-    id: 'test-signup-flow',
-    name: 'Signup Flow Test',
-    description: 'Verify user registration process',
+    id: 'test-auth',
+    name: 'Authentication Flow Test',
+    description: 'Verify user registration and login processes',
     run: async () => {
-      console.log('Running signup flow test...');
+      console.log('Running auth flow test...');
       return true;
     }
   },
   {
-    id: 'test-login-flow',
-    name: 'Login Flow Test',
-    description: 'Verify user login process',
+    id: 'test-payments',
+    name: 'Payment System Test',
+    description: 'Verify credit purchase and Stripe integration',
     run: async () => {
-      console.log('Running login flow test...');
+      console.log('Running payment system test...');
+      return true;
+    }
+  },
+  {
+    id: 'test-analytics',
+    name: 'Analytics System Test',
+    description: 'Verify data tracking and reporting functionality',
+    run: async () => {
+      console.log('Running analytics system test...');
+      return true;
+    }
+  },
+  {
+    id: 'test-admin-access',
+    name: 'Admin Access Test',
+    description: 'Verify role-based access control for admin features',
+    run: async () => {
+      console.log('Running admin access test...');
       return true;
     }
   }
 ];
+
