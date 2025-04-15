@@ -11,11 +11,10 @@ import DevDashboard from "./pages/DevDashboard";
 import Progress from "./pages/Progress";
 import InitialTestRunner from "@/components/InitialTestRunner";
 
-// Create a new QueryClient instance inside the component
+// Create a new QueryClient instance at the module level to avoid recreation on renders
+const queryClient = new QueryClient();
+
 const App: React.FC = () => {
-  // Create the query client inside the component function, not at module level
-  const queryClient = new QueryClient();
-  
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
