@@ -8,7 +8,8 @@ class ErrorBoundary extends React.Component {
       hasError: false, 
       error: null, 
       errorInfo: null,
-      componentTrace: []
+      componentTrace: [],
+      attemptedRecovery: false
     };
     console.log('[ERROR_BOUNDARY] Initializing');
   }
@@ -40,6 +41,20 @@ class ErrorBoundary extends React.Component {
     
     // Log additional diagnostic info
     console.log('[ERROR_BOUNDARY] Error caught in these components:', componentNames);
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    // Try to recover from error on props change
+    if (this.state.hasError && JSON.stringify(prevProps) !== JSON.stringify(this.props) && !this.state.attemptedRecovery) {
+      console.log('[ERROR_BOUNDARY] Props changed, attempting recovery');
+      this.setState({ 
+        hasError: false, 
+        error: null, 
+        errorInfo: null,
+        componentTrace: [],
+        attemptedRecovery: true 
+      });
+    }
   }
 
   render() {
@@ -76,8 +91,23 @@ class ErrorBoundary extends React.Component {
           </details>
           
           <button
+            onClick={() => {
+              this.setState({ 
+                hasError: false, 
+                error: null, 
+                errorInfo: null,
+                componentTrace: [],
+                attemptedRecovery: false
+              });
+            }}
+            className="mt-4 px-4 py-2 bg-puzzle-aqua text-black rounded hover:bg-puzzle-aqua/80 mr-2"
+          >
+            Try Again
+          </button>
+          
+          <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-puzzle-aqua text-black rounded hover:bg-puzzle-aqua/80"
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
           >
             Reload Page
           </button>

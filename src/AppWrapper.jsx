@@ -38,33 +38,19 @@ const AppWrapper = ({ children }) => {
       return;
     }
     
-    // Simulate application stages for better debugging
-    const stages = [
-      { message: 'Preparing application environment...', time: 200 },
-      { message: 'Loading component structure...', time: 300 },
-      { message: 'Initializing state management...', time: 200 },
-      { message: 'Setting up routing...', time: 300 },
-      { message: 'Finalizing application startup...', time: 200 }
-    ];
-    
-    // Progress through simulated startup stages
-    let currentStage = 0;
-    const progressTimer = setInterval(() => {
-      if (currentStage < stages.length) {
-        setAppMessage(stages[currentStage].message);
-        setAppState('loading-stage-' + (currentStage + 1));
-        console.log(`[WRAPPER] ${stages[currentStage].message}`);
-        currentStage++;
-      } else {
-        clearInterval(progressTimer);
+    // Shorter loading simulation for faster rendering
+    setTimeout(() => {
+      console.log('[WRAPPER] Preparing application environment...');
+      setAppMessage('Preparing application environment...');
+      
+      setTimeout(() => {
+        console.log('[WRAPPER] Application ready to render');
         setIsLoading(false);
         setAppState('ready');
-        console.log('[WRAPPER] Application ready to render');
-      }
+      }, 500);
     }, 300);
     
     return () => {
-      clearInterval(progressTimer);
       console.log('[WRAPPER] AppWrapper unmounting');
     };
   }, [children]);
@@ -90,10 +76,29 @@ const AppWrapper = ({ children }) => {
       setAppState('promise-error');
     });
     
-    return () => {
-      window.removeEventListener('error', handleGlobalError);
-      window.removeEventListener('unhandledrejection', handleGlobalError);
-    };
+    // Monitor DOM changes to detect rendering issues
+    try {
+      const observer = new MutationObserver((mutations) => {
+        console.log('[WRAPPER] DOM mutation detected:', mutations.length);
+      });
+      
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+      
+      return () => {
+        window.removeEventListener('error', handleGlobalError);
+        window.removeEventListener('unhandledrejection', handleGlobalError);
+        observer.disconnect();
+      };
+    } catch (err) {
+      console.error('[WRAPPER] Error setting up observers:', err);
+      return () => {
+        window.removeEventListener('error', handleGlobalError);
+        window.removeEventListener('unhandledrejection', handleGlobalError);
+      };
+    }
   }, []);
 
   // If there's an error, show it using our Debug component with a fallback UI
@@ -109,7 +114,16 @@ const AppWrapper = ({ children }) => {
               <p className="text-red-400">{error.message || String(error)}</p>
             </div>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                try {
+                  // Clear any cached state
+                  localStorage.removeItem('supabase.auth.token');
+                  sessionStorage.clear();
+                } catch (e) {
+                  console.error('Error clearing storage:', e);
+                }
+                window.location.reload();
+              }}
               className="w-full px-4 py-2 bg-puzzle-aqua text-black rounded hover:bg-puzzle-aqua/80 font-medium"
             >
               Reload Application
@@ -140,20 +154,7 @@ const AppWrapper = ({ children }) => {
     return (
       <div className="app-wrapper" data-state={appState}>
         <Debug message="Application render in progress" />
-        <ErrorBoundary fallback={
-          <div className="min-h-screen bg-puzzle-black flex items-center justify-center p-4">
-            <div className="text-center">
-              <h2 className="text-xl text-red-500 mb-2">Component Error</h2>
-              <p className="text-gray-300 mb-4">A component failed to render properly.</p>
-              <button 
-                onClick={() => window.location.reload()} 
-                className="px-4 py-2 bg-puzzle-aqua text-black rounded"
-              >
-                Reload Application
-              </button>
-            </div>
-          </div>
-        }>
+        <ErrorBoundary>
           <Suspense fallback={
             <div className="min-h-screen bg-puzzle-black flex items-center justify-center">
               <Loading size="large" color="aqua" />

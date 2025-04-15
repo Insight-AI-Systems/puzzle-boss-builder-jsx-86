@@ -15,6 +15,25 @@ const Index = () => {
   // Add debug log to verify component mounting
   useEffect(() => {
     console.log('Index page mounted');
+    
+    // Log any potential issues with required components
+    const componentsToCheck = [
+      { name: 'Hero', component: Hero },
+      { name: 'ConceptSection', component: ConceptSection },
+      { name: 'FeaturedPuzzles', component: FeaturedPuzzles },
+      { name: 'Categories', component: Categories },
+      { name: 'HowItWorks', component: HowItWorks },
+      { name: 'Testimonials', component: Testimonials },
+      { name: 'Benefits', component: Benefits },
+      { name: 'RegistrationCTA', component: RegistrationCTA },
+      { name: 'Footer', component: Footer }
+    ];
+    
+    componentsToCheck.forEach(({ name, component }) => {
+      if (!component) {
+        console.error(`Missing component: ${name}`);
+      }
+    });
   }, []);
 
   return (

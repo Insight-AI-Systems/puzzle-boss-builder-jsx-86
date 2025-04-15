@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 /**
  * Enhanced Debug component to display runtime information and errors
@@ -9,16 +9,63 @@ const Debug = ({ message, error }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [renderInfo, setRenderInfo] = useState({
     renderedAt: new Date().toISOString(),
-    componentCount: 0
+    componentCount: 0,
+    routePath: window.location.pathname,
+    timeSinceLoad: 0
   });
-
+  const startTimeRef = useRef(Date.now());
+  const [logs, setLogs] = useState([]);
+  
+  // Track console logs
   useEffect(() => {
-    // Count rendered components as a debugging metric
-    const domElements = document.querySelectorAll('*');
-    setRenderInfo({
-      renderedAt: new Date().toISOString(),
-      componentCount: domElements.length
-    });
+    const originalConsoleLog = console.log;
+    const originalConsoleError = console.error;
+    const originalConsoleWarn = console.warn;
+    
+    const captureLog = (type, args) => {
+      const logEntry = {
+        type,
+        message: Array.from(args).map(arg => 
+          typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+        ).join(' '),
+        timestamp: new Date().toISOString()
+      };
+      
+      setLogs(prevLogs => [logEntry, ...prevLogs.slice(0, 29)]);
+      
+      // Call original console method
+      return type === 'error' 
+        ? originalConsoleError(...args) 
+        : type === 'warn'
+          ? originalConsoleWarn(...args)
+          : originalConsoleLog(...args);
+    };
+    
+    console.log = (...args) => captureLog('log', args);
+    console.error = (...args) => captureLog('error', args);
+    console.warn = (...args) => captureLog('warn', args);
+    
+    return () => {
+      console.log = originalConsoleLog;
+      console.error = originalConsoleError;
+      console.warn = originalConsoleWarn;
+    };
+  }, []);
+  
+  // Update render info periodically
+  useEffect(() => {
+    const updateInfo = () => {
+      const domElements = document.querySelectorAll('*');
+      setRenderInfo({
+        renderedAt: new Date().toISOString(),
+        componentCount: domElements.length,
+        routePath: window.location.pathname,
+        timeSinceLoad: Math.round((Date.now() - startTimeRef.current) / 1000)
+      });
+    };
+    
+    updateInfo();
+    const intervalId = setInterval(updateInfo, 2000);
     
     console.log('[DEBUG] Debug component mounted', {
       message,
@@ -27,25 +74,39 @@ const Debug = ({ message, error }) => {
     });
     
     return () => {
+      clearInterval(intervalId);
       console.log('[DEBUG] Debug component unmounted');
     };
   }, [message, error]);
 
   return (
-    <div className={`fixed top-0 left-0 right-0 z-50 ${isExpanded ? 'p-4' : 'p-2'} bg-black/90 text-white border-b-2 border-puzzle-aqua overflow-auto ${isExpanded ? 'max-h-[70vh]' : 'max-h-[40px]'}`}>
+    <div className={`fixed top-0 left-0 right-0 z-50 ${isExpanded ? 'p-4' : 'p-2'} bg-black/90 text-white border-b-2 border-puzzle-aqua overflow-auto ${isExpanded ? 'max-h-[80vh]' : 'max-h-[40px]'}`}>
       <div className="flex justify-between items-center mb-2">
-        <h2 className="text-xl font-bold text-puzzle-aqua">Puzzle Boss Debug Panel</h2>
-        <button 
-          onClick={() => setIsExpanded(!isExpanded)} 
-          className="px-2 py-1 bg-puzzle-aqua/30 text-white rounded"
-        >
-          {isExpanded ? 'Collapse' : 'Expand'}
-        </button>
+        <h2 className="text-xl font-bold text-puzzle-aqua">
+          Puzzle Boss Debug Panel
+          <span className="ml-2 text-sm text-gray-400">
+            ({renderInfo.timeSinceLoad}s)
+          </span>
+        </h2>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => console.clear()} 
+            className="px-2 py-1 bg-gray-700 text-white rounded text-xs"
+          >
+            Clear Console
+          </button>
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)} 
+            className="px-2 py-1 bg-puzzle-aqua/30 text-white rounded"
+          >
+            {isExpanded ? 'Collapse' : 'Expand'}
+          </button>
+        </div>
       </div>
       
       {isExpanded && (
         <>
-          {message && <p className="mb-2 font-medium">{message}</p>}
+          {message && <p className="mb-2 font-medium text-yellow-300">{message}</p>}
           
           {error && (
             <div className="p-3 bg-red-900/50 border border-red-500 rounded mb-3">
@@ -66,6 +127,7 @@ const Debug = ({ message, error }) => {
               <p className="text-xs text-gray-300">Mode: <span className="text-white">{process.env.NODE_ENV}</span></p>
               <p className="text-xs text-gray-300">Rendered at: <span className="text-white">{renderInfo.renderedAt}</span></p>
               <p className="text-xs text-gray-300">DOM Elements: <span className="text-white">{renderInfo.componentCount}</span></p>
+              <p className="text-xs text-gray-300">Current route: <span className="text-white">{renderInfo.routePath}</span></p>
             </div>
             
             <div className="p-2 bg-gray-800/50 rounded">
@@ -75,18 +137,40 @@ const Debug = ({ message, error }) => {
             </div>
           </div>
           
+          <div className="mt-3 p-2 bg-gray-800/50 rounded">
+            <h3 className="text-sm font-bold text-puzzle-aqua mb-1 flex justify-between">
+              <span>Console Logs</span>
+              <span className="text-xs text-gray-400">(Recent {logs.length})</span>
+            </h3>
+            
+            <div className="text-xs max-h-[200px] overflow-y-auto">
+              {logs.length === 0 && (
+                <p className="text-gray-500 italic">No logs captured yet</p>
+              )}
+              {logs.map((log, index) => (
+                <div 
+                  key={index} 
+                  className={`p-1 border-l-2 mb-1 ${
+                    log.type === 'error' 
+                      ? 'border-red-500 text-red-300 bg-red-900/20' 
+                      : log.type === 'warn'
+                        ? 'border-yellow-500 text-yellow-300 bg-yellow-900/20'
+                        : 'border-gray-500 text-white'
+                  }`}
+                >
+                  <span className="text-gray-400 mr-1">{log.timestamp.split('T')[1].split('.')[0]}</span>
+                  <span>{log.message}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
           <div className="flex space-x-2 mt-3">
             <button 
               onClick={() => window.location.reload()} 
               className="px-3 py-1 bg-puzzle-aqua text-black rounded hover:bg-puzzle-aqua/80"
             >
               Reload Page
-            </button>
-            <button 
-              onClick={() => console.clear()} 
-              className="px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-600"
-            >
-              Clear Console
             </button>
             <button 
               onClick={() => {

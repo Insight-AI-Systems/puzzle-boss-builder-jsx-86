@@ -23,7 +23,7 @@ try {
   const rootElement = document.getElementById('root');
 
   if (rootElement) {
-    console.log('[PUZZLE BOSS] Root element found, checking current state:', rootElement.innerHTML);
+    console.log('[PUZZLE BOSS] Root element found, checking current state');
     
     // Create and render the app with explicit error handling
     console.log('[PUZZLE BOSS] Creating root and rendering app...');
@@ -33,11 +33,9 @@ try {
     // Wrap rendering in another try/catch for more specific error logging
     try {
       root.render(
-        <StrictMode>
-          <AppWrapper>
-            <App />
-          </AppWrapper>
-        </StrictMode>
+        <AppWrapper>
+          <App />
+        </AppWrapper>
       );
       console.log('%c[PUZZLE BOSS] Initial render complete', 'color: #00FFFF; font-weight: bold;');
     } catch (renderError) {
