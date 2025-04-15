@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 /**
@@ -23,7 +24,7 @@ const Loading = ({ size = "large", color = "aqua", fullScreen = false }) => {
   
   const spinnerClasses = `animate-spin rounded-full ${sizeClasses[size]} ${colorClasses[color]}`;
   
-  // Fix: Only use fullscreen container when fullScreen prop is true
+  // Only use fullscreen container when fullScreen prop is true
   if (fullScreen) {
     return (
       <div className="min-h-screen bg-puzzle-black flex items-center justify-center">

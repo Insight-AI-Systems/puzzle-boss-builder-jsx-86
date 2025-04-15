@@ -8,6 +8,33 @@ export interface PuzzleConfig {
 }
 
 /**
+ * Interface for puzzle piece position coordinates
+ */
+interface Position {
+  row: number;
+  col: number;
+}
+
+/**
+ * Interface for puzzle piece data
+ */
+interface PuzzlePiece {
+  id: number;
+  correctPosition: Position;
+  currentPosition: Position;
+}
+
+/**
+ * Interface for saved puzzle state
+ */
+export interface PuzzleSaveState {
+  pieces: PuzzlePiece[];
+  gridSize: number;
+  moveCount: number;
+  elapsedTime: number;
+}
+
+/**
  * Type for available sound effects in the puzzle
  */
 export type SoundEffectType = 'pick' | 'place' | 'success';
@@ -42,11 +69,24 @@ export const getPuzzleConfig = (): PuzzleConfig => {
 };
 
 /**
- * Plays a sound effect for the puzzle
+ * Saves puzzle configuration to localStorage
+ * @param {PuzzleConfig} config - The puzzle configuration to save
+ */
+export const savePuzzleConfig = (config: PuzzleConfig): void => {
+  try {
+    localStorage.setItem('puzzleConfig', JSON.stringify(config));
+  } catch (error) {
+    console.error('Error saving puzzle config:', error);
+  }
+};
+
+/**
+ * Plays a sound effect for the puzzle with volume control
  * @param {SoundEffectType} type - The type of sound to play
  * @param {boolean} muted - Whether sound is muted
+ * @param {number} volume - Volume level (0.0 to 1.0)
  */
-export const playSound = (type: SoundEffectType, muted: boolean): void => {
+export const playSound = (type: SoundEffectType, muted: boolean, volume: number = 0.3): void => {
   if (muted) return;
   
   if (!soundCache[type]) {
@@ -57,7 +97,6 @@ export const playSound = (type: SoundEffectType, muted: boolean): void => {
     };
     
     soundCache[type] = new Audio(sounds[type]);
-    soundCache[type]!.volume = 0.3;
   }
   
   try {
@@ -66,10 +105,11 @@ export const playSound = (type: SoundEffectType, muted: boolean): void => {
     
     if (sound.paused || sound.ended) {
       sound.currentTime = 0;
+      sound.volume = volume;
       sound.play().catch(error => console.log('Audio play prevented:', error));
     } else {
       const tempSound = sound.cloneNode() as HTMLAudioElement;
-      tempSound.volume = 0.3;
+      tempSound.volume = volume;
       tempSound.play().catch(error => console.log('Audio play prevented:', error));
     }
   } catch (error) {
@@ -88,4 +128,44 @@ export const preloadPuzzleImage = (imageUrl: string | undefined): HTMLImageEleme
   const img = new Image();
   img.src = imageUrl;
   return img;
+};
+
+/**
+ * Saves the current puzzle progress to localStorage
+ * @param {PuzzleSaveState} state - The current puzzle state to save
+ */
+export const savePuzzleProgress = (state: PuzzleSaveState): void => {
+  try {
+    localStorage.setItem('puzzleProgress', JSON.stringify(state));
+  } catch (error) {
+    console.error('Error saving puzzle progress:', error);
+  }
+};
+
+/**
+ * Loads saved puzzle progress from localStorage
+ * @returns {PuzzleSaveState | null} The saved puzzle state or null if none exists
+ */
+export const loadPuzzleProgress = (): PuzzleSaveState | null => {
+  try {
+    const savedState = localStorage.getItem('puzzleProgress');
+    if (savedState) {
+      return JSON.parse(savedState);
+    }
+  } catch (error) {
+    console.error('Error loading puzzle progress:', error);
+  }
+  
+  return null;
+};
+
+/**
+ * Clears saved puzzle progress from localStorage
+ */
+export const clearPuzzleProgress = (): void => {
+  try {
+    localStorage.removeItem('puzzleProgress');
+  } catch (error) {
+    console.error('Error clearing puzzle progress:', error);
+  }
 };
