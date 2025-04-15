@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import Loading from '@/components/ui/loading';
 
 /**
- * A bootstrap loader component that renders even if the main app fails
- * Provides detailed visibility into the application loading process with error handling
+ * An enhanced bootstrap loader component that renders even if the main app fails
+ * Provides detailed diagnostics and progressive loading capabilities
  */
 const BootstrapLoader = ({ 
   onComplete, 
