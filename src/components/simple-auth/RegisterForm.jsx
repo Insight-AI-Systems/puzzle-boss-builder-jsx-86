@@ -1,133 +1,77 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useSimpleAuth } from '@/contexts/simple-auth';
-import FormField from '@/components/form/FormField';
+import { useSimpleRegisterForm } from '@/hooks/useSimpleRegisterForm';
+import SimpleFormField from './SimpleFormField';
 import TermsCheckbox from '@/components/form/TermsCheckbox';
 
 const SimpleRegisterForm = () => {
-  const navigate = useNavigate();
-  const { signUp } = useSimpleAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [registerData, setRegisterData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
-  const [errors, setErrors] = useState({});
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setRegisterData({
-      ...registerData,
-      [name]: value
-    });
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: ''
-      });
-    }
-  };
-
-  const validateForm = () => {
-    const errors = {};
-    
-    if (!registerData.username) {
-      errors.username = 'Username is required';
-    }
-    
-    if (!registerData.email) {
-      errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(registerData.email)) {
-      errors.email = 'Email is invalid';
-    }
-    
-    if (!registerData.password) {
-      errors.password = 'Password is required';
-    } else if (registerData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
-    }
-    
-    if (registerData.password !== registerData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
-    }
-    
-    setErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-    
-    setIsSubmitting(true);
-    try {
-      const { error } = await signUp(
-        registerData.email,
-        registerData.password,
-        registerData.username
-      );
-      if (!error) {
-        navigate('/');
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    formData,
+    errors,
+    isSubmitting,
+    handleChange,
+    handleSubmit
+  } = useSimpleRegisterForm();
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <FormField
+      <SimpleFormField
         id="username"
         label="Username"
         name="username"
-        type="text"
-        value={registerData.username}
+        value={formData.username}
         onChange={handleChange}
         error={errors.username}
+        autoComplete="username"
       />
       
-      <FormField
-        id="email"
-        label="Email"
+      <SimpleFormField
+        id="register-email"
+        label="Email address"
         name="email"
         type="email"
-        value={registerData.email}
+        value={formData.email}
         onChange={handleChange}
         error={errors.email}
+        autoComplete="email"
       />
       
-      <FormField
-        id="password"
+      <SimpleFormField
+        id="register-password"
         label="Password"
         name="password"
         type="password"
-        value={registerData.password}
+        value={formData.password}
         onChange={handleChange}
         error={errors.password}
+        autoComplete="new-password"
       />
       
-      <FormField
+      <SimpleFormField
         id="confirmPassword"
         label="Confirm Password"
         name="confirmPassword"
         type="password"
-        value={registerData.confirmPassword}
+        value={formData.confirmPassword}
         onChange={handleChange}
         error={errors.confirmPassword}
+        autoComplete="new-password"
+      />
+      
+      <TermsCheckbox
+        checked={formData.agreeTerms}
+        error={errors.agreeTerms}
+        onCheckedChange={(checked) => 
+          handleChange({
+            target: { name: 'agreeTerms', checked, value: checked }
+          })
+        }
       />
       
       <Button 
         type="submit" 
-        className="w-full bg-cyan-400 text-black hover:bg-cyan-400/90"
+        className="w-full bg-puzzle-gold text-puzzle-black hover:bg-puzzle-gold/90"
         disabled={isSubmitting}
       >
         {isSubmitting ? 'Creating account...' : 'Create account'}
