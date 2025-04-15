@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import {
   Table,
@@ -14,10 +15,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Clock, MessageSquare } from "lucide-react";
+import { Calendar, Clock, MessageSquare, RefreshCw } from "lucide-react";
 import { AddProgressItemDialog } from "@/components/AddProgressItemDialog";
+import { syncProjectTasksToProgress } from "@/utils/syncTasks";
 
 const Progress = () => {
+  const queryClient = useQueryClient();
+  const [isSyncing, setIsSyncing] = useState(false);
+
   const { data: items, isLoading } = useQuery({
     queryKey: ['progress-items'],
     queryFn: async () => {
@@ -29,6 +34,7 @@ const Progress = () => {
             *
           )
         `)
+        .order('priority', { ascending: false })
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -62,6 +68,31 @@ const Progress = () => {
       title: "Comment added",
       description: "Your comment has been added successfully.",
     });
+    
+    // Refresh data after adding comment
+    queryClient.invalidateQueries({ queryKey: ['progress-items'] });
+  };
+  
+  const handleSyncTasks = async () => {
+    setIsSyncing(true);
+    try {
+      const success = await syncProjectTasksToProgress();
+      if (success) {
+        toast({
+          title: "Tasks synchronized",
+          description: "Project tasks have been synchronized with progress items.",
+        });
+        queryClient.invalidateQueries({ queryKey: ['progress-items'] });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Sync failed",
+          description: "Failed to synchronize tasks. Please try again.",
+        });
+      }
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   if (isLoading) {
@@ -79,7 +110,18 @@ const Progress = () => {
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-game text-puzzle-aqua">Project Progress Tracker</h1>
-          <AddProgressItemDialog />
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10"
+              onClick={handleSyncTasks}
+              disabled={isSyncing}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              Sync Project Tasks
+            </Button>
+            <AddProgressItemDialog />
+          </div>
         </div>
         
         <Card className="bg-puzzle-black/50 border-puzzle-aqua/20">
