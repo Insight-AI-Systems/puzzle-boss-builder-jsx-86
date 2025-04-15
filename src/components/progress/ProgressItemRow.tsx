@@ -17,11 +17,18 @@ export const ProgressItemRow: React.FC<ProgressItemRowProps> = ({
 }) => {
   return (
     <TableRow 
-      className="border-puzzle-aqua/20 cursor-pointer"
+      className="border-puzzle-aqua/20 cursor-pointer hover:bg-puzzle-aqua/5"
       onClick={() => onToggleComments(item.id)}
       data-state={isExpanded ? 'expanded' : 'collapsed'}
     >
-      <TableCell className="text-puzzle-white font-medium">{item.title}</TableCell>
+      <TableCell className="text-puzzle-white font-medium">
+        <div>
+          {item.title}
+          {item.description && (
+            <p className="text-sm text-puzzle-white/70 mt-1">{item.description}</p>
+          )}
+        </div>
+      </TableCell>
       <TableCell className="text-puzzle-white">
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
           ${item.status === 'completed' ? 'bg-green-100 text-green-800' : 

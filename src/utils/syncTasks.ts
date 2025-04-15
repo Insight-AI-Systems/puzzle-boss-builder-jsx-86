@@ -63,6 +63,7 @@ export const syncProjectTasksToProgress = async () => {
             title: task.name,
             status,
             priority,
+            description: task.description // Add the task description
           });
       } else {
         // Update existing item if task status changed
@@ -84,6 +85,7 @@ export const syncProjectTasksToProgress = async () => {
       }
     }
     
+    console.log(`Synchronized ${sortedTasks.length} tasks to progress items`);
     return true;
   } catch (error) {
     console.error("Error syncing tasks:", error);
