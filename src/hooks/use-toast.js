@@ -1,6 +1,4 @@
 
-// Create a standalone implementation of the toast hook
-
 import * as React from "react";
 
 // Create a context for the toast system
@@ -45,9 +43,8 @@ function useToast() {
   return context;
 }
 
-// Create a standalone toast function that uses a default provider
-// This is a convenience method for one-off toasts without the hook
-const toast = function(props) {
+// Create a standalone toast function that can be used without the hook
+const toast = (props) => {
   // For standalone usage without context, log to console as fallback
   console.log("Toast:", props.title || props.description || props);
   
@@ -65,6 +62,6 @@ const toast = function(props) {
   }
   
   return null;
-}
+};
 
 export { useToast, toast, ToastProvider };

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useSimpleAuth } from '@/contexts/simple-auth';
 import { validateRegisterForm } from '@/utils/validation/registerValidation';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export const useSimpleRegisterForm = () => {
   const { signUp } = useSimpleAuth();
