@@ -2,6 +2,7 @@
 import { ProjectTask, ProjectTest } from '../types/projectTypes';
 
 export const getInitialTasks = (): ProjectTask[] => [
+  // Phase 1: Core Authentication and User Management
   {
     id: 'auth-setup',
     phase: 1,
@@ -13,8 +14,8 @@ export const getInitialTasks = (): ProjectTask[] => [
   {
     id: 'user-profiles',
     phase: 1,
-    name: 'User Profiles & Achievements',
-    description: 'Create profile customization, achievement badges, and player history tracking',
+    name: 'User Profiles & Roles',
+    description: 'Implement profile customization, user roles (Super Admin, Admin, Category Managers, etc)',
     status: 'pending',
     dependsOn: ['auth-setup']
   },
@@ -22,21 +23,31 @@ export const getInitialTasks = (): ProjectTask[] => [
     id: 'puzzle-engine',
     phase: 1,
     name: 'Core Puzzle Engine',
-    description: 'Implement timed puzzle completion and fair competition mechanics',
+    description: 'Implement timed jigsaw puzzle completion with fair competition mechanics',
     status: 'pending'
   },
   {
-    id: 'category-system',
+    id: 'puzzle-gameplay',
+    phase: 1,
+    name: 'Puzzle Gameplay Features',
+    description: 'Add pause functionality, mobile responsiveness, and difficulty levels',
+    status: 'pending',
+    dependsOn: ['puzzle-engine']
+  },
+  
+  // Phase 2: Prize and Payment Systems
+  {
+    id: 'prize-categories',
     phase: 2,
-    name: 'Prize Categories',
-    description: 'Set up 25 prize categories with proper organization and management',
+    name: 'Prize Categories Setup',
+    description: 'Configure 25 prize categories including Smartphones, Laptops, Gaming Consoles, etc',
     status: 'pending'
   },
   {
     id: 'credit-system',
     phase: 2,
-    name: 'Credit System',
-    description: 'Implement credit/token purchase system with Stripe integration',
+    name: 'Credit/Token System',
+    description: 'Implement credit purchase system with Stripe integration',
     status: 'pending',
     testIds: ['test-payments']
   },
@@ -49,35 +60,88 @@ export const getInitialTasks = (): ProjectTask[] => [
     dependsOn: ['credit-system']
   },
   {
-    id: 'prize-management',
-    phase: 3,
-    name: 'Prize Management',
-    description: 'Implement prize fulfillment workflow and winner verification system',
+    id: 'referral-system',
+    phase: 2,
+    name: 'Referral Program',
+    description: 'Implement referral tracking and rewards system',
     status: 'pending',
-    dependsOn: ['category-system']
+    dependsOn: ['membership-tiers']
+  },
+  
+  // Phase 3: Prize and Content Management
+  {
+    id: 'prize-fulfillment',
+    phase: 3,
+    name: 'Prize Management System',
+    description: 'Create winner verification and prize fulfillment workflow',
+    status: 'pending',
+    dependsOn: ['prize-categories']
   },
   {
     id: 'content-management',
     phase: 3,
-    name: 'Content Management',
-    description: 'Create puzzle upload, category organization, and promotion scheduling',
+    name: 'Content Management System',
+    description: 'Implement puzzle upload, category organization, and promotion scheduling',
     status: 'pending'
   },
   {
-    id: 'analytics-dashboard',
+    id: 'seasonal-content',
+    phase: 3,
+    name: 'Seasonal Content Planning',
+    description: 'Set up system for managing seasonal puzzles and promotional content',
+    status: 'pending',
+    dependsOn: ['content-management']
+  },
+  
+  // Phase 4: Admin and Analytics
+  {
+    id: 'admin-dashboard',
     phase: 4,
-    name: 'Analytics System',
-    description: 'Implement user engagement metrics, revenue tracking, and puzzle popularity stats',
+    name: 'Admin Dashboard',
+    description: 'Create interfaces for all admin roles with role-based access control',
+    status: 'pending',
+    testIds: ['test-admin-access'],
+    dependsOn: ['user-profiles']
+  },
+  {
+    id: 'analytics-system',
+    phase: 4,
+    name: 'Analytics Dashboard',
+    description: 'Implement engagement metrics, revenue tracking, and puzzle popularity stats',
     status: 'pending',
     testIds: ['test-analytics']
   },
   {
-    id: 'admin-roles',
+    id: 'leaderboard-system',
     phase: 4,
-    name: 'Admin Dashboard',
-    description: 'Create interfaces for all admin roles (Super Admin, Category Managers, etc)',
+    name: 'Real-time Leaderboards',
+    description: 'Create real-time leaderboard mechanics for puzzle competitions',
     status: 'pending',
-    testIds: ['test-admin-access']
+    dependsOn: ['puzzle-engine']
+  },
+  
+  // Phase 5: Legal and Compliance
+  {
+    id: 'age-verification',
+    phase: 5,
+    name: 'Age Verification System',
+    description: 'Implement age verification based on local regulations',
+    status: 'pending'
+  },
+  {
+    id: 'legal-documentation',
+    phase: 5,
+    name: 'Legal Documentation',
+    description: 'Set up terms of service, privacy policy, and prize claim documentation',
+    status: 'pending'
+  },
+  {
+    id: 'fair-play-monitoring',
+    phase: 5,
+    name: 'Fair Play System',
+    description: 'Implement fair play monitoring and anti-cheat measures',
+    status: 'pending',
+    dependsOn: ['puzzle-engine']
   }
 ];
 
@@ -85,7 +149,7 @@ export const getInitialTests = (): ProjectTest[] => [
   {
     id: 'test-auth',
     name: 'Authentication Flow Test',
-    description: 'Verify user registration and login processes',
+    description: 'Verify user registration, login processes, and role assignment',
     run: async () => {
       console.log('Running auth flow test...');
       return true;
