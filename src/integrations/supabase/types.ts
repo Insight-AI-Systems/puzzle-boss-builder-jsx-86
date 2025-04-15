@@ -39,6 +39,65 @@ export type Database = {
         }
         Relationships: []
       }
+      progress_comments: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          progress_item_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          progress_item_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          progress_item_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "progress_comments_progress_item_id_fkey"
+            columns: ["progress_item_id"]
+            isOneToOne: false
+            referencedRelation: "progress_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      progress_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          priority: string
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
