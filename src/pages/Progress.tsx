@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { Calendar, Clock, MessageSquare } from "lucide-react";
+import { AddProgressItemDialog } from "@/components/AddProgressItemDialog";
 
 const Progress = () => {
   const { data: items, isLoading } = useQuery({
@@ -79,9 +79,7 @@ const Progress = () => {
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-game text-puzzle-aqua">Project Progress Tracker</h1>
-          <Button className="bg-puzzle-aqua text-puzzle-black hover:bg-puzzle-aqua/90">
-            Add New Item
-          </Button>
+          <AddProgressItemDialog />
         </div>
         
         <Card className="bg-puzzle-black/50 border-puzzle-aqua/20">
@@ -191,4 +189,3 @@ const Progress = () => {
 };
 
 export default Progress;
-
