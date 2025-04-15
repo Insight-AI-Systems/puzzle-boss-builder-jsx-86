@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppMode } from '@/contexts/app-mode';
-import diagnosticConfig from '@/config/diagnosticSettings';
 
 /**
  * A component that displays diagnostic information and logs
