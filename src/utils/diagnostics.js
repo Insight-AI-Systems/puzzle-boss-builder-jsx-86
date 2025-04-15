@@ -12,6 +12,7 @@ export const diagnostics = {
   },
 
   checkEnvironment() {
+    // Safely check for React version
     let reactVersion = 'unknown';
     try {
       // Safe check for React

@@ -3,6 +3,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import EmergencyApp from './EmergencyApp.jsx';
+import StandaloneModeHandler from './components/StandaloneModeHandler.jsx';
 import './index.css';
 
 console.log('[EMERGENCY] Starting emergency application initialization', new Date().toISOString());
@@ -78,6 +79,27 @@ window.emergencyRecovery = {
   }
 };
 
+// Handle different application modes
+const determineAppMode = () => {
+  // Get URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const isStandalone = urlParams.get('standalone') === 'true';
+  const isMinimal = urlParams.get('minimal') === 'true';
+  const isRecovery = urlParams.get('recovery') === 'true' || urlParams.get('debug') === 'true';
+  
+  console.log('[EMERGENCY] App mode detection:', { isStandalone, isMinimal, isRecovery });
+  
+  // Force emergency mode if there are specific error parameters
+  const forceEmergency = urlParams.get('emergency') === 'true' || urlParams.get('force-emergency') === 'true';
+  
+  return {
+    isStandalone,
+    isMinimal,
+    isRecovery,
+    forceEmergency
+  };
+};
+
 // Main app execution in try/catch
 try {
   console.log('[EMERGENCY] Looking for root element...');
@@ -87,11 +109,26 @@ try {
     throw new Error('Root element not found in DOM');
   }
   
-  console.log('[EMERGENCY] Creating root and rendering emergency app...');
+  // Determine which mode to run in
+  const { isStandalone, isMinimal, isRecovery, forceEmergency } = determineAppMode();
+  
+  console.log('[EMERGENCY] Creating root and rendering application...');
   try {
     const root = createRoot(rootElement);
-    root.render(<EmergencyApp />);
-    console.log('[EMERGENCY] Emergency app rendered successfully');
+    
+    // Decide what to render based on mode
+    if (forceEmergency) {
+      console.log('[EMERGENCY] Forcing emergency mode due to URL parameter');
+      root.render(<EmergencyApp />);
+    } else if (isStandalone) {
+      console.log('[EMERGENCY] Rendering in standalone mode');
+      root.render(<StandaloneModeHandler />);
+    } else {
+      console.log('[EMERGENCY] Rendering emergency app as default recovery path');
+      root.render(<EmergencyApp />);
+    }
+    
+    console.log('[EMERGENCY] Application rendered successfully');
   } catch (renderError) {
     console.error('[EMERGENCY] Failed to render with createRoot:', renderError);
     
