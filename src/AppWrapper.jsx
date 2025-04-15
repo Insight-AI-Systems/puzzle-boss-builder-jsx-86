@@ -78,13 +78,19 @@ const AppWrapper = ({ children }) => {
     }
     
     // Ready to render the application - use a very short delay
-    setTimeout(() => {
+    const readyTimer = setTimeout(() => {
       logInit('Application ready to render');
-      if (initTimeout) clearTimeout(initTimeout);
+      if (initTimeout) {
+        clearTimeout(initTimeout);
+        setInitTimeout(null);
+      }
       setIsLoading(false);
       setAppState('ready');
     }, 100); // Very short delay to ensure DOM updates
     
+    return () => {
+      clearTimeout(readyTimer);
+    };
   }, [children, initTimeout]);
 
   // Global error handler for runtime errors
@@ -101,16 +107,20 @@ const AppWrapper = ({ children }) => {
     };
     
     window.addEventListener('error', handleGlobalError);
-    window.addEventListener('unhandledrejection', (event) => {
+    
+    const handleUnhandledRejection = (event) => {
       logInit(`Unhandled promise rejection: ${event.reason?.message || 'Unknown promise error'}`);
       setError(new Error(`Promise error: ${event.reason?.message || 'Unknown promise error'}`));
       setAppMessage('Unhandled promise rejection');
       setAppState('promise-error');
-    });
+    };
+    
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
     
     // Monitor DOM changes to detect rendering issues
+    let observer;
     try {
-      const observer = new MutationObserver((mutations) => {
+      observer = new MutationObserver((mutations) => {
         if (appState === 'initializing' || appState === 'ready') {
           logInit(`DOM mutation detected: ${mutations.length} changes`);
         }
@@ -120,19 +130,15 @@ const AppWrapper = ({ children }) => {
         childList: true,
         subtree: true
       });
-      
-      return () => {
-        window.removeEventListener('error', handleGlobalError);
-        window.removeEventListener('unhandledrejection', handleGlobalError);
-        observer.disconnect();
-      };
     } catch (err) {
       logInit(`Error setting up observers: ${err.message}`);
-      return () => {
-        window.removeEventListener('error', handleGlobalError);
-        window.removeEventListener('unhandledrejection', handleGlobalError);
-      };
     }
+    
+    return () => {
+      window.removeEventListener('error', handleGlobalError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+      if (observer) observer.disconnect();
+    };
   }, [appState]);
 
   // If there's an error, show it using our Debug component with a fallback UI

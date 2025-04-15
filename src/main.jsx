@@ -22,7 +22,7 @@ const envInfo = {
 console.log('[PUZZLE BOSS] Environment:', envInfo);
 
 // Define a timeout to detect stalled loading
-const loadingTimeout = setTimeout(() => {
+let loadingTimeout = setTimeout(() => {
   console.error('[PUZZLE BOSS] Loading timeout reached - Application may be stalled');
   // Try to identify why we might be stalled
   console.log('[PUZZLE BOSS] Current DOM state:', {
@@ -49,15 +49,20 @@ try {
     // Wrap rendering in another try/catch for more specific error logging
     try {
       root.render(
-        <AppWrapper>
-          <App />
-        </AppWrapper>
+        <StrictMode>
+          <AppWrapper>
+            <App />
+          </AppWrapper>
+        </StrictMode>
       );
       console.log('%c[PUZZLE BOSS] Initial render complete', 'color: #00FFFF; font-weight: bold;', new Date().toISOString());
       clearTimeout(loadingTimeout); // Clear the timeout as render was successful
+      loadingTimeout = null;
     } catch (renderError) {
       console.error('[PUZZLE BOSS] Error during render:', renderError);
       clearTimeout(loadingTimeout); // Clear the timeout as we already have an error
+      loadingTimeout = null;
+      
       // Show a more visible error message
       rootElement.innerHTML = `
         <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000000; color: #FF0000; font-family: sans-serif; padding: 20px; text-align: center;">
@@ -73,6 +78,8 @@ try {
   } else {
     console.error('[PUZZLE BOSS] Critical: Root element not found in DOM');
     clearTimeout(loadingTimeout); // Clear the timeout as we already have an error
+    loadingTimeout = null;
+    
     document.body.innerHTML = `
       <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000000; color: #FF0000; font-family: sans-serif; padding: 20px; text-align: center;">
         <div>
@@ -87,6 +94,8 @@ try {
 } catch (error) {
   console.error('[PUZZLE BOSS] Fatal initialization error:', error);
   clearTimeout(loadingTimeout); // Clear the timeout as we already have an error
+  loadingTimeout = null;
+  
   // Try to display an error message on the page
   try {
     document.body.innerHTML = `

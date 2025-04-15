@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 /**
@@ -15,7 +16,7 @@ const Loading = ({
   fullScreen = false,
   message = "Loading..." 
 }) => {
-  console.log('[Loading] Rendering loading component', { size, color, fullScreen });
+  console.log('[Loading] Rendering loading component', { size, color, fullScreen, message });
   
   const sizeClasses = {
     small: "h-8 w-8 border-2",

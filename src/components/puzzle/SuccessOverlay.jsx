@@ -4,6 +4,9 @@ import { Check, Trophy, Star } from 'lucide-react';
 
 /**
  * Success overlay displayed when puzzle is completed
+ * @param {Object} props - Component properties
+ * @param {string} props.completionTime - The time taken to complete the puzzle
+ * @param {number} props.moveCount - The number of moves taken to complete the puzzle
  * @returns {JSX.Element} Success overlay component
  */
 const SuccessOverlay = memo(({ completionTime, moveCount }) => {
@@ -33,7 +36,7 @@ const SuccessOverlay = memo(({ completionTime, moveCount }) => {
       </div>
       
       {/* Stats summary */}
-      {(completionTime || moveCount) && (
+      {(completionTime || moveCount !== undefined) && (
         <div className="mt-4 text-white animate-fade-in opacity-0" style={{ animationDelay: "0.3s", animationFillMode: "forwards" }}>
           {completionTime && (
             <div className="text-center mb-1">
