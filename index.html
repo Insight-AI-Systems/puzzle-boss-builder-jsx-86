@@ -19,10 +19,29 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000000; color: #00FFFF; font-family: sans-serif;">
+        <div style="text-align: center;">
+          <h1>Loading The Puzzle Boss...</h1>
+          <p>If this message persists, please check the console for errors.</p>
+        </div>
+      </div>
+    </div>
     <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
     <script>
-      console.log('Initializing application...');
+      console.log('HTML Initialization started at:', new Date().toISOString());
+      
+      // Add global error handler
+      window.onerror = function(message, source, lineno, colno, error) {
+        console.error('Global error caught:', message, 'at', source, lineno, colno);
+        console.error('Error object:', error);
+        return false;
+      };
+      
+      // Add unhandled promise rejection handler
+      window.addEventListener('unhandledrejection', function(event) {
+        console.error('Unhandled promise rejection:', event.reason);
+      });
     </script>
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.jsx"></script>
