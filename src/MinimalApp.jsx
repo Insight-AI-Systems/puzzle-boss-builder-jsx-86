@@ -1,11 +1,37 @@
+
 import React, { useState, useEffect } from 'react';
-import { useAppMode } from '@/contexts/app-mode';
 import ReactErrorBoundary from './components/ReactErrorBoundary';
 import ReactTester from './components/ReactTester';
 import DiagnosticLog from './components/DiagnosticLog';
 
-const MinimalApp = () => {
-  const { toggleMode } = useAppMode();
+// Helper function to safely use the context
+const safelyUseAppMode = () => {
+  try {
+    // Dynamically import to avoid issues if the module fails
+    const { useAppMode } = require('@/contexts/app-mode');
+    return useAppMode();
+  } catch (error) {
+    console.warn('AppMode context not available, using fallback mode', error);
+    // Provide a fallback implementation
+    return {
+      isMinimal: true,
+      toggleMode: () => {
+        console.log('Mode toggle attempted but context not available');
+        // Attempt to reload with full mode
+        window.location.href = window.location.pathname.replace(/[?&]minimal=true/, '');
+      }
+    };
+  }
+};
+
+const MinimalApp = ({ isStandalone = false }) => {
+  // Only try to use the context if not in standalone mode
+  const appMode = isStandalone
+    ? { 
+        isMinimal: true, 
+        toggleMode: () => window.location.href = window.location.pathname 
+      }
+    : safelyUseAppMode();
   
   // Simple state to verify React hooks are working
   const [count, setCount] = useState(0);
@@ -84,15 +110,20 @@ const MinimalApp = () => {
   // Get React version for diagnostics
   const reactVersion = React.version || 'unknown';
   
+  // Determine button text based on standalone mode
+  const buttonText = isStandalone 
+    ? "Return to Normal App" 
+    : "Switch to Full Mode";
+  
   return (
     <div className="min-h-screen bg-puzzle-black text-white flex flex-col items-center justify-center p-4">
       <div className="flex justify-between items-center w-full max-w-4xl mb-4">
         <h1 className="text-4xl font-bold text-puzzle-aqua">The Puzzle Boss</h1>
         <button
-          onClick={toggleMode}
+          onClick={appMode.toggleMode}
           className="px-4 py-2 bg-puzzle-burgundy text-white rounded hover:bg-puzzle-burgundy/80"
         >
-          Switch to Full Mode
+          {buttonText}
         </button>
       </div>
       
@@ -173,6 +204,11 @@ const MinimalApp = () => {
           {/* React feature tests */}
           <ReactTester />
         </ReactErrorBoundary>
+      </div>
+      
+      {/* Add the diagnostic log directly in the component */}
+      <div className="w-full max-w-4xl mt-4">
+        <DiagnosticLog maxEntries={20} />
       </div>
     </div>
   );

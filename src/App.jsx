@@ -4,8 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
-import { AppModeProvider } from '@/contexts/app-mode';
-import { useAppMode } from '@/contexts/app-mode';
+import { AppModeProvider, useAppMode } from '@/contexts/app-mode';
 import MinimalApp from './MinimalApp';
 import SimpleHome from './pages/simple/Home';
 import SimpleAbout from './pages/simple/About';
@@ -37,6 +36,15 @@ const AppRouter = () => {
 };
 
 const App = () => {
+  // Check for standalone mode from URL parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const isStandalone = urlParams.get('standalone') === 'true';
+  
+  // In standalone mode, render MinimalApp directly without contexts
+  if (isStandalone) {
+    return <MinimalApp isStandalone={true} />;
+  }
+
   return (
     <ErrorBoundary>
       <BrowserRouter>

@@ -3,6 +3,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import MinimalApp from './MinimalApp.jsx';
+import { AppModeProvider } from './contexts/app-mode';
 import './index.css';
 
 // Add detailed console logs to track initialization
@@ -60,12 +61,16 @@ try {
   
   console.log('[MINIMAL APP] Creating root and rendering minimal app...');
   
-  // Simplest possible render without any wrappers
+  // Wrap the app with AppModeProvider to ensure context is available
   const root = createRoot(rootElement);
   
-  console.log('[MINIMAL APP] Root created, about to render...');
+  console.log('[MINIMAL APP] Root created, about to render with AppModeProvider...');
   
-  root.render(<MinimalApp />);
+  root.render(
+    <AppModeProvider>
+      <MinimalApp />
+    </AppModeProvider>
+  );
   
   console.log('[MINIMAL APP] Render call completed');
   
@@ -92,6 +97,11 @@ try {
           <button onclick="window.location.reload()" style="background: #00FFFF; color: #000000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
             Reload Page
           </button>
+          <div style="margin-top: 15px;">
+            <a href="?standalone=true" style="color: #00FFFF; text-decoration: underline;">
+              Try Standalone Mode (without contexts)
+            </a>
+          </div>
         </div>
       </div>
     `;
