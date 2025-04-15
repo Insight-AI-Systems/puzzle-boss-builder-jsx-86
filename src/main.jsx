@@ -16,7 +16,7 @@ const startTime = performance.now();
 // Try to get diagnostic settings from local storage
 let diagnosticSettings = {
   enabled: true,
-  timeout: 5000,
+  timeout: 10000, // Increased timeout to 10 seconds
   showWarnings: true
 };
 
@@ -29,11 +29,14 @@ try {
   console.error('[MINIMAL APP] Error loading diagnostic settings:', error);
 }
 
-// Global error handler for uncaught exceptions
+// Enhanced global error handler for uncaught exceptions with line numbers
 window.onerror = function(message, source, lineno, colno, error) {
   console.error('[MINIMAL APP] Global error:', {message, source, lineno, colno, errorObject: error});
   
-  // Try to display error on screen
+  // Extract filename from source URL for cleaner display
+  const filename = source ? source.split('/').pop() : 'unknown';
+  
+  // Try to display error on screen with improved information
   try {
     const rootEl = document.getElementById('root');
     if (rootEl) {
@@ -41,12 +44,17 @@ window.onerror = function(message, source, lineno, colno, error) {
         <div style="padding: 20px; background: #800020; color: white; font-family: sans-serif; border-radius: 5px; margin: 20px;">
           <h2>JavaScript Error Detected</h2>
           <p><strong>Message:</strong> ${message}</p>
-          <p><strong>Source:</strong> ${source}</p>
-          <p><strong>Line/Column:</strong> ${lineno}:${colno}</p>
-          <pre style="background: rgba(0,0,0,0.3); padding: 10px; overflow: auto; max-height: 200px; margin-top: 10px;">${error?.stack || 'No stack trace available'}</pre>
-          <button onclick="location.reload()" style="background: #00FFFF; color: black; border: none; padding: 10px 15px; margin-top: 10px; cursor: pointer; border-radius: 5px;">
-            Reload Page
-          </button>
+          <p><strong>File:</strong> ${filename}</p>
+          <p><strong>Location:</strong> Line ${lineno}, Column ${colno}</p>
+          <pre style="background: rgba(0,0,0,0.3); padding: 10px; overflow: auto; max-height: 200px; margin-top: 10px; white-space: pre-wrap;">${error?.stack || 'No stack trace available'}</pre>
+          <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button onclick="location.reload()" style="background: #00FFFF; color: black; border: none; padding: 10px 15px; cursor: pointer; border-radius: 5px;">
+              Reload Page
+            </button>
+            <button onclick="location.href='?standalone=true'" style="background: #FFD700; color: black; border: none; padding: 10px 15px; cursor: pointer; border-radius: 5px;">
+              Try Standalone Mode
+            </button>
+          </div>
         </div>
       `;
     }
@@ -123,21 +131,25 @@ try {
 } catch (error) {
   console.error('[MINIMAL APP] Critical error during initialization:', error);
   
-  // Try to show error on screen
+  // Try to show error on screen with improved error details
   try {
     document.body.innerHTML = `
       <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000000; color: #FF0000; font-family: sans-serif; padding: 20px; text-align: center;">
         <div>
           <h1 style="color: #FF0000; margin-bottom: 20px;">The Puzzle Boss - Critical Error</h1>
           <p style="margin-bottom: 15px;">${error.message || 'Unknown initialization error'}</p>
-          <code style="display: block; background: #222; padding: 15px; border-radius: 5px; margin: 15px 0; white-space: pre-wrap; text-align: left; max-height: 200px; overflow: auto;">${error.stack || 'No stack trace available'}</code>
-          <button onclick="window.location.reload()" style="background: #00FFFF; color: #000000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
-            Reload Page
-          </button>
-          <div style="margin-top: 15px;">
-            <a href="?standalone=true" style="color: #00FFFF; text-decoration: underline;">
-              Try Standalone Mode (without contexts)
-            </a>
+          <div style="background: #222; padding: 15px; border-radius: 5px; margin: 15px 0; text-align: left; max-height: 200px; overflow: auto;">
+            <p><strong>Error Type:</strong> ${error.name || 'Unknown'}</p>
+            <p><strong>Stack Trace:</strong></p>
+            <code style="display: block; white-space: pre-wrap;">${error.stack || 'No stack trace available'}</code>
+          </div>
+          <div style="display: flex; justify-content: center; gap: 10px; margin-top: 15px;">
+            <button onclick="window.location.reload()" style="background: #00FFFF; color: #000000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+              Reload Page
+            </button>
+            <button onclick="window.location.href='?standalone=true'" style="background: #FFD700; color: #000000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+              Try Standalone Mode
+            </button>
           </div>
         </div>
       </div>
@@ -161,7 +173,7 @@ const renderTimeout = setTimeout(() => {
   const rootContent = document.getElementById('root')?.innerHTML || 'Empty';
   console.log('[MINIMAL APP] Current root content:', rootContent);
   
-  // Try to display a message
+  // Try to display a message with dismiss option
   try {
     const rootEl = document.getElementById('root');
     if (rootEl && !rootEl.querySelector('.minimal-app-timeout-message')) {
@@ -170,8 +182,10 @@ const renderTimeout = setTimeout(() => {
           <p style="margin: 0 0 8px 0;"><strong>Warning:</strong> Rendering timeout reached.</p>
           <p style="margin: 0 0 8px 0; font-size: 0.9em;">Check console for details</p>
           <div style="display: flex; justify-content: space-between; gap: 8px;">
-            <button onclick="this.parentNode.parentNode.remove()" style="background: #800020; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-size: 0.9em;">
-              Dismiss
+            <button 
+              onclick="this.parentNode.parentNode.remove(); localStorage.setItem('dismissed-warnings', JSON.stringify([...JSON.parse(localStorage.getItem('dismissed-warnings') || '[]'), 'render-timeout']))" 
+              style="background: #800020; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-size: 0.9em;">
+              Don't Show Again
             </button>
             <button onclick="location.reload()" style="background: #00FFFF; color: black; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-size: 0.9em;">
               Reload
@@ -183,7 +197,7 @@ const renderTimeout = setTimeout(() => {
   } catch (e) {
     console.error('[MINIMAL APP] Failed to add timeout message:', e);
   }
-}, diagnosticSettings.timeout || 5000); // Use configured timeout or default to 5000ms
+}, diagnosticSettings.timeout || 10000); // Use configured timeout or default to 10 seconds
 
 // Expose a cleanup function to be called when rendering is complete
 window.__clearMinimalAppTimeout = () => {
