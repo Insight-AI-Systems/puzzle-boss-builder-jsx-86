@@ -6,6 +6,10 @@ import './index.css';
 
 // Add detailed console logs to track initialization
 console.log('[MINIMAL APP] Starting application initialization', new Date().toISOString());
+console.log('[MINIMAL APP] React version:', React?.version || 'unknown');
+
+// Track performance
+const startTime = performance.now();
 
 // Global error handler for uncaught exceptions
 window.onerror = function(message, source, lineno, colno, error) {
@@ -21,6 +25,7 @@ window.onerror = function(message, source, lineno, colno, error) {
           <p><strong>Message:</strong> ${message}</p>
           <p><strong>Source:</strong> ${source}</p>
           <p><strong>Line/Column:</strong> ${lineno}:${colno}</p>
+          <pre style="background: rgba(0,0,0,0.3); padding: 10px; overflow: auto; max-height: 200px; margin-top: 10px;">${error?.stack || 'No stack trace available'}</pre>
           <button onclick="location.reload()" style="background: #00FFFF; color: black; border: none; padding: 10px 15px; margin-top: 10px; cursor: pointer; border-radius: 5px;">
             Reload Page
           </button>
@@ -33,6 +38,15 @@ window.onerror = function(message, source, lineno, colno, error) {
   
   return false;
 };
+
+// Enhanced unhandled promise rejection handler
+window.addEventListener('unhandledrejection', function(event) {
+  console.error('[MINIMAL APP] Unhandled promise rejection:', event.reason);
+  // Try to log it to the diagnostic log if available
+  if (window.__addDiagnosticLog) {
+    window.__addDiagnosticLog(`Unhandled promise rejection: ${event.reason?.message || 'Unknown promise error'}`);
+  }
+});
 
 // Execute render in a try/catch block
 try {
@@ -47,9 +61,22 @@ try {
   
   // Simplest possible render without any wrappers
   const root = createRoot(rootElement);
+  
+  console.log('[MINIMAL APP] Root created, about to render...');
+  
   root.render(<MinimalApp />);
   
   console.log('[MINIMAL APP] Render call completed');
+  
+  // Log performance metrics
+  const renderTime = performance.now() - startTime;
+  console.log(`[MINIMAL APP] Initial render took ${renderTime.toFixed(2)}ms`);
+  
+  // Clear the initialization timeout
+  if (window.__clearMinimalAppTimeout) {
+    window.__clearMinimalAppTimeout();
+  }
+  
 } catch (error) {
   console.error('[MINIMAL APP] Critical error during initialization:', error);
   
