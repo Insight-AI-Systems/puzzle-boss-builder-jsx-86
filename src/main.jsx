@@ -5,65 +5,83 @@ import App from './App.jsx';
 import AppWrapper from './AppWrapper.jsx';
 import './index.css';
 
-// Enhanced initialization logging
-console.log('Main.jsx initialization started at:', new Date().toISOString());
-console.log('Environment info:', {
+// More detailed initialization logging
+console.log('%c[PUZZLE BOSS] Initializing application', 'color: #00FFFF; font-weight: bold;');
+console.log('[PUZZLE BOSS] Environment:', {
+  NODE_ENV: process.env.NODE_ENV,
   userAgent: navigator.userAgent,
   viewport: {
     width: window.innerWidth,
     height: window.innerHeight
-  }
+  },
+  timestamp: new Date().toISOString()
 });
 
 // Try/catch block to catch initialization errors
 try {
-  console.log('Searching for root element...');
+  console.log('[PUZZLE BOSS] Searching for root element...');
   const rootElement = document.getElementById('root');
 
   if (rootElement) {
-    console.log('Root element found, mounting app...');
+    console.log('[PUZZLE BOSS] Root element found, checking current state:', rootElement.innerHTML);
     
-    // Check if anything is already rendered in the root
-    console.log('Root element current content:', rootElement.innerHTML);
+    // Create and render the app with explicit error handling
+    console.log('[PUZZLE BOSS] Creating root and rendering app...');
     
-    // Create and render the app
     const root = createRoot(rootElement);
-    console.log('Root created, rendering app...');
     
-    root.render(
-      <StrictMode>
-        <AppWrapper>
-          <App />
-        </AppWrapper>
-      </StrictMode>
-    );
-    
-    console.log('App rendered successfully');
+    // Wrap rendering in another try/catch for more specific error logging
+    try {
+      root.render(
+        <StrictMode>
+          <AppWrapper>
+            <App />
+          </AppWrapper>
+        </StrictMode>
+      );
+      console.log('%c[PUZZLE BOSS] Initial render complete', 'color: #00FFFF; font-weight: bold;');
+    } catch (renderError) {
+      console.error('[PUZZLE BOSS] Error during render:', renderError);
+      // Show a more visible error message
+      rootElement.innerHTML = `
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000000; color: #FF0000; font-family: sans-serif; padding: 20px; text-align: center;">
+          <div>
+            <h1 style="color: #FF0000; margin-bottom: 20px;">The Puzzle Boss - Render Error</h1>
+            <p style="margin-bottom: 15px;">Error during rendering: ${renderError.message || 'Unknown render error'}</p>
+            <code style="display: block; background: #222; padding: 15px; border-radius: 5px; margin: 15px 0; white-space: pre-wrap; text-align: left; max-height: 200px; overflow: auto;">${renderError.stack || 'No stack trace available'}</code>
+            <button onclick="window.location.reload()" style="background: #00FFFF; color: #000000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">Reload Page</button>
+          </div>
+        </div>
+      `;
+    }
   } else {
-    console.error('Failed to find root element in DOM');
+    console.error('[PUZZLE BOSS] Critical: Root element not found in DOM');
     document.body.innerHTML = `
-      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000000; color: #FF0000; font-family: sans-serif;">
-        <div style="text-align: center;">
-          <h1>Error Loading The Puzzle Boss</h1>
-          <p>Could not find the root element. Please check the console for details.</p>
+      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000000; color: #FF0000; font-family: sans-serif; padding: 20px; text-align: center;">
+        <div>
+          <h1 style="color: #FF0000; margin-bottom: 20px;">The Puzzle Boss - Critical Error</h1>
+          <p style="margin-bottom: 15px;">Could not find the root element for mounting the application.</p>
+          <p style="margin-bottom: 15px;">This could be due to a configuration issue or a problem with the HTML structure.</p>
+          <button onclick="window.location.reload()" style="background: #00FFFF; color: #000000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">Reload Page</button>
         </div>
       </div>
     `;
   }
 } catch (error) {
-  console.error('Critical error during app initialization:', error);
+  console.error('[PUZZLE BOSS] Fatal initialization error:', error);
   // Try to display an error message on the page
   try {
     document.body.innerHTML = `
-      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000000; color: #FF0000; font-family: sans-serif;">
-        <div style="text-align: center;">
-          <h1>Error Loading The Puzzle Boss</h1>
-          <p>${error.message || 'Unknown error'}</p>
-          <p>Check the console for more details.</p>
+      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000000; color: #FF0000; font-family: sans-serif; padding: 20px; text-align: center;">
+        <div>
+          <h1 style="color: #FF0000; margin-bottom: 20px;">The Puzzle Boss - Fatal Error</h1>
+          <p style="margin-bottom: 15px;">${error.message || 'Unknown error'}</p>
+          <code style="display: block; background: #222; padding: 15px; border-radius: 5px; margin: 15px 0; white-space: pre-wrap; text-align: left; max-height: 200px; overflow: auto;">${error.stack || 'No stack trace available'}</code>
+          <button onclick="window.location.reload()" style="background: #00FFFF; color: #000000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">Reload Page</button>
         </div>
       </div>
     `;
   } catch (displayError) {
-    console.error('Failed to display error message:', displayError);
+    console.error('[PUZZLE BOSS] Failed to display error message:', displayError);
   }
 }
