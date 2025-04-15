@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
@@ -7,9 +7,21 @@ import { AddProgressItemDialog } from "@/components/AddProgressItemDialog";
 import { useProgressItems } from "@/hooks/useProgressItems";
 import { ProgressTable } from "@/components/progress/ProgressTable";
 import { ProgressSummary } from "@/components/progress/ProgressSummary";
+import { toast } from "@/hooks/use-toast";
 
 const Progress = () => {
   const { items, isLoading, isSyncing, addComment, syncTasks } = useProgressItems();
+
+  // Automatically sync tasks if there are no items
+  useEffect(() => {
+    if (!isLoading && (!items || items.length === 0)) {
+      console.log('No progress items found, suggesting sync');
+      toast({
+        title: "No tasks found",
+        description: "Click 'Sync Project Tasks' to import tasks",
+      });
+    }
+  }, [isLoading, items]);
 
   if (isLoading) {
     return (
@@ -34,7 +46,7 @@ const Progress = () => {
               disabled={isSyncing}
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              Sync Project Tasks
+              {items && items.length > 0 ? 'Sync Project Tasks' : 'Import Project Tasks'}
             </Button>
             <AddProgressItemDialog />
           </div>

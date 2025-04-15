@@ -9,7 +9,7 @@ export interface ProgressItem {
   title: string;
   status: 'pending' | 'in_progress' | 'completed';
   priority: 'high' | 'medium' | 'low';
-  description?: string; // Add description field
+  description?: string; 
   created_at: string;
   updated_at: string;
   progress_comments: ProgressComment[];
@@ -29,6 +29,8 @@ export function useProgressItems() {
   const { data: items, isLoading, refetch } = useQuery({
     queryKey: ['progress-items'],
     queryFn: async () => {
+      console.log('Fetching progress items...');
+      
       const { data, error } = await supabase
         .from('progress_items')
         .select(`
@@ -41,6 +43,7 @@ export function useProgressItems() {
         .order('created_at', { ascending: false });
 
       if (error) {
+        console.error('Error fetching progress items:', error);
         toast({
           variant: "destructive",
           title: "Error fetching progress items",
@@ -49,7 +52,7 @@ export function useProgressItems() {
         return [];
       }
 
-      console.log(`Fetched ${data?.length || 0} progress items`);
+      console.log(`Fetched ${data?.length || 0} progress items:`, data);
       return data as ProgressItem[] || [];
     },
   });
@@ -88,7 +91,11 @@ export function useProgressItems() {
           title: "Tasks synchronized",
           description: "Project tasks have been synchronized with progress items.",
         });
-        await refetch(); // Force refresh after sync
+        
+        // Force a complete refresh of the data
+        queryClient.removeQueries({ queryKey: ['progress-items'] });
+        await refetch(); 
+        console.log('Refetch completed after sync');
       } else {
         toast({
           variant: "destructive",
