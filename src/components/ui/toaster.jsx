@@ -12,11 +12,6 @@ import {
 export function Toaster() {
   const { toasts } = useToast()
 
-  // Set a global accessor for the toast function to allow standalone usage
-  if (typeof window !== "undefined") {
-    window.__TOAST_FN = useToast().toast;
-  }
-
   return (
     <ToastUIProvider data-toast-provider="true">
       {toasts.map(function ({ id, title, description, action, ...props }) {

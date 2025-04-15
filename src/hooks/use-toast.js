@@ -25,6 +25,25 @@ function ToastProvider({ children }) {
     setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== toastId));
   }, []);
 
+  // Store toast function in a ref for global access
+  const toastFnRef = React.useRef(toast);
+  React.useEffect(() => {
+    // Update the ref whenever toast function changes
+    toastFnRef.current = toast;
+    
+    // Set a global reference for standalone usage
+    if (typeof window !== "undefined") {
+      window.__TOAST_FN = toast;
+    }
+    
+    return () => {
+      // Clean up global reference when component unmounts
+      if (typeof window !== "undefined") {
+        window.__TOAST_FN = undefined;
+      }
+    };
+  }, [toast]);
+
   return (
     <ToastContext.Provider value={{ toasts, toast, dismiss }}>
       {children}
@@ -44,21 +63,24 @@ function useToast() {
 }
 
 // Create a standalone toast function that can be used without the hook
+// This version avoids recursive calls by not using the hook itself
 const toast = (props) => {
   // For standalone usage without context, log to console as fallback
-  console.log("Toast:", props.title || props.description || props);
+  if (typeof props === 'string') {
+    props = { description: props };
+  }
   
   // If we're in a browser context, try to access the context via a global
-  if (typeof window !== "undefined") {
+  if (typeof window !== "undefined" && window.__TOAST_FN) {
     try {
-      // Check if we have access to the toast context from a provider higher up
-      const contextValue = document.querySelector("[data-toast-provider='true']");
-      if (contextValue && window.__TOAST_FN) {
-        return window.__TOAST_FN(props);
-      }
+      return window.__TOAST_FN(props);
     } catch (e) {
-      console.error("Failed to access toast context:", e);
+      console.error("Failed to access toast function:", e);
+      console.log("Toast fallback:", props.title || props.description || props);
     }
+  } else {
+    // Fall back to console if no global toast function is available
+    console.log("Toast fallback:", props.title || props.description || props);
   }
   
   return null;
