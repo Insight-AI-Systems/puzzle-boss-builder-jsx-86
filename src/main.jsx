@@ -1,5 +1,6 @@
 
 // Simplify imports to only what's needed for minimal rendering
+import React from 'react';
 import { createRoot } from 'react-dom/client';
 import MinimalApp from './MinimalApp.jsx';
 import './index.css';
