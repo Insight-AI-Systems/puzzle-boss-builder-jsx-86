@@ -1,14 +1,14 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { AppModeProvider, useAppMode } from '@/contexts/app-mode';
+import { SimpleAuthProvider } from '@/contexts/simple-auth';
 import MinimalApp from './MinimalApp';
 import SimpleHome from './pages/simple/Home';
 import SimpleAbout from './pages/simple/About';
-import Auth from './pages/Auth';
+import SimpleAuth from './pages/simple/Auth';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // QueryClient configuration
@@ -27,11 +27,13 @@ const AppRouter = () => {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<SimpleHome />} />
-      <Route path="/about" element={<SimpleAbout />} />
-      <Route path="/auth" element={<Auth />} />
-    </Routes>
+    <SimpleAuthProvider>
+      <Routes>
+        <Route path="/" element={<SimpleHome />} />
+        <Route path="/about" element={<SimpleAbout />} />
+        <Route path="/auth" element={<SimpleAuth />} />
+      </Routes>
+    </SimpleAuthProvider>
   );
 };
 
