@@ -12,8 +12,6 @@ import { ProgressItemRow } from './ProgressItemRow';
 import { CommentsSection } from './CommentsSection';
 import { Filter, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
 import { 
   DropdownMenu, 
   DropdownMenuTrigger, 
@@ -27,9 +25,16 @@ import {
 interface ProgressTableProps {
   items: ProgressItem[];
   onAddComment: (content: string, itemId: string) => Promise<boolean>;
+  onUpdateStatus: (itemId: string, status: string) => Promise<boolean>;
+  onUpdatePriority: (itemId: string, priority: string) => Promise<boolean>;
 }
 
-export const ProgressTable: React.FC<ProgressTableProps> = ({ items, onAddComment }) => {
+export const ProgressTable: React.FC<ProgressTableProps> = ({ 
+  items, 
+  onAddComment,
+  onUpdateStatus,
+  onUpdatePriority
+}) => {
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [priorityFilter, setPriorityFilter] = useState<string | undefined>(undefined);
@@ -40,52 +45,6 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({ items, onAddCommen
       ...prev,
       [itemId]: !prev[itemId]
     }));
-  };
-
-  const handleStatusChange = async (itemId: string, status: string) => {
-    try {
-      const { error } = await supabase
-        .from('progress_items')
-        .update({ status })
-        .eq('id', itemId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Status updated",
-        description: "The task status has been updated successfully.",
-      });
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update the task status. Please try again.",
-      });
-    }
-  };
-
-  const handlePriorityChange = async (itemId: string, priority: string) => {
-    try {
-      const { error } = await supabase
-        .from('progress_items')
-        .update({ priority })
-        .eq('id', itemId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Priority updated",
-        description: "The task priority has been updated successfully.",
-      });
-    } catch (error) {
-      console.error('Error updating priority:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update the task priority. Please try again.",
-      });
-    }
   };
 
   const filteredItems = items.filter(item => {
@@ -196,8 +155,8 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({ items, onAddCommen
                   item={item} 
                   onToggleComments={toggleComments}
                   isExpanded={!!expandedItems[item.id]}
-                  onStatusChange={handleStatusChange}
-                  onPriorityChange={handlePriorityChange}
+                  onStatusChange={onUpdateStatus}
+                  onPriorityChange={onUpdatePriority}
                 />
                 {expandedItems[item.id] && (
                   <CommentsSection item={item} onAddComment={onAddComment} />

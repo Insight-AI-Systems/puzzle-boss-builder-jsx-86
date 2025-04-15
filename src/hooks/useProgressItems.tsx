@@ -58,26 +58,87 @@ export function useProgressItems() {
   });
 
   const addComment = async (content: string, itemId: string) => {
-    const { error } = await supabase
-      .from('progress_comments')
-      .insert({ content, progress_item_id: itemId });
+    try {
+      console.log(`Adding comment to item ${itemId}: ${content}`);
+      
+      const { data, error } = await supabase
+        .from('progress_comments')
+        .insert({ 
+          content, 
+          progress_item_id: itemId 
+        })
+        .select();
 
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Error adding comment",
-        description: error.message,
-      });
+      if (error) {
+        console.error('Error adding comment:', error);
+        toast({
+          variant: "destructive",
+          title: "Error adding comment",
+          description: error.message,
+        });
+        return false;
+      }
+
+      console.log('Comment added successfully:', data);
+      
+      // Invalidate and refetch to get the updated data
+      await queryClient.invalidateQueries({ queryKey: ['progress-items'] });
+      
+      return true;
+    } catch (error) {
+      console.error('Unexpected error adding comment:', error);
       return false;
     }
+  };
 
-    toast({
-      title: "Comment added",
-      description: "Your comment has been added successfully.",
-    });
-    
-    queryClient.invalidateQueries({ queryKey: ['progress-items'] });
-    return true;
+  const updateItemStatus = async (itemId: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('progress_items')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', itemId);
+
+      if (error) {
+        console.error('Error updating status:', error);
+        toast({
+          variant: "destructive",
+          title: "Error updating status",
+          description: error.message,
+        });
+        return false;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ['progress-items'] });
+      return true;
+    } catch (error) {
+      console.error('Unexpected error updating status:', error);
+      return false;
+    }
+  };
+
+  const updateItemPriority = async (itemId: string, priority: string) => {
+    try {
+      const { error } = await supabase
+        .from('progress_items')
+        .update({ priority, updated_at: new Date().toISOString() })
+        .eq('id', itemId);
+
+      if (error) {
+        console.error('Error updating priority:', error);
+        toast({
+          variant: "destructive",
+          title: "Error updating priority",
+          description: error.message,
+        });
+        return false;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ['progress-items'] });
+      return true;
+    } catch (error) {
+      console.error('Unexpected error updating priority:', error);
+      return false;
+    }
   };
 
   const syncTasks = async () => {
@@ -121,6 +182,8 @@ export function useProgressItems() {
     isLoading,
     isSyncing,
     addComment,
-    syncTasks
+    syncTasks,
+    updateItemStatus,
+    updateItemPriority
   };
 }

@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
 
 interface ProgressItemRowProps {
   item: ProgressItem;
@@ -26,9 +27,33 @@ export const ProgressItemRow: React.FC<ProgressItemRowProps> = ({
   onStatusChange,
   onPriorityChange
 }) => {
+  const handleStatusChange = async (value: string) => {
+    try {
+      await onStatusChange(item.id, value);
+      toast({
+        title: "Status updated",
+        description: "Task status has been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error in status change handler:', error);
+    }
+  };
+
+  const handlePriorityChange = async (value: string) => {
+    try {
+      await onPriorityChange(item.id, value);
+      toast({
+        title: "Priority updated",
+        description: "Task priority has been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error in priority change handler:', error);
+    }
+  };
+
   return (
     <TableRow 
-      className="border-puzzle-aqua/20 hover:bg-puzzle-aqua/5"
+      className="border-puzzle-aqua/20 hover:bg-puzzle-aqua/5 cursor-pointer"
       data-state={isExpanded ? 'expanded' : 'collapsed'}
     >
       <TableCell className="text-puzzle-white font-medium" onClick={() => onToggleComments(item.id)}>
@@ -39,10 +64,10 @@ export const ProgressItemRow: React.FC<ProgressItemRowProps> = ({
           )}
         </div>
       </TableCell>
-      <TableCell className="text-puzzle-white">
+      <TableCell className="text-puzzle-white" onClick={(e) => e.stopPropagation()}>
         <Select
           value={item.status}
-          onValueChange={(value) => onStatusChange(item.id, value)}
+          onValueChange={handleStatusChange}
         >
           <SelectTrigger className={`w-[130px] 
             ${item.status === 'completed' ? 'bg-green-100 text-green-800' : 
@@ -58,10 +83,10 @@ export const ProgressItemRow: React.FC<ProgressItemRowProps> = ({
           </SelectContent>
         </Select>
       </TableCell>
-      <TableCell className="text-puzzle-white">
+      <TableCell className="text-puzzle-white" onClick={(e) => e.stopPropagation()}>
         <Select
           value={item.priority}
-          onValueChange={(value) => onPriorityChange(item.id, value)}
+          onValueChange={handlePriorityChange}
         >
           <SelectTrigger className={`w-[130px]
             ${item.priority === 'high' ? 'bg-red-100 text-red-800' : 
@@ -77,13 +102,13 @@ export const ProgressItemRow: React.FC<ProgressItemRowProps> = ({
           </SelectContent>
         </Select>
       </TableCell>
-      <TableCell className="text-puzzle-white">
+      <TableCell className="text-puzzle-white" onClick={() => onToggleComments(item.id)}>
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-puzzle-aqua" />
           {new Date(item.updated_at).toLocaleDateString()}
         </div>
       </TableCell>
-      <TableCell className="text-puzzle-white">
+      <TableCell className="text-puzzle-white" onClick={() => onToggleComments(item.id)}>
         <div className="flex items-center gap-2">
           <MessageSquare className="h-4 w-4 text-puzzle-aqua" />
           {item.progress_comments?.length || 0}

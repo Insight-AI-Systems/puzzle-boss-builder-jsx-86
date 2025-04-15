@@ -10,7 +10,15 @@ import { ProgressSummary } from "@/components/progress/ProgressSummary";
 import { toast } from "@/hooks/use-toast";
 
 const Progress = () => {
-  const { items, isLoading, isSyncing, addComment, syncTasks } = useProgressItems();
+  const { 
+    items, 
+    isLoading, 
+    isSyncing, 
+    addComment, 
+    syncTasks,
+    updateItemStatus,
+    updateItemPriority
+  } = useProgressItems();
 
   // Automatically sync tasks if there are no items
   useEffect(() => {
@@ -60,7 +68,12 @@ const Progress = () => {
             <CardTitle className="text-puzzle-white">Current Progress</CardTitle>
           </CardHeader>
           <CardContent>
-            <ProgressTable items={items || []} onAddComment={addComment} />
+            <ProgressTable 
+              items={items || []} 
+              onAddComment={addComment}
+              onUpdateStatus={updateItemStatus}
+              onUpdatePriority={updateItemPriority}
+            />
           </CardContent>
         </Card>
       </div>
