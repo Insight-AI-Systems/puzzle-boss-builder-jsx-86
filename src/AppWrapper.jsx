@@ -14,6 +14,7 @@ const AppWrapper = ({ children }) => {
   const [appMessage, setAppMessage] = useState('Initializing application...');
   const [appState, setAppState] = useState('initializing');
   const [initLogs, setInitLogs] = useState([]);
+  const [initTimeout, setInitTimeout] = useState(null);
 
   // Log initialization steps for debugging
   const logInit = (message) => {
@@ -21,10 +22,30 @@ const AppWrapper = ({ children }) => {
     setInitLogs(prev => [...prev, { timestamp: new Date().toISOString(), message }]);
   };
 
+  // Initial setup and timeout detection
   useEffect(() => {
     // Enhanced initialization logic with more detailed logging
     logInit('AppWrapper mounted, checking for children');
     
+    // Set a timeout to detect if we're stuck in loading
+    const timeoutId = setTimeout(() => {
+      logInit('WARNING: Initialization timeout reached - application may be stalled');
+      setError(new Error('Application initialization timed out'));
+      setAppMessage('Initialization timed out. Check console for details.');
+      setAppState('timeout');
+    }, 8000);
+    
+    setInitTimeout(timeoutId);
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      logInit('AppWrapper unmounting');
+    };
+  }, []);
+
+  // Main initialization logic
+  useEffect(() => {
+    // Enhanced initialization logic with more detailed logging
     if (!children) {
       logInit('ERROR: AppWrapper has no children - critical error');
       setError(new Error('No application components found'));
@@ -56,17 +77,15 @@ const AppWrapper = ({ children }) => {
       return;
     }
     
-    // Ready to render the application
+    // Ready to render the application - use a very short delay
     setTimeout(() => {
       logInit('Application ready to render');
+      if (initTimeout) clearTimeout(initTimeout);
       setIsLoading(false);
       setAppState('ready');
-    }, 300);
+    }, 100); // Very short delay to ensure DOM updates
     
-    return () => {
-      logInit('AppWrapper unmounting');
-    };
-  }, [children]);
+  }, [children, initTimeout]);
 
   // Global error handler for runtime errors
   useEffect(() => {
@@ -165,8 +184,7 @@ const AppWrapper = ({ children }) => {
       <div className="min-h-screen bg-puzzle-black text-white" data-state={appState}>
         <Debug message={appMessage} />
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
-          <Loading size="large" color="aqua" />
-          <p className="mt-4 text-puzzle-aqua animate-pulse">{appMessage}</p>
+          <Loading size="large" color="aqua" message={appMessage} />
           <p className="text-xs text-gray-500 mt-2">State: {appState}</p>
           <div className="mt-4 p-2 bg-black/20 rounded max-w-md w-full">
             <h3 className="text-sm font-bold text-puzzle-aqua mb-1">Initialization Log</h3>
@@ -192,7 +210,7 @@ const AppWrapper = ({ children }) => {
         <ErrorBoundary>
           <Suspense fallback={
             <div className="min-h-screen bg-puzzle-black flex items-center justify-center">
-              <Loading size="large" color="aqua" />
+              <Loading size="large" color="aqua" message="Loading application components..." />
             </div>
           }>
             {children}

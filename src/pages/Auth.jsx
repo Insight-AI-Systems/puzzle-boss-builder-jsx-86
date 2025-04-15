@@ -6,15 +6,40 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LoginForm from '@/components/auth/LoginForm';
 import RegisterForm from '@/components/auth/RegisterForm';
 import PasswordResetForm from '@/components/auth/PasswordResetForm';
+import Loading from '@/components/ui/loading';
 
+/**
+ * Authentication page component that handles login, registration, and password reset
+ * @returns {JSX.Element} Authentication page
+ */
 const Auth = () => {
+  console.log('[Auth] Rendering Auth page');
+  
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('login');
+  const [pageReady, setPageReady] = useState(false);
+
+  // Mark page as ready after a short delay to ensure smooth transition
+  useEffect(() => {
+    console.log('[Auth] Auth page mounted');
+    const timer = setTimeout(() => {
+      setPageReady(true);
+      console.log('[Auth] Auth page ready');
+    }, 100);
+    
+    return () => {
+      clearTimeout(timer);
+      console.log('[Auth] Auth page unmounted');
+    };
+  }, []);
 
   // Redirect if user is already logged in
   useEffect(() => {
+    console.log('[Auth] Auth state check:', { loading, user: user ? 'Present' : 'Not present' });
+    
     if (user) {
+      console.log('[Auth] User already logged in, redirecting to home');
       navigate('/');
     }
   }, [user, navigate]);
@@ -26,6 +51,24 @@ const Auth = () => {
   const handleBackToLogin = () => {
     setActiveTab('login');
   };
+
+  // Show loading spinner while auth state is being determined
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-puzzle-black flex items-center justify-center">
+        <Loading color="aqua" message="Checking authentication status..." />
+      </div>
+    );
+  }
+
+  // Simple loading indicator before the page is fully ready
+  if (!pageReady) {
+    return (
+      <div className="min-h-screen bg-puzzle-black flex items-center justify-center">
+        <Loading color="aqua" message="Preparing authentication forms..." />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-puzzle-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">

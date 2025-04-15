@@ -6,20 +6,21 @@ import { Check, Trophy, Star } from 'lucide-react';
  * Success overlay displayed when puzzle is completed
  * @returns {JSX.Element} Success overlay component
  */
-const SuccessOverlay = memo(() => {
+const SuccessOverlay = memo(({ completionTime, moveCount }) => {
   const [showStars, setShowStars] = useState(false);
   
   // Delay star animation
   useEffect(() => {
+    console.log('[SuccessOverlay] Component mounted', { completionTime, moveCount });
     const timer = setTimeout(() => {
       setShowStars(true);
     }, 300);
     
     return () => clearTimeout(timer);
-  }, []);
+  }, [completionTime, moveCount]);
   
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-puzzle-black/50 backdrop-blur-[2px] animate-fade-in overflow-hidden">
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-puzzle-black/50 backdrop-blur-[2px] animate-fade-in overflow-hidden z-50">
       <div className="text-puzzle-gold flex items-center gap-2 font-bold text-3xl mb-2 animate-scale-in">
         <Trophy className="w-8 h-8" />
         <span className="gold-gradient">Complete!</span>
@@ -30,6 +31,22 @@ const SuccessOverlay = memo(() => {
         <Check className="w-5 h-5 inline mr-1" />
         Puzzle Solved
       </div>
+      
+      {/* Stats summary */}
+      {(completionTime || moveCount) && (
+        <div className="mt-4 text-white animate-fade-in opacity-0" style={{ animationDelay: "0.3s", animationFillMode: "forwards" }}>
+          {completionTime && (
+            <div className="text-center mb-1">
+              <span className="text-puzzle-gold">Time:</span> {completionTime}
+            </div>
+          )}
+          {moveCount !== undefined && (
+            <div className="text-center">
+              <span className="text-puzzle-gold">Moves:</span> {moveCount}
+            </div>
+          )}
+        </div>
+      )}
       
       {/* Animated stars */}
       {showStars && (

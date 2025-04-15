@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 /**
@@ -7,9 +6,17 @@ import React from 'react';
  * @param {string} [props.size="large"] - Size of the spinner: "small", "medium", or "large"
  * @param {string} [props.color="aqua"] - Color of the spinner: "aqua", "gold", or "burgundy"
  * @param {boolean} [props.fullScreen=false] - Whether to display the spinner in full screen mode
+ * @param {string} [props.message] - Optional message to display with the spinner
  * @returns {JSX.Element} Loading spinner component
  */
-const Loading = ({ size = "large", color = "aqua", fullScreen = false }) => {
+const Loading = ({ 
+  size = "large", 
+  color = "aqua", 
+  fullScreen = false,
+  message = "Loading..." 
+}) => {
+  console.log('[Loading] Rendering loading component', { size, color, fullScreen });
+  
   const sizeClasses = {
     small: "h-8 w-8 border-2",
     medium: "h-10 w-10 border-2",
@@ -22,19 +29,29 @@ const Loading = ({ size = "large", color = "aqua", fullScreen = false }) => {
     burgundy: "border-puzzle-burgundy"
   };
   
-  const spinnerClasses = `animate-spin rounded-full ${sizeClasses[size]} ${colorClasses[color]}`;
+  const spinnerClasses = `animate-spin rounded-full ${sizeClasses[size] || sizeClasses.large} ${colorClasses[color] || colorClasses.aqua}`;
   
   // Only use fullscreen container when fullScreen prop is true
   if (fullScreen) {
     return (
-      <div className="min-h-screen bg-puzzle-black flex items-center justify-center">
+      <div className="min-h-screen bg-puzzle-black flex flex-col items-center justify-center">
         <div className={spinnerClasses}></div>
+        {message && <p className="mt-4 text-puzzle-aqua animate-pulse">{message}</p>}
+        <div id="loading-debug" className="hidden">
+          {/* Hidden debug information that could be revealed when needed */}
+          <p className="text-xs text-gray-500 mt-4">Render time: {new Date().toISOString()}</p>
+        </div>
       </div>
     );
   }
   
-  // Otherwise just return the spinner itself
-  return <div className={spinnerClasses}></div>;
+  // Otherwise just return the spinner with optional message
+  return (
+    <div className="flex flex-col items-center justify-center">
+      <div className={spinnerClasses}></div>
+      {message && <p className="mt-2 text-puzzle-aqua animate-pulse text-sm">{message}</p>}
+    </div>
+  );
 };
 
 export default Loading;
