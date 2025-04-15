@@ -1,172 +1,116 @@
 
-import React, { useRef, memo, useState } from 'react';
-import PuzzlePiece from './puzzle/PuzzlePiece';
-import SuccessOverlay from './puzzle/SuccessOverlay';
-import PuzzleControls from './puzzle/PuzzleControls';
-import { usePuzzle } from '../hooks/usePuzzle';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Clock, Move } from 'lucide-react';
-import Loading from './ui/loading';
+import React, { useState, useEffect } from 'react';
 
-/**
- * Difficulty level options for the puzzle
- */
-export type DifficultyLevel = 'easy' | 'medium' | 'hard';
+interface PuzzlePiece {
+  id: number;
+  position: number;
+}
 
-/**
- * Mapping of difficulty levels to grid sizes
- */
-const DIFFICULTY_GRID_SIZE: Record<DifficultyLevel, number> = {
-  easy: 3,
-  medium: 4,
-  hard: 5
-};
-
-/**
- * Interactive puzzle component with game controls and piece management
- * @returns {JSX.Element} The interactive puzzle component
- */
-const InteractivePuzzle = memo(() => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [difficulty, setDifficulty] = useState<DifficultyLevel>('medium');
+const InteractivePuzzle: React.FC = () => {
+  const [pieces, setPieces] = useState<PuzzlePiece[]>([]);
+  const [emptyPosition, setEmptyPosition] = useState(8); // Bottom right is empty initially
+  const [isSolved, setIsSolved] = useState(false);
   
-  const {
-    pieces,
-    solved,
-    gridSize,
-    muted,
-    draggedPiece,
-    puzzleImage,
-    elapsedTime,
-    moveCount,
-    isLoading,
-    timerActive,
-    hintsRemaining,
-    showHint,
-    setDraggedPiece,
-    setMuted,
-    shufflePuzzle,
-    resetPuzzle,
-    handleDrop,
-    playSoundEffect,
-    allowDrop,
-    resetTimer,
-    toggleTimer,
-    activateHint,
-    changeDifficulty
-  } = usePuzzle({ 
-    initialMuted: true, 
-    initialDifficulty: difficulty
-  });
+  // Initialize puzzle
+  useEffect(() => {
+    resetPuzzle();
+  }, []);
   
-  /**
-   * Format time from seconds to MM:SS
-   * @param {number} seconds - Time in seconds
-   * @returns {string} Formatted time string
-   */
-  const formatTime = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  const resetPuzzle = () => {
+    // Create ordered pieces (1-8 in positions 0-7, empty at position 8)
+    const initialPieces: PuzzlePiece[] = Array.from({ length: 8 }, (_, i) => ({
+      id: i + 1,
+      position: i
+    }));
+    
+    // Shuffle the pieces (make sure it's solvable)
+    const shuffledPieces = shufflePieces([...initialPieces]);
+    setPieces(shuffledPieces);
+    setEmptyPosition(8);
+    setIsSolved(false);
   };
-
-  /**
-   * Handle difficulty change
-   * @param {string} value - New difficulty level
-   */
-  const handleDifficultyChange = (value: string) => {
-    const newDifficulty = value as DifficultyLevel;
-    setDifficulty(newDifficulty);
-    changeDifficulty(DIFFICULTY_GRID_SIZE[newDifficulty]);
+  
+  // Fisher-Yates shuffle algorithm
+  const shufflePieces = (piecesToShuffle: PuzzlePiece[]): PuzzlePiece[] => {
+    for (let i = piecesToShuffle.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [piecesToShuffle[i], piecesToShuffle[j]] = [piecesToShuffle[j], piecesToShuffle[i]];
+    }
+    return piecesToShuffle;
+  };
+  
+  const isAdjacent = (position: number): boolean => {
+    // Check if the piece is adjacent to the empty position
+    const row = Math.floor(position / 3);
+    const col = position % 3;
+    const emptyRow = Math.floor(emptyPosition / 3);
+    const emptyCol = emptyPosition % 3;
+    
+    return (
+      (row === emptyRow && Math.abs(col - emptyCol) === 1) ||
+      (col === emptyCol && Math.abs(row - emptyRow) === 1)
+    );
+  };
+  
+  const movePiece = (position: number) => {
+    if (!isAdjacent(position)) return;
+    
+    // Move the piece to the empty position
+    const updatedPieces = pieces.map(piece => 
+      piece.position === position ? { ...piece, position: emptyPosition } : piece
+    );
+    
+    setPieces(updatedPieces);
+    setEmptyPosition(position);
+    
+    // Check if the puzzle is solved
+    const isSolved = updatedPieces.every(piece => piece.id === piece.position + 1);
+    setIsSolved(isSolved);
+  };
+  
+  // Render the puzzle grid
+  const renderPuzzleGrid = () => {
+    const grid = Array(9).fill(null);
+    
+    // Place pieces in the grid
+    pieces.forEach(piece => {
+      grid[piece.position] = (
+        <div 
+          key={piece.id}
+          className={`puzzle-piece flex items-center justify-center text-xl font-bold ${isAdjacent(piece.position) ? 'cursor-pointer hover:scale-105' : ''}`}
+          onClick={() => movePiece(piece.position)}
+        >
+          {piece.id}
+        </div>
+      );
+    });
+    
+    // Add empty piece
+    grid[emptyPosition] = (
+      <div key="empty" className="puzzle-piece empty"></div>
+    );
+    
+    return grid;
   };
   
   return (
     <div className="flex flex-col items-center">
-      <div className="w-full max-w-xs mb-4">
-        {/* Difficulty selector */}
-        <div className="mb-4">
-          <Select value={difficulty} onValueChange={handleDifficultyChange}>
-            <SelectTrigger className="w-full border-puzzle-aqua focus:ring-puzzle-aqua">
-              <SelectValue placeholder="Difficulty" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="easy">Easy (3×3)</SelectItem>
-              <SelectItem value="medium">Medium (4×4)</SelectItem>
-              <SelectItem value="hard">Hard (5×5)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {/* Game stats */}
-        <div className="flex justify-between mb-2 text-puzzle-aqua">
-          <div className="flex items-center gap-1">
-            <Clock className="w-4 h-4" />
-            <span>{formatTime(elapsedTime)}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Move className="w-4 h-4" />
-            <span>{moveCount} moves</span>
-          </div>
-        </div>
-        
-        {/* Puzzle container */}
-        <div 
-          ref={containerRef}
-          className={`relative aspect-square rounded-md overflow-hidden bg-puzzle-black/50 border-2 ${solved ? 'border-puzzle-gold' : 'border-puzzle-aqua'}`}
-          onDragOver={allowDrop}
-        >
-          {isLoading ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Loading color="aqua" size="medium" />
-            </div>
-          ) : (
-            <>
-              {/* Puzzle pieces */}
-              {pieces.map((piece) => (
-                <PuzzlePiece
-                  key={piece.id}
-                  piece={piece}
-                  puzzleImage={puzzleImage}
-                  gridSize={gridSize}
-                  draggedPiece={draggedPiece}
-                  setDraggedPiece={setDraggedPiece}
-                  playSound={playSoundEffect}
-                  onDrop={(e) => handleDrop(e, piece.currentPosition.row, piece.currentPosition.col)}
-                />
-              ))}
-              
-              {/* Hint overlay - shows the completed puzzle temporarily */}
-              {showHint && (
-                <div 
-                  className="absolute inset-0 bg-cover bg-center animate-fade-in" 
-                  style={{ backgroundImage: `url(${puzzleImage})` }}
-                />
-              )}
-              
-              {/* Success overlay - only render when solved */}
-              {solved && <SuccessOverlay />}
-            </>
-          )}
-        </div>
+      <div className={`puzzle-container mb-4 ${isSolved ? 'puzzle-solved' : ''}`}>
+        {renderPuzzleGrid()}
       </div>
-      
-      {/* Controls */}
-      <PuzzleControls 
-        shufflePuzzle={shufflePuzzle}
-        resetPuzzle={resetPuzzle}
-        muted={muted}
-        setMuted={setMuted}
-        timerActive={timerActive}
-        toggleTimer={toggleTimer}
-        resetTimer={resetTimer}
-        hintsRemaining={hintsRemaining}
-        activateHint={activateHint}
-      />
+      <button 
+        onClick={resetPuzzle}
+        className="text-puzzle-aqua hover:text-puzzle-gold transition-colors duration-300"
+      >
+        Shuffle
+      </button>
+      {isSolved && (
+        <div className="mt-4 text-puzzle-gold font-bold animate-pulse">
+          Puzzle Solved! 🏆
+        </div>
+      )}
     </div>
   );
-});
-
-// Display name for debugging
-InteractivePuzzle.displayName = 'InteractivePuzzle';
+};
 
 export default InteractivePuzzle;

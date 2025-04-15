@@ -1,5 +1,3 @@
+import { useToast, toast } from "@/hooks/use-toast";
 
-// Re-export from our base implementation
-import { useToast, toast, ToastProvider } from "@/hooks/use-toast.jsx";
-
-export { useToast, toast, ToastProvider };
+export { useToast, toast };
