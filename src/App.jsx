@@ -46,7 +46,7 @@ const App = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const isStandalone = urlParams.get('standalone') === 'true';
   
-  // If in standalone mode, render MinimalApp directly
+  // If in standalone mode, render StandaloneApp directly
   if (isStandalone) {
     return <MinimalApp isStandalone={true} />;
   }
