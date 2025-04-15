@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -14,6 +15,7 @@ const App = () => {
   // Check for standalone mode first
   const standaloneHandler = <StandaloneModeHandler />;
   if (standaloneHandler.props.children) {
+    // Return standalone mode if enabled
     return standaloneHandler;
   }
 

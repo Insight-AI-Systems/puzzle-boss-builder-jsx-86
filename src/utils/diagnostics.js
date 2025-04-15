@@ -1,3 +1,4 @@
+import React from 'react';
 
 // Basic diagnostic utilities
 export const diagnostics = {
@@ -16,7 +17,10 @@ export const diagnostics = {
       isDev: process.env.NODE_ENV === 'development',
       isBrowser: typeof window !== 'undefined',
       hasReact: typeof React !== 'undefined',
-      reactVersion: React?.version,
+      reactVersion: React?.version || 'unknown',
+      hasLocalStorage: typeof localStorage !== 'undefined',
+      hasSessionStorage: typeof sessionStorage !== 'undefined',
+      timestamp: new Date().toISOString()
     };
   },
 
