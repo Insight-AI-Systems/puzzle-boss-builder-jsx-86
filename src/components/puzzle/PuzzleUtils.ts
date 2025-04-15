@@ -15,7 +15,11 @@ export type SoundEffectType = 'pick' | 'place' | 'success';
 /**
  * Cache object for storing audio instances
  */
-const soundCache: Record<SoundEffectType, HTMLAudioElement | undefined> = {};
+const soundCache: Record<SoundEffectType, HTMLAudioElement | undefined> = {
+  pick: undefined,
+  place: undefined,
+  success: undefined
+};
 
 /**
  * Retrieves puzzle configuration from localStorage or returns defaults
