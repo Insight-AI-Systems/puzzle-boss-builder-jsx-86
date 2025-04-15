@@ -1,14 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useAppMode } from '@/contexts/app-mode';
 import ReactErrorBoundary from './components/ReactErrorBoundary';
-import DiagnosticLog from './components/DiagnosticLog';
 import ReactTester from './components/ReactTester';
 
-/**
- * A minimal application component with no dependencies on complex features
- * Used to verify that the basic React setup is working correctly
- */
 const MinimalApp = () => {
-  console.log('MinimalApp rendering');
+  const { toggleMode } = useAppMode();
   
   // Simple state to verify React hooks are working
   const [count, setCount] = useState(0);
@@ -89,7 +85,16 @@ const MinimalApp = () => {
   
   return (
     <div className="min-h-screen bg-puzzle-black text-white flex flex-col items-center justify-center p-4">
-      <h1 className="text-4xl font-bold text-puzzle-aqua mb-4">The Puzzle Boss</h1>
+      <div className="flex justify-between items-center w-full max-w-4xl mb-4">
+        <h1 className="text-4xl font-bold text-puzzle-aqua">The Puzzle Boss</h1>
+        <button
+          onClick={toggleMode}
+          className="px-4 py-2 bg-puzzle-burgundy text-white rounded hover:bg-puzzle-burgundy/80"
+        >
+          Switch to Full Mode
+        </button>
+      </div>
+      
       <p className="text-xl mb-2">Minimal Application Testing</p>
       <p className="text-sm text-gray-400 mb-6">React version: {reactVersion}</p>
       
