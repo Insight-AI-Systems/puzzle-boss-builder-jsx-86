@@ -1,9 +1,10 @@
-import { useToast } from "@/hooks/use-toast"
+
+import { useToast, ToastProvider } from "@/hooks/use-toast"
 import {
   Toast,
   ToastClose,
   ToastDescription,
-  ToastProvider,
+  ToastProvider as ToastUIProvider,
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast"
@@ -11,8 +12,13 @@ import {
 export function Toaster() {
   const { toasts } = useToast()
 
+  // Set a global accessor for the toast function to allow standalone usage
+  if (typeof window !== "undefined") {
+    window.__TOAST_FN = useToast().toast;
+  }
+
   return (
-    <ToastProvider>
+    <ToastUIProvider data-toast-provider="true">
       {toasts.map(function ({ id, title, description, action, ...props }) {
         return (
           <Toast key={id} {...props}>
@@ -28,6 +34,9 @@ export function Toaster() {
         )
       })}
       <ToastViewport />
-    </ToastProvider>
+    </ToastUIProvider>
   )
 }
+
+// Also export the provider for apps that need to wrap their own components
+export { ToastProvider }
