@@ -13,10 +13,12 @@ import { queryClient } from '@/config/queryClient';
 
 const App = () => {
   // Check for standalone mode first
-  const standaloneHandler = <StandaloneModeHandler />;
-  if (standaloneHandler.props.children) {
-    // Return standalone mode if enabled
-    return standaloneHandler;
+  const urlParams = new URLSearchParams(window.location.search);
+  const isStandalone = urlParams.get('standalone') === 'true';
+  
+  // If in standalone mode, return the standalone app
+  if (isStandalone) {
+    return <StandaloneModeHandler />;
   }
 
   // Otherwise render the full app with proper provider hierarchy

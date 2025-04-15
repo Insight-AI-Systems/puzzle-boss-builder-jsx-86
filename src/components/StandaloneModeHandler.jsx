@@ -1,6 +1,6 @@
 
 import React from 'react';
-import MinimalApp from '@/MinimalApp';
+import StandaloneApp from '@/StandaloneApp';
 
 const StandaloneModeHandler = () => {
   // Handle standalone mode from URL
@@ -8,7 +8,7 @@ const StandaloneModeHandler = () => {
   const isStandalone = urlParams.get('standalone') === 'true';
   
   if (isStandalone) {
-    return <MinimalApp isStandalone={true} />;
+    return <StandaloneApp />;
   }
   
   return null;

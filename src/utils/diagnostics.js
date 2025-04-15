@@ -1,4 +1,3 @@
-import React from 'react';
 
 // Basic diagnostic utilities
 export const diagnostics = {
@@ -13,11 +12,21 @@ export const diagnostics = {
   },
 
   checkEnvironment() {
+    let reactVersion = 'unknown';
+    try {
+      // Safe check for React
+      if (typeof React !== 'undefined' && React && React.version) {
+        reactVersion = React.version;
+      }
+    } catch (e) {
+      console.error('Error checking React version:', e);
+    }
+
     return {
       isDev: process.env.NODE_ENV === 'development',
       isBrowser: typeof window !== 'undefined',
       hasReact: typeof React !== 'undefined',
-      reactVersion: React?.version || 'unknown',
+      reactVersion: reactVersion,
       hasLocalStorage: typeof localStorage !== 'undefined',
       hasSessionStorage: typeof sessionStorage !== 'undefined',
       timestamp: new Date().toISOString()
