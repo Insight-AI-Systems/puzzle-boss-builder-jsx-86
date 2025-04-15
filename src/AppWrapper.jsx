@@ -13,13 +13,20 @@ const AppWrapper = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [appMessage, setAppMessage] = useState('Initializing application...');
   const [appState, setAppState] = useState('initializing');
+  const [initLogs, setInitLogs] = useState([]);
+
+  // Log initialization steps for debugging
+  const logInit = (message) => {
+    console.log(`[WRAPPER] ${message}`);
+    setInitLogs(prev => [...prev, { timestamp: new Date().toISOString(), message }]);
+  };
 
   useEffect(() => {
     // Enhanced initialization logic with more detailed logging
-    console.log('[WRAPPER] AppWrapper mounted, checking for children');
+    logInit('AppWrapper mounted, checking for children');
     
     if (!children) {
-      console.error('[WRAPPER] AppWrapper has no children - critical error');
+      logInit('ERROR: AppWrapper has no children - critical error');
       setError(new Error('No application components found'));
       setAppMessage('Critical: No application components found');
       setAppState('error');
@@ -28,10 +35,10 @@ const AppWrapper = ({ children }) => {
     
     // Check for React components specifically
     let isValidReactElement = React.isValidElement(children);
-    console.log('[WRAPPER] Children validation:', { isValidReactElement });
+    logInit(`Children validation: isValidReactElement=${isValidReactElement}`);
     
     if (!isValidReactElement) {
-      console.error('[WRAPPER] AppWrapper children are not valid React elements');
+      logInit('ERROR: AppWrapper children are not valid React elements');
       setError(new Error('Invalid React components'));
       setAppMessage('Error: Invalid application structure');
       setAppState('error');
@@ -39,26 +46,32 @@ const AppWrapper = ({ children }) => {
     }
     
     // Shorter loading simulation for faster rendering
+    logInit('Preparing application environment...');
+    setAppMessage('Preparing application environment...');
+    
+    // Quick check for essential dependencies
+    if (typeof React === 'undefined') {
+      logInit('ERROR: React is undefined - critical dependency missing');
+      setError(new Error('Critical dependency missing: React'));
+      return;
+    }
+    
+    // Ready to render the application
     setTimeout(() => {
-      console.log('[WRAPPER] Preparing application environment...');
-      setAppMessage('Preparing application environment...');
-      
-      setTimeout(() => {
-        console.log('[WRAPPER] Application ready to render');
-        setIsLoading(false);
-        setAppState('ready');
-      }, 500);
+      logInit('Application ready to render');
+      setIsLoading(false);
+      setAppState('ready');
     }, 300);
     
     return () => {
-      console.log('[WRAPPER] AppWrapper unmounting');
+      logInit('AppWrapper unmounting');
     };
   }, [children]);
 
   // Global error handler for runtime errors
   useEffect(() => {
     const handleGlobalError = (event) => {
-      console.error('[WRAPPER] Global error caught:', event);
+      logInit(`Global error caught: ${event.message || 'Unknown error'}`);
       if (event.error) {
         setError(event.error);
         setAppMessage('Runtime error detected');
@@ -70,7 +83,7 @@ const AppWrapper = ({ children }) => {
     
     window.addEventListener('error', handleGlobalError);
     window.addEventListener('unhandledrejection', (event) => {
-      console.error('[WRAPPER] Unhandled promise rejection:', event.reason);
+      logInit(`Unhandled promise rejection: ${event.reason?.message || 'Unknown promise error'}`);
       setError(new Error(`Promise error: ${event.reason?.message || 'Unknown promise error'}`));
       setAppMessage('Unhandled promise rejection');
       setAppState('promise-error');
@@ -79,7 +92,9 @@ const AppWrapper = ({ children }) => {
     // Monitor DOM changes to detect rendering issues
     try {
       const observer = new MutationObserver((mutations) => {
-        console.log('[WRAPPER] DOM mutation detected:', mutations.length);
+        if (appState === 'initializing' || appState === 'ready') {
+          logInit(`DOM mutation detected: ${mutations.length} changes`);
+        }
       });
       
       observer.observe(document.body, {
@@ -93,13 +108,13 @@ const AppWrapper = ({ children }) => {
         observer.disconnect();
       };
     } catch (err) {
-      console.error('[WRAPPER] Error setting up observers:', err);
+      logInit(`Error setting up observers: ${err.message}`);
       return () => {
         window.removeEventListener('error', handleGlobalError);
         window.removeEventListener('unhandledrejection', handleGlobalError);
       };
     }
-  }, []);
+  }, [appState]);
 
   // If there's an error, show it using our Debug component with a fallback UI
   if (error) {
@@ -112,6 +127,16 @@ const AppWrapper = ({ children }) => {
             <p className="mb-4 text-gray-300">Sorry, something went wrong while loading the application.</p>
             <div className="p-3 bg-red-900/20 rounded mb-4">
               <p className="text-red-400">{error.message || String(error)}</p>
+            </div>
+            <div className="mb-4 p-2 bg-black/50 rounded text-left">
+              <h3 className="text-sm font-bold text-puzzle-aqua mb-1">Initialization Log</h3>
+              <div className="max-h-[100px] overflow-y-auto text-xs text-gray-400">
+                {initLogs.map((log, i) => (
+                  <div key={i} className="mb-1">
+                    <span className="opacity-70">[{log.timestamp.split('T')[1].split('.')[0]}]</span> {log.message}
+                  </div>
+                ))}
+              </div>
             </div>
             <button
               onClick={() => {
@@ -143,6 +168,16 @@ const AppWrapper = ({ children }) => {
           <Loading size="large" color="aqua" />
           <p className="mt-4 text-puzzle-aqua animate-pulse">{appMessage}</p>
           <p className="text-xs text-gray-500 mt-2">State: {appState}</p>
+          <div className="mt-4 p-2 bg-black/20 rounded max-w-md w-full">
+            <h3 className="text-sm font-bold text-puzzle-aqua mb-1">Initialization Log</h3>
+            <div className="max-h-[100px] overflow-y-auto text-xs text-gray-400">
+              {initLogs.map((log, i) => (
+                <div key={i} className="mb-1">
+                  <span className="opacity-70">[{log.timestamp.split('T')[1].split('.')[0]}]</span> {log.message}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -150,7 +185,7 @@ const AppWrapper = ({ children }) => {
 
   // Render the application with enhanced error boundaries
   try {
-    console.log('[WRAPPER] Rendering AppWrapper children');
+    logInit('Rendering AppWrapper children');
     return (
       <div className="app-wrapper" data-state={appState}>
         <Debug message="Application render in progress" />
@@ -166,7 +201,7 @@ const AppWrapper = ({ children }) => {
       </div>
     );
   } catch (renderError) {
-    console.error('[WRAPPER] Error in AppWrapper render:', renderError);
+    logInit(`Error in AppWrapper render: ${renderError.message}`);
     setError(renderError);
     setAppMessage('Error rendering application content');
     setAppState('render-error');

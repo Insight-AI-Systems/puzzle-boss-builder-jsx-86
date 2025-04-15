@@ -28,7 +28,7 @@ import AuthDebug from "./pages/AuthDebug";
 import AdminPuzzleConfig from "./pages/AdminPuzzleConfig";
 import ErrorBoundary from "./components/ErrorBoundary";
 
-// Create a new QueryClient instance
+// Create a new QueryClient instance with specific configuration
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -38,6 +38,10 @@ const queryClient = new QueryClient({
   },
 });
 
+/**
+ * Main App component that sets up routing and providers
+ * @returns {JSX.Element} The main application component
+ */
 const App = () => {
   console.log("App component rendering with detailed logging");
   

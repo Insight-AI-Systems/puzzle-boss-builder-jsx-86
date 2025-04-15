@@ -7,7 +7,9 @@ import './index.css';
 
 // More detailed initialization logging
 console.log('%c[PUZZLE BOSS] Initializing application', 'color: #00FFFF; font-weight: bold;');
-console.log('[PUZZLE BOSS] Environment:', {
+
+// Environment information for debugging
+const envInfo = {
   NODE_ENV: process.env.NODE_ENV,
   userAgent: navigator.userAgent,
   viewport: {
@@ -15,7 +17,9 @@ console.log('[PUZZLE BOSS] Environment:', {
     height: window.innerHeight
   },
   timestamp: new Date().toISOString()
-});
+};
+
+console.log('[PUZZLE BOSS] Environment:', envInfo);
 
 // Try/catch block to catch initialization errors
 try {
