@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, Suspense } from 'react';
 import EmergencyLayout from './recovery/EmergencyLayout';
 import EmergencyRouter from './recovery/EmergencyRouter';
@@ -432,7 +431,7 @@ const EmergencyApp = () => {
         );
       
       case 'navigation':
-        return <EmergencyRouter routes={routeTests} />;
+        return <NavigationTabContent />;
       
       case 'components':
         return (
@@ -643,6 +642,11 @@ const EmergencyApp = () => {
         return <div>Select a tab</div>;
     }
   };
+  
+  // Modified navigation tab content to use our new EmergencyRouter
+  const NavigationTabContent = () => (
+    <EmergencyRouter routes={routeTests} />
+  );
   
   // Render the emergency UI with our layout
   return (
