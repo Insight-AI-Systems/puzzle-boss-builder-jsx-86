@@ -74,6 +74,7 @@ export type Database = {
       progress_items: {
         Row: {
           created_at: string | null
+          description: string | null
           id: string
           priority: string
           status: string
@@ -82,6 +83,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          description?: string | null
           id?: string
           priority?: string
           status?: string
@@ -90,6 +92,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          description?: string | null
           id?: string
           priority?: string
           status?: string

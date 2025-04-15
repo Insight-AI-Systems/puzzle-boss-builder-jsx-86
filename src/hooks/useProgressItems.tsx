@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -93,17 +92,24 @@ export function useProgressItems() {
         });
         
         // Force a complete refresh of the data
-        queryClient.removeQueries({ queryKey: ['progress-items'] });
-        await refetch(); 
+        await refetch();
         console.log('Refetch completed after sync');
       } else {
         toast({
           variant: "destructive",
           title: "Sync failed",
-          description: "Failed to synchronize tasks. Please try again.",
+          description: "Failed to synchronize tasks. Please check the console for details.",
         });
       }
       return success;
+    } catch (error) {
+      console.error('Error in syncTasks:', error);
+      toast({
+        variant: "destructive",
+        title: "Sync error",
+        description: "An unexpected error occurred while syncing tasks.",
+      });
+      return false;
     } finally {
       setIsSyncing(false);
     }
