@@ -11,14 +11,12 @@ import SimpleAbout from './pages/simple/About';
 import SimpleAuth from './pages/simple/Auth';
 import ErrorBoundary from './components/ErrorBoundary';
 
-// QueryClient configuration
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, refetchOnWindowFocus: false }
   }
 });
 
-// Router wrapper that checks for minimal mode
 const AppRouter = () => {
   const { isMinimal } = useAppMode();
 
@@ -38,11 +36,9 @@ const AppRouter = () => {
 };
 
 const App = () => {
-  // Check for standalone mode from URL parameter
   const urlParams = new URLSearchParams(window.location.search);
   const isStandalone = urlParams.get('standalone') === 'true';
   
-  // In standalone mode, render MinimalApp directly without contexts
   if (isStandalone) {
     return <MinimalApp isStandalone={true} />;
   }
@@ -54,9 +50,11 @@ const App = () => {
           <ErrorBoundary>
             <AppModeProvider>
               <ErrorBoundary>
-                <Toaster />
-                <Sonner />
-                <AppRouter />
+                <SimpleAuthProvider>
+                  <Toaster />
+                  <Sonner />
+                  <AppRouter />
+                </SimpleAuthProvider>
               </ErrorBoundary>
             </AppModeProvider>
           </ErrorBoundary>

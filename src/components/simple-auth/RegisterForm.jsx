@@ -35,30 +35,30 @@ const SimpleRegisterForm = () => {
   };
 
   const validateForm = () => {
-    const newErrors = {};
+    const errors = {};
     
     if (!registerData.username) {
-      newErrors.username = 'Username is required';
+      errors.username = 'Username is required';
     }
     
     if (!registerData.email) {
-      newErrors.email = 'Email is required';
+      errors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(registerData.email)) {
-      newErrors.email = 'Invalid email format';
+      errors.email = 'Email is invalid';
     }
     
     if (!registerData.password) {
-      newErrors.password = 'Password is required';
+      errors.password = 'Password is required';
     } else if (registerData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      errors.password = 'Password must be at least 6 characters';
     }
     
     if (registerData.password !== registerData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      errors.confirmPassword = 'Passwords do not match';
     }
     
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
