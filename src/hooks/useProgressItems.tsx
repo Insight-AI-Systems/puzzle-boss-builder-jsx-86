@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,12 +84,12 @@ export function useProgressItems() {
     setIsSyncing(true);
     try {
       const { syncProjectTasksToProgress } = await import('@/utils/syncTasks');
-      const success = await syncProjectTasksToProgress();
+      const result = await syncProjectTasksToProgress();
       
-      if (success) {
+      if (result.success) {
         toast({
           title: "Tasks synchronized",
-          description: "Project tasks have been synchronized with progress items.",
+          description: result.message || "Project tasks have been synchronized with progress items.",
         });
         
         // Force a complete refresh of the data
@@ -98,10 +99,10 @@ export function useProgressItems() {
         toast({
           variant: "destructive",
           title: "Sync failed",
-          description: "Failed to synchronize tasks. Please check the console for details.",
+          description: result.message || "Failed to synchronize tasks. Please check the console for details.",
         });
       }
-      return success;
+      return result.success;
     } catch (error) {
       console.error('Error in syncTasks:', error);
       toast({
