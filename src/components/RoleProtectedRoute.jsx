@@ -32,6 +32,19 @@ const RoleProtectedRoute = ({
     });
   }, [loading, user, profile, roles]);
   
+  // Safety timeout to prevent infinite loading
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.warn('RoleProtectedRoute: Loading timeout reached');
+        // Redirect to auth page as a fallback
+        navigate('/auth', { replace: true });
+      }
+    }, 5000);
+    
+    return () => clearTimeout(timeoutId);
+  }, [loading, navigate]);
+  
   // Show loading while checking auth state
   if (loading) {
     console.log('RoleProtectedRoute: Loading auth state');

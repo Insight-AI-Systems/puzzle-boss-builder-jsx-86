@@ -19,6 +19,7 @@ const Auth = () => {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('login');
   const [pageReady, setPageReady] = useState(false);
+  const [pageError, setPageError] = useState(null);
 
   // Mark page as ready after a short delay to ensure smooth transition
   useEffect(() => {
@@ -34,15 +35,28 @@ const Auth = () => {
     };
   }, []);
 
-  // Redirect if user is already logged in
+  // Redirect if user is already logged in - with safety timeout
   useEffect(() => {
     console.log('[Auth] Auth state check:', { loading, user: user ? 'Present' : 'Not present' });
+    
+    // Clear any previous errors when auth state changes
+    setPageError(null);
     
     if (user) {
       console.log('[Auth] User already logged in, redirecting to home');
       navigate('/');
     }
-  }, [user, navigate]);
+    
+    // Safety timeout to prevent getting stuck on this page
+    const safetyTimeout = setTimeout(() => {
+      if (loading) {
+        console.warn('[Auth] Authentication state check taking too long');
+        setPageError('Authentication check timeout. Please refresh the page.');
+      }
+    }, 5000);
+    
+    return () => clearTimeout(safetyTimeout);
+  }, [user, navigate, loading]);
 
   const handleForgotPassword = () => {
     setActiveTab('reset');
@@ -51,6 +65,24 @@ const Auth = () => {
   const handleBackToLogin = () => {
     setActiveTab('login');
   };
+
+  // Show error state if there's a problem
+  if (pageError) {
+    return (
+      <div className="min-h-screen bg-puzzle-black flex items-center justify-center p-4">
+        <div className="max-w-md w-full space-y-4 card-highlight p-8 text-center">
+          <h2 className="text-xl text-puzzle-gold">Authentication Error</h2>
+          <p className="text-white">{pageError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-puzzle-aqua text-black rounded hover:bg-puzzle-aqua/90"
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Show loading spinner while auth state is being determined
   if (loading) {

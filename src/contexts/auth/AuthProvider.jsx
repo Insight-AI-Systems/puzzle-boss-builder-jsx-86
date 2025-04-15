@@ -12,78 +12,111 @@ import {
 } from './authUtils.jsx';
 import { useAuthRoles } from './useAuthRoles';
 
-const AuthContext = createContext();
+// Create a separate context for loading state to avoid circular dependencies
+const AuthLoadingContext = createContext(true);
+const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
+  const [initError, setInitError] = useState(null);
   const { toast } = useToast();
   const roles = useAuthRoles(profile);
 
+  // Clear loading state after maximum timeout to prevent infinite loading
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.warn('[AUTH] Loading timeout reached, forcing ready state');
+        setLoading(false);
+      }
+    }, 5000); // 5 second maximum loading time
+    
+    return () => clearTimeout(timeoutId);
+  }, [loading]);
+
   useEffect(() => {
     console.log('[AUTH] Setting up auth state listener...');
+    let authSubscription = null;
     
     try {
-      // Set up auth state listener FIRST
+      // Set up auth state listener FIRST with error handling
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        (event, session) => {
+        (event, newSession) => {
           console.log('[AUTH] Auth state changed:', event);
-          setSession(session);
-          setUser(session?.user ?? null);
           
-          // Fetch profile data with setTimeout to avoid deadlock
-          if (session?.user) {
+          // Update session state synchronously
+          setSession(newSession);
+          setUser(newSession?.user ?? null);
+          
+          // If session exists, fetch profile in next tick to avoid deadlock
+          if (newSession?.user) {
             setTimeout(() => {
-              console.log('[AUTH] Fetching profile for user:', session.user.id);
-              fetchUserProfile(session.user.id).then(({ data, error }) => {
-                if (error) {
-                  console.error('[AUTH] Error fetching profile:', error);
-                } else if (data) {
-                  console.log('[AUTH] Profile fetched successfully');
-                  setProfile(data);
-                } else {
-                  console.log('[AUTH] No profile data found');
-                }
-              });
+              console.log('[AUTH] Fetching profile for user:', newSession.user.id);
+              fetchUserProfile(newSession.user.id)
+                .then(({ data, error }) => {
+                  if (error) {
+                    console.error('[AUTH] Error fetching profile:', error);
+                  } else if (data) {
+                    console.log('[AUTH] Profile fetched successfully');
+                    setProfile(data);
+                  } else {
+                    console.log('[AUTH] No profile data found');
+                  }
+                })
+                .catch(err => {
+                  console.error('[AUTH] Exception fetching profile:', err);
+                });
             }, 0);
           } else {
             setProfile(null);
           }
         }
       );
+      
+      authSubscription = subscription;
 
       // THEN check for existing session
-      supabase.auth.getSession().then(({ data: { session }, error }) => {
-        if (error) {
-          console.error('[AUTH] Session check error:', error);
-        }
-        console.log('[AUTH] Initial session check:', session ? 'Session found' : 'No session');
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          fetchUserProfile(session.user.id).then(({ data, error }) => {
-            if (error) {
-              console.error('[AUTH] Error fetching profile:', error);
-            }
-            if (data) {
-              console.log('[AUTH] Profile data:', data);
-              setProfile(data);
-            }
-            setLoading(false);
-          });
-        } else {
+      supabase.auth.getSession()
+        .then(({ data: { session: initialSession }, error }) => {
+          if (error) {
+            console.error('[AUTH] Session check error:', error);
+            setInitError(error.message);
+          }
+          
+          console.log('[AUTH] Initial session check:', initialSession ? 'Session found' : 'No session');
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
+          
+          if (initialSession?.user) {
+            return fetchUserProfile(initialSession.user.id);
+          }
+          return { data: null };
+        })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('[AUTH] Error fetching profile:', error);
+          }
+          if (data) {
+            console.log('[AUTH] Profile data:', data);
+            setProfile(data);
+          }
+          // Always set loading to false after initial session check completes
           setLoading(false);
-        }
-      });
+        })
+        .catch(err => {
+          console.error('[AUTH] Critical error in auth setup:', err);
+          setInitError(err.message);
+          setLoading(false);
+        });
 
       return () => {
         console.log('[AUTH] Cleaning up auth subscription');
-        if (subscription) {
+        if (authSubscription) {
           try {
-            subscription.unsubscribe();
+            authSubscription.unsubscribe();
           } catch (err) {
             console.error('[AUTH] Error unsubscribing:', err);
           }
@@ -91,15 +124,25 @@ export function AuthProvider({ children }) {
       };
     } catch (error) {
       console.error('[AUTH] Critical error in auth setup:', error);
+      setInitError(error.message);
       setLoading(false);
-      return () => {};
+      return () => {
+        if (authSubscription) {
+          try {
+            authSubscription.unsubscribe();
+          } catch (err) {
+            console.error('[AUTH] Error unsubscribing:', err);
+          }
+        }
+      };
     }
   }, []);
 
   // Create API functions that use our utility functions but maintain state
   const signUp = async (email, password, username) => {
     try {
-      return await authSignUp(email, password, username);
+      const result = await authSignUp(email, password, username);
+      return result;
     } catch (error) {
       console.error('[AUTH] Sign up error:', error);
       return { error: { message: error.message || 'Sign up failed' } };
@@ -108,7 +151,8 @@ export function AuthProvider({ children }) {
 
   const signIn = async (email, password) => {
     try {
-      return await authSignIn(email, password);
+      const result = await authSignIn(email, password);
+      return result;
     } catch (error) {
       console.error('[AUTH] Sign in error:', error);
       return { error: { message: error.message || 'Sign in failed' } };
@@ -117,7 +161,8 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     try {
-      return await authSignOut();
+      const result = await authSignOut();
+      return result;
     } catch (error) {
       console.error('[AUTH] Sign out error:', error);
       return { error: { message: error.message || 'Sign out failed' } };
@@ -126,7 +171,8 @@ export function AuthProvider({ children }) {
 
   const resetPassword = async (email) => {
     try {
-      return await authResetPassword(email);
+      const result = await authResetPassword(email);
+      return result;
     } catch (error) {
       console.error('[AUTH] Reset password error:', error);
       return { error: { message: error.message || 'Password reset failed' } };
@@ -155,6 +201,7 @@ export function AuthProvider({ children }) {
     session,
     profile,
     loading,
+    initError,
     signUp,
     signIn,
     signOut,
@@ -163,10 +210,31 @@ export function AuthProvider({ children }) {
     ...roles
   };
 
+  // Provide the loading state separately to avoid circular dependencies
   return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+    <AuthLoadingContext.Provider value={loading}>
+      <AuthContext.Provider value={value}>
+        {initError ? (
+          <div className="min-h-screen bg-puzzle-black flex items-center justify-center p-4">
+            <div className="max-w-md p-6 bg-black/30 rounded-lg border border-red-500">
+              <h2 className="text-xl text-puzzle-gold mb-4">Authentication Error</h2>
+              <p className="text-white mb-4">There was a problem initializing authentication:</p>
+              <div className="bg-red-900/20 p-3 rounded mb-4">
+                <p className="text-red-400">{initError}</p>
+              </div>
+              <button
+                className="w-full bg-puzzle-aqua text-black px-4 py-2 rounded"
+                onClick={() => window.location.reload()}
+              >
+                Reload Application
+              </button>
+            </div>
+          </div>
+        ) : (
+          children
+        )}
+      </AuthContext.Provider>
+    </AuthLoadingContext.Provider>
   );
 }
 
@@ -176,4 +244,8 @@ export const useAuth = () => {
     throw new Error('[AUTH] useAuth must be used within an AuthProvider');
   }
   return context;
+};
+
+export const useAuthLoading = () => {
+  return useContext(AuthLoadingContext);
 };

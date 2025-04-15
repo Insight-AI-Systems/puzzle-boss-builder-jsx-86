@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { StrictMode } from 'react';
 import App from './App.jsx';
 import AppWrapper from './AppWrapper.jsx';
+import BootstrapLoader from './components/bootstrap/BootstrapLoader.jsx';
 import './index.css';
 
 // More detailed initialization logging with timing
@@ -30,7 +31,16 @@ let loadingTimeout = setTimeout(() => {
     bodyChildren: document.body.children.length,
     documentReady: document.readyState
   });
-}, 10000);
+}, 15000); // Extended to 15 seconds
+
+// Create a function to clear timeout when loaded
+const clearLoadingTimeout = () => {
+  if (loadingTimeout) {
+    clearTimeout(loadingTimeout);
+    loadingTimeout = null;
+    console.log('[PUZZLE BOSS] Loading timeout cleared - Application loaded successfully');
+  }
+};
 
 // Try/catch block to catch initialization errors
 try {
@@ -50,18 +60,17 @@ try {
     try {
       root.render(
         <StrictMode>
-          <AppWrapper>
-            <App />
-          </AppWrapper>
+          <BootstrapLoader onComplete={clearLoadingTimeout} timeout={12000}>
+            <AppWrapper>
+              <App />
+            </AppWrapper>
+          </BootstrapLoader>
         </StrictMode>
       );
       console.log('%c[PUZZLE BOSS] Initial render complete', 'color: #00FFFF; font-weight: bold;', new Date().toISOString());
-      clearTimeout(loadingTimeout); // Clear the timeout as render was successful
-      loadingTimeout = null;
     } catch (renderError) {
       console.error('[PUZZLE BOSS] Error during render:', renderError);
-      clearTimeout(loadingTimeout); // Clear the timeout as we already have an error
-      loadingTimeout = null;
+      clearLoadingTimeout(); // Clear the timeout as we already have an error
       
       // Show a more visible error message
       rootElement.innerHTML = `
@@ -77,8 +86,7 @@ try {
     }
   } else {
     console.error('[PUZZLE BOSS] Critical: Root element not found in DOM');
-    clearTimeout(loadingTimeout); // Clear the timeout as we already have an error
-    loadingTimeout = null;
+    clearLoadingTimeout(); // Clear the timeout as we already have an error
     
     document.body.innerHTML = `
       <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000000; color: #FF0000; font-family: sans-serif; padding: 20px; text-align: center;">
@@ -93,8 +101,7 @@ try {
   }
 } catch (error) {
   console.error('[PUZZLE BOSS] Fatal initialization error:', error);
-  clearTimeout(loadingTimeout); // Clear the timeout as we already have an error
-  loadingTimeout = null;
+  clearLoadingTimeout(); // Clear the timeout as we already have an error
   
   // Try to display an error message on the page
   try {
@@ -125,7 +132,8 @@ window.__puzzleBossDebug = {
       routerInitialized: Boolean(window.location && window.location.pathname),
       documentReady: document.readyState
     });
-  }
+  },
+  clearLoadingTimeout: clearLoadingTimeout
 };
 
 console.log('[PUZZLE BOSS] Debug helper available at window.__puzzleBossDebug');

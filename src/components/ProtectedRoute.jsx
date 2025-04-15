@@ -20,6 +20,12 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     return <Loading color="aqua" />;
   }
 
+  // Safety check for infinite loading
+  if (loading === undefined) {
+    console.error('ProtectedRoute: Auth loading state is undefined');
+    return <Loading color="burgundy" message="Authentication system error" />;
+  }
+
   if (!user) {
     console.log('ProtectedRoute: User not logged in, redirecting to /auth');
     return <Navigate to="/auth" replace />;
