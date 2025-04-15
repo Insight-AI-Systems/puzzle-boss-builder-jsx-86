@@ -1,8 +1,7 @@
-
 import React from 'react';
 import Debug from '../Debug';
 import { useAppMode } from '@/contexts/app-mode';
-import Loading from '../ui/loading';
+import { InitializationError } from '@/components/error/ErrorComponents';
 
 const AppErrorBoundary = ({ error, appMessage, appState, loadingStages, initLogs }) => {
   const { switchToMode } = useAppMode();

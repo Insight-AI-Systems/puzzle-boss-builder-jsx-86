@@ -1,8 +1,6 @@
-
 import React from 'react';
 import { useBootstrapStages } from '@/hooks/useBootstrapStages';
-import BootstrapError from './BootstrapError';
-import BootstrapTimeoutWarning from './BootstrapTimeoutWarning';
+import { BootstrapError, TimeoutWarning } from '@/components/error/ErrorComponents';
 import BootstrapProgress from './BootstrapProgress';
 import { bootstrapConfig } from '@/config/bootstrapConfig';
 
@@ -57,7 +55,7 @@ const BootstrapLoader = ({
   // Show timeout warning if loading takes too long
   if (timeoutReached) {
     return (
-      <BootstrapTimeoutWarning
+      <TimeoutWarning
         loadingStage={loadingStage}
         loadingSteps={loadingSteps}
         currentStepIndex={currentStepIndex}
