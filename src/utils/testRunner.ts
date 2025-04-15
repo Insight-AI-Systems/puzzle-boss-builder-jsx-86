@@ -77,9 +77,9 @@ export class TestRunner {
   }
 }
 
-// Run some basic tests at startup to verify the environment
-(async () => {
-  // Check if we're in a browser environment
+// Modified to avoid using hooks outside of component functions
+// This function should be called from a component, not at the module level
+export const runInitialTests = async () => {
   if (typeof window !== 'undefined') {
     console.log('Running initial environment tests...');
     
@@ -91,4 +91,4 @@ export class TestRunner {
     const authStatusOk = await TestRunner.testAuthStatus();
     console.log('Auth system:', authStatusOk ? 'OK' : 'Failed');
   }
-})();
+};
