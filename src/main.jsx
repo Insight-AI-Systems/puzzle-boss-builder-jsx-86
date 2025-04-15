@@ -3,7 +3,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import MinimalApp from './MinimalApp.jsx';
-import { AppModeProvider } from './contexts/app-mode';
+import { AppModeProvider, getAppMode } from './contexts/app-mode';
 import './index.css';
 
 // Add detailed console logs to track initialization
@@ -12,6 +12,22 @@ console.log('[MINIMAL APP] React version:', React?.version || 'unknown');
 
 // Track performance
 const startTime = performance.now();
+
+// Try to get diagnostic settings from local storage
+let diagnosticSettings = {
+  enabled: true,
+  timeout: 5000,
+  showWarnings: true
+};
+
+try {
+  const storedSettings = localStorage.getItem('diagnostic-settings');
+  if (storedSettings) {
+    diagnosticSettings = JSON.parse(storedSettings);
+  }
+} catch (error) {
+  console.error('[MINIMAL APP] Error loading diagnostic settings:', error);
+}
 
 // Global error handler for uncaught exceptions
 window.onerror = function(message, source, lineno, colno, error) {
@@ -50,6 +66,19 @@ window.addEventListener('unhandledrejection', function(event) {
   }
 });
 
+// Function to check for dismissed warnings
+const isWarningDismissed = (warningId) => {
+  try {
+    const dismissedWarnings = localStorage.getItem('dismissed-warnings');
+    if (dismissedWarnings) {
+      return JSON.parse(dismissedWarnings).includes(warningId);
+    }
+  } catch (e) {
+    console.error('[MINIMAL APP] Error checking dismissed warnings:', e);
+  }
+  return false;
+};
+
 // Execute render in a try/catch block
 try {
   console.log('[MINIMAL APP] Looking for root element...');
@@ -66,11 +95,19 @@ try {
   
   console.log('[MINIMAL APP] Root created, about to render with AppModeProvider...');
   
-  root.render(
-    <AppModeProvider>
-      <MinimalApp />
-    </AppModeProvider>
-  );
+  // Determine if we should use the AppModeProvider or render in standalone mode
+  const urlParams = new URLSearchParams(window.location.search);
+  const isStandalone = urlParams.get('standalone') === 'true';
+  
+  if (isStandalone) {
+    root.render(<MinimalApp isStandalone={true} />);
+  } else {
+    root.render(
+      <AppModeProvider>
+        <MinimalApp />
+      </AppModeProvider>
+    );
+  }
   
   console.log('[MINIMAL APP] Render call completed');
   
@@ -110,8 +147,14 @@ try {
   }
 }
 
-// Create a timeout to detect if rendering hangs
+// Create a timeout to detect if rendering hangs, using the configurable timeout
 const renderTimeout = setTimeout(() => {
+  // Skip if warnings are disabled or this specific warning is dismissed
+  if (!diagnosticSettings.showWarnings || isWarningDismissed('render-timeout')) {
+    console.log('[MINIMAL APP] Render timeout reached but warnings are disabled');
+    return;
+  }
+  
   console.warn('[MINIMAL APP] Render timeout reached - application may be stalled');
   
   // Check what's in the DOM
@@ -123,19 +166,24 @@ const renderTimeout = setTimeout(() => {
     const rootEl = document.getElementById('root');
     if (rootEl && !rootEl.querySelector('.minimal-app-timeout-message')) {
       rootEl.innerHTML += `
-        <div class="minimal-app-timeout-message" style="position: fixed; bottom: 10px; right: 10px; background: #FFD700; color: black; padding: 10px; border-radius: 5px; max-width: 300px; z-index: 9999;">
-          <p><strong>Warning:</strong> Rendering timeout reached.</p>
-          <p>Check console for details</p>
-          <button onclick="location.reload()" style="background: #00FFFF; color: black; border: none; padding: 5px 10px; margin-top: 10px; cursor: pointer;">
-            Reload
-          </button>
+        <div class="minimal-app-timeout-message" style="position: fixed; bottom: 10px; right: 10px; background: #FFD700; color: black; padding: 10px; border-radius: 5px; max-width: 300px; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+          <p style="margin: 0 0 8px 0;"><strong>Warning:</strong> Rendering timeout reached.</p>
+          <p style="margin: 0 0 8px 0; font-size: 0.9em;">Check console for details</p>
+          <div style="display: flex; justify-content: space-between; gap: 8px;">
+            <button onclick="this.parentNode.parentNode.remove()" style="background: #800020; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-size: 0.9em;">
+              Dismiss
+            </button>
+            <button onclick="location.reload()" style="background: #00FFFF; color: black; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-size: 0.9em;">
+              Reload
+            </button>
+          </div>
         </div>
       `;
     }
   } catch (e) {
     console.error('[MINIMAL APP] Failed to add timeout message:', e);
   }
-}, 5000);
+}, diagnosticSettings.timeout || 5000); // Use configured timeout or default to 5000ms
 
 // Expose a cleanup function to be called when rendering is complete
 window.__clearMinimalAppTimeout = () => {
