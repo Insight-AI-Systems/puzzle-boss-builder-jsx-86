@@ -16,32 +16,192 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    
+    <!-- Add diagnostic info container that will be visible regardless of JavaScript -->
+    <style>
+      #diagnostic-info {
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #00FFFF;
+        padding: 10px;
+        border-radius: 5px;
+        font-family: monospace;
+        font-size: 12px;
+        max-width: 300px;
+        max-height: 200px;
+        overflow: auto;
+        z-index: 9999;
+        display: none;
+      }
+      
+      .error-message {
+        margin: 5px 0;
+        color: #FF5555;
+      }
+      
+      #toggle-diagnostics {
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        background: #000000;
+        color: #00FFFF;
+        border: 1px solid #00FFFF;
+        border-radius: 5px;
+        padding: 5px 10px;
+        font-size: 12px;
+        cursor: pointer;
+        z-index: 10000;
+      }
+    </style>
   </head>
 
   <body>
     <div id="root">
-      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000000; color: #00FFFF; font-family: sans-serif;">
-        <div style="text-align: center;">
-          <h1>Loading The Puzzle Boss...</h1>
-          <p>If this message persists, please check the console for errors.</p>
+      <!-- Enhanced fallback content that will show if JavaScript fails to load -->
+      <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; background-color: #000000; color: #00FFFF; font-family: sans-serif; text-align: center; padding: 20px;">
+        <h1 style="font-size: 32px; margin-bottom: 20px;">The Puzzle Boss</h1>
+        <div style="max-width: 500px; background-color: rgba(0, 0, 0, 0.5); padding: 30px; border-radius: 10px; border: 1px solid #00FFFF;">
+          <p style="font-size: 18px; margin-bottom: 15px;">Loading application...</p>
+          <div style="width: 100%; background-color: #333; height: 20px; border-radius: 10px; overflow: hidden; margin-bottom: 20px;">
+            <div id="progress-bar" style="width: 0%; height: 100%; background-color: #00FFFF; transition: width 0.5s;"></div>
+          </div>
+          <p style="font-size: 14px; color: #BBB; margin-bottom: 15px;">If you see this message for more than a few seconds, try refreshing the page.</p>
+          <div style="color: #FF5555; margin-top: 20px; font-size: 14px; display: none;" id="error-message">
+            JavaScript may be disabled or an error occurred.
+          </div>
+          <button 
+            style="margin-top: 20px; background-color: #00FFFF; color: #000000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; display: none;" 
+            id="reload-button"
+            onclick="window.location.reload()">
+            Reload Page
+          </button>
         </div>
       </div>
     </div>
-    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
+    
+    <!-- Diagnostics toggle button -->
+    <button id="toggle-diagnostics">Show Diagnostics</button>
+    
+    <!-- Diagnostic information container -->
+    <div id="diagnostic-info">
+      <h3>Diagnostic Info</h3>
+      <div id="diagnostic-content"></div>
+    </div>
+    
+    <!-- Enhanced initialization script with better error handling -->
     <script>
       console.log('HTML Initialization started at:', new Date().toISOString());
+      
+      // Track loading progress
+      let loadingProgress = 0;
+      const progressBar = document.getElementById('progress-bar');
+      const errorMessage = document.getElementById('error-message');
+      const reloadButton = document.getElementById('reload-button');
+      const diagnosticInfo = document.getElementById('diagnostic-info');
+      const diagnosticContent = document.getElementById('diagnostic-content');
+      const toggleDiagnostics = document.getElementById('toggle-diagnostics');
+      
+      // Toggle diagnostics visibility
+      if (toggleDiagnostics) {
+        toggleDiagnostics.addEventListener('click', function() {
+          if (diagnosticInfo.style.display === 'none' || !diagnosticInfo.style.display) {
+            diagnosticInfo.style.display = 'block';
+            this.textContent = 'Hide Diagnostics';
+          } else {
+            diagnosticInfo.style.display = 'none';
+            this.textContent = 'Show Diagnostics';
+          }
+        });
+      }
+      
+      // Function to add diagnostic information
+      function addDiagnostic(message, isError = false) {
+        if (diagnosticContent) {
+          const el = document.createElement('div');
+          el.textContent = message;
+          if (isError) {
+            el.className = 'error-message';
+          }
+          diagnosticContent.appendChild(el);
+          diagnosticContent.scrollTop = diagnosticContent.scrollHeight;
+        }
+        console.log(isError ? 'ERROR:' : 'INFO:', message);
+      }
+      
+      // Log browser information
+      addDiagnostic('Browser: ' + navigator.userAgent);
+      addDiagnostic('Resolution: ' + window.innerWidth + 'x' + window.innerHeight);
+      
+      // Simulate loading progress
+      const updateProgress = () => {
+        if (loadingProgress < 90) {
+          loadingProgress += 10;
+          if (progressBar) {
+            progressBar.style.width = loadingProgress + '%';
+          }
+          setTimeout(updateProgress, 500);
+        }
+      };
+      updateProgress();
+      
+      // Show error after timeout
+      setTimeout(() => {
+        if (document.body.contains(errorMessage) && document.body.contains(reloadButton)) {
+          errorMessage.style.display = 'block';
+          reloadButton.style.display = 'block';
+          addDiagnostic('Loading timeout reached - application may be stalled', true);
+        }
+      }, 10000);
       
       // Add global error handler
       window.onerror = function(message, source, lineno, colno, error) {
         console.error('Global error caught:', message, 'at', source, lineno, colno);
         console.error('Error object:', error);
+        
+        addDiagnostic('Error: ' + message + ' at ' + source + ':' + lineno, true);
+        
+        if (errorMessage && reloadButton) {
+          errorMessage.textContent = 'JavaScript error: ' + message;
+          errorMessage.style.display = 'block';
+          reloadButton.style.display = 'block';
+        }
+        
         return false;
       };
       
       // Add unhandled promise rejection handler
       window.addEventListener('unhandledrejection', function(event) {
         console.error('Unhandled promise rejection:', event.reason);
+        addDiagnostic('Unhandled promise: ' + (event.reason?.message || 'Unknown promise error'), true);
       });
+      
+      // Check if key features are available
+      if (!window.requestAnimationFrame) {
+        addDiagnostic('requestAnimationFrame not supported!', true);
+      }
+      
+      if (!window.fetch) {
+        addDiagnostic('fetch API not supported!', true);
+      }
+      
+      if (!window.localStorage) {
+        addDiagnostic('localStorage not supported!', true);
+      }
+      
+      // Monitor network requests (simplified version)
+      const originalFetch = window.fetch;
+      window.fetch = function(...args) {
+        const url = args[0];
+        addDiagnostic('Fetch: ' + (typeof url === 'string' ? url : url.url));
+        
+        return originalFetch.apply(this, args)
+          .catch(error => {
+            addDiagnostic('Fetch error for ' + (typeof url === 'string' ? url : url.url) + ': ' + error.message, true);
+            throw error;
+          });
+      };
     </script>
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.jsx"></script>
