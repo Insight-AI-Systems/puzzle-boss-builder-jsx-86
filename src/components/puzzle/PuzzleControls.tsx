@@ -3,8 +3,26 @@ import React, { memo } from 'react';
 import { Shuffle, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Memoize the controls component to prevent re-renders when the puzzle pieces change
-const PuzzleControls = memo(({ shufflePuzzle, resetPuzzle, muted, setMuted }) => {
+/**
+ * Props interface for the PuzzleControls component
+ */
+interface PuzzleControlsProps {
+  shufflePuzzle: () => void;
+  resetPuzzle: () => void;
+  muted: boolean;
+  setMuted: (muted: boolean) => void;
+}
+
+/**
+ * PuzzleControls component for rendering puzzle control buttons
+ * Memoized to prevent re-renders when the puzzle pieces change
+ */
+const PuzzleControls: React.FC<PuzzleControlsProps> = memo(({
+  shufflePuzzle,
+  resetPuzzle,
+  muted,
+  setMuted
+}) => {
   return (
     <div className="flex justify-center gap-2 w-full max-w-xs">
       <Button 
