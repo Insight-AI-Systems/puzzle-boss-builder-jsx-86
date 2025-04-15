@@ -1,18 +1,21 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import DiagnosticLog from '@/components/DiagnosticLog';
+import diagnosticConfig, { 
+  loadDiagnosticSettings, 
+  saveDiagnosticSettings, 
+  isWarningDismissed,
+  dismissWarning as dismissWarningUtil
+} from '@/config/diagnosticSettings';
 
 // Create the context with extended default values
 const AppModeContext = createContext({
   isMinimal: false,
   toggleMode: () => {},
-  diagnosticSettings: {
-    enabled: true,
-    timeout: 5000,
-    showWarnings: true
-  },
+  diagnosticSettings: diagnosticConfig.settings,
   updateDiagnosticSettings: () => {},
-  dismissWarning: () => {}
+  dismissWarning: () => {},
+  isWarningDismissed: () => false
 });
 
 export function AppModeProvider({ children }) {
@@ -35,33 +38,13 @@ export function AppModeProvider({ children }) {
   });
 
   // Diagnostic settings with configurable timeout
-  const [diagnosticSettings, setDiagnosticSettings] = useState(() => {
-    try {
-      const storedSettings = localStorage.getItem('diagnostic-settings');
-      return storedSettings ? JSON.parse(storedSettings) : {
-        enabled: true,
-        timeout: 5000, // Default timeout in ms
-        showWarnings: true
-      };
-    } catch (error) {
-      console.error('Error loading diagnostic settings:', error);
-      return {
-        enabled: true,
-        timeout: 5000,
-        showWarnings: true
-      };
-    }
-  });
+  const [diagnosticSettings, setDiagnosticSettings] = useState(loadDiagnosticSettings);
 
-  // Warning dismissal state
-  const [dismissedWarnings, setDismissedWarnings] = useState(() => {
-    try {
-      const stored = localStorage.getItem('dismissed-warnings');
-      return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-      console.error('Error loading dismissed warnings:', error);
-      return [];
-    }
+  // ModeTransition state for visual indicators
+  const [modeTransition, setModeTransition] = useState({
+    active: false,
+    target: null,
+    startTime: null
   });
 
   // Persist mode changes
@@ -69,6 +52,20 @@ export function AppModeProvider({ children }) {
     try {
       localStorage.setItem('app-mode', isMinimal ? 'minimal' : 'full');
       console.log(`[APP_MODE] Switched to ${isMinimal ? 'minimal' : 'full'} mode`);
+      
+      // Trigger mode transition animation
+      setModeTransition({
+        active: true,
+        target: isMinimal ? 'minimal' : 'full',
+        startTime: Date.now()
+      });
+      
+      // Clear transition state after animation completes
+      const timeoutId = setTimeout(() => {
+        setModeTransition(prev => ({ ...prev, active: false }));
+      }, 1000);
+      
+      return () => clearTimeout(timeoutId);
     } catch (error) {
       console.error('Failed to save app mode to localStorage:', error);
     }
@@ -76,21 +73,8 @@ export function AppModeProvider({ children }) {
 
   // Persist diagnostic settings
   useEffect(() => {
-    try {
-      localStorage.setItem('diagnostic-settings', JSON.stringify(diagnosticSettings));
-    } catch (error) {
-      console.error('Failed to save diagnostic settings:', error);
-    }
+    saveDiagnosticSettings(diagnosticSettings);
   }, [diagnosticSettings]);
-
-  // Persist dismissed warnings
-  useEffect(() => {
-    try {
-      localStorage.setItem('dismissed-warnings', JSON.stringify(dismissedWarnings));
-    } catch (error) {
-      console.error('Failed to save dismissed warnings:', error);
-    }
-  }, [dismissedWarnings]);
 
   // Toggle between minimal and full mode
   const toggleMode = () => {
@@ -99,27 +83,22 @@ export function AppModeProvider({ children }) {
 
   // Update diagnostic settings
   const updateDiagnosticSettings = (updates) => {
-    setDiagnosticSettings(prev => ({
-      ...prev,
-      ...updates
-    }));
+    setDiagnosticSettings(prev => {
+      const newSettings = { ...prev, ...updates };
+      saveDiagnosticSettings(newSettings);
+      return newSettings;
+    });
   };
 
   // Dismiss a specific warning
   const dismissWarning = (warningId) => {
-    if (!dismissedWarnings.includes(warningId)) {
-      setDismissedWarnings(prev => [...prev, warningId]);
-    }
-  };
-
-  // Check if a warning is dismissed
-  const isWarningDismissed = (warningId) => {
-    return dismissedWarnings.includes(warningId);
+    dismissWarningUtil(warningId);
   };
 
   const contextValue = {
     isMinimal,
     toggleMode,
+    modeTransition,
     diagnosticSettings,
     updateDiagnosticSettings,
     dismissWarning,
@@ -128,9 +107,16 @@ export function AppModeProvider({ children }) {
 
   return (
     <AppModeContext.Provider value={contextValue}>
-      {children}
-      {/* Always show DiagnosticLog in full mode, but make it collapsible */}
-      {!isMinimal && diagnosticSettings.enabled && <DiagnosticLog maxEntries={5} />}
+      <div className={`app-container ${modeTransition.active ? 'mode-transition' : ''}`} data-mode={isMinimal ? 'minimal' : 'full'}>
+        {children}
+        {/* Only show DiagnosticLog in full mode when enabled */}
+        {!isMinimal && diagnosticSettings.display.showDiagnosticsInUI && (
+          <DiagnosticLog 
+            maxEntries={diagnosticSettings.display.maxLogEntries} 
+            expanded={diagnosticSettings.display.expandedByDefault}
+          />
+        )}
+      </div>
     </AppModeContext.Provider>
   );
 }
@@ -160,11 +146,7 @@ export const useAppMode = () => {
         url.searchParams.set('minimal', 'true');
         window.location.href = url.toString();
       },
-      diagnosticSettings: {
-        enabled: true,
-        timeout: 5000,
-        showWarnings: true
-      },
+      diagnosticSettings: diagnosticConfig.settings,
       updateDiagnosticSettings: () => {
         console.warn('updateDiagnosticSettings called outside provider');
       },
