@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useSimpleAuth } from '@/contexts/simple-auth';
+import FormField from '@/components/form/FormField';
+import TermsCheckbox from '@/components/form/TermsCheckbox';
 
 const SimpleRegisterForm = () => {
   const navigate = useNavigate();
@@ -85,65 +85,45 @@ const SimpleRegisterForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="username">Username</Label>
-        <Input
-          id="username"
-          name="username"
-          type="text"
-          value={registerData.username}
-          onChange={handleChange}
-          className={errors.username ? 'border-red-500' : ''}
-        />
-        {errors.username && (
-          <p className="text-red-500 text-xs">{errors.username}</p>
-        )}
-      </div>
+      <FormField
+        id="username"
+        label="Username"
+        name="username"
+        type="text"
+        value={registerData.username}
+        onChange={handleChange}
+        error={errors.username}
+      />
       
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          value={registerData.email}
-          onChange={handleChange}
-          className={errors.email ? 'border-red-500' : ''}
-        />
-        {errors.email && (
-          <p className="text-red-500 text-xs">{errors.email}</p>
-        )}
-      </div>
+      <FormField
+        id="email"
+        label="Email"
+        name="email"
+        type="email"
+        value={registerData.email}
+        onChange={handleChange}
+        error={errors.email}
+      />
       
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          value={registerData.password}
-          onChange={handleChange}
-          className={errors.password ? 'border-red-500' : ''}
-        />
-        {errors.password && (
-          <p className="text-red-500 text-xs">{errors.password}</p>
-        )}
-      </div>
+      <FormField
+        id="password"
+        label="Password"
+        name="password"
+        type="password"
+        value={registerData.password}
+        onChange={handleChange}
+        error={errors.password}
+      />
       
-      <div className="space-y-2">
-        <Label htmlFor="confirmPassword">Confirm Password</Label>
-        <Input
-          id="confirmPassword"
-          name="confirmPassword"
-          type="password"
-          value={registerData.confirmPassword}
-          onChange={handleChange}
-          className={errors.confirmPassword ? 'border-red-500' : ''}
-        />
-        {errors.confirmPassword && (
-          <p className="text-red-500 text-xs">{errors.confirmPassword}</p>
-        )}
-      </div>
+      <FormField
+        id="confirmPassword"
+        label="Confirm Password"
+        name="confirmPassword"
+        type="password"
+        value={registerData.confirmPassword}
+        onChange={handleChange}
+        error={errors.confirmPassword}
+      />
       
       <Button 
         type="submit" 
