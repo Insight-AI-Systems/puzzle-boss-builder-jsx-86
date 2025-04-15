@@ -6,6 +6,7 @@ import { RefreshCw } from "lucide-react";
 import { AddProgressItemDialog } from "@/components/AddProgressItemDialog";
 import { useProgressItems } from "@/hooks/useProgressItems";
 import { ProgressTable } from "@/components/progress/ProgressTable";
+import { ProgressSummary } from "@/components/progress/ProgressSummary";
 
 const Progress = () => {
   const { items, isLoading, isSyncing, addComment, syncTasks } = useProgressItems();
@@ -38,6 +39,9 @@ const Progress = () => {
             <AddProgressItemDialog />
           </div>
         </div>
+        
+        {/* Add progress summary */}
+        <ProgressSummary items={items || []} />
         
         <Card className="bg-puzzle-black/50 border-puzzle-aqua/20">
           <CardHeader>
