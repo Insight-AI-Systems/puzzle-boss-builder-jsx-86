@@ -1,46 +1,24 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
-import { ROLES } from '@/utils/permissions';
 import { AuthResult } from '../types';
 
 /**
- * Signs up a new user
+ * Signs up a new user with email, password and username
  */
 export const signUp = async (email: string, password: string, username: string): Promise<AuthResult> => {
   console.log('Attempting signup for:', email);
   try {
-    // Check if email already exists
-    const { data: existingUsers, error: checkError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('username', username)
-      .maybeSingle();
-    
-    if (checkError) {
-      console.error('Error checking existing username:', checkError);
-    }
-    
-    if (existingUsers) {
-      toast({
-        title: "Username already taken",
-        description: "Please choose a different username",
-        variant: "destructive"
-      });
-      return { error: { message: "Username already taken" } };
-    }
-
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          username,
-          role: ROLES.PLAYER // Default role for new users
+          username
         }
       }
     });
-
+    
     if (error) {
       console.error('Signup error:', error);
       toast({
@@ -53,8 +31,8 @@ export const signUp = async (email: string, password: string, username: string):
 
     console.log('Signup successful:', data);
     toast({
-      title: "Signup successful!",
-      description: "Welcome to The Puzzle Boss. Check your email to confirm your account.",
+      title: "Welcome to The Puzzle Boss!",
+      description: "Your account has been created successfully.",
     });
     
     return { data };

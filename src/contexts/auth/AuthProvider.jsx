@@ -9,7 +9,7 @@ import {
   signOut as authSignOut, 
   resetPassword as authResetPassword, 
   updateUserProfile as authUpdateProfile 
-} from './authUtils.jsx';
+} from './authUtils';
 import { useAuthRoles } from './useAuthRoles';
 
 // Create a separate context for loading state to avoid circular dependencies
