@@ -1,40 +1,8 @@
 
 import { useState, useEffect } from 'react';
+import { bootstrapStages, bootstrapConfig } from '@/config/bootstrapConfig';
 
-const defaultStages = [
-  { 
-    name: 'environment', 
-    description: 'Loading environment variables and configuration', 
-    delay: 100 
-  },
-  { 
-    name: 'libraries', 
-    description: 'Initializing core libraries and dependencies', 
-    delay: 200 
-  },
-  { 
-    name: 'configuration', 
-    description: 'Setting up application configuration', 
-    delay: 300 
-  },
-  { 
-    name: 'services', 
-    description: 'Connecting to services and APIs', 
-    delay: 500 
-  },
-  { 
-    name: 'components', 
-    description: 'Preparing React components', 
-    delay: 400 
-  },
-  { 
-    name: 'complete', 
-    description: 'Finalizing application startup', 
-    delay: 200 
-  }
-];
-
-export const useBootstrapStages = ({ onComplete, timeout = 10000 }) => {
+export const useBootstrapStages = ({ onComplete, timeout = bootstrapConfig.defaultTimeout }) => {
   const [loadingStage, setLoadingStage] = useState('initializing');
   const [loadingSteps, setLoadingSteps] = useState([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -46,14 +14,18 @@ export const useBootstrapStages = ({ onComplete, timeout = 10000 }) => {
 
   // Track loading stages
   useEffect(() => {
-    console.log(`[Bootstrap] Stage: ${loadingStage}`);
+    if (bootstrapConfig.debugEnabled) {
+      console.log(`[Bootstrap] Stage: ${loadingStage}`);
+    }
     
     // Add detailed logging for each stage
     const addLoadingStep = (stage, status) => {
       const timestamp = Date.now();
       const timeFromStart = timestamp - startTime;
       
-      console.log(`[Bootstrap] ${stage.name} (${timeFromStart}ms): ${status}`);
+      if (bootstrapConfig.debugEnabled) {
+        console.log(`[Bootstrap] ${stage.name} (${timeFromStart}ms): ${status}`);
+      }
       
       setLoadingSteps(prev => [
         ...prev, 
@@ -73,21 +45,21 @@ export const useBootstrapStages = ({ onComplete, timeout = 10000 }) => {
       setElapsedTime(current);
       
       // Check if we should show timeout warning
-      if (current > 5000 && !isComplete && !timeoutReached) {
+      if (current > timeout/2 && !isComplete && !timeoutReached) {
         setTimeoutReached(true);
       }
     }, 100);
     
     return () => clearInterval(timer);
-  }, [loadingStage, startTime, isComplete, timeoutReached]);
+  }, [loadingStage, startTime, isComplete, timeoutReached, timeout]);
   
   // Set up loading stages progression
   useEffect(() => {
     let currentStageIndex = 0;
     
     const progressLoading = () => {
-      if (currentStageIndex < defaultStages.length) {
-        const currentStage = defaultStages[currentStageIndex];
+      if (currentStageIndex < bootstrapStages.length) {
+        const currentStage = bootstrapStages[currentStageIndex];
         setLoadingStage(currentStage.name);
         setCurrentStepIndex(currentStageIndex);
         
@@ -105,7 +77,7 @@ export const useBootstrapStages = ({ onComplete, timeout = 10000 }) => {
         
         currentStageIndex++;
         
-        if (currentStageIndex < defaultStages.length) {
+        if (currentStageIndex < bootstrapStages.length) {
           setTimeout(() => {
             // Record previous step completed
             setLoadingSteps(prev => [
@@ -120,7 +92,7 @@ export const useBootstrapStages = ({ onComplete, timeout = 10000 }) => {
             ]);
             
             progressLoading();
-          }, defaultStages[currentStageIndex - 1].delay);
+          }, currentStage.delay);
         } else {
           // Final stage
           setTimeout(() => {
@@ -166,6 +138,6 @@ export const useBootstrapStages = ({ onComplete, timeout = 10000 }) => {
     isComplete,
     elapsedTime,
     timeoutReached,
-    stages: defaultStages
+    stages: bootstrapStages
   };
 };

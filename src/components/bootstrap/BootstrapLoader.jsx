@@ -1,14 +1,16 @@
+
 import React from 'react';
 import { useBootstrapStages } from '@/hooks/useBootstrapStages';
 import BootstrapError from './BootstrapError';
 import BootstrapTimeoutWarning from './BootstrapTimeoutWarning';
 import BootstrapProgress from './BootstrapProgress';
+import { bootstrapConfig } from '@/config/bootstrapConfig';
 
 const BootstrapLoader = ({ 
   onComplete, 
   children,
-  fallback = null,
-  timeout = 10000 
+  fallback = bootstrapConfig.defaultFallback,
+  timeout = bootstrapConfig.defaultTimeout 
 }) => {
   const {
     loadingStage,
@@ -32,9 +34,7 @@ const BootstrapLoader = ({
     if (window.appRecovery && window.appRecovery.switchMode) {
       window.appRecovery.switchMode('minimal');
     } else {
-      const url = new URL(window.location);
-      url.searchParams.set('mode', 'minimal');
-      window.location = url.toString();
+      window.location = bootstrapConfig.minimalModeUrl;
     }
   };
   
