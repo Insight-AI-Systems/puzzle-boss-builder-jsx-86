@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Table,
@@ -13,6 +12,8 @@ import { ProgressItemRow } from './ProgressItemRow';
 import { CommentsSection } from './CommentsSection';
 import { Filter, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import { 
   DropdownMenu, 
   DropdownMenuTrigger, 
@@ -41,23 +42,65 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({ items, onAddCommen
     }));
   };
 
-  // Apply filters and sorting
+  const handleStatusChange = async (itemId: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('progress_items')
+        .update({ status })
+        .eq('id', itemId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Status updated",
+        description: "The task status has been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update the task status. Please try again.",
+      });
+    }
+  };
+
+  const handlePriorityChange = async (itemId: string, priority: string) => {
+    try {
+      const { error } = await supabase
+        .from('progress_items')
+        .update({ priority })
+        .eq('id', itemId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Priority updated",
+        description: "The task priority has been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating priority:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update the task priority. Please try again.",
+      });
+    }
+  };
+
   const filteredItems = items.filter(item => {
     if (statusFilter && item.status !== statusFilter) return false;
     if (priorityFilter && item.priority !== priorityFilter) return false;
     return true;
   });
 
-  // Sort items by priority and updated date
   const sortedItems = [...filteredItems].sort((a, b) => {
-    // First sort by priority (high > medium > low)
     const priorityOrder = { high: 3, medium: 2, low: 1 };
     const priorityDiff = priorityOrder[b.priority as keyof typeof priorityOrder] - 
                         priorityOrder[a.priority as keyof typeof priorityOrder];
     
     if (priorityDiff !== 0) return priorityDiff;
     
-    // Then sort by updated_at date
     const dateA = new Date(a.updated_at).getTime();
     const dateB = new Date(b.updated_at).getTime();
     return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
@@ -153,6 +196,8 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({ items, onAddCommen
                   item={item} 
                   onToggleComments={toggleComments}
                   isExpanded={!!expandedItems[item.id]}
+                  onStatusChange={handleStatusChange}
+                  onPriorityChange={handlePriorityChange}
                 />
                 {expandedItems[item.id] && (
                   <CommentsSection item={item} onAddComment={onAddComment} />
