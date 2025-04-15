@@ -3,7 +3,7 @@
  * Test Runner - Utilities for running tests and verifying functionality
  */
 
-import { projectTracker } from './projectTracker';
+import { projectTracker } from './ProjectTracker';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 

@@ -5,8 +5,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { projectTracker, ProjectTask, ProjectTest } from '@/utils/projectTracker';
+import { projectTracker } from '@/utils/ProjectTracker';
 import { TestRunner } from '@/utils/testRunner';
+import { ProjectTask, ProjectTest } from '@/utils/types/projectTypes';
 
 const DevelopmentDashboard: React.FC = () => {
   const [tasks, setTasks] = useState<ProjectTask[]>([]);

@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { projectTracker } from "./projectTracker";
+import { projectTracker } from "./ProjectTracker";
 
 /**
  * Synchronizes project tracker tasks with progress items in Supabase
