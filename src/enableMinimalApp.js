@@ -49,3 +49,4 @@ window.enableStandaloneMode = function() {
 
 // Make it globally available for console usage
 console.log('Use window.enableStandaloneMode() to switch to standalone mode (no contexts)');
+

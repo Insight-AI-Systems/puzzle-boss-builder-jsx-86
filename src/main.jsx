@@ -174,3 +174,4 @@ try {
   console.error('[EMERGENCY] Critical error during initialization:', criticalError);
   logErrorToDOM(criticalError, 'Initialization');
 }
+
