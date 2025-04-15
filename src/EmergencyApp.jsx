@@ -69,7 +69,7 @@ const EmergencyApp = () => {
     { path: '/admin', name: 'Admin Dashboard' }
   ];
   
-  // Simple error boundary component
+  // Simple error boundary component - properly implemented
   const ErrorCatcher = ({ children }) => {
     const [hasError, setHasError] = useState(false);
     const [error, setError] = useState(null);

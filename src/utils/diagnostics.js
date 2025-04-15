@@ -1,4 +1,7 @@
 
+// Add missing React import
+import React from 'react';
+
 // Basic diagnostic utilities
 export const diagnostics = {
   checkStorage() {
