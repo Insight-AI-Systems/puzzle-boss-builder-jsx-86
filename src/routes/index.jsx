@@ -1,20 +1,9 @@
 
-import SimpleHome from '@/pages/simple/Home';
-import SimpleAbout from '@/pages/simple/About';
-import SimpleAuth from '@/pages/simple/Auth';
+import Index from '@/pages/Index';
 
 export const routes = [
   {
     path: "/",
-    element: <SimpleHome />
-  },
-  {
-    path: "/about",
-    element: <SimpleAbout />
-  },
-  {
-    path: "/auth",
-    element: <SimpleAuth />
+    element: <Index />
   }
 ];
-
