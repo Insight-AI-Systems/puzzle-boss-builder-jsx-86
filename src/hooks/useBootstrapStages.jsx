@@ -1,6 +1,11 @@
 
 import { useState, useEffect } from 'react';
 import { bootstrapStages, bootstrapConfig } from '@/config/bootstrapConfig';
+import {
+  logBootstrapStage,
+  createLoadingStep,
+  shouldShowTimeoutWarning
+} from '@/utils/bootstrapUtils';
 
 export const useBootstrapStages = ({ onComplete, timeout = bootstrapConfig.defaultTimeout }) => {
   const [loadingStage, setLoadingStage] = useState('initializing');
@@ -14,38 +19,13 @@ export const useBootstrapStages = ({ onComplete, timeout = bootstrapConfig.defau
 
   // Track loading stages
   useEffect(() => {
-    if (bootstrapConfig.debugEnabled) {
-      console.log(`[Bootstrap] Stage: ${loadingStage}`);
-    }
-    
-    // Add detailed logging for each stage
-    const addLoadingStep = (stage, status) => {
-      const timestamp = Date.now();
-      const timeFromStart = timestamp - startTime;
-      
-      if (bootstrapConfig.debugEnabled) {
-        console.log(`[Bootstrap] ${stage.name} (${timeFromStart}ms): ${status}`);
-      }
-      
-      setLoadingSteps(prev => [
-        ...prev, 
-        { 
-          stage: stage.name, 
-          description: stage.description,
-          status, 
-          timestamp,
-          timeFromStart
-        }
-      ]);
-    };
-    
     // Update elapsed time periodically
     const timer = setInterval(() => {
       const current = Date.now() - startTime;
       setElapsedTime(current);
       
       // Check if we should show timeout warning
-      if (current > timeout/2 && !isComplete && !timeoutReached) {
+      if (shouldShowTimeoutWarning(current, timeout, isComplete)) {
         setTimeoutReached(true);
       }
     }, 100);
@@ -63,50 +43,26 @@ export const useBootstrapStages = ({ onComplete, timeout = bootstrapConfig.defau
         setLoadingStage(currentStage.name);
         setCurrentStepIndex(currentStageIndex);
         
-        // Record step started
-        setLoadingSteps(prev => [
-          ...prev, 
-          { 
-            stage: currentStage.name, 
-            description: currentStage.description,
-            status: 'started', 
-            timestamp: Date.now(),
-            timeFromStart: Date.now() - startTime
-          }
-        ]);
+        // Log and record step started
+        logBootstrapStage(currentStage, 'started', startTime);
+        setLoadingSteps(prev => [...prev, createLoadingStep(currentStage, 'started', startTime)]);
         
         currentStageIndex++;
         
         if (currentStageIndex < bootstrapStages.length) {
           setTimeout(() => {
-            // Record previous step completed
-            setLoadingSteps(prev => [
-              ...prev, 
-              { 
-                stage: currentStage.name, 
-                description: currentStage.description,
-                status: 'completed', 
-                timestamp: Date.now(),
-                timeFromStart: Date.now() - startTime
-              }
-            ]);
+            // Log and record previous step completed
+            logBootstrapStage(currentStage, 'completed', startTime);
+            setLoadingSteps(prev => [...prev, createLoadingStep(currentStage, 'completed', startTime)]);
             
             progressLoading();
           }, currentStage.delay);
         } else {
           // Final stage
           setTimeout(() => {
-            // Record final step completed
-            setLoadingSteps(prev => [
-              ...prev, 
-              { 
-                stage: currentStage.name, 
-                description: currentStage.description,
-                status: 'completed', 
-                timestamp: Date.now(),
-                timeFromStart: Date.now() - startTime
-              }
-            ]);
+            // Log and record final step completed
+            logBootstrapStage(currentStage, 'completed', startTime);
+            setLoadingSteps(prev => [...prev, createLoadingStep(currentStage, 'completed', startTime)]);
             
             setIsComplete(true);
             if (onComplete) onComplete();
@@ -141,3 +97,4 @@ export const useBootstrapStages = ({ onComplete, timeout = bootstrapConfig.defau
     stages: bootstrapStages
   };
 };
+
