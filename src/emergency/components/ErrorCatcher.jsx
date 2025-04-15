@@ -4,12 +4,18 @@ import React, { useState, useEffect } from 'react';
 export const ErrorCatcher = ({ children }) => {
   const [hasError, setHasError] = useState(false);
   const [error, setError] = useState(null);
+  const [errorInfo, setErrorInfo] = useState(null);
   
   useEffect(() => {
     const handleError = (event) => {
       console.error('Error caught by ErrorCatcher:', event);
       setHasError(true);
       setError(event.error || new Error('Unknown error'));
+      setErrorInfo({
+        message: event.message || 'Unknown error',
+        source: event.filename || 'Unknown source',
+        line: event.lineno || 'Unknown line'
+      });
       event.preventDefault();
     };
     
@@ -19,12 +25,24 @@ export const ErrorCatcher = ({ children }) => {
   
   if (hasError) {
     return (
-      <div style={{ padding: '10px', background: '#800020', color: 'white', borderRadius: '4px' }}>
-        <h4>Error Caught:</h4>
-        <p>{error?.message || 'Unknown error'}</p>
+      <div className="p-4 bg-puzzle-burgundy/70 border border-puzzle-burgundy rounded-lg text-white">
+        <h4 className="text-xl font-bold mb-2">Error Caught:</h4>
+        <p className="mb-2">{error?.message || 'Unknown error'}</p>
+        
+        {errorInfo && (
+          <div className="bg-black/40 p-2 rounded mb-2">
+            <p>Source: {errorInfo.source}</p>
+            <p>Line: {errorInfo.line}</p>
+          </div>
+        )}
+        
         <button 
-          onClick={() => setHasError(false)}
-          style={{ background: '#333', border: 'none', color: 'white', padding: '4px 8px', borderRadius: '2px', marginTop: '8px' }}
+          onClick={() => {
+            setHasError(false);
+            setError(null);
+            setErrorInfo(null);
+          }}
+          className="bg-puzzle-aqua text-black px-4 py-2 rounded hover:bg-puzzle-aqua/80 transition-colors"
         >
           Reset
         </button>
