@@ -20,7 +20,6 @@ import { DraggableTableRow } from './DraggableTableRow';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { TestRunner } from '@/utils/testRunner';
-import { Check } from 'lucide-react';
 
 interface DraggableProgressTableProps {
   items: ProgressItem[];
@@ -58,7 +57,8 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
     setIsUpdating(true);
     toast({
       title: "Updating order...",
-      description: "Saving your changes...",
+      description: "Saving your changes to both local storage and database...",
+      duration: 3000,
     });
 
     try {
@@ -81,22 +81,12 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
       const success = await onUpdateItemsOrder(itemIds);
       
       if (success) {
-        const persistenceVerified = await TestRunner.testProgressItemOrder(itemIds);
-        
-        if (persistenceVerified) {
-          toast({
-            title: "Tasks reordered",
-            description: "The task order has been successfully saved and verified",
-            className: "bg-green-800 border-green-900 text-white",
-          });
-        } else {
-          // Even if verification fails, don't revert UI if the update succeeded
-          toast({
-            title: "Order saved",
-            description: "The order was saved to localStorage successfully",
-            className: "bg-green-800 border-green-900 text-white",
-          });
-        }
+        toast({
+          title: "Changes saved",
+          description: "Your task order has been saved and will be available on all devices.",
+          duration: 3000,
+          className: "bg-green-800 border-green-900 text-white",
+        });
       } else {
         // Only revert the UI if the update definitely failed
         setSortedItems(items);
@@ -104,6 +94,7 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
           variant: "destructive",
           title: "Update failed",
           description: "Failed to save the new order. Please try again.",
+          duration: 5000,
         });
       }
     } catch (error) {
@@ -113,6 +104,7 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
         variant: "destructive",
         title: "Error occurred",
         description: "An error occurred while updating the order.",
+        duration: 5000,
       });
     } finally {
       setIsUpdating(false);

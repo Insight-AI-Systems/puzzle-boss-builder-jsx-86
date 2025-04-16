@@ -14,6 +14,8 @@ export function useItemOrder() {
 
   const loadSavedOrder = async () => {
     try {
+      console.log('Loading saved order from database and localStorage...');
+      
       // First try to load from database
       const { data: items, error } = await supabase
         .from('progress_items')
@@ -21,10 +23,18 @@ export function useItemOrder() {
         .order('order_index', { ascending: true })
         .not('order_index', 'is', null);
 
+      if (error) {
+        console.error('Error loading order from database:', error);
+        // Try fallback to localStorage
+        fallbackToLocalStorage();
+        return;
+      }
+
       const localStorageOrder = localStorage.getItem('progressItemsOrder');
       const localStorageTimestamp = localStorage.getItem('progressItemsOrderTimestamp');
       
       if (items && items.length > 0) {
+        console.log(`Found ${items.length} items with order_index in database`);
         const orderFromDb = items.map(item => item.id);
         const latestDbUpdate = Math.max(...items.map(item => 
           new Date(item.updated_at).getTime()
@@ -33,37 +43,72 @@ export function useItemOrder() {
         // If localStorage exists, compare timestamps
         if (localStorageOrder && localStorageTimestamp) {
           const savedTimestamp = parseInt(localStorageTimestamp, 10);
+          
+          console.log('Comparing timestamps:', {
+            localStorage: new Date(savedTimestamp).toISOString(),
+            database: new Date(latestDbUpdate).toISOString()
+          });
+          
           if (savedTimestamp > latestDbUpdate) {
             // localStorage is more recent, use it
+            console.log('Using localStorage order (more recent)');
             setSavedOrder(JSON.parse(localStorageOrder));
             return;
           }
         }
 
         // Use database order and update localStorage
+        console.log('Using database order and updating localStorage');
         setSavedOrder(orderFromDb);
         localStorage.setItem('progressItemsOrder', JSON.stringify(orderFromDb));
         localStorage.setItem('progressItemsOrderTimestamp', Date.now().toString());
+        
+        toast({
+          title: "Order loaded",
+          description: "Task order has been loaded from database",
+          duration: 3000,
+        });
+        
         return;
+      } else {
+        console.log('No items with order_index found in database');
       }
 
       // Fallback to localStorage if no order in database
-      if (localStorageOrder) {
-        setSavedOrder(JSON.parse(localStorageOrder));
-      }
+      fallbackToLocalStorage();
     } catch (err) {
       console.error('Error loading saved order:', err);
+      fallbackToLocalStorage();
+    }
+  };
+
+  const fallbackToLocalStorage = () => {
+    const localStorageOrder = localStorage.getItem('progressItemsOrder');
+    if (localStorageOrder) {
+      console.log('Falling back to localStorage order');
+      setSavedOrder(JSON.parse(localStorageOrder));
+      toast({
+        title: "Order loaded",
+        description: "Task order has been loaded from local storage",
+        duration: 3000,
+      });
+    } else {
+      console.log('No saved order found in localStorage');
     }
   };
 
   const saveOrderToDB = async (orderedItemIds: string[]) => {
     try {
+      console.log('Saving order to database:', orderedItemIds);
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        console.error('No authenticated user found');
         toast({
           variant: "destructive",
           title: "Authentication required",
-          description: "You must be logged in to save item order",
+          description: "You must be logged in to save item order to database",
+          duration: 5000,
         });
         return false;
       }
@@ -72,7 +117,7 @@ export function useItemOrder() {
       const updates = orderedItemIds.map((id, index) => ({
         id,
         order_index: index,
-        title: undefined // Adding undefined for required fields that we don't want to update
+        updated_at: new Date().toISOString() // Explicitly update timestamp
       }));
 
       const { error } = await supabase
@@ -87,6 +132,7 @@ export function useItemOrder() {
         return false;
       }
 
+      console.log('Order saved successfully to database');
       return true;
     } catch (error) {
       console.error('Error saving order to database:', error);
@@ -115,6 +161,7 @@ export function useItemOrder() {
           toast({
             title: "Order saved",
             description: "The new task order has been saved and verified in both local storage and database",
+            duration: 3000,
             className: "bg-green-800 border-green-900 text-white",
           });
           return true;
@@ -123,14 +170,16 @@ export function useItemOrder() {
             variant: "destructive",
             title: "Verification failed",
             description: "The order was saved but could not be verified. Please check the console.",
+            duration: 5000,
           });
           return false;
         }
       } else {
         toast({
           variant: "destructive",
-          title: "Save failed",
-          description: "Failed to save the new order. Please try again.",
+          title: "Database save failed",
+          description: "Failed to save to database, but changes are stored locally.",
+          duration: 5000,
         });
         return false;
       }
@@ -140,6 +189,7 @@ export function useItemOrder() {
         variant: "destructive",
         title: "Error occurred",
         description: error instanceof Error ? error.message : "An unknown error occurred",
+        duration: 5000,
       });
       return false;
     }

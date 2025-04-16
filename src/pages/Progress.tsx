@@ -2,13 +2,14 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, AlertCircle } from "lucide-react";
+import { RefreshCw, AlertCircle, Save } from "lucide-react";
 import { AddProgressItemDialog } from "@/components/AddProgressItemDialog";
 import { useProgressItems } from "@/hooks/useProgressItems";
 import { ProgressTable } from "@/components/progress/ProgressTable";
 import { ProgressSummary } from "@/components/progress/ProgressSummary";
 import { AutomatedTaskFlow } from "@/components/progress/AutomatedTaskFlow";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 
 const Progress = () => {
   const { 
@@ -23,6 +24,16 @@ const Progress = () => {
   } = useProgressItems();
   
   const [syncError, setSyncError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Show a toast when the page loads to inform about auto-saving
+    toast({
+      title: "Auto-save enabled",
+      description: "Changes to task order, status, and priority are automatically saved",
+      duration: 5000,
+    });
+  }, [toast]);
 
   // Add automatic sync on mount and periodic sync
   useEffect(() => {
@@ -56,6 +67,11 @@ const Progress = () => {
       console.error('Manual sync error:', error);
       setSyncError('Sync failed. Please try again later.');
     }
+  };
+
+  const handleOrderUpdate = async (itemIds: string[]) => {
+    const result = await updateItemsOrder(itemIds);
+    return result;
   };
 
   if (isLoading) {
@@ -95,6 +111,14 @@ const Progress = () => {
           </Alert>
         )}
         
+        <Alert className="bg-green-900/20 border-green-500 text-green-100">
+          <Save className="h-4 w-4" />
+          <AlertTitle>Auto-save enabled</AlertTitle>
+          <AlertDescription>
+            Changes to task order, status, and priorities are automatically saved to both your browser and database
+          </AlertDescription>
+        </Alert>
+        
         <AutomatedTaskFlow 
           items={items || []} 
           onUpdateStatus={updateItemStatus}
@@ -113,7 +137,7 @@ const Progress = () => {
               onAddComment={addComment}
               onUpdateStatus={updateItemStatus}
               onUpdatePriority={updateItemPriority}
-              onUpdateItemsOrder={updateItemsOrder}
+              onUpdateItemsOrder={handleOrderUpdate}
             />
           </CardContent>
         </Card>

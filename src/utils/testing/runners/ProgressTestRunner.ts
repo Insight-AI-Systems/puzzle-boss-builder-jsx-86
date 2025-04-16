@@ -9,6 +9,8 @@ export class ProgressTestRunner {
         return false;
       }
       
+      console.log('Testing progress item order for:', itemIds);
+      
       // Verify items exist in the database and check their order
       const { data: dbItems, error } = await supabase
         .from('progress_items')
@@ -25,6 +27,8 @@ export class ProgressTestRunner {
         console.error(`Only found ${dbItems?.length} of ${itemIds.length} items in database`);
         return false;
       }
+
+      console.log('Database items retrieved:', dbItems.map(d => ({id: d.id, order: d.order_index})));
 
       // Get the most recent update timestamp from database
       const latestDbUpdate = Math.max(...dbItems.map(item => 
@@ -50,6 +54,11 @@ export class ProgressTestRunner {
           return false;
         }
 
+        console.log('Comparing timestamps:', {
+          localStorage: new Date(savedTimestamp).toISOString(),
+          database: new Date(latestDbUpdate).toISOString()
+        });
+
         // Compare timestamps to determine which order to use
         if (savedTimestamp > latestDbUpdate) {
           console.log('localStorage order is more recent, using localStorage order');
@@ -71,6 +80,11 @@ export class ProgressTestRunner {
 
   private static verifyDatabaseOrder(dbItems: any[], expectedOrder: string[]): boolean {
     const databaseOrder = dbItems.map(item => item.id);
+    console.log('Verifying database order:', {
+      expected: expectedOrder,
+      actual: databaseOrder
+    });
+    
     const orderMatches = expectedOrder.every((id, index) => databaseOrder[index] === id);
     
     if (!orderMatches) {
@@ -83,6 +97,11 @@ export class ProgressTestRunner {
   }
 
   private static verifyLocalStorageOrder(savedOrder: string[], expectedOrder: string[]): boolean {
+    console.log('Verifying localStorage order:', {
+      expected: expectedOrder,
+      actual: savedOrder
+    });
+    
     const orderMatches = expectedOrder.every((id, index) => savedOrder[index] === id);
     
     if (!orderMatches) {
