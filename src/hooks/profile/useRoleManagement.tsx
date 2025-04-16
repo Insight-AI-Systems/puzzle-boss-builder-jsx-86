@@ -23,7 +23,7 @@ export function useRoleManagement() {
         display_name: data[0].username || null,
         bio: null,
         avatar_url: data[0].avatar_url,
-        role: (data[0].role || 'player'),
+        role: (data[0].role || 'player') as UserRole,
         credits: data[0].credits || 0,
         achievements: [],
         referral_code: null,
@@ -53,4 +53,3 @@ export function useRoleManagement() {
 
   return { updateUserRole };
 }
-

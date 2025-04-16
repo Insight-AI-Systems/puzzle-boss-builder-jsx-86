@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { UserProfile } from '@/types/userTypes';
+import { UserProfile, UserRole } from '@/types/userTypes';
 
 export function useProfileData(profileId: string | null) {
   return useQuery({
@@ -22,7 +22,7 @@ export function useProfileData(profileId: string | null) {
         display_name: data.username || null,
         bio: null,
         avatar_url: data.avatar_url,
-        role: (data.role || 'player'),
+        role: (data.role || 'player') as UserRole,
         credits: data.credits || 0,
         achievements: [],
         referral_code: null,
@@ -35,4 +35,3 @@ export function useProfileData(profileId: string | null) {
     enabled: !!profileId,
   });
 }
-
