@@ -18,8 +18,8 @@ interface ProgressItemRowProps {
   item: ProgressItem;
   onToggleComments: (id: string) => void;
   isExpanded: boolean;
-  onStatusChange: (id: string, status: string) => void;
-  onPriorityChange: (id: string, priority: string) => void;
+  onStatusChange: (id: string, status: string) => Promise<boolean>;
+  onPriorityChange: (id: string, priority: string) => Promise<boolean>;
 }
 
 export const ProgressItemRow: React.FC<ProgressItemRowProps> = ({ 

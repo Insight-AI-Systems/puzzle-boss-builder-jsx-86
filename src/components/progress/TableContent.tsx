@@ -49,7 +49,6 @@ export const TableContent: React.FC<TableContentProps> = ({
       </TableHeader>
       <TableBody>
         {items.map((item) => (
-          // Use a proper wrapper element instead of Fragment with props
           <React.Fragment key={item.id}>
             <ProgressItemRow 
               item={item} 
