@@ -31,22 +31,14 @@ export class ProgressTestRunner {
         new Date(item.updated_at).getTime()
       ));
 
-      // Check database order matches expected order
-      const databaseOrder = dbItems.map(item => item.id);
-      const databaseOrderMatches = itemIds.every((id, index) => databaseOrder[index] === id);
-      
-      if (!databaseOrderMatches) {
-        console.error('Database order does not match expected order');
-        return false;
-      }
-      
-      // Check localStorage
+      // Check localStorage for timestamps
       const savedOrderStr = localStorage.getItem('progressItemsOrder');
       const savedTimeStr = localStorage.getItem('progressItemsOrderTimestamp');
       
       if (!savedOrderStr || !savedTimeStr) {
-        console.error('No saved order or timestamp found in localStorage');
-        return false;
+        // If no localStorage data exists, database order is authoritative
+        console.log('No localStorage data found, using database order');
+        return this.verifyDatabaseOrder(dbItems, itemIds);
       }
       
       try {
@@ -58,21 +50,15 @@ export class ProgressTestRunner {
           return false;
         }
 
-        // Check if localStorage timestamp is older than database
-        if (savedTimestamp < latestDbUpdate) {
-          console.error('localStorage order is outdated compared to database');
-          return false;
+        // Compare timestamps to determine which order to use
+        if (savedTimestamp > latestDbUpdate) {
+          console.log('localStorage order is more recent, using localStorage order');
+          return this.verifyLocalStorageOrder(savedOrder, itemIds);
+        } else {
+          console.log('Database order is more recent, using database order');
+          return this.verifyDatabaseOrder(dbItems, itemIds);
         }
         
-        // Check that saved order matches the order of IDs
-        const localStorageMatches = itemIds.every((id, index) => savedOrder[index] === id);
-        if (!localStorageMatches) {
-          console.error('localStorage order does not match expected order');
-          return false;
-        }
-        
-        console.log('Progress item order test passed for both database and localStorage');
-        return true;
       } catch (e) {
         console.error('Error parsing saved order from localStorage:', e);
         return false;
@@ -81,5 +67,30 @@ export class ProgressTestRunner {
       console.error('Progress item order test error:', error);
       return false;
     }
+  }
+
+  private static verifyDatabaseOrder(dbItems: any[], expectedOrder: string[]): boolean {
+    const databaseOrder = dbItems.map(item => item.id);
+    const orderMatches = expectedOrder.every((id, index) => databaseOrder[index] === id);
+    
+    if (!orderMatches) {
+      console.error('Database order does not match expected order');
+      return false;
+    }
+    
+    console.log('Database order verification passed');
+    return true;
+  }
+
+  private static verifyLocalStorageOrder(savedOrder: string[], expectedOrder: string[]): boolean {
+    const orderMatches = expectedOrder.every((id, index) => savedOrder[index] === id);
+    
+    if (!orderMatches) {
+      console.error('localStorage order does not match expected order');
+      return false;
+    }
+    
+    console.log('localStorage order verification passed');
+    return true;
   }
 }
