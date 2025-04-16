@@ -1,13 +1,15 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, AlertCircle } from "lucide-react";
 import { AddProgressItemDialog } from "@/components/AddProgressItemDialog";
 import { useProgressItems } from "@/hooks/useProgressItems";
 import { ProgressTable } from "@/components/progress/ProgressTable";
 import { ProgressSummary } from "@/components/progress/ProgressSummary";
 import { AutomatedTaskFlow } from "@/components/progress/AutomatedTaskFlow";
 import { toast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Progress = () => {
   const { 
@@ -19,24 +21,42 @@ const Progress = () => {
     updateItemStatus,
     updateItemPriority
   } = useProgressItems();
+  
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   // Add automatic sync on mount and periodic sync
   useEffect(() => {
     // Initial sync if no items exist
     if (!isLoading && (!items || items.length === 0)) {
       console.log('No progress items found, auto-syncing');
-      syncTasks();
+      syncTasks().catch(err => {
+        console.error('Auto-sync failed:', err);
+        setSyncError('Failed to automatically sync tasks. Please try manual sync.');
+      });
     }
 
     // Set up periodic sync every 30 minutes
     const syncInterval = setInterval(() => {
       console.log('Running periodic sync');
-      syncTasks();
+      syncTasks().catch(err => {
+        console.error('Periodic sync failed:', err);
+        // Don't show UI error for periodic sync failures
+      });
     }, 30 * 60 * 1000); // 30 minutes
 
     // Cleanup interval on unmount
     return () => clearInterval(syncInterval);
   }, [isLoading, items, syncTasks]);
+
+  const handleManualSync = async () => {
+    setSyncError(null);
+    try {
+      await syncTasks();
+    } catch (error) {
+      console.error('Manual sync error:', error);
+      setSyncError('Sync failed. Please try again later.');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -57,7 +77,7 @@ const Progress = () => {
             <Button 
               variant="outline" 
               className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10"
-              onClick={syncTasks}
+              onClick={handleManualSync}
               disabled={isSyncing}
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
@@ -66,6 +86,14 @@ const Progress = () => {
             <AddProgressItemDialog />
           </div>
         </div>
+        
+        {syncError && (
+          <Alert variant="destructive" className="bg-red-900/20 border-red-500 text-red-100">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Sync Error</AlertTitle>
+            <AlertDescription>{syncError}</AlertDescription>
+          </Alert>
+        )}
         
         {/* Add automated task flow component */}
         <AutomatedTaskFlow 

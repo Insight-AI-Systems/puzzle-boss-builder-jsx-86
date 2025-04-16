@@ -87,6 +87,11 @@ export function useProgressItems() {
       return true;
     } catch (error) {
       console.error('Unexpected error adding comment:', error);
+      toast({
+        variant: "destructive",
+        title: "Error adding comment",
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+      });
       return false;
     }
   };
@@ -112,6 +117,11 @@ export function useProgressItems() {
       return true;
     } catch (error) {
       console.error('Unexpected error updating status:', error);
+      toast({
+        variant: "destructive",
+        title: "Error updating status",
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+      });
       return false;
     }
   };
@@ -137,6 +147,11 @@ export function useProgressItems() {
       return true;
     } catch (error) {
       console.error('Unexpected error updating priority:', error);
+      toast({
+        variant: "destructive",
+        title: "Error updating priority",
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+      });
       return false;
     }
   };
@@ -169,7 +184,7 @@ export function useProgressItems() {
       toast({
         variant: "destructive",
         title: "Sync error",
-        description: "An unexpected error occurred while syncing tasks.",
+        description: error instanceof Error ? error.message : "An unexpected error occurred while syncing tasks.",
       });
       return false;
     } finally {
