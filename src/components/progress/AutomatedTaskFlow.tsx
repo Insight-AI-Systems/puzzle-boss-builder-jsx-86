@@ -1,10 +1,7 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { ProgressItem } from '@/hooks/useProgressItems';
-import { Badge } from '@/components/ui/badge';
 import { CheckCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useTaskWorkflow } from '@/hooks/useTaskWorkflow';
@@ -12,6 +9,8 @@ import { ProposalStage } from './workflow/ProposalStage';
 import { ImplementationStage } from './workflow/ImplementationStage';
 import { TestingStage } from './workflow/TestingStage';
 import { CompletedStage } from './workflow/CompletedStage';
+import { TaskHeader } from './workflow/TaskHeader';
+import { TaskProgress } from './workflow/TaskProgress';
 
 interface AutomatedTaskFlowProps {
   items: ProgressItem[];
@@ -157,38 +156,9 @@ export const AutomatedTaskFlow: React.FC<AutomatedTaskFlowProps> = ({
       <CardContent>
         {currentTask && (
           <>
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-puzzle-white mb-1">{currentTask.title}</h3>
-              <div className="flex items-center space-x-2">
-                <Badge className={
-                  currentTask.priority === 'high' ? 'bg-red-600' : 
-                  currentTask.priority === 'medium' ? 'bg-amber-600' : 'bg-blue-600'
-                }>
-                  {currentTask.priority}
-                </Badge>
-                <Badge className={
-                  currentTask.status === 'completed' ? 'bg-green-600' : 
-                  currentTask.status === 'in_progress' ? 'bg-amber-600' : 'bg-slate-600'
-                }>
-                  {currentTask.status.replace('_', ' ')}
-                </Badge>
-              </div>
-              {currentTask.description && (
-                <p className="text-puzzle-white/80 mt-2">{currentTask.description}</p>
-              )}
-            </div>
-            
+            <TaskHeader task={currentTask} />
             <Separator className="my-4 bg-puzzle-aqua/20" />
-            
-            <div className="mb-4">
-              <div className="flex justify-between mb-2 text-puzzle-white/80">
-                <span>Select Task</span>
-                <span>Create Proposal</span>
-                <span>Implementation</span>
-                <span>Testing</span>
-              </div>
-              <Progress value={progressValue} className="h-2 bg-puzzle-black" />
-            </div>
+            <TaskProgress progressValue={progressValue} />
             
             {workflowStage === 'proposal' && (
               <ProposalStage
