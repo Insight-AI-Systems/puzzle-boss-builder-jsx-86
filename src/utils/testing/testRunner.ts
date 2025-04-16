@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { runComponentTests, componentRenderTest } from './testUtils';
 import { UsersTab } from '@/components/admin/analytics/tabs/UsersTab';
 import { AnalyticsTabs } from '@/components/admin/analytics/AnalyticsTabs';

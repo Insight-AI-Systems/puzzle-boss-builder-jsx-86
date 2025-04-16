@@ -21,26 +21,28 @@ const queryClient = new QueryClient();
 
 const App: React.FC = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="dark">
-        <Toaster />
-        <Sonner />
-        <InitialTestRunner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/progress" element={<Progress />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            <Route path="/dev-dashboard" element={<DevDashboard />} />
-            <Route path="/membership" element={<Membership />} />
-            <Route path="/account" element={<AccountDashboard />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider attribute="class" defaultTheme="dark">
+          <Toaster />
+          <Sonner />
+          <InitialTestRunner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/progress" element={<Progress />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route path="/dev-dashboard" element={<DevDashboard />} />
+              <Route path="/membership" element={<Membership />} />
+              <Route path="/account" element={<AccountDashboard />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </React.StrictMode>
   );
 };
 
