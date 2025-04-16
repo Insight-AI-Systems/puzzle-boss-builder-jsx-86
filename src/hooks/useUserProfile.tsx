@@ -41,13 +41,28 @@ export function useUserProfile(userId?: string) {
       if (!profileId) return null;
       
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('*')
         .eq('id', profileId)
         .single();
       
       if (error) throw error;
-      return data as UserProfile;
+      
+      // Transform the data to match our UserProfile interface
+      const userProfile: UserProfile = {
+        id: data.id,
+        display_name: data.username || null,
+        bio: null, // Not in the original profiles table
+        avatar_url: data.avatar_url,
+        role: (data.role || 'player') as UserRole,
+        credits: data.credits || 0,
+        achievements: [],
+        referral_code: null,
+        created_at: data.created_at || new Date().toISOString(),
+        updated_at: data.updated_at || new Date().toISOString()
+      };
+      
+      return userProfile;
     },
     enabled: !!profileId,
   });
@@ -64,15 +79,37 @@ export function useUserProfile(userId?: string) {
     mutationFn: async (updatedProfile: Partial<UserProfile>) => {
       if (!profileId) throw new Error('No user ID provided');
       
+      // Transform back to match the profiles table structure
+      const profileUpdate = {
+        username: updatedProfile.display_name,
+        avatar_url: updatedProfile.avatar_url,
+        // We don't update role here since that's handled separately
+      };
+      
       const { data, error } = await supabase
-        .from('user_profiles')
-        .update(updatedProfile)
+        .from('profiles')
+        .update(profileUpdate)
         .eq('id', profileId)
         .select()
         .single();
       
       if (error) throw error;
-      return data as UserProfile;
+      
+      // Transform the response back to our UserProfile interface
+      const updatedUserProfile: UserProfile = {
+        id: data.id,
+        display_name: data.username || null,
+        bio: null,
+        avatar_url: data.avatar_url,
+        role: (data.role || 'player') as UserRole,
+        credits: data.credits || 0,
+        achievements: [],
+        referral_code: null,
+        created_at: data.created_at || new Date().toISOString(),
+        updated_at: data.updated_at || new Date().toISOString()
+      };
+      
+      return updatedUserProfile;
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['profile', profileId], data);
@@ -95,23 +132,30 @@ export function useUserProfile(userId?: string) {
   // Mutation to update user role (admin only)
   const updateUserRole = useMutation({
     mutationFn: async ({ targetUserId, newRole }: { targetUserId: string; newRole: UserRole }) => {
+      // Since we don't have the RPC function, we'll directly update the role in the profiles table
       const { data, error } = await supabase
-        .rpc('update_user_role', {
-          user_id: targetUserId,
-          new_role: newRole
-        });
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', targetUserId)
+        .select();
       
       if (error) throw error;
       
-      // If successful, fetch the updated profile
-      const { data: updatedProfile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', targetUserId)
-        .single();
+      // Transform the response to our UserProfile interface
+      const updatedUserProfile: UserProfile = {
+        id: data[0].id,
+        display_name: data[0].username || null,
+        bio: null,
+        avatar_url: data[0].avatar_url,
+        role: (data[0].role || 'player') as UserRole,
+        credits: data[0].credits || 0,
+        achievements: [],
+        referral_code: null,
+        created_at: data[0].created_at || new Date().toISOString(),
+        updated_at: data[0].updated_at || new Date().toISOString()
+      };
       
-      if (profileError) throw profileError;
-      return updatedProfile as UserProfile;
+      return updatedUserProfile;
     },
     onSuccess: (data, variables) => {
       queryClient.setQueryData(['profile', variables.targetUserId], data);
@@ -138,12 +182,25 @@ export function useUserProfile(userId?: string) {
       if (!isAdmin) return [];
       
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as UserProfile[];
+      
+      // Transform the data to match our UserProfile interface
+      return data.map(profile => ({
+        id: profile.id,
+        display_name: profile.username || null,
+        bio: null,
+        avatar_url: profile.avatar_url,
+        role: (profile.role || 'player') as UserRole,
+        credits: profile.credits || 0,
+        achievements: [],
+        referral_code: null,
+        created_at: profile.created_at || new Date().toISOString(),
+        updated_at: profile.updated_at || new Date().toISOString()
+      } as UserProfile));
     },
     enabled: isAdmin && !!currentUserId,
   });
