@@ -19,6 +19,7 @@ import { ProgressItem } from '@/hooks/useProgressItems';
 import { DraggableTableRow } from './DraggableTableRow';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { Save } from 'lucide-react';
 
 interface DraggableProgressTableProps {
   items: ProgressItem[];
@@ -37,9 +38,8 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      // Increase activation constraint to prevent accidental drags
       activationConstraint: {
-        distance: 8, // Require a drag of at least 8px before activating
+        distance: 8,
       }
     }),
     useSensor(KeyboardSensor, {
@@ -61,17 +61,10 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
     }
 
     setIsUpdating(true);
-    // Show a small "Saving..." toast
-    toast({
-      title: "Auto-saving...",
-      description: "Saving your task order",
-      duration: 2000,
-    });
 
     try {
       console.log(`Moving item from position with ID ${active.id} to position with ID ${over.id}`);
       
-      // Find the actual indices in the current sortedItems array
       const oldIndex = sortedItems.findIndex((item) => item.id === active.id);
       const newIndex = sortedItems.findIndex((item) => item.id === over.id);
       
@@ -86,40 +79,32 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
         return;
       }
       
-      // Create a copy of the current items array
       const updatedItems = [...sortedItems];
       
-      // Move just the dragged item to its new position
       const [movedItem] = updatedItems.splice(oldIndex, 1);
       updatedItems.splice(newIndex, 0, movedItem);
       
       console.log('Reordered just the dragged item:', movedItem.title);
-      console.log('New positions:');
-      updatedItems.forEach((item, index) => {
-        console.log(`${index}: ${item.title}`);
-      });
       
-      // Update the local state with the updated order
       setSortedItems(updatedItems);
       
-      // Get the item IDs for the new order
       const itemIds = updatedItems.map(item => item.id);
       
-      // Save the new order immediately
       console.log("Auto-saving new item order:", itemIds);
       const success = await onUpdateItemsOrder(itemIds);
       
       if (success) {
         toast({
-          title: "Order saved",
-          description: "Your task order has been saved",
+          title: "Order Saved",
+          description: `Task "${movedItem.title}" reordered successfully`,
+          duration: 3000,
+          icon: <Save className="h-4 w-4" />,
           className: "bg-green-800 border-green-900 text-white",
-          duration: 2000,
         });
       } else {
         toast({
           variant: "destructive",
-          title: "Save failed",
+          title: "Save Failed",
           description: "Failed to save the new order",
           duration: 3000,
         });
@@ -170,4 +155,3 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
     </DndContext>
   );
 }
-
