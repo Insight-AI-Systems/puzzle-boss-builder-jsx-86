@@ -3,7 +3,7 @@ export type EmailTemplate = {
   id: string;
   name: string;
   subject: string;
-  type: 'verification' | 'notification' | 'marketing' | 'system';
+  type: 'verification' | 'notification' | 'marketing' | 'system' | 'membership';
   status: 'active' | 'draft' | 'archived';
   created_at: string;
   last_sent?: string;
@@ -21,3 +21,14 @@ export type EmailCampaign = {
   created_at: string;
 };
 
+export type MembershipTier = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  interval: 'month' | 'year' | 'one-time';
+  features: string[];
+  credits: number;
+  is_popular?: boolean;
+  stripe_price_id?: string;
+};
