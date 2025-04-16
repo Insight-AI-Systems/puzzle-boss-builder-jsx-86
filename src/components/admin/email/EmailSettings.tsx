@@ -33,7 +33,8 @@ export const EmailSettings: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="email_provider">Email Service Provider</Label>
-              <Select defaultValue="custom_smtp" id="email_provider">
+              {/* Remove the id from the Select component as it's not supported */}
+              <Select defaultValue="custom_smtp">
                 <SelectTrigger>
                   <SelectValue placeholder="Select provider" />
                 </SelectTrigger>
@@ -122,4 +123,3 @@ export const EmailSettings: React.FC = () => {
     </div>
   );
 };
-

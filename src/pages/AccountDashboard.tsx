@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { 
@@ -12,7 +11,8 @@ import {
   Star, 
   RefreshCw, 
   Loader2,
-  ChevronRight
+  ChevronRight,
+  UserCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,7 +47,6 @@ const AccountDashboard = () => {
     bonusEarned: 0
   });
   
-  // Mock data for recent activity
   const recentActivity = [
     { id: 1, action: 'Completed puzzle', name: 'Ocean Treasures', date: '2 hours ago', reward: '+5 credits' },
     { id: 2, action: 'Friend joined', name: 'User184290', date: '1 day ago', reward: '+10 credits' },
@@ -55,7 +54,6 @@ const AccountDashboard = () => {
     { id: 4, action: 'Won competition', name: 'Weekly Challenge', date: '1 week ago', reward: 'Prize Pending' },
   ];
   
-  // Redirect to auth if not logged in
   if (!profileLoading && !currentUserId) {
     return <Navigate to="/auth" replace />;
   }
@@ -64,18 +62,16 @@ const AccountDashboard = () => {
     setIsCheckingSubscription(true);
     
     try {
-      // Call Supabase Edge Function to check subscription status
       const { data, error } = await supabase.functions.invoke('check-subscription');
       
       if (error) throw error;
       
       if (data) {
-        // Update subscription data based on response
         setSubscriptionData({
           active: data.subscribed || false,
           plan: data.subscription_tier || 'Free',
           renewalDate: data.subscription_end,
-          credits: data.subscribed ? 50 : 10, // Mock values based on tier
+          credits: data.subscribed ? 50 : 10,
           maxCredits: 100
         });
         
@@ -100,12 +96,10 @@ const AccountDashboard = () => {
     setIsLoadingPortal(true);
     
     try {
-      // Call Supabase Edge Function to get customer portal URL
       const { data, error } = await supabase.functions.invoke('customer-portal');
       
       if (error) throw error;
       
-      // Redirect to Stripe Customer Portal
       if (data?.url) {
         window.location.href = data.url;
       } else {
@@ -133,7 +127,6 @@ const AccountDashboard = () => {
   
   useEffect(() => {
     if (currentUserId) {
-      // Check subscription status on load
       checkSubscription();
     }
   }, [currentUserId]);
@@ -431,7 +424,7 @@ const AccountDashboard = () => {
                         className="w-full h-full rounded-full object-cover"
                       />
                     ) : (
-                      <User className="h-8 w-8 text-puzzle-aqua" />
+                      <UserCircle className="h-8 w-8 text-puzzle-aqua" />
                     )}
                   </div>
                   <div>
