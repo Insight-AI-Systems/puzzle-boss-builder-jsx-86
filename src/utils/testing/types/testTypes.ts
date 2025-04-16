@@ -1,4 +1,3 @@
-
 export interface VerificationResult {
   status: 'VERIFIED' | 'PARTIAL' | 'FAILED' | 'SKIPPED';
   message: string;
@@ -24,4 +23,14 @@ export interface TestSummary {
   duration: number;
   timestamp: Date;
   status: string;
+}
+
+export type TestCategory = 'database' | 'component' | 'integration' | 'progress' | 'performance';
+
+export interface TestSuite {
+  id: string;
+  name: string;
+  description: string;
+  category: TestCategory;
+  testIds: string[];
 }
