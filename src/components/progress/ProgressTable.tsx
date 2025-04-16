@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { ProgressItem } from '@/hooks/useProgressItems';
 import { TableFilters } from './TableFilters';
 import { DraggableProgressTable } from './DraggableProgressTable';
@@ -18,6 +19,7 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
 }) => {
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [priorityFilter, setPriorityFilter] = useState<string | undefined>(undefined);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const resetFilters = () => {
     setStatusFilter(undefined);
@@ -37,6 +39,8 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
         setStatusFilter={setStatusFilter}
         priorityFilter={priorityFilter}
         setPriorityFilter={setPriorityFilter}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
         resetFilters={resetFilters}
         itemCount={filteredItems.length}
       />

@@ -8,7 +8,6 @@ import { useProgressItems } from "@/hooks/useProgressItems";
 import { ProgressTable } from "@/components/progress/ProgressTable";
 import { ProgressSummary } from "@/components/progress/ProgressSummary";
 import { AutomatedTaskFlow } from "@/components/progress/AutomatedTaskFlow";
-import { toast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Progress = () => {
