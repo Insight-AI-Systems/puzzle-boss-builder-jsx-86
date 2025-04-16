@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { TestRunner } from '@/utils/testRunner';
 
 export function useItemOrder() {
   const [savedOrder, setSavedOrder] = useState<string[]>([]);
@@ -51,26 +52,38 @@ export function useItemOrder() {
       const success = await saveOrderToDB(newOrder);
       
       if (success) {
-        toast({
-          title: "Order updated",
-          description: "Task order has been saved to localStorage",
-          className: "bg-green-800 border-green-900 text-white",
-        });
-        return true;
+        // Verify that the order was actually saved using TestRunner
+        const persistenceVerified = await TestRunner.testProgressItemOrder(newOrder);
+        
+        if (persistenceVerified) {
+          toast({
+            title: "Order saved",
+            description: "The new task order has been verified and saved successfully",
+            className: "bg-green-800 border-green-900 text-white",
+          });
+          return true;
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Verification failed",
+            description: "The order was saved but could not be verified. Please check the console.",
+          });
+          return false;
+        }
       } else {
         toast({
           variant: "destructive",
-          title: "Order update warning",
-          description: "Task order was saved locally but not to the database",
+          title: "Save failed",
+          description: "Failed to save the new order. Please try again.",
         });
-        return true; // Still return true since localStorage save succeeded
+        return false;
       }
     } catch (error) {
       console.error('Error in updateItemsOrder:', error);
       toast({
         variant: "destructive",
-        title: "Order update error",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
+        title: "Error occurred",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
       });
       return false;
     }
