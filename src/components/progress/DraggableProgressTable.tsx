@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   DndContext, 
   closestCenter,
@@ -32,7 +32,7 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
   const { toast } = useToast();
   
   // Update sorted items when the items prop changes
-  useEffect(() => {
+  React.useEffect(() => {
     setSortedItems(items);
   }, [items]);
 
@@ -51,12 +51,12 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
     const { active, over } = event;
     
     if (!over || active.id === over.id) {
-      console.log('Drag ended but no change needed (same position or no target)');
+      console.log('Drag ended but no change needed');
       return;
     }
 
     if (isUpdating) {
-      console.log('Ignoring drag operation - already updating');
+      console.log('Ignoring drag - update in progress');
       toast({
         variant: "destructive",
         title: "Please wait",
@@ -67,12 +67,7 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
     }
 
     setIsUpdating(true);
-    toast({
-      title: "Saving changes...",
-      description: "Updating task order",
-      duration: 2000,
-    });
-
+    
     try {
       console.log(`Moving item from position with ID ${active.id} to position with ID ${over.id}`);
       
@@ -89,45 +84,36 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
         setIsUpdating(false);
         return;
       }
-      
+
       const updatedItems = arrayMove(sortedItems, oldIndex, newIndex);
       const movedItem = sortedItems[oldIndex];
       
-      console.log('Reordered just the dragged item:', movedItem.title);
+      console.log('Reordered task:', movedItem.title);
       console.log(`From index ${oldIndex} to ${newIndex}`);
       
       setSortedItems(updatedItems);
       
       const itemIds = updatedItems.map(item => item.id);
-      
-      console.log("Auto-saving new item order:", itemIds.length, "items");
       const success = await onUpdateItemsOrder(itemIds);
       
       if (success) {
         toast({
           title: "Order Saved",
-          description: `Task "${movedItem.title}" reordered successfully`,
-          duration: 3000,
+          description: `Moved "${movedItem.title}" ${oldIndex > newIndex ? 'up' : 'down'} the list`,
           icon: <Save className="h-4 w-4" />,
           className: "bg-green-800 border-green-900 text-white",
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Save Failed",
-          description: "Failed to save the new order. Please try again.",
           duration: 3000,
         });
-        // Revert to original order if save failed
-        setSortedItems(items);
+      } else {
+        throw new Error('Failed to save new order');
       }
     } catch (error) {
-      console.error("Error during drag end:", error);
-      setSortedItems(items);
+      console.error('Error during drag end:', error);
+      setSortedItems(items); // Revert to original order
       toast({
         variant: "destructive",
-        title: "Error occurred",
-        description: "An error occurred while updating the order. Please try again.",
+        title: "Save Failed",
+        description: "Failed to save the new order. Please try again.",
         duration: 3000,
       });
     } finally {
