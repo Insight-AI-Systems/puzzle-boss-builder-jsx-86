@@ -9,7 +9,7 @@ import { PartnersDashboard } from './PartnersDashboard';
 import { FinancialDashboard } from './FinancialDashboard';
 import { MonitoringDashboard } from './MonitoringDashboard';
 import { NotificationsDashboard } from './NotificationsDashboard';
-import { AnalyticsDashboard } from '../AnalyticsDashboard';
+import { AnalyticsDashboard } from '../analytics/AnalyticsDashboard';
 import { UserManagement } from '../UserManagement';
 import { GameManagement } from '../GameManagement';
 import { ContentManagement } from '../ContentManagement';
