@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,16 +20,23 @@ const Progress = () => {
     updateItemPriority
   } = useProgressItems();
 
-  // Automatically sync tasks if there are no items
+  // Add automatic sync on mount and periodic sync
   useEffect(() => {
+    // Initial sync if no items exist
     if (!isLoading && (!items || items.length === 0)) {
-      console.log('No progress items found, suggesting sync');
-      toast({
-        title: "No tasks found",
-        description: "Click 'Sync Project Tasks' to import tasks",
-      });
+      console.log('No progress items found, auto-syncing');
+      syncTasks();
     }
-  }, [isLoading, items]);
+
+    // Set up periodic sync every 30 minutes
+    const syncInterval = setInterval(() => {
+      console.log('Running periodic sync');
+      syncTasks();
+    }, 30 * 60 * 1000); // 30 minutes
+
+    // Cleanup interval on unmount
+    return () => clearInterval(syncInterval);
+  }, [isLoading, items, syncTasks]);
 
   if (isLoading) {
     return (
@@ -55,7 +61,7 @@ const Progress = () => {
               disabled={isSyncing}
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              {items && items.length > 0 ? 'Sync Project Tasks' : 'Import Project Tasks'}
+              {isSyncing ? 'Syncing...' : 'Sync Now'}
             </Button>
             <AddProgressItemDialog />
           </div>
