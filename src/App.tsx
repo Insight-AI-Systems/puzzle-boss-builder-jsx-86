@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import DevDashboard from "./pages/DevDashboard";
 import Progress from "./pages/Progress";
+import Profile from "./pages/Profile";
 import InitialTestRunner from "@/components/InitialTestRunner";
 
 // Create a new QueryClient instance at the module level to avoid recreation on renders
@@ -25,6 +26,7 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/progress" element={<Progress />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/dev-dashboard" element={<DevDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

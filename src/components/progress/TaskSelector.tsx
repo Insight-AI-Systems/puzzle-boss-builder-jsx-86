@@ -2,9 +2,10 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clipboard, ArrowRight } from "lucide-react";
+import { Clipboard, ArrowRight, User } from "lucide-react";
 import { ProgressItem } from '@/types/progressTypes';
 import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
 
 interface TaskSelectorProps {
   items: ProgressItem[];
@@ -38,11 +39,22 @@ export const TaskSelector: React.FC<TaskSelectorProps> = ({ items }) => {
 
   return (
     <Card className="bg-puzzle-black/50 border-puzzle-aqua/20">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-puzzle-white flex items-center gap-2">
           <Clipboard className="h-5 w-5" />
           Select Task for Development
         </CardTitle>
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10"
+          asChild
+        >
+          <Link to="/profile">
+            <User className="h-4 w-4 mr-2" />
+            My Profile
+          </Link>
+        </Button>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
