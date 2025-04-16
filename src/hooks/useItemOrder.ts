@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ProgressItem } from '@/types/progressTypes';
 
 export function useItemOrder() {
   const [savedOrder, setSavedOrder] = useState<string[]>([]);
@@ -31,8 +30,8 @@ export function useItemOrder() {
         return false;
       }
 
-      // For now, we won't try to update the order_index column
-      // since it doesn't exist in the database yet
+      // For now, we're not updating any database column
+      // This prevents errors while we determine the best approach
       return true;
     } catch (error) {
       console.error('Error saving order to database:', error);
@@ -48,7 +47,7 @@ export function useItemOrder() {
       localStorage.setItem('progressItemsOrder', JSON.stringify(newOrder));
       setSavedOrder(newOrder);
       
-      // Then save to database (will just return true for now)
+      // Attempt to save to database (will just return true for now)
       const success = await saveOrderToDB(newOrder);
       
       if (success) {
