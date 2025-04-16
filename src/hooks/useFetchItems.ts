@@ -36,8 +36,8 @@ export function useFetchItems(savedOrder: string[]) {
 
       // If we have a saved order in localStorage, use it as a fallback
       if (savedOrder.length > 0 && data) {
-        // First check if any items have order_index as null
-        const hasNullOrderIndex = data.some(item => item.order_index === null);
+        // First check if any items have order_index as null or undefined
+        const hasNullOrderIndex = data.some(item => item.order_index === null || item.order_index === undefined);
         
         if (hasNullOrderIndex) {
           // If there are items with null order_index, use the saved order as fallback

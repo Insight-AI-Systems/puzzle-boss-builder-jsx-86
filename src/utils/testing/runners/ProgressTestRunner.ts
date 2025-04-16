@@ -47,7 +47,12 @@ export class ProgressTestRunner {
         }
         
         // Check for order_index fields in the database
-        const allHaveOrderIndex = data.every(item => item.order_index !== null);
+        // Cast the data items to have order_index (might be undefined if column doesn't exist yet)
+        const dataWithOrderIndex = data as { id: string; order_index?: number }[];
+        const allHaveOrderIndex = dataWithOrderIndex.every(item => 
+          item.order_index !== null && item.order_index !== undefined
+        );
+        
         if (!allHaveOrderIndex) {
           console.warn('Some items do not have order_index set in the database');
           // This is not a failure condition since we can fall back to localStorage
