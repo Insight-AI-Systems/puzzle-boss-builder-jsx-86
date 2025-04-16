@@ -1,8 +1,10 @@
 
-import { useState } from 'react';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useProgressSync } from "./useProgressSync";
+import { addCommentToItem } from "@/utils/progress/commentOperations";
+import { updateItemStatus, updateItemPriority } from "@/utils/progress/statusOperations";
 
 export interface ProgressItem {
   id: string;
@@ -24,9 +26,9 @@ export interface ProgressComment {
 
 export function useProgressItems() {
   const queryClient = useQueryClient();
-  const [isSyncing, setIsSyncing] = useState(false);
+  const { isSyncing, syncTasks } = useProgressSync();
 
-  const { data: items, isLoading, refetch } = useQuery({
+  const { data: items, isLoading } = useQuery({
     queryKey: ['progress-items'],
     queryFn: async () => {
       console.log('Fetching progress items...');
@@ -58,138 +60,27 @@ export function useProgressItems() {
   });
 
   const addComment = async (content: string, itemId: string) => {
-    try {
-      console.log(`Adding comment to item ${itemId}: ${content}`);
-      
-      const { data, error } = await supabase
-        .from('progress_comments')
-        .insert({ 
-          content, 
-          progress_item_id: itemId 
-        })
-        .select();
-
-      if (error) {
-        console.error('Error adding comment:', error);
-        toast({
-          variant: "destructive",
-          title: "Error adding comment",
-          description: error.message,
-        });
-        return false;
-      }
-
-      console.log('Comment added successfully:', data);
-      
-      // Invalidate and refetch to get the updated data
+    const success = await addCommentToItem(content, itemId);
+    if (success) {
       await queryClient.invalidateQueries({ queryKey: ['progress-items'] });
-      
-      return true;
-    } catch (error) {
-      console.error('Unexpected error adding comment:', error);
-      toast({
-        variant: "destructive",
-        title: "Error adding comment",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-      });
-      return false;
     }
+    return success;
   };
 
-  const updateItemStatus = async (itemId: string, status: string) => {
-    try {
-      const { error } = await supabase
-        .from('progress_items')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', itemId);
-
-      if (error) {
-        console.error('Error updating status:', error);
-        toast({
-          variant: "destructive",
-          title: "Error updating status",
-          description: error.message,
-        });
-        return false;
-      }
-
+  const handleUpdateItemStatus = async (itemId: string, status: string) => {
+    const success = await updateItemStatus(itemId, status);
+    if (success) {
       await queryClient.invalidateQueries({ queryKey: ['progress-items'] });
-      return true;
-    } catch (error) {
-      console.error('Unexpected error updating status:', error);
-      toast({
-        variant: "destructive",
-        title: "Error updating status",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-      });
-      return false;
     }
+    return success;
   };
 
-  const updateItemPriority = async (itemId: string, priority: string) => {
-    try {
-      const { error } = await supabase
-        .from('progress_items')
-        .update({ priority, updated_at: new Date().toISOString() })
-        .eq('id', itemId);
-
-      if (error) {
-        console.error('Error updating priority:', error);
-        toast({
-          variant: "destructive",
-          title: "Error updating priority",
-          description: error.message,
-        });
-        return false;
-      }
-
+  const handleUpdateItemPriority = async (itemId: string, priority: string) => {
+    const success = await updateItemPriority(itemId, priority);
+    if (success) {
       await queryClient.invalidateQueries({ queryKey: ['progress-items'] });
-      return true;
-    } catch (error) {
-      console.error('Unexpected error updating priority:', error);
-      toast({
-        variant: "destructive",
-        title: "Error updating priority",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-      });
-      return false;
     }
-  };
-
-  const syncTasks = async () => {
-    setIsSyncing(true);
-    try {
-      const { syncProjectTasksToProgress } = await import('@/utils/syncTasks');
-      const result = await syncProjectTasksToProgress();
-      
-      if (result.success) {
-        toast({
-          title: "Tasks synchronized",
-          description: result.message || "Project tasks have been synchronized with progress items.",
-        });
-        
-        // Force a complete refresh of the data
-        await refetch();
-        console.log('Refetch completed after sync');
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Sync failed",
-          description: result.message || "Failed to synchronize tasks. Please check the console for details.",
-        });
-      }
-      return result.success;
-    } catch (error) {
-      console.error('Error in syncTasks:', error);
-      toast({
-        variant: "destructive",
-        title: "Sync error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred while syncing tasks.",
-      });
-      return false;
-    } finally {
-      setIsSyncing(false);
-    }
+    return success;
   };
 
   return {
@@ -198,7 +89,7 @@ export function useProgressItems() {
     isSyncing,
     addComment,
     syncTasks,
-    updateItemStatus,
-    updateItemPriority
+    updateItemStatus: handleUpdateItemStatus,
+    updateItemPriority: handleUpdateItemPriority
   };
 }
