@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { ProgressItem } from '@/hooks/useProgressItems';
 import { useToast } from "@/hooks/use-toast";
@@ -20,25 +19,18 @@ export function useTaskWorkflow(items: ProgressItem[]) {
   
   const { toast } = useToast();
 
-  // Find the highest priority pending task
+  // Find the highest priority pending task based on list order
   useEffect(() => {
     if (items.length > 0 && state.workflowStage === 'selecting') {
-      const priorityOrder = { high: 0, medium: 1, low: 2 };
+      // Filter out completed tasks and use array order to determine priority
+      const pendingTasks = items.filter(item => item.status !== 'completed');
       
-      const sortedItems = [...items]
-        .filter(item => item.status !== 'completed')
-        .sort((a, b) => {
-          const priorityDiff = priorityOrder[a.priority as keyof typeof priorityOrder] - 
-                              priorityOrder[b.priority as keyof typeof priorityOrder];
-          
-          if (priorityDiff !== 0) return priorityDiff;
-          return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-        });
-      
-      if (sortedItems.length > 0) {
+      if (pendingTasks.length > 0) {
+        // Select the first pending task as it will be the highest priority
+        // due to the drag-and-drop ordering
         setState(prev => ({
           ...prev,
-          currentTask: sortedItems[0],
+          currentTask: pendingTasks[0],
           workflowStage: 'proposal',
           progressValue: 25
         }));
