@@ -16,6 +16,7 @@ type FormData = {
 };
 
 export function AddProgressItemDialog() {
+  console.log('AddProgressItemDialog rendering'); // Added console log
   const [open, setOpen] = React.useState(false);
   const form = useForm<FormData>({
     defaultValues: {
@@ -113,4 +114,4 @@ export function AddProgressItemDialog() {
       </DialogContent>
     </Dialog>
   );
-}
+};
