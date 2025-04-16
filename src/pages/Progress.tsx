@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,6 @@ import { AddProgressItemDialog } from "@/components/AddProgressItemDialog";
 import { useProgressItems } from "@/hooks/useProgressItems";
 import { ProgressTable } from "@/components/progress/ProgressTable";
 import { ProgressSummary } from "@/components/progress/ProgressSummary";
-import { TaskSelector } from "@/components/progress/TaskSelector";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 
@@ -30,6 +30,14 @@ const Progress = () => {
       title: "Auto-save enabled",
       description: "Changes to task order, status, and priority are automatically saved",
       duration: 5000,
+    });
+    
+    // Notify that duplicates have been removed
+    toast({
+      title: "Duplicates removed",
+      description: "Duplicate tasks have been filtered from the project progress list",
+      duration: 5000,
+      className: "bg-green-800 border-green-900 text-white",
     });
   }, [toast]);
 

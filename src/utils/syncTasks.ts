@@ -9,6 +9,26 @@ export const syncProjectTasksToProgress = async () => {
     const tasks = projectTracker.getAllTasks();
     console.log(`Found ${tasks.length} tasks to sync`);
     
+    // First, get all existing progress items to check for duplicates
+    const { data: existingItems, error: fetchError } = await supabase
+      .from('progress_items')
+      .select('id, title, status');
+      
+    if (fetchError) {
+      console.error('Error fetching existing items:', fetchError);
+      return { success: false, message: `Error fetching existing items: ${fetchError.message}` };
+    }
+    
+    // Create a map of existing titles to avoid duplicates
+    const existingTitles = new Map();
+    if (existingItems) {
+      existingItems.forEach(item => {
+        if (!existingTitles.has(item.title)) {
+          existingTitles.set(item.title, item);
+        }
+      });
+    }
+    
     let successCount = 0;
     let errorCount = 0;
     
@@ -16,25 +36,15 @@ export const syncProjectTasksToProgress = async () => {
       console.log(`Syncing task: ${task.name}`);
       
       try {
-        // Check if a progress item already exists for this task
-        // Use .eq() with .select() instead of .maybeSingle() to handle duplicate titles
-        const { data: existingItems, error: queryError } = await supabase
-          .from('progress_items')
-          .select('id, title, status')
-          .eq('title', task.name);
-        
-        if (queryError) {
-          console.error(`Error checking existing task '${task.name}':`, queryError);
-          errorCount++;
-          continue;
-        }
-
         // Map task status to progress item status
         const status = task.status === 'completed' ? 'completed' : 
                       task.status === 'in-progress' ? 'in_progress' : 
                       'pending';
 
-        if (!existingItems || existingItems.length === 0) {
+        // Check if this task already exists
+        const existingItem = existingTitles.get(task.name);
+
+        if (!existingItem) {
           // Insert new progress item
           const { error: insertError } = await supabase
             .from('progress_items')
@@ -53,12 +63,6 @@ export const syncProjectTasksToProgress = async () => {
             successCount++;
           }
         } else {
-          // Handle case where there may be multiple items with the same title
-          let updatedCount = 0;
-          
-          // Update the first matching item only
-          const firstItem = existingItems[0];
-          
           // Update existing item if needed
           const { error: updateError } = await supabase
             .from('progress_items')
@@ -66,7 +70,7 @@ export const syncProjectTasksToProgress = async () => {
               status,
               description: task.description || null
             })
-            .eq('id', firstItem.id);
+            .eq('id', existingItem.id);
           
           if (updateError) {
             console.error(`Error updating task '${task.name}':`, updateError);
@@ -74,11 +78,6 @@ export const syncProjectTasksToProgress = async () => {
           } else {
             console.log(`Updated existing task: ${task.name}`);
             successCount++;
-            
-            // If there are duplicates, log it so we're aware
-            if (existingItems.length > 1) {
-              console.warn(`Found ${existingItems.length} items with title '${task.name}', only updated the first one.`);
-            }
           }
         }
       } catch (taskError) {

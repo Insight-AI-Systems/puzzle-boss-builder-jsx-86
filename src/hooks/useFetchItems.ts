@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -34,33 +33,55 @@ export function useFetchItems(savedOrder: string[]) {
           return [];
         }
 
-        // Apply custom sorting if we have a saved order
-        if (Array.isArray(savedOrder) && savedOrder.length > 0 && data && data.length > 0) {
-          console.log('Applying manual sorting based on saved order');
+        // Remove duplicate tasks based on title
+        if (data && data.length > 0) {
+          console.log(`Retrieved ${data.length} items before deduplication`);
           
-          // Create a map for O(1) lookup of indices
-          const orderMap = new Map(savedOrder.map((id, index) => [id, index]));
-          
-          // Print out the first few items in saved order
-          console.log('Saved order (first 5 items):', savedOrder.slice(0, 5));
-          
-          // Create a copy of the data and sort it based on the saved order
-          const sortedData = [...data].sort((a, b) => {
-            const indexA = orderMap.has(a.id) ? orderMap.get(a.id)! : Number.MAX_SAFE_INTEGER;
-            const indexB = orderMap.has(b.id) ? orderMap.get(b.id)! : Number.MAX_SAFE_INTEGER;
-            
-            // Sort based on index in saved order
-            return indexA - indexB;
+          // Create a map to keep track of unique titles
+          const uniqueTitlesMap = new Map();
+          const deduplicatedData = data.filter(item => {
+            // If we've seen this title before, skip it
+            if (uniqueTitlesMap.has(item.title)) {
+              console.log(`Filtering out duplicate: ${item.title}`);
+              return false;
+            }
+            // Otherwise, add it to our map and keep it
+            uniqueTitlesMap.set(item.title, true);
+            return true;
           });
           
-          // Print out the first few items after sorting
-          console.log('Sorted order (first 5 items):', sortedData.slice(0, 5).map(item => item.title));
+          console.log(`Reduced to ${deduplicatedData.length} unique items`);
           
-          console.log('Successfully sorted items based on saved order');
-          return sortedData as ProgressItem[];
+          // Apply custom sorting if we have a saved order
+          if (Array.isArray(savedOrder) && savedOrder.length > 0 && deduplicatedData.length > 0) {
+            console.log('Applying manual sorting based on saved order');
+            
+            // Create a map for O(1) lookup of indices
+            const orderMap = new Map(savedOrder.map((id, index) => [id, index]));
+            
+            // Print out the first few items in saved order
+            console.log('Saved order (first 5 items):', savedOrder.slice(0, 5));
+            
+            // Create a copy of the data and sort it based on the saved order
+            const sortedData = [...deduplicatedData].sort((a, b) => {
+              const indexA = orderMap.has(a.id) ? orderMap.get(a.id)! : Number.MAX_SAFE_INTEGER;
+              const indexB = orderMap.has(b.id) ? orderMap.get(b.id)! : Number.MAX_SAFE_INTEGER;
+              
+              // Sort based on index in saved order
+              return indexA - indexB;
+            });
+            
+            // Print out the first few items after sorting
+            console.log('Sorted order (first 5 items):', sortedData.slice(0, 5).map(item => item.title));
+            
+            console.log('Successfully sorted items based on saved order');
+            return sortedData as ProgressItem[];
+          }
+          
+          console.log('No saved order applied, using default sorting');
+          return deduplicatedData as ProgressItem[] || [];
         }
         
-        console.log('No saved order applied, using default sorting');
         return data as ProgressItem[] || [];
       } catch (e) {
         console.error('Unexpected error in useFetchItems:', e);
