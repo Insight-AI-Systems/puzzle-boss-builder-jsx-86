@@ -1,14 +1,40 @@
 
 import React, { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from './ui/use-toast';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { currentUserId } = useUserProfile();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: 'Signed out successfully',
+        description: 'Come back soon!',
+      });
+      
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: 'Error signing out',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -33,12 +59,36 @@ const Navbar = () => {
           </div>
           
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="outline" className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
-              Login
-            </Button>
-            <Button className="bg-puzzle-aqua text-puzzle-black hover:bg-puzzle-aqua/90">
-              Register
-            </Button>
+            {currentUserId ? (
+              <>
+                <Link to="/profile">
+                  <Button variant="outline" className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
+                    Profile
+                  </Button>
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  className="text-puzzle-white hover:text-puzzle-gold hover:bg-transparent"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="outline" className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/auth?tab=signup">
+                  <Button className="bg-puzzle-aqua text-puzzle-black hover:bg-puzzle-aqua/90">
+                    Register
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
           
           {/* Mobile Menu Button */}
@@ -57,14 +107,36 @@ const Navbar = () => {
             <a href="#categories" className="nav-link py-2">Categories</a>
             <a href="#how-it-works" className="nav-link py-2">How It Works</a>
             <a href="#prizes" className="nav-link py-2">Prizes</a>
-            <div className="flex flex-col space-y-3 w-full pt-4">
-              <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
-                Login
-              </Button>
-              <Button className="w-full bg-puzzle-aqua text-puzzle-black hover:bg-puzzle-aqua/90">
-                Register
-              </Button>
-            </div>
+            {currentUserId ? (
+              <>
+                <Link to="/profile" className="w-full">
+                  <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
+                    Profile
+                  </Button>
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  className="w-full text-puzzle-white hover:text-puzzle-gold hover:bg-transparent"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <div className="flex flex-col space-y-3 w-full pt-4">
+                <Link to="/auth" className="w-full">
+                  <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/auth?tab=signup" className="w-full">
+                  <Button className="w-full bg-puzzle-aqua text-puzzle-black hover:bg-puzzle-aqua/90">
+                    Register
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </div>
