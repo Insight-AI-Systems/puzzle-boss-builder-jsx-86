@@ -35,7 +35,7 @@ export function runComponentTests(tests: Array<{ name: string; test: () => Promi
         console.error(`❌ ${name}: ${result.message}`);
       }
     } catch (error) {
-      console.error(`❌ ${name}: Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(`❌ ${name}: Unexpected error: ${error instanceof Error ? error.message : String(error)}`)
     }
   });
 }
