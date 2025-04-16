@@ -8,9 +8,9 @@ export function useFetchItems(savedOrder: string[]) {
   const { toast } = useToast();
   
   return useQuery({
-    queryKey: ['progress-items'],
+    queryKey: ['progress-items', savedOrder], // Include savedOrder in queryKey to refetch when it changes
     queryFn: async () => {
-      console.log('Fetching progress items...');
+      console.log('Fetching progress items...', { savedOrderLength: savedOrder.length });
       
       try {
         const { data, error } = await supabase
@@ -34,8 +34,8 @@ export function useFetchItems(savedOrder: string[]) {
           return [];
         }
 
-        // Always use the saved order if available
-        if (Array.isArray(savedOrder) && savedOrder.length > 0 && data) {
+        // Apply custom sorting if we have a saved order and it contains items
+        if (Array.isArray(savedOrder) && savedOrder.length > 0 && data && data.length > 0) {
           console.log('Sorting items based on saved order:', savedOrder);
           
           // Create a copy of the data and sort it based on the saved order
@@ -55,7 +55,8 @@ export function useFetchItems(savedOrder: string[]) {
           return sortedData as ProgressItem[];
         }
         
-        console.log('No saved order, using default sorting');
+        console.log('No saved order applied, using default sorting:', 
+          data ? data.map(item => ({ title: item.title, priority: item.priority })) : []);
         return data as ProgressItem[] || [];
       } catch (e) {
         console.error('Unexpected error in useFetchItems:', e);

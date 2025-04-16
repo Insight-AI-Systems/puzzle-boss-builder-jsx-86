@@ -6,6 +6,7 @@ import { getLocalStorageOrder, saveLocalStorageOrder } from '@/utils/progress/lo
 
 export function useItemOrder() {
   const [savedOrder, setSavedOrder] = useState<string[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -25,28 +26,32 @@ export function useItemOrder() {
       if (dbResult && localResult) {
         // Compare timestamps to decide which order to use
         if (localResult.timestamp > dbResult.latestUpdate) {
-          console.log('Using localStorage order (more recent)');
+          console.log('Using localStorage order (more recent)', localResult.orderIds);
           setSavedOrder(localResult.orderIds);
         } else {
-          console.log('Using database order');
+          console.log('Using database order', dbResult.orderIds);
           setSavedOrder(dbResult.orderIds);
           // Update localStorage with database order
           saveLocalStorageOrder(dbResult.orderIds);
         }
       } else if (dbResult) {
-        console.log('Using database order (no localStorage)');
+        console.log('Using database order (no localStorage)', dbResult.orderIds);
         setSavedOrder(dbResult.orderIds);
         saveLocalStorageOrder(dbResult.orderIds);
       } else if (localResult) {
-        console.log('Using localStorage order (no database)');
+        console.log('Using localStorage order (no database)', localResult.orderIds);
         setSavedOrder(localResult.orderIds);
       }
       
-      toast({
-        title: "Order loaded",
-        description: "Task order has been loaded successfully",
-        duration: 3000,
-      });
+      setLoaded(true);
+      
+      if (dbResult || localResult) {
+        toast({
+          title: "Order loaded",
+          description: "Task order has been loaded successfully",
+          duration: 3000,
+        });
+      }
     } catch (err) {
       console.error('Error loading saved order:', err);
       const localResult = getLocalStorageOrder();
@@ -58,6 +63,7 @@ export function useItemOrder() {
           duration: 3000,
         });
       }
+      setLoaded(true);
     }
   };
 
@@ -103,6 +109,7 @@ export function useItemOrder() {
 
   return {
     savedOrder,
-    updateItemsOrder
+    updateItemsOrder,
+    loaded
   };
 }

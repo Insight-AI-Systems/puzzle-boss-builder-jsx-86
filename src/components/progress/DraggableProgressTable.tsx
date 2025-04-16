@@ -19,7 +19,6 @@ import { ProgressItem } from '@/hooks/useProgressItems';
 import { DraggableTableRow } from './DraggableTableRow';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { TestRunner } from '@/utils/testRunner';
 
 interface DraggableProgressTableProps {
   items: ProgressItem[];
@@ -76,6 +75,8 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
       
       // Get just the IDs for updating the order
       const itemIds = reorderedItems.map(item => item.id);
+      
+      console.log('Saving reordered items:', itemIds);
       
       // Save the new order
       const success = await onUpdateItemsOrder(itemIds);

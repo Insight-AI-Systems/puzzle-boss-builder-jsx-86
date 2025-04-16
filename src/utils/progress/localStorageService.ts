@@ -8,6 +8,7 @@ export const getLocalStorageOrder = () => {
     const savedTimeStr = localStorage.getItem(TIMESTAMP_KEY);
     
     if (!savedOrderStr || !savedTimeStr) {
+      console.log('No saved order found in localStorage');
       return null;
     }
     
@@ -18,6 +19,9 @@ export const getLocalStorageOrder = () => {
       console.error('Invalid saved order format in localStorage');
       return null;
     }
+    
+    console.log('Retrieved order from localStorage with', savedOrder.length, 'items:', 
+      savedOrder.slice(0, 3).join(', ') + (savedOrder.length > 3 ? '...' : ''));
     
     return {
       orderIds: savedOrder,
@@ -30,8 +34,17 @@ export const getLocalStorageOrder = () => {
 };
 
 export const saveLocalStorageOrder = (orderIds: string[]) => {
-  const timestamp = Date.now();
-  localStorage.setItem(ORDER_KEY, JSON.stringify(orderIds));
-  localStorage.setItem(TIMESTAMP_KEY, timestamp.toString());
-  return timestamp;
+  try {
+    console.log('Saving order to localStorage:', 
+      orderIds.slice(0, 3).join(', ') + (orderIds.length > 3 ? '...' : ''));
+    
+    const timestamp = Date.now();
+    localStorage.setItem(ORDER_KEY, JSON.stringify(orderIds));
+    localStorage.setItem(TIMESTAMP_KEY, timestamp.toString());
+    
+    return timestamp;
+  } catch (error) {
+    console.error('Error saving to localStorage:', error);
+    return Date.now(); // Return current timestamp even if save failed
+  }
 };

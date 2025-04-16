@@ -2,30 +2,40 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export const fetchDatabaseOrder = async () => {
-  const { data: items, error } = await supabase
-    .from('progress_items')
-    .select('id, order_index, updated_at, title')
-    .order('order_index', { ascending: true })
-    .not('order_index', 'is', null);
+  try {
+    const { data: items, error } = await supabase
+      .from('progress_items')
+      .select('id, order_index, updated_at, title')
+      .order('order_index', { ascending: true })
+      .not('order_index', 'is', null);
 
-  if (error) {
-    console.error('Error loading order from database:', error);
+    if (error) {
+      console.error('Error loading order from database:', error);
+      return null;
+    }
+
+    if (!items || items.length === 0) {
+      console.log('No items with order_index found in database');
+      return null;
+    }
+
+    // Log the retrieved order for debugging
+    console.log('Database order retrieved:', items.map(i => ({ id: i.id, title: i.title, order: i.order_index })));
+
+    return {
+      orderIds: items.map(item => item.id),
+      latestUpdate: Math.max(...items.map(item => new Date(item.updated_at).getTime()))
+    };
+  } catch (error) {
+    console.error('Error in fetchDatabaseOrder:', error);
     return null;
   }
-
-  if (!items || items.length === 0) {
-    console.log('No items with order_index found in database');
-    return null;
-  }
-
-  return {
-    orderIds: items.map(item => item.id),
-    latestUpdate: Math.max(...items.map(item => new Date(item.updated_at).getTime()))
-  };
 };
 
 export const saveDatabaseOrder = async (orderedItemIds: string[]) => {
   try {
+    console.log('Saving order to database:', orderedItemIds);
+    
     // First, get existing items to preserve required fields
     const { data: existingItems, error: fetchError } = await supabase
       .from('progress_items')
@@ -40,7 +50,7 @@ export const saveDatabaseOrder = async (orderedItemIds: string[]) => {
     // Create a map of id to title for easy lookup
     const itemsMap = new Map(existingItems.map(item => [item.id, item.title]));
     
-    // Update order_index for each item using upsert with all required fields
+    // Update order_index for each item
     const updates = orderedItemIds.map((id, index) => {
       const title = itemsMap.get(id);
       if (!title) {
@@ -73,6 +83,7 @@ export const saveDatabaseOrder = async (orderedItemIds: string[]) => {
       return false;
     }
 
+    console.log('Order successfully saved to database');
     return true;
   } catch (error) {
     console.error('Error in saveDatabaseOrder:', error);

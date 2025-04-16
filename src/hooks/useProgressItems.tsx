@@ -9,8 +9,8 @@ import { useFetchItems } from "./useFetchItems";
 export function useProgressItems() {
   const queryClient = useQueryClient();
   const { isSyncing, syncTasks } = useProgressSync();
-  const { savedOrder, updateItemsOrder } = useItemOrder();
-  const { data: items, isLoading } = useFetchItems(savedOrder);
+  const { savedOrder, updateItemsOrder, loaded } = useItemOrder();
+  const { data: items, isLoading } = useFetchItems(loaded ? savedOrder : []);
 
   const addComment = async (content: string, itemId: string) => {
     const success = await addCommentToItem(content, itemId);
@@ -42,7 +42,7 @@ export function useProgressItems() {
 
   return {
     items,
-    isLoading,
+    isLoading: isLoading || !loaded,
     isSyncing,
     addComment,
     syncTasks,
