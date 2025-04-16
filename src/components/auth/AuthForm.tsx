@@ -5,14 +5,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Mail, Google, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import dynamicIconImports from 'lucide-react/dynamicIconImports';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React, { Suspense, lazy } from 'react';
 
 export const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { toast } = useToast();
+
+  // Dynamically import Google icon
+  const GoogleIcon = lazy(dynamicIconImports['google']);
 
   const handleEmailAuth = async (isSignUp: boolean) => {
     try {
@@ -33,7 +38,7 @@ export const AuthForm = () => {
     } catch (error) {
       toast({
         title: 'Authentication error',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
         variant: 'destructive',
       });
     } finally {
@@ -55,7 +60,7 @@ export const AuthForm = () => {
     } catch (error) {
       toast({
         title: 'Authentication error',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
         variant: 'destructive',
       });
       setIsLoading(false);
@@ -162,7 +167,9 @@ export const AuthForm = () => {
           {isLoading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
-            <Google className="mr-2 h-4 w-4" />
+            <Suspense fallback={<div>Loading...</div>}>
+              <GoogleIcon className="mr-2 h-4 w-4" />
+            </Suspense>
           )}
           Google
         </Button>
