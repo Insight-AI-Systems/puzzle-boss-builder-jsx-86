@@ -20,22 +20,24 @@ export function useTaskWorkflow(items: ProgressItem[]) {
   
   const { toast } = useToast();
 
-  // Find the highest priority pending task based on array index order from drag-and-drop
+  // Use the items array directly, which is already ordered by the drag and drop functionality
   useEffect(() => {
     if (state.workflowStage === 'selecting' && items.length > 0) {
       console.log('Finding highest priority task from list of', items.length, 'items');
       
-      // Filter out completed tasks and use array order to determine priority
-      // Since the array is already sorted by the drag-and-drop functionality
+      // Filter out completed tasks and use the first item in the filtered array
       const pendingTasks = items.filter(item => item.status !== 'completed');
       
+      console.log('Pending tasks after filtering:', pendingTasks.map(t => t.title));
+      
       if (pendingTasks.length > 0) {
-        console.log('Selected pending task:', pendingTasks[0].title);
-        // Select the first pending task as it will be the highest priority
-        // due to the drag-and-drop ordering
+        // Always select the first pending task as the highest priority
+        const selectedTask = pendingTasks[0];
+        console.log('Selected task for workflow:', selectedTask.title);
+        
         setState(prev => ({
           ...prev,
-          currentTask: pendingTasks[0],
+          currentTask: selectedTask,
           workflowStage: 'proposal',
           progressValue: 25
         }));

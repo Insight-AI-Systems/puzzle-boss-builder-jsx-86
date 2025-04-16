@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   DndContext, 
   closestCenter,
@@ -29,7 +29,7 @@ export function DraggableProgressTable({ items, onUpdatePriority }: DraggablePro
   const [sortedItems, setSortedItems] = useState(items);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setSortedItems(items);
   }, [items]);
 
@@ -39,6 +39,16 @@ export function DraggableProgressTable({ items, onUpdatePriority }: DraggablePro
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  const saveOrderToLocalStorage = (items: ProgressItem[]) => {
+    try {
+      const itemIds = items.map(item => item.id);
+      localStorage.setItem('progressItemsOrder', JSON.stringify(itemIds));
+      console.log('Saved order to localStorage:', itemIds);
+    } catch (err) {
+      console.error('Error saving order to localStorage:', err);
+    }
+  };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -69,6 +79,9 @@ export function DraggableProgressTable({ items, onUpdatePriority }: DraggablePro
       const reorderedItems = arrayMove(newItems, oldIndex, newIndex);
       
       console.log("Reordered items:", reorderedItems.map(item => ({id: item.id, title: item.title})));
+      
+      // Save the new order to localStorage
+      saveOrderToLocalStorage(reorderedItems);
       
       // Update priorities based on new position
       const priorities = ['high', 'high', 'medium', 'medium', 'low'];

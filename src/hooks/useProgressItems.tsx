@@ -56,6 +56,36 @@ export function useProgressItems() {
       }
 
       console.log(`Fetched ${data?.length || 0} progress items:`, data);
+      
+      // Try to restore the order from localStorage if it exists
+      try {
+        const savedOrder = localStorage.getItem('progressItemsOrder');
+        if (savedOrder) {
+          const orderIds = JSON.parse(savedOrder) as string[];
+          console.log('Found saved order in localStorage:', orderIds);
+          
+          if (orderIds.length > 0 && data) {
+            // Sort items based on the saved order
+            const sortedData = [...data].sort((a, b) => {
+              const indexA = orderIds.indexOf(a.id);
+              const indexB = orderIds.indexOf(b.id);
+              
+              // If an item isn't in the saved order, put it at the end
+              if (indexA === -1) return 1;
+              if (indexB === -1) return -1;
+              
+              return indexA - indexB;
+            });
+            
+            console.log('Applied saved order to items');
+            return sortedData as ProgressItem[] || [];
+          }
+        }
+      } catch (err) {
+        console.error('Error applying saved order:', err);
+        // Continue with default ordering if there's an error
+      }
+      
       return data as ProgressItem[] || [];
     },
   });
