@@ -10,7 +10,7 @@ export function useFetchItems(savedOrder: string[]) {
   return useQuery({
     queryKey: ['progress-items', savedOrder], // Include savedOrder in queryKey to refetch when it changes
     queryFn: async () => {
-      console.log('Fetching progress items...', { savedOrderLength: savedOrder.length });
+      console.log('Fetching progress items with saved order of', savedOrder.length, 'items');
       
       try {
         const { data, error } = await supabase
@@ -34,29 +34,27 @@ export function useFetchItems(savedOrder: string[]) {
           return [];
         }
 
-        // Apply custom sorting if we have a saved order and it contains items
+        // Apply custom sorting if we have a saved order
         if (Array.isArray(savedOrder) && savedOrder.length > 0 && data && data.length > 0) {
-          console.log('Sorting items based on saved order:', savedOrder);
+          console.log('Applying manual sorting based on saved order');
+          
+          // Create a map for O(1) lookup of indices
+          const orderMap = new Map(savedOrder.map((id, index) => [id, index]));
           
           // Create a copy of the data and sort it based on the saved order
           const sortedData = [...data].sort((a, b) => {
-            const indexA = savedOrder.indexOf(a.id);
-            const indexB = savedOrder.indexOf(b.id);
+            const indexA = orderMap.has(a.id) ? orderMap.get(a.id)! : Number.MAX_SAFE_INTEGER;
+            const indexB = orderMap.has(b.id) ? orderMap.get(b.id)! : Number.MAX_SAFE_INTEGER;
             
-            // If an item is not in the saved order, put it at the end
-            if (indexA === -1) return 1;
-            if (indexB === -1) return -1;
-            
-            // Otherwise, sort by the saved order
+            // Sort based on index in saved order
             return indexA - indexB;
           });
           
-          console.log('Sorted items:', sortedData.map(item => item.title));
+          console.log('Successfully sorted items based on saved order');
           return sortedData as ProgressItem[];
         }
         
-        console.log('No saved order applied, using default sorting:', 
-          data ? data.map(item => ({ title: item.title, priority: item.priority })) : []);
+        console.log('No saved order applied, using default sorting');
         return data as ProgressItem[] || [];
       } catch (e) {
         console.error('Unexpected error in useFetchItems:', e);
@@ -68,5 +66,6 @@ export function useFetchItems(savedOrder: string[]) {
         return [];
       }
     },
+    staleTime: 30000, // Data stays fresh for 30 seconds to prevent excessive refetching
   });
 }

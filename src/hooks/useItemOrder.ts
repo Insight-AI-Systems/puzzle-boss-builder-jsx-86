@@ -23,47 +23,51 @@ export function useItemOrder() {
       // Get order from localStorage
       const localResult = getLocalStorageOrder();
       
+      console.log('Database order:', dbResult?.orderIds);
+      console.log('LocalStorage order:', localResult?.orderIds);
+      
       if (dbResult && localResult) {
         // Compare timestamps to decide which order to use
+        console.log('Comparing timestamps: local =', new Date(localResult.timestamp).toISOString(), 
+                    'db =', new Date(dbResult.latestUpdate).toISOString());
+                    
         if (localResult.timestamp > dbResult.latestUpdate) {
-          console.log('Using localStorage order (more recent)', localResult.orderIds);
+          console.log('Using localStorage order (more recent)');
           setSavedOrder(localResult.orderIds);
+          // Sync to database to ensure consistency
+          await saveDatabaseOrder(localResult.orderIds);
         } else {
-          console.log('Using database order', dbResult.orderIds);
+          console.log('Using database order');
           setSavedOrder(dbResult.orderIds);
           // Update localStorage with database order
           saveLocalStorageOrder(dbResult.orderIds);
         }
       } else if (dbResult) {
-        console.log('Using database order (no localStorage)', dbResult.orderIds);
+        console.log('Using database order (no localStorage)');
         setSavedOrder(dbResult.orderIds);
         saveLocalStorageOrder(dbResult.orderIds);
       } else if (localResult) {
-        console.log('Using localStorage order (no database)', localResult.orderIds);
+        console.log('Using localStorage order (no database)');
         setSavedOrder(localResult.orderIds);
+        // Sync to database
+        await saveDatabaseOrder(localResult.orderIds);
       }
       
       setLoaded(true);
-      
-      if (dbResult || localResult) {
-        toast({
-          title: "Order loaded",
-          description: "Task order has been loaded successfully",
-          duration: 3000,
-        });
-      }
     } catch (err) {
       console.error('Error loading saved order:', err);
+      setLoaded(true);
+      
+      // Try localStorage as fallback
       const localResult = getLocalStorageOrder();
       if (localResult) {
         setSavedOrder(localResult.orderIds);
         toast({
-          title: "Order loaded",
-          description: "Task order has been loaded from local storage",
+          title: "Fallback to local storage",
+          description: "Using locally saved order due to database connection issue",
           duration: 3000,
         });
       }
-      setLoaded(true);
     }
   };
 
@@ -71,30 +75,25 @@ export function useItemOrder() {
     try {
       console.log('Saving new order:', orderedItemIds);
       
-      // Save to localStorage
-      saveLocalStorageOrder(orderedItemIds);
+      // Update state immediately
       setSavedOrder(orderedItemIds);
       
-      // Save to database
+      // Save to localStorage first for immediate persistence
+      saveLocalStorageOrder(orderedItemIds);
+      
+      // Then save to database for long-term persistence
       const success = await saveDatabaseOrder(orderedItemIds);
       
-      if (success) {
-        toast({
-          title: "Order saved",
-          description: "The new task order has been saved",
-          duration: 3000,
-          className: "bg-green-800 border-green-900 text-white",
-        });
-        return true;
-      } else {
+      if (!success) {
         toast({
           variant: "destructive",
           title: "Database save failed",
-          description: "Failed to save to database, but changes are stored locally",
+          description: "Order saved locally but failed to save to database",
           duration: 5000,
         });
-        return false;
       }
+      
+      return true; // We've saved to localStorage even if database failed
     } catch (error) {
       console.error('Error in updateItemsOrder:', error);
       toast({

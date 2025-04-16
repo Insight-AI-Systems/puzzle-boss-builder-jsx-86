@@ -1,3 +1,4 @@
+
 import { useQueryClient } from "@tanstack/react-query";
 import { useProgressSync } from "./useProgressSync";
 import { addCommentToItem } from "@/utils/progress/commentOperations";
@@ -40,9 +41,14 @@ export function useProgressItems() {
   };
 
   const handleUpdateItemsOrder = async (itemIds: string[]) => {
+    console.log("useProgressItems: Updating order of items", itemIds);
     const success = await updateItemsOrder(itemIds);
     if (success) {
-      await queryClient.invalidateQueries({ queryKey: ['progress-items'] });
+      console.log("Order updated successfully, invalidating queries");
+      // Use a short delay to ensure the database has time to update
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['progress-items'] });
+      }, 300);
     }
     return success;
   };

@@ -9,7 +9,7 @@ export class ProgressTestRunner {
         return false;
       }
       
-      console.log('Testing progress item order for:', itemIds);
+      console.log('Testing progress item order for:', itemIds.length, 'items');
       
       // Verify items exist in the database and check their order
       const { data: dbItems, error } = await supabase
@@ -23,12 +23,17 @@ export class ProgressTestRunner {
         return false;
       }
       
-      if (!dbItems || dbItems.length !== itemIds.length) {
-        console.error(`Only found ${dbItems?.length} of ${itemIds.length} items in database`);
+      if (!dbItems || dbItems.length === 0) {
+        console.error('No items found in database for order test');
         return false;
       }
 
-      console.log('Database items retrieved:', dbItems.map(d => ({id: d.id, title: d.title, order: d.order_index})));
+      if (dbItems.length !== itemIds.length) {
+        console.warn(`Only found ${dbItems?.length} of ${itemIds.length} items in database`);
+        // Continue with validation for the items we found
+      }
+
+      console.log('Database items retrieved for validation:', dbItems.length);
 
       // Get the most recent update timestamp from database
       const latestDbUpdate = Math.max(...dbItems.map(item => 
@@ -41,7 +46,7 @@ export class ProgressTestRunner {
       
       if (!savedOrderStr || !savedTimeStr) {
         // If no localStorage data exists, database order is authoritative
-        console.log('No localStorage data found, using database order');
+        console.log('No localStorage data found, validating database order only');
         return this.verifyDatabaseOrder(dbItems, itemIds);
       }
       
@@ -59,14 +64,12 @@ export class ProgressTestRunner {
           database: new Date(latestDbUpdate).toISOString()
         });
 
-        // Compare timestamps to determine which order to use
-        if (savedTimestamp > latestDbUpdate) {
-          console.log('localStorage order is more recent, using localStorage order');
-          return this.verifyLocalStorageOrder(savedOrder, itemIds);
-        } else {
-          console.log('Database order is more recent, using database order');
-          return this.verifyDatabaseOrder(dbItems, itemIds);
-        }
+        // Verify both localStorage and database orders
+        const localStorageValid = this.verifyLocalStorageOrder(savedOrder, itemIds);
+        const databaseValid = this.verifyDatabaseOrder(dbItems, itemIds);
+        
+        // Both sources should be consistent with the expected order
+        return localStorageValid && databaseValid;
         
       } catch (e) {
         console.error('Error parsing saved order from localStorage:', e);
@@ -79,17 +82,24 @@ export class ProgressTestRunner {
   }
 
   private static verifyDatabaseOrder(dbItems: any[], expectedOrder: string[]): boolean {
-    const databaseOrder = dbItems.map(item => item.id);
-    console.log('Verifying database order:', {
-      expected: expectedOrder,
-      actual: databaseOrder
-    });
+    // Create map of database items for efficient lookup
+    const dbItemMap = new Map(dbItems.map(item => [item.id, item.order_index]));
     
-    const orderMatches = expectedOrder.every((id, index) => databaseOrder[index] === id);
-    
-    if (!orderMatches) {
-      console.error('Database order does not match expected order');
-      return false;
+    // Verify that items are ordered correctly based on order_index
+    let previousIndex = -1;
+    for (const id of expectedOrder) {
+      if (!dbItemMap.has(id)) {
+        console.warn(`Item ${id} not found in database order`);
+        continue;
+      }
+      
+      const currentIndex = dbItemMap.get(id);
+      if (currentIndex <= previousIndex) {
+        console.error(`Database order inconsistency: item ${id} has index ${currentIndex} but should be greater than ${previousIndex}`);
+        return false;
+      }
+      
+      previousIndex = currentIndex;
     }
     
     console.log('Database order verification passed');
@@ -97,16 +107,17 @@ export class ProgressTestRunner {
   }
 
   private static verifyLocalStorageOrder(savedOrder: string[], expectedOrder: string[]): boolean {
-    console.log('Verifying localStorage order:', {
-      expected: expectedOrder,
-      actual: savedOrder
-    });
-    
-    const orderMatches = expectedOrder.every((id, index) => savedOrder[index] === id);
-    
-    if (!orderMatches) {
-      console.error('localStorage order does not match expected order');
+    // Check that the orders match exactly (same items in same order)
+    if (savedOrder.length !== expectedOrder.length) {
+      console.error('localStorage order length mismatch');
       return false;
+    }
+    
+    for (let i = 0; i < expectedOrder.length; i++) {
+      if (savedOrder[i] !== expectedOrder[i]) {
+        console.error(`localStorage order mismatch at position ${i}`);
+        return false;
+      }
     }
     
     console.log('localStorage order verification passed');

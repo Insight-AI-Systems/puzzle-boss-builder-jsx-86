@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { ProgressItem } from '@/types/progressTypes';
 import { useToast } from "@/hooks/use-toast";
@@ -19,9 +20,9 @@ export function useTaskWorkflow(items: ProgressItem[]) {
   
   const { toast } = useToast();
 
-  // Reset workflow when items change to ensure we're showing the correct task
+  // Update the current task whenever items change or when in selecting stage
   useEffect(() => {
-    if (state.workflowStage === 'selecting' && items.length > 0) {
+    if ((state.workflowStage === 'selecting' || !state.currentTask) && items.length > 0) {
       console.log('Finding top task from sorted list of', items.length, 'items');
       
       // Filter out completed tasks, strictly preserving the current order from the items array
@@ -36,15 +37,26 @@ export function useTaskWorkflow(items: ProgressItem[]) {
         setState(prev => ({
           ...prev,
           currentTask: topTask,
-          workflowStage: 'proposal',
-          progressValue: 25
+          workflowStage: prev.workflowStage === 'selecting' ? 'proposal' : prev.workflowStage,
+          progressValue: prev.workflowStage === 'selecting' ? 25 : prev.progressValue
         }));
       } else {
         console.log('No pending tasks found');
-        setState(prev => ({ ...prev, currentTask: null }));
+        setState(prev => ({ ...prev, currentTask: null, workflowStage: 'selecting', progressValue: 0 }));
       }
     }
-  }, [items, state.workflowStage]);
+  }, [items, state.currentTask, state.workflowStage]);
+
+  // Also check if the current task still exists in the items list
+  useEffect(() => {
+    if (state.currentTask && items.length > 0) {
+      const currentTaskExists = items.some(item => item.id === state.currentTask?.id);
+      if (!currentTaskExists) {
+        console.log('Current task no longer exists in items list, resetting workflow');
+        setState(prev => ({ ...prev, currentTask: null, workflowStage: 'selecting', progressValue: 0 }));
+      }
+    }
+  }, [items, state.currentTask]);
 
   const generateProposal = () => {
     if (!state.currentTask) return;

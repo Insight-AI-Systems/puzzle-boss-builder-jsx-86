@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   DndContext, 
@@ -53,31 +54,51 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
     }
 
     setIsUpdating(true);
+    toast({
+      title: "Saving order...",
+      description: "Your changes are being saved",
+      duration: 3000,
+    });
 
     try {
       // First update local state for immediate UI feedback
-      setSortedItems((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        return arrayMove(items, oldIndex, newIndex);
-      });
-      
-      // Prepare the reordered items list
       const oldIndex = sortedItems.findIndex((item) => item.id === active.id);
       const newIndex = sortedItems.findIndex((item) => item.id === over.id);
+      
       const reorderedItems = arrayMove([...sortedItems], oldIndex, newIndex);
+      setSortedItems(reorderedItems);
+      
+      // Get the item IDs for the new order
       const itemIds = reorderedItems.map(item => item.id);
       
-      // Save the new order immediately
-      await onUpdateItemsOrder(itemIds);
-
+      // Save the new order
+      console.log("DraggableProgressTable: Saving new item order", itemIds);
+      const success = await onUpdateItemsOrder(itemIds);
+      
+      if (success) {
+        toast({
+          title: "Order saved",
+          description: "Your task order has been saved successfully",
+          className: "bg-green-800 border-green-900 text-white",
+          duration: 3000,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Save failed",
+          description: "Failed to save the new order",
+          duration: 5000,
+        });
+        // Revert to original order if save failed
+        setSortedItems(items);
+      }
     } catch (error) {
       console.error("Error during drag end:", error);
       setSortedItems(items);
       toast({
         variant: "destructive",
         title: "Error occurred",
-        description: "An error occurred while updating the order.",
+        description: "An error occurred while updating the order",
         duration: 5000,
       });
     } finally {

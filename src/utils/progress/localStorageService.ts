@@ -17,11 +17,13 @@ export const getLocalStorageOrder = () => {
     
     if (!Array.isArray(savedOrder) || savedOrder.length === 0) {
       console.error('Invalid saved order format in localStorage');
+      localStorage.removeItem(ORDER_KEY);
+      localStorage.removeItem(TIMESTAMP_KEY);
       return null;
     }
     
-    console.log('Retrieved order from localStorage with', savedOrder.length, 'items:', 
-      savedOrder.slice(0, 3).join(', ') + (savedOrder.length > 3 ? '...' : ''));
+    console.log('Retrieved order from localStorage with', savedOrder.length, 'items');
+    console.log('Order timestamp:', new Date(savedTimestamp).toISOString());
     
     return {
       orderIds: savedOrder,
@@ -29,22 +31,30 @@ export const getLocalStorageOrder = () => {
     };
   } catch (e) {
     console.error('Error parsing saved order from localStorage:', e);
+    // Clear potentially corrupted data
+    localStorage.removeItem(ORDER_KEY);
+    localStorage.removeItem(TIMESTAMP_KEY);
     return null;
   }
 };
 
 export const saveLocalStorageOrder = (orderIds: string[]) => {
   try {
-    console.log('Saving order to localStorage:', 
-      orderIds.slice(0, 3).join(', ') + (orderIds.length > 3 ? '...' : ''));
+    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      console.error('Invalid order data provided for localStorage save');
+      return 0;
+    }
+    
+    console.log('Saving order to localStorage:', orderIds.length, 'items');
     
     const timestamp = Date.now();
     localStorage.setItem(ORDER_KEY, JSON.stringify(orderIds));
     localStorage.setItem(TIMESTAMP_KEY, timestamp.toString());
     
+    console.log('Order saved to localStorage with timestamp:', new Date(timestamp).toISOString());
     return timestamp;
   } catch (error) {
     console.error('Error saving to localStorage:', error);
-    return Date.now(); // Return current timestamp even if save failed
+    return 0;
   }
 };
