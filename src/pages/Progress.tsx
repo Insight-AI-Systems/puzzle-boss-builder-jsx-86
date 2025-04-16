@@ -119,8 +119,6 @@ const Progress = () => {
           </AlertDescription>
         </Alert>
         
-        <TaskSelector items={items || []} />
-        
         <ProgressSummary items={items || []} />
         
         <Card className="bg-puzzle-black/50 border-puzzle-aqua/20">
