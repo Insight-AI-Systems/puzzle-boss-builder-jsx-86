@@ -6,7 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   UserCog, ShieldAlert, LayoutDashboard, Users, 
   ImageIcon, ShoppingCart, Settings, BarChart,
-  FileText, GameController, Star
+  FileText, Puzzle, Star
 } from "lucide-react";
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { UserManagement } from './UserManagement';
@@ -167,7 +167,7 @@ export const RoleBasedDashboard: React.FC = () => {
     {
       id: "puzzles",
       label: "Puzzles",
-      icon: <GameController className="h-4 w-4 mr-2" />,
+      icon: <Puzzle className="h-4 w-4 mr-2" />,
       component: <GameManagement />,
       roles: ['super_admin', 'admin', 'category_manager']
     },

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,14 +14,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 
+type GameDifficulty = 'easy' | 'medium' | 'hard';
+type GameStatus = 'active' | 'scheduled' | 'completed' | 'draft';
+
 type PuzzleGame = {
   id: string;
   title: string;
   category: string;
   prize_value: number;
-  status: 'active' | 'scheduled' | 'completed' | 'draft';
-  difficulty: 'easy' | 'medium' | 'hard';
+  status: GameStatus;
+  difficulty: GameDifficulty;
   created_at: string;
+};
+
+type GameFormValues = {
+  title: string;
+  category: string;
+  prize_value: number;
+  difficulty: GameDifficulty;
+  status: GameStatus;
 };
 
 export function GameManagement() {
@@ -35,15 +45,9 @@ export function GameManagement() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentGame, setCurrentGame] = useState<PuzzleGame | null>(null);
   
-  // Fetch games
   const { data: games, isLoading } = useQuery({
     queryKey: ['puzzle-games'],
     queryFn: async () => {
-      // This would normally fetch from the database, but we'll mock data for now
-      // In a real implementation, you would use:
-      // const { data, error } = await supabase.from('puzzles').select('*');
-      
-      // Mock data for demonstration
       const mockGames: PuzzleGame[] = [
         {
           id: '1',
@@ -78,13 +82,8 @@ export function GameManagement() {
     },
   });
 
-  // Create game mutation
   const createGame = useMutation({
     mutationFn: async (newGame: Omit<PuzzleGame, 'id' | 'created_at'>) => {
-      // In a real implementation, you would use:
-      // const { data, error } = await supabase.from('puzzles').insert([newGame]).select();
-      
-      // Mock response
       return {
         ...newGame,
         id: Math.random().toString(36).substr(2, 9),
@@ -108,13 +107,8 @@ export function GameManagement() {
     },
   });
 
-  // Update game mutation
   const updateGame = useMutation({
     mutationFn: async (updatedGame: PuzzleGame) => {
-      // In a real implementation, you would use:
-      // const { data, error } = await supabase.from('puzzles').update(updatedGame).eq('id', updatedGame.id);
-      
-      // Mock response
       return updatedGame;
     },
     onSuccess: () => {
@@ -134,13 +128,8 @@ export function GameManagement() {
     },
   });
 
-  // Delete game mutation
   const deleteGame = useMutation({
     mutationFn: async (id: string) => {
-      // In a real implementation, you would use:
-      // const { data, error } = await supabase.from('puzzles').delete().eq('id', id);
-      
-      // Mock response
       return { success: true };
     },
     onSuccess: () => {
@@ -159,13 +148,8 @@ export function GameManagement() {
     },
   });
 
-  // Toggle game status mutation
   const toggleGameStatus = useMutation({
     mutationFn: async ({ id, newStatus }: { id: string, newStatus: 'active' | 'draft' }) => {
-      // In a real implementation, you would use:
-      // const { data, error } = await supabase.from('puzzles').update({ status: newStatus }).eq('id', id);
-      
-      // Mock response
       return { id, status: newStatus };
     },
     onSuccess: () => {
@@ -184,7 +168,6 @@ export function GameManagement() {
     },
   });
 
-  // Filter games based on search term and filters
   const filteredGames = games?.filter(game => {
     const matchesSearch = 
       game.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -196,28 +179,25 @@ export function GameManagement() {
     return matchesSearch && matchesCategory && matchesStatus;
   }) || [];
 
-  // Categories from all games (for filter dropdown)
   const categories = games ? Array.from(new Set(games.map(game => game.category))) : [];
 
-  // Game creation form
-  const createForm = useForm({
+  const createForm = useForm<GameFormValues>({
     defaultValues: {
       title: '',
       category: '',
       prize_value: 0,
-      difficulty: 'medium' as const,
-      status: 'draft' as const,
+      difficulty: 'medium',
+      status: 'draft',
     },
   });
 
-  // Game edit form
-  const editForm = useForm({
+  const editForm = useForm<GameFormValues>({
     defaultValues: {
       title: '',
       category: '',
       prize_value: 0,
-      difficulty: 'medium' as const,
-      status: 'draft' as const,
+      difficulty: 'medium',
+      status: 'draft',
     },
   });
 
@@ -503,7 +483,6 @@ export function GameManagement() {
           </div>
         </div>
 
-        {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-[550px]">
             <DialogHeader>
