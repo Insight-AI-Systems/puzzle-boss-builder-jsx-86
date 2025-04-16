@@ -8,7 +8,7 @@ import Navbar from '@/components/Navbar';
 const Auth = () => {
   const { currentUserId, isLoading } = useAuthState();
   const [searchParams] = useSearchParams();
-  const [defaultTab, setDefaultTab] = useState('signin');
+  const [defaultTab, setDefaultTab] = useState<'signin' | 'signup'>('signin');
   
   useEffect(() => {
     const tab = searchParams.get('tab');
