@@ -7,8 +7,14 @@ export function useAdminStatus(profile: UserProfile | null) {
 
   useEffect(() => {
     if (profile) {
+      // Debug logging to help trace role issues
+      console.log('Checking admin status for role:', profile.role);
+      
       // Check if the user role is either super_admin or admin
-      setIsAdmin(['super_admin', 'admin'].includes(profile.role));
+      const hasAdminRole = ['super_admin', 'admin'].includes(profile.role);
+      console.log('Has admin role:', hasAdminRole);
+      
+      setIsAdmin(hasAdminRole);
     } else {
       setIsAdmin(false);
     }

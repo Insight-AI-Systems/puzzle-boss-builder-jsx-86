@@ -17,6 +17,8 @@ export function useProfileData(profileId: string | null) {
       
       if (error) throw error;
       
+      console.log('Profile data retrieved:', data);
+      
       const userProfile: UserProfile = {
         id: data.id,
         display_name: data.username || null,
