@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { AddProgressItemDialog } from "@/components/AddProgressItemDialog";
 import { useProgressItems } from "@/hooks/useProgressItems";
 import { ProgressTable } from "@/components/progress/ProgressTable";
 import { ProgressSummary } from "@/components/progress/ProgressSummary";
-import { AutomatedTaskFlow } from "@/components/progress/AutomatedTaskFlow";
+import { TaskSelector } from "@/components/progress/TaskSelector";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,7 +26,6 @@ const Progress = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Show a toast when the page loads to inform about auto-saving
     toast({
       title: "Auto-save enabled",
       description: "Changes to task order, status, and priority are automatically saved",
@@ -35,9 +33,7 @@ const Progress = () => {
     });
   }, [toast]);
 
-  // Add automatic sync on mount and periodic sync
   useEffect(() => {
-    // Initial sync if no items exist
     if (!isLoading && (!items || items.length === 0)) {
       console.log('No progress items found, auto-syncing');
       syncTasks().catch(err => {
@@ -46,16 +42,13 @@ const Progress = () => {
       });
     }
 
-    // Set up periodic sync every 30 minutes
     const syncInterval = setInterval(() => {
       console.log('Running periodic sync');
       syncTasks().catch(err => {
         console.error('Periodic sync failed:', err);
-        // Don't show UI error for periodic sync failures
       });
-    }, 30 * 60 * 1000); // 30 minutes
+    }, 30 * 60 * 1000);
 
-    // Cleanup interval on unmount
     return () => clearInterval(syncInterval);
   }, [isLoading, items, syncTasks]);
 
@@ -126,11 +119,7 @@ const Progress = () => {
           </AlertDescription>
         </Alert>
         
-        <AutomatedTaskFlow 
-          items={items || []} 
-          onUpdateStatus={updateItemStatus}
-          onAddComment={addComment}
-        />
+        <TaskSelector items={items || []} />
         
         <ProgressSummary items={items || []} />
         
