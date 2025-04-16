@@ -1,146 +1,138 @@
 
-import React, { useState } from 'react';
-import { Menu, X, LogOut } from 'lucide-react';
-import { Button } from './ui/button';
-import { Link, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from './ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { ChevronDown, LogOut, Settings, Shield, User } from 'lucide-react';
 
-const Navbar = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { currentUserId } = useUserProfile();
-  const navigate = useNavigate();
+const Navbar: React.FC = () => {
+  const { profile, isLoading, isAdmin } = useUserProfile();
   const { toast } = useToast();
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
-  const handleLogout = async () => {
+  const handleSignOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
       toast({
-        title: 'Signed out successfully',
-        description: 'Come back soon!',
+        title: 'Signed out',
+        description: 'You have been successfully signed out.',
       });
-      
-      navigate('/');
     } catch (error) {
+      console.error('Error signing out:', error);
       toast({
-        title: 'Error signing out',
-        description: error.message,
+        title: 'Error',
+        description: 'There was a problem signing you out.',
         variant: 'destructive',
       });
     }
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-puzzle-black/90 backdrop-blur-md border-b border-puzzle-aqua/20 py-4">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link to="/" className="text-2xl font-game text-puzzle-white">
-              <span className="text-puzzle-aqua">The</span> Puzzle <span className="text-puzzle-gold">Boss</span>
-            </Link>
-            <Link to="/progress" className="hidden md:block nav-link">
-              Progress
-            </Link>
-          </div>
-          
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-8">
-            <Link to="/" className="nav-link">Home</Link>
-            <a href="#categories" className="nav-link">Categories</a>
-            <a href="#how-it-works" className="nav-link">How It Works</a>
-            <a href="#prizes" className="nav-link">Prizes</a>
-          </div>
-          
-          <div className="hidden md:flex items-center space-x-4">
-            {currentUserId ? (
-              <>
-                <Link to="/profile">
-                  <Button variant="outline" className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
-                    Profile
-                  </Button>
-                </Link>
-                <Button 
-                  variant="ghost" 
-                  className="text-puzzle-white hover:text-puzzle-gold hover:bg-transparent"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
-                </Button>
-              </>
-            ) : (
-              <>
-                <Link to="/auth">
-                  <Button variant="outline" className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/auth?tab=signup">
-                  <Button className="bg-puzzle-aqua text-puzzle-black hover:bg-puzzle-aqua/90">
-                    Register
-                  </Button>
-                </Link>
-              </>
-            )}
-          </div>
-          
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
-            <button onClick={toggleMenu} className="text-puzzle-white hover:text-puzzle-aqua">
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-        </div>
+    <header className="bg-gradient-to-r from-puzzle-black to-puzzle-black/95 py-4 sticky top-0 z-40 w-full border-b border-puzzle-aqua/20">
+      <div className="container mx-auto px-4 flex justify-between items-center">
+        <Link to="/" className="flex items-center">
+          <span className="text-puzzle-aqua font-game text-2xl tracking-wider">Puzzle Boss</span>
+        </Link>
         
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden mt-4 py-4 space-y-4 flex flex-col items-center">
-            <Link to="/" className="nav-link py-2">Home</Link>
-            <Link to="/progress" className="nav-link py-2">Progress</Link>
-            <a href="#categories" className="nav-link py-2">Categories</a>
-            <a href="#how-it-works" className="nav-link py-2">How It Works</a>
-            <a href="#prizes" className="nav-link py-2">Prizes</a>
-            {currentUserId ? (
-              <>
-                <Link to="/profile" className="w-full">
-                  <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
-                    Profile
-                  </Button>
-                </Link>
-                <Button 
-                  variant="ghost" 
-                  className="w-full text-puzzle-white hover:text-puzzle-gold hover:bg-transparent"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
+        <nav className="hidden md:flex items-center gap-8">
+          <Link to="/" className="text-white/80 hover:text-puzzle-aqua transition-colors">
+            Home
+          </Link>
+          <Link to="/puzzles" className="text-white/80 hover:text-puzzle-aqua transition-colors">
+            Puzzles
+          </Link>
+          <Link to="/prizes" className="text-white/80 hover:text-puzzle-aqua transition-colors">
+            Prizes
+          </Link>
+          <Link to="/how-it-works" className="text-white/80 hover:text-puzzle-aqua transition-colors">
+            How It Works
+          </Link>
+          
+          {isAdmin && (
+            <Link to="/admin-dashboard" className="text-white/80 hover:text-puzzle-aqua transition-colors flex items-center">
+              <Shield className="mr-1 h-4 w-4" />
+              Admin
+            </Link>
+          )}
+        </nav>
+        
+        <div className="flex items-center gap-4">
+          {!isLoading && profile ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-9 w-9 border border-puzzle-aqua/50">
+                    <AvatarImage src={profile.avatar_url || ''} alt={profile.display_name || ''} />
+                    <AvatarFallback className="bg-puzzle-aqua/20 text-puzzle-aqua">
+                      {profile.display_name?.charAt(0).toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
                 </Button>
-              </>
-            ) : (
-              <div className="flex flex-col space-y-3 w-full pt-4">
-                <Link to="/auth" className="w-full">
-                  <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/auth?tab=signup" className="w-full">
-                  <Button className="w-full bg-puzzle-aqua text-puzzle-black hover:bg-puzzle-aqua/90">
-                    Register
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
-        )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{profile.display_name || 'User'}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {profile.role}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="flex w-full cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin-dashboard" className="flex w-full cursor-pointer">
+                      <Shield className="mr-2 h-4 w-4" />
+                      <span>Admin Dashboard</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="flex w-full cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-red-600 cursor-pointer" 
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/auth">
+              <Button variant="default" className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
+                Sign In
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
-    </nav>
+    </header>
   );
 };
 

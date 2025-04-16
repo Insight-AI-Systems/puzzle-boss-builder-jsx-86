@@ -1,105 +1,110 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+ 
 @layer base {
   :root {
-    --background: 0 0% 7%;
+    --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
-
-    --card: 0 0% 9%;
+    
+    --card: 0 0% 3.9%;
     --card-foreground: 0 0% 98%;
-
-    --popover: 0 0% 9%;
+    
+    --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
-
-    --primary: 180 100% 35%;
-    --primary-foreground: 0 0% 98%;
-
-    --secondary: 45 100% 50%;
-    --secondary-foreground: 0 0% 9%;
-
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 65%;
-
-    --accent: 345 100% 25%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 84.2% 60.2%;
+    
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    
+    --accent: 180 100% 50%; /* puzzle-aqua */
+    --accent-foreground: 0 0% 9%;
+    
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-
-    --border: 0 0% 20%;
-    --input: 0 0% 15%;
-    --ring: 180 100% 35%;
-
+    
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    
     --radius: 0.5rem;
-  }
 
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-puzzle-black text-puzzle-white;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-game;
-  }
-
-  .puzzle-container {
-    @apply grid grid-cols-3 gap-1 w-full max-w-[300px] aspect-square mx-auto;
-  }
-
-  .puzzle-piece {
-    @apply bg-puzzle-aqua/80 border border-puzzle-aqua rounded-md transition-all duration-300 hover:brightness-110 cursor-move;
-  }
-
-  .puzzle-piece.empty {
-    @apply bg-transparent border-dashed border-puzzle-aqua/30;
-  }
-
-  .puzzle-solved {
-    @apply animate-pulse-gentle;
+    /* Puzzle Boss specific colors */
+    --puzzle-black: 0 0% 8%;
+    --puzzle-aqua: 180 100% 50%;
+    --puzzle-gold: 41 100% 50%;
+    --puzzle-burgundy: 345 83% 41%;
   }
 }
 
-@layer components {
-  .glow-text {
-    text-shadow: 0 0 5px theme('colors.puzzle-aqua'), 0 0 10px theme('colors.puzzle-aqua/50');
+@layer base {
+  * {
+    @apply border-border;
   }
-  
-  .gold-gradient {
-    background: linear-gradient(135deg, theme('colors.puzzle-gold') 0%, #e6b800 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+  body {
+    @apply bg-background text-foreground;
   }
-  
-  .card-highlight {
-    @apply bg-gradient-to-br from-puzzle-black to-puzzle-black/90 border border-puzzle-aqua/30 rounded-xl shadow-lg shadow-puzzle-aqua/10 backdrop-blur-sm hover:border-puzzle-aqua/60 transition-all duration-300;
-  }
-  
-  .btn-primary {
-    @apply bg-puzzle-aqua text-puzzle-black font-bold py-3 px-6 rounded-md hover:bg-puzzle-aqua/90 transition-all duration-300 shadow-md shadow-puzzle-aqua/20;
-  }
-  
-  .btn-secondary {
-    @apply bg-puzzle-gold text-puzzle-black font-bold py-3 px-6 rounded-md hover:bg-puzzle-gold/90 transition-all duration-300 shadow-md shadow-puzzle-gold/20;
-  }
-  
-  .nav-link {
-    @apply text-puzzle-white hover:text-puzzle-aqua transition-colors duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-puzzle-aqua after:transition-all after:duration-300 hover:after:w-full;
-  }
+}
 
-  .section-title {
-    @apply text-3xl md:text-4xl font-bold mb-6 text-center;
+/* Make the text more readable on dark backgrounds */
+.text-puzzle-aqua {
+  color: hsl(180, 100%, 60%);
+}
+
+.bg-puzzle-aqua {
+  background-color: hsl(180, 100%, 50%);
+}
+
+.border-puzzle-aqua {
+  border-color: hsl(180, 100%, 50%);
+}
+
+.bg-puzzle-black {
+  background-color: hsl(0, 0%, 8%);
+}
+
+.text-puzzle-gold {
+  color: hsl(41, 100%, 50%);
+}
+
+.bg-puzzle-gold {
+  background-color: hsl(41, 100%, 50%);
+}
+
+.card-highlight {
+  background-color: hsl(0, 0%, 11%);
+  border: 1px solid hsl(180, 100%, 50%, 0.2);
+  border-radius: 0.5rem;
+}
+
+/* Font for game titles */
+.font-game {
+  font-family: "Audiowide", "Orbitron", system-ui, sans-serif;
+  letter-spacing: 0.05em;
+}
+
+/* Puzzle piece animation for loading */
+@keyframes pulse-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 0.5rem hsl(180, 100%, 50%, 0.3));
   }
-  
-  .section-subtitle {
-    @apply text-xl md:text-2xl font-semibold mb-4;
+  50% {
+    filter: drop-shadow(0 0 1rem hsl(180, 100%, 50%, 0.6));
   }
+}
+
+.puzzle-piece-animate {
+  animation: pulse-glow 2s infinite;
+}
+
+/* Admin dashboard styles */
+.sidebar-item-active {
+  background-color: hsl(180, 100%, 50%, 0.2);
+  border-left: 3px solid hsl(180, 100%, 50%);
 }

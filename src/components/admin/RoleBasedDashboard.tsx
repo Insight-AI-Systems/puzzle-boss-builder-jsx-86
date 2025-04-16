@@ -5,13 +5,57 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   UserCog, ShieldAlert, LayoutDashboard, Users, 
-  ImageIcon, ShoppingCart, Settings, BarChart 
+  ImageIcon, ShoppingCart, Settings, BarChart,
+  FileText, GameController, Star
 } from "lucide-react";
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { UserManagement } from './UserManagement';
+import { GameManagement } from './GameManagement';
+import { ContentManagement } from './ContentManagement';
 import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 
 // Components for different admin sections
+const AnalyticsDashboard: React.FC = () => (
+  <Card>
+    <CardHeader>
+      <CardTitle>Analytics Dashboard</CardTitle>
+      <CardDescription>Performance metrics and user engagement</CardDescription>
+    </CardHeader>
+    <CardContent>
+      <p className="text-muted-foreground">This section will show analytics data including user engagement, puzzle completions, and revenue metrics.</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Active Users</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-puzzle-aqua">1,248</p>
+            <p className="text-sm text-muted-foreground">+12% from last month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Puzzles Completed</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-puzzle-aqua">8,392</p>
+            <p className="text-sm text-muted-foreground">+24% from last month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Revenue</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-puzzle-aqua">$34,219</p>
+            <p className="text-sm text-muted-foreground">+8% from last month</p>
+          </CardContent>
+        </Card>
+      </div>
+    </CardContent>
+  </Card>
+);
+
 const CategoryManagement: React.FC = () => (
   <Card>
     <CardHeader>
@@ -107,11 +151,25 @@ export const RoleBasedDashboard: React.FC = () => {
       roles: ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo']
     },
     {
+      id: "analytics",
+      label: "Analytics",
+      icon: <BarChart className="h-4 w-4 mr-2" />,
+      component: <AnalyticsDashboard />,
+      roles: ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo']
+    },
+    {
       id: "users",
       label: "User Management",
       icon: <Users className="h-4 w-4 mr-2" />,
       component: <UserManagement />,
       roles: ['super_admin', 'admin']
+    },
+    {
+      id: "puzzles",
+      label: "Puzzles",
+      icon: <GameController className="h-4 w-4 mr-2" />,
+      component: <GameManagement />,
+      roles: ['super_admin', 'admin', 'category_manager']
     },
     {
       id: "categories",
@@ -121,9 +179,16 @@ export const RoleBasedDashboard: React.FC = () => {
       roles: ['super_admin', 'admin', 'category_manager']
     },
     {
+      id: "content",
+      label: "Content",
+      icon: <FileText className="h-4 w-4 mr-2" />,
+      component: <ContentManagement />,
+      roles: ['super_admin', 'admin', 'social_media_manager']
+    },
+    {
       id: "marketing",
       label: "Marketing",
-      icon: <BarChart className="h-4 w-4 mr-2" />,
+      icon: <Star className="h-4 w-4 mr-2" />,
       component: <MarketingDashboard />,
       roles: ['super_admin', 'admin', 'social_media_manager']
     },
@@ -148,7 +213,7 @@ export const RoleBasedDashboard: React.FC = () => {
 
   return (
     <Tabs defaultValue="overview" className="w-full">
-      <TabsList className="bg-puzzle-black/50 border border-puzzle-aqua/20 mb-6">
+      <TabsList className="bg-puzzle-black/50 border border-puzzle-aqua/20 mb-6 flex flex-wrap">
         {accessibleTabs.map(tab => (
           <TabsTrigger 
             key={tab.id} 
