@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Mail } from 'lucide-react';
 import dynamicIconImports from 'lucide-react/dynamicIconImports';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import React, { Suspense, lazy } from 'react';
@@ -17,7 +17,7 @@ export const AuthForm = () => {
   const { toast } = useToast();
 
   // Dynamically import Google icon
-  const GoogleIcon = lazy(dynamicIconImports['google']);
+  const GoogleIcon = lazy(() => import('lucide-react/esm/icons/google').then(mod => ({ default: mod.Google })));
 
   const handleEmailAuth = async (isSignUp: boolean) => {
     try {
