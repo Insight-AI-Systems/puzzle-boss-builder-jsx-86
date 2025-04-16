@@ -4,9 +4,23 @@ import { toast } from "@/hooks/use-toast";
 
 export const updateItemStatus = async (itemId: string, status: string) => {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "You must be logged in to update task status",
+      });
+      return false;
+    }
+
     const { error } = await supabase
       .from('progress_items')
-      .update({ status, updated_at: new Date().toISOString() })
+      .update({ 
+        status, 
+        updated_at: new Date().toISOString(),
+        last_edited_by: user.id 
+      })
       .eq('id', itemId);
 
     if (error) {
@@ -33,9 +47,23 @@ export const updateItemStatus = async (itemId: string, status: string) => {
 
 export const updateItemPriority = async (itemId: string, priority: string) => {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "You must be logged in to update task priority",
+      });
+      return false;
+    }
+
     const { error } = await supabase
       .from('progress_items')
-      .update({ priority, updated_at: new Date().toISOString() })
+      .update({ 
+        priority, 
+        updated_at: new Date().toISOString(),
+        last_edited_by: user.id 
+      })
       .eq('id', itemId);
 
     if (error) {
@@ -59,3 +87,4 @@ export const updateItemPriority = async (itemId: string, priority: string) => {
     return false;
   }
 };
+

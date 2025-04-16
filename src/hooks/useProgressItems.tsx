@@ -14,6 +14,7 @@ export interface ProgressItem {
   description?: string; 
   created_at: string;
   updated_at: string;
+  last_edited_by?: string;
   progress_comments: ProgressComment[];
 }
 
@@ -33,7 +34,6 @@ export function useProgressItems() {
     queryFn: async () => {
       console.log('Fetching progress items...');
       
-      // Use created_at as secondary sort after priority to ensure consistent ordering
       const { data, error } = await supabase
         .from('progress_items')
         .select(`
