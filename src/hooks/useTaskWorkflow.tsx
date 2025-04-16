@@ -25,14 +25,15 @@ export function useTaskWorkflow(items: ProgressItem[]) {
     if (state.workflowStage === 'selecting' && items.length > 0) {
       console.log('Finding highest priority task from list of', items.length, 'items');
       
-      // Filter out completed tasks
+      // Filter out completed tasks, but preserve the original order
+      // which comes from the drag-and-drop functionality
       const pendingTasks = items.filter(item => item.status !== 'completed');
       
       console.log('Found', pendingTasks.length, 'pending tasks');
       
       if (pendingTasks.length > 0) {
-        // The array is already ordered by the drag-and-drop functionality
-        // so the first item is the highest priority
+        // Use the first task in the list, which should be the highest priority
+        // based on the user's manually ordered list
         const topTask = pendingTasks[0];
         console.log('Selected top task for workflow:', topTask.title, 'with priority:', topTask.priority);
         

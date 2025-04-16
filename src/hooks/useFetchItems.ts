@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -34,19 +33,27 @@ export function useFetchItems(savedOrder: string[]) {
           return [];
         }
 
-        // If we have a saved order in localStorage, use it
-        if (savedOrder.length > 0 && data) {
-          console.log('Using saved order from localStorage');
+        // If we have a saved order in localStorage/database, use it
+        if (savedOrder && savedOrder.length > 0 && data) {
+          console.log('Using saved order from localStorage/database with', savedOrder.length, 'items');
+          
+          // Create a copy of the data and sort it based on the saved order
           const sortedData = [...data].sort((a, b) => {
             const indexA = savedOrder.indexOf(a.id);
             const indexB = savedOrder.indexOf(b.id);
+            
+            // If an item is not in the saved order, put it at the end
             if (indexA === -1) return 1;
             if (indexB === -1) return -1;
+            
+            // Otherwise, sort by the saved order
             return indexA - indexB;
           });
+          
           return sortedData as ProgressItem[];
         }
         
+        // If no saved order, return the items sorted by priority and updated_at
         return data as ProgressItem[] || [];
       } catch (e) {
         console.error('Unexpected error in useFetchItems:', e);
