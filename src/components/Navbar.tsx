@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ChevronDown, LogOut, Settings, Shield, User } from 'lucide-react';
 
 const Navbar: React.FC = () => {
-  const { profile, isLoading, isAdmin } = useUserProfile();
+  const { profile, isLoading, isAdmin, currentUserId } = useUserProfile();
   const { toast } = useToast();
 
   const handleSignOut = async () => {
@@ -38,13 +39,18 @@ const Navbar: React.FC = () => {
     }
   };
 
-  const checkAdminStatus = () => {
-    if (profile) {
-      toast({
-        title: 'Admin Status Check',
-        description: `Role: ${profile.role}, isAdmin: ${isAdmin}`,
-      });
-    }
+  const checkAuthStatus = () => {
+    console.log('Current auth status:', { 
+      isLoading, 
+      profile, 
+      isAdmin, 
+      currentUserId 
+    });
+    
+    toast({
+      title: 'Auth Status Check',
+      description: `User ID: ${currentUserId || 'Not logged in'}, Admin: ${isAdmin ? 'Yes' : 'No'}`,
+    });
   };
 
   return (
@@ -77,14 +83,23 @@ const Navbar: React.FC = () => {
         </nav>
         
         <div className="flex items-center gap-4">
-          {!isLoading && profile ? (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="border-puzzle-aqua/20 text-puzzle-aqua mr-2"
+            onClick={checkAuthStatus}
+          >
+            Check Auth
+          </Button>
+          
+          {!isLoading && currentUserId ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-9 w-9 border border-puzzle-aqua/50">
-                    <AvatarImage src={profile.avatar_url || ''} alt={profile.display_name || ''} />
+                    <AvatarImage src={profile?.avatar_url || ''} alt={profile?.display_name || ''} />
                     <AvatarFallback className="bg-puzzle-aqua/20 text-puzzle-aqua">
-                      {profile.display_name?.charAt(0).toUpperCase() || 'U'}
+                      {profile?.display_name?.charAt(0).toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -92,9 +107,9 @@ const Navbar: React.FC = () => {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{profile.display_name || 'User'}</p>
+                    <p className="text-sm font-medium leading-none">{profile?.display_name || 'User'}</p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      {profile.role}
+                      {profile?.role || 'user'}
                     </p>
                   </div>
                 </DropdownMenuLabel>
@@ -106,7 +121,7 @@ const Navbar: React.FC = () => {
                   </Link>
                 </DropdownMenuItem>
                 
-                {(isAdmin || profile.role === 'super_admin') && (
+                {(isAdmin || profile?.role === 'super_admin') && (
                   <DropdownMenuItem asChild>
                     <Link to="/admin-dashboard" className="flex w-full cursor-pointer">
                       <Shield className="mr-2 h-4 w-4" />
@@ -128,13 +143,6 @@ const Navbar: React.FC = () => {
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="text-blue-600 cursor-pointer" 
-                  onClick={checkAdminStatus}
-                >
-                  <Shield className="mr-2 h-4 w-4" />
-                  <span>Check Admin Status</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
