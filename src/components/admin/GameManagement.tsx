@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,16 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Plus, Edit, Trash2, EyeOff, Eye, Search, Filter } from "lucide-react";
+import { Loader2, Plus, Edit, Trash2, EyeOff, Eye, Search, Filter, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
+import { Checkbox } from "@/components/ui/checkbox";
 
-type GameDifficulty = 'easy' | 'medium' | 'hard';
-type GameStatus = 'active' | 'scheduled' | 'completed' | 'draft';
+export type GameDifficulty = 'easy' | 'medium' | 'hard';
+export type GameStatus = 'active' | 'scheduled' | 'completed' | 'draft';
 
-type PuzzleGame = {
+export type PuzzleGame = {
   id: string;
   title: string;
   category: string;
@@ -25,14 +27,20 @@ type PuzzleGame = {
   status: GameStatus;
   difficulty: GameDifficulty;
   created_at: string;
+  verified?: boolean;
+  rules?: string;
+  image_url?: string;
 };
 
-type GameFormValues = {
+export type GameFormValues = {
   title: string;
   category: string;
   prize_value: number;
   difficulty: GameDifficulty;
   status: GameStatus;
+  rules?: string;
+  image_url?: string;
+  verified?: boolean;
 };
 
 export function GameManagement() {
@@ -43,6 +51,7 @@ export function GameManagement() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   const [currentGame, setCurrentGame] = useState<PuzzleGame | null>(null);
   
   const { data: games, isLoading } = useQuery({
@@ -57,6 +66,9 @@ export function GameManagement() {
           status: 'active',
           difficulty: 'medium',
           created_at: new Date().toISOString(),
+          verified: true,
+          rules: 'Complete the puzzle within 5 minutes to qualify. Fastest time wins.',
+          image_url: 'https://placehold.co/600x400?text=iPhone+15'
         },
         {
           id: '2',
@@ -66,6 +78,9 @@ export function GameManagement() {
           status: 'scheduled',
           difficulty: 'hard',
           created_at: new Date().toISOString(),
+          verified: false,
+          rules: 'Complete the puzzle with 100% accuracy. Top 3 fastest times qualify for prize drawing.',
+          image_url: 'https://placehold.co/600x400?text=MacBook+Pro'
         },
         {
           id: '3',
@@ -75,6 +90,9 @@ export function GameManagement() {
           status: 'completed',
           difficulty: 'easy',
           created_at: new Date().toISOString(),
+          verified: true,
+          rules: 'Complete the puzzle to enter the drawing. Winner randomly selected from all completed entries.',
+          image_url: 'https://placehold.co/600x400?text=AirPods+Pro'
         },
       ];
       
@@ -149,7 +167,7 @@ export function GameManagement() {
   });
 
   const toggleGameStatus = useMutation({
-    mutationFn: async ({ id, newStatus }: { id: string, newStatus: 'active' | 'draft' }) => {
+    mutationFn: async ({ id, newStatus }: { id: string, newStatus: GameStatus }) => {
       return { id, status: newStatus };
     },
     onSuccess: () => {
@@ -168,6 +186,26 @@ export function GameManagement() {
     },
   });
 
+  const verifyGame = useMutation({
+    mutationFn: async ({ id, verified }: { id: string, verified: boolean }) => {
+      return { id, verified };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['puzzle-games'] });
+      toast({
+        title: "Success",
+        description: `Game ${data.verified ? 'verified' : 'unverified'} successfully`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update verification status: " + error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const filteredGames = games?.filter(game => {
     const matchesSearch = 
       game.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -181,28 +219,28 @@ export function GameManagement() {
 
   const categories = games ? Array.from(new Set(games.map(game => game.category))) : [];
 
+  // Define default values properly to match the type
+  const defaultCreateValues: GameFormValues = {
+    title: '',
+    category: '',
+    prize_value: 0,
+    difficulty: 'medium' as GameDifficulty,
+    status: 'draft' as GameStatus,
+    rules: '',
+    image_url: '',
+    verified: false
+  };
+
   const createForm = useForm<GameFormValues>({
-    defaultValues: {
-      title: '',
-      category: '',
-      prize_value: 0,
-      difficulty: 'medium',
-      status: 'draft',
-    },
+    defaultValues: defaultCreateValues
   });
 
   const editForm = useForm<GameFormValues>({
-    defaultValues: {
-      title: '',
-      category: '',
-      prize_value: 0,
-      difficulty: 'medium',
-      status: 'draft',
-    },
+    defaultValues: defaultCreateValues
   });
 
   const handleCreateSubmit = createForm.handleSubmit(data => {
-    createGame.mutate(data);
+    createGame.mutate(data as Omit<PuzzleGame, 'id' | 'created_at'>);
   });
 
   const handleEditSubmit = editForm.handleSubmit(data => {
@@ -222,8 +260,16 @@ export function GameManagement() {
       prize_value: game.prize_value,
       difficulty: game.difficulty,
       status: game.status,
+      rules: game.rules || '',
+      image_url: game.image_url || '',
+      verified: game.verified || false
     });
     setIsEditDialogOpen(true);
+  };
+
+  const handlePreview = (game: PuzzleGame) => {
+    setCurrentGame(game);
+    setIsPreviewDialogOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -232,9 +278,13 @@ export function GameManagement() {
     }
   };
 
-  const handleToggleStatus = (id: string, currentStatus: 'active' | 'draft' | 'scheduled' | 'completed') => {
+  const handleToggleStatus = (id: string, currentStatus: GameStatus) => {
     const newStatus = currentStatus === 'active' ? 'draft' : 'active';
     toggleGameStatus.mutate({ id, newStatus });
+  };
+
+  const handleToggleVerification = (id: string, currentVerified: boolean = false) => {
+    verifyGame.mutate({ id, verified: !currentVerified });
   };
 
   if (isLoading) {
@@ -262,7 +312,7 @@ export function GameManagement() {
                 <Plus className="mr-2 h-4 w-4" /> Add New Puzzle
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[550px]">
+            <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Create New Puzzle Game</DialogTitle>
                 <DialogDescription>
@@ -362,6 +412,54 @@ export function GameManagement() {
                       )}
                     />
                   </div>
+                  <FormField
+                    control={createForm.control}
+                    name="image_url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Image URL</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter image URL" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={createForm.control}
+                    name="rules"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Game Rules</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter game rules" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={createForm.control}
+                    name="verified"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            Verified for publication
+                          </FormLabel>
+                          <p className="text-sm text-muted-foreground">
+                            Check this box to verify this puzzle is ready for public view
+                          </p>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
                   <DialogFooter>
                     <Button type="submit" className="bg-puzzle-aqua hover:bg-puzzle-aqua/80" disabled={createGame.isPending}>
                       {createGame.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -425,7 +523,7 @@ export function GameManagement() {
                   <TableHead>Prize Value</TableHead>
                   <TableHead>Difficulty</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Created At</TableHead>
+                  <TableHead>Verified</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -455,9 +553,21 @@ export function GameManagement() {
                           {game.status.charAt(0).toUpperCase() + game.status.slice(1)}
                         </Badge>
                       </TableCell>
-                      <TableCell>{new Date(game.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleToggleVerification(game.id, game.verified)}
+                          className={game.verified ? "text-green-500" : "text-gray-400"}
+                        >
+                          <CheckCircle2 className="h-5 w-5" />
+                        </Button>
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="icon" onClick={() => handlePreview(game)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
                           <Button variant="outline" size="icon" onClick={() => handleToggleStatus(game.id, game.status)}>
                             {game.status === 'active' ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
@@ -484,7 +594,7 @@ export function GameManagement() {
         </div>
 
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-[550px]">
+          <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>Edit Puzzle Game</DialogTitle>
               <DialogDescription>
@@ -585,6 +695,54 @@ export function GameManagement() {
                     )}
                   />
                 </div>
+                <FormField
+                  control={editForm.control}
+                  name="image_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Image URL</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter image URL" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="rules"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Game Rules</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter game rules" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="verified"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Verified for publication
+                        </FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Check this box to verify this puzzle is ready for public view
+                        </p>
+                      </div>
+                    </FormItem>
+                  )}
+                />
                 <DialogFooter>
                   <Button type="submit" className="bg-puzzle-aqua hover:bg-puzzle-aqua/80" disabled={updateGame.isPending}>
                     {updateGame.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -593,6 +751,66 @@ export function GameManagement() {
                 </DialogFooter>
               </form>
             </Form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
+          <DialogContent className="sm:max-w-[800px]">
+            <DialogHeader>
+              <DialogTitle>Puzzle Preview: {currentGame?.title}</DialogTitle>
+              <DialogDescription>
+                Preview how this puzzle will appear to users.
+              </DialogDescription>
+            </DialogHeader>
+            {currentGame && (
+              <div className="space-y-6">
+                <div className="rounded-lg overflow-hidden border h-64 bg-gray-100 flex items-center justify-center">
+                  {currentGame.image_url ? (
+                    <img src={currentGame.image_url} alt={currentGame.title} className="max-h-full object-contain" />
+                  ) : (
+                    <div className="text-gray-400">No image available</div>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Category</h3>
+                    <p>{currentGame.category}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Prize Value</h3>
+                    <p>${currentGame.prize_value.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Difficulty</h3>
+                    <p>{currentGame.difficulty.charAt(0).toUpperCase() + currentGame.difficulty.slice(1)}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Status</h3>
+                    <p>{currentGame.status.charAt(0).toUpperCase() + currentGame.status.slice(1)}</p>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Rules</h3>
+                  <p className="text-gray-700">{currentGame.rules || "No rules specified."}</p>
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle2 className={`mr-2 h-5 w-5 ${currentGame.verified ? "text-green-500" : "text-gray-400"}`} />
+                  <span>{currentGame.verified ? "Verified for publication" : "Not verified"}</span>
+                </div>
+                <DialogFooter>
+                  <Button 
+                    onClick={() => handleToggleVerification(currentGame.id, currentGame.verified)}
+                    className={currentGame.verified ? "bg-gray-500" : "bg-puzzle-aqua"}
+                  >
+                    {currentGame.verified ? "Unverify Puzzle" : "Verify Puzzle"}
+                  </Button>
+                  <Button onClick={() => handleEdit(currentGame)} variant="outline">
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                  </Button>
+                </DialogFooter>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </CardContent>

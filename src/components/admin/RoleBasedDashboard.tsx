@@ -6,56 +6,18 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   UserCog, ShieldAlert, LayoutDashboard, Users, 
   ImageIcon, ShoppingCart, Settings, BarChart,
-  FileText, Puzzle, Star
+  FileText, Puzzle, Star, Mail, Eye, Bell, Lock
 } from "lucide-react";
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { UserManagement } from './UserManagement';
 import { GameManagement } from './GameManagement';
 import { ContentManagement } from './ContentManagement';
 import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
+import { SecurityDashboard } from './SecurityDashboard';
+import { EmailManagement } from './EmailManagement';
+import { AnalyticsDashboard } from './AnalyticsDashboard';
 
-// Components for different admin sections
-const AnalyticsDashboard: React.FC = () => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Analytics Dashboard</CardTitle>
-      <CardDescription>Performance metrics and user engagement</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <p className="text-muted-foreground">This section will show analytics data including user engagement, puzzle completions, and revenue metrics.</p>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Active Users</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-puzzle-aqua">1,248</p>
-            <p className="text-sm text-muted-foreground">+12% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Puzzles Completed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-puzzle-aqua">8,392</p>
-            <p className="text-sm text-muted-foreground">+24% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-puzzle-aqua">$34,219</p>
-            <p className="text-sm text-muted-foreground">+8% from last month</p>
-          </CardContent>
-        </Card>
-      </div>
-    </CardContent>
-  </Card>
-);
-
+// Category Management Component
 const CategoryManagement: React.FC = () => (
   <Card>
     <CardHeader>
@@ -68,6 +30,7 @@ const CategoryManagement: React.FC = () => (
   </Card>
 );
 
+// Marketing Dashboard Component
 const MarketingDashboard: React.FC = () => (
   <Card>
     <CardHeader>
@@ -80,6 +43,7 @@ const MarketingDashboard: React.FC = () => (
   </Card>
 );
 
+// Partners Dashboard Component
 const PartnersDashboard: React.FC = () => (
   <Card>
     <CardHeader>
@@ -92,6 +56,7 @@ const PartnersDashboard: React.FC = () => (
   </Card>
 );
 
+// Financial Dashboard Component
 const FinancialDashboard: React.FC = () => (
   <Card>
     <CardHeader>
@@ -205,6 +170,54 @@ export const RoleBasedDashboard: React.FC = () => {
       icon: <Settings className="h-4 w-4 mr-2" />,
       component: <FinancialDashboard />,
       roles: ['super_admin', 'admin', 'cfo']
+    },
+    {
+      id: "security",
+      label: "Security",
+      icon: <Lock className="h-4 w-4 mr-2" />,
+      component: <SecurityDashboard />,
+      roles: ['super_admin']
+    },
+    {
+      id: "email",
+      label: "Email",
+      icon: <Mail className="h-4 w-4 mr-2" />,
+      component: <EmailManagement />,
+      roles: ['super_admin', 'admin']
+    },
+    {
+      id: "monitoring",
+      label: "Monitoring",
+      icon: <Eye className="h-4 w-4 mr-2" />,
+      component: (
+        <Card>
+          <CardHeader>
+            <CardTitle>System Monitoring</CardTitle>
+            <CardDescription>Real-time monitoring and alerts</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">This section provides real-time monitoring of system activity and alerts.</p>
+          </CardContent>
+        </Card>
+      ),
+      roles: ['super_admin']
+    },
+    {
+      id: "notifications",
+      label: "Notifications",
+      icon: <Bell className="h-4 w-4 mr-2" />,
+      component: (
+        <Card>
+          <CardHeader>
+            <CardTitle>Notification Management</CardTitle>
+            <CardDescription>Manage system notifications and alerts</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">This section allows control of system-wide notifications and alerts.</p>
+          </CardContent>
+        </Card>
+      ),
+      roles: ['super_admin', 'admin']
     }
   ];
   
