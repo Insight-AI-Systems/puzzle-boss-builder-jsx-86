@@ -1,4 +1,3 @@
-
 import { projectTracker } from './ProjectTracker';
 import { toast } from '@/hooks/use-toast';
 import { TestManager } from './managers/TestManager';
@@ -100,15 +99,73 @@ export class TestRunner {
 }
 
 export const runInitialTests = async () => {
-  if (typeof window !== 'undefined') {
-    console.log('Running initial environment tests...');
+  console.info('Running initial environment tests...');
+  
+  // Test database connection
+  const dbConnected = await DatabaseTestRunner.testDatabaseConnection();
+  console.info(`Database connection: ${dbConnected ? 'OK' : 'FAILED'}`);
+  
+  // Test auth status
+  const authOk = await DatabaseTestRunner.testAuthStatus();
+  console.info(`Auth system: ${authOk ? 'OK' : 'FAILED'}`);
+  
+  // Create a demo admin account if it doesn't exist
+  await createDemoAdminAccount();
+}
+
+const createDemoAdminAccount = async () => {
+  try {
+    // First check if the demo admin account exists
+    const { data: existingUser, error: checkError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', 'admin')
+      .maybeSingle();
     
-    const dbConnectionOk = await DatabaseTestRunner.testDatabaseConnection();
-    console.log('Database connection:', dbConnectionOk ? 'OK' : 'Failed');
+    if (checkError) {
+      console.error('Error checking for demo admin account:', checkError);
+      return;
+    }
     
-    const authStatusOk = await DatabaseTestRunner.testAuthStatus();
-    console.log('Auth system:', authStatusOk ? 'OK' : 'Failed');
+    // If the account already exists, do nothing
+    if (existingUser) {
+      console.info('Demo admin account already exists');
+      return;
+    }
+    
+    // Create the admin user
+    const { data: userData, error: signUpError } = await supabase.auth.signUp({
+      email: 'admin@puzzleboss.com',
+      password: 'Puzzle123!',
+      options: {
+        data: {
+          username: 'admin',
+          role: 'super_admin'
+        }
+      }
+    });
+    
+    if (signUpError) {
+      console.error('Error creating demo admin account:', signUpError);
+      return;
+    }
+    
+    console.info('Demo admin account created successfully');
+    
+    // Update the profile if needed
+    if (userData?.user?.id) {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ role: 'super_admin' })
+        .eq('id', userData.user.id);
+      
+      if (updateError) {
+        console.error('Error updating demo admin profile:', updateError);
+      }
+    }
+  } catch (err) {
+    console.error('Unexpected error creating demo admin:', err);
   }
-};
+}
 
 export type { VerificationResult } from './testing/types/testTypes';

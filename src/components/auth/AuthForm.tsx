@@ -5,30 +5,36 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Mail } from 'lucide-react';
-import dynamicIconImports from 'lucide-react/dynamicIconImports';
+import { Loader2, Mail, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import React, { Suspense, lazy } from 'react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const { toast } = useToast();
-
-  // Using the Icon component directly with dynamicIconImports
-  // Note: The Google icon may not be part of the default Lucide React package
-  // Using a different approach with a custom icon component
   
   const handleEmailAuth = async (isSignUp: boolean) => {
     try {
       setIsLoading(true);
+      setErrorMessage('');
       
-      const { error } = isSignUp 
+      console.log(`Attempting to ${isSignUp ? 'sign up' : 'sign in'} with email: ${email}`);
+      
+      const { data, error } = isSignUp 
         ? await supabase.auth.signUp({ email, password })
         : await supabase.auth.signInWithPassword({ email, password });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Auth error:', error);
+        setErrorMessage(error.message);
+        throw error;
+      }
+
+      // Log successful result for debugging
+      console.log('Auth successful:', data);
 
       toast({
         title: isSignUp ? 'Account created!' : 'Welcome back!',
@@ -37,6 +43,8 @@ export const AuthForm = () => {
           : 'Successfully signed in.',
       });
     } catch (error) {
+      console.error('Authentication error:', error);
+      
       toast({
         title: 'Authentication error',
         description: error instanceof Error ? error.message : 'An unknown error occurred',
@@ -50,6 +58,8 @@ export const AuthForm = () => {
   const handleGoogleAuth = async () => {
     try {
       setIsLoading(true);
+      setErrorMessage('');
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -59,6 +69,8 @@ export const AuthForm = () => {
       
       if (error) throw error;
     } catch (error) {
+      console.error('Google auth error:', error);
+      
       toast({
         title: 'Authentication error',
         description: error instanceof Error ? error.message : 'An unknown error occurred',
@@ -75,6 +87,13 @@ export const AuthForm = () => {
           <TabsTrigger value="signin">Sign In</TabsTrigger>
           <TabsTrigger value="signup">Sign Up</TabsTrigger>
         </TabsList>
+
+        {errorMessage && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
 
         <TabsContent value="signin" className="space-y-4">
           <div className="space-y-2">
@@ -190,6 +209,12 @@ export const AuthForm = () => {
           )}
           Google
         </Button>
+        
+        <div className="mt-4 text-sm text-muted-foreground">
+          <p>Demo admin account:</p>
+          <p>Email: admin@puzzleboss.com</p>
+          <p>Password: Puzzle123!</p>
+        </div>
       </Tabs>
     </div>
   );
