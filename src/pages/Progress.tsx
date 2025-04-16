@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,10 +8,11 @@ import { ProgressTable } from "@/components/progress/ProgressTable";
 import { ProgressSummary } from "@/components/progress/ProgressSummary";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { ProgressItem } from '@/types/progressTypes';
 
 const Progress = () => {
   const { 
-    items, 
+    items: initialItems,
     isLoading, 
     isSyncing, 
     addComment, 
@@ -22,9 +22,17 @@ const Progress = () => {
     updateItemsOrder,
     isSavingOrder
   } = useProgressItems();
-  
+
+  const [progressItems, setProgressItems] = useState<ProgressItem[]>([]);
   const [syncError, setSyncError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Update local state when items from hook changes
+  useEffect(() => {
+    if (initialItems) {
+      setProgressItems(initialItems);
+    }
+  }, [initialItems]);
 
   useEffect(() => {
     toast({
@@ -43,7 +51,7 @@ const Progress = () => {
   }, [toast]);
 
   useEffect(() => {
-    if (!isLoading && (!items || items.length === 0)) {
+    if (!isLoading && (!initialItems || initialItems.length === 0)) {
       console.log('No progress items found, auto-syncing');
       syncTasks().catch(err => {
         console.error('Auto-sync failed:', err);
@@ -59,7 +67,7 @@ const Progress = () => {
     }, 30 * 60 * 1000);
 
     return () => clearInterval(syncInterval);
-  }, [isLoading, items, syncTasks]);
+  }, [isLoading, initialItems, syncTasks]);
 
   const handleManualSync = async () => {
     setSyncError(null);
@@ -77,10 +85,19 @@ const Progress = () => {
     }
   };
 
-  const handleOrderUpdate = async (itemIds: string[]) => {
-    console.log("Progress.tsx: Updating order of items:", itemIds.length, "items");
-    const result = await updateItemsOrder(itemIds);
-    return result;
+  const handleUpdateItemsOrder = async (itemIds: string[]) => {
+    console.log('Progress.tsx: Updating order with', itemIds.length, 'items');
+    const success = await updateItemsOrder(itemIds);
+
+    if (success) {
+      // Update local state to match new order
+      setProgressItems(prevItems => 
+        itemIds.map(id => prevItems.find(item => item.id === id)!)
+          .filter(Boolean)
+      );
+      return true;
+    }
+    return false;
   };
 
   if (isLoading) {
@@ -128,7 +145,7 @@ const Progress = () => {
           </AlertDescription>
         </Alert>
         
-        <ProgressSummary items={items || []} />
+        <ProgressSummary items={progressItems} />
         
         <Card className="bg-puzzle-black/50 border-puzzle-aqua/20">
           <CardHeader>
@@ -136,11 +153,11 @@ const Progress = () => {
           </CardHeader>
           <CardContent>
             <ProgressTable 
-              items={items || []} 
+              items={progressItems} 
               onAddComment={addComment}
               onUpdateStatus={updateItemStatus}
               onUpdatePriority={updateItemPriority}
-              onUpdateItemsOrder={handleOrderUpdate}
+              onUpdateItemsOrder={handleUpdateItemsOrder}
               isSavingOrder={isSavingOrder}
             />
           </CardContent>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   DndContext, 
@@ -31,7 +30,7 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
   
-  // Update sorted items when the items prop changes
+  // Update sorted items when items prop changes
   React.useEffect(() => {
     setSortedItems(items);
   }, [items]);
@@ -69,18 +68,11 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
     setIsUpdating(true);
     
     try {
-      console.log(`Moving item from position with ID ${active.id} to position with ID ${over.id}`);
-      
-      const oldIndex = sortedItems.findIndex((item) => item.id === active.id);
-      const newIndex = sortedItems.findIndex((item) => item.id === over.id);
+      const oldIndex = sortedItems.findIndex(item => item.id === active.id);
+      const newIndex = sortedItems.findIndex(item => item.id === over.id);
       
       if (oldIndex === -1 || newIndex === -1) {
-        console.error('Could not find dragged items in the sorted list', { 
-          activeId: active.id, 
-          overId: over.id,
-          oldIndex,
-          newIndex
-        });
+        console.error('Could not find dragged items');
         setIsUpdating(false);
         return;
       }
@@ -91,8 +83,10 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
       console.log('Reordered task:', movedItem.title);
       console.log(`From index ${oldIndex} to ${newIndex}`);
       
+      // Update local state immediately for smooth UX
       setSortedItems(updatedItems);
       
+      // Save to backend through parent handler
       const itemIds = updatedItems.map(item => item.id);
       const success = await onUpdateItemsOrder(itemIds);
       
