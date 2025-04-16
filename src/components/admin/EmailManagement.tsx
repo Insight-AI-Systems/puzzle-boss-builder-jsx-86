@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
+import { Checkbox } from "@/components/ui/checkbox"; // Added missing import
 
 type EmailTemplate = {
   id: string;
@@ -228,6 +228,26 @@ export const EmailManagement: React.FC = () => {
       description: "A test email has been sent to your address.",
     });
   };
+
+  // Label component for the email settings
+  const Label = ({ children, htmlFor }: { children: React.ReactNode, htmlFor?: string }) => (
+    <label 
+      htmlFor={htmlFor} 
+      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+    >
+      {children}
+    </label>
+  );
+
+  // Checkbox component for the email settings
+  const CheckboxInput = ({ id, defaultChecked }: { id: string, defaultChecked?: boolean }) => (
+    <input 
+      type="checkbox"
+      id={id}
+      defaultChecked={defaultChecked}
+      className="h-4 w-4 rounded border-gray-300 text-puzzle-aqua focus:ring-puzzle-aqua"
+    />
+  );
 
   return (
     <Card className="w-full">
@@ -671,8 +691,8 @@ export const EmailManagement: React.FC = () => {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Email Service Provider</Label>
-                      <Select defaultValue="custom_smtp">
+                      <Label htmlFor="email_provider">Email Service Provider</Label>
+                      <Select defaultValue="custom_smtp" id="email_provider">
                         <SelectTrigger>
                           <SelectValue placeholder="Select provider" />
                         </SelectTrigger>
@@ -685,16 +705,16 @@ export const EmailManagement: React.FC = () => {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>From Email Address</Label>
-                      <Input placeholder="noreply@puzzleboss.com" defaultValue="noreply@puzzleboss.com" />
+                      <Label htmlFor="from_email">From Email Address</Label>
+                      <Input id="from_email" placeholder="noreply@puzzleboss.com" defaultValue="noreply@puzzleboss.com" />
                     </div>
                     <div className="space-y-2">
-                      <Label>From Name</Label>
-                      <Input placeholder="Puzzle Boss" defaultValue="Puzzle Boss" />
+                      <Label htmlFor="from_name">From Name</Label>
+                      <Input id="from_name" placeholder="Puzzle Boss" defaultValue="Puzzle Boss" />
                     </div>
                     <div className="space-y-2">
-                      <Label>Reply-To Email</Label>
-                      <Input placeholder="support@puzzleboss.com" defaultValue="support@puzzleboss.com" />
+                      <Label htmlFor="reply_to">Reply-To Email</Label>
+                      <Input id="reply_to" placeholder="support@puzzleboss.com" defaultValue="support@puzzleboss.com" />
                     </div>
                   </div>
                   <div className="pt-4">
@@ -824,23 +844,3 @@ export const EmailManagement: React.FC = () => {
     </Card>
   );
 };
-
-// Label component for the email settings
-const Label = ({ children, htmlFor }: { children: React.ReactNode, htmlFor?: string }) => (
-  <label 
-    htmlFor={htmlFor} 
-    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-  >
-    {children}
-  </label>
-);
-
-// Checkbox component for the email settings
-const Checkbox = ({ id, defaultChecked }: { id: string, defaultChecked?: boolean }) => (
-  <input 
-    type="checkbox"
-    id={id}
-    defaultChecked={defaultChecked}
-    className="h-4 w-4 rounded border-gray-300 text-puzzle-aqua focus:ring-puzzle-aqua"
-  />
-);
