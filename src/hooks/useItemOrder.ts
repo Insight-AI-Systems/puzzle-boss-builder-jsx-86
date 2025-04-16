@@ -1,11 +1,12 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { ProgressItem } from '@/types/progressTypes';
 
 export function useItemOrder() {
   const [savedOrder, setSavedOrder] = useState<string[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
     try {
@@ -30,22 +31,20 @@ export function useItemOrder() {
         return false;
       }
 
-      const priorities = ['high', 'high', 'medium', 'medium', 'low'];
-      
+      // Update order_index for each item
       const updatePromises = orderedItemIds.map(async (itemId, index) => {
-        const newPriority = priorities[Math.min(index, priorities.length - 1)];
-        
         const { error } = await supabase
           .from('progress_items')
           .update({ 
-            priority: newPriority,
             updated_at: new Date().toISOString(),
-            last_edited_by: user.id
+            last_edited_by: user.id,
+            // Store the index as an integer for proper sorting
+            order_index: index
           })
           .eq('id', itemId);
           
         if (error) {
-          console.error(`Error updating priority for item ${itemId}:`, error);
+          console.error(`Error updating order for item ${itemId}:`, error);
           return false;
         }
         return true;
@@ -62,22 +61,26 @@ export function useItemOrder() {
   const updateItemsOrder = async (newOrder: string[]) => {
     try {
       console.log('Saving new order to localStorage and database:', newOrder);
+      
+      // Save to localStorage first for immediate feedback
       localStorage.setItem('progressItemsOrder', JSON.stringify(newOrder));
       setSavedOrder(newOrder);
       
+      // Then save to database
       const success = await saveOrderToDB(newOrder);
       
       if (success) {
         toast({
           title: "Order updated",
-          description: "Item order has been successfully saved",
+          description: "Task order has been successfully saved",
+          className: "bg-green-800 border-green-900 text-white",
         });
         return true;
       } else {
         toast({
           variant: "destructive",
           title: "Order update failed",
-          description: "Failed to save item order in the database",
+          description: "Failed to save task order in the database",
         });
         return false;
       }

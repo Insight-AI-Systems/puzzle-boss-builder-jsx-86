@@ -9,9 +9,10 @@ export class ProgressTestRunner {
         return false;
       }
       
+      // Verify the items exist in the database
       const { data, error } = await supabase
         .from('progress_items')
-        .select('id')
+        .select('id, order_index')
         .in('id', itemIds);
         
       if (error) {
@@ -24,6 +25,7 @@ export class ProgressTestRunner {
         return false;
       }
       
+      // Check that localStorage has been updated
       const savedOrderStr = localStorage.getItem('progressItemsOrder');
       if (!savedOrderStr) {
         console.error('No saved order found in localStorage');
@@ -35,6 +37,20 @@ export class ProgressTestRunner {
         if (!Array.isArray(savedOrder) || savedOrder.length === 0) {
           console.error('Invalid saved order format in localStorage');
           return false;
+        }
+        
+        // Check that saved order matches the order of IDs
+        const savedOrderMatches = itemIds.every((id, index) => savedOrder[index] === id);
+        if (!savedOrderMatches) {
+          console.error('Saved order does not match expected order');
+          return false;
+        }
+        
+        // Check for order_index fields in the database
+        const allHaveOrderIndex = data.every(item => item.order_index !== null);
+        if (!allHaveOrderIndex) {
+          console.warn('Some items do not have order_index set in the database');
+          // This is not a failure condition since we can fall back to localStorage
         }
         
         console.log('Progress item order test passed');

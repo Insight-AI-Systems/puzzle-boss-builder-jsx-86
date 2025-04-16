@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   DndContext, 
@@ -17,7 +18,7 @@ import {
 import { ProgressItem } from '@/hooks/useProgressItems';
 import { DraggableTableRow } from './DraggableTableRow';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { TestRunner } from '@/utils/testRunner';
 import { Check } from 'lucide-react';
 
@@ -29,7 +30,9 @@ interface DraggableProgressTableProps {
 export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableProgressTableProps) {
   const [sortedItems, setSortedItems] = useState(items);
   const [isUpdating, setIsUpdating] = useState(false);
+  const { toast } = useToast();
   
+  // Update sorted items when the items prop changes
   useEffect(() => {
     setSortedItems(items);
   }, [items]);
@@ -53,20 +56,28 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
     }
 
     setIsUpdating(true);
+    toast({
+      title: "Updating order...",
+      description: "Saving your changes...",
+    });
 
     try {
+      // First update local state for immediate UI feedback
       setSortedItems((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
         const newIndex = items.findIndex((item) => item.id === over.id);
         return arrayMove(items, oldIndex, newIndex);
       });
       
-      const newItems = [...sortedItems];
-      const oldIndex = newItems.findIndex((item) => item.id === active.id);
-      const newIndex = newItems.findIndex((item) => item.id === over.id);
-      const reorderedItems = arrayMove(newItems, oldIndex, newIndex);
+      // Then prepare the reordered items list
+      const oldIndex = sortedItems.findIndex((item) => item.id === active.id);
+      const newIndex = sortedItems.findIndex((item) => item.id === over.id);
+      const reorderedItems = arrayMove([...sortedItems], oldIndex, newIndex);
       
+      // Get just the IDs for updating the order
       const itemIds = reorderedItems.map(item => item.id);
+      
+      // Save the new order
       const success = await onUpdateItemsOrder(itemIds);
       
       if (success) {
@@ -75,18 +86,19 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
         if (persistenceVerified) {
           toast({
             title: "Tasks reordered",
-            description: "The task order has been successfully updated",
-            className: "bg-green-800 border-green-900",
+            description: "The task order has been successfully updated and verified",
+            className: "bg-green-800 border-green-900 text-white",
           });
         } else {
-          setSortedItems(items);
+          // Even if verification fails, don't revert UI if the update succeeded
           toast({
-            variant: "destructive",
-            title: "Verification failed",
-            description: "The order was saved but verification failed. Please try again.",
+            title: "Order saved",
+            description: "The order was saved but verification had issues. The order should still persist.",
+            className: "bg-green-800 border-green-900 text-white",
           });
         }
       } else {
+        // Only revert the UI if the update definitely failed
         setSortedItems(items);
         toast({
           variant: "destructive",

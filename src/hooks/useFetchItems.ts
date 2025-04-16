@@ -1,10 +1,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { ProgressItem } from '@/types/progressTypes';
 
 export function useFetchItems(savedOrder: string[]) {
+  const { toast } = useToast();
+  
   return useQuery({
     queryKey: ['progress-items'],
     queryFn: async () => {
@@ -18,6 +20,7 @@ export function useFetchItems(savedOrder: string[]) {
             *
           )
         `)
+        .order('order_index', { ascending: true })
         .order('priority', { ascending: false })
         .order('updated_at', { ascending: false });
 
@@ -31,15 +34,23 @@ export function useFetchItems(savedOrder: string[]) {
         return [];
       }
 
+      // If we have a saved order in localStorage, use it as a fallback
       if (savedOrder.length > 0 && data) {
-        const sortedData = [...data].sort((a, b) => {
-          const indexA = savedOrder.indexOf(a.id);
-          const indexB = savedOrder.indexOf(b.id);
-          if (indexA === -1) return 1;
-          if (indexB === -1) return -1;
-          return indexA - indexB;
-        });
-        return sortedData as ProgressItem[];
+        // First check if any items have order_index as null
+        const hasNullOrderIndex = data.some(item => item.order_index === null);
+        
+        if (hasNullOrderIndex) {
+          // If there are items with null order_index, use the saved order as fallback
+          console.log('Using saved order from localStorage as fallback');
+          const sortedData = [...data].sort((a, b) => {
+            const indexA = savedOrder.indexOf(a.id);
+            const indexB = savedOrder.indexOf(b.id);
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+          });
+          return sortedData as ProgressItem[];
+        }
       }
       
       return data as ProgressItem[] || [];
