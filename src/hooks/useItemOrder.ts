@@ -9,7 +9,27 @@ export function useItemOrder() {
   const { toast } = useToast();
 
   useEffect(() => {
+    loadSavedOrder();
+  }, []);
+
+  const loadSavedOrder = async () => {
     try {
+      // First try to load from database
+      const { data: items } = await supabase
+        .from('progress_items')
+        .select('id, order_index')
+        .order('order_index', { ascending: true })
+        .not('order_index', 'is', null);
+
+      if (items && items.length > 0) {
+        const orderFromDb = items.map(item => item.id);
+        setSavedOrder(orderFromDb);
+        // Sync localStorage with database
+        localStorage.setItem('progressItemsOrder', JSON.stringify(orderFromDb));
+        return;
+      }
+
+      // Fallback to localStorage if no order in database
       const storedOrder = localStorage.getItem('progressItemsOrder');
       if (storedOrder) {
         setSavedOrder(JSON.parse(storedOrder));
@@ -17,7 +37,7 @@ export function useItemOrder() {
     } catch (err) {
       console.error('Error loading saved order:', err);
     }
-  }, []);
+  };
 
   const saveOrderToDB = async (orderedItemIds: string[]) => {
     try {
@@ -31,8 +51,21 @@ export function useItemOrder() {
         return false;
       }
 
-      // For now, we're not updating any database column
-      // This prevents errors while we determine the best approach
+      // Update order_index for each item
+      const updates = orderedItemIds.map((id, index) => ({
+        id,
+        order_index: index
+      }));
+
+      const { error } = await supabase
+        .from('progress_items')
+        .upsert(updates, { onConflict: 'id' });
+
+      if (error) {
+        console.error('Error saving order to database:', error);
+        return false;
+      }
+
       return true;
     } catch (error) {
       console.error('Error saving order to database:', error);
@@ -42,13 +75,13 @@ export function useItemOrder() {
 
   const updateItemsOrder = async (newOrder: string[]) => {
     try {
-      console.log('Saving new order to localStorage:', newOrder);
+      console.log('Saving new order to localStorage and database:', newOrder);
       
       // Save to localStorage first for immediate feedback
       localStorage.setItem('progressItemsOrder', JSON.stringify(newOrder));
       setSavedOrder(newOrder);
       
-      // Attempt to save to database (will just return true for now)
+      // Attempt to save to database
       const success = await saveOrderToDB(newOrder);
       
       if (success) {
@@ -58,7 +91,7 @@ export function useItemOrder() {
         if (persistenceVerified) {
           toast({
             title: "Order saved",
-            description: "The new task order has been verified and saved successfully",
+            description: "The new task order has been saved and verified in both local storage and database",
             className: "bg-green-800 border-green-900 text-white",
           });
           return true;

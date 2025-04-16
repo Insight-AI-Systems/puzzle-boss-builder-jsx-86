@@ -77,6 +77,7 @@ export type Database = {
           description: string | null
           id: string
           last_edited_by: string | null
+          order_index: number | null
           priority: string
           status: string
           title: string
@@ -87,6 +88,7 @@ export type Database = {
           description?: string | null
           id?: string
           last_edited_by?: string | null
+          order_index?: number | null
           priority?: string
           status?: string
           title: string
@@ -97,6 +99,7 @@ export type Database = {
           description?: string | null
           id?: string
           last_edited_by?: string | null
+          order_index?: number | null
           priority?: string
           status?: string
           title?: string

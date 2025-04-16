@@ -9,11 +9,12 @@ export class ProgressTestRunner {
         return false;
       }
       
-      // Verify the items exist in the database
+      // Verify items exist in the database and check their order
       const { data, error } = await supabase
         .from('progress_items')
-        .select('id')
-        .in('id', itemIds);
+        .select('id, order_index')
+        .in('id', itemIds)
+        .order('order_index', { ascending: true });
         
       if (error) {
         console.error('Error fetching items for order test:', error);
@@ -24,8 +25,17 @@ export class ProgressTestRunner {
         console.error(`Only found ${data?.length} of ${itemIds.length} items in database`);
         return false;
       }
+
+      // Check database order matches expected order
+      const databaseOrder = data.map(item => item.id);
+      const databaseOrderMatches = itemIds.every((id, index) => databaseOrder[index] === id);
       
-      // Check that localStorage has been updated
+      if (!databaseOrderMatches) {
+        console.error('Database order does not match expected order');
+        return false;
+      }
+      
+      // Check localStorage
       const savedOrderStr = localStorage.getItem('progressItemsOrder');
       if (!savedOrderStr) {
         console.error('No saved order found in localStorage');
@@ -40,13 +50,13 @@ export class ProgressTestRunner {
         }
         
         // Check that saved order matches the order of IDs
-        const savedOrderMatches = itemIds.every((id, index) => savedOrder[index] === id);
-        if (!savedOrderMatches) {
-          console.error('Saved order does not match expected order');
+        const localStorageMatches = itemIds.every((id, index) => savedOrder[index] === id);
+        if (!localStorageMatches) {
+          console.error('localStorage order does not match expected order');
           return false;
         }
         
-        console.log('Progress item order test passed');
+        console.log('Progress item order test passed for both database and localStorage');
         return true;
       } catch (e) {
         console.error('Error parsing saved order from localStorage:', e);
