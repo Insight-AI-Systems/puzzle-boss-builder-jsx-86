@@ -1,8 +1,7 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { ProgressItem } from '@/hooks/useProgressItems';
 import { TableFilters } from './TableFilters';
-import { TableContent } from './TableContent';
+import { DraggableProgressTable } from './DraggableProgressTable';
 
 interface ProgressTableProps {
   items: ProgressItem[];
@@ -17,17 +16,8 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
   onUpdateStatus,
   onUpdatePriority
 }) => {
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [priorityFilter, setPriorityFilter] = useState<string | undefined>(undefined);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-
-  const toggleComments = (itemId: string) => {
-    setExpandedItems(prev => ({
-      ...prev,
-      [itemId]: !prev[itemId]
-    }));
-  };
 
   const resetFilters = () => {
     setStatusFilter(undefined);
@@ -40,18 +30,6 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
     return true;
   });
 
-  const sortedItems = [...filteredItems].sort((a, b) => {
-    const priorityOrder = { high: 3, medium: 2, low: 1 };
-    const priorityDiff = priorityOrder[b.priority as keyof typeof priorityOrder] - 
-                        priorityOrder[a.priority as keyof typeof priorityOrder];
-    
-    if (priorityDiff !== 0) return priorityDiff;
-    
-    const dateA = new Date(a.updated_at).getTime();
-    const dateB = new Date(b.updated_at).getTime();
-    return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
-  });
-
   return (
     <div className="space-y-4">
       <TableFilters
@@ -59,18 +37,12 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
         setStatusFilter={setStatusFilter}
         priorityFilter={priorityFilter}
         setPriorityFilter={setPriorityFilter}
-        sortOrder={sortOrder}
-        setSortOrder={setSortOrder}
         resetFilters={resetFilters}
-        itemCount={sortedItems.length}
+        itemCount={filteredItems.length}
       />
       
-      <TableContent
-        items={sortedItems}
-        expandedItems={expandedItems}
-        onToggleComments={toggleComments}
-        onAddComment={onAddComment}
-        onUpdateStatus={onUpdateStatus}
+      <DraggableProgressTable
+        items={filteredItems}
         onUpdatePriority={onUpdatePriority}
       />
     </div>
