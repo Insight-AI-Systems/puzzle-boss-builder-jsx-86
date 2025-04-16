@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export const fetchDatabaseOrder = async () => {
@@ -49,7 +48,7 @@ export const saveDatabaseOrder = async (orderedItemIds: string[]) => {
     // First, get existing items to preserve required fields
     const { data: existingItems, error: fetchError } = await supabase
       .from('progress_items')
-      .select('id, title')
+      .select('id, title, status, priority, description')
       .in('id', orderedItemIds);
       
     if (fetchError) {
@@ -62,21 +61,25 @@ export const saveDatabaseOrder = async (orderedItemIds: string[]) => {
       // Continue with the items we found rather than failing entirely
     }
     
-    // Create a map of id to title for easy lookup
-    const itemsMap = new Map(existingItems?.map(item => [item.id, item.title]) || []);
+    // Create a map of id to item data for easy lookup
+    const itemsMap = new Map(existingItems?.map(item => [item.id, item]) || []);
     
     // Update order_index for each item
     const currentTime = new Date().toISOString();
     const updates = orderedItemIds.map((id, index) => {
-      const title = itemsMap.get(id);
-      if (!title) {
-        console.warn(`Could not find title for item id: ${id}`);
+      const item = itemsMap.get(id);
+      if (!item) {
+        console.warn(`Could not find item data for id: ${id}`);
         return null;
       }
       
+      // Keep all existing fields and only update order_index and timestamp
       return {
-        id,
-        title,
+        id: id,
+        title: item.title,
+        status: item.status,
+        priority: item.priority,
+        description: item.description,
         order_index: index,
         updated_at: currentTime
       };
@@ -86,6 +89,8 @@ export const saveDatabaseOrder = async (orderedItemIds: string[]) => {
       console.error('No valid items to update in database');
       return false;
     }
+
+    console.log('Saving order updates to database:', updates.map(item => `${item.title} (${item.order_index})`));
 
     const { error } = await supabase
       .from('progress_items')

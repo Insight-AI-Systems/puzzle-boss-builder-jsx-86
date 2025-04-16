@@ -36,7 +36,12 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
   }, [items]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      // Increase activation constraint to prevent accidental drags
+      activationConstraint: {
+        distance: 8, // Require a drag of at least 8px before activating
+      }
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -46,10 +51,12 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
     const { active, over } = event;
     
     if (!over || active.id === over.id) {
+      console.log('Drag ended but no change needed (same position or no target)');
       return;
     }
 
     if (isUpdating) {
+      console.log('Ignoring drag operation - already updating');
       return;
     }
 
@@ -61,11 +68,28 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
     });
 
     try {
-      // First update local state for immediate UI feedback
+      console.log(`Moving item from position with ID ${active.id} to position with ID ${over.id}`);
+      
+      // Find the actual indices in the current sortedItems array
       const oldIndex = sortedItems.findIndex((item) => item.id === active.id);
       const newIndex = sortedItems.findIndex((item) => item.id === over.id);
       
+      if (oldIndex === -1 || newIndex === -1) {
+        console.error('Could not find dragged items in the sorted list', { 
+          activeId: active.id, 
+          overId: over.id,
+          oldIndex,
+          newIndex
+        });
+        setIsUpdating(false);
+        return;
+      }
+      
+      // Reorder only the item that was dragged
       const reorderedItems = arrayMove([...sortedItems], oldIndex, newIndex);
+      console.log('Reordered items:', reorderedItems.map(item => item.title));
+      
+      // Update the local state first for immediate feedback
       setSortedItems(reorderedItems);
       
       // Get the item IDs for the new order

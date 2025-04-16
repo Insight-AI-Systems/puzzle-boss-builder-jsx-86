@@ -24,6 +24,7 @@ export function useTaskWorkflow(items: ProgressItem[]) {
   useEffect(() => {
     if ((state.workflowStage === 'selecting' || !state.currentTask) && items.length > 0) {
       console.log('Finding top task from sorted list of', items.length, 'items');
+      console.log('Current sorted items (first 3):', items.slice(0, 3).map(i => i.title));
       
       // Filter out completed tasks, strictly preserving the current order from the items array
       const pendingTasks = items.filter(item => item.status !== 'completed');
@@ -34,12 +35,16 @@ export function useTaskWorkflow(items: ProgressItem[]) {
         const topTask = pendingTasks[0];
         console.log('Selected top task for workflow:', topTask.title, 'with priority:', topTask.priority);
         
-        setState(prev => ({
-          ...prev,
-          currentTask: topTask,
-          workflowStage: prev.workflowStage === 'selecting' ? 'proposal' : prev.workflowStage,
-          progressValue: prev.workflowStage === 'selecting' ? 25 : prev.progressValue
-        }));
+        // Only update if the top task has changed or we're in selecting stage
+        if (!state.currentTask || state.currentTask.id !== topTask.id || state.workflowStage === 'selecting') {
+          console.log('Updating current task in workflow to:', topTask.title);
+          setState(prev => ({
+            ...prev,
+            currentTask: topTask,
+            workflowStage: prev.workflowStage === 'selecting' ? 'proposal' : prev.workflowStage,
+            progressValue: prev.workflowStage === 'selecting' ? 25 : prev.progressValue
+          }));
+        }
       } else {
         console.log('No pending tasks found');
         setState(prev => ({ ...prev, currentTask: null, workflowStage: 'selecting', progressValue: 0 }));
