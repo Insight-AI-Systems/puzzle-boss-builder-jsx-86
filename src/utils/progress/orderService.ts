@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export const fetchDatabaseOrder = async () => {
@@ -45,10 +46,10 @@ export const saveDatabaseOrder = async (orderedItemIds: string[]) => {
     
     console.log('Saving order to database:', orderedItemIds.length, 'items');
     
-    // First, get existing items to preserve required fields
+    // Fetch existing items to get current order_index values
     const { data: existingItems, error: fetchError } = await supabase
       .from('progress_items')
-      .select('id, title, status, priority, description')
+      .select('id, title, status, priority, description, order_index')
       .in('id', orderedItemIds);
       
     if (fetchError) {
@@ -61,36 +62,43 @@ export const saveDatabaseOrder = async (orderedItemIds: string[]) => {
       // Continue with the items we found rather than failing entirely
     }
     
-    // Create a map of id to item data for easy lookup
+    // Create a map of id to existing item data
     const itemsMap = new Map(existingItems?.map(item => [item.id, item]) || []);
     
-    // Update order_index for each item
+    // Prepare the updates by comparing old and new positions
     const currentTime = new Date().toISOString();
-    const updates = orderedItemIds.map((id, index) => {
+    const updates = [];
+    
+    for (let newIndex = 0; newIndex < orderedItemIds.length; newIndex++) {
+      const id = orderedItemIds[newIndex];
       const item = itemsMap.get(id);
+      
       if (!item) {
         console.warn(`Could not find item data for id: ${id}`);
-        return null;
+        continue;
       }
       
-      // Keep all existing fields and only update order_index and timestamp
-      return {
-        id: id,
-        title: item.title,
-        status: item.status,
-        priority: item.priority,
-        description: item.description,
-        order_index: index,
-        updated_at: currentTime
-      };
-    }).filter(Boolean);
-
-    if (updates.length === 0) {
-      console.error('No valid items to update in database');
-      return false;
+      // Only update items whose order has changed
+      if (item.order_index !== newIndex) {
+        updates.push({
+          id: id,
+          title: item.title,
+          status: item.status,
+          priority: item.priority,
+          description: item.description,
+          order_index: newIndex,
+          updated_at: currentTime
+        });
+        console.log(`Updating item ${item.title} from order ${item.order_index} to ${newIndex}`);
+      }
     }
 
-    console.log('Saving order updates to database:', updates.map(item => `${item.title} (${item.order_index})`));
+    if (updates.length === 0) {
+      console.log('No order changes detected, skipping database update');
+      return true; // Consider this a success, as the order is already correct
+    }
+
+    console.log(`Updating ${updates.length} items with new order indices`);
 
     const { error } = await supabase
       .from('progress_items')
@@ -104,7 +112,7 @@ export const saveDatabaseOrder = async (orderedItemIds: string[]) => {
       return false;
     }
 
-    console.log('Order successfully saved to database with', updates.length, 'items');
+    console.log('Order successfully saved to database with', updates.length, 'updated items');
     return true;
   } catch (error) {
     console.error('Error in saveDatabaseOrder:', error);

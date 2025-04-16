@@ -46,8 +46,25 @@ export const saveLocalStorageOrder = (orderIds: string[]) => {
     }
     
     console.log('Saving order to localStorage:', orderIds.length, 'items');
+    console.log('First 5 items in new order:', orderIds.slice(0, 5));
     
     const timestamp = Date.now();
+    
+    // First get the existing order to compare
+    const existingOrderStr = localStorage.getItem(ORDER_KEY);
+    if (existingOrderStr) {
+      try {
+        const existingOrder = JSON.parse(existingOrderStr);
+        if (Array.isArray(existingOrder) && JSON.stringify(existingOrder) === JSON.stringify(orderIds)) {
+          console.log('Order unchanged, skipping localStorage save');
+          return parseInt(localStorage.getItem(TIMESTAMP_KEY) || '0', 10);
+        }
+      } catch (e) {
+        console.warn('Error comparing existing order:', e);
+        // Continue with the save
+      }
+    }
+    
     localStorage.setItem(ORDER_KEY, JSON.stringify(orderIds));
     localStorage.setItem(TIMESTAMP_KEY, timestamp.toString());
     

@@ -41,6 +41,9 @@ export function useFetchItems(savedOrder: string[]) {
           // Create a map for O(1) lookup of indices
           const orderMap = new Map(savedOrder.map((id, index) => [id, index]));
           
+          // Print out the first few items in saved order
+          console.log('Saved order (first 5 items):', savedOrder.slice(0, 5));
+          
           // Create a copy of the data and sort it based on the saved order
           const sortedData = [...data].sort((a, b) => {
             const indexA = orderMap.has(a.id) ? orderMap.get(a.id)! : Number.MAX_SAFE_INTEGER;
@@ -49,6 +52,9 @@ export function useFetchItems(savedOrder: string[]) {
             // Sort based on index in saved order
             return indexA - indexB;
           });
+          
+          // Print out the first few items after sorting
+          console.log('Sorted order (first 5 items):', sortedData.slice(0, 5).map(item => item.title));
           
           console.log('Successfully sorted items based on saved order');
           return sortedData as ProgressItem[];

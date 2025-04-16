@@ -85,15 +85,24 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
         return;
       }
       
-      // Reorder only the item that was dragged
-      const reorderedItems = arrayMove([...sortedItems], oldIndex, newIndex);
-      console.log('Reordered items:', reorderedItems.map(item => item.title));
+      // Create a copy of the current items array
+      const updatedItems = [...sortedItems];
       
-      // Update the local state first for immediate feedback
-      setSortedItems(reorderedItems);
+      // Move just the dragged item to its new position
+      const [movedItem] = updatedItems.splice(oldIndex, 1);
+      updatedItems.splice(newIndex, 0, movedItem);
+      
+      console.log('Reordered just the dragged item:', movedItem.title);
+      console.log('New positions:');
+      updatedItems.forEach((item, index) => {
+        console.log(`${index}: ${item.title}`);
+      });
+      
+      // Update the local state with the updated order
+      setSortedItems(updatedItems);
       
       // Get the item IDs for the new order
-      const itemIds = reorderedItems.map(item => item.id);
+      const itemIds = updatedItems.map(item => item.id);
       
       // Save the new order
       console.log("DraggableProgressTable: Saving new item order", itemIds);
@@ -148,7 +157,7 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
         </TableHeader>
         <TableBody>
           <SortableContext
-            items={sortedItems}
+            items={sortedItems.map(item => item.id)}
             strategy={verticalListSortingStrategy}
           >
             {sortedItems.map((item) => (
