@@ -14,7 +14,7 @@ import {
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, LogOut, Settings, Shield, User } from 'lucide-react';
+import { LogOut, Settings, Shield, User } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const { profile, isLoading, isAdmin, currentUserId } = useUserProfile();
@@ -37,20 +37,6 @@ const Navbar: React.FC = () => {
         variant: 'destructive',
       });
     }
-  };
-
-  const checkAuthStatus = () => {
-    console.log('Current auth status:', { 
-      isLoading, 
-      profile, 
-      isAdmin, 
-      currentUserId 
-    });
-    
-    toast({
-      title: 'Auth Status Check',
-      description: `User ID: ${currentUserId || 'Not logged in'}, Admin: ${isAdmin ? 'Yes' : 'No'}`,
-    });
   };
 
   return (
@@ -83,15 +69,6 @@ const Navbar: React.FC = () => {
         </nav>
         
         <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="border-puzzle-aqua/20 text-puzzle-aqua mr-2"
-            onClick={checkAuthStatus}
-          >
-            Check Auth
-          </Button>
-          
           {!isLoading && currentUserId ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -147,11 +124,18 @@ const Navbar: React.FC = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Link to="/auth">
-              <Button variant="default" className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
-                Sign In
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link to="/auth">
+                <Button variant="default" className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
+                  Sign In
+                </Button>
+              </Link>
+              <Link to="/auth?tab=signup">
+                <Button variant="outline" className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold/10">
+                  Sign Up
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
       </div>

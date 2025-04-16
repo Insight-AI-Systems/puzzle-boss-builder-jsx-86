@@ -9,7 +9,11 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Mail, AlertCircle } from 'lucide-react';
 
-export const AuthForm = () => {
+interface AuthFormProps {
+  defaultTab?: 'signin' | 'signup';
+}
+
+export const AuthForm = ({ defaultTab = 'signin' }: AuthFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -82,7 +86,7 @@ export const AuthForm = () => {
 
   return (
     <div className="card-highlight p-6">
-      <Tabs defaultValue="signin" className="w-full">
+      <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="signin">Sign In</TabsTrigger>
           <TabsTrigger value="signup">Sign Up</TabsTrigger>

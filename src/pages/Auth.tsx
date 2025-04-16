@@ -1,12 +1,21 @@
 
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { useAuthState } from '@/hooks/auth/useAuthState';
 import Navbar from '@/components/Navbar';
 
 const Auth = () => {
   const { currentUserId, isLoading } = useAuthState();
+  const [searchParams] = useSearchParams();
+  const [defaultTab, setDefaultTab] = useState('signin');
+  
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'signup') {
+      setDefaultTab('signup');
+    }
+  }, [searchParams]);
   
   // Show loading state while checking auth
   if (isLoading) {
@@ -37,7 +46,7 @@ const Auth = () => {
               Sign in or create an account to start playing
             </p>
           </div>
-          <AuthForm />
+          <AuthForm defaultTab={defaultTab} />
         </div>
       </div>
     </div>
