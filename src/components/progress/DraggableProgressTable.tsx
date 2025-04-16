@@ -19,6 +19,7 @@ import { ProgressItem } from '@/hooks/useProgressItems';
 import { DraggableTableRow } from './DraggableTableRow';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
+import { TestRunner } from '@/utils/testRunner';
 
 interface DraggableProgressTableProps {
   items: ProgressItem[];
@@ -28,6 +29,7 @@ interface DraggableProgressTableProps {
 export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableProgressTableProps) {
   const [sortedItems, setSortedItems] = useState(items);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     setSortedItems(items);
@@ -53,6 +55,7 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
     }
 
     setIsUpdating(true);
+    setVerificationResult(null);
 
     try {
       // Update UI immediately for better user experience
@@ -74,7 +77,24 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
       const itemIds = reorderedItems.map(item => item.id);
       const success = await onUpdateItemsOrder(itemIds);
       
-      if (!success) {
+      if (success) {
+        // Verify the change was successfully persisted
+        const persistenceVerified = await TestRunner.testProgressItemOrder(itemIds);
+        
+        if (persistenceVerified) {
+          setVerificationResult({
+            success: true,
+            message: "Order updated and persistence verified"
+          });
+        } else {
+          setVerificationResult({
+            success: false,
+            message: "Order updated but persistence verification failed"
+          });
+          
+          console.warn("Persistence verification failed. The order might not be correctly saved.");
+        }
+      } else {
         // If update failed, revert the UI to match the data
         setSortedItems(items);
         
@@ -83,6 +103,11 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
           variant: "destructive",
           title: "Update failed",
           description: "Failed to save the new order. Please try again.",
+        });
+        
+        setVerificationResult({
+          success: false,
+          message: "Failed to update order"
         });
       }
     } catch (error) {
@@ -95,6 +120,11 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
       
       // Revert UI on error
       setSortedItems(items);
+      
+      setVerificationResult({
+        success: false,
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      });
     } finally {
       setIsUpdating(false);
     }
@@ -127,6 +157,12 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
           </SortableContext>
         </TableBody>
       </Table>
+      
+      {verificationResult && (
+        <div className={`mt-2 text-sm ${verificationResult.success ? 'text-green-400' : 'text-red-400'}`}>
+          {verificationResult.message}
+        </div>
+      )}
     </DndContext>
   );
 }
