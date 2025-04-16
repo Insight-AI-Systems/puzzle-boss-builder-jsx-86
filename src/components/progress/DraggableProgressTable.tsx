@@ -61,10 +61,11 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
     }
 
     setIsUpdating(true);
+    // Show a small "Saving..." toast
     toast({
-      title: "Saving order...",
-      description: "Your changes are being saved",
-      duration: 3000,
+      title: "Auto-saving...",
+      description: "Saving your task order",
+      duration: 2000,
     });
 
     try {
@@ -104,23 +105,23 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
       // Get the item IDs for the new order
       const itemIds = updatedItems.map(item => item.id);
       
-      // Save the new order
-      console.log("DraggableProgressTable: Saving new item order", itemIds);
+      // Save the new order immediately
+      console.log("Auto-saving new item order:", itemIds);
       const success = await onUpdateItemsOrder(itemIds);
       
       if (success) {
         toast({
           title: "Order saved",
-          description: "Your task order has been saved successfully",
+          description: "Your task order has been saved",
           className: "bg-green-800 border-green-900 text-white",
-          duration: 3000,
+          duration: 2000,
         });
       } else {
         toast({
           variant: "destructive",
           title: "Save failed",
           description: "Failed to save the new order",
-          duration: 5000,
+          duration: 3000,
         });
         // Revert to original order if save failed
         setSortedItems(items);
@@ -132,7 +133,7 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
         variant: "destructive",
         title: "Error occurred",
         description: "An error occurred while updating the order",
-        duration: 5000,
+        duration: 3000,
       });
     } finally {
       setIsUpdating(false);
@@ -169,3 +170,4 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
     </DndContext>
   );
 }
+

@@ -44,9 +44,9 @@ export const saveDatabaseOrder = async (orderedItemIds: string[]) => {
       return false;
     }
     
-    console.log('Saving order to database:', orderedItemIds.length, 'items');
+    console.log('Saving order to database immediately:', orderedItemIds.length, 'items');
     
-    // Fetch existing items to get current order_index values
+    // Fetch existing items to prepare updates
     const { data: existingItems, error: fetchError } = await supabase
       .from('progress_items')
       .select('id, title, status, priority, description, order_index')
@@ -65,7 +65,7 @@ export const saveDatabaseOrder = async (orderedItemIds: string[]) => {
     // Create a map of id to existing item data
     const itemsMap = new Map(existingItems?.map(item => [item.id, item]) || []);
     
-    // Prepare the updates by comparing old and new positions
+    // Prepare the updates for all items, ensuring order indices match new position
     const currentTime = new Date().toISOString();
     const updates = [];
     
@@ -78,24 +78,22 @@ export const saveDatabaseOrder = async (orderedItemIds: string[]) => {
         continue;
       }
       
-      // Only update items whose order has changed
-      if (item.order_index !== newIndex) {
-        updates.push({
-          id: id,
-          title: item.title,
-          status: item.status,
-          priority: item.priority,
-          description: item.description,
-          order_index: newIndex,
-          updated_at: currentTime
-        });
-        console.log(`Updating item ${item.title} from order ${item.order_index} to ${newIndex}`);
-      }
+      // Update all items to ensure consistent order
+      updates.push({
+        id: id,
+        title: item.title,
+        status: item.status,
+        priority: item.priority,
+        description: item.description,
+        order_index: newIndex,
+        updated_at: currentTime
+      });
+      console.log(`Setting item ${item.title} to order ${newIndex}`);
     }
 
     if (updates.length === 0) {
-      console.log('No order changes detected, skipping database update');
-      return true; // Consider this a success, as the order is already correct
+      console.log('No items to update, skipping database update');
+      return true; // Consider this a success
     }
 
     console.log(`Updating ${updates.length} items with new order indices`);

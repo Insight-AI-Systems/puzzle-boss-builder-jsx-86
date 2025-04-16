@@ -59,6 +59,13 @@ export function useTaskWorkflow(items: ProgressItem[]) {
       if (!currentTaskExists) {
         console.log('Current task no longer exists in items list, resetting workflow');
         setState(prev => ({ ...prev, currentTask: null, workflowStage: 'selecting', progressValue: 0 }));
+      } else {
+        // Make sure the current task info is up-to-date
+        const updatedTask = items.find(item => item.id === state.currentTask?.id);
+        if (updatedTask && JSON.stringify(updatedTask) !== JSON.stringify(state.currentTask)) {
+          console.log('Updating current task info', updatedTask.title);
+          setState(prev => ({ ...prev, currentTask: updatedTask }));
+        }
       }
     }
   }, [items, state.currentTask]);

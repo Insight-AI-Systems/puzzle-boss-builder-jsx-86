@@ -73,7 +73,7 @@ export function useItemOrder() {
 
   const updateItemsOrder = async (orderedItemIds: string[]) => {
     try {
-      console.log('Saving new order:', orderedItemIds);
+      console.log('Saving new order immediately:', orderedItemIds);
       
       // Update state immediately
       setSavedOrder(orderedItemIds);
