@@ -1,9 +1,10 @@
 
-import React from 'react';
+import * as React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -21,22 +22,24 @@ const queryClient = new QueryClient();
 const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <Toaster />
-      <Sonner />
-      <InitialTestRunner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/progress" element={<Progress />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route path="/dev-dashboard" element={<DevDashboard />} />
-          <Route path="/membership" element={<Membership />} />
-          <Route path="/account" element={<AccountDashboard />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <ThemeProvider attribute="class" defaultTheme="dark">
+        <Toaster />
+        <Sonner />
+        <InitialTestRunner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/progress" element={<Progress />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/dev-dashboard" element={<DevDashboard />} />
+            <Route path="/membership" element={<Membership />} />
+            <Route path="/account" element={<AccountDashboard />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };
