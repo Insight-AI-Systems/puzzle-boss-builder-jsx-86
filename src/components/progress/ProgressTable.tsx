@@ -12,6 +12,7 @@ interface ProgressTableProps {
   onAddComment: (content: string, itemId: string) => Promise<boolean>;
   onUpdateStatus: (itemId: string, status: string) => Promise<boolean>;
   onUpdatePriority: (itemId: string, priority: string) => Promise<boolean>;
+  onUpdateItemsOrder: (itemIds: string[]) => Promise<boolean>;
 }
 
 const priorityOrder = {
@@ -24,7 +25,8 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
   items, 
   onAddComment,
   onUpdateStatus,
-  onUpdatePriority
+  onUpdatePriority,
+  onUpdateItemsOrder
 }) => {
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [priorityFilter, setPriorityFilter] = useState<string | undefined>(undefined);
@@ -107,7 +109,7 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
       {isDragMode ? (
         <DraggableProgressTable
           items={filteredAndSortedItems}
-          onUpdatePriority={onUpdatePriority}
+          onUpdateItemsOrder={onUpdateItemsOrder}
         />
       ) : (
         <TableContent

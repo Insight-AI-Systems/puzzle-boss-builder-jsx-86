@@ -18,7 +18,8 @@ const Progress = () => {
     addComment, 
     syncTasks,
     updateItemStatus,
-    updateItemPriority
+    updateItemPriority,
+    updateItemsOrder
   } = useProgressItems();
   
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -94,14 +95,12 @@ const Progress = () => {
           </Alert>
         )}
         
-        {/* Add automated task flow component */}
         <AutomatedTaskFlow 
           items={items || []} 
           onUpdateStatus={updateItemStatus}
           onAddComment={addComment}
         />
         
-        {/* Progress summary */}
         <ProgressSummary items={items || []} />
         
         <Card className="bg-puzzle-black/50 border-puzzle-aqua/20">
@@ -114,6 +113,7 @@ const Progress = () => {
               onAddComment={addComment}
               onUpdateStatus={updateItemStatus}
               onUpdatePriority={updateItemPriority}
+              onUpdateItemsOrder={updateItemsOrder}
             />
           </CardContent>
         </Card>

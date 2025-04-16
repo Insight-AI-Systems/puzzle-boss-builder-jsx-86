@@ -22,10 +22,10 @@ import { toast } from "@/hooks/use-toast";
 
 interface DraggableProgressTableProps {
   items: ProgressItem[];
-  onUpdatePriority: (itemId: string, priority: string) => Promise<boolean>;
+  onUpdateItemsOrder: (itemIds: string[]) => Promise<boolean>;
 }
 
-export function DraggableProgressTable({ items, onUpdatePriority }: DraggableProgressTableProps) {
+export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableProgressTableProps) {
   const [sortedItems, setSortedItems] = useState(items);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -39,16 +39,6 @@ export function DraggableProgressTable({ items, onUpdatePriority }: DraggablePro
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-
-  const saveOrderToLocalStorage = (items: ProgressItem[]) => {
-    try {
-      const itemIds = items.map(item => item.id);
-      localStorage.setItem('progressItemsOrder', JSON.stringify(itemIds));
-      console.log('Saved order to localStorage:', itemIds);
-    } catch (err) {
-      console.error('Error saving order to localStorage:', err);
-    }
-  };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -80,48 +70,31 @@ export function DraggableProgressTable({ items, onUpdatePriority }: DraggablePro
       
       console.log("Reordered items:", reorderedItems.map(item => ({id: item.id, title: item.title})));
       
-      // Save the new order to localStorage
-      saveOrderToLocalStorage(reorderedItems);
+      // Save reordered items to persistent storage
+      const itemIds = reorderedItems.map(item => item.id);
+      const success = await onUpdateItemsOrder(itemIds);
       
-      // Update priorities based on new position
-      const priorities = ['high', 'high', 'medium', 'medium', 'low'];
-      
-      // Create an array of promises for all update operations
-      const updatePromises = reorderedItems.map(async (item, index) => {
-        const newPriority = priorities[Math.min(index, priorities.length - 1)];
-        if (newPriority !== item.priority) {
-          console.log(`Updating item ${item.id} (${item.title}) priority from ${item.priority} to ${newPriority}`);
-          return onUpdatePriority(item.id, newPriority);
-        }
-        return true;
-      });
-      
-      // Wait for all updates to complete
-      const results = await Promise.all(updatePromises);
-      
-      // Check if all updates were successful
-      const allSuccessful = results.every(result => result === true);
-      
-      if (allSuccessful) {
-        toast({
-          title: "Priorities updated",
-          description: "Task priorities have been successfully updated",
-        });
-      } else {
-        console.error("Some priority updates failed");
+      if (!success) {
+        // If update failed, revert the UI to match the data
+        setSortedItems(items);
+        
+        console.error("Failed to update items order");
         toast({
           variant: "destructive",
-          title: "Update partially failed",
-          description: "Some task priorities could not be updated. Please try again.",
+          title: "Update failed",
+          description: "Failed to save the new order. Please try again.",
         });
       }
     } catch (error) {
-      console.error("Error updating priorities:", error);
+      console.error("Error during drag end:", error);
       toast({
         variant: "destructive",
-        title: "Update failed",
-        description: "Failed to update task priorities. Please try again.",
+        title: "Error occurred",
+        description: "An error occurred while updating the order.",
       });
+      
+      // Revert UI on error
+      setSortedItems(items);
     } finally {
       setIsUpdating(false);
     }
