@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { ProgressItem } from '@/types/progressTypes';
 import { useToast } from "@/hooks/use-toast";
@@ -20,20 +19,17 @@ export function useTaskWorkflow(items: ProgressItem[]) {
   
   const { toast } = useToast();
 
-  // Select the top pending item from the list, respecting the user's custom sort order
+  // Reset workflow when items change to ensure we're showing the correct task
   useEffect(() => {
     if (state.workflowStage === 'selecting' && items.length > 0) {
       console.log('Finding top task from sorted list of', items.length, 'items');
       
       // Filter out completed tasks, strictly preserving the current order from the items array
-      // This ensures we respect the drag-and-drop ordering
       const pendingTasks = items.filter(item => item.status !== 'completed');
       
       console.log('Found', pendingTasks.length, 'pending tasks');
       
       if (pendingTasks.length > 0) {
-        // Use the first pending task in the list, which is the highest priority
-        // based on the user's manually ordered list
         const topTask = pendingTasks[0];
         console.log('Selected top task for workflow:', topTask.title, 'with priority:', topTask.priority);
         

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   DndContext, 
@@ -54,11 +53,6 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
     }
 
     setIsUpdating(true);
-    toast({
-      title: "Updating order...",
-      description: "Saving your changes to both local storage and database...",
-      duration: 3000,
-    });
 
     try {
       // First update local state for immediate UI feedback
@@ -68,36 +62,15 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
         return arrayMove(items, oldIndex, newIndex);
       });
       
-      // Then prepare the reordered items list
+      // Prepare the reordered items list
       const oldIndex = sortedItems.findIndex((item) => item.id === active.id);
       const newIndex = sortedItems.findIndex((item) => item.id === over.id);
       const reorderedItems = arrayMove([...sortedItems], oldIndex, newIndex);
-      
-      // Get just the IDs for updating the order
       const itemIds = reorderedItems.map(item => item.id);
       
-      console.log('Saving reordered items:', itemIds);
-      
-      // Save the new order
-      const success = await onUpdateItemsOrder(itemIds);
-      
-      if (success) {
-        toast({
-          title: "Changes saved",
-          description: "Your task order has been saved and will be available on all devices.",
-          duration: 3000,
-          className: "bg-green-800 border-green-900 text-white",
-        });
-      } else {
-        // Only revert the UI if the update definitely failed
-        setSortedItems(items);
-        toast({
-          variant: "destructive",
-          title: "Update failed",
-          description: "Failed to save the new order. Please try again.",
-          duration: 5000,
-        });
-      }
+      // Save the new order immediately
+      await onUpdateItemsOrder(itemIds);
+
     } catch (error) {
       console.error("Error during drag end:", error);
       setSortedItems(items);

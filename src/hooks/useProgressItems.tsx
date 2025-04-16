@@ -1,4 +1,3 @@
-
 import { useQueryClient } from "@tanstack/react-query";
 import { useProgressSync } from "./useProgressSync";
 import { addCommentToItem } from "@/utils/progress/commentOperations";
@@ -40,6 +39,14 @@ export function useProgressItems() {
     return success;
   };
 
+  const handleUpdateItemsOrder = async (itemIds: string[]) => {
+    const success = await updateItemsOrder(itemIds);
+    if (success) {
+      await queryClient.invalidateQueries({ queryKey: ['progress-items'] });
+    }
+    return success;
+  };
+
   return {
     items,
     isLoading: isLoading || !loaded,
@@ -48,7 +55,7 @@ export function useProgressItems() {
     syncTasks,
     updateItemStatus: handleUpdateItemStatus,
     updateItemPriority: handleUpdateItemPriority,
-    updateItemsOrder
+    updateItemsOrder: handleUpdateItemsOrder
   };
 }
 
