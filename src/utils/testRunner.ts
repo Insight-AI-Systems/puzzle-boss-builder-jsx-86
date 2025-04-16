@@ -1,3 +1,4 @@
+
 /**
  * Test Runner - Utilities for running tests and verifying functionality
  */
@@ -33,7 +34,6 @@ export class TestRunner {
         variant: "destructive",
         title: "Tests failed",
         description: `Some tests for this task have failed. Check the console for details.`,
-        variant: "destructive",
       });
     }
     
