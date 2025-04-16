@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   DndContext, 
   closestCenter,
@@ -26,7 +26,8 @@ interface DraggableProgressTableProps {
 }
 
 export function DraggableProgressTable({ items, onUpdatePriority }: DraggableProgressTableProps) {
-  const [sortedItems, setSortedItems] = React.useState(items);
+  const [sortedItems, setSortedItems] = useState(items);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   React.useEffect(() => {
     setSortedItems(items);
@@ -46,38 +47,61 @@ export function DraggableProgressTable({ items, onUpdatePriority }: DraggablePro
       return;
     }
 
-    // Update UI immediately for better user experience
-    setSortedItems((items) => {
-      const oldIndex = items.findIndex((item) => item.id === active.id);
-      const newIndex = items.findIndex((item) => item.id === over.id);
-      return arrayMove(items, oldIndex, newIndex);
-    });
-    
-    // Get the new sorted items after updating the state
-    const newItems = [...sortedItems];
-    const oldIndex = newItems.findIndex((item) => item.id === active.id);
-    const newIndex = newItems.findIndex((item) => item.id === over.id);
-    const reorderedItems = arrayMove(newItems, oldIndex, newIndex);
-    
-    // Update priorities based on new position
-    const priorities = ['high', 'high', 'medium', 'medium', 'low'];
-    
-    // Create an array of promises for all update operations
-    const updatePromises = reorderedItems.map(async (item, index) => {
-      const newPriority = priorities[Math.min(index, priorities.length - 1)];
-      if (newPriority !== item.priority) {
-        return onUpdatePriority(item.id, newPriority);
-      }
-      return true;
-    });
-    
-    // Wait for all updates to complete
+    // Prevent multiple simultaneous updates
+    if (isUpdating) {
+      return;
+    }
+
+    setIsUpdating(true);
+
     try {
-      await Promise.all(updatePromises);
-      toast({
-        title: "Priorities updated",
-        description: "Task priorities have been successfully updated",
+      // Update UI immediately for better user experience
+      setSortedItems((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
       });
+      
+      // Get the updated sorted items
+      const newItems = [...sortedItems];
+      const oldIndex = newItems.findIndex((item) => item.id === active.id);
+      const newIndex = newItems.findIndex((item) => item.id === over.id);
+      const reorderedItems = arrayMove(newItems, oldIndex, newIndex);
+      
+      console.log("Reordered items:", reorderedItems.map(item => ({id: item.id, title: item.title})));
+      
+      // Update priorities based on new position
+      const priorities = ['high', 'high', 'medium', 'medium', 'low'];
+      
+      // Create an array of promises for all update operations
+      const updatePromises = reorderedItems.map(async (item, index) => {
+        const newPriority = priorities[Math.min(index, priorities.length - 1)];
+        if (newPriority !== item.priority) {
+          console.log(`Updating item ${item.id} (${item.title}) priority from ${item.priority} to ${newPriority}`);
+          return onUpdatePriority(item.id, newPriority);
+        }
+        return true;
+      });
+      
+      // Wait for all updates to complete
+      const results = await Promise.all(updatePromises);
+      
+      // Check if all updates were successful
+      const allSuccessful = results.every(result => result === true);
+      
+      if (allSuccessful) {
+        toast({
+          title: "Priorities updated",
+          description: "Task priorities have been successfully updated",
+        });
+      } else {
+        console.error("Some priority updates failed");
+        toast({
+          variant: "destructive",
+          title: "Update partially failed",
+          description: "Some task priorities could not be updated. Please try again.",
+        });
+      }
     } catch (error) {
       console.error("Error updating priorities:", error);
       toast({
@@ -85,6 +109,8 @@ export function DraggableProgressTable({ items, onUpdatePriority }: DraggablePro
         title: "Update failed",
         description: "Failed to update task priorities. Please try again.",
       });
+    } finally {
+      setIsUpdating(false);
     }
   };
 

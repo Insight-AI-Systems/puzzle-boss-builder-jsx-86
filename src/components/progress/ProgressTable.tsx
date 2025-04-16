@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ProgressItem } from '@/hooks/useProgressItems';
 import { TableFilters } from './TableFilters';
 import { DraggableProgressTable } from './DraggableProgressTable';
@@ -31,7 +31,17 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [sortField, setSortField] = useState<'date' | 'priority'>('date');
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
-  const [isDragMode, setIsDragMode] = useState<boolean>(false);
+  
+  // Persist drag mode in localStorage
+  const [isDragMode, setIsDragMode] = useState<boolean>(() => {
+    const savedMode = localStorage.getItem('progressTableDragMode');
+    return savedMode ? JSON.parse(savedMode) : false;
+  });
+
+  // Update localStorage when drag mode changes
+  useEffect(() => {
+    localStorage.setItem('progressTableDragMode', JSON.stringify(isDragMode));
+  }, [isDragMode]);
 
   const resetFilters = () => {
     setStatusFilter(undefined);

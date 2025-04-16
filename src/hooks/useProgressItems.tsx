@@ -33,6 +33,7 @@ export function useProgressItems() {
     queryFn: async () => {
       console.log('Fetching progress items...');
       
+      // Use created_at as secondary sort after priority to ensure consistent ordering
       const { data, error } = await supabase
         .from('progress_items')
         .select(`
@@ -42,7 +43,7 @@ export function useProgressItems() {
           )
         `)
         .order('priority', { ascending: false })
-        .order('created_at', { ascending: false });
+        .order('updated_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching progress items:', error);
@@ -76,9 +77,13 @@ export function useProgressItems() {
   };
 
   const handleUpdateItemPriority = async (itemId: string, priority: string) => {
+    console.log(`Updating priority for item ${itemId} to ${priority}`);
     const success = await updateItemPriority(itemId, priority);
     if (success) {
+      console.log(`Successfully updated priority for item ${itemId}`);
       await queryClient.invalidateQueries({ queryKey: ['progress-items'] });
+    } else {
+      console.error(`Failed to update priority for item ${itemId}`);
     }
     return success;
   };
