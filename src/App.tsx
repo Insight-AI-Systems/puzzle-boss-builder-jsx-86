@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import DevDashboard from "./pages/DevDashboard";
 import Progress from "./pages/Progress";
 import Profile from "./pages/Profile";
+import AdminDashboard from "./pages/AdminDashboard";
 import InitialTestRunner from "@/components/InitialTestRunner";
 
 // Create a new QueryClient instance at the module level to avoid recreation on renders
@@ -27,6 +28,7 @@ const App: React.FC = () => {
           <Route path="/auth" element={<Auth />} />
           <Route path="/progress" element={<Progress />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/dev-dashboard" element={<DevDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
