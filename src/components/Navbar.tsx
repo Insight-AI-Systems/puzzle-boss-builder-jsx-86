@@ -61,9 +61,9 @@ const Navbar: React.FC = () => {
           </Link>
           
           {isAdmin && (
-            <Link to="/admin-dashboard" className="text-white/80 hover:text-puzzle-aqua transition-colors flex items-center">
+            <Link to="/admin-dashboard" className="text-puzzle-aqua font-bold hover:text-puzzle-aqua/80 transition-colors flex items-center">
               <Shield className="mr-1 h-4 w-4" />
-              Admin
+              Admin Dashboard
             </Link>
           )}
         </nav>

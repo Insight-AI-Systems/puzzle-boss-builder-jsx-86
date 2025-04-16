@@ -1,21 +1,37 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { RoleBasedDashboard } from '@/components/admin/RoleBasedDashboard';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useToast } from '@/hooks/use-toast';
 
 const AdminDashboard = () => {
-  const { profile, isLoading, isAdmin } = useUserProfile();
+  const { profile, isLoading, isAdmin, currentUserId } = useUserProfile();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  React.useEffect(() => {
-    // Redirect non-admin users to the home page
+  useEffect(() => {
+    // Debug logging
+    console.log('Admin Dashboard - Auth State:', { 
+      isLoading, 
+      isLoggedIn: !!currentUserId,
+      profile, 
+      isAdmin,
+      role: profile?.role
+    });
+    
+    // Redirect non-admin users to the home page but only after loading is complete
     if (!isLoading && !isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: `You don't have admin privileges. Current role: ${profile?.role || 'unknown'}`,
+        variant: "destructive",
+      });
       navigate('/', { replace: true });
     }
-  }, [isLoading, isAdmin, navigate]);
+  }, [isLoading, isAdmin, navigate, profile, currentUserId, toast]);
 
   if (isLoading) {
     return (
@@ -34,6 +50,9 @@ const AdminDashboard = () => {
           <AlertTitle>Access Denied</AlertTitle>
           <AlertDescription>
             You do not have permission to access the admin dashboard.
+            {profile && (
+              <p className="mt-2">Your current role: {profile.role}</p>
+            )}
           </AlertDescription>
         </Alert>
       </div>
