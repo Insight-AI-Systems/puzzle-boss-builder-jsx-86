@@ -1,12 +1,11 @@
 
-/**
- * Test Runner - Utilities for running tests and verifying functionality
- */
-
 import { projectTracker } from './ProjectTracker';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { TestManager } from './managers/TestManager';
+import { VerificationResult } from './testing/types/testTypes';
+import { DatabaseTestRunner } from './testing/runners/DatabaseTestRunner';
+import { ComponentTestRunner } from './testing/runners/ComponentTestRunner';
+import { ProgressTestRunner } from './testing/runners/ProgressTestRunner';
 
 export class TestRunner {
   private static verificationEnabled = true;
@@ -27,7 +26,6 @@ export class TestRunner {
       toast({
         title: "Tests passed",
         description: `All tests for this task have passed successfully.`,
-        variant: "default",
       });
     } else {
       toast({
@@ -53,7 +51,7 @@ export class TestRunner {
       };
     }
     
-    const dbConnected = await TestRunner.testDatabaseConnection();
+    const dbConnected = await DatabaseTestRunner.testDatabaseConnection();
     if (!dbConnected) {
       return {
         status: 'FAILED',
@@ -93,121 +91,24 @@ export class TestRunner {
       }
     };
   }
-  
-  static async testDatabaseConnection(): Promise<boolean> {
-    try {
-      const { data, error } = await supabase.from('profiles').select('count', { count: 'exact', head: true });
-      
-      if (error) {
-        console.error('Database connection test failed:', error);
-        return false;
-      }
-      
-      console.log('Database connection test passed');
-      return true;
-    } catch (error) {
-      console.error('Database connection test error:', error);
-      return false;
-    }
-  }
-  
-  static async testAuthStatus(): Promise<boolean> {
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('Auth status test error:', error);
-        return false;
-      }
-      
-      console.log('Auth status:', session ? 'Logged in' : 'Logged out');
-      return true;
-    } catch (error) {
-      console.error('Auth status test error:', error);
-      return false;
-    }
-  }
-  
-  static testComponentRender(component: React.ReactNode): boolean {
-    try {
-      // In a real implementation, this would use React Testing Library
-      // For now, we just check that the component is not null
-      return component !== null && component !== undefined;
-    } catch (error) {
-      console.error('Component render test error:', error);
-      return false;
-    }
-  }
-  
-  static async testProgressItemOrder(itemIds: string[]): Promise<boolean> {
-    try {
-      if (!itemIds || itemIds.length === 0) {
-        console.error('No item IDs provided for order test');
-        return false;
-      }
-      
-      // Check if items exist in database
-      const { data, error } = await supabase
-        .from('progress_items')
-        .select('id')
-        .in('id', itemIds);
-        
-      if (error) {
-        console.error('Error fetching items for order test:', error);
-        return false;
-      }
-      
-      // Verify all items were found
-      if (!data || data.length !== itemIds.length) {
-        console.error(`Only found ${data?.length} of ${itemIds.length} items in database`);
-        return false;
-      }
-      
-      // Verify local storage order
-      const savedOrderStr = localStorage.getItem('progressItemsOrder');
-      if (!savedOrderStr) {
-        console.error('No saved order found in localStorage');
-        return false;
-      }
-      
-      try {
-        const savedOrder = JSON.parse(savedOrderStr);
-        if (!Array.isArray(savedOrder) || savedOrder.length === 0) {
-          console.error('Invalid saved order format in localStorage');
-          return false;
-        }
-        
-        console.log('Progress item order test passed');
-        return true;
-      } catch (e) {
-        console.error('Error parsing saved order from localStorage:', e);
-        return false;
-      }
-    } catch (error) {
-      console.error('Progress item order test error:', error);
-      return false;
-    }
-  }
+
+  // Re-export static methods from other test runners for convenience
+  static readonly testDatabaseConnection = DatabaseTestRunner.testDatabaseConnection;
+  static readonly testAuthStatus = DatabaseTestRunner.testAuthStatus;
+  static readonly testComponentRender = ComponentTestRunner.testComponentRender;
+  static readonly testProgressItemOrder = ProgressTestRunner.testProgressItemOrder;
 }
 
 export const runInitialTests = async () => {
   if (typeof window !== 'undefined') {
     console.log('Running initial environment tests...');
     
-    // Test database connection
-    const dbConnectionOk = await TestRunner.testDatabaseConnection();
+    const dbConnectionOk = await DatabaseTestRunner.testDatabaseConnection();
     console.log('Database connection:', dbConnectionOk ? 'OK' : 'Failed');
     
-    // Test auth status
-    const authStatusOk = await TestRunner.testAuthStatus();
+    const authStatusOk = await DatabaseTestRunner.testAuthStatus();
     console.log('Auth system:', authStatusOk ? 'OK' : 'Failed');
   }
 };
 
-export interface VerificationResult {
-  status: 'VERIFIED' | 'PARTIAL' | 'FAILED' | 'SKIPPED';
-  message: string;
-  changeId: string;
-  description: string;
-  details?: Record<string, any>;
-}
+export type { VerificationResult } from './testing/types/testTypes';
