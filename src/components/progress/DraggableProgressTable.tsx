@@ -18,6 +18,7 @@ import {
 import { ProgressItem } from '@/hooks/useProgressItems';
 import { DraggableTableRow } from './DraggableTableRow';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "@/hooks/use-toast";
 
 interface DraggableProgressTableProps {
   items: ProgressItem[];
@@ -45,23 +46,46 @@ export function DraggableProgressTable({ items, onUpdatePriority }: DraggablePro
       return;
     }
 
+    // Update UI immediately for better user experience
     setSortedItems((items) => {
       const oldIndex = items.findIndex((item) => item.id === active.id);
       const newIndex = items.findIndex((item) => item.id === over.id);
-      
-      const newItems = arrayMove(items, oldIndex, newIndex);
-      
-      // Update priorities based on new position
-      const priorities = ['high', 'high', 'medium', 'medium', 'low'];
-      newItems.forEach(async (item, index) => {
-        const newPriority = priorities[Math.min(index, priorities.length - 1)];
-        if (newPriority !== item.priority) {
-          await onUpdatePriority(item.id, newPriority);
-        }
-      });
-      
-      return newItems;
+      return arrayMove(items, oldIndex, newIndex);
     });
+    
+    // Get the new sorted items after updating the state
+    const newItems = [...sortedItems];
+    const oldIndex = newItems.findIndex((item) => item.id === active.id);
+    const newIndex = newItems.findIndex((item) => item.id === over.id);
+    const reorderedItems = arrayMove(newItems, oldIndex, newIndex);
+    
+    // Update priorities based on new position
+    const priorities = ['high', 'high', 'medium', 'medium', 'low'];
+    
+    // Create an array of promises for all update operations
+    const updatePromises = reorderedItems.map(async (item, index) => {
+      const newPriority = priorities[Math.min(index, priorities.length - 1)];
+      if (newPriority !== item.priority) {
+        return onUpdatePriority(item.id, newPriority);
+      }
+      return true;
+    });
+    
+    // Wait for all updates to complete
+    try {
+      await Promise.all(updatePromises);
+      toast({
+        title: "Priorities updated",
+        description: "Task priorities have been successfully updated",
+      });
+    } catch (error) {
+      console.error("Error updating priorities:", error);
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: "Failed to update task priorities. Please try again.",
+      });
+    }
   };
 
   return (
