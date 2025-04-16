@@ -19,7 +19,7 @@ export function useItemOrder() {
       // First try to load from database
       const { data: items, error } = await supabase
         .from('progress_items')
-        .select('id, order_index, updated_at')
+        .select('id, order_index, updated_at, title')
         .order('order_index', { ascending: true })
         .not('order_index', 'is', null);
 
@@ -113,12 +113,45 @@ export function useItemOrder() {
         return false;
       }
 
-      // Update order_index for each item using upsert
-      const updates = orderedItemIds.map((id, index) => ({
-        id,
-        order_index: index,
-        updated_at: new Date().toISOString() // Explicitly update timestamp
-      }));
+      // First, get existing items to preserve required fields
+      const { data: existingItems, error: fetchError } = await supabase
+        .from('progress_items')
+        .select('id, title')
+        .in('id', orderedItemIds);
+        
+      if (fetchError) {
+        console.error('Error fetching existing items:', fetchError);
+        return false;
+      }
+      
+      if (!existingItems || existingItems.length === 0) {
+        console.error('No existing items found to update');
+        return false;
+      }
+      
+      // Create a map of id to title for easy lookup
+      const itemsMap = new Map(existingItems.map(item => [item.id, item.title]));
+      
+      // Update order_index for each item using upsert with all required fields
+      const updates = orderedItemIds.map((id, index) => {
+        const title = itemsMap.get(id);
+        if (!title) {
+          console.error(`Could not find title for item id: ${id}`);
+          return null;
+        }
+        
+        return {
+          id,
+          title, // Include required title field
+          order_index: index,
+          updated_at: new Date().toISOString() // Explicitly update timestamp
+        };
+      }).filter(item => item !== null);
+
+      if (updates.length !== orderedItemIds.length) {
+        console.error('Some items could not be prepared for update');
+        return false;
+      }
 
       const { error } = await supabase
         .from('progress_items')

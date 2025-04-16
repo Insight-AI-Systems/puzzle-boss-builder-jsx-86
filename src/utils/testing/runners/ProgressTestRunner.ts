@@ -14,7 +14,7 @@ export class ProgressTestRunner {
       // Verify items exist in the database and check their order
       const { data: dbItems, error } = await supabase
         .from('progress_items')
-        .select('id, order_index, updated_at')
+        .select('id, order_index, updated_at, title')
         .in('id', itemIds)
         .order('order_index', { ascending: true });
         
@@ -28,7 +28,7 @@ export class ProgressTestRunner {
         return false;
       }
 
-      console.log('Database items retrieved:', dbItems.map(d => ({id: d.id, order: d.order_index})));
+      console.log('Database items retrieved:', dbItems.map(d => ({id: d.id, title: d.title, order: d.order_index})));
 
       // Get the most recent update timestamp from database
       const latestDbUpdate = Math.max(...dbItems.map(item => 

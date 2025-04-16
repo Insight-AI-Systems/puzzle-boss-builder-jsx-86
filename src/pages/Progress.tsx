@@ -63,6 +63,12 @@ const Progress = () => {
     setSyncError(null);
     try {
       await syncTasks();
+      toast({
+        title: "Sync Successful",
+        description: "Your tasks have been synchronized with the server",
+        duration: 3000,
+        className: "bg-green-800 border-green-900 text-white",
+      });
     } catch (error) {
       console.error('Manual sync error:', error);
       setSyncError('Sync failed. Please try again later.');
@@ -70,6 +76,7 @@ const Progress = () => {
   };
 
   const handleOrderUpdate = async (itemIds: string[]) => {
+    console.log("Progress.tsx: Updating order of items:", itemIds);
     const result = await updateItemsOrder(itemIds);
     return result;
   };
