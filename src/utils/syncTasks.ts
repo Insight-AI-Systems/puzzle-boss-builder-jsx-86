@@ -17,11 +17,11 @@ export const syncProjectTasksToProgress = async () => {
       
       try {
         // Check if a progress item already exists for this task
-        const { data: existingItem, error: queryError } = await supabase
+        // Use .eq() with .select() instead of .maybeSingle() to handle duplicate titles
+        const { data: existingItems, error: queryError } = await supabase
           .from('progress_items')
           .select('id, title, status')
-          .eq('title', task.name)
-          .maybeSingle();
+          .eq('title', task.name);
         
         if (queryError) {
           console.error(`Error checking existing task '${task.name}':`, queryError);
@@ -34,7 +34,7 @@ export const syncProjectTasksToProgress = async () => {
                       task.status === 'in-progress' ? 'in_progress' : 
                       'pending';
 
-        if (!existingItem) {
+        if (!existingItems || existingItems.length === 0) {
           // Insert new progress item
           const { error: insertError } = await supabase
             .from('progress_items')
@@ -53,6 +53,12 @@ export const syncProjectTasksToProgress = async () => {
             successCount++;
           }
         } else {
+          // Handle case where there may be multiple items with the same title
+          let updatedCount = 0;
+          
+          // Update the first matching item only
+          const firstItem = existingItems[0];
+          
           // Update existing item if needed
           const { error: updateError } = await supabase
             .from('progress_items')
@@ -60,7 +66,7 @@ export const syncProjectTasksToProgress = async () => {
               status,
               description: task.description || null
             })
-            .eq('id', existingItem.id);
+            .eq('id', firstItem.id);
           
           if (updateError) {
             console.error(`Error updating task '${task.name}':`, updateError);
@@ -68,6 +74,11 @@ export const syncProjectTasksToProgress = async () => {
           } else {
             console.log(`Updated existing task: ${task.name}`);
             successCount++;
+            
+            // If there are duplicates, log it so we're aware
+            if (existingItems.length > 1) {
+              console.warn(`Found ${existingItems.length} items with title '${task.name}', only updated the first one.`);
+            }
           }
         }
       } catch (taskError) {
