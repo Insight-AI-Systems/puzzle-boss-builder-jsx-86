@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Clock, MessageSquare } from "lucide-react";
+import { Clock, MessageSquare, CheckCircle } from "lucide-react";
 import { ProgressItem } from '@/hooks/useProgressItems';
 import {
   Select,
@@ -11,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ProgressItemRowProps {
   item: ProgressItem;
@@ -30,10 +30,18 @@ export const ProgressItemRow: React.FC<ProgressItemRowProps> = ({
   const handleStatusChange = async (value: string) => {
     try {
       await onStatusChange(item.id, value);
-      toast({
-        title: "Status updated",
-        description: "Task status has been updated successfully.",
-      });
+      if (value === 'completed') {
+        toast({
+          title: "Task completed",
+          description: "The task has been marked as completed.",
+          className: "bg-green-800 border-green-900 text-white",
+        });
+      } else {
+        toast({
+          title: "Status updated",
+          description: "Task status has been updated successfully.",
+        });
+      }
     } catch (error) {
       console.error('Error in status change handler:', error);
     }
@@ -75,14 +83,31 @@ export const ProgressItemRow: React.FC<ProgressItemRowProps> = ({
     }
   };
 
+  const handleCompletionToggle = (checked: boolean) => {
+    handleStatusChange(checked ? 'completed' : 'pending');
+  };
+
   return (
     <TableRow 
-      className="border-puzzle-aqua/20 hover:bg-puzzle-aqua/5 cursor-pointer"
+      className={`border-puzzle-aqua/20 hover:bg-puzzle-aqua/5 cursor-pointer ${
+        item.status === 'completed' ? 'bg-green-900/10' : ''
+      }`}
       data-state={isExpanded ? 'expanded' : 'collapsed'}
     >
-      <TableCell className="text-puzzle-white font-medium" onClick={() => onToggleComments(item.id)}>
+      <TableCell className="text-puzzle-white font-medium flex items-center gap-3" onClick={() => onToggleComments(item.id)}>
+        <Checkbox
+          checked={item.status === 'completed'}
+          onCheckedChange={handleCompletionToggle}
+          onClick={(e) => e.stopPropagation()}
+          className="border-puzzle-aqua data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+        />
         <div>
-          {item.title}
+          <div className="flex items-center gap-2">
+            {item.title}
+            {item.status === 'completed' && (
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            )}
+          </div>
           {item.description && (
             <p className="text-sm text-puzzle-white/70 mt-1">{item.description}</p>
           )}
