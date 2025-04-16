@@ -98,12 +98,6 @@ export function useItemOrder() {
           description: "Order saved locally but failed to save to database. Changes will be synced on next refresh.",
           duration: 5000,
         });
-      } else {
-        toast({
-          title: "Order saved",
-          description: "Task order has been updated successfully",
-          duration: 3000,
-        });
       }
       
       return true; // We've saved to localStorage even if database failed

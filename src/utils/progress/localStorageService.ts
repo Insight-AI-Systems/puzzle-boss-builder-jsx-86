@@ -45,7 +45,6 @@ export const saveLocalStorageOrder = (orderIds: string[]) => {
     }
     
     console.log('Saving order to localStorage:', orderIds.length, 'items');
-    console.log('First 5 items in new order:', orderIds.slice(0, 5));
     
     const timestamp = Date.now();
     

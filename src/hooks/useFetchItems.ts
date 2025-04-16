@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -35,7 +34,7 @@ export function useFetchItems(savedOrder: string[]) {
           return [];
         }
 
-        // Remove duplicate tasks based on title
+        // Filter out duplicates
         if (data && data.length > 0) {
           console.log(`Retrieved ${data.length} items before deduplication`);
           
@@ -44,7 +43,6 @@ export function useFetchItems(savedOrder: string[]) {
           const deduplicatedData = data.filter(item => {
             // If we've seen this title before, skip it
             if (uniqueTitlesMap.has(item.title)) {
-              console.log(`Filtering out duplicate: ${item.title}`);
               return false;
             }
             // Otherwise, add it to our map and keep it
@@ -80,7 +78,6 @@ export function useFetchItems(savedOrder: string[]) {
             return sortedData as ProgressItem[];
           }
           
-          console.log('No saved order applied, using default sorting');
           return deduplicatedData as ProgressItem[] || [];
         }
         

@@ -44,9 +44,9 @@ export const saveDatabaseOrder = async (orderedItemIds: string[]) => {
       return false;
     }
     
-    console.log('Saving order to database immediately:', orderedItemIds.length, 'items');
-    console.log('First few items in order:', orderedItemIds.slice(0, 3));
+    console.log('Saving order to database:', orderedItemIds.length, 'items');
     
+    // Ensure we have a transaction to make the update atomic
     // Update each item individually with its new order_index
     const updates = [];
     
@@ -85,7 +85,7 @@ export const saveDatabaseOrder = async (orderedItemIds: string[]) => {
       console.log('Sample of saved items in database:', checkItems);
     }
 
-    console.log('Order successfully saved to database with', updates.length, 'updated items');
+    console.log('Order successfully saved to database');
     return true;
   } catch (error) {
     console.error('Error in saveDatabaseOrder:', error);

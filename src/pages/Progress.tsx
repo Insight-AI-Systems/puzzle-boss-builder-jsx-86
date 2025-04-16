@@ -35,18 +35,11 @@ const Progress = () => {
   }, [initialItems]);
 
   useEffect(() => {
+    // Auto-save notification
     toast({
       title: "Auto-save enabled",
       description: "Changes to task order, status, and priority are automatically saved",
       duration: 5000,
-    });
-    
-    // Notify that duplicates have been removed
-    toast({
-      title: "Duplicates removed",
-      description: "Duplicate tasks have been filtered from the project progress list",
-      duration: 5000,
-      className: "bg-green-800 border-green-900 text-white",
     });
   }, [toast]);
 
@@ -90,11 +83,13 @@ const Progress = () => {
     const success = await updateItemsOrder(itemIds);
 
     if (success) {
-      // Update local state to match new order
-      setProgressItems(prevItems => 
-        itemIds.map(id => prevItems.find(item => item.id === id)!)
-          .filter(Boolean)
-      );
+      // Update local state to match new order explicitly
+      const reorderedItems = itemIds
+        .map(id => progressItems.find(item => item.id === id))
+        .filter(Boolean) as ProgressItem[];
+        
+      console.log('Setting reordered items:', reorderedItems.map(item => item.title).join(', '));
+      setProgressItems(reorderedItems);
       return true;
     }
     return false;

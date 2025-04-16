@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   DndContext, 
   closestCenter,
@@ -26,14 +26,15 @@ interface DraggableProgressTableProps {
 }
 
 export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableProgressTableProps) {
-  const [sortedItems, setSortedItems] = useState(items);
+  const [sortedItems, setSortedItems] = useState<ProgressItem[]>([...items]);
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
   
-  // Update sorted items when items prop changes
-  React.useEffect(() => {
-    setSortedItems(items);
-  }, [items]);
+  useEffect(() => {
+    if (!isUpdating) {
+      setSortedItems([...items]);
+    }
+  }, [items, isUpdating]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -83,10 +84,8 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
       console.log('Reordered task:', movedItem.title);
       console.log(`From index ${oldIndex} to ${newIndex}`);
       
-      // Update local state immediately for smooth UX
       setSortedItems(updatedItems);
       
-      // Save to backend through parent handler
       const itemIds = updatedItems.map(item => item.id);
       const success = await onUpdateItemsOrder(itemIds);
       
@@ -103,7 +102,7 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
       }
     } catch (error) {
       console.error('Error during drag end:', error);
-      setSortedItems(items); // Revert to original order
+      setSortedItems([...items]);
       toast({
         variant: "destructive",
         title: "Save Failed",
