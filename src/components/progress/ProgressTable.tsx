@@ -11,6 +11,12 @@ interface ProgressTableProps {
   onUpdatePriority: (itemId: string, priority: string) => Promise<boolean>;
 }
 
+const priorityOrder = {
+  high: 3,
+  medium: 2,
+  low: 1
+};
+
 export const ProgressTable: React.FC<ProgressTableProps> = ({ 
   items, 
   onAddComment,
@@ -20,17 +26,33 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [priorityFilter, setPriorityFilter] = useState<string | undefined>(undefined);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortField, setSortField] = useState<'date' | 'priority'>('date');
 
   const resetFilters = () => {
     setStatusFilter(undefined);
     setPriorityFilter(undefined);
+    setSortField('date');
+    setSortOrder('desc');
   };
 
-  const filteredItems = items.filter(item => {
-    if (statusFilter && item.status !== statusFilter) return false;
-    if (priorityFilter && item.priority !== priorityFilter) return false;
-    return true;
-  });
+  const filteredAndSortedItems = [...items]
+    .filter(item => {
+      if (statusFilter && item.status !== statusFilter) return false;
+      if (priorityFilter && item.priority !== priorityFilter) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortField === 'priority') {
+        const priorityDiff = priorityOrder[b.priority as keyof typeof priorityOrder] - 
+                           priorityOrder[a.priority as keyof typeof priorityOrder];
+        return sortOrder === 'desc' ? priorityDiff : -priorityDiff;
+      } else {
+        // Sort by date
+        const dateA = new Date(sortOrder === 'desc' ? a.created_at : b.created_at);
+        const dateB = new Date(sortOrder === 'desc' ? b.created_at : a.created_at);
+        return dateB.getTime() - dateA.getTime();
+      }
+    });
 
   return (
     <div className="space-y-4">
@@ -41,12 +63,14 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
         setPriorityFilter={setPriorityFilter}
         sortOrder={sortOrder}
         setSortOrder={setSortOrder}
+        sortField={sortField}
+        setSortField={setSortField}
         resetFilters={resetFilters}
-        itemCount={filteredItems.length}
+        itemCount={filteredAndSortedItems.length}
       />
       
       <DraggableProgressTable
-        items={filteredItems}
+        items={filteredAndSortedItems}
         onUpdatePriority={onUpdatePriority}
       />
     </div>

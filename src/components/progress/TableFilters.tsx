@@ -19,6 +19,8 @@ interface TableFiltersProps {
   setPriorityFilter: (value: string | undefined) => void;
   sortOrder: 'asc' | 'desc';
   setSortOrder: (value: 'asc' | 'desc') => void;
+  sortField: 'date' | 'priority';
+  setSortField: (value: 'date' | 'priority') => void;
   resetFilters: () => void;
   itemCount: number;
 }
@@ -30,6 +32,8 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
   setPriorityFilter,
   sortOrder,
   setSortOrder,
+  sortField,
+  setSortField,
   resetFilters,
   itemCount
 }) => {
@@ -82,9 +86,18 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
+            <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={sortField} onValueChange={(value) => setSortField(value as 'date' | 'priority')}>
+              <DropdownMenuRadioItem value="date">Date</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="priority">Priority</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuLabel>Order</DropdownMenuLabel>
             <DropdownMenuRadioGroup value={sortOrder} onValueChange={(value) => setSortOrder(value as 'asc' | 'desc')}>
-              <DropdownMenuRadioItem value="desc">Newest First</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="asc">Oldest First</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="desc">{sortField === 'priority' ? 'High to Low' : 'Newest First'}</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="asc">{sortField === 'priority' ? 'Low to High' : 'Oldest First'}</DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
