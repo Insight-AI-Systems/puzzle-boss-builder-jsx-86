@@ -15,24 +15,41 @@ export function useItemOrder() {
   const loadSavedOrder = async () => {
     try {
       // First try to load from database
-      const { data: items } = await supabase
+      const { data: items, error } = await supabase
         .from('progress_items')
-        .select('id, order_index')
+        .select('id, order_index, updated_at')
         .order('order_index', { ascending: true })
         .not('order_index', 'is', null);
 
+      const localStorageOrder = localStorage.getItem('progressItemsOrder');
+      const localStorageTimestamp = localStorage.getItem('progressItemsOrderTimestamp');
+      
       if (items && items.length > 0) {
         const orderFromDb = items.map(item => item.id);
+        const latestDbUpdate = Math.max(...items.map(item => 
+          new Date(item.updated_at).getTime()
+        ));
+
+        // If localStorage exists, compare timestamps
+        if (localStorageOrder && localStorageTimestamp) {
+          const savedTimestamp = parseInt(localStorageTimestamp, 10);
+          if (savedTimestamp > latestDbUpdate) {
+            // localStorage is more recent, use it
+            setSavedOrder(JSON.parse(localStorageOrder));
+            return;
+          }
+        }
+
+        // Use database order and update localStorage
         setSavedOrder(orderFromDb);
-        // Sync localStorage with database
         localStorage.setItem('progressItemsOrder', JSON.stringify(orderFromDb));
+        localStorage.setItem('progressItemsOrderTimestamp', Date.now().toString());
         return;
       }
 
       // Fallback to localStorage if no order in database
-      const storedOrder = localStorage.getItem('progressItemsOrder');
-      if (storedOrder) {
-        setSavedOrder(JSON.parse(storedOrder));
+      if (localStorageOrder) {
+        setSavedOrder(JSON.parse(localStorageOrder));
       }
     } catch (err) {
       console.error('Error loading saved order:', err);
@@ -51,15 +68,19 @@ export function useItemOrder() {
         return false;
       }
 
-      // Update order_index for each item
+      // Update order_index for each item using upsert
       const updates = orderedItemIds.map((id, index) => ({
         id,
-        order_index: index
+        order_index: index,
+        title: undefined // Adding undefined for required fields that we don't want to update
       }));
 
       const { error } = await supabase
         .from('progress_items')
-        .upsert(updates, { onConflict: 'id' });
+        .upsert(updates, { 
+          onConflict: 'id',
+          ignoreDuplicates: false
+        });
 
       if (error) {
         console.error('Error saving order to database:', error);
@@ -77,8 +98,10 @@ export function useItemOrder() {
     try {
       console.log('Saving new order to localStorage and database:', newOrder);
       
-      // Save to localStorage first for immediate feedback
+      // Save to localStorage with timestamp
+      const timestamp = Date.now();
       localStorage.setItem('progressItemsOrder', JSON.stringify(newOrder));
+      localStorage.setItem('progressItemsOrderTimestamp', timestamp.toString());
       setSavedOrder(newOrder);
       
       // Attempt to save to database
