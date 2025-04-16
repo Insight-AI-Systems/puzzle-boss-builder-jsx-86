@@ -51,6 +51,30 @@ export const ProgressItemRow: React.FC<ProgressItemRowProps> = ({
     }
   };
 
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'low':
+        return 'bg-green-100 text-green-800';
+      default:
+        return '';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-yellow-100 text-yellow-800';
+    }
+  };
+
   return (
     <TableRow 
       className="border-puzzle-aqua/20 hover:bg-puzzle-aqua/5 cursor-pointer"
@@ -69,11 +93,7 @@ export const ProgressItemRow: React.FC<ProgressItemRowProps> = ({
           value={item.status}
           onValueChange={handleStatusChange}
         >
-          <SelectTrigger className={`w-[130px] 
-            ${item.status === 'completed' ? 'bg-green-100 text-green-800' : 
-            item.status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 
-            'bg-yellow-100 text-yellow-800'}`}
-          >
+          <SelectTrigger className={`w-[130px] ${getStatusColor(item.status)}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -88,11 +108,7 @@ export const ProgressItemRow: React.FC<ProgressItemRowProps> = ({
           value={item.priority}
           onValueChange={handlePriorityChange}
         >
-          <SelectTrigger className={`w-[130px]
-            ${item.priority === 'high' ? 'bg-red-100 text-red-800' : 
-            item.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
-            'bg-green-100 text-green-800'}`}
-          >
+          <SelectTrigger className={`w-[130px] ${getPriorityColor(item.priority)}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

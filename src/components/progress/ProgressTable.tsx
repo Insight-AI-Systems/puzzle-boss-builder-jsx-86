@@ -1,8 +1,8 @@
-
 import React, { useState } from 'react';
 import { ProgressItem } from '@/hooks/useProgressItems';
 import { TableFilters } from './TableFilters';
 import { DraggableProgressTable } from './DraggableProgressTable';
+import { TableContent } from './TableContent';
 
 interface ProgressTableProps {
   items: ProgressItem[];
@@ -27,6 +27,7 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
   const [priorityFilter, setPriorityFilter] = useState<string | undefined>(undefined);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [sortField, setSortField] = useState<'date' | 'priority'>('date');
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
   const resetFilters = () => {
     setStatusFilter(undefined);
@@ -47,12 +48,18 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
                            priorityOrder[a.priority as keyof typeof priorityOrder];
         return sortOrder === 'desc' ? priorityDiff : -priorityDiff;
       } else {
-        // Sort by date
         const dateA = new Date(sortOrder === 'desc' ? a.created_at : b.created_at);
         const dateB = new Date(sortOrder === 'desc' ? b.created_at : a.created_at);
         return dateB.getTime() - dateA.getTime();
       }
     });
+
+  const handleToggleComments = (id: string) => {
+    setExpandedItems(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
 
   return (
     <div className="space-y-4">
@@ -69,8 +76,12 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
         itemCount={filteredAndSortedItems.length}
       />
       
-      <DraggableProgressTable
+      <TableContent
         items={filteredAndSortedItems}
+        expandedItems={expandedItems}
+        onToggleComments={handleToggleComments}
+        onAddComment={onAddComment}
+        onUpdateStatus={onUpdateStatus}
         onUpdatePriority={onUpdatePriority}
       />
     </div>
