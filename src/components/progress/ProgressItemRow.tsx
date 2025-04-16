@@ -2,6 +2,7 @@ import React from 'react';
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Clock, MessageSquare, CheckCircle } from "lucide-react";
 import { ProgressItem } from '@/hooks/useProgressItems';
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -83,8 +84,15 @@ export const ProgressItemRow: React.FC<ProgressItemRowProps> = ({
     }
   };
 
-  const handleCompletionToggle = (checked: boolean) => {
-    handleStatusChange(checked ? 'completed' : 'pending');
+  const handleToggleStatus = (checked: boolean) => {
+    const newStatus = checked ? 'completed' : 'pending';
+    handleStatusChange(newStatus);
+    
+    toast({
+      title: checked ? "Task Completed" : "Task Pending",
+      description: `Task "${item.title}" has been marked as ${checked ? 'completed' : 'pending'}`,
+      className: checked ? "bg-green-800 border-green-900 text-white" : undefined,
+    });
   };
 
   return (
@@ -95,11 +103,11 @@ export const ProgressItemRow: React.FC<ProgressItemRowProps> = ({
       data-state={isExpanded ? 'expanded' : 'collapsed'}
     >
       <TableCell className="text-puzzle-white font-medium flex items-center gap-3" onClick={() => onToggleComments(item.id)}>
-        <Checkbox
+        <Switch
           checked={item.status === 'completed'}
-          onCheckedChange={handleCompletionToggle}
+          onCheckedChange={handleToggleStatus}
           onClick={(e) => e.stopPropagation()}
-          className="border-puzzle-aqua data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+          className="data-[state=checked]:bg-green-600"
         />
         <div>
           <div className="flex items-center gap-2">
