@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -20,8 +21,9 @@ export function useFetchItems(savedOrder: string[]) {
               *
             )
           `)
-          .order('priority', { ascending: false })
-          .order('updated_at', { ascending: false });
+          .order('order_index', { ascending: true }) // First try to sort by order_index
+          .order('priority', { ascending: false }) // Then by priority
+          .order('updated_at', { ascending: false }); // Finally by update time
 
         if (error) {
           console.error('Error fetching progress items:', error);

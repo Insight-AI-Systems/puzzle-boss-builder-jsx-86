@@ -9,7 +9,7 @@ import { useFetchItems } from "./useFetchItems";
 export function useProgressItems() {
   const queryClient = useQueryClient();
   const { isSyncing, syncTasks } = useProgressSync();
-  const { savedOrder, updateItemsOrder, loaded } = useItemOrder();
+  const { savedOrder, updateItemsOrder, loaded, isSaving } = useItemOrder();
   const { data: items, isLoading } = useFetchItems(loaded ? savedOrder : []);
 
   const addComment = async (content: string, itemId: string) => {
@@ -41,7 +41,7 @@ export function useProgressItems() {
   };
 
   const handleUpdateItemsOrder = async (itemIds: string[]) => {
-    console.log("useProgressItems: Updating order of items", itemIds);
+    console.log("useProgressItems: Updating order of items", itemIds.length, "items");
     const success = await updateItemsOrder(itemIds);
     if (success) {
       console.log("Order updated successfully, invalidating queries");
@@ -57,6 +57,7 @@ export function useProgressItems() {
     items,
     isLoading: isLoading || !loaded,
     isSyncing,
+    isSavingOrder: isSaving,
     addComment,
     syncTasks,
     updateItemStatus: handleUpdateItemStatus,

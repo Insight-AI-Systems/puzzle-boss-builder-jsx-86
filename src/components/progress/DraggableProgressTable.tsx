@@ -57,10 +57,21 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
 
     if (isUpdating) {
       console.log('Ignoring drag operation - already updating');
+      toast({
+        variant: "destructive",
+        title: "Please wait",
+        description: "Another update is in progress",
+        duration: 2000,
+      });
       return;
     }
 
     setIsUpdating(true);
+    toast({
+      title: "Saving changes...",
+      description: "Updating task order",
+      duration: 2000,
+    });
 
     try {
       console.log(`Moving item from position with ID ${active.id} to position with ID ${over.id}`);
@@ -79,18 +90,17 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
         return;
       }
       
-      const updatedItems = [...sortedItems];
-      
-      const [movedItem] = updatedItems.splice(oldIndex, 1);
-      updatedItems.splice(newIndex, 0, movedItem);
+      const updatedItems = arrayMove(sortedItems, oldIndex, newIndex);
+      const movedItem = sortedItems[oldIndex];
       
       console.log('Reordered just the dragged item:', movedItem.title);
+      console.log(`From index ${oldIndex} to ${newIndex}`);
       
       setSortedItems(updatedItems);
       
       const itemIds = updatedItems.map(item => item.id);
       
-      console.log("Auto-saving new item order:", itemIds);
+      console.log("Auto-saving new item order:", itemIds.length, "items");
       const success = await onUpdateItemsOrder(itemIds);
       
       if (success) {
@@ -105,7 +115,7 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
         toast({
           variant: "destructive",
           title: "Save Failed",
-          description: "Failed to save the new order",
+          description: "Failed to save the new order. Please try again.",
           duration: 3000,
         });
         // Revert to original order if save failed
@@ -117,7 +127,7 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
       toast({
         variant: "destructive",
         title: "Error occurred",
-        description: "An error occurred while updating the order",
+        description: "An error occurred while updating the order. Please try again.",
         duration: 3000,
       });
     } finally {

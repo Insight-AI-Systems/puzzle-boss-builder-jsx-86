@@ -5,7 +5,7 @@ import { TableFilters } from './TableFilters';
 import { DraggableProgressTable } from './DraggableProgressTable';
 import { TableContent } from './TableContent';
 import { Button } from '@/components/ui/button';
-import { MoveVertical, List } from 'lucide-react';
+import { MoveVertical, List, Save } from 'lucide-react';
 
 interface ProgressTableProps {
   items: ProgressItem[];
@@ -13,6 +13,7 @@ interface ProgressTableProps {
   onUpdateStatus: (itemId: string, status: string) => Promise<boolean>;
   onUpdatePriority: (itemId: string, priority: string) => Promise<boolean>;
   onUpdateItemsOrder: (itemIds: string[]) => Promise<boolean>;
+  isSavingOrder?: boolean;
 }
 
 const priorityOrder = {
@@ -26,7 +27,8 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
   onAddComment,
   onUpdateStatus,
   onUpdatePriority,
-  onUpdateItemsOrder
+  onUpdateItemsOrder,
+  isSavingOrder = false
 }) => {
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [priorityFilter, setPriorityFilter] = useState<string | undefined>(undefined);
@@ -100,9 +102,24 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
           variant="outline" 
           className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10"
           onClick={toggleDragMode}
+          disabled={isSavingOrder}
         >
-          {isDragMode ? <List className="mr-2 h-4 w-4" /> : <MoveVertical className="mr-2 h-4 w-4" />}
-          {isDragMode ? "View Details" : "Drag & Sort"}
+          {isSavingOrder ? (
+            <>
+              <Save className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : isDragMode ? (
+            <>
+              <List className="mr-2 h-4 w-4" />
+              View Details
+            </>
+          ) : (
+            <>
+              <MoveVertical className="mr-2 h-4 w-4" />
+              Drag & Sort
+            </>
+          )}
         </Button>
       </div>
       

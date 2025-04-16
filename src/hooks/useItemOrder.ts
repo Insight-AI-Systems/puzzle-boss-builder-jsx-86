@@ -7,6 +7,7 @@ import { getLocalStorageOrder, saveLocalStorageOrder } from '@/utils/progress/lo
 export function useItemOrder() {
   const [savedOrder, setSavedOrder] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -23,8 +24,8 @@ export function useItemOrder() {
       // Get order from localStorage
       const localResult = getLocalStorageOrder();
       
-      console.log('Database order:', dbResult?.orderIds);
-      console.log('LocalStorage order:', localResult?.orderIds);
+      console.log('Database order:', dbResult?.orderIds?.length || 0, 'items');
+      console.log('LocalStorage order:', localResult?.orderIds?.length || 0, 'items');
       
       if (dbResult && localResult) {
         // Compare timestamps to decide which order to use
@@ -72,8 +73,14 @@ export function useItemOrder() {
   };
 
   const updateItemsOrder = async (orderedItemIds: string[]) => {
+    if (isSaving) {
+      console.log('Already saving order, skipping duplicate save request');
+      return true;
+    }
+    
     try {
-      console.log('Saving new order immediately:', orderedItemIds);
+      setIsSaving(true);
+      console.log('Saving new order:', orderedItemIds.length, 'items');
       
       // Update state immediately
       setSavedOrder(orderedItemIds);
@@ -88,8 +95,14 @@ export function useItemOrder() {
         toast({
           variant: "destructive",
           title: "Database save failed",
-          description: "Order saved locally but failed to save to database",
+          description: "Order saved locally but failed to save to database. Changes will be synced on next refresh.",
           duration: 5000,
+        });
+      } else {
+        toast({
+          title: "Order saved",
+          description: "Task order has been updated successfully",
+          duration: 3000,
         });
       }
       
@@ -99,16 +112,19 @@ export function useItemOrder() {
       toast({
         variant: "destructive",
         title: "Error occurred",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
+        description: error instanceof Error ? error.message : "An unknown error occurred while saving order",
         duration: 5000,
       });
       return false;
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return {
     savedOrder,
     updateItemsOrder,
-    loaded
+    loaded,
+    isSaving
   };
 }

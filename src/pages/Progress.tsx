@@ -19,7 +19,8 @@ const Progress = () => {
     syncTasks,
     updateItemStatus,
     updateItemPriority,
-    updateItemsOrder
+    updateItemsOrder,
+    isSavingOrder
   } = useProgressItems();
   
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -77,7 +78,7 @@ const Progress = () => {
   };
 
   const handleOrderUpdate = async (itemIds: string[]) => {
-    console.log("Progress.tsx: Updating order of items:", itemIds);
+    console.log("Progress.tsx: Updating order of items:", itemIds.length, "items");
     const result = await updateItemsOrder(itemIds);
     return result;
   };
@@ -140,6 +141,7 @@ const Progress = () => {
               onUpdateStatus={updateItemStatus}
               onUpdatePriority={updateItemPriority}
               onUpdateItemsOrder={handleOrderUpdate}
+              isSavingOrder={isSavingOrder}
             />
           </CardContent>
         </Card>
