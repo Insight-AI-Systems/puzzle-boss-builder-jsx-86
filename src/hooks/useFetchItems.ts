@@ -12,36 +12,31 @@ export function useFetchItems(savedOrder: string[]) {
     queryFn: async () => {
       console.log('Fetching progress items...');
       
-      const { data, error } = await supabase
-        .from('progress_items')
-        .select(`
-          *,
-          progress_comments (
-            *
-          )
-        `)
-        .order('order_index', { ascending: true })
-        .order('priority', { ascending: false })
-        .order('updated_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('progress_items')
+          .select(`
+            *,
+            progress_comments (
+              *
+            )
+          `)
+          .order('priority', { ascending: false })
+          .order('updated_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching progress items:', error);
-        toast({
-          variant: "destructive",
-          title: "Error fetching progress items",
-          description: error.message,
-        });
-        return [];
-      }
+        if (error) {
+          console.error('Error fetching progress items:', error);
+          toast({
+            variant: "destructive",
+            title: "Error fetching progress items",
+            description: error.message,
+          });
+          return [];
+        }
 
-      // If we have a saved order in localStorage, use it as a fallback
-      if (savedOrder.length > 0 && data) {
-        // First check if any items have order_index as null or undefined
-        const hasNullOrderIndex = data.some(item => item.order_index === null || item.order_index === undefined);
-        
-        if (hasNullOrderIndex) {
-          // If there are items with null order_index, use the saved order as fallback
-          console.log('Using saved order from localStorage as fallback');
+        // If we have a saved order in localStorage, use it
+        if (savedOrder.length > 0 && data) {
+          console.log('Using saved order from localStorage');
           const sortedData = [...data].sort((a, b) => {
             const indexA = savedOrder.indexOf(a.id);
             const indexB = savedOrder.indexOf(b.id);
@@ -51,9 +46,17 @@ export function useFetchItems(savedOrder: string[]) {
           });
           return sortedData as ProgressItem[];
         }
+        
+        return data as ProgressItem[] || [];
+      } catch (e) {
+        console.error('Unexpected error in useFetchItems:', e);
+        toast({
+          variant: "destructive",
+          title: "Error loading progress items",
+          description: "An unexpected error occurred while loading progress items.",
+        });
+        return [];
       }
-      
-      return data as ProgressItem[] || [];
     },
   });
 }

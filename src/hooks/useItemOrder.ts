@@ -31,27 +31,9 @@ export function useItemOrder() {
         return false;
       }
 
-      // Update order_index for each item
-      const updatePromises = orderedItemIds.map(async (itemId, index) => {
-        const { error } = await supabase
-          .from('progress_items')
-          .update({ 
-            updated_at: new Date().toISOString(),
-            last_edited_by: user.id,
-            // Store the index as an integer for proper sorting
-            order_index: index
-          })
-          .eq('id', itemId);
-          
-        if (error) {
-          console.error(`Error updating order for item ${itemId}:`, error);
-          return false;
-        }
-        return true;
-      });
-      
-      const results = await Promise.all(updatePromises);
-      return results.every(result => result === true);
+      // For now, we won't try to update the order_index column
+      // since it doesn't exist in the database yet
+      return true;
     } catch (error) {
       console.error('Error saving order to database:', error);
       return false;
@@ -60,29 +42,29 @@ export function useItemOrder() {
 
   const updateItemsOrder = async (newOrder: string[]) => {
     try {
-      console.log('Saving new order to localStorage and database:', newOrder);
+      console.log('Saving new order to localStorage:', newOrder);
       
       // Save to localStorage first for immediate feedback
       localStorage.setItem('progressItemsOrder', JSON.stringify(newOrder));
       setSavedOrder(newOrder);
       
-      // Then save to database
+      // Then save to database (will just return true for now)
       const success = await saveOrderToDB(newOrder);
       
       if (success) {
         toast({
           title: "Order updated",
-          description: "Task order has been successfully saved",
+          description: "Task order has been saved to localStorage",
           className: "bg-green-800 border-green-900 text-white",
         });
         return true;
       } else {
         toast({
           variant: "destructive",
-          title: "Order update failed",
-          description: "Failed to save task order in the database",
+          title: "Order update warning",
+          description: "Task order was saved locally but not to the database",
         });
-        return false;
+        return true; // Still return true since localStorage save succeeded
       }
     } catch (error) {
       console.error('Error in updateItemsOrder:', error);

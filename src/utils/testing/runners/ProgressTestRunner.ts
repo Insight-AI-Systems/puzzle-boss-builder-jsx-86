@@ -12,7 +12,7 @@ export class ProgressTestRunner {
       // Verify the items exist in the database
       const { data, error } = await supabase
         .from('progress_items')
-        .select('id, order_index')
+        .select('id')
         .in('id', itemIds);
         
       if (error) {
@@ -44,18 +44,6 @@ export class ProgressTestRunner {
         if (!savedOrderMatches) {
           console.error('Saved order does not match expected order');
           return false;
-        }
-        
-        // Check for order_index fields in the database
-        // Cast the data items to have order_index (might be undefined if column doesn't exist yet)
-        const dataWithOrderIndex = data as { id: string; order_index?: number }[];
-        const allHaveOrderIndex = dataWithOrderIndex.every(item => 
-          item.order_index !== null && item.order_index !== undefined
-        );
-        
-        if (!allHaveOrderIndex) {
-          console.warn('Some items do not have order_index set in the database');
-          // This is not a failure condition since we can fall back to localStorage
         }
         
         console.log('Progress item order test passed');

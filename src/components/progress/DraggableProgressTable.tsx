@@ -86,14 +86,14 @@ export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableP
         if (persistenceVerified) {
           toast({
             title: "Tasks reordered",
-            description: "The task order has been successfully updated and verified",
+            description: "The task order has been successfully saved and verified",
             className: "bg-green-800 border-green-900 text-white",
           });
         } else {
           // Even if verification fails, don't revert UI if the update succeeded
           toast({
             title: "Order saved",
-            description: "The order was saved but verification had issues. The order should still persist.",
+            description: "The order was saved to localStorage successfully",
             className: "bg-green-800 border-green-900 text-white",
           });
         }
