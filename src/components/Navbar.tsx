@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -39,6 +38,15 @@ const Navbar: React.FC = () => {
     }
   };
 
+  const checkAdminStatus = () => {
+    if (profile) {
+      toast({
+        title: 'Admin Status Check',
+        description: `Role: ${profile.role}, isAdmin: ${isAdmin}`,
+      });
+    }
+  };
+
   return (
     <header className="bg-gradient-to-r from-puzzle-black to-puzzle-black/95 py-4 sticky top-0 z-40 w-full border-b border-puzzle-aqua/20">
       <div className="container mx-auto px-4 flex justify-between items-center">
@@ -60,7 +68,7 @@ const Navbar: React.FC = () => {
             How It Works
           </Link>
           
-          {isAdmin && (
+          {(isAdmin || profile?.role === 'super_admin') && (
             <Link to="/admin-dashboard" className="text-puzzle-aqua font-bold hover:text-puzzle-aqua/80 transition-colors flex items-center">
               <Shield className="mr-1 h-4 w-4" />
               Admin Dashboard
@@ -98,7 +106,7 @@ const Navbar: React.FC = () => {
                   </Link>
                 </DropdownMenuItem>
                 
-                {isAdmin && (
+                {(isAdmin || profile.role === 'super_admin') && (
                   <DropdownMenuItem asChild>
                     <Link to="/admin-dashboard" className="flex w-full cursor-pointer">
                       <Shield className="mr-2 h-4 w-4" />
@@ -120,6 +128,13 @@ const Navbar: React.FC = () => {
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-blue-600 cursor-pointer" 
+                  onClick={checkAdminStatus}
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  <span>Check Admin Status</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

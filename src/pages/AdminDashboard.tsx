@@ -15,7 +15,7 @@ const AdminDashboard = () => {
   const [accessChecked, setAccessChecked] = useState(false);
 
   useEffect(() => {
-    // Debug logging
+    // More verbose debug logging
     console.log('Admin Dashboard - Auth State:', { 
       isLoading, 
       isLoggedIn: !!currentUserId,
@@ -24,19 +24,52 @@ const AdminDashboard = () => {
       role: profile?.role
     });
     
-    // Only redirect if we've finished loading and the user is not an admin
-    if (!isLoading) {
-      if (!isAdmin && currentUserId) {
-        toast({
-          title: "Access Denied",
-          description: `You don't have admin privileges. Current role: ${profile?.role || 'unknown'}`,
-          variant: "destructive",
-        });
-        navigate('/', { replace: true });
+    // Force update the access check after a delay to ensure everything is loaded
+    const timer = setTimeout(() => {
+      // Only redirect if user is not admin and we have a currentUserId (meaning they're logged in)
+      if (!isLoading) {
+        if (!isAdmin && currentUserId) {
+          toast({
+            title: "Access Denied",
+            description: `You don't have admin privileges. Current role: ${profile?.role || 'unknown'}`,
+            variant: "destructive",
+          });
+          navigate('/', { replace: true });
+        } else if (isAdmin) {
+          toast({
+            title: "Admin Access Granted",
+            description: `Welcome to the Admin Dashboard. Your role: ${profile?.role}`,
+          });
+        }
+        setAccessChecked(true);
       }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [isLoading, isAdmin, navigate, profile, currentUserId, toast]);
+
+  // If user is explicitly super_admin, force isAdmin to true
+  useEffect(() => {
+    if (profile?.role === 'super_admin' && !isAdmin) {
+      console.log('Force granting admin access to super_admin user');
       setAccessChecked(true);
     }
-  }, [isLoading, isAdmin, navigate, profile, currentUserId, toast]);
+  }, [profile, isAdmin]);
+
+  // Force entry for super_admin regardless of isAdmin flag
+  if (profile?.role === 'super_admin') {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-puzzle-black p-6">
+          <div className="max-w-6xl mx-auto space-y-8">
+            <h1 className="text-3xl font-game text-puzzle-aqua">Super Admin Dashboard</h1>
+            <RoleBasedDashboard />
+          </div>
+        </div>
+      </>
+    );
+  }
 
   if (isLoading || !accessChecked) {
     return (
