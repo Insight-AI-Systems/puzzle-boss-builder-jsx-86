@@ -1,4 +1,3 @@
-
 /**
  * Test Runner - Utilities for running tests and verifying functionality
  */
@@ -10,6 +9,7 @@ import { TestManager } from './managers/TestManager';
 
 export class TestRunner {
   private static verificationEnabled = true;
+  private static testManager = new TestManager();
   
   static enableVerification(enable: boolean): void {
     TestRunner.verificationEnabled = enable;
@@ -41,7 +41,7 @@ export class TestRunner {
   }
   
   static async verifyChange(changeId: string, description: string): Promise<VerificationResult> {
-    console.log(`Verifying change: ${description} (${changeId})`);
+    console.log(`Verifying change: ${changeId} (${description})`);
     
     if (!TestRunner.verificationEnabled) {
       console.log('Verification disabled, skipping tests');
@@ -53,7 +53,6 @@ export class TestRunner {
       };
     }
     
-    // Run database connection test first
     const dbConnected = await TestRunner.testDatabaseConnection();
     if (!dbConnected) {
       return {
@@ -67,8 +66,7 @@ export class TestRunner {
       };
     }
     
-    // Run all project tests
-    const summary = await projectTracker.testManager.runAllTests();
+    const summary = await TestRunner.testManager.runAllTests();
     
     let status: 'VERIFIED' | 'PARTIAL' | 'FAILED';
     let message: string;
@@ -91,12 +89,11 @@ export class TestRunner {
       description,
       details: {
         summary,
-        reports: projectTracker.testManager.getAllTestReports()
+        reports: TestRunner.testManager.getAllTestReports()
       }
     };
   }
   
-  // Database connection test
   static async testDatabaseConnection(): Promise<boolean> {
     try {
       const { data, error } = await supabase.from('profiles').select('count', { count: 'exact', head: true });
@@ -114,7 +111,6 @@ export class TestRunner {
     }
   }
   
-  // Auth test helpers
   static async testAuthStatus(): Promise<boolean> {
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
@@ -132,7 +128,6 @@ export class TestRunner {
     }
   }
   
-  // Component rendering test helper
   static testComponentRender(component: React.ReactNode): boolean {
     try {
       // In a real implementation, this would use React Testing Library
@@ -144,7 +139,6 @@ export class TestRunner {
     }
   }
   
-  // Progress item specific tests
   static async testProgressItemOrder(itemIds: string[]): Promise<boolean> {
     try {
       if (!itemIds || itemIds.length === 0) {
@@ -196,8 +190,6 @@ export class TestRunner {
   }
 }
 
-// Modified to avoid using hooks outside of component functions
-// This function should be called from a component, not at the module level
 export const runInitialTests = async () => {
   if (typeof window !== 'undefined') {
     console.log('Running initial environment tests...');
