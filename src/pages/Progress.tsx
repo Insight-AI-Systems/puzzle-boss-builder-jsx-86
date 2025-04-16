@@ -7,6 +7,7 @@ import { AddProgressItemDialog } from "@/components/AddProgressItemDialog";
 import { useProgressItems } from "@/hooks/useProgressItems";
 import { ProgressTable } from "@/components/progress/ProgressTable";
 import { ProgressSummary } from "@/components/progress/ProgressSummary";
+import { AutomatedTaskFlow } from "@/components/progress/AutomatedTaskFlow";
 import { toast } from "@/hooks/use-toast";
 
 const Progress = () => {
@@ -60,7 +61,14 @@ const Progress = () => {
           </div>
         </div>
         
-        {/* Add progress summary */}
+        {/* Add automated task flow component */}
+        <AutomatedTaskFlow 
+          items={items || []} 
+          onUpdateStatus={updateItemStatus}
+          onAddComment={addComment}
+        />
+        
+        {/* Progress summary */}
         <ProgressSummary items={items || []} />
         
         <Card className="bg-puzzle-black/50 border-puzzle-aqua/20">
