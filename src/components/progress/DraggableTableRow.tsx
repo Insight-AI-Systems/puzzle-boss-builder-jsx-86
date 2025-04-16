@@ -27,6 +27,30 @@ export function DraggableTableRow({ item }: DraggableTableRowProps) {
     cursor: 'move',
   };
 
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'low':
+        return 'bg-green-100 text-green-800';
+      default:
+        return '';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-yellow-100 text-yellow-800';
+    }
+  };
+
   return (
     <TableRow
       ref={setNodeRef}
@@ -39,8 +63,16 @@ export function DraggableTableRow({ item }: DraggableTableRowProps) {
         </span>
         {item.title}
       </TableCell>
-      <TableCell className="text-puzzle-white">{item.status}</TableCell>
-      <TableCell className="text-puzzle-white">{item.priority}</TableCell>
+      <TableCell className="text-puzzle-white">
+        <span className={`px-2 py-1 rounded text-sm ${getStatusColor(item.status)}`}>
+          {item.status.replace('_', ' ')}
+        </span>
+      </TableCell>
+      <TableCell className="text-puzzle-white">
+        <span className={`px-2 py-1 rounded text-sm ${getPriorityColor(item.priority)}`}>
+          {item.priority}
+        </span>
+      </TableCell>
       <TableCell className="text-puzzle-white">
         {new Date(item.updated_at).toLocaleDateString()}
       </TableCell>

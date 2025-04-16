@@ -1,8 +1,11 @@
+
 import React, { useState } from 'react';
 import { ProgressItem } from '@/hooks/useProgressItems';
 import { TableFilters } from './TableFilters';
 import { DraggableProgressTable } from './DraggableProgressTable';
 import { TableContent } from './TableContent';
+import { Button } from '@/components/ui/button';
+import { MoveVertical, List } from 'lucide-react';
 
 interface ProgressTableProps {
   items: ProgressItem[];
@@ -28,6 +31,7 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [sortField, setSortField] = useState<'date' | 'priority'>('date');
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const [isDragMode, setIsDragMode] = useState<boolean>(false);
 
   const resetFilters = () => {
     setStatusFilter(undefined);
@@ -61,29 +65,50 @@ export const ProgressTable: React.FC<ProgressTableProps> = ({
     }));
   };
 
+  const toggleDragMode = () => {
+    setIsDragMode(!isDragMode);
+  };
+
   return (
     <div className="space-y-4">
-      <TableFilters
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        priorityFilter={priorityFilter}
-        setPriorityFilter={setPriorityFilter}
-        sortOrder={sortOrder}
-        setSortOrder={setSortOrder}
-        sortField={sortField}
-        setSortField={setSortField}
-        resetFilters={resetFilters}
-        itemCount={filteredAndSortedItems.length}
-      />
+      <div className="flex justify-between items-center">
+        <TableFilters
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          priorityFilter={priorityFilter}
+          setPriorityFilter={setPriorityFilter}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
+          sortField={sortField}
+          setSortField={setSortField}
+          resetFilters={resetFilters}
+          itemCount={filteredAndSortedItems.length}
+        />
+        <Button 
+          variant="outline" 
+          className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10"
+          onClick={toggleDragMode}
+        >
+          {isDragMode ? <List className="mr-2 h-4 w-4" /> : <MoveVertical className="mr-2 h-4 w-4" />}
+          {isDragMode ? "View Details" : "Drag & Sort"}
+        </Button>
+      </div>
       
-      <TableContent
-        items={filteredAndSortedItems}
-        expandedItems={expandedItems}
-        onToggleComments={handleToggleComments}
-        onAddComment={onAddComment}
-        onUpdateStatus={onUpdateStatus}
-        onUpdatePriority={onUpdatePriority}
-      />
+      {isDragMode ? (
+        <DraggableProgressTable
+          items={filteredAndSortedItems}
+          onUpdatePriority={onUpdatePriority}
+        />
+      ) : (
+        <TableContent
+          items={filteredAndSortedItems}
+          expandedItems={expandedItems}
+          onToggleComments={handleToggleComments}
+          onAddComment={onAddComment}
+          onUpdateStatus={onUpdateStatus}
+          onUpdatePriority={onUpdatePriority}
+        />
+      )}
     </div>
   );
 };
