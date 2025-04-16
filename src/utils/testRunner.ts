@@ -1,3 +1,4 @@
+
 import { projectTracker } from './ProjectTracker';
 import { toast } from '@/hooks/use-toast';
 import { TestManager } from './managers/TestManager';
@@ -5,6 +6,7 @@ import { VerificationResult } from './testing/types/testTypes';
 import { DatabaseTestRunner } from './testing/runners/DatabaseTestRunner';
 import { ComponentTestRunner } from './testing/runners/ComponentTestRunner';
 import { ProgressTestRunner } from './testing/runners/ProgressTestRunner';
+import { supabase } from '@/integrations/supabase/client';
 
 export class TestRunner {
   private static verificationEnabled = true;
