@@ -4,6 +4,7 @@ import DevelopmentDashboard from '@/components/DevelopmentDashboard';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import Navbar from '@/components/Navbar';
 
 const DevDashboardPage: React.FC = () => {
   const { currentUserId, isLoading } = useUserProfile();
@@ -19,23 +20,36 @@ const DevDashboardPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 px-4 flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
-      </div>
+      <>
+        <Navbar />
+        <div className="container mx-auto py-8 px-4 flex items-center justify-center min-h-screen">
+          <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+        </div>
+      </>
     );
   }
 
   // Only render dashboard if authenticated
   if (!currentUserId) {
     console.log('No current user, not rendering dashboard');
-    return null; // This prevents flash of content before redirect happens
+    return (
+      <>
+        <Navbar />
+        <div className="container mx-auto py-8 px-4">
+          <p>Please log in to access the development dashboard.</p>
+        </div>
+      </>
+    );
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold mb-6">Development Dashboard</h1>
-      <DevelopmentDashboard />
-    </div>
+    <>
+      <Navbar />
+      <div className="container mx-auto py-8 px-4">
+        <h1 className="text-2xl font-bold mb-6">Development Dashboard</h1>
+        <DevelopmentDashboard />
+      </div>
+    </>
   );
 };
 

@@ -17,14 +17,16 @@ const DevelopmentDashboard: React.FC = () => {
   
   useEffect(() => {
     // Load all tasks and tests from the project tracker
-    setTasks(projectTracker.getAllTasks());
-    setTests(projectTracker.getAllTests());
+    const loadedTasks = projectTracker.getAllTasks();
+    const loadedTests = projectTracker.getAllTests();
+    
+    setTasks(loadedTasks);
+    setTests(loadedTests);
     
     // Find the active phase (lowest phase with incomplete tasks)
-    const allTasks = projectTracker.getAllTasks();
     const pendingPhases = Array.from(
       new Set(
-        allTasks
+        loadedTasks
           .filter(task => task.status !== 'completed')
           .map(task => task.phase)
       )
@@ -33,6 +35,9 @@ const DevelopmentDashboard: React.FC = () => {
     if (pendingPhases.length > 0) {
       setActivePhase(pendingPhases[0]);
     }
+    
+    console.log('Loaded tasks:', loadedTasks.length);
+    console.log('Loaded tests:', loadedTests.length);
   }, []);
   
   const getTaskStatusColor = (status: string) => {
@@ -46,18 +51,22 @@ const DevelopmentDashboard: React.FC = () => {
   
   const runTaskTests = async (taskId: string) => {
     setIsTestRunning(true);
+    console.log('Running tests for task:', taskId);
     try {
       await TestRunner.runAllTaskTests(taskId);
       
       // Refresh tasks after tests
       setTasks(projectTracker.getAllTasks());
       setTests(projectTracker.getAllTests());
+    } catch (error) {
+      console.error('Error running tests:', error);
     } finally {
       setIsTestRunning(false);
     }
   };
   
   const updateTaskStatus = (taskId: string, status: ProjectTask['status']) => {
+    console.log(`Updating task ${taskId} status to ${status}`);
     projectTracker.updateTaskStatus(taskId, status);
     setTasks(projectTracker.getAllTasks());
   };
