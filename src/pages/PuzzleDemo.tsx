@@ -55,18 +55,10 @@ const SimplePuzzleGame = () => {
 
   const [draggedPiece, setDraggedPiece] = React.useState(null);
 
+  // Explicitly using pointer events instead of drag events for better compatibility
   const handleDragStart = (e, piece) => {
-    e.dataTransfer.setData('text/plain', piece.id);
+    e.preventDefault();
     setDraggedPiece(piece);
-    
-    // Set a ghost image for drag preview
-    const dragPreview = document.createElement('div');
-    dragPreview.style.width = '100px';
-    dragPreview.style.height = '100px';
-    dragPreview.style.backgroundColor = piece.color;
-    dragPreview.style.opacity = '0.5';
-    document.body.appendChild(dragPreview);
-    e.dataTransfer.setDragImage(dragPreview, 50, 50);
     
     // Update piece state
     setPieces(pieces.map(p => 
@@ -74,16 +66,10 @@ const SimplePuzzleGame = () => {
         ? { ...p, isDragging: true } 
         : p
     ));
-    
-    // Remove drag preview element after drag operation
-    setTimeout(() => {
-      document.body.removeChild(dragPreview);
-    }, 0);
   };
 
-  const handleDragOver = (e, index) => {
+  const handleMove = (e, targetIndex) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = (e, targetIndex) => {
@@ -91,10 +77,8 @@ const SimplePuzzleGame = () => {
     
     if (!draggedPiece) return;
     
-    const draggedId = e.dataTransfer.getData('text/plain');
-    
-    // Find the source piece and target position
-    const sourceIndex = pieces.findIndex(p => p.id === draggedId);
+    // Find the source piece position
+    const sourceIndex = pieces.findIndex(p => p.id === draggedPiece.id);
     
     if (sourceIndex === -1) return;
     
@@ -118,11 +102,47 @@ const SimplePuzzleGame = () => {
     setDraggedPiece(null);
   };
 
+  const handlePieceClick = (piece) => {
+    // For touch screens and dev panel - implement click to select and then click to place
+    if (draggedPiece && draggedPiece.id !== piece.id) {
+      // Find the source and target indices
+      const sourceIndex = pieces.findIndex(p => p.id === draggedPiece.id);
+      const targetIndex = pieces.findIndex(p => p.id === piece.id);
+      
+      if (sourceIndex !== -1 && targetIndex !== -1) {
+        // Create a new array with swapped positions
+        const newPieces = [...pieces];
+        const temp = newPieces[sourceIndex];
+        newPieces[sourceIndex] = newPieces[targetIndex];
+        newPieces[targetIndex] = temp;
+        
+        // Update position property
+        newPieces[sourceIndex].position = sourceIndex;
+        newPieces[targetIndex].position = targetIndex;
+        
+        // Reset dragging state
+        setPieces(newPieces.map(p => ({ ...p, isDragging: false })));
+        setDraggedPiece(null);
+      }
+    } else {
+      // Select the piece
+      setDraggedPiece(piece);
+      setPieces(pieces.map(p => 
+        p.id === piece.id 
+          ? { ...p, isDragging: true } 
+          : p
+      ));
+    }
+  };
+
   return (
     <div className="flex flex-col items-center">
       <div className="mb-4">
         <Button 
-          onClick={() => setPieces(p => [...p].sort(() => Math.random() - 0.5))}
+          onClick={() => {
+            console.log("Shuffling pieces");
+            setPieces(p => [...p].sort(() => Math.random() - 0.5));
+          }}
           className="bg-puzzle-gold hover:bg-puzzle-gold/80 text-black"
         >
           Shuffle Pieces
@@ -136,13 +156,14 @@ const SimplePuzzleGame = () => {
         {pieces.map((piece, index) => (
           <div 
             key={piece.id}
-            draggable
-            onDragStart={(e) => handleDragStart(e, piece)}
-            onDragOver={(e) => handleDragOver(e, index)}
-            onDrop={(e) => handleDrop(e, index)}
-            onDragEnd={handleDragEnd}
-            className={`flex items-center justify-center rounded-lg cursor-grab shadow-md transition-all ${
-              piece.isDragging ? 'opacity-50' : 'opacity-100'
+            onMouseDown={(e) => handleDragStart(e, piece)}
+            onTouchStart={(e) => handleDragStart(e, piece)}
+            onMouseOver={(e) => handleMove(e, index)}
+            onMouseUp={(e) => handleDrop(e, index)}
+            onTouchEnd={(e) => handleDrop(e, index)}
+            onClick={() => handlePieceClick(piece)}
+            className={`flex items-center justify-center rounded-lg cursor-pointer shadow-md transition-all ${
+              piece.isDragging ? 'opacity-50 ring-2 ring-white' : 'opacity-100'
             }`}
             style={{ 
               backgroundColor: piece.color,
@@ -159,7 +180,7 @@ const SimplePuzzleGame = () => {
       </div>
       
       <p className="mt-4 text-sm text-puzzle-aqua">
-        Drag and drop pieces to rearrange the puzzle
+        Click or drag pieces to rearrange the puzzle
       </p>
     </div>
   );

@@ -32,7 +32,11 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
               ? 'text-puzzle-aqua bg-puzzle-aqua/10'
               : 'text-muted-foreground hover:text-puzzle-white hover:bg-white/10'
           }`}
-          onClick={onClick}
+          onClick={(e) => {
+            // Log navigation attempt
+            console.log(`Navigating to: ${item.path}`);
+            if (onClick) onClick();
+          }}
         >
           {item.name}
         </Link>
