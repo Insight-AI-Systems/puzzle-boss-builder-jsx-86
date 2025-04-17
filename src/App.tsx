@@ -31,6 +31,12 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import FAQ from "./pages/FAQ";
 
+// Guide Pages
+import GettingStartedGuide from "./pages/guides/GettingStartedGuide";
+import PuzzleTechniques from "./pages/guides/PuzzleTechniques";
+import PrizeClaimProcess from "./pages/guides/PrizeClaimProcess";
+import AccountManagement from "./pages/guides/AccountManagement";
+
 // Create a new QueryClient instance at the module level to avoid recreation on renders
 const queryClient = new QueryClient();
 
@@ -73,6 +79,12 @@ const App: React.FC = () => {
               <Route path="/partnerships" element={<Partnerships />} />
               <Route path="/careers" element={<Careers />} />
               <Route path="/press" element={<Press />} />
+              
+              {/* Guide Pages */}
+              <Route path="/guides/getting-started-guide" element={<GettingStartedGuide />} />
+              <Route path="/guides/puzzle-techniques" element={<PuzzleTechniques />} />
+              <Route path="/guides/prize-claim-process" element={<PrizeClaimProcess />} />
+              <Route path="/guides/account-management" element={<AccountManagement />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>

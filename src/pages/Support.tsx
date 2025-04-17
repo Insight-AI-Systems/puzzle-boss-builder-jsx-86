@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { HelpCircle, MessageSquare, FileText, PhoneCall, Mail } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const commonQuestions = [
   {
@@ -201,9 +202,11 @@ const Support = () => {
                       <p className="text-muted-foreground text-sm mb-4">
                         Learn the basics of The Puzzle Boss platform, from creating your account to winning your first prize.
                       </p>
-                      <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
-                        Read Guide
-                      </Button>
+                      <Link to="/guides/getting-started-guide">
+                        <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
+                          Read Guide
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                   
@@ -216,9 +219,11 @@ const Support = () => {
                       <p className="text-muted-foreground text-sm mb-4">
                         Advanced strategies and techniques to improve your puzzle-solving speed and efficiency.
                       </p>
-                      <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
-                        Read Guide
-                      </Button>
+                      <Link to="/guides/puzzle-techniques">
+                        <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
+                          Read Guide
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                   
@@ -231,9 +236,11 @@ const Support = () => {
                       <p className="text-muted-foreground text-sm mb-4">
                         Step-by-step instructions for claiming and receiving your prizes after winning a contest.
                       </p>
-                      <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
-                        Read Guide
-                      </Button>
+                      <Link to="/guides/prize-claim-process">
+                        <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
+                          Read Guide
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                   
@@ -246,9 +253,11 @@ const Support = () => {
                       <p className="text-muted-foreground text-sm mb-4">
                         Learn how to manage your profile, subscriptions, payment methods, and security settings.
                       </p>
-                      <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
-                        Read Guide
-                      </Button>
+                      <Link to="/guides/account-management">
+                        <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
+                          Read Guide
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </div>
