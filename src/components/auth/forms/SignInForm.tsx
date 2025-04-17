@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,8 +28,13 @@ export const SignInForm: React.FC<SignInFormProps> = ({
   handleSubmit,
   onForgotPassword,
 }) => {
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSubmit();
+  };
+
   return (
-    <div className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4">
       {errorMessage && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -52,6 +57,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
         <div className="flex items-center justify-between">
           <Label htmlFor="signin-password">Password</Label>
           <Button 
+            type="button"
             variant="link" 
             className="p-0 h-auto text-xs"
             onClick={onForgotPassword}
@@ -69,8 +75,8 @@ export const SignInForm: React.FC<SignInFormProps> = ({
         />
       </div>
       <Button
+        type="submit"
         className="w-full"
-        onClick={handleSubmit}
         disabled={isLoading}
       >
         {isLoading ? (
@@ -80,6 +86,6 @@ export const SignInForm: React.FC<SignInFormProps> = ({
         )}
         Sign In
       </Button>
-    </div>
+    </form>
   );
 };

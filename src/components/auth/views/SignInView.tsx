@@ -36,10 +36,10 @@ export const SignInView: React.FC<SignInViewProps> = ({
   const defaultTab = currentView === 'signin' ? 'signin' : 'signup';
 
   return (
-    <Tabs defaultValue={defaultTab} className="w-full">
+    <Tabs defaultValue={defaultTab} className="w-full" onValueChange={setCurrentView}>
       <TabsList className="grid w-full grid-cols-2 mb-6">
-        <TabsTrigger value="signin" onClick={() => setCurrentView('signin')}>Sign In</TabsTrigger>
-        <TabsTrigger value="signup" onClick={() => setCurrentView('signup')}>Sign Up</TabsTrigger>
+        <TabsTrigger value="signin">Sign In</TabsTrigger>
+        <TabsTrigger value="signup">Sign Up</TabsTrigger>
       </TabsList>
 
       <TabsContent value="signin">

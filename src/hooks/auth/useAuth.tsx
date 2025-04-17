@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export function useAuth() {
   const [email, setEmail] = useState('');
@@ -12,6 +12,7 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const resetForm = () => {
     setEmail('');
@@ -21,6 +22,16 @@ export function useAuth() {
   };
 
   const handleEmailAuth = async (isSignUp: boolean) => {
+    if (!email) {
+      setErrorMessage('Email is required');
+      return;
+    }
+
+    if (!password) {
+      setErrorMessage('Password is required');
+      return;
+    }
+    
     try {
       setIsLoading(true);
       setErrorMessage('');
