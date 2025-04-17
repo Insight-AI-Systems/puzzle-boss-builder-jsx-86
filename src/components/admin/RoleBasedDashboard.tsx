@@ -13,7 +13,11 @@ export const RoleBasedDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("overview");
   const { toast } = useToast();
   
-  if (!profile) return null;
+  // Early return with null if profile is not available
+  // but this should be OUTSIDE any hooks to avoid the "rendered more hooks" error
+  if (!profile) {
+    return null;
+  }
   
   const userRole = profile.role;
   
