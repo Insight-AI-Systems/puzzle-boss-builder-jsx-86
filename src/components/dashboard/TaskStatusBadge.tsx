@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, RotateCw, AlertCircle } from 'lucide-react';
+import { CheckCircle, RotateCw, AlertCircle, Clock } from 'lucide-react';
 
 interface TaskStatusBadgeProps {
   status: string;
@@ -20,16 +20,21 @@ export const TaskStatusBadge: React.FC<TaskStatusBadgeProps> = ({ status }) => {
   const getTaskStatusIcon = (status: string) => {
     switch (status) {
       case 'completed': return <CheckCircle className="h-3 w-3 mr-1" />;
-      case 'in-progress': return <RotateCw className="h-3 w-3 mr-1" />;
+      case 'in-progress': return <RotateCw className="h-3 w-3 mr-1 animate-spin" />;
       case 'failed': return <AlertCircle className="h-3 w-3 mr-1" />;
-      default: return null;
+      default: return <Clock className="h-3 w-3 mr-1" />;
     }
+  };
+
+  // Capitalize and format status text
+  const formatStatus = (status: string) => {
+    return status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
   return (
     <Badge className={`flex items-center ${getTaskStatusColor(status)}`}>
       {getTaskStatusIcon(status)}
-      <span>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
+      <span>{formatStatus(status)}</span>
     </Badge>
   );
 };

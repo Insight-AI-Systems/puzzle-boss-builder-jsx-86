@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Play, CheckCircle, RotateCw } from 'lucide-react';
 import { ProjectTask, ProjectTest } from '@/utils/types/projectTypes';
 import { TaskStatusBadge } from './TaskStatusBadge';
+import { useToast } from '@/hooks/use-toast';
 
 interface TaskCardProps {
   task: ProjectTask;
@@ -23,23 +24,38 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onRunTests,
   onUpdateStatus
 }) => {
+  const { toast } = useToast();
+
   const handleRunTests = () => {
     console.log('Running tests for task:', task.id);
+    toast({
+      title: "Running Tests",
+      description: `Running tests for task: ${task.name}`,
+    });
     onRunTests(task.id);
   };
 
   const handleStartTask = () => {
     console.log('Starting task:', task.id);
+    toast({
+      title: "Task Started",
+      description: `Now working on: ${task.name}`,
+    });
     onUpdateStatus(task.id, 'in-progress');
   };
 
   const handleCompleteTask = () => {
     console.log('Completing task:', task.id);
+    toast({
+      title: "Task Completed",
+      description: `Finished task: ${task.name}`,
+      variant: "success",
+    });
     onUpdateStatus(task.id, 'completed');
   };
 
   return (
-    <Card key={task.id} className="overflow-hidden">
+    <Card key={task.id} className="overflow-hidden hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start p-4">
         <div>
           <h4 className="font-medium">{task.name}</h4>
@@ -77,7 +93,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               size="sm"
               onClick={handleStartTask}
               disabled={task.status === 'in-progress'}
-              className="hover:bg-puzzle-aqua/10 hover:text-puzzle-aqua"
+              className="hover:bg-puzzle-aqua/10 hover:text-puzzle-aqua active:scale-95 transition-transform"
             >
               <Play className="h-4 w-4 mr-1" />
               {task.status === 'in-progress' ? 'In Progress' : 'Start'}
@@ -89,7 +105,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               variant="outline" 
               size="sm"
               onClick={handleCompleteTask}
-              className="hover:bg-green-100 hover:text-green-800"
+              className="hover:bg-green-100 hover:text-green-800 active:scale-95 transition-transform"
             >
               <CheckCircle className="h-4 w-4 mr-1" />
               Complete
@@ -103,7 +119,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             size="sm"
             onClick={handleRunTests}
             disabled={isTestRunning}
-            className="bg-puzzle-black/50 text-puzzle-white hover:bg-puzzle-aqua/20"
+            className="bg-puzzle-black/50 text-puzzle-white hover:bg-puzzle-aqua/20 active:scale-95 transition-transform"
           >
             <RotateCw className={`h-4 w-4 mr-1 ${isTestRunning ? 'animate-spin' : ''}`} />
             {isTestRunning ? 'Running...' : 'Run Tests'}

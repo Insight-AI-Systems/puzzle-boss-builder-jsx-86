@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectTask, ProjectTest } from '@/utils/types/projectTypes';
 import { PhaseContent } from './PhaseContent';
 import { projectTracker } from '@/utils/ProjectTracker';
+import { useToast } from '@/hooks/use-toast';
 
 interface PhaseTabsProps {
   phases: number[];
@@ -26,9 +27,15 @@ export const PhaseTabs: React.FC<PhaseTabsProps> = ({
   onRunTests,
   onUpdateStatus
 }) => {
+  const { toast } = useToast();
+  
   const handlePhaseChange = (phase: string) => {
     console.log('Phase changed to:', phase);
     onPhaseChange(phase);
+    toast({
+      title: `Switched to Phase ${phase}`,
+      description: `Now viewing tasks for Phase ${phase}`,
+    });
   };
 
   return (
@@ -39,6 +46,7 @@ export const PhaseTabs: React.FC<PhaseTabsProps> = ({
             key={phase} 
             value={phase.toString()}
             data-state={activePhase === phase.toString() ? 'active' : 'inactive'}
+            className="data-[state=active]:bg-puzzle-aqua/10 data-[state=active]:text-puzzle-aqua"
           >
             Phase {phase}
           </TabsTrigger>
