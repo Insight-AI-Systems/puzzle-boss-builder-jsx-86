@@ -1,9 +1,9 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
 import PageLayout from '@/components/layouts/PageLayout';
 import PuzzleGame from '@/components/puzzle/PuzzleGame';
-import { ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 const PuzzleDemo = () => {
   return (
@@ -31,13 +31,12 @@ const PuzzleDemo = () => {
       <div className="bg-puzzle-black/30 border border-puzzle-aqua/20 p-6 rounded-lg">
         <h2 className="text-puzzle-white text-xl font-bold mb-2">About This Demo</h2>
         <p className="text-muted-foreground">
-          This is a demonstration of our jigsaw puzzle technology using the Headbreaker.js library.
-          The full version will include customizable images, difficulty levels, and competitive gameplay
-          with leaderboards and timed challenges.
+          This is a demonstration of our jigsaw puzzle technology. The full version will include customizable 
+          images, difficulty levels, and competitive gameplay with leaderboards and timed challenges.
         </p>
         <p className="text-muted-foreground mt-2">
-          Try dragging the pieces to complete the puzzle. Pieces will snap together
-          when they are close enough to their correct positions.
+          Try dragging the pieces to move them around. This simple demo showcases the basic puzzle 
+          mechanics that will be used in our full game.
         </p>
       </div>
     </PageLayout>
