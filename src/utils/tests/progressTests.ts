@@ -1,5 +1,5 @@
 
-import { TestRunner } from '../testRunner';
+import { TestRunner } from '@/utils/TestRunner';
 import { supabase } from '@/integrations/supabase/client';
 import { ProgressItem } from '@/hooks/useProgressItems';
 

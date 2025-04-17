@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { TestRunner, VerificationResult } from '@/utils/testRunner';
+import { TestRunner, VerificationResult } from '@/utils/TestRunner';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, AlertTriangle, AlertCircle, Play } from "lucide-react";
