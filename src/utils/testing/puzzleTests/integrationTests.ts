@@ -1,5 +1,4 @@
 
-// For now, let's simplify this file to avoid the test execution errors
 import { TestManager } from '../../managers/TestManager';
 
 export const testPuzzleIntegration = async (testManager: TestManager): Promise<void> => {

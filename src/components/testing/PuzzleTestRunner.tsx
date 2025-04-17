@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { BrowserCompatibilityTests, CompatibilityTestResult } from '@/utils/testing/BrowserCompatibilityTests';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+
+interface PuzzleTestRunnerProps {
+  testType?: string;
+}
 
 interface TestResult {
   name: string;
@@ -17,18 +20,23 @@ interface TestResult {
   errors: string[];
 }
 
-const PuzzleTestRunner: React.FC = () => {
+const PuzzleTestRunner: React.FC<PuzzleTestRunnerProps> = ({ testType = 'unit' }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [testProgress, setTestProgress] = useState(0);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [browserResult, setBrowserResult] = useState<CompatibilityTestResult | null>(null);
-  const [activeTab, setActiveTab] = useState('unit');
+  const [activeTab, setActiveTab] = useState(testType);
 
   useEffect(() => {
+    // Update active tab when testType prop changes
+    if (testType) {
+      setActiveTab(testType);
+    }
+    
     // Get browser info on mount
     const browserInfo = BrowserCompatibilityTests.getBrowserInfo();
     console.log('Browser Info:', browserInfo);
-  }, []);
+  }, [testType]);
 
   const runUnitTests = async () => {
     setIsRunning(true);

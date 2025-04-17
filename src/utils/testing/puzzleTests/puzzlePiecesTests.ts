@@ -46,11 +46,13 @@ describe('Puzzle Pieces Hook', () => {
   });
   
   test('shuffle function creates a different piece arrangement', async () => {
-    const { result, waitForNextUpdate } = renderHook(() => 
+    const { result } = renderHook(() => 
       usePuzzlePieces('3x3', defaultTestImage, true, mockSetIsLoading));
     
     // Wait for image loading to complete
-    await waitForNextUpdate();
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    });
     
     // Get initial positions
     const initialPositions = result.current.pieces.map(p => p.position);
@@ -68,11 +70,13 @@ describe('Puzzle Pieces Hook', () => {
   });
   
   test('tracks move count correctly', async () => {
-    const { result, waitForNextUpdate } = renderHook(() => 
+    const { result } = renderHook(() => 
       usePuzzlePieces('3x3', defaultTestImage, true, mockSetIsLoading));
     
     // Wait for image loading to complete
-    await waitForNextUpdate();
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    });
     
     expect(result.current.moveCount).toBe(0);
     
