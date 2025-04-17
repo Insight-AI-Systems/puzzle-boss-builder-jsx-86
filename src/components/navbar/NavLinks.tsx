@@ -22,8 +22,7 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
     return location.pathname.startsWith(path);
   };
   
-  const handleNavigation = (e: React.MouseEvent, path: string) => {
-    // Prevent default link behavior
+  const handleClick = (e: React.MouseEvent, path: string) => {
     e.preventDefault();
     
     // Log navigation attempt
@@ -32,7 +31,7 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
     // Close mobile menu if applicable
     if (onClick) onClick();
     
-    // Explicitly use navigate for programmatic navigation
+    // Use navigate for programmatic navigation
     navigate(path);
   };
   
@@ -47,7 +46,7 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
               ? 'text-puzzle-aqua bg-puzzle-aqua/10'
               : 'text-muted-foreground hover:text-puzzle-white hover:bg-white/10'
           }`}
-          onClick={(e) => handleNavigation(e, item.path)}
+          onClick={(e) => handleClick(e, item.path)}
         >
           {item.name}
         </Link>

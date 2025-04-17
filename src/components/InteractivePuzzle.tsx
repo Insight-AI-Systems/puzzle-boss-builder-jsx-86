@@ -10,6 +10,7 @@ const InteractivePuzzle: React.FC = () => {
   const [pieces, setPieces] = useState<PuzzlePiece[]>([]);
   const [emptyPosition, setEmptyPosition] = useState(8); // Bottom right is empty initially
   const [isSolved, setIsSolved] = useState(false);
+  const [selectedPiece, setSelectedPiece] = useState<number | null>(null);
   
   // Initialize puzzle
   useEffect(() => {
@@ -28,6 +29,7 @@ const InteractivePuzzle: React.FC = () => {
     setPieces(shuffledPieces);
     setEmptyPosition(8);
     setIsSolved(false);
+    setSelectedPiece(null);
     
     console.log("Puzzle reset and shuffled");
   };
@@ -54,12 +56,54 @@ const InteractivePuzzle: React.FC = () => {
     );
   };
   
-  const movePiece = (position: number) => {
-    if (!isAdjacent(position)) {
-      console.log(`Piece at position ${position} is not adjacent to empty space at ${emptyPosition}`);
-      return;
-    }
+  const handlePieceClick = (position: number) => {
+    console.log(`Piece at position ${position} clicked`);
     
+    if (isAdjacent(position)) {
+      movePiece(position);
+    } else if (selectedPiece === null) {
+      // First selection
+      console.log(`Selected piece at position ${position}`);
+      setSelectedPiece(position);
+    } else if (position !== selectedPiece) {
+      // Second selection - swap pieces
+      console.log(`Swapping pieces at positions ${selectedPiece} and ${position}`);
+      swapPieces(selectedPiece, position);
+      setSelectedPiece(null);
+    } else {
+      // Clicked the same piece twice
+      console.log(`Deselected piece at position ${position}`);
+      setSelectedPiece(null);
+    }
+  };
+  
+  const swapPieces = (position1: number, position2: number) => {
+    console.log(`Swapping pieces at positions ${position1} and ${position2}`);
+    
+    const updatedPieces = [...pieces];
+    const piece1Index = updatedPieces.findIndex(p => p.position === position1);
+    const piece2Index = updatedPieces.findIndex(p => p.position === position2);
+    
+    if (piece1Index !== -1 && piece2Index !== -1) {
+      // Swap positions
+      updatedPieces[piece1Index].position = position2;
+      updatedPieces[piece2Index].position = position1;
+      
+      setPieces(updatedPieces);
+      
+      // Check if either position is the empty position
+      if (position1 === emptyPosition) {
+        setEmptyPosition(position2);
+      } else if (position2 === emptyPosition) {
+        setEmptyPosition(position1);
+      }
+      
+      // Check if puzzle is solved
+      checkIfSolved(updatedPieces);
+    }
+  };
+  
+  const movePiece = (position: number) => {
     console.log(`Moving piece from position ${position} to empty position ${emptyPosition}`);
     
     // Move the piece to the empty position
@@ -71,7 +115,11 @@ const InteractivePuzzle: React.FC = () => {
     setEmptyPosition(position);
     
     // Check if the puzzle is solved
-    const isSolved = updatedPieces.every(piece => piece.id === piece.position + 1);
+    checkIfSolved(updatedPieces);
+  };
+  
+  const checkIfSolved = (currentPieces: PuzzlePiece[]) => {
+    const isSolved = currentPieces.every(piece => piece.id === piece.position + 1);
     setIsSolved(isSolved);
     
     if (isSolved) {
@@ -88,9 +136,12 @@ const InteractivePuzzle: React.FC = () => {
       grid[piece.position] = (
         <div 
           key={piece.id}
-          className={`puzzle-piece flex items-center justify-center text-xl font-bold bg-puzzle-black border border-puzzle-aqua/40 rounded-md h-16 w-16 transition-all 
-            ${isAdjacent(piece.position) ? 'cursor-pointer hover:bg-puzzle-black/80 hover:border-puzzle-aqua' : ''}`}
-          onClick={() => movePiece(piece.position)}
+          className={`puzzle-piece flex items-center justify-center text-xl font-bold 
+            ${selectedPiece === piece.position 
+              ? 'bg-puzzle-aqua/70 border-puzzle-gold' 
+              : 'bg-puzzle-black border-puzzle-aqua/40'} 
+            border rounded-md h-16 w-16 transition-all cursor-pointer hover:bg-puzzle-black/80 hover:border-puzzle-aqua`}
+          onClick={() => handlePieceClick(piece.position)}
         >
           {piece.id}
         </div>
@@ -99,7 +150,11 @@ const InteractivePuzzle: React.FC = () => {
     
     // Add empty piece
     grid[emptyPosition] = (
-      <div key="empty" className="empty h-16 w-16 bg-transparent"></div>
+      <div 
+        key="empty" 
+        className="empty h-16 w-16 bg-transparent cursor-pointer"
+        onClick={() => handlePieceClick(emptyPosition)}
+      ></div>
     );
     
     return grid;
