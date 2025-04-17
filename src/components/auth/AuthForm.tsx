@@ -1,18 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertCircle } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { SignInForm } from './forms/SignInForm';
-import { SignUpForm } from './forms/SignUpForm';
-import { ResetPasswordRequestForm } from './forms/ResetPasswordRequestForm';
-import { ResetPasswordConfirmForm } from './forms/ResetPasswordConfirmForm';
-import { ResetPasswordSuccess } from './ResetPasswordSuccess';
-import { GoogleAuthButton } from './buttons/GoogleAuthButton';
-import { DemoAccountInfo } from './demo/DemoAccountInfo';
+import { SignInView } from './views/SignInView';
+import { ResetPasswordRequestView } from './views/ResetPasswordRequestView';
+import { ResetPasswordConfirmView } from './views/ResetPasswordConfirmView';
+import { ResetPasswordSuccessView } from './views/ResetPasswordSuccessView';
 
 type AuthView = 'signin' | 'signup' | 'reset-request' | 'reset-confirm' | 'reset-success';
 
@@ -202,164 +196,54 @@ export const AuthForm = () => {
     }
   };
 
-  const renderAuthForm = () => {
+  const renderAuthView = () => {
     switch (currentView) {
       case 'signin':
-        return (
-          <>
-            <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="signin" onClick={() => setCurrentView('signin')}>Sign In</TabsTrigger>
-                <TabsTrigger value="signup" onClick={() => setCurrentView('signup')}>Sign Up</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="signin">
-                <SignInForm 
-                  email={email}
-                  password={password}
-                  errorMessage={errorMessage}
-                  isLoading={isLoading}
-                  setEmail={setEmail}
-                  setPassword={setPassword}
-                  handleSubmit={() => handleEmailAuth(false)}
-                  onForgotPassword={() => setCurrentView('reset-request')}
-                />
-              </TabsContent>
-
-              <TabsContent value="signup">
-                <SignUpForm 
-                  email={email}
-                  password={password}
-                  errorMessage={errorMessage}
-                  isLoading={isLoading}
-                  setEmail={setEmail}
-                  setPassword={setPassword}
-                  handleSubmit={() => handleEmailAuth(true)}
-                />
-              </TabsContent>
-
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-muted"></div>
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Or continue with
-                  </span>
-                </div>
-              </div>
-
-              <GoogleAuthButton 
-                isLoading={isLoading}
-                onClick={handleGoogleAuth}
-              />
-              
-              <DemoAccountInfo />
-            </Tabs>
-          </>
-        );
-        
       case 'signup':
         return (
-          <>
-            <Tabs defaultValue="signup" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="signin" onClick={() => setCurrentView('signin')}>Sign In</TabsTrigger>
-                <TabsTrigger value="signup" onClick={() => setCurrentView('signup')}>Sign Up</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="signin">
-                <SignInForm 
-                  email={email}
-                  password={password}
-                  errorMessage={errorMessage}
-                  isLoading={isLoading}
-                  setEmail={setEmail}
-                  setPassword={setPassword}
-                  handleSubmit={() => handleEmailAuth(false)}
-                  onForgotPassword={() => setCurrentView('reset-request')}
-                />
-              </TabsContent>
-
-              <TabsContent value="signup">
-                <SignUpForm 
-                  email={email}
-                  password={password}
-                  errorMessage={errorMessage}
-                  isLoading={isLoading}
-                  setEmail={setEmail}
-                  setPassword={setPassword}
-                  handleSubmit={() => handleEmailAuth(true)}
-                />
-              </TabsContent>
-
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-muted"></div>
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Or continue with
-                  </span>
-                </div>
-              </div>
-
-              <GoogleAuthButton 
-                isLoading={isLoading}
-                onClick={handleGoogleAuth}
-              />
-              
-              <DemoAccountInfo />
-            </Tabs>
-          </>
+          <SignInView 
+            email={email}
+            password={password}
+            errorMessage={errorMessage}
+            isLoading={isLoading}
+            setEmail={setEmail}
+            setPassword={setPassword}
+            handleEmailAuth={handleEmailAuth}
+            handleGoogleAuth={handleGoogleAuth}
+            onForgotPassword={() => setCurrentView('reset-request')}
+            currentView={currentView}
+            setCurrentView={setCurrentView as (view: string) => void}
+          />
         );
         
       case 'reset-request':
         return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-semibold">Reset Password</h2>
-              <p className="text-muted-foreground mt-1">
-                Enter your email and we'll send you instructions to reset your password
-              </p>
-            </div>
-            
-            <ResetPasswordRequestForm 
-              email={email}
-              errorMessage={errorMessage}
-              isLoading={isLoading}
-              setEmail={setEmail}
-              handleSubmit={handlePasswordResetRequest}
-              goBack={() => setCurrentView('signin')}
-            />
-          </div>
+          <ResetPasswordRequestView 
+            email={email}
+            errorMessage={errorMessage}
+            isLoading={isLoading}
+            setEmail={setEmail}
+            handlePasswordResetRequest={handlePasswordResetRequest}
+            goBack={() => setCurrentView('signin')}
+          />
         );
         
       case 'reset-confirm':
         return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-semibold">Create New Password</h2>
-              <p className="text-muted-foreground mt-1">
-                Enter your new password below
-              </p>
-            </div>
-            
-            <ResetPasswordConfirmForm 
-              password={password}
-              confirmPassword={confirmPassword}
-              errorMessage={errorMessage}
-              isLoading={isLoading}
-              setPassword={setPassword}
-              setConfirmPassword={setConfirmPassword}
-              handleSubmit={handlePasswordReset}
-            />
-          </div>
+          <ResetPasswordConfirmView 
+            password={password}
+            confirmPassword={confirmPassword}
+            errorMessage={errorMessage}
+            isLoading={isLoading}
+            setPassword={setPassword}
+            setConfirmPassword={setConfirmPassword}
+            handlePasswordReset={handlePasswordReset}
+          />
         );
         
       case 'reset-success':
         return (
-          <ResetPasswordSuccess 
+          <ResetPasswordSuccessView 
             goToSignIn={() => setCurrentView('signin')} 
           />
         );
@@ -371,7 +255,7 @@ export const AuthForm = () => {
 
   return (
     <div className="card-highlight p-6 bg-puzzle-black/50 border border-puzzle-aqua/20 rounded-lg shadow-lg">
-      {renderAuthForm()}
+      {renderAuthView()}
     </div>
   );
 };
