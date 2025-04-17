@@ -19,7 +19,13 @@ const PuzzleDemo = () => {
       </div>
 
       <div className="flex justify-center mb-12">
-        <PuzzleGame />
+        <PuzzleGame 
+          width={600}
+          height={450}
+          rows={3}
+          columns={3}
+          imageSrc="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b"
+        />
       </div>
 
       <div className="bg-puzzle-black/30 border border-puzzle-aqua/20 p-6 rounded-lg">

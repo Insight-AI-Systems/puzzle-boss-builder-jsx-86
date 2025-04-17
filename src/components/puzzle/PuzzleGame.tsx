@@ -19,27 +19,22 @@ const PuzzleGame: React.FC<PuzzleGameProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [canvas, setCanvas] = useState<headbreaker.Canvas | null>(null);
   
   useEffect(() => {
-    // Ensure the DOM element exists before creating the canvas
     if (!containerRef.current) return;
     
     // Clear any existing content
     containerRef.current.innerHTML = '';
+
+    // Generate a unique ID for this puzzle instance
+    const puzzleId = `puzzle-container-${Math.random().toString(36).substring(2, 11)}`;
+    containerRef.current.id = puzzleId;
     
-    // Use a setTimeout to ensure the DOM is fully rendered
-    setTimeout(() => {
+    // Wait for DOM to be fully ready
+    const timer = setTimeout(() => {
       try {
-        // Create a new Headbreaker canvas with the correct DOM element ID
-        const puzzleContainer = document.getElementById('puzzle-container');
-        
-        if (!puzzleContainer) {
-          console.error('Puzzle container element not found');
-          return;
-        }
-        
-        const puzzleCanvas = new headbreaker.Canvas('puzzle-container', {
+        // Create a new Headbreaker canvas
+        const puzzleCanvas = new headbreaker.Canvas(puzzleId, {
           width,
           height,
           pieceSize: 100,
@@ -49,15 +44,12 @@ const PuzzleGame: React.FC<PuzzleGameProps> = ({
           lineSoftness: 0.18,
         });
         
-        setCanvas(puzzleCanvas);
-        
-        // Load image and create puzzle once image is loaded
+        // Load image and create puzzle
         const img = new Image();
         img.crossOrigin = 'Anonymous';
         img.src = imageSrc;
         
         img.onload = () => {
-          // Create puzzle with the loaded image
           try {
             const imagePuzzle = puzzleCanvas.createImagePuzzle(columns, rows, img);
             
@@ -72,59 +64,50 @@ const PuzzleGame: React.FC<PuzzleGameProps> = ({
             puzzleCanvas.attachDragListeners(imagePuzzle);
             
             setIsLoaded(true);
+            console.log('Puzzle successfully loaded');
           } catch (error) {
-            console.error('Error creating puzzle:', error);
-            
-            // Fallback to colored pieces if image loading fails
-            const colorPuzzle = puzzleCanvas.createPuzzle(columns, rows);
-            
-            colorPuzzle.forEach((piece) => {
-              const color = `hsl(${Math.random() * 360}, 80%, 60%)`;
-              piece.fill = color;
-              piece.strokeColor = '#000';
-            });
-            
-            puzzleCanvas.adjustPieces(colorPuzzle);
-            puzzleCanvas.shuffle(colorPuzzle, 0.6);
-            puzzleCanvas.draw(colorPuzzle);
-            
-            puzzleCanvas.attachSolvedValidator(colorPuzzle);
-            puzzleCanvas.snapDistance = 40;
-            puzzleCanvas.attachDragListeners(colorPuzzle);
-            
-            setIsLoaded(true);
+            console.error('Error creating image puzzle:', error);
+            createFallbackPuzzle(puzzleCanvas);
           }
         };
         
         img.onerror = () => {
           console.error('Failed to load image');
-          
-          // Create a fallback colored puzzle
-          const colorPuzzle = puzzleCanvas.createPuzzle(columns, rows);
-          
-          colorPuzzle.forEach((piece) => {
-            const color = `hsl(${Math.random() * 360}, 80%, 60%)`;
-            piece.fill = color;
-            piece.strokeColor = '#000';
-          });
-          
-          puzzleCanvas.adjustPieces(colorPuzzle);
-          puzzleCanvas.shuffle(colorPuzzle, 0.6);
-          puzzleCanvas.draw(colorPuzzle);
-          
-          puzzleCanvas.attachSolvedValidator(colorPuzzle);
-          puzzleCanvas.snapDistance = 40;
-          puzzleCanvas.attachDragListeners(colorPuzzle);
-          
-          setIsLoaded(true);
+          createFallbackPuzzle(puzzleCanvas);
         };
       } catch (error) {
         console.error('Error initializing canvas:', error);
       }
-    }, 100); // Short delay to ensure DOM is ready
+    }, 200); // Slightly longer delay to ensure DOM is ready
+    
+    // Helper function to create a fallback colored puzzle
+    const createFallbackPuzzle = (canvas: headbreaker.Canvas) => {
+      try {
+        const colorPuzzle = canvas.createPuzzle(columns, rows);
+        
+        colorPuzzle.forEach((piece) => {
+          const color = `hsl(${Math.random() * 360}, 80%, 60%)`;
+          piece.fill = color;
+          piece.strokeColor = '#000';
+        });
+        
+        canvas.adjustPieces(colorPuzzle);
+        canvas.shuffle(colorPuzzle, 0.6);
+        canvas.draw(colorPuzzle);
+        
+        canvas.attachSolvedValidator(colorPuzzle);
+        canvas.snapDistance = 40;
+        canvas.attachDragListeners(colorPuzzle);
+        
+        setIsLoaded(true);
+        console.log('Fallback puzzle loaded');
+      } catch (error) {
+        console.error('Error creating fallback puzzle:', error);
+      }
+    };
     
     return () => {
-      // Cleanup function
+      clearTimeout(timer);
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
       }
@@ -142,7 +125,7 @@ const PuzzleGame: React.FC<PuzzleGameProps> = ({
             <div className="animate-pulse text-puzzle-aqua">Loading puzzle...</div>
           </div>
         )}
-        <div id="puzzle-container" ref={containerRef} className="w-full h-full" />
+        <div ref={containerRef} className="w-full h-full" />
       </div>
       <div className="mt-4 text-center max-w-2xl">
         <h3 className="text-lg font-bold text-puzzle-aqua">How to Play</h3>

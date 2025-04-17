@@ -12,18 +12,15 @@ const PuzzleComponent: React.FC = () => {
     // Clear any existing content
     containerRef.current.innerHTML = '';
     
+    // Generate a unique ID for this puzzle instance
+    const puzzleId = `simple-puzzle-container-${Math.random().toString(36).substring(2, 11)}`;
+    containerRef.current.id = puzzleId;
+    
     // Use a setTimeout to ensure the DOM is fully rendered
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       try {
-        const puzzleContainer = document.getElementById('simple-puzzle-container');
-        
-        if (!puzzleContainer) {
-          console.error('Simple puzzle container not found');
-          return;
-        }
-        
         // Create a new Headbreaker canvas with a 4x4 puzzle
-        const canvas = new headbreaker.Canvas('simple-puzzle-container', {
+        const canvas = new headbreaker.Canvas(puzzleId, {
           width: 400,
           height: 400,
           pieceSize: 100,
@@ -55,13 +52,15 @@ const PuzzleComponent: React.FC = () => {
         canvas.attachDragListeners(imagePuzzle);
         
         setIsLoaded(true);
+        console.log('Simple puzzle loaded successfully');
       } catch (error) {
         console.error('Error initializing simple puzzle:', error);
       }
-    }, 100);
+    }, 200);
     
     return () => {
       // Cleanup function if needed
+      clearTimeout(timer);
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
       }
@@ -80,7 +79,7 @@ const PuzzleComponent: React.FC = () => {
             <div className="animate-pulse text-puzzle-aqua">Loading puzzle...</div>
           </div>
         )}
-        <div id="simple-puzzle-container" ref={containerRef} />
+        <div ref={containerRef} className="w-full h-full" />
       </div>
       <p className="mt-4 text-sm text-muted-foreground">
         Drag the pieces to solve the puzzle. Pieces will snap together when close enough.
