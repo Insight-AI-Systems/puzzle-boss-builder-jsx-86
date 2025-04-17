@@ -15,7 +15,7 @@ export function useProfileMutation(profileId: string | null) {
       const profileUpdate = {
         username: updatedProfile.display_name,
         avatar_url: updatedProfile.avatar_url,
-        bio: updatedProfile.bio, // Added bio field to the update
+        bio: updatedProfile.bio,
       };
       
       const { data, error } = await supabase
@@ -30,7 +30,7 @@ export function useProfileMutation(profileId: string | null) {
       const updatedUserProfile: UserProfile = {
         id: data.id,
         display_name: data.username || null,
-        bio: data.bio || null, // Ensure bio is included in the returned data
+        bio: data.bio || null,
         avatar_url: data.avatar_url,
         role: (data.role || 'player') as UserRole,
         credits: data.credits || 0,

@@ -22,7 +22,7 @@ export function useProfileData(profileId: string | null) {
       const userProfile: UserProfile = {
         id: data.id,
         display_name: data.username || null,
-        bio: data.bio || null, // Ensure bio is properly retrieved from the database
+        bio: data.bio || null,
         avatar_url: data.avatar_url,
         role: (data.role || 'player') as UserRole,
         credits: data.credits || 0,
