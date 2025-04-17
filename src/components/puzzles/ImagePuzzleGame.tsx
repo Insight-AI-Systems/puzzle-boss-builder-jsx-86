@@ -1,19 +1,20 @@
-
-import React, { useRef, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDeviceInfo } from '@/hooks/use-mobile';
 import { difficultyConfig, DifficultyLevel } from './types/puzzle-types';
+import { useImageLoading } from './hooks/useImageLoading';
 import { usePuzzlePieces } from './hooks/usePuzzlePieces';
 import { usePuzzleState } from './hooks/usePuzzleState';
-import { createPieceHandlers } from './utils/pieceInteractionHandlers';
-import { calculateContainerSize, getRecommendedDifficulty } from './utils/puzzleSizeUtils';
-import { useSoundEffects } from './utils/useSoundEffects';
-import { useImageLoading } from './hooks/useImageLoading';
 import { usePuzzleGridEvents } from './hooks/usePuzzleGridEvents';
+import { useSavedPuzzles } from './hooks/useSavedPuzzles';
+import { getImagePieceStyle } from './utils/pieceStyleUtils';
 import PuzzleGrid from './components/PuzzleGrid';
 import DirectionalControls from './components/DirectionalControls';
 import PuzzleStatusMessage from './components/PuzzleStatusMessage';
 import PuzzleStateDisplay from './components/PuzzleStateDisplay';
 import GameControlsLayout from './components/GameControlsLayout';
+import SaveLoadControls from './components/SaveLoadControls';
+import { SavedPuzzleState } from './types/save-types';
+import { DEFAULT_IMAGES } from './constants/puzzle-images';
 import './styles/puzzle-animations.css';
 
 interface ImagePuzzleGameProps {
@@ -34,7 +35,6 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   
-  // Auto-suggest appropriate difficulty based on screen size
   const initialDifficulty = getRecommendedDifficulty(width);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(initialDifficulty);
   
@@ -137,6 +137,53 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
   const containerSize = calculateContainerSize(isMobile, difficulty);
   const totalPieces = gridSize * gridSize;
 
+  const { savedGames, saveGame, deleteSave } = useSavedPuzzles();
+  const [currentGameId] = useState<string>(`puzzle-${Date.now()}`);
+
+  useEffect(() => {
+    if (!isSolved && pieces.length > 0) {
+      const autoSaveInterval = setInterval(() => {
+        const saveState: SavedPuzzleState = {
+          id: currentGameId,
+          name: `Puzzle ${new Date().toLocaleTimeString()}`,
+          timestamp: Date.now(),
+          difficulty,
+          pieces,
+          moveCount,
+          timeSpent: puzzleState.timeSpent,
+          selectedImage,
+          version: '1.0.0'
+        };
+        saveGame(saveState);
+      }, 30000);
+
+      return () => clearInterval(autoSaveInterval);
+    }
+  }, [pieces, isSolved, currentGameId, difficulty, moveCount, puzzleState.timeSpent, selectedImage]);
+
+  const handleSave = useCallback(() => {
+    const saveState: SavedPuzzleState = {
+      id: currentGameId,
+      name: `Puzzle ${new Date().toLocaleTimeString()}`,
+      timestamp: Date.now(),
+      difficulty,
+      pieces,
+      moveCount,
+      timeSpent: puzzleState.timeSpent,
+      selectedImage,
+      version: '1.0.0'
+    };
+    saveGame(saveState);
+  }, [currentGameId, difficulty, pieces, moveCount, puzzleState.timeSpent, selectedImage, saveGame]);
+
+  const handleLoad = useCallback((save: SavedPuzzleState) => {
+    setSelectedImage(save.selectedImage);
+    setPieces(save.pieces);
+    setMoveCount(save.moveCount);
+    setDifficulty(save.difficulty as DifficultyLevel);
+    puzzleState.loadState(save.timeSpent);
+  }, [puzzleState]);
+
   return (
     <div className="flex flex-col items-center w-full max-w-full px-2">
       <canvas ref={canvasRef} width="600" height="600" className="hidden" />
@@ -152,6 +199,18 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
           onNewGame={handleNewGame}
           onDifficultyChange={handleDifficultyChange}
           onTogglePause={puzzleState.togglePause}
+          isMobile={isMobile}
+        />
+      </div>
+
+      <div className="w-full mb-4">
+        <SaveLoadControls
+          onSave={handleSave}
+          onLoad={handleLoad}
+          onDelete={deleteSave}
+          savedGames={savedGames}
+          currentGameId={currentGameId}
+          isLoading={isLoading}
           isMobile={isMobile}
         />
       </div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { DifficultyLevel, PuzzleState } from '../types/puzzle-types';
@@ -84,6 +83,15 @@ export const usePuzzleState = (initialDifficulty: DifficultyLevel = '3x3') => {
     }
   }, [state.isComplete]);
   
+  // Load state from saved time spent
+  const loadState = useCallback((savedTimeSpent: number) => {
+    setState(prev => ({
+      ...prev,
+      timeSpent: savedTimeSpent,
+      isActive: true
+    }));
+  }, []);
+
   // Format time for display (mm:ss)
   const formattedTime = formatTime(state.timeSpent);
   
@@ -95,7 +103,8 @@ export const usePuzzleState = (initialDifficulty: DifficultyLevel = '3x3') => {
     updateCorrectPieces,
     incrementMoves,
     changeDifficulty,
-    togglePause
+    togglePause,
+    loadState
   };
 };
 
