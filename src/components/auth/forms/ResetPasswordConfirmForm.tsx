@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,8 +26,13 @@ export const ResetPasswordConfirmForm: React.FC<ResetPasswordConfirmFormProps> =
   setConfirmPassword,
   handleSubmit,
 }) => {
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSubmit();
+  };
+
   return (
-    <div className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4">
       {errorMessage && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -60,8 +65,8 @@ export const ResetPasswordConfirmForm: React.FC<ResetPasswordConfirmFormProps> =
       </div>
       
       <Button
+        type="submit"
         className="w-full"
-        onClick={handleSubmit}
         disabled={isLoading || password !== confirmPassword || !password}
       >
         {isLoading ? (
@@ -71,6 +76,6 @@ export const ResetPasswordConfirmForm: React.FC<ResetPasswordConfirmFormProps> =
         )}
         Reset Password
       </Button>
-    </div>
+    </form>
   );
 };
