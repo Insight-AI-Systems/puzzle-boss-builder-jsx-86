@@ -42,7 +42,7 @@ const Navbar: React.FC = () => {
           </div>
           
           {/* Mobile Navigation Toggle */}
-          <div className="md:hidden flex">
+          <div className="md:hidden flex items-center">
             {!isLoading && profile ? (
               <UserMenu profile={profile} isMobile={true} />
             ) : (
