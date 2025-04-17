@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Clock, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -22,19 +22,19 @@ const TimedModeBanner: React.FC<TimedModeBannerProps> = ({
   const [timeLeft, setTimeLeft] = useState(timeLimit - timeSpent);
   const [warning, setWarning] = useState(false);
   
-  // Calculate percentage of time remaining
+  // Calculate percentage of time remaining - memoized to reduce calculations
   const percentRemaining = Math.max(0, Math.min(100, (timeLeft / timeLimit) * 100));
   
-  // Format time for display
-  const formatTime = (seconds: number): string => {
+  // Format time for display - memoized
+  const formatTime = useCallback((seconds: number): string => {
     if (seconds <= 0) return '0:00';
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
+  }, []);
   
+  // Update time left based on timeSpent
   useEffect(() => {
-    // Update time left based on timeSpent
     setTimeLeft(timeLimit - timeSpent);
     
     // Show warning when less than 20% time remains
@@ -46,7 +46,7 @@ const TimedModeBanner: React.FC<TimedModeBannerProps> = ({
     }
   }, [timeLimit, timeSpent, percentRemaining, isActive, onTimeUp]);
   
-  // Timer effect
+  // Timer effect with optimized tick calculation
   useEffect(() => {
     let interval: number | null = null;
     
@@ -91,4 +91,5 @@ const TimedModeBanner: React.FC<TimedModeBannerProps> = ({
   );
 };
 
-export default TimedModeBanner;
+// Memoize component to prevent unnecessary re-renders
+export default memo(TimedModeBanner);

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import SoundControls from './SoundControls';
 import PuzzleControls from './PuzzleControls';
 import { DifficultyLevel } from '../types/puzzle-types';
@@ -20,6 +20,12 @@ interface GameControlsLayoutProps {
   handleDifficultyChange: (difficulty: DifficultyLevel) => void;
 }
 
+// Memoized sound controls component to prevent unnecessary re-renders
+const MemoizedSoundControls = memo(SoundControls);
+
+// Memoized puzzle controls component to prevent unnecessary re-renders
+const MemoizedPuzzleControls = memo(PuzzleControls);
+
 const GameControlsLayout: React.FC<GameControlsLayoutProps> = ({
   isMobile,
   muted,
@@ -38,7 +44,7 @@ const GameControlsLayout: React.FC<GameControlsLayoutProps> = ({
   return (
     <div className={`w-full flex ${isMobile ? 'flex-col' : 'flex-row'} items-center justify-center gap-2 mb-3`}>
       <div className={`${isMobile ? 'w-full mb-2' : 'mr-4'}`}>
-        <SoundControls
+        <MemoizedSoundControls
           muted={muted}
           volume={volume}
           onToggleMute={toggleMute}
@@ -47,7 +53,7 @@ const GameControlsLayout: React.FC<GameControlsLayoutProps> = ({
         />
       </div>
       
-      <PuzzleControls
+      <MemoizedPuzzleControls
         moveCount={moveCount}
         difficulty={difficulty}
         setDifficulty={handleDifficultyChange}
@@ -62,4 +68,4 @@ const GameControlsLayout: React.FC<GameControlsLayoutProps> = ({
   );
 };
 
-export default GameControlsLayout;
+export default memo(GameControlsLayout);

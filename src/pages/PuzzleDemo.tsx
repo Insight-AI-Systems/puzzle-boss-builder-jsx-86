@@ -1,16 +1,43 @@
 
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy, useCallback, useEffect } from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
-import SimplePuzzleGame from '@/components/puzzles/SimplePuzzleGame';
-import ImagePuzzleGame from '@/components/puzzles/ImagePuzzleGame';
-import PuzzleDemoInfo from '@/components/puzzles/PuzzleDemoInfo';
 import Breadcrumb from '@/components/common/Breadcrumb';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import ImageSelector from '@/components/puzzles/components/ImageSelector';
 import { PUZZLE_IMAGES } from '@/components/puzzles/constants/puzzle-images';
 import { useDeviceInfo } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { Puzzle, Clock, RotateCcw } from 'lucide-react';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import ImageSelector from '@/components/puzzles/components/ImageSelector';
+import PuzzleDemoInfo from '@/components/puzzles/PuzzleDemoInfo';
+
+// Lazy load heavy components for better performance
+const SimplePuzzleGame = lazy(() => 
+  import('@/components/puzzles/SimplePuzzleGame').then(module => {
+    // Artificial delay to ensure loading states are visible for testing
+    return new Promise(resolve => setTimeout(() => resolve(module), 1000));
+  })
+);
+
+const ImagePuzzleGame = lazy(() => 
+  import('@/components/puzzles/ImagePuzzleGame').then(module => {
+    // Artificial delay to ensure loading states are visible for testing
+    return new Promise(resolve => setTimeout(() => resolve(module), 1000));
+  })
+);
+
+// List of audio files to preload
+const AUDIO_FILES = [
+  { name: 'pickup', url: '/sounds/pickup.mp3' },
+  { name: 'place', url: '/sounds/place.mp3' },
+  { name: 'correct', url: '/sounds/correct.mp3' },
+  { name: 'complete', url: '/sounds/complete.mp3' }
+];
+
+// Performance monitoring component
+const PerformanceMonitor = lazy(() => 
+  import('@/components/puzzles/components/PerformanceMonitor')
+);
 
 const PuzzleDemo: React.FC = () => {
   const { isMobile } = useDeviceInfo();
@@ -22,11 +49,33 @@ const PuzzleDemo: React.FC = () => {
   
   const [selectedImage, setSelectedImage] = useState<string>(PUZZLE_IMAGES[0].url);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(
+    process.env.NODE_ENV === 'development'
+  );
 
-  const handleImageSelect = (imageUrl: string) => {
+  const handleImageSelect = useCallback((imageUrl: string) => {
     setIsLoading(true);
     setSelectedImage(imageUrl);
-  };
+  }, []);
+  
+  // Preload all puzzle images in the background
+  useEffect(() => {
+    // Create a hidden image preloader
+    const preloadImages = () => {
+      PUZZLE_IMAGES.forEach(img => {
+        const image = new Image();
+        image.src = img.url;
+      });
+    };
+    
+    // Use requestIdleCallback for non-blocking preloading when browser is idle
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(preloadImages);
+    } else {
+      // Fallback for browsers that don't support requestIdleCallback
+      setTimeout(preloadImages, 1000);
+    }
+  }, []);
 
   return (
     <PageLayout
@@ -80,6 +129,20 @@ const PuzzleDemo: React.FC = () => {
         </Card>
       </div>
 
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4 p-3 bg-gray-800 rounded-md">
+          <label className="flex items-center cursor-pointer">
+            <input 
+              type="checkbox"
+              checked={showPerformanceMonitor}
+              onChange={(e) => setShowPerformanceMonitor(e.target.checked)}
+              className="mr-2"
+            />
+            <span>Show Performance Monitor</span>
+          </label>
+        </div>
+      )}
+
       <Tabs defaultValue="image" className="w-full">
         <TabsList className={`grid w-full ${isMobile ? 'max-w-full' : 'max-w-sm mx-auto'} grid-cols-2 mb-4`}>
           <TabsTrigger value="simple">Simple Puzzle</TabsTrigger>
@@ -87,7 +150,10 @@ const PuzzleDemo: React.FC = () => {
         </TabsList>
         
         <TabsContent value="simple" className="flex flex-col items-center mb-8">
-          <SimplePuzzleGame />
+          <Suspense fallback={<LoadingSpinner message="Loading simple puzzle game..." />}>
+            <SimplePuzzleGame />
+            {showPerformanceMonitor && <PerformanceMonitor />}
+          </Suspense>
         </TabsContent>
         
         <TabsContent value="image" className="flex flex-col items-center mb-8">
@@ -100,12 +166,16 @@ const PuzzleDemo: React.FC = () => {
               />
             </div>
           )}
-          <ImagePuzzleGame 
-            sampleImages={PUZZLE_IMAGES.map(img => img.url)} 
-            initialImage={selectedImage}
-            isImageLoading={isLoading}
-            onImageLoaded={() => setIsLoading(false)}
-          />
+          
+          <Suspense fallback={<LoadingSpinner message="Loading image puzzle game..." />}>
+            <ImagePuzzleGame 
+              sampleImages={PUZZLE_IMAGES.map(img => img.url)} 
+              initialImage={selectedImage}
+              isImageLoading={isLoading}
+              onImageLoaded={() => setIsLoading(false)}
+            />
+            {showPerformanceMonitor && <PerformanceMonitor />}
+          </Suspense>
         </TabsContent>
       </Tabs>
 

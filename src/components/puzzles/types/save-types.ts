@@ -22,3 +22,10 @@ export interface SaveManagerState {
   saves: SavedPuzzleState[];
   lastAutoSave?: string | number;
 }
+
+export interface SaveLoadStats {
+  totalSaves: number;
+  lastSaveTime: Date | null;
+  storageUsed: number; // in bytes
+  storageLimit: number; // in bytes
+}

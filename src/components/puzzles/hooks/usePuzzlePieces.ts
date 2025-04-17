@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { PuzzlePiece, difficultyConfig, DifficultyLevel } from '../types/puzzle-types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,10 +14,11 @@ export const usePuzzlePieces = (
   const [moveCount, setMoveCount] = useState(0);
   const [isSolved, setIsSolved] = useState(false);
   
+  const cleanupRef = useRef<(() => void) | null>(null);
+  
   const gridSize = difficultyConfig[difficulty].gridSize;
   const pieceCount = gridSize * gridSize;
   
-  // Initialize puzzle pieces
   useEffect(() => {
     if (isLoading) {
       setIsSolved(false);
@@ -27,7 +27,16 @@ export const usePuzzlePieces = (
       
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.src = `${selectedImage}?w=600&h=600&fit=crop&auto=format`;
+      
+      const cacheBuster = process.env.NODE_ENV === 'development' ? `&cb=${Date.now()}` : '';
+      
+      const size = gridSize * 100;
+      img.src = `${selectedImage}?w=${size}&h=${size}&fit=crop&auto=format${cacheBuster}`;
+      
+      cleanupRef.current = () => {
+        img.onload = null;
+        img.onerror = null;
+      };
       
       img.onload = () => {
         initializePuzzlePieces();
@@ -42,12 +51,17 @@ export const usePuzzlePieces = (
         });
         setIsLoading(false);
       };
+      
+      return () => {
+        if (cleanupRef.current) {
+          cleanupRef.current();
+        }
+      };
     }
-  }, [difficulty, selectedImage, isLoading]);
+  }, [difficulty, selectedImage, isLoading, gridSize, toast]);
   
-  // Create puzzle pieces
-  const initializePuzzlePieces = () => {
-    // Create array of puzzle pieces
+  const initializePuzzlePieces = useCallback(() => {
+    console.time('initializePieces');
     const initialPieces: PuzzlePiece[] = [];
     
     for (let i = 0; i < pieceCount; i++) {
@@ -59,21 +73,33 @@ export const usePuzzlePieces = (
       });
     }
     
-    // Shuffle pieces
-    const shuffledPieces = [...initialPieces]
-      .sort(() => Math.random() - 0.5)
-      .map((p, index) => ({
-        ...p,
-        position: index
-      }));
-    
+    const shuffledPieces = shufflePieces([...initialPieces]);
     setPieces(shuffledPieces);
-  };
+    console.timeEnd('initializePieces');
+  }, [pieceCount]);
   
-  // Check if puzzle is solved
+  const shufflePieces = useCallback((piecesToShuffle: PuzzlePiece[]): PuzzlePiece[] => {
+    console.time('shufflePieces');
+    for (let i = piecesToShuffle.length - 1; i > 0; i--) {
+      const j = Math.floor((window.crypto ? 
+        window.crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296 : 
+        Math.random()) * (i + 1));
+      
+      [piecesToShuffle[i], piecesToShuffle[j]] = [piecesToShuffle[j], piecesToShuffle[i]];
+    }
+    
+    const result = piecesToShuffle.map((p, index) => ({
+      ...p,
+      position: index
+    }));
+    console.timeEnd('shufflePieces');
+    return result;
+  }, []);
+  
   useEffect(() => {
     if (pieces.length === 0) return;
     
+    console.time('checkSolution');
     const solved = pieces.every((piece) => {
       const pieceNumber = parseInt(piece.id.split('-')[1]);
       return pieceNumber === pieces.indexOf(piece);
@@ -87,27 +113,26 @@ export const usePuzzlePieces = (
         variant: "default",
       });
     }
+    console.timeEnd('checkSolution');
   }, [pieces, isSolved, moveCount, difficulty, toast]);
 
-  // Shuffle pieces
-  const handleShuffleClick = () => {
+  const handleShuffleClick = useCallback(() => {
     if (isSolved) {
       setIsSolved(false);
     }
     
-    console.log("Shuffling pieces");
+    console.time('handleShuffle');
     setPieces(prevPieces => {
-      const shuffled = [...prevPieces].sort(() => Math.random() - 0.5);
-      // Update positions after shuffle
-      return shuffled.map((p, index) => ({
+      const shuffled = shufflePieces([...prevPieces]);
+      return shuffled.map(p => ({
         ...p,
-        position: index,
         isDragging: false
       }));
     });
     setDraggedPiece(null);
     setMoveCount(0);
-  };
+    console.timeEnd('handleShuffle');
+  }, [isSolved, shufflePieces]);
   
   return {
     pieces,
