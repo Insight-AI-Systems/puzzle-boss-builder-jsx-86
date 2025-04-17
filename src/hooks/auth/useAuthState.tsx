@@ -27,8 +27,8 @@ export function useAuthState() {
       }
     );
 
-    // Then check for existing session - use a small timeout to prevent blocking
-    setTimeout(async () => {
+    // Check for existing session with minimal delay
+    const sessionTimer = setTimeout(async () => {
       try {
         if (!isActive) return;
         
@@ -55,7 +55,7 @@ export function useAuthState() {
           setIsLoading(false);
         }
       }
-    }, 50);
+    }, 10); // Very small timeout for non-blocking behavior
 
     // Guarantee loading state ends after a maximum wait time
     const safetyTimer = setTimeout(() => {
@@ -63,11 +63,12 @@ export function useAuthState() {
         console.log('Safety timeout triggered in useAuthState');
         setIsLoading(false);
       }
-    }, 1000);
+    }, 800); // Even shorter timeout to prevent wheel of death
 
     return () => {
       isActive = false;
       authListener.subscription.unsubscribe();
+      clearTimeout(sessionTimer);
       clearTimeout(safetyTimer);
     };
   }, []);

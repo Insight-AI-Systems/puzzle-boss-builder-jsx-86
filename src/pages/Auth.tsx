@@ -19,16 +19,16 @@ const Auth = () => {
   
   // Add safety timeout to prevent infinite loading
   useEffect(() => {
-    // Set a short timeout for initial page load
+    // Set a very short timeout for initial page load
     const pageTimer = setTimeout(() => {
       setIsPageLoading(false);
-    }, 100); // Shorter timeout for faster rendering
+    }, 50); // Ultra-short timeout for faster rendering
 
-    // Set a longer safety timeout to prevent infinite loading
+    // Set a short safety timeout to prevent infinite loading
     const safetyTimer = setTimeout(() => {
       setLoadingTimeout(true);
       console.log('Safety timeout triggered - forcing auth page to render');
-    }, 1500); // Shorter timeout to prevent long "wheel of death"
+    }, 1000); // Even shorter timeout to prevent long "wheel of death"
 
     return () => {
       clearTimeout(pageTimer);
@@ -70,7 +70,7 @@ const Auth = () => {
     );
   }
 
-  // Show loading indicator only initially and for a very short time
+  // Show loading indicator only for a very short time
   if (isPageLoading && authLoading) {
     return (
       <div className="min-h-screen bg-puzzle-black flex items-center justify-center p-4">

@@ -28,11 +28,13 @@ export const AuthForm = () => {
     handlePasswordReset
   } = useAuth();
   
-  // Check for password reset token in URL
+  // Check for password reset token in URL (only once on initial load)
   useEffect(() => {
     const type = searchParams.get('type');
     if (type === 'recovery') {
       setCurrentView('reset-confirm');
+    } else if (searchParams.get('signup') === 'true') {
+      setCurrentView('signup');
     }
   }, [searchParams]);
 
