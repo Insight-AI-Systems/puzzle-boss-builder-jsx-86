@@ -18,13 +18,16 @@ const Auth = () => {
       setDefaultTab('signup');
     }
     
-    // Add a short delay to ensure content renders even if there's an issue with auth state
+    // Ensure content is displayed after a short delay
     const timer = setTimeout(() => {
       setShowContent(true);
-    }, 500);
+    }, 100);
     
     return () => clearTimeout(timer);
   }, [searchParams]);
+  
+  // For debugging
+  console.log('Auth state:', { isLoading, currentUserId, showContent, defaultTab });
   
   // Redirect to home if already authenticated
   if (currentUserId) {
@@ -35,7 +38,7 @@ const Auth = () => {
     <div className="min-h-screen bg-puzzle-black">
       <Navbar />
       <div className="container mx-auto flex items-center justify-center py-12 px-4">
-        {isLoading && !showContent ? (
+        {(isLoading && !showContent) ? (
           <div className="w-full max-w-md space-y-8">
             <Skeleton className="h-12 w-3/4 mx-auto mb-6" />
             <Skeleton className="h-64 w-full rounded-lg" />

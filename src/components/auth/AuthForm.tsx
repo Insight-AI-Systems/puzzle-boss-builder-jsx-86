@@ -20,6 +20,14 @@ export const AuthForm = ({ defaultTab = 'signin' }: AuthFormProps) => {
   const [errorMessage, setErrorMessage] = useState('');
   const { toast } = useToast();
   
+  // Add debug log to check if component is rendering
+  console.log('AuthForm rendering with defaultTab:', defaultTab);
+  
+  useEffect(() => {
+    // Reset error on tab change
+    setErrorMessage('');
+  }, [defaultTab]);
+  
   const handleEmailAuth = async (isSignUp: boolean) => {
     try {
       setIsLoading(true);
@@ -91,7 +99,7 @@ export const AuthForm = ({ defaultTab = 'signin' }: AuthFormProps) => {
   };
 
   return (
-    <div className="card-highlight p-6">
+    <div className="card-highlight p-6 bg-background shadow-md rounded-lg border border-border">
       <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="signin">Sign In</TabsTrigger>

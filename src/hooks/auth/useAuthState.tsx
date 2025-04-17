@@ -10,6 +10,8 @@ export function useAuthState() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log('Setting up auth state listener');
+    
     // First set up auth state change listener 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
@@ -24,7 +26,10 @@ export function useAuthState() {
     // Then check for existing session
     const getInitialSession = async () => {
       try {
+        console.log('Getting initial session');
         const { data } = await supabase.auth.getSession();
+        
+        console.log('Initial session data:', data);
         
         if (data.session) {
           setSession(data.session);
@@ -34,6 +39,7 @@ export function useAuthState() {
       } catch (error) {
         console.error('Error getting session:', error);
       } finally {
+        // Always set loading to false after checking for session
         setIsLoading(false);
       }
     };
@@ -41,6 +47,7 @@ export function useAuthState() {
     getInitialSession();
 
     return () => {
+      console.log('Cleaning up auth listener');
       authListener.subscription.unsubscribe();
     };
   }, []);
