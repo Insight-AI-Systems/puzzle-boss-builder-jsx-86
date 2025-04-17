@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -49,7 +48,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     toast({
       title: "Task Completed",
       description: `Finished task: ${task.name}`,
-      variant: "success",
+      variant: "default",
     });
     onUpdateStatus(task.id, 'completed');
   };
