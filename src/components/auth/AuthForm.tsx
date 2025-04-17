@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +26,12 @@ export const AuthForm = ({ defaultTab = 'signin' }: AuthFormProps) => {
       setErrorMessage('');
       
       console.log(`Attempting to ${isSignUp ? 'sign up' : 'sign in'} with email: ${email}`);
+      
+      if (!email || !password) {
+        setErrorMessage('Email and password are required');
+        setIsLoading(false);
+        return;
+      }
       
       const { data, error } = isSignUp 
         ? await supabase.auth.signUp({ email, password })

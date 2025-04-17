@@ -10,31 +10,35 @@ export function useAuthState() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // First get the current session
-    const getSession = async () => {
-      setIsLoading(true);
-      const { data } = await supabase.auth.getSession();
-      
-      if (data.session) {
-        setSession(data.session);
-        setUser(data.session.user);
-        setCurrentUserId(data.session.user.id);
-      }
-      
-      setIsLoading(false);
-    };
-    
-    getSession();
-
-    // Set up auth state change listener
+    // First set up auth state change listener 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
-        setSession(session);
-        setUser(session?.user || null);
-        setCurrentUserId(session?.user?.id || null);
+      (event, newSession) => {
+        console.log('Auth state changed:', event, newSession?.user?.id);
+        setSession(newSession);
+        setUser(newSession?.user || null);
+        setCurrentUserId(newSession?.user?.id || null);
+        setIsLoading(false);
       }
     );
+
+    // Then check for existing session
+    const getInitialSession = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        
+        if (data.session) {
+          setSession(data.session);
+          setUser(data.session.user);
+          setCurrentUserId(data.session.user.id);
+        }
+      } catch (error) {
+        console.error('Error getting session:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    getInitialSession();
 
     return () => {
       authListener.subscription.unsubscribe();
