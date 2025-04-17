@@ -1,13 +1,39 @@
 
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { Loader2 } from 'lucide-react';
 
 const Auth = () => {
-  const { currentUserId } = useUserProfile();
+  const { currentUserId, isLoading } = useUserProfile();
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const navigate = useNavigate();
   
+  useEffect(() => {
+    // Add a small delay to ensure components are fully loaded
+    const timer = setTimeout(() => {
+      setIsPageLoading(false);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   // Redirect to home if already authenticated
+  useEffect(() => {
+    if (currentUserId && !isLoading) {
+      navigate('/', { replace: true });
+    }
+  }, [currentUserId, isLoading, navigate]);
+
+  if (isPageLoading || isLoading) {
+    return (
+      <div className="min-h-screen bg-puzzle-black flex items-center justify-center p-4">
+        <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+      </div>
+    );
+  }
+
   if (currentUserId) {
     return <Navigate to="/" replace />;
   }

@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Mail, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -15,6 +16,7 @@ export const AuthForm = () => {
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const handleEmailAuth = async (isSignUp: boolean) => {
     try {
@@ -42,6 +44,11 @@ export const AuthForm = () => {
           ? 'Please check your email to verify your account.'
           : 'Successfully signed in.',
       });
+
+      // Redirect to home page on successful sign-in
+      if (!isSignUp && data.session) {
+        navigate('/');
+      }
     } catch (error) {
       console.error('Authentication error:', error);
       
@@ -81,7 +88,7 @@ export const AuthForm = () => {
   };
 
   return (
-    <div className="card-highlight p-6">
+    <div className="card-highlight p-6 bg-puzzle-black/50 border border-puzzle-aqua/20 rounded-lg shadow-lg">
       <Tabs defaultValue="signin" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="signin">Sign In</TabsTrigger>
