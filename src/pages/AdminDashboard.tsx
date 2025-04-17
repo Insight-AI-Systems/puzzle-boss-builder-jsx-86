@@ -14,8 +14,8 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const [accessChecked, setAccessChecked] = useState(false);
 
+  // Consolidated useEffect for access checks and logging
   useEffect(() => {
-    // More verbose debug logging
     console.log('Admin Dashboard - Auth State:', { 
       isLoading, 
       isLoggedIn: !!currentUserId,
@@ -24,40 +24,45 @@ const AdminDashboard = () => {
       role: profile?.role
     });
     
-    // Force update the access check after a delay to ensure everything is loaded
-    const timer = setTimeout(() => {
-      // Only redirect if user is not admin and we have a currentUserId (meaning they're logged in)
-      if (!isLoading) {
-        if (!isAdmin && currentUserId) {
-          toast({
-            title: "Access Denied",
-            description: `You don't have admin privileges. Current role: ${profile?.role || 'unknown'}`,
-            variant: "destructive",
-          });
-          navigate('/', { replace: true });
-        } else if (isAdmin) {
-          toast({
-            title: "Admin Access Granted",
-            description: `Welcome to the Admin Dashboard. Your role: ${profile?.role}`,
-          });
-        }
-        setAccessChecked(true);
+    // Only check access when loading is complete
+    if (!isLoading) {
+      if (!isAdmin && currentUserId) {
+        console.log('Access denied, redirecting to home');
+        toast({
+          title: "Access Denied",
+          description: `You don't have admin privileges. Current role: ${profile?.role || 'unknown'}`,
+          variant: "destructive",
+        });
+        navigate('/', { replace: true });
+      } else if (isAdmin) {
+        console.log('Admin access granted');
+        toast({
+          title: "Admin Access Granted",
+          description: `Welcome to the Admin Dashboard. Your role: ${profile?.role}`,
+        });
       }
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, [isLoading, isAdmin, navigate, profile, currentUserId, toast]);
-
-  // If user is explicitly super_admin, force isAdmin to true
-  useEffect(() => {
-    if (profile?.role === 'super_admin' && !isAdmin) {
-      console.log('Force granting admin access to super_admin user');
       setAccessChecked(true);
     }
-  }, [profile, isAdmin]);
+  }, [isLoading, isAdmin, navigate, profile, currentUserId, toast]);
 
-  // Force entry for super_admin regardless of isAdmin flag
-  if (profile?.role === 'super_admin') {
+  // Special super_admin handling 
+  const isSuperAdmin = profile?.role === 'super_admin';
+
+  // Loading state
+  if (isLoading || (!accessChecked && !isSuperAdmin)) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+        </div>
+      </>
+    );
+  }
+
+  // Super admin access is always permitted
+  if (isSuperAdmin) {
+    console.log('Rendering super admin dashboard');
     return (
       <>
         <Navbar />
@@ -71,19 +76,9 @@ const AdminDashboard = () => {
     );
   }
 
-  if (isLoading || !accessChecked) {
-    return (
-      <>
-        <Navbar />
-        <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
-        </div>
-      </>
-    );
-  }
-
-  // If they're not an admin and not loading, they'll be redirected
+  // Access denied case
   if (!isAdmin) {
+    console.log('Rendering access denied screen');
     return (
       <>
         <Navbar />
@@ -103,6 +98,8 @@ const AdminDashboard = () => {
     );
   }
 
+  // Regular admin dashboard
+  console.log('Rendering regular admin dashboard');
   return (
     <>
       <Navbar />

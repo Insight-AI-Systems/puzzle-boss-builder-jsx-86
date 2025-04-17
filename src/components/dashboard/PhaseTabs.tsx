@@ -53,29 +53,24 @@ export const PhaseTabs: React.FC<PhaseTabsProps> = ({
         ))}
       </TabsList>
       
-      {phases.map(phase => {
-        const isActive = activePhase === phase.toString();
-        return (
-          <TabsContent 
-            key={phase} 
-            value={phase.toString()}
-            // Only use forceMount when this is the active phase
-            {...(isActive ? { forceMount: true } : {})}
-          >
-            <h3 className="text-lg font-semibold mb-2">
-              Phase {phase} Tasks
-            </h3>
-            
-            <PhaseContent 
-              phaseTasks={projectTracker.getTasksByPhase(phase)}
-              tests={tests}
-              isTestRunning={isTestRunning}
-              onRunTests={onRunTests}
-              onUpdateStatus={onUpdateStatus}
-            />
-          </TabsContent>
-        );
-      })}
+      {phases.map(phase => (
+        <TabsContent 
+          key={phase} 
+          value={phase.toString()}
+        >
+          <h3 className="text-lg font-semibold mb-2">
+            Phase {phase} Tasks
+          </h3>
+          
+          <PhaseContent 
+            phaseTasks={projectTracker.getTasksByPhase(phase)}
+            tests={tests}
+            isTestRunning={isTestRunning}
+            onRunTests={onRunTests}
+            onUpdateStatus={onUpdateStatus}
+          />
+        </TabsContent>
+      ))}
     </Tabs>
   );
 };

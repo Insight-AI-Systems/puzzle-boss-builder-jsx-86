@@ -15,9 +15,8 @@ export const RoleBasedDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [accessibleTabs, setAccessibleTabs] = useState<ReturnType<typeof getTabDefinitions>>([]);
   
-  // Define handler outside of conditional render
+  // Define handlers outside of conditional statements
   const handleTabChange = (tabId: string) => {
-    console.log('Changing to tab:', tabId);
     setActiveTab(tabId);
     toast({
       title: `Navigated to ${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`,
@@ -29,26 +28,33 @@ export const RoleBasedDashboard: React.FC = () => {
   useEffect(() => {
     if (!profile) return;
     
-    // Get user role from profile
-    const userRole = profile.role;
+    console.log('Tab filtering effect running with role:', profile.role);
     
     // Get all tab definitions
     const tabs = getTabDefinitions();
     
     // Filter tabs based on user role
-    const filtered = tabs.filter(tab => tab.roles.includes(userRole as UserRole));
+    const filtered = tabs.filter(tab => 
+      tab.roles.includes(profile.role as UserRole)
+    );
+    
+    console.log('Filtered tabs:', filtered.map(t => t.id));
     setAccessibleTabs(filtered);
     
-    // If no tabs are accessible, show the first one
+    // If we have tabs and current active tab isn't in filtered list, set to first available
     if (filtered.length > 0 && !filtered.some(tab => tab.id === activeTab)) {
       setActiveTab(filtered[0].id);
     }
   }, [profile, activeTab]);
   
-  // Early return with null if profile is not available
+  // Early return before rendering if profile is not available
   if (!profile) {
+    console.log('No profile available, returning null');
     return null;
   }
+
+  console.log('Rendering dashboard with active tab:', activeTab);
+  console.log('Accessible tabs:', accessibleTabs.map(t => t.id));
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
