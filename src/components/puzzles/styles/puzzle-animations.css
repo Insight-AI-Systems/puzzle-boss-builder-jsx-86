@@ -1,45 +1,99 @@
 
-/* Piece hover and selection animation */
+/* Puzzle piece animations */
 .puzzle-piece {
-  transition: transform 0.15s ease-out, filter 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease-out;
 }
 
 .puzzle-piece-dragging {
-  transform: scale(1.02) !important;
-  filter: brightness(1.1);
   z-index: 10;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-/* Highlight for correct piece placement */
-@keyframes correctPlacement {
-  0% { box-shadow: 0 0 0 2px rgba(102, 255, 255, 0); }
-  50% { box-shadow: 0 0 0 3px rgba(102, 255, 255, 0.7); }
-  100% { box-shadow: 0 0 0 2px rgba(102, 255, 255, 0); }
+  transition: transform 0.1s ease-out;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
 .puzzle-piece-correct {
-  animation: correctPlacement 0.5s ease-out;
-}
-
-/* Puzzle completion celebration animation */
-@keyframes celebrationPulse {
-  0% { transform: scale(1); filter: brightness(1); }
-  50% { transform: scale(1.03); filter: brightness(1.2); }
-  100% { transform: scale(1); filter: brightness(1); }
-}
-
-.puzzle-complete {
-  animation: celebrationPulse 1.5s ease-in-out infinite;
-}
-
-/* Hint animation for nearby pieces */
-@keyframes hintPulse {
-  0% { transform: scale(1); }
-  70% { transform: scale(1.03); }
-  100% { transform: scale(1); }
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+  animation: correct-piece 0.5s ease;
 }
 
 .puzzle-piece-hint {
-  animation: hintPulse 1s ease-in-out infinite;
+  animation: hint-piece 2s infinite;
+}
+
+/* Puzzle completion animation */
+.puzzle-complete {
+  animation: complete-puzzle 2s ease;
+}
+
+/* Keyframes for piece movements */
+@keyframes correct-piece {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.7);
+  }
+}
+
+@keyframes hint-piece {
+  0%, 100% {
+    box-shadow: 0 0 3px rgba(0, 179, 179, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(0, 179, 179, 0.8);
+  }
+}
+
+@keyframes complete-puzzle {
+  0% {
+    box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  }
+}
+
+/* Touch specific enhancements */
+@media (pointer: coarse) {
+  .puzzle-piece:active {
+    transform: scale(1.05);
+  }
+  
+  /* Larger touch targets */
+  .puzzle-piece {
+    touch-action: none; /* Prevent browser handling of gestures */
+  }
+  
+  /* Mobile-friendly direction controls */
+  .direction-button-touch {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Device-specific adjustments */
+@media (max-width: 480px) {
+  .puzzle-grid-mobile {
+    gap: 2px;
+    padding: 4px;
+  }
+  
+  .puzzle-piece-mobile {
+    border-radius: 4px;
+  }
+}
+
+/* Smooth transition for pinch-to-zoom */
+.transform-gpu {
+  transform-origin: center;
+  will-change: transform;
+  backface-visibility: hidden;
 }

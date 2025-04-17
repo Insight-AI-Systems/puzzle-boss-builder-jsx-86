@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shuffle, Image as ImageIcon } from 'lucide-react';
+import { RefreshCw, Image } from 'lucide-react';
 import { DifficultyLevel } from '../types/puzzle-types';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import ImageSelector from './ImageSelector';
 
 interface PuzzleControlsProps {
   moveCount: number;
@@ -14,6 +16,7 @@ interface PuzzleControlsProps {
   onShuffle: () => void;
   sampleImages: string[];
   isLoading: boolean;
+  isMobile?: boolean;
 }
 
 const PuzzleControls: React.FC<PuzzleControlsProps> = ({
@@ -24,62 +27,124 @@ const PuzzleControls: React.FC<PuzzleControlsProps> = ({
   setSelectedImage,
   onShuffle,
   sampleImages,
-  isLoading
+  isLoading,
+  isMobile = false
 }) => {
-  return (
-    <div className="mb-4 w-full max-w-[360px]">
-      <div className="flex justify-between items-center mb-2">
-        <div className="text-sm text-puzzle-aqua">
-          Moves: {moveCount}
-        </div>
-        <Button 
-          onClick={onShuffle}
-          className="bg-puzzle-gold hover:bg-puzzle-gold/80 text-black"
-        >
-          <Shuffle className="w-4 h-4 mr-2" />
-          Shuffle
-        </Button>
-      </div>
-      
-      {/* Difficulty and image selectors */}
-      <div className="flex justify-between gap-2 mb-2">
-        <div className="w-1/2">
-          <Select 
-            value={difficulty} 
-            onValueChange={(value: string) => setDifficulty(value as DifficultyLevel)}
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  const handleImageSelected = (image: string) => {
+    setSelectedImage(image);
+    setIsDialogOpen(false);
+  };
+  
+  // More compact controls for mobile
+  if (isMobile) {
+    return (
+      <div className="flex justify-between items-center w-full">
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-2 flex items-center"
+              disabled={isLoading}
+            >
+              <Image className="h-4 w-4 mr-1" />
+              <span className="text-xs">Image</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-[90vw] p-4">
+            <DialogTitle>Select Puzzle Image</DialogTitle>
+            <ImageSelector
+              images={sampleImages.map(url => ({ url }))}
+              selectedImage={selectedImage}
+              onSelect={handleImageSelected}
+              compact={true}
+            />
+          </DialogContent>
+        </Dialog>
+        
+        <div className="flex space-x-1 items-center">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 px-2"
+            onClick={onShuffle}
             disabled={isLoading}
           >
-            <SelectTrigger className="w-full">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          
+          <Select
+            value={difficulty}
+            onValueChange={(value) => setDifficulty(value as DifficultyLevel)}
+            disabled={isLoading}
+          >
+            <SelectTrigger className="w-16 h-8 text-xs">
               <SelectValue placeholder="Difficulty" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="3x3">Easy (3×3)</SelectItem>
-              <SelectItem value="4x4">Medium (4×4)</SelectItem>
-              <SelectItem value="5x5">Hard (5×5)</SelectItem>
+              <SelectItem value="3x3">3×3</SelectItem>
+              <SelectItem value="4x4">4×4</SelectItem>
+              <SelectItem value="5x5">5×5</SelectItem>
             </SelectContent>
           </Select>
         </div>
+      </div>
+    );
+  }
+  
+  // Desktop controls with more space
+  return (
+    <div className="flex justify-between items-center w-full max-w-md">
+      <div className="flex space-x-2 items-center">
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              className="space-x-1"
+              disabled={isLoading}
+            >
+              <Image className="h-4 w-4" />
+              <span>Change Image</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-[80vw]">
+            <DialogTitle>Select Puzzle Image</DialogTitle>
+            <ImageSelector
+              images={sampleImages.map(url => ({ url }))}
+              selectedImage={selectedImage}
+              onSelect={handleImageSelected}
+            />
+          </DialogContent>
+        </Dialog>
         
-        {/* Image selector */}
-        <div className="w-1/2">
-          <Select 
-            value={selectedImage} 
-            onValueChange={setSelectedImage}
-            disabled={isLoading}
-          >
-            <SelectTrigger className="w-full">
-              <ImageIcon className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Image" />
-            </SelectTrigger>
-            <SelectContent>
-              {sampleImages.map((img, index) => (
-                <SelectItem key={img} value={img}>
-                  Image {index + 1}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Select
+          value={difficulty}
+          onValueChange={(value) => setDifficulty(value as DifficultyLevel)}
+          disabled={isLoading}
+        >
+          <SelectTrigger className="w-36">
+            <SelectValue placeholder="Difficulty" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="3x3">3×3 (Easy)</SelectItem>
+            <SelectItem value="4x4">4×4 (Medium)</SelectItem>
+            <SelectItem value="5x5">5×5 (Hard)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="flex items-center space-x-2">
+        <Button
+          variant="outline"
+          className="space-x-1"
+          onClick={onShuffle}
+          disabled={isLoading}
+        >
+          <RefreshCw className="h-4 w-4" />
+          <span>Shuffle</span>
+        </Button>
       </div>
     </div>
   );

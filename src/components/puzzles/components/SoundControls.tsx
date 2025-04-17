@@ -1,58 +1,86 @@
 
 import React from 'react';
-import { Volume2, VolumeX, Volume } from 'lucide-react';
-import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Slider } from '@/components/ui/slider';
+import { Volume2, VolumeX } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SoundControlsProps {
   muted: boolean;
   volume: number;
   onToggleMute: () => void;
   onVolumeChange: (value: number) => void;
+  isMobile?: boolean;
 }
 
-const SoundControls: React.FC<SoundControlsProps> = ({
-  muted,
-  volume,
-  onToggleMute,
-  onVolumeChange
+const SoundControls: React.FC<SoundControlsProps> = ({ 
+  muted, 
+  volume, 
+  onToggleMute, 
+  onVolumeChange,
+  isMobile = false
 }) => {
-  return (
-    <div className="flex items-center space-x-2 bg-puzzle-black/20 px-3 py-1 rounded-full">
+  // More compact for mobile
+  if (isMobile) {
+    return (
       <TooltipProvider>
+        <div className="flex items-center space-x-2 w-full">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={onToggleMute}
+            className="h-8 w-8 p-0"
+          >
+            {muted ? 
+              <VolumeX className="h-4 w-4" /> : 
+              <Volume2 className="h-4 w-4" />
+            }
+          </Button>
+          
+          <Slider
+            value={[volume]}
+            min={0}
+            max={100}
+            step={1}
+            onValueChange={(values) => onVolumeChange(values[0])}
+            disabled={muted}
+            className="w-full max-w-32 h-8"
+          />
+        </div>
+      </TooltipProvider>
+    );
+  }
+  
+  // Full controls for desktop
+  return (
+    <TooltipProvider>
+      <div className="flex items-center space-x-2">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button 
-              variant="ghost" 
               size="icon" 
-              onClick={onToggleMute} 
-              className="h-8 w-8 text-puzzle-aqua hover:text-white"
+              variant="outline" 
+              onClick={onToggleMute}
             >
-              {muted ? (
-                <VolumeX className="h-4 w-4" />
-              ) : volume < 0.2 ? (
-                <Volume className="h-4 w-4" />
-              ) : (
-                <Volume2 className="h-4 w-4" />
-              )}
+              {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">
+          <TooltipContent>
             {muted ? 'Unmute sounds' : 'Mute sounds'}
           </TooltipContent>
         </Tooltip>
-      </TooltipProvider>
-      
-      <Slider
-        disabled={muted}
-        value={[volume]}
-        onValueChange={(values) => onVolumeChange(values[0])}
-        max={1}
-        step={0.01}
-        className="w-24"
-      />
-    </div>
+        
+        <Slider
+          value={[volume]}
+          min={0}
+          max={100}
+          step={1}
+          onValueChange={(values) => onVolumeChange(values[0])}
+          disabled={muted}
+          className="w-32"
+        />
+      </div>
+    </TooltipProvider>
   );
 };
 

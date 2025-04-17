@@ -1,10 +1,11 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useDeviceInfo } from '@/hooks/use-mobile';
 import { DEFAULT_IMAGES, DifficultyLevel, difficultyConfig } from './types/puzzle-types';
 import { usePuzzlePieces } from './hooks/usePuzzlePieces';
 import { usePuzzleState } from './hooks/usePuzzleState';
 import { createPieceHandlers, getImagePieceStyle } from './utils/pieceInteractionHandlers';
-import { calculateContainerSize } from './utils/puzzleSizeUtils';
+import { calculateContainerSize, getRecommendedDifficulty } from './utils/puzzleSizeUtils';
 import { useSoundEffects } from './utils/useSoundEffects';
 import PuzzleControls from './components/PuzzleControls';
 import PuzzleGrid from './components/PuzzleGrid';
@@ -27,8 +28,13 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
   isImageLoading: externalLoading,
   onImageLoaded
 }) => {
-  const isMobile = useIsMobile();
-  const [difficulty, setDifficulty] = useState<DifficultyLevel>('3x3');
+  const deviceInfo = useDeviceInfo();
+  const { isMobile, width, isTouchDevice } = deviceInfo;
+  
+  // Auto-suggest appropriate difficulty based on screen size
+  const initialDifficulty = getRecommendedDifficulty(width);
+  const [difficulty, setDifficulty] = useState<DifficultyLevel>(initialDifficulty);
+  
   const [selectedImage, setSelectedImage] = useState<string>(initialImage || sampleImages[0]);
   const [isLoading, setIsLoading] = useState(externalLoading !== undefined ? externalLoading : true);
   
@@ -66,6 +72,7 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
   
   const {
     handleDragStart,
+    handleMove,
     handleDrop,
     handlePieceClick,
     handleDirectionalMove,
@@ -84,11 +91,20 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
   );
   
   const handleGridDragStart = (e: React.MouseEvent | React.TouchEvent, piece: any) => {
+    e.preventDefault(); // Prevent default scroll/zoom behaviors
     handleDragStart(piece);
+  };
+  
+  const handleGridMove = (e: React.MouseEvent | React.TouchEvent, index: number) => {
+    if (draggedPiece) {
+      e.preventDefault();
+      handleMove(draggedPiece, index);
+    }
   };
   
   const handleGridDrop = (e: React.MouseEvent | React.TouchEvent, index: number) => {
     if (draggedPiece) {
+      e.preventDefault();
       handleDrop(draggedPiece);
     }
   };
@@ -161,40 +177,47 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
   const totalPieces = gridSize * gridSize;
   
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center w-full max-w-full px-2">
       <canvas ref={canvasRef} width="600" height="600" className="hidden" />
       <img ref={imgRef} className="hidden" alt="Source" />
       
-      <PuzzleStateDisplay 
-        state={{
-          ...puzzleState,
-          isComplete: isSolved
-        }}
-        totalPieces={totalPieces}
-        onNewGame={handleNewGame}
-        onDifficultyChange={handleDifficultyChange}
-        onTogglePause={puzzleState.togglePause}
-      />
-      
-      <div className="mb-4">
-        <SoundControls
-          muted={muted}
-          volume={volume}
-          onToggleMute={toggleMute}
-          onVolumeChange={changeVolume}
+      <div className={`w-full ${isMobile ? 'mb-2' : 'mb-4'}`}>
+        <PuzzleStateDisplay 
+          state={{
+            ...puzzleState,
+            isComplete: isSolved
+          }}
+          totalPieces={totalPieces}
+          onNewGame={handleNewGame}
+          onDifficultyChange={handleDifficultyChange}
+          onTogglePause={puzzleState.togglePause}
+          isMobile={isMobile}
         />
       </div>
       
-      <PuzzleControls
-        moveCount={moveCount}
-        difficulty={difficulty}
-        setDifficulty={handleDifficultyChange}
-        selectedImage={selectedImage}
-        setSelectedImage={handleImageChange}
-        onShuffle={handleNewGame}
-        sampleImages={sampleImages}
-        isLoading={isLoading}
-      />
+      <div className={`w-full flex ${isMobile ? 'flex-col' : 'flex-row'} items-center justify-center gap-2 mb-3`}>
+        <div className={`${isMobile ? 'w-full mb-2' : 'mr-4'}`}>
+          <SoundControls
+            muted={muted}
+            volume={volume}
+            onToggleMute={toggleMute}
+            onVolumeChange={changeVolume}
+            isMobile={isMobile}
+          />
+        </div>
+        
+        <PuzzleControls
+          moveCount={moveCount}
+          difficulty={difficulty}
+          setDifficulty={handleDifficultyChange}
+          selectedImage={selectedImage}
+          setSelectedImage={handleImageChange}
+          onShuffle={handleNewGame}
+          sampleImages={sampleImages}
+          isLoading={isLoading}
+          isMobile={isMobile}
+        />
+      </div>
       
       <PuzzleGrid
         pieces={pieces}
@@ -203,23 +226,28 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
         isLoading={isLoading}
         containerSize={containerSize}
         onDragStart={handleGridDragStart}
+        onMove={handleGridMove}
         onDrop={handleGridDrop}
         onPieceClick={handleGridPieceClick}
         getPieceStyle={(piece) => getImagePieceStyle(piece, selectedImage, gridSize)}
+        isTouchDevice={isTouchDevice}
+        isMobile={isMobile}
       />
       
-      {(isMobile || draggedPiece) && !isSolved && !isLoading && (
+      {(isTouchDevice || draggedPiece) && !isSolved && !isLoading && (
         <DirectionalControls 
           draggedPiece={draggedPiece}
           onDirectionalMove={handleDirectionalMoveWithGrid}
+          isMobile={isMobile}
         />
       )}
       
       <PuzzleStatusMessage
         isSolved={isSolved}
         isLoading={isLoading}
-        isMobile={!!isMobile}
+        isMobile={isMobile}
         moveCount={moveCount}
+        isTouchDevice={isTouchDevice}
       />
     </div>
   );

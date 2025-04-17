@@ -1,25 +1,23 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Clock, Play, Pause, RefreshCw } from 'lucide-react';
-import { DifficultyLevel, PuzzleState } from '../types/puzzle-types';
+import { DifficultyLevel } from '../types/puzzle-types';
+import { Pause, Play, RefreshCw } from 'lucide-react';
 
 interface PuzzleStateDisplayProps {
-  state: Omit<PuzzleState, 'difficulty'> & { 
-    formattedTime: string;
+  state: {
+    isActive: boolean;
+    isComplete: boolean;
+    timeSpent: number;
+    moveCount: number;
+    correctPieces: number;
     difficulty: DifficultyLevel;
   };
   totalPieces: number;
   onNewGame: () => void;
   onDifficultyChange: (difficulty: DifficultyLevel) => void;
   onTogglePause: () => void;
+  isMobile?: boolean;
 }
 
 const PuzzleStateDisplay: React.FC<PuzzleStateDisplayProps> = ({
@@ -27,79 +25,127 @@ const PuzzleStateDisplay: React.FC<PuzzleStateDisplayProps> = ({
   totalPieces,
   onNewGame,
   onDifficultyChange,
-  onTogglePause
+  onTogglePause,
+  isMobile = false
 }) => {
-  const { 
-    isComplete, 
-    correctPieces, 
-    formattedTime, 
-    moveCount, 
-    difficulty, 
-    isActive 
-  } = state;
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
   
-  return (
-    <div className="w-full max-w-[360px] bg-card rounded-lg p-3 mb-4 shadow-md">
-      <div className="flex justify-between items-center mb-2">
-        <div className="flex items-center">
-          <Clock className="w-4 h-4 mr-2 text-puzzle-aqua" />
-          <span className="text-sm font-mono">{formattedTime}</span>
+  // For mobile use a more compact layout
+  if (isMobile) {
+    return (
+      <div className="w-full bg-puzzle-black/40 p-2 rounded-lg">
+        <div className="flex justify-between items-center mb-2">
+          <div className="flex space-x-1">
+            <Button 
+              size="icon" 
+              variant="outline" 
+              onClick={onTogglePause}
+              className="h-8 w-8"
+            >
+              {state.isActive ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </Button>
+            <Button 
+              size="icon" 
+              variant="outline" 
+              onClick={onNewGame}
+              className="h-8 w-8"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="flex flex-col items-end">
+            <span className="text-xs text-puzzle-aqua">Time: {formatTime(state.timeSpent)}</span>
+            <span className="text-xs text-puzzle-aqua">Moves: {state.moveCount}</span>
+          </div>
         </div>
         
-        <div className="flex items-center space-x-1">
+        <div className="flex justify-between items-center">
+          <div className="text-xs text-puzzle-aqua">
+            Progress: {state.correctPieces}/{totalPieces} pieces
+          </div>
+          
+          <div className="flex space-x-1">
+            {(['3x3', '4x4', '5x5'] as DifficultyLevel[]).map((diff) => (
+              <Button 
+                key={diff}
+                size="sm"
+                variant={state.difficulty === diff ? "default" : "outline"}
+                onClick={() => onDifficultyChange(diff)}
+                className="h-6 px-1.5 text-xs"
+              >
+                {diff}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Desktop layout
+  return (
+    <div className="w-full bg-puzzle-black/40 p-4 rounded-lg">
+      <div className="flex justify-between items-center">
+        <div className="flex space-x-2">
           <Button 
-            size="sm" 
-            variant="ghost"
+            variant="outline" 
             onClick={onTogglePause}
-            disabled={isComplete}
-            className="px-2"
+            className="space-x-1"
           >
-            {isActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            {state.isActive ? 
+              <><Pause className="h-4 w-4" /><span>Pause</span></> : 
+              <><Play className="h-4 w-4" /><span>Resume</span></>
+            }
           </Button>
           
           <Button 
-            size="sm" 
-            variant="ghost"
+            variant="outline" 
             onClick={onNewGame}
-            className="px-2"
+            className="space-x-1"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="h-4 w-4" />
+            <span>New Game</span>
           </Button>
         </div>
+        
+        <div className="flex space-x-4">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-puzzle-aqua">Difficulty:</span>
+            <div className="flex space-x-1">
+              {(['3x3', '4x4', '5x5'] as DifficultyLevel[]).map((diff) => (
+                <Button 
+                  key={diff}
+                  size="sm"
+                  variant={state.difficulty === diff ? "default" : "outline"}
+                  onClick={() => onDifficultyChange(diff)}
+                >
+                  {diff}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
       
-      <div className="flex justify-between items-center mb-2">
-        <div className="text-sm">
-          Moves: <span className="font-semibold">{moveCount}</span>
+      <div className="flex justify-between mt-2">
+        <div className="flex space-x-4">
+          <div className="text-sm text-puzzle-aqua">
+            Time: <span className="font-bold">{formatTime(state.timeSpent)}</span>
+          </div>
+          <div className="text-sm text-puzzle-aqua">
+            Moves: <span className="font-bold">{state.moveCount}</span>
+          </div>
         </div>
-        <div className="text-sm">
-          Progress: <span className="font-semibold">{correctPieces}/{totalPieces}</span>
+        
+        <div className="text-sm text-puzzle-aqua">
+          Progress: <span className="font-bold">{state.correctPieces}/{totalPieces}</span> pieces
         </div>
       </div>
-      
-      <div className="flex items-center justify-between">
-        <span className="text-sm mr-2">Difficulty:</span>
-        <Select 
-          value={difficulty} 
-          onValueChange={(value) => onDifficultyChange(value as DifficultyLevel)}
-          disabled={isActive && !isComplete}
-        >
-          <SelectTrigger className="w-[140px] h-8 text-xs">
-            <SelectValue placeholder="Difficulty" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="3x3">Easy (3×3)</SelectItem>
-            <SelectItem value="4x4">Medium (4×4)</SelectItem>
-            <SelectItem value="5x5">Hard (5×5)</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      {isComplete && (
-        <div className="mt-2 text-center text-puzzle-gold font-bold animate-pulse">
-          🏆 Puzzle Completed! 🏆
-        </div>
-      )}
     </div>
   );
 };
