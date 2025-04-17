@@ -77,7 +77,8 @@ const InteractivePuzzle: React.FC = () => {
       grid[piece.position] = (
         <div 
           key={piece.id}
-          className={`puzzle-piece flex items-center justify-center text-xl font-bold ${isAdjacent(piece.position) ? 'cursor-pointer hover:scale-105' : ''}`}
+          className={`puzzle-piece flex items-center justify-center text-xl font-bold bg-puzzle-black border border-puzzle-aqua/40 rounded-md h-16 w-16 transition-all 
+            ${isAdjacent(piece.position) ? 'cursor-pointer hover:bg-puzzle-black/80 hover:border-puzzle-aqua' : ''}`}
           onClick={() => movePiece(piece.position)}
         >
           {piece.id}
@@ -87,7 +88,7 @@ const InteractivePuzzle: React.FC = () => {
     
     // Add empty piece
     grid[emptyPosition] = (
-      <div key="empty" className="puzzle-piece empty"></div>
+      <div key="empty" className="empty h-16 w-16 bg-transparent"></div>
     );
     
     return grid;
@@ -95,12 +96,13 @@ const InteractivePuzzle: React.FC = () => {
   
   return (
     <div className="flex flex-col items-center">
-      <div className={`puzzle-container mb-4 ${isSolved ? 'puzzle-solved' : ''}`}>
+      <div className={`grid grid-cols-3 gap-2 mb-4 p-2 rounded-lg bg-puzzle-black/50 border border-puzzle-aqua/20 
+        ${isSolved ? 'ring-2 ring-puzzle-gold animate-pulse' : ''}`}>
         {renderPuzzleGrid()}
       </div>
       <button 
         onClick={resetPuzzle}
-        className="text-puzzle-aqua hover:text-puzzle-gold transition-colors duration-300"
+        className="px-4 py-2 bg-puzzle-black border border-puzzle-aqua/40 text-puzzle-aqua rounded-md hover:bg-puzzle-black/80 hover:border-puzzle-aqua transition-colors duration-300"
       >
         Shuffle
       </button>

@@ -3,7 +3,7 @@ import React from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronRight, Zap, Clock, PuzzlePiece, Brain, Award, Target } from 'lucide-react';
+import { ChevronRight, Zap, Clock, Puzzle, Brain, Award, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const PuzzleTechniques = () => {
@@ -43,7 +43,7 @@ const PuzzleTechniques = () => {
         <div className="space-y-6 mb-8">
           <div className="flex items-start gap-4">
             <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
-              <PuzzlePiece className="h-5 w-5 text-puzzle-aqua" />
+              <Puzzle className="h-5 w-5 text-puzzle-aqua" />
             </div>
             <div>
               <h3 className="text-puzzle-white text-xl font-bold mb-1">Edge First Approach</h3>
@@ -56,7 +56,7 @@ const PuzzleTechniques = () => {
           
           <div className="flex items-start gap-4">
             <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
-              <PuzzlePiece className="h-5 w-5 text-puzzle-aqua" />
+              <Puzzle className="h-5 w-5 text-puzzle-aqua" />
             </div>
             <div>
               <h3 className="text-puzzle-white text-xl font-bold mb-1">Color Sorting</h3>
@@ -69,7 +69,7 @@ const PuzzleTechniques = () => {
           
           <div className="flex items-start gap-4">
             <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
-              <PuzzlePiece className="h-5 w-5 text-puzzle-aqua" />
+              <Puzzle className="h-5 w-5 text-puzzle-aqua" />
             </div>
             <div>
               <h3 className="text-puzzle-white text-xl font-bold mb-1">Shape Recognition</h3>

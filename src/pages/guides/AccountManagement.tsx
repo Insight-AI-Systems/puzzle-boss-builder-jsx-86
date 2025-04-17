@@ -3,17 +3,15 @@ import React from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronRight, User, CreditCard, Bell, Lock, Shield, Wrench, AlertTriangle } from 'lucide-react';
+import { AlertCircle, ChevronRight, Settings, User, CreditCard, Shield, Bell, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Button } from '@/components/ui/button';
+import InteractivePuzzle from '@/components/InteractivePuzzle';
 
 const AccountManagement = () => {
   return (
     <PageLayout
-      title="Account Management"
-      subtitle="Learn how to manage your profile, subscriptions, and security settings"
+      title="Account Management Guide"
+      subtitle="Everything you need to know about managing your Puzzle Boss account"
       className="prose prose-invert prose-headings:text-puzzle-white prose-a:text-puzzle-aqua max-w-4xl"
     >
       <div className="flex items-center text-muted-foreground text-sm mb-6">
@@ -29,426 +27,388 @@ const AccountManagement = () => {
           <CardContent className="pt-6">
             <div className="flex items-center gap-4 text-puzzle-aqua mb-4">
               <User className="h-8 w-8" />
-              <h2 className="text-2xl font-bold m-0">Managing Your Puzzle Boss Account</h2>
+              <h2 className="text-2xl font-bold m-0">Managing Your Account</h2>
             </div>
             <p className="text-muted-foreground">
-              This guide covers everything you need to know about managing your Puzzle Boss account, from updating your profile to securing your account and managing subscriptions.
+              This guide covers everything you need to know about managing your Puzzle Boss account, 
+              from updating your profile to managing subscriptions and security settings.
             </p>
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Link to="#profile-settings" className="no-underline">
-            <Card className="bg-puzzle-black/30 border-puzzle-aqua/20 h-full hover:border-puzzle-aqua transition-colors duration-300">
-              <CardContent className="pt-6">
-                <div className="flex flex-col items-center text-center">
-                  <User className="h-10 w-10 text-puzzle-aqua mb-2" />
-                  <h3 className="text-lg font-bold text-puzzle-white mb-1">Profile Settings</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Update your personal information and display preferences
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-          
-          <Link to="#membership-and-billing" className="no-underline">
-            <Card className="bg-puzzle-black/30 border-puzzle-aqua/20 h-full hover:border-puzzle-aqua transition-colors duration-300">
-              <CardContent className="pt-6">
-                <div className="flex flex-col items-center text-center">
-                  <CreditCard className="h-10 w-10 text-puzzle-aqua mb-2" />
-                  <h3 className="text-lg font-bold text-puzzle-white mb-1">Membership & Billing</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Manage your subscription and payment methods
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-          
-          <Link to="#security-and-privacy" className="no-underline">
-            <Card className="bg-puzzle-black/30 border-puzzle-aqua/20 h-full hover:border-puzzle-aqua transition-colors duration-300">
-              <CardContent className="pt-6">
-                <div className="flex flex-col items-center text-center">
-                  <Shield className="h-10 w-10 text-puzzle-aqua mb-2" />
-                  <h3 className="text-lg font-bold text-puzzle-white mb-1">Security & Privacy</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Protect your account and manage your data
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
-
-        <Separator className="my-8" id="profile-settings" />
-
         <h2 className="text-puzzle-white text-2xl font-bold mb-4">Profile Settings</h2>
-        <p className="text-muted-foreground mb-6">
-          Your profile represents you on the Puzzle Boss platform. Here's how to manage your profile information:
+        <p className="text-muted-foreground mb-4">
+          Your profile represents you on The Puzzle Boss platform. Here's how to keep it updated:
         </p>
         
         <div className="space-y-6 mb-8">
-          <Collapsible className="border border-puzzle-aqua/20 rounded-lg overflow-hidden">
-            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-puzzle-black/50 hover:bg-puzzle-aqua/10 text-left">
-              <div className="flex items-center gap-2">
-                <User className="h-5 w-5 text-puzzle-aqua" />
-                <h3 className="text-puzzle-white text-lg font-medium m-0">Personal Information</h3>
-              </div>
-              <ChevronRight className="h-5 w-5 transition-transform ui-open:rotate-90" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-4 border-t border-puzzle-aqua/20">
-              <p className="text-muted-foreground mb-4">
-                To update your personal information:
+          <div className="flex items-start gap-4">
+            <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
+              <User className="h-5 w-5 text-puzzle-aqua" />
+            </div>
+            <div>
+              <h3 className="text-puzzle-white text-xl font-bold mb-1">Display Name</h3>
+              <p className="text-muted-foreground">
+                Your display name appears on leaderboards and in competitions. To change it:
               </p>
-              <ol className="space-y-2 text-muted-foreground mb-4">
-                <li>Go to your Account Dashboard</li>
-                <li>Select the "Profile" tab</li>
-                <li>Click "Edit Profile"</li>
-                <li>Update your name, email, or other information</li>
+              <ol className="pl-5 mt-2 text-muted-foreground">
+                <li>Go to <Link to="/settings" className="text-puzzle-aqua hover:underline">Account Settings</Link></li>
+                <li>Click on the "Profile" tab</li>
+                <li>Update your display name in the field provided</li>
                 <li>Click "Save Changes"</li>
               </ol>
-              <Alert className="bg-puzzle-aqua/10 border-puzzle-aqua/20">
-                <AlertTriangle className="h-4 w-4 text-puzzle-aqua" />
-                <AlertTitle className="text-puzzle-white">Email Changes</AlertTitle>
-                <AlertDescription className="text-muted-foreground">
-                  When changing your email address, you'll need to verify the new address before the change takes effect.
-                </AlertDescription>
-              </Alert>
-            </CollapsibleContent>
-          </Collapsible>
+              <p className="text-muted-foreground mt-2">
+                <span className="text-puzzle-white font-medium">Note:</span> You can change your display name once every 30 days.
+              </p>
+            </div>
+          </div>
           
-          <Collapsible className="border border-puzzle-aqua/20 rounded-lg overflow-hidden">
-            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-puzzle-black/50 hover:bg-puzzle-aqua/10 text-left">
-              <div className="flex items-center gap-2">
-                <Bell className="h-5 w-5 text-puzzle-aqua" />
-                <h3 className="text-puzzle-white text-lg font-medium m-0">Notification Preferences</h3>
-              </div>
-              <ChevronRight className="h-5 w-5 transition-transform ui-open:rotate-90" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-4 border-t border-puzzle-aqua/20">
-              <p className="text-muted-foreground mb-4">
-                Customize what notifications you receive and how:
-              </p>
-              <ul className="space-y-2 text-muted-foreground mb-4">
-                <li><span className="text-puzzle-white font-medium">Email Notifications:</span> New contests, wins, promotions, etc.</li>
-                <li><span className="text-puzzle-white font-medium">In-App Notifications:</span> Puzzle completions, credit purchases, etc.</li>
-                <li><span className="text-puzzle-white font-medium">Push Notifications:</span> Real-time alerts about contest results and wins</li>
-              </ul>
-              <p className="text-muted-foreground mb-4">
-                To update notification preferences:
-              </p>
-              <ol className="space-y-2 text-muted-foreground">
-                <li>Go to Account Dashboard</li>
-                <li>Select the "Notifications" tab</li>
-                <li>Toggle on/off different notification types</li>
-                <li>Click "Save Preferences"</li>
-              </ol>
-            </CollapsibleContent>
-          </Collapsible>
-          
-          <Collapsible className="border border-puzzle-aqua/20 rounded-lg overflow-hidden">
-            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-puzzle-black/50 hover:bg-puzzle-aqua/10 text-left">
-              <div className="flex items-center gap-2">
-                <Wrench className="h-5 w-5 text-puzzle-aqua" />
-                <h3 className="text-puzzle-white text-lg font-medium m-0">Display Preferences</h3>
-              </div>
-              <ChevronRight className="h-5 w-5 transition-transform ui-open:rotate-90" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-4 border-t border-puzzle-aqua/20">
-              <p className="text-muted-foreground mb-4">
-                Customize how the platform looks and behaves for you:
-              </p>
-              <ul className="space-y-2 text-muted-foreground mb-4">
-                <li><span className="text-puzzle-white font-medium">Theme Settings:</span> Choose between light and dark mode</li>
-                <li><span className="text-puzzle-white font-medium">Leaderboard Display:</span> Show/hide your name on public leaderboards</li>
-                <li><span className="text-puzzle-white font-medium">Puzzle Interface:</span> Customize the puzzle solving experience</li>
-              </ul>
+          <div className="flex items-start gap-4">
+            <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
+              <User className="h-5 w-5 text-puzzle-aqua" />
+            </div>
+            <div>
+              <h3 className="text-puzzle-white text-xl font-bold mb-1">Profile Picture</h3>
               <p className="text-muted-foreground">
-                To update display preferences, go to Account Dashboard > Settings > Display.
+                Your profile picture helps other players recognize you. To update it:
               </p>
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
-
-        <Separator className="my-8" id="membership-and-billing" />
-
-        <h2 className="text-puzzle-white text-2xl font-bold mb-4">Membership & Billing</h2>
-        <p className="text-muted-foreground mb-6">
-          Manage your subscription, credits, and payment methods:
-        </p>
-        
-        <div className="space-y-6 mb-8">
-          <Collapsible className="border border-puzzle-aqua/20 rounded-lg overflow-hidden">
-            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-puzzle-black/50 hover:bg-puzzle-aqua/10 text-left">
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-puzzle-aqua" />
-                <h3 className="text-puzzle-white text-lg font-medium m-0">Managing Your Subscription</h3>
-              </div>
-              <ChevronRight className="h-5 w-5 transition-transform ui-open:rotate-90" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-4 border-t border-puzzle-aqua/20">
-              <h4 className="text-puzzle-white font-medium mb-2">Upgrading Your Membership</h4>
-              <p className="text-muted-foreground mb-4">
-                To upgrade to a Premium or Pro membership:
-              </p>
-              <ol className="space-y-2 text-muted-foreground mb-4">
-                <li>Go to Account Dashboard > Membership</li>
-                <li>View available subscription tiers</li>
-                <li>Select your preferred plan</li>
-                <li>Choose billing frequency (monthly/annual)</li>
-                <li>Complete payment to activate</li>
+              <ol className="pl-5 mt-2 text-muted-foreground">
+                <li>Go to <Link to="/settings" className="text-puzzle-aqua hover:underline">Account Settings</Link></li>
+                <li>Click on the "Profile" tab</li>
+                <li>Click on your current profile picture or the upload icon</li>
+                <li>Select a new image from your device (JPG, PNG, or GIF, max 5MB)</li>
+                <li>Crop as needed and click "Save"</li>
               </ol>
-              
-              <h4 className="text-puzzle-white font-medium mb-2">Changing or Cancelling Your Subscription</h4>
-              <p className="text-muted-foreground mb-4">
-                To modify or cancel your current subscription:
-              </p>
-              <ol className="space-y-2 text-muted-foreground mb-4">
-                <li>Go to Account Dashboard > Membership</li>
-                <li>Select "Manage Subscription"</li>
-                <li>Choose "Change Plan" or "Cancel Subscription"</li>
-                <li>Follow the prompts to complete your request</li>
-              </ol>
-              
-              <Alert className="bg-puzzle-aqua/10 border-puzzle-aqua/20">
-                <AlertTriangle className="h-4 w-4 text-puzzle-aqua" />
-                <AlertDescription className="text-muted-foreground">
-                  Cancellations take effect at the end of your current billing period. You'll maintain access to premium features until then.
-                </AlertDescription>
-              </Alert>
-            </CollapsibleContent>
-          </Collapsible>
+            </div>
+          </div>
           
-          <Collapsible className="border border-puzzle-aqua/20 rounded-lg overflow-hidden">
-            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-puzzle-black/50 hover:bg-puzzle-aqua/10 text-left">
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-puzzle-aqua" />
-                <h3 className="text-puzzle-white text-lg font-medium m-0">Payment Methods</h3>
-              </div>
-              <ChevronRight className="h-5 w-5 transition-transform ui-open:rotate-90" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-4 border-t border-puzzle-aqua/20">
-              <p className="text-muted-foreground mb-4">
-                You can add, update, or remove payment methods from your account at any time:
-              </p>
-              
-              <h4 className="text-puzzle-white font-medium mb-2">Adding a Payment Method</h4>
-              <ol className="space-y-2 text-muted-foreground mb-4">
-                <li>Go to Account Dashboard > Billing</li>
-                <li>Select "Add Payment Method"</li>
-                <li>Choose card type or payment service</li>
-                <li>Enter payment details</li>
-                <li>Set as default (optional)</li>
-              </ol>
-              
-              <h4 className="text-puzzle-white font-medium mb-2">Updating Payment Information</h4>
-              <ol className="space-y-2 text-muted-foreground mb-4">
-                <li>Go to Account Dashboard > Billing</li>
-                <li>Find the payment method to update</li>
-                <li>Click "Edit" and make changes</li>
-                <li>Save your changes</li>
-              </ol>
-              
+          <div className="flex items-start gap-4">
+            <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
+              <Settings className="h-5 w-5 text-puzzle-aqua" />
+            </div>
+            <div>
+              <h3 className="text-puzzle-white text-xl font-bold mb-1">Account Information</h3>
               <p className="text-muted-foreground">
-                We accept major credit cards, PayPal, and select regional payment methods. All payment information is encrypted and securely stored.
+                Keep your email and contact information up to date for important account notifications:
               </p>
-            </CollapsibleContent>
-          </Collapsible>
-          
-          <Collapsible className="border border-puzzle-aqua/20 rounded-lg overflow-hidden">
-            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-puzzle-black/50 hover:bg-puzzle-aqua/10 text-left">
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-puzzle-aqua" />
-                <h3 className="text-puzzle-white text-lg font-medium m-0">Credits & Transactions</h3>
-              </div>
-              <ChevronRight className="h-5 w-5 transition-transform ui-open:rotate-90" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-4 border-t border-puzzle-aqua/20">
-              <h4 className="text-puzzle-white font-medium mb-2">Purchasing Credits</h4>
-              <p className="text-muted-foreground mb-4">
-                To buy additional credits:
-              </p>
-              <ol className="space-y-2 text-muted-foreground mb-4">
-                <li>Go to Account Dashboard > Credits</li>
-                <li>Select "Buy Credits"</li>
-                <li>Choose a credit package</li>
-                <li>Select payment method</li>
-                <li>Complete purchase</li>
+              <ol className="pl-5 mt-2 text-muted-foreground">
+                <li>Go to <Link to="/settings" className="text-puzzle-aqua hover:underline">Account Settings</Link></li>
+                <li>Click on the "Account" tab</li>
+                <li>Update your email address, phone number, or address as needed</li>
+                <li>Click "Save Changes"</li>
+                <li>You may need to verify a new email address by clicking a link sent to that address</li>
               </ol>
-              
-              <h4 className="text-puzzle-white font-medium mb-2">Viewing Transaction History</h4>
-              <p className="text-muted-foreground mb-4">
-                To review past purchases and credit usage:
-              </p>
-              <ol className="space-y-2 text-muted-foreground mb-4">
-                <li>Go to Account Dashboard > Billing</li>
-                <li>Select "Transaction History"</li>
-                <li>Filter by date or transaction type</li>
-                <li>Download records (optional)</li>
-              </ol>
-              
-              <Alert className="bg-puzzle-aqua/10 border-puzzle-aqua/20">
-                <AlertTriangle className="h-4 w-4 text-puzzle-aqua" />
-                <AlertDescription className="text-muted-foreground">
-                  Credits never expire, but are non-refundable once purchased.
-                </AlertDescription>
-              </Alert>
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
-
-        <Separator className="my-8" id="security-and-privacy" />
-
-        <h2 className="text-puzzle-white text-2xl font-bold mb-4">Security & Privacy</h2>
-        <p className="text-muted-foreground mb-6">
-          Protecting your account and personal information is our priority. Here's how you can manage your security settings:
-        </p>
-        
-        <div className="space-y-6 mb-8">
-          <Collapsible className="border border-puzzle-aqua/20 rounded-lg overflow-hidden">
-            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-puzzle-black/50 hover:bg-puzzle-aqua/10 text-left">
-              <div className="flex items-center gap-2">
-                <Lock className="h-5 w-5 text-puzzle-aqua" />
-                <h3 className="text-puzzle-white text-lg font-medium m-0">Password Management</h3>
-              </div>
-              <ChevronRight className="h-5 w-5 transition-transform ui-open:rotate-90" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-4 border-t border-puzzle-aqua/20">
-              <h4 className="text-puzzle-white font-medium mb-2">Changing Your Password</h4>
-              <p className="text-muted-foreground mb-4">
-                To update your password:
-              </p>
-              <ol className="space-y-2 text-muted-foreground mb-4">
-                <li>Go to Account Dashboard > Security</li>
-                <li>Select "Change Password"</li>
-                <li>Enter your current password</li>
-                <li>Create and confirm your new password</li>
-                <li>Click "Update Password"</li>
-              </ol>
-              
-              <h4 className="text-puzzle-white font-medium mb-2">Password Requirements</h4>
-              <p className="text-muted-foreground mb-4">
-                For maximum security, your password should:
-              </p>
-              <ul className="space-y-2 text-muted-foreground mb-4">
-                <li>Be at least 8 characters long</li>
-                <li>Include uppercase and lowercase letters</li>
-                <li>Contain at least one number</li>
-                <li>Include at least one special character</li>
-                <li>Not match previously used passwords</li>
-              </ul>
-              
-              <div className="bg-puzzle-aqua/10 p-4 rounded-lg">
-                <h4 className="text-puzzle-white font-medium mb-2">Security Tip</h4>
-                <p className="text-muted-foreground">
-                  Change your password regularly and never use the same password across multiple sites.
-                </p>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-          
-          <Collapsible className="border border-puzzle-aqua/20 rounded-lg overflow-hidden">
-            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-puzzle-black/50 hover:bg-puzzle-aqua/10 text-left">
-              <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-puzzle-aqua" />
-                <h3 className="text-puzzle-white text-lg font-medium m-0">Two-Factor Authentication</h3>
-              </div>
-              <ChevronRight className="h-5 w-5 transition-transform ui-open:rotate-90" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-4 border-t border-puzzle-aqua/20">
-              <p className="text-muted-foreground mb-4">
-                Two-factor authentication (2FA) adds an extra layer of security to your account by requiring a second verification step during login.
-              </p>
-              
-              <h4 className="text-puzzle-white font-medium mb-2">Enabling 2FA</h4>
-              <ol className="space-y-2 text-muted-foreground mb-4">
-                <li>Go to Account Dashboard > Security</li>
-                <li>Select "Two-Factor Authentication"</li>
-                <li>Choose your preferred 2FA method (app, SMS, email)</li>
-                <li>Follow the setup instructions</li>
-                <li>Save your recovery codes in a safe place</li>
-              </ol>
-              
-              <h4 className="text-puzzle-white font-medium mb-2">Recovery Options</h4>
-              <p className="text-muted-foreground mb-4">
-                If you lose access to your 2FA device:
-              </p>
-              <ul className="space-y-2 text-muted-foreground mb-4">
-                <li>Use one of your saved recovery codes</li>
-                <li>Use an alternate verification method if configured</li>
-                <li>Contact support if all else fails</li>
-              </ul>
-              
-              <Alert className="bg-puzzle-gold/10 border-puzzle-gold">
-                <AlertTriangle className="h-4 w-4 text-puzzle-gold" />
-                <AlertTitle className="text-puzzle-gold">Important</AlertTitle>
-                <AlertDescription className="text-muted-foreground">
-                  Two-factor authentication is required for accounts with high-value prize claims or premium memberships.
-                </AlertDescription>
-              </Alert>
-            </CollapsibleContent>
-          </Collapsible>
-          
-          <Collapsible className="border border-puzzle-aqua/20 rounded-lg overflow-hidden">
-            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-puzzle-black/50 hover:bg-puzzle-aqua/10 text-left">
-              <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-puzzle-aqua" />
-                <h3 className="text-puzzle-white text-lg font-medium m-0">Privacy Settings</h3>
-              </div>
-              <ChevronRight className="h-5 w-5 transition-transform ui-open:rotate-90" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-4 border-t border-puzzle-aqua/20">
-              <p className="text-muted-foreground mb-4">
-                Control how your information is used and displayed on the platform:
-              </p>
-              
-              <h4 className="text-puzzle-white font-medium mb-2">Profile Privacy</h4>
-              <ul className="space-y-2 text-muted-foreground mb-4">
-                <li><span className="text-puzzle-white font-medium">Public Profile:</span> Control what information is visible to other users</li>
-                <li><span className="text-puzzle-white font-medium">Leaderboard Visibility:</span> Show/hide your name on public leaderboards</li>
-                <li><span className="text-puzzle-white font-medium">Activity Sharing:</span> Control whether your wins and achievements are shared</li>
-              </ul>
-              
-              <h4 className="text-puzzle-white font-medium mb-2">Data Management</h4>
-              <ul className="space-y-2 text-muted-foreground mb-4">
-                <li><span className="text-puzzle-white font-medium">Data Download:</span> Request a copy of your personal data</li>
-                <li><span className="text-puzzle-white font-medium">Account Deletion:</span> Permanently remove your account and data</li>
-                <li><span className="text-puzzle-white font-medium">Cookie Preferences:</span> Manage how we use cookies and tracking technologies</li>
-              </ul>
-              
-              <p className="text-muted-foreground">
-                To update privacy settings, go to Account Dashboard > Privacy.
-              </p>
-            </CollapsibleContent>
-          </Collapsible>
+            </div>
+          </div>
         </div>
 
         <div className="bg-puzzle-aqua/10 p-6 rounded-lg mb-8">
-          <h3 className="text-puzzle-white text-xl font-bold mb-2">Account Security Best Practices</h3>
+          <h3 className="text-puzzle-white text-xl font-bold mb-2">Pro Tip: Account Linking</h3>
+          <p className="text-muted-foreground">
+            Link your social media accounts to make signing in easier and to enable social features. 
+            Go to "Settings" {">"} "Connected Accounts" to link your Facebook, Google, or Apple account.
+          </p>
+        </div>
+
+        <Separator className="my-8" />
+
+        <h2 className="text-puzzle-white text-2xl font-bold mb-4">Payment & Subscription Management</h2>
+        <p className="text-muted-foreground mb-4">
+          Managing your payment methods and subscriptions is easy on The Puzzle Boss:
+        </p>
+        
+        <div className="space-y-6 mb-8">
+          <div className="flex items-start gap-4">
+            <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
+              <CreditCard className="h-5 w-5 text-puzzle-aqua" />
+            </div>
+            <div>
+              <h3 className="text-puzzle-white text-xl font-bold mb-1">Adding Payment Methods</h3>
+              <p className="text-muted-foreground">
+                To add a new credit card or payment method:
+              </p>
+              <ol className="pl-5 mt-2 text-muted-foreground">
+                <li>Go to <Link to="/settings" className="text-puzzle-aqua hover:underline">Account Settings</Link> {">"} "Billing"</li>
+                <li>Click "Add Payment Method"</li>
+                <li>Enter your card details or select another payment option</li>
+                <li>Click "Save Payment Method"</li>
+              </ol>
+            </div>
+          </div>
+          
+          <div className="flex items-start gap-4">
+            <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
+              <CreditCard className="h-5 w-5 text-puzzle-aqua" />
+            </div>
+            <div>
+              <h3 className="text-puzzle-white text-xl font-bold mb-1">Managing Subscriptions</h3>
+              <p className="text-muted-foreground">
+                To change, upgrade, or cancel your subscription:
+              </p>
+              <ol className="pl-5 mt-2 text-muted-foreground">
+                <li>Go to <Link to="/settings" className="text-puzzle-aqua hover:underline">Account Settings</Link> {">"} "Subscriptions"</li>
+                <li>View your current subscription details</li>
+                <li>Click "Upgrade" to move to a higher tier</li>
+                <li>Click "Change Plan" to switch to a different plan</li>
+                <li>Click "Cancel Subscription" to end your subscription at the next billing cycle</li>
+              </ol>
+              <p className="text-muted-foreground mt-2">
+                <span className="text-puzzle-white font-medium">Note:</span> Canceling a subscription does not provide a refund for the current billing period. Your subscription benefits will continue until the end of the current period.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-start gap-4">
+            <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
+              <CreditCard className="h-5 w-5 text-puzzle-aqua" />
+            </div>
+            <div>
+              <h3 className="text-puzzle-white text-xl font-bold mb-1">Viewing Transaction History</h3>
+              <p className="text-muted-foreground">
+                To review your past transactions and purchases:
+              </p>
+              <ol className="pl-5 mt-2 text-muted-foreground">
+                <li>Go to <Link to="/settings" className="text-puzzle-aqua hover:underline">Account Settings</Link> {">"} "Billing"</li>
+                <li>Click "Transaction History"</li>
+                <li>View a list of all your purchases, including credits, memberships, and any other transactions</li>
+                <li>Click on any transaction to view its details</li>
+                <li>Use the "Download Receipt" option to save or print receipts for your records</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <Separator className="my-8" />
+
+        <h2 className="text-puzzle-white text-2xl font-bold mb-4">Security Settings</h2>
+        <p className="text-muted-foreground mb-4">
+          Keeping your account secure is important, especially when real prizes are involved:
+        </p>
+        
+        <div className="space-y-6 mb-8">
+          <div className="flex items-start gap-4">
+            <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
+              <Lock className="h-5 w-5 text-puzzle-aqua" />
+            </div>
+            <div>
+              <h3 className="text-puzzle-white text-xl font-bold mb-1">Changing Your Password</h3>
+              <p className="text-muted-foreground">
+                To update your password:
+              </p>
+              <ol className="pl-5 mt-2 text-muted-foreground">
+                <li>Go to <Link to="/settings" className="text-puzzle-aqua hover:underline">Account Settings</Link> {">"} "Security"</li>
+                <li>Click "Change Password"</li>
+                <li>Enter your current password</li>
+                <li>Enter and confirm your new password</li>
+                <li>Click "Update Password"</li>
+              </ol>
+              <p className="text-muted-foreground mt-2">
+                <span className="text-puzzle-white font-medium">Password Requirements:</span> Passwords must be at least 8 characters long and include a mix of uppercase letters, lowercase letters, numbers, and special characters.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-start gap-4">
+            <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
+              <Shield className="h-5 w-5 text-puzzle-aqua" />
+            </div>
+            <div>
+              <h3 className="text-puzzle-white text-xl font-bold mb-1">Two-Factor Authentication (2FA)</h3>
+              <p className="text-muted-foreground">
+                Add an extra layer of security to your account by enabling 2FA:
+              </p>
+              <ol className="pl-5 mt-2 text-muted-foreground">
+                <li>Go to <Link to="/settings" className="text-puzzle-aqua hover:underline">Account Settings</Link> {">"} "Security"</li>
+                <li>Find "Two-Factor Authentication" and click "Enable"</li>
+                <li>Choose your preferred 2FA method (SMS, email, or authenticator app)</li>
+                <li>Follow the setup instructions for your chosen method</li>
+                <li>Save your backup codes in a secure location</li>
+              </ol>
+              <p className="text-muted-foreground mt-2">
+                <span className="text-puzzle-white font-medium">Important:</span> We strongly recommend enabling 2FA for all accounts with active subscriptions or credit balances.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-start gap-4">
+            <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
+              <AlertCircle className="h-5 w-5 text-puzzle-aqua" />
+            </div>
+            <div>
+              <h3 className="text-puzzle-white text-xl font-bold mb-1">Login History & Security Alerts</h3>
+              <p className="text-muted-foreground">
+                Monitor your account activity and set up security alerts:
+              </p>
+              <ol className="pl-5 mt-2 text-muted-foreground">
+                <li>Go to <Link to="/settings" className="text-puzzle-aqua hover:underline">Account Settings</Link> {">"} "Security"</li>
+                <li>View "Login History" to see recent account access</li>
+                <li>Enable "Security Alerts" to receive notifications about unusual account activity</li>
+                <li>If you notice any suspicious activity, click "Secure Account" to immediately lock your account and contact support</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-puzzle-aqua/10 p-6 rounded-lg mb-8">
+          <h3 className="text-puzzle-white text-xl font-bold mb-2">Security Best Practices</h3>
           <ul className="space-y-2 text-muted-foreground">
-            <li>Use a strong, unique password for your Puzzle Boss account</li>
-            <li>Enable two-factor authentication for added security</li>
-            <li>Never share your account credentials with anyone</li>
-            <li>Be cautious of phishing attempts—we'll never ask for your password via email</li>
-            <li>Keep your email address up to date to receive security notifications</li>
-            <li>Sign out when using shared or public computers</li>
-            <li>Regularly review your account activity for unauthorized actions</li>
+            <li>Use a unique password for your Puzzle Boss account that you don't use elsewhere</li>
+            <li>Enable two-factor authentication for maximum security</li>
+            <li>Never share your login credentials with anyone</li>
+            <li>Be wary of phishing attempts—we will never ask for your password via email</li>
+            <li>Log out when using shared or public computers</li>
           </ul>
         </div>
 
         <Separator className="my-8" />
 
-        <h2 className="text-puzzle-white text-2xl font-bold mb-4">Need More Help?</h2>
-        <p className="text-muted-foreground mb-6">
-          If you have any questions about managing your account or need assistance with a specific issue, our support team is here to help.
+        <h2 className="text-puzzle-white text-2xl font-bold mb-4">Notification Preferences</h2>
+        <p className="text-muted-foreground mb-4">
+          Control what notifications you receive and how you receive them:
         </p>
         
-        <div className="text-center mb-8">
-          <Link to="/support">
-            <Button className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
-              Contact Support
-            </Button>
+        <div className="space-y-6 mb-8">
+          <div className="flex items-start gap-4">
+            <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
+              <Bell className="h-5 w-5 text-puzzle-aqua" />
+            </div>
+            <div>
+              <h3 className="text-puzzle-white text-xl font-bold mb-1">Email Notifications</h3>
+              <p className="text-muted-foreground">
+                To manage your email notification settings:
+              </p>
+              <ol className="pl-5 mt-2 text-muted-foreground">
+                <li>Go to <Link to="/settings" className="text-puzzle-aqua hover:underline">Account Settings</Link> {">"} "Notifications"</li>
+                <li>Under "Email Notifications," toggle the types of emails you want to receive</li>
+                <li>Options include: New puzzles, prize announcements, competition reminders, account updates, and marketing communications</li>
+                <li>Click "Save Preferences" to update your settings</li>
+              </ol>
+            </div>
+          </div>
+          
+          <div className="flex items-start gap-4">
+            <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
+              <Bell className="h-5 w-5 text-puzzle-aqua" />
+            </div>
+            <div>
+              <h3 className="text-puzzle-white text-xl font-bold mb-1">In-App Notifications</h3>
+              <p className="text-muted-foreground">
+                To manage notifications within the Puzzle Boss platform:
+              </p>
+              <ol className="pl-5 mt-2 text-muted-foreground">
+                <li>Go to <Link to="/settings" className="text-puzzle-aqua hover:underline">Account Settings</Link> {">"} "Notifications"</li>
+                <li>Under "In-App Notifications," toggle the types of notifications you want to see</li>
+                <li>Options include: Competition results, friend activities, credit bonuses, and system announcements</li>
+                <li>Click "Save Preferences" to update your settings</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <Separator className="my-8" />
+
+        <h2 className="text-puzzle-white text-2xl font-bold mb-4">Account Recovery Options</h2>
+        <p className="text-muted-foreground mb-4">
+          Set up account recovery options to ensure you never lose access to your account:
+        </p>
+        
+        <div className="space-y-6 mb-8">
+          <div className="flex items-start gap-4">
+            <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
+              <Settings className="h-5 w-5 text-puzzle-aqua" />
+            </div>
+            <div>
+              <h3 className="text-puzzle-white text-xl font-bold mb-1">Recovery Email</h3>
+              <p className="text-muted-foreground">
+                Add a recovery email to help regain access if you're locked out:
+              </p>
+              <ol className="pl-5 mt-2 text-muted-foreground">
+                <li>Go to <Link to="/settings" className="text-puzzle-aqua hover:underline">Account Settings</Link> {">"} "Security"</li>
+                <li>Find "Recovery Options" and click "Add Recovery Email"</li>
+                <li>Enter an alternate email address that you have access to</li>
+                <li>Verify this email by clicking the link sent to that address</li>
+              </ol>
+            </div>
+          </div>
+          
+          <div className="flex items-start gap-4">
+            <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
+              <Settings className="h-5 w-5 text-puzzle-aqua" />
+            </div>
+            <div>
+              <h3 className="text-puzzle-white text-xl font-bold mb-1">Recovery Phone</h3>
+              <p className="text-muted-foreground">
+                Add a recovery phone number for SMS verification:
+              </p>
+              <ol className="pl-5 mt-2 text-muted-foreground">
+                <li>Go to <Link to="/settings" className="text-puzzle-aqua hover:underline">Account Settings</Link> {">"} "Security"</li>
+                <li>Find "Recovery Options" and click "Add Recovery Phone"</li>
+                <li>Enter your phone number</li>
+                <li>Enter the verification code sent to your phone</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <Separator className="my-8" />
+
+        <h2 className="text-puzzle-white text-2xl font-bold mb-4">Account Deletion</h2>
+        <p className="text-muted-foreground mb-4">
+          If you need to close your account permanently:
+        </p>
+        
+        <div className="bg-puzzle-black/30 border border-red-500/30 p-6 rounded-lg mb-8">
+          <h3 className="text-red-400 text-xl font-bold mb-2">Important: Account Deletion is Permanent</h3>
+          <p className="text-muted-foreground mb-4">
+            Deleting your account will:
+          </p>
+          <ul className="space-y-2 text-muted-foreground">
+            <li>Permanently remove all your profile information</li>
+            <li>Forfeit any unused credits or active subscriptions</li>
+            <li>Remove you from all leaderboards and competitions</li>
+            <li>Delete your puzzle history and achievements</li>
+          </ul>
+          <p className="text-muted-foreground mt-4">
+            This action cannot be undone. If you're having issues with the platform, please <Link to="/contact" className="text-puzzle-aqua hover:underline">contact support</Link> first to see if we can help resolve them.
+          </p>
+          <div className="mt-4">
+            <p className="text-muted-foreground">
+              To delete your account:
+            </p>
+            <ol className="pl-5 mt-2 text-muted-foreground">
+              <li>Go to <Link to="/settings" className="text-puzzle-aqua hover:underline">Account Settings</Link> {">"} "Account"</li>
+              <li>Scroll to the bottom and click "Delete Account"</li>
+              <li>Follow the verification steps (which may include entering your password or a special code)</li>
+              <li>Confirm your decision</li>
+            </ol>
+          </div>
+        </div>
+
+        <h2 className="text-puzzle-white text-2xl font-bold mb-4">Interactive Example: Account Settings Navigation</h2>
+        <p className="text-muted-foreground mb-4">
+          Try this simple interactive puzzle to familiarize yourself with navigating account settings:
+        </p>
+        
+        <div className="bg-puzzle-black/30 border-puzzle-aqua/20 border p-6 rounded-lg mb-8">
+          <p className="text-muted-foreground mb-4">
+            In this example, rearrange the tiles to create the correct navigation path to change your password:
+          </p>
+          <div className="max-w-sm mx-auto">
+            <InteractivePuzzle />
+          </div>
+          <p className="text-muted-foreground mt-4 text-center">
+            The correct path is: Settings {">"} Security {">"} Change Password {">"} Save
+          </p>
+        </div>
+
+        <div className="flex justify-between items-center mt-8">
+          <Link to="/guides/prize-claim-process" className="text-puzzle-aqua hover:underline flex items-center">
+            <ChevronRight className="h-4 w-4 rotate-180 mr-1" />
+            Prize Claim Process
+          </Link>
+          <Link to="/guides/getting-started-guide" className="text-puzzle-aqua hover:underline flex items-center">
+            Getting Started Guide
+            <ChevronRight className="h-4 w-4 ml-1" />
           </Link>
         </div>
       </div>
