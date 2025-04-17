@@ -2,11 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthForm } from '@/components/auth/AuthForm';
-import { useUserProfile } from '@/hooks/useUserProfile';
+import { useAuthState } from '@/hooks/auth/useAuthState';
 import { Loader2 } from 'lucide-react';
 
 const Auth = () => {
-  const { currentUserId, isLoading } = useUserProfile();
+  const { currentUserId, isLoading } = useAuthState();
   const [isPageLoading, setIsPageLoading] = useState(true);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
