@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -19,6 +19,7 @@ import { LogOut, Settings, Shield, User } from 'lucide-react';
 const Navbar: React.FC = () => {
   const { profile, isLoading, isAdmin, currentUserId } = useUserProfile();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     try {
@@ -37,6 +38,14 @@ const Navbar: React.FC = () => {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleSignIn = () => {
+    navigate('/auth');
+  };
+
+  const handleSignUp = () => {
+    navigate('/auth?tab=signup');
   };
 
   return (
@@ -125,16 +134,20 @@ const Navbar: React.FC = () => {
             </DropdownMenu>
           ) : (
             <div className="flex items-center gap-2">
-              <Link to="/auth">
-                <Button variant="default" className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
-                  Sign In
-                </Button>
-              </Link>
-              <Link to="/auth?tab=signup">
-                <Button variant="outline" className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold/10">
-                  Sign Up
-                </Button>
-              </Link>
+              <Button 
+                variant="default" 
+                className="bg-puzzle-aqua hover:bg-puzzle-aqua/80"
+                onClick={handleSignIn}
+              >
+                Sign In
+              </Button>
+              <Button 
+                variant="outline" 
+                className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold/10"
+                onClick={handleSignUp}
+              >
+                Sign Up
+              </Button>
             </div>
           )}
         </div>
