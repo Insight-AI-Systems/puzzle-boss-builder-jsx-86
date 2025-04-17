@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 const Auth = () => {
   const { currentUserId, isLoading: authLoading, error: authError } = useAuthState();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
   
   // If we're in password recovery flow, we don't want to redirect
