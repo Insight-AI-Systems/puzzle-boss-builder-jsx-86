@@ -9,25 +9,13 @@ import { getTabDefinitions } from './dashboard/TabDefinitions';
 import { useToast } from '@/hooks/use-toast';
 
 export const RoleBasedDashboard: React.FC = () => {
+  // All hooks must be called at the top level, consistently
   const { profile } = useUserProfile();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [accessibleTabs, setAccessibleTabs] = useState<ReturnType<typeof getTabDefinitions>>([]);
   
-  // Early return with null if profile is not available
-  if (!profile) {
-    return null;
-  }
-  
-  // Get user role from profile
-  const userRole = profile.role;
-  
-  // Get all tab definitions
-  const tabs = getTabDefinitions();
-  
-  // Filter tabs based on user role
-  const accessibleTabs = tabs.filter(tab => tab.roles.includes(userRole as UserRole));
-
-  // Handle tab change with feedback
+  // Define handler outside of conditional render
   const handleTabChange = (tabId: string) => {
     console.log('Changing to tab:', tabId);
     setActiveTab(tabId);
@@ -36,13 +24,31 @@ export const RoleBasedDashboard: React.FC = () => {
       description: `Viewing ${tabId} dashboard content`,
     });
   };
-
-  // If no tabs are accessible, show the first one
+  
+  // Use effect for tab loading and filtering
   useEffect(() => {
-    if (accessibleTabs.length > 0 && !accessibleTabs.some(tab => tab.id === activeTab)) {
-      setActiveTab(accessibleTabs[0].id);
+    if (!profile) return;
+    
+    // Get user role from profile
+    const userRole = profile.role;
+    
+    // Get all tab definitions
+    const tabs = getTabDefinitions();
+    
+    // Filter tabs based on user role
+    const filtered = tabs.filter(tab => tab.roles.includes(userRole as UserRole));
+    setAccessibleTabs(filtered);
+    
+    // If no tabs are accessible, show the first one
+    if (filtered.length > 0 && !filtered.some(tab => tab.id === activeTab)) {
+      setActiveTab(filtered[0].id);
     }
-  }, [accessibleTabs, activeTab]);
+  }, [profile, activeTab]);
+  
+  // Early return with null if profile is not available
+  if (!profile) {
+    return null;
+  }
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
