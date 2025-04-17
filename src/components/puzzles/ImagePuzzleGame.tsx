@@ -152,11 +152,13 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({ sampleImages = DEFAUL
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent, piece: PuzzlePiece) => {
     if (isSolved) return;
     
-    e.preventDefault();
+    // Prevent default to avoid issues in dev panel
+    if (e.preventDefault) e.preventDefault();
+    console.log('Drag start:', piece.id);
     setDraggedPiece(piece);
     
     // Update piece state
-    setPieces(pieces.map(p => 
+    setPieces(prev => prev.map(p => 
       p.id === piece.id 
         ? { ...p, isDragging: true } 
         : p
@@ -164,20 +166,26 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({ sampleImages = DEFAUL
   };
   
   const handleDrop = (e: React.MouseEvent | React.TouchEvent, targetIndex: number) => {
-    e.preventDefault();
+    // Prevent default to avoid issues in dev panel
+    if (e.preventDefault) e.preventDefault();
     
     if (!draggedPiece || isSolved) {
       return;
     }
     
+    console.log('Drop attempt on index:', targetIndex);
+    
     // Find the source piece position
     const sourceIndex = pieces.findIndex(p => p.id === draggedPiece.id);
     
     if (sourceIndex === -1) {
+      console.log('Source piece not found');
       return;
     }
     
     if (sourceIndex !== targetIndex) {
+      console.log(`Swapping piece from position ${sourceIndex} to ${targetIndex}`);
+      
       // Create a new array with swapped positions
       const newPieces = [...pieces];
       const temp = newPieces[sourceIndex];
@@ -196,7 +204,7 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({ sampleImages = DEFAUL
       setMoveCount(prev => prev + 1);
     } else {
       // Reset dragging state without counting as a move
-      setPieces(pieces.map(p => ({ ...p, isDragging: false })));
+      setPieces(prev => prev.map(p => ({ ...p, isDragging: false })));
       setDraggedPiece(null);
     }
   };
@@ -204,8 +212,12 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({ sampleImages = DEFAUL
   const handlePieceClick = (piece: PuzzlePiece) => {
     if (isSolved) return;
     
+    console.log('Piece clicked:', piece.id);
+    
     // For touch screens - implement click to select and then click to place
     if (draggedPiece && draggedPiece.id !== piece.id) {
+      console.log(`Swapping pieces via click: ${draggedPiece.id} with ${piece.id}`);
+      
       // Find the source and target indices
       const sourceIndex = pieces.findIndex(p => p.id === draggedPiece.id);
       const targetIndex = pieces.findIndex(p => p.id === piece.id);
@@ -232,12 +244,12 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({ sampleImages = DEFAUL
       // Select or deselect the piece
       if (draggedPiece?.id === piece.id) {
         // Deselect if clicking the same piece
-        setPieces(pieces.map(p => ({ ...p, isDragging: false })));
+        setPieces(prev => prev.map(p => ({ ...p, isDragging: false })));
         setDraggedPiece(null);
       } else {
         // Select a new piece
         setDraggedPiece(piece);
-        setPieces(pieces.map(p => 
+        setPieces(prev => prev.map(p => 
           p.id === piece.id 
             ? { ...p, isDragging: true } 
             : { ...p, isDragging: false }
@@ -251,7 +263,7 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({ sampleImages = DEFAUL
       setIsSolved(false);
     }
     
-    // Shuffle the pieces
+    console.log("Shuffling pieces");
     setPieces(prevPieces => {
       const shuffled = [...prevPieces].sort(() => Math.random() - 0.5);
       // Update positions after shuffle

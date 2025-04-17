@@ -31,8 +31,11 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
     // Close mobile menu if applicable
     if (onClick) onClick();
     
-    // Use navigate for programmatic navigation
-    navigate(path);
+    // Use setTimeout to ensure event completes before navigation
+    setTimeout(() => {
+      // Use navigate for programmatic navigation
+      navigate(path);
+    }, 0);
   };
   
   return (

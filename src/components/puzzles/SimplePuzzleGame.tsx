@@ -54,12 +54,13 @@ const SimplePuzzleGame: React.FC = () => {
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent, piece: PuzzlePiece) => {
     if (isSolved) return; // Prevent interactions if puzzle is solved
     
-    e.preventDefault();
+    // Prevent default to avoid issues in dev panel
+    if (e.preventDefault) e.preventDefault();
     console.log('Drag start:', piece.id);
     setDraggedPiece(piece);
     
     // Update piece state
-    setPieces(pieces.map(p => 
+    setPieces(prev => prev.map(p => 
       p.id === piece.id 
         ? { ...p, isDragging: true } 
         : p
@@ -67,7 +68,8 @@ const SimplePuzzleGame: React.FC = () => {
   };
 
   const handleMove = (e: React.MouseEvent | React.TouchEvent, targetIndex: number) => {
-    e.preventDefault();
+    // Prevent default to avoid issues in dev panel
+    if (e.preventDefault) e.preventDefault();
     // Provide visual feedback on hover
     if (draggedPiece && !isMobile) {
       // Optional: Add more hover effects or visual feedback here
@@ -75,11 +77,14 @@ const SimplePuzzleGame: React.FC = () => {
   };
 
   const handleDrop = (e: React.MouseEvent | React.TouchEvent, targetIndex: number) => {
-    e.preventDefault();
+    // Prevent default to avoid issues in dev panel
+    if (e.preventDefault) e.preventDefault();
     
     if (!draggedPiece || isSolved) {
       return;
     }
+    
+    console.log('Drop attempt on index:', targetIndex);
     
     // Find the source piece position
     const sourceIndex = pieces.findIndex(p => p.id === draggedPiece.id);
@@ -110,7 +115,7 @@ const SimplePuzzleGame: React.FC = () => {
       setMoveCount(prev => prev + 1);
     } else {
       // Reset dragging state without counting as a move
-      setPieces(pieces.map(p => ({ ...p, isDragging: false })));
+      setPieces(prev => prev.map(p => ({ ...p, isDragging: false })));
       setDraggedPiece(null);
     }
   };
@@ -119,7 +124,7 @@ const SimplePuzzleGame: React.FC = () => {
     if (isSolved) return;
     
     console.log('Drag end');
-    setPieces(pieces.map(p => ({ ...p, isDragging: false })));
+    setPieces(prev => prev.map(p => ({ ...p, isDragging: false })));
     setDraggedPiece(null);
   };
 
