@@ -1,4 +1,3 @@
-
 import * as React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -30,6 +29,7 @@ import Press from "./pages/Press";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import FAQ from "./pages/FAQ";
+import PuzzleDemo from './pages/PuzzleDemo';
 
 // Guide Pages
 import GettingStartedGuide from "./pages/guides/GettingStartedGuide";
