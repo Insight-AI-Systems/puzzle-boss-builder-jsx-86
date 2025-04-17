@@ -8,31 +8,12 @@ import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
   const { currentUserId, isLoading: authLoading, error: authError } = useAuthState();
-  const [isPageLoading, setIsPageLoading] = useState(true);
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   
   // If we're in password recovery flow, we don't want to redirect
   const isPasswordRecovery = searchParams.get('type') === 'recovery';
   
-  // Add safety timeout to prevent infinite loading
-  useEffect(() => {
-    // Set an immediate timeout for initial page load
-    setIsPageLoading(false);
-
-    // Set a very short safety timeout to prevent infinite loading
-    const safetyTimer = setTimeout(() => {
-      setLoadingTimeout(true);
-      console.log('Safety timeout triggered - forcing auth page to render');
-    }, 500); // Ultra-short timeout to prevent "wheel of death"
-
-    return () => {
-      clearTimeout(safetyTimer);
-    };
-  }, []);
-
   // Handle authentication errors
   useEffect(() => {
     if (authError) {
@@ -45,37 +26,7 @@ const Auth = () => {
     }
   }, [authError, toast]);
 
-  // Force render the auth form if we've been loading too long
-  if (loadingTimeout) {
-    console.log('Rendering auth form due to timeout');
-    return (
-      <div className="min-h-screen bg-puzzle-black flex items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-puzzle-white">
-              Welcome to <span className="text-puzzle-aqua">The</span>{' '}
-              <span className="text-puzzle-white">Puzzle</span>{' '}
-              <span className="text-puzzle-gold">Boss</span>
-            </h2>
-            <p className="mt-2 text-muted-foreground">
-              Sign in or create an account to start playing
-            </p>
-          </div>
-          <AuthForm />
-        </div>
-      </div>
-    );
-  }
-
-  // Show loading indicator only for a very short time
-  if (isPageLoading && authLoading) {
-    return (
-      <div className="min-h-screen bg-puzzle-black flex items-center justify-center p-4">
-        <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
-      </div>
-    );
-  }
-
+  // For simplicity, we'll render the auth form immediately - no loading states
   // Handle redirection only if not in recovery mode and we're not loading
   if (!isPasswordRecovery && currentUserId && !authLoading) {
     console.log('User authenticated, redirecting to home');

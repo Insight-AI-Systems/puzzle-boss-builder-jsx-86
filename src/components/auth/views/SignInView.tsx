@@ -36,18 +36,20 @@ export const SignInView: React.FC<SignInViewProps> = ({
 }) => {
   const [searchParams] = useSearchParams();
   
-  // Explicitly determine the initial tab based on URL or default to signin
-  const defaultTab = currentView === 'signup' || searchParams.get('signup') === 'true' ? 'signup' : 'signin';
-  
-  // Handle URL parameters to set the proper tab
+  // Get the initial tab directly based on URL or currentView
+  const initialTab = searchParams.get('signup') === 'true' ? 'signup' : 
+                    currentView === 'signup' ? 'signup' : 'signin';
+                    
+  // Synchronize the tab with URL parameters
   useEffect(() => {
-    if (searchParams.get('signup') === 'true') {
+    const signupParam = searchParams.get('signup');
+    if (signupParam === 'true' && currentView !== 'signup') {
       setCurrentView('signup');
     }
-  }, [searchParams, setCurrentView]);
+  }, [searchParams, currentView, setCurrentView]);
 
   return (
-    <Tabs defaultValue={defaultTab} className="w-full" onValueChange={setCurrentView}>
+    <Tabs defaultValue={initialTab} className="w-full" value={currentView} onValueChange={setCurrentView}>
       <TabsList className="grid w-full grid-cols-2 mb-6">
         <TabsTrigger value="signin">Sign In</TabsTrigger>
         <TabsTrigger value="signup">Sign Up</TabsTrigger>

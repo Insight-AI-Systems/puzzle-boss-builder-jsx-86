@@ -11,7 +11,14 @@ export function useAuthState() {
 
   useEffect(() => {
     let isActive = true;
-    let isInitialized = false;
+    
+    // Immediately set a fast timeout to prevent hanging UI
+    const quickTimeout = setTimeout(() => {
+      if (isActive && isLoading) {
+        console.log('Quick timeout triggered - ensuring UI is responsive');
+        setIsLoading(false);
+      }
+    }, 200); // Ultra-short timeout for immediate response
     
     // Set up auth state listener first
     const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -21,16 +28,11 @@ export function useAuthState() {
         console.log('Auth state changed:', event);
         setCurrentUserId(session?.user?.id || null);
         setSession(session);
-        
-        // Mark as initialized for certain events
-        if (['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED', 'PASSWORD_RECOVERY'].includes(event)) {
-          isInitialized = true;
-          setIsLoading(false);
-        }
+        setIsLoading(false); // Always set loading to false on any auth event
       }
     );
 
-    // Immediately check for existing session, don't use timeout
+    // Immediately check for existing session
     const checkSession = async () => {
       try {
         if (!isActive) return;
@@ -63,18 +65,10 @@ export function useAuthState() {
     // Start session check immediately
     checkSession();
 
-    // Ultra short safety timer - 300ms max for authentication
-    const safetyTimer = setTimeout(() => {
-      if (isActive && isLoading) {
-        console.log('Safety timeout triggered in useAuthState - forcing completion');
-        setIsLoading(false);
-      }
-    }, 300); // Even shorter timeout to prevent wheel of death
-
     return () => {
       isActive = false;
+      clearTimeout(quickTimeout);
       authListener.subscription.unsubscribe();
-      clearTimeout(safetyTimer);
     };
   }, []);
 
