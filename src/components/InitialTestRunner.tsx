@@ -1,7 +1,6 @@
 
 import * as React from 'react';
-import { runInitialTests } from '@/utils/testRunner';
-import { runComponentTestSuite } from '@/utils/testing/testRunner';
+import { runInitialTests, runComponentTestSuite } from '@/utils/testing';
 
 const InitialTestRunner: React.FC = () => {
   React.useEffect(() => {
