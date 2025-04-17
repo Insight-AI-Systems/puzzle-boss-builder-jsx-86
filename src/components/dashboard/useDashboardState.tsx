@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { projectTracker } from '@/utils/ProjectTracker';
-import { TestRunner } from '@/utils/TestRunner';
+import { TestRunner } from '@/utils/testing';
 import { ProjectTask, ProjectTest } from '@/utils/types/projectTypes';
 
 export function useDashboardState() {
