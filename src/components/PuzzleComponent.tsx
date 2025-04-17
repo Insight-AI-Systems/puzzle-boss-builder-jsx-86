@@ -1,9 +1,10 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as headbreaker from 'headbreaker';
 
 const PuzzleComponent: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
   
   useEffect(() => {
     if (!containerRef.current) return;
@@ -11,38 +12,53 @@ const PuzzleComponent: React.FC = () => {
     // Clear any existing content
     containerRef.current.innerHTML = '';
     
-    // Create a new Headbreaker canvas with a 4x4 puzzle
-    const canvas = new headbreaker.Canvas('puzzle-container', {
-      width: 400,
-      height: 400,
-      pieceSize: 100,
-      proximity: 20,
-      borderFill: 10,
-      strokeWidth: 1.5,
-      lineSoftness: 0.18,
-      outlineSoftness: 0,
-    });
-    
-    // Create a 4x4 puzzle with 100x100px pieces
-    const imagePuzzle = canvas.createImagePuzzle(4, 4);
-    
-    // Use a solid color for each piece as a placeholder
-    // In a real implementation, you would use an actual image
-    imagePuzzle.forEach((piece) => {
-      const color = `hsl(${Math.random() * 360}, 80%, 60%)`;
-      piece.fill = color;
-      piece.strokeColor = '#000';
-    });
-    
-    // Adjust piece positions and draw the puzzle
-    canvas.adjustPieces(imagePuzzle);
-    canvas.shuffle(imagePuzzle, 0.6);
-    canvas.draw(imagePuzzle);
-    
-    // Make the pieces draggable
-    canvas.attachSolvedValidator(imagePuzzle);
-    canvas.snapDistance = 40;
-    canvas.attachDragListeners(imagePuzzle);
+    // Use a setTimeout to ensure the DOM is fully rendered
+    setTimeout(() => {
+      try {
+        const puzzleContainer = document.getElementById('simple-puzzle-container');
+        
+        if (!puzzleContainer) {
+          console.error('Simple puzzle container not found');
+          return;
+        }
+        
+        // Create a new Headbreaker canvas with a 4x4 puzzle
+        const canvas = new headbreaker.Canvas('simple-puzzle-container', {
+          width: 400,
+          height: 400,
+          pieceSize: 100,
+          proximity: 20,
+          borderFill: 10,
+          strokeWidth: 1.5,
+          lineSoftness: 0.18,
+          outlineSoftness: 0,
+        });
+        
+        // Create a 4x4 puzzle with 100x100px pieces
+        const imagePuzzle = canvas.createPuzzle(4, 4);
+        
+        // Use a solid color for each piece as a placeholder
+        imagePuzzle.forEach((piece) => {
+          const color = `hsl(${Math.random() * 360}, 80%, 60%)`;
+          piece.fill = color;
+          piece.strokeColor = '#000';
+        });
+        
+        // Adjust piece positions and draw the puzzle
+        canvas.adjustPieces(imagePuzzle);
+        canvas.shuffle(imagePuzzle, 0.6);
+        canvas.draw(imagePuzzle);
+        
+        // Make the pieces draggable
+        canvas.attachSolvedValidator(imagePuzzle);
+        canvas.snapDistance = 40;
+        canvas.attachDragListeners(imagePuzzle);
+        
+        setIsLoaded(true);
+      } catch (error) {
+        console.error('Error initializing simple puzzle:', error);
+      }
+    }, 100);
     
     return () => {
       // Cleanup function if needed
@@ -59,7 +75,12 @@ const PuzzleComponent: React.FC = () => {
         className="border border-puzzle-aqua/40 bg-puzzle-black/50 rounded-lg p-4"
         style={{ width: '450px', height: '450px' }}
       >
-        <div id="puzzle-container" ref={containerRef} />
+        {!isLoaded && (
+          <div className="flex items-center justify-center h-full">
+            <div className="animate-pulse text-puzzle-aqua">Loading puzzle...</div>
+          </div>
+        )}
+        <div id="simple-puzzle-container" ref={containerRef} />
       </div>
       <p className="mt-4 text-sm text-muted-foreground">
         Drag the pieces to solve the puzzle. Pieces will snap together when close enough.

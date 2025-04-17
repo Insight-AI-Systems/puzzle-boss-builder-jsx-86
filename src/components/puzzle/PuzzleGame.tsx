@@ -22,91 +22,106 @@ const PuzzleGame: React.FC<PuzzleGameProps> = ({
   const [canvas, setCanvas] = useState<headbreaker.Canvas | null>(null);
   
   useEffect(() => {
+    // Ensure the DOM element exists before creating the canvas
     if (!containerRef.current) return;
     
     // Clear any existing content
     containerRef.current.innerHTML = '';
     
-    // Create a new Headbreaker canvas
-    const puzzleCanvas = new headbreaker.Canvas('puzzle-container', {
-      width,
-      height,
-      pieceSize: 100,
-      proximity: 20,
-      borderFill: 10,
-      strokeWidth: 2,
-      lineSoftness: 0.18,
-    });
-    
-    setCanvas(puzzleCanvas);
-    
-    // Load image and create puzzle once image is loaded
-    const img = new Image();
-    img.crossOrigin = 'Anonymous';
-    img.src = imageSrc;
-    
-    img.onload = () => {
-      // Create puzzle with the loaded image
+    // Use a setTimeout to ensure the DOM is fully rendered
+    setTimeout(() => {
       try {
-        const imagePuzzle = puzzleCanvas.createImagePuzzle(columns, rows, img);
+        // Create a new Headbreaker canvas with the correct DOM element ID
+        const puzzleContainer = document.getElementById('puzzle-container');
         
-        // Adjust piece positions and draw the puzzle
-        puzzleCanvas.adjustPieces(imagePuzzle);
-        puzzleCanvas.shuffle(imagePuzzle, 0.6);
-        puzzleCanvas.draw(imagePuzzle);
+        if (!puzzleContainer) {
+          console.error('Puzzle container element not found');
+          return;
+        }
         
-        // Make the pieces draggable
-        puzzleCanvas.attachSolvedValidator(imagePuzzle);
-        puzzleCanvas.snapDistance = 40;
-        puzzleCanvas.attachDragListeners(imagePuzzle);
-        
-        setIsLoaded(true);
-      } catch (error) {
-        console.error('Error creating puzzle:', error);
-        
-        // Fallback to colored pieces if image loading fails
-        const colorPuzzle = puzzleCanvas.createPuzzle(columns, rows);
-        
-        colorPuzzle.forEach((piece) => {
-          const color = `hsl(${Math.random() * 360}, 80%, 60%)`;
-          piece.fill = color;
-          piece.strokeColor = '#000';
+        const puzzleCanvas = new headbreaker.Canvas('puzzle-container', {
+          width,
+          height,
+          pieceSize: 100,
+          proximity: 20,
+          borderFill: 10,
+          strokeWidth: 2,
+          lineSoftness: 0.18,
         });
         
-        puzzleCanvas.adjustPieces(colorPuzzle);
-        puzzleCanvas.shuffle(colorPuzzle, 0.6);
-        puzzleCanvas.draw(colorPuzzle);
+        setCanvas(puzzleCanvas);
         
-        puzzleCanvas.attachSolvedValidator(colorPuzzle);
-        puzzleCanvas.snapDistance = 40;
-        puzzleCanvas.attachDragListeners(colorPuzzle);
+        // Load image and create puzzle once image is loaded
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.src = imageSrc;
         
-        setIsLoaded(true);
+        img.onload = () => {
+          // Create puzzle with the loaded image
+          try {
+            const imagePuzzle = puzzleCanvas.createImagePuzzle(columns, rows, img);
+            
+            // Adjust piece positions and draw the puzzle
+            puzzleCanvas.adjustPieces(imagePuzzle);
+            puzzleCanvas.shuffle(imagePuzzle, 0.6);
+            puzzleCanvas.draw(imagePuzzle);
+            
+            // Make the pieces draggable
+            puzzleCanvas.attachSolvedValidator(imagePuzzle);
+            puzzleCanvas.snapDistance = 40;
+            puzzleCanvas.attachDragListeners(imagePuzzle);
+            
+            setIsLoaded(true);
+          } catch (error) {
+            console.error('Error creating puzzle:', error);
+            
+            // Fallback to colored pieces if image loading fails
+            const colorPuzzle = puzzleCanvas.createPuzzle(columns, rows);
+            
+            colorPuzzle.forEach((piece) => {
+              const color = `hsl(${Math.random() * 360}, 80%, 60%)`;
+              piece.fill = color;
+              piece.strokeColor = '#000';
+            });
+            
+            puzzleCanvas.adjustPieces(colorPuzzle);
+            puzzleCanvas.shuffle(colorPuzzle, 0.6);
+            puzzleCanvas.draw(colorPuzzle);
+            
+            puzzleCanvas.attachSolvedValidator(colorPuzzle);
+            puzzleCanvas.snapDistance = 40;
+            puzzleCanvas.attachDragListeners(colorPuzzle);
+            
+            setIsLoaded(true);
+          }
+        };
+        
+        img.onerror = () => {
+          console.error('Failed to load image');
+          
+          // Create a fallback colored puzzle
+          const colorPuzzle = puzzleCanvas.createPuzzle(columns, rows);
+          
+          colorPuzzle.forEach((piece) => {
+            const color = `hsl(${Math.random() * 360}, 80%, 60%)`;
+            piece.fill = color;
+            piece.strokeColor = '#000';
+          });
+          
+          puzzleCanvas.adjustPieces(colorPuzzle);
+          puzzleCanvas.shuffle(colorPuzzle, 0.6);
+          puzzleCanvas.draw(colorPuzzle);
+          
+          puzzleCanvas.attachSolvedValidator(colorPuzzle);
+          puzzleCanvas.snapDistance = 40;
+          puzzleCanvas.attachDragListeners(colorPuzzle);
+          
+          setIsLoaded(true);
+        };
+      } catch (error) {
+        console.error('Error initializing canvas:', error);
       }
-    };
-    
-    img.onerror = () => {
-      console.error('Failed to load image');
-      
-      // Create a fallback colored puzzle
-      const colorPuzzle = puzzleCanvas.createPuzzle(columns, rows);
-      
-      colorPuzzle.forEach((piece) => {
-        const color = `hsl(${Math.random() * 360}, 80%, 60%)`;
-        piece.fill = color;
-        piece.strokeColor = '#000';
-      });
-      
-      puzzleCanvas.adjustPieces(colorPuzzle);
-      puzzleCanvas.shuffle(colorPuzzle, 0.6);
-      puzzleCanvas.draw(colorPuzzle);
-      
-      puzzleCanvas.attachSolvedValidator(colorPuzzle);
-      puzzleCanvas.snapDistance = 40;
-      puzzleCanvas.attachDragListeners(colorPuzzle);
-      
-      setIsLoaded(true);
-    };
+    }, 100); // Short delay to ensure DOM is ready
     
     return () => {
       // Cleanup function
