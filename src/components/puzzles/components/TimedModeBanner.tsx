@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Clock, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface TimedModeBannerProps {
   timeLimit: number;
@@ -18,61 +19,74 @@ const TimedModeBanner: React.FC<TimedModeBannerProps> = ({
   onTimeUp,
   isMobile
 }) => {
-  const [timeRemaining, setTimeRemaining] = useState(timeLimit - timeSpent);
-  const [isWarning, setIsWarning] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(timeLimit - timeSpent);
+  const [warning, setWarning] = useState(false);
   
-  // Update time remaining
-  useEffect(() => {
-    setTimeRemaining(timeLimit - timeSpent);
-  }, [timeLimit, timeSpent]);
+  // Calculate percentage of time remaining
+  const percentRemaining = Math.max(0, Math.min(100, (timeLeft / timeLimit) * 100));
   
-  // Set warning state when time is running low
-  useEffect(() => {
-    const warningThreshold = timeLimit * 0.25; // 25% of time remaining
-    setIsWarning(timeRemaining <= warningThreshold && timeRemaining > 0);
-  }, [timeRemaining, timeLimit]);
-  
-  // Check if time is up
-  useEffect(() => {
-    if (timeRemaining <= 0 && isActive) {
-      onTimeUp();
-    }
-  }, [timeRemaining, isActive, onTimeUp]);
-  
-  // Format time for display (mm:ss)
+  // Format time for display
   const formatTime = (seconds: number): string => {
-    const mins = Math.max(0, Math.floor(seconds / 60));
-    const secs = Math.max(0, seconds % 60);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    if (seconds <= 0) return '0:00';
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
   
-  // Calculate progress percentage
-  const progressPercentage = Math.max(0, (timeRemaining / timeLimit) * 100);
+  useEffect(() => {
+    // Update time left based on timeSpent
+    setTimeLeft(timeLimit - timeSpent);
+    
+    // Show warning when less than 20% time remains
+    setWarning(percentRemaining < 20 && percentRemaining > 0);
+    
+    // Check if time is up
+    if (timeSpent >= timeLimit && isActive) {
+      onTimeUp();
+    }
+  }, [timeLimit, timeSpent, percentRemaining, isActive, onTimeUp]);
+  
+  // Timer effect
+  useEffect(() => {
+    let interval: number | null = null;
+    
+    if (isActive && timeLeft > 0) {
+      interval = window.setInterval(() => {
+        setTimeLeft(prev => {
+          const newTime = prev - 1;
+          if (newTime <= 0) {
+            if (interval !== null) clearInterval(interval);
+            onTimeUp();
+            return 0;
+          }
+          return newTime;
+        });
+      }, 1000);
+    }
+    
+    return () => {
+      if (interval !== null) clearInterval(interval);
+    };
+  }, [isActive, timeLeft, onTimeUp]);
   
   return (
-    <div className={`w-full ${isWarning ? 'animate-pulse' : ''}`}>
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-1 text-sm font-medium">
-          <Clock className={`h-4 w-4 ${isWarning ? 'text-red-500' : ''}`} />
-          <span className={isWarning ? 'text-red-500' : ''}>Time Remaining:</span>
+    <div className={`w-full ${warning ? 'animate-pulse' : ''}`}>
+      <Alert variant={warning ? "destructive" : "default"} className="mb-2">
+        <div className="flex items-center">
+          {warning ? <AlertTriangle className="h-4 w-4 mr-2" /> : <Clock className="h-4 w-4 mr-2" />}
+          <span className="font-medium">
+            {warning ? 'Time running out!' : 'Timed Challenge'}
+          </span>
         </div>
-        <div className={`font-bold ${isWarning ? 'text-red-500' : ''}`}>
-          {formatTime(timeRemaining)}
-        </div>
-      </div>
+        <AlertDescription className="mt-1">
+          {isActive ? `Time remaining: ${formatTime(timeLeft)}` : 'Paused'}
+        </AlertDescription>
+      </Alert>
       
       <Progress 
-        value={progressPercentage} 
-        className={`h-2 ${isWarning ? 'bg-red-200' : ''}`}
-        indicatorClassName={isWarning ? 'bg-red-500' : undefined}
+        value={percentRemaining} 
+        className={warning ? 'bg-red-200' : 'bg-gray-200'} 
       />
-      
-      {isWarning && (
-        <div className="flex items-center gap-1 mt-1 text-xs text-red-500">
-          <AlertTriangle className="h-3 w-3" />
-          <span>Time is running out!</span>
-        </div>
-      )}
     </div>
   );
 };

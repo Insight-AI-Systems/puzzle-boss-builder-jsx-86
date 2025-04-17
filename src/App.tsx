@@ -43,57 +43,55 @@ const queryClient = new QueryClient();
 
 const App: React.FC = () => {
   return (
-    <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="dark">
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="dark">
+        <BrowserRouter>
           <Toaster />
           <Sonner />
           <InitialTestRunner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/progress" element={<Progress />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/admin-dashboard" element={<AdminDashboard />} />
-              <Route path="/dev-dashboard" element={<DevDashboard />} />
-              <Route path="/membership" element={<Membership />} />
-              <Route path="/account" element={<AccountDashboard />} />
-              <Route path="/puzzles" element={<Puzzles />} />
-              <Route path="/prizes" element={<Prizes />} />
-              <Route path="/how-it-works" element={<HowItWorks />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/puzzle-demo" element={<PuzzleDemo />} />
-              
-              {/* New Pages */}
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/faq" element={<FAQ />} />
-              
-              {/* Legal Pages */}
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/cookie-policy" element={<CookiePolicy />} />
-              <Route path="/contest-rules" element={<ContestRules />} />
-              
-              {/* Support & Company Pages */}
-              <Route path="/support" element={<Support />} />
-              <Route path="/partnerships" element={<Partnerships />} />
-              <Route path="/careers" element={<Careers />} />
-              <Route path="/press" element={<Press />} />
-              
-              {/* Guide Pages */}
-              <Route path="/guides/getting-started-guide" element={<GettingStartedGuide />} />
-              <Route path="/guides/puzzle-techniques" element={<PuzzleTechniques />} />
-              <Route path="/guides/prize-claim-process" element={<PrizeClaimProcess />} />
-              <Route path="/guides/account-management" element={<AccountManagement />} />
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </React.StrictMode>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/progress" element={<Progress />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/dev-dashboard" element={<DevDashboard />} />
+            <Route path="/membership" element={<Membership />} />
+            <Route path="/account" element={<AccountDashboard />} />
+            <Route path="/puzzles" element={<Puzzles />} />
+            <Route path="/prizes" element={<Prizes />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/puzzle-demo" element={<PuzzleDemo />} />
+            
+            {/* New Pages */}
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/faq" element={<FAQ />} />
+            
+            {/* Legal Pages */}
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/cookie-policy" element={<CookiePolicy />} />
+            <Route path="/contest-rules" element={<ContestRules />} />
+            
+            {/* Support & Company Pages */}
+            <Route path="/support" element={<Support />} />
+            <Route path="/partnerships" element={<Partnerships />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/press" element={<Press />} />
+            
+            {/* Guide Pages */}
+            <Route path="/guides/getting-started-guide" element={<GettingStartedGuide />} />
+            <Route path="/guides/puzzle-techniques" element={<PuzzleTechniques />} />
+            <Route path="/guides/prize-claim-process" element={<PrizeClaimProcess />} />
+            <Route path="/guides/account-management" element={<AccountManagement />} />
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 };
 

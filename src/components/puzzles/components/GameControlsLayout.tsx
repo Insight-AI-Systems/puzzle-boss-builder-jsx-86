@@ -2,6 +2,7 @@
 import React from 'react';
 import SoundControls from './SoundControls';
 import PuzzleControls from './PuzzleControls';
+import { DifficultyLevel } from '../types/puzzle-types';
 
 interface GameControlsLayoutProps {
   isMobile: boolean;
@@ -10,13 +11,13 @@ interface GameControlsLayoutProps {
   toggleMute: () => void;
   changeVolume: (value: number) => void;
   moveCount: number;
-  difficulty: string;
+  difficulty: DifficultyLevel;
   selectedImage: string;
   setSelectedImage: (image: string) => void;
   onShuffle: () => void;
   sampleImages: string[];
   isLoading: boolean;
-  handleDifficultyChange: (difficulty: any) => void;
+  handleDifficultyChange: (difficulty: DifficultyLevel) => void;
 }
 
 const GameControlsLayout: React.FC<GameControlsLayoutProps> = ({

@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
+import { createRoot } from 'react-dom/client';
+import App from './App.tsx';
+import './index.css';
 
 // Create a container for the React application
 const container = document.getElementById("root");
