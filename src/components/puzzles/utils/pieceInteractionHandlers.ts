@@ -1,278 +1,203 @@
-
 import { BasePuzzlePiece } from '../types/puzzle-types';
-import React from 'react';
-import { PuzzleSoundType } from './useSoundEffects';
 
+// Function to create handlers for piece interactions
 export const createPieceHandlers = <T extends BasePuzzlePiece>(
   pieces: T[],
   setPieces: React.Dispatch<React.SetStateAction<T[]>>,
   draggedPiece: T | null,
   setDraggedPiece: React.Dispatch<React.SetStateAction<T | null>>,
-  setMoveCount: React.Dispatch<React.SetStateAction<number>>,
+  incrementMoveCount: (count: number) => void,
   isSolved: boolean,
-  playSound?: (sound: PuzzleSoundType) => void
+  playSound?: (soundType: 'pickup' | 'place' | 'correct' | 'complete') => void
 ) => {
-  const handleDragStart = (e: React.MouseEvent | React.TouchEvent, piece: T) => {
+  // Track move count for the current session
+  let moveCount = 0;
+
+  // Handle the start of a drag operation
+  const handleDragStart = (piece: T) => {
     if (isSolved) return;
     
-    // Prevent default to avoid issues in dev panel
-    if (e.preventDefault) e.preventDefault();
-    console.log('Drag start:', piece.id);
+    // Play pickup sound if available
+    if (playSound) playSound('pickup');
+    
     setDraggedPiece(piece);
     
-    // Play pickup sound
-    playSound?.('pickup');
-    
-    // Update piece state
-    setPieces(prev => prev.map(p => 
+    // Update the piece's dragging state
+    setPieces(pieces.map(p => 
       p.id === piece.id 
         ? { ...p, isDragging: true } 
         : p
-    ) as T[]);
+    ));
   };
-  
-  const handleDrop = (e: React.MouseEvent | React.TouchEvent, targetIndex: number) => {
-    // Prevent default to avoid issues in dev panel
-    if (e.preventDefault) e.preventDefault();
+
+  // Handle piece movement during drag
+  const handleMove = (piece: T, newPosition: number) => {
+    if (isSolved || !piece.isDragging) return;
     
-    if (!draggedPiece || isSolved) {
-      return;
-    }
-    
-    console.log('Drop attempt on index:', targetIndex);
-    
-    // Find the source piece position
-    const sourceIndex = pieces.findIndex(p => p.id === draggedPiece.id);
-    
-    if (sourceIndex === -1) {
-      console.log('Source piece not found');
-      return;
-    }
-    
-    if (sourceIndex !== targetIndex) {
-      console.log(`Swapping piece from position ${sourceIndex} to ${targetIndex}`);
-      
-      // Create a new array with swapped positions
-      const newPieces = [...pieces];
-      const temp = newPieces[sourceIndex];
-      newPieces[sourceIndex] = newPieces[targetIndex];
-      newPieces[targetIndex] = temp;
-      
-      // Update position property
-      newPieces[sourceIndex].position = sourceIndex;
-      newPieces[targetIndex].position = targetIndex;
-      
-      // Check if the piece is in the correct position for sound effect
-      const pieceNumber = parseInt(draggedPiece.id.split('-')[1]);
-      const isCorrectPlacement = pieceNumber === targetIndex;
-      
-      // Play appropriate sound
-      if (isCorrectPlacement) {
-        playSound?.('correct');
-      } else {
-        playSound?.('place');
-      }
-      
-      // Reset dragging state
-      setPieces(newPieces.map(p => ({ 
-        ...p, 
-        isDragging: false,
-        // Add correctlyPlaced for animation
-        correctlyPlaced: isCorrectPlacement && p.id === draggedPiece.id 
-          ? true 
-          : (p as any).correctlyPlaced 
-      })) as T[]);
-      
-      setDraggedPiece(null);
-      
-      // Increment move count
-      setMoveCount(prev => prev + 1);
-      
-      // Clear the correctlyPlaced flag after animation
-      if (isCorrectPlacement) {
-        setTimeout(() => {
-          setPieces(currentPieces => 
-            currentPieces.map(p => ({ ...p, correctlyPlaced: false })) as T[]
-          );
-        }, 600);
-      }
-    } else {
-      // Reset dragging state without counting as a move
-      setPieces(prev => prev.map(p => ({ ...p, isDragging: false })) as T[]);
-      setDraggedPiece(null);
-      
-      // Play placement sound even when dropping in the same spot
-      playSound?.('place');
-    }
+    // Update the piece's position
+    setPieces(pieces.map(p => 
+      p.id === piece.id 
+        ? { ...p, position: newPosition } 
+        : p
+    ));
   };
-  
+
+  // Handle the end of a drag operation
+  const handleDrop = (piece: T) => {
+    if (isSolved) return;
+    
+    // Play place sound if available
+    if (playSound) playSound('place');
+    
+    // Update move count
+    moveCount++;
+    incrementMoveCount(moveCount);
+    
+    // Check if the piece is in its correct position
+    const pieceId = piece.id;
+    const pieceNumber = parseInt(pieceId.split('-')[1]);
+    const isCorrectlyPlaced = pieceNumber === piece.position;
+    
+    // Update the piece's state
+    setPieces(pieces.map(p => 
+      p.id === piece.id 
+        ? { 
+            ...p, 
+            isDragging: false,
+            correctlyPlaced: isCorrectlyPlaced
+          } 
+        : p
+    ));
+    
+    // Play correct sound if the piece is placed correctly
+    if (isCorrectlyPlaced && playSound) {
+      playSound('correct');
+    }
+    
+    setDraggedPiece(null);
+  };
+
+  // Handle piece click for non-drag interactions
   const handlePieceClick = (piece: T) => {
     if (isSolved) return;
     
-    console.log('Piece clicked:', piece.id);
-    
-    // For touch screens - implement click to select and then click to place
+    // If we already have a dragged piece, swap positions
     if (draggedPiece && draggedPiece.id !== piece.id) {
-      console.log(`Swapping pieces via click: ${draggedPiece.id} with ${piece.id}`);
+      // Play place sound if available
+      if (playSound) playSound('place');
       
-      // Find the source and target indices
-      const sourceIndex = pieces.findIndex(p => p.id === draggedPiece.id);
-      const targetIndex = pieces.findIndex(p => p.id === piece.id);
+      // Swap positions
+      const draggedPosition = draggedPiece.position;
+      const targetPosition = piece.position;
       
-      if (sourceIndex !== -1 && targetIndex !== -1) {
-        // Create a new array with swapped positions
-        const newPieces = [...pieces];
-        const temp = newPieces[sourceIndex];
-        newPieces[sourceIndex] = newPieces[targetIndex];
-        newPieces[targetIndex] = temp;
-        
-        // Update position property
-        newPieces[sourceIndex].position = sourceIndex;
-        newPieces[targetIndex].position = targetIndex;
-        
-        // Check if the piece is in the correct position for sound effect
-        const pieceNumber = parseInt(draggedPiece.id.split('-')[1]);
-        const isCorrectPlacement = pieceNumber === targetIndex;
-        
-        // Play appropriate sound
-        if (isCorrectPlacement) {
-          playSound?.('correct');
-        } else {
-          playSound?.('place');
+      setPieces(pieces.map(p => {
+        if (p.id === draggedPiece.id) {
+          return { ...p, position: targetPosition, isDragging: false };
         }
-        
-        // Reset dragging state
-        setPieces(newPieces.map(p => ({ 
-          ...p, 
-          isDragging: false,
-          // Add correctlyPlaced for animation
-          correctlyPlaced: isCorrectPlacement && p.id === draggedPiece.id 
-            ? true 
-            : (p as any).correctlyPlaced 
-        })) as T[]);
-        
-        setDraggedPiece(null);
-        
-        // Increment move count
-        setMoveCount(prev => prev + 1);
-        
-        // Clear the correctlyPlaced flag after animation
-        if (isCorrectPlacement) {
-          setTimeout(() => {
-            setPieces(currentPieces => 
-              currentPieces.map(p => ({ ...p, correctlyPlaced: false })) as T[]
-            );
-          }, 600);
+        if (p.id === piece.id) {
+          return { ...p, position: draggedPosition };
         }
-      }
+        return p;
+      }));
+      
+      // Update move count
+      moveCount++;
+      incrementMoveCount(moveCount);
+      
+      setDraggedPiece(null);
     } else {
-      // Select or deselect the piece
-      if (draggedPiece?.id === piece.id) {
-        // Deselect if clicking the same piece
-        setPieces(pieces.map(p => ({ ...p, isDragging: false })) as T[]);
-        setDraggedPiece(null);
-        
-        // Play placement sound when deselecting
-        playSound?.('place');
-      } else {
-        // Select a new piece
-        setDraggedPiece(piece);
-        setPieces(pieces.map(p => 
-          p.id === piece.id 
-            ? { ...p, isDragging: true } 
-            : { ...p, isDragging: false }
-        ) as T[]);
-        
-        // Play pickup sound
-        playSound?.('pickup');
-      }
-    }
-  };
-  
-  const handleDirectionalMove = (direction: 'up' | 'down' | 'left' | 'right', gridSize: number) => {
-    if (!draggedPiece || isSolved) return;
-    
-    const sourceIndex = pieces.findIndex(p => p.id === draggedPiece.id);
-    if (sourceIndex === -1) return;
-    
-    const row = Math.floor(sourceIndex / gridSize);
-    const col = sourceIndex % gridSize;
-    
-    let targetRow = row;
-    let targetCol = col;
-    
-    switch (direction) {
-      case 'up':
-        targetRow = Math.max(0, row - 1);
-        break;
-      case 'down':
-        targetRow = Math.min(gridSize - 1, row + 1);
-        break;
-      case 'left':
-        targetCol = Math.max(0, col - 1);
-        break;
-      case 'right':
-        targetCol = Math.min(gridSize - 1, col + 1);
-        break;
-    }
-    
-    const targetIndex = targetRow * gridSize + targetCol;
-    
-    // Only process if we're actually moving to a different position
-    if (targetIndex !== sourceIndex) {
-      handleDrop({ preventDefault: () => {} } as React.MouseEvent, targetIndex);
+      // Start dragging this piece
+      handleDragStart(piece);
     }
   };
 
-  const handleMove = (e: React.MouseEvent | React.TouchEvent, targetIndex: number) => {
-    // Prevent default to avoid issues in dev panel
-    if (e.preventDefault) e.preventDefault();
-    // Provide visual feedback on hover
-    if (draggedPiece && !isSolved) {
-      // Optional: Add more hover effects or visual feedback here
+  // Handle directional movement for keyboard/gamepad controls
+  const handleDirectionalMove = (direction: 'up' | 'down' | 'left' | 'right', gridSize: number) => {
+    if (isSolved || !draggedPiece) return;
+    
+    const currentPosition = draggedPiece.position;
+    let newPosition = currentPosition;
+    
+    // Calculate the new position based on direction
+    switch (direction) {
+      case 'up':
+        if (currentPosition >= gridSize) {
+          newPosition = currentPosition - gridSize;
+        }
+        break;
+      case 'down':
+        if (currentPosition < (gridSize * gridSize) - gridSize) {
+          newPosition = currentPosition + gridSize;
+        }
+        break;
+      case 'left':
+        if (currentPosition % gridSize !== 0) {
+          newPosition = currentPosition - 1;
+        }
+        break;
+      case 'right':
+        if (currentPosition % gridSize !== gridSize - 1) {
+          newPosition = currentPosition + 1;
+        }
+        break;
+    }
+    
+    // If position changed, update the piece
+    if (newPosition !== currentPosition) {
+      handleMove(draggedPiece, newPosition);
     }
   };
-  
-  // New function to check for and highlight hints for nearby correct pieces
+
+  // Function to check for nearby pieces to provide hints
   const checkForHints = () => {
-    if (isSolved || !pieces.length) return;
+    // Only provide hints if the puzzle is not solved
+    if (isSolved) return;
     
-    // Find pieces that are one position away from their correct position
-    const hintsToShow = pieces.filter(piece => {
-      const pieceNumber = parseInt(piece.id.split('-')[1]);
-      const currentPosition = piece.position;
+    // Find pieces that are close to their correct position
+    const hintablePieceIds: string[] = [];
+    
+    pieces.forEach(piece => {
+      const pieceId = piece.id;
+      const pieceNumber = parseInt(pieceId.split('-')[1]);
+      const correctPosition = pieceNumber;
       
-      // Check if piece is one position away horizontally or vertically
-      const pieceRow = Math.floor(pieceNumber / Math.sqrt(pieces.length));
-      const pieceCol = pieceNumber % Math.sqrt(pieces.length);
-      const currentRow = Math.floor(currentPosition / Math.sqrt(pieces.length));
-      const currentCol = currentPosition % Math.sqrt(pieces.length);
-      
-      const isOneAway = (
-        (Math.abs(pieceRow - currentRow) === 1 && pieceCol === currentCol) ||
-        (Math.abs(pieceCol - currentCol) === 1 && pieceRow === currentRow)
-      );
-      
-      return isOneAway;
+      // If piece is within 1-2 positions of its correct spot
+      if (piece.position !== correctPosition) {
+        const currentRow = Math.floor(piece.position / 3);
+        const currentCol = piece.position % 3;
+        const correctRow = Math.floor(correctPosition / 3);
+        const correctCol = correctPosition % 3;
+        
+        // Calculate Manhattan distance
+        const distance = Math.abs(currentRow - correctRow) + Math.abs(currentCol - correctCol);
+        
+        // If piece is close to its correct position, add it to hintable pieces
+        if (distance === 1) {
+          hintablePieceIds.push(pieceId);
+        }
+      }
     });
     
-    // Apply hints to pieces
-    if (hintsToShow.length > 0) {
-      setPieces(prev => prev.map(p => {
-        const shouldHint = hintsToShow.some(hint => hint.id === p.id);
-        return {
-          ...p,
-          showHint: shouldHint && Math.random() > 0.7 // Only show some hints randomly
-        } as T;
-      }));
-      
-      // Clear hints after a short time
-      setTimeout(() => {
-        setPieces(prev => prev.map(p => ({ ...p, showHint: false })) as T);
-      }, 1000);
+    // Randomly select up to 2 pieces to hint
+    if (hintablePieceIds.length > 2) {
+      hintablePieceIds.sort(() => Math.random() - 0.5);
+      hintablePieceIds.splice(2);
     }
+    
+    // Fix type error: Make sure we're returning an array of T, not a single T
+    setPieces((prev: T[]) => {
+      // Create a new array with updated hints
+      return prev.map(piece => {
+        // If this piece ID is in our hintablePieceIds array, show a hint
+        if (hintablePieceIds.includes(piece.id)) {
+          return { ...piece, showHint: true };
+        }
+        // Otherwise, make sure showHint is false/undefined
+        return { ...piece, showHint: false };
+      });
+    });
   };
-  
+
   return {
     handleDragStart,
     handleMove,
@@ -280,22 +205,5 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     handlePieceClick,
     handleDirectionalMove,
     checkForHints
-  };
-};
-
-// Helper for image piece style based on position
-export const getImagePieceStyle = (piece: BasePuzzlePiece & { correctlyPlaced?: boolean, showHint?: boolean }, selectedImage: string, gridSize: number): React.CSSProperties => {
-  const pieceNumber = parseInt(piece.id.split('-')[1]);
-  const row = Math.floor(pieceNumber / gridSize);
-  const col = pieceNumber % gridSize;
-  
-  return {
-    backgroundImage: `url(${selectedImage}?w=600&h=600&fit=crop&auto=format)`,
-    backgroundSize: `${gridSize * 100}%`,
-    backgroundPosition: `${col * 100 / (gridSize - 1)}% ${row * 100 / (gridSize - 1)}%`,
-    opacity: piece.isDragging ? 0.8 : 1,
-    transform: piece.isDragging ? 'scale(0.95)' : 'scale(1)',
-    animation: piece.correctlyPlaced ? 'correctPlacement 0.5s ease-out' : 
-               (piece.showHint ? 'hintPulse 1s ease-in-out infinite' : 'none'),
   };
 };

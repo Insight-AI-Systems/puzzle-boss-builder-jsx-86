@@ -3,7 +3,7 @@ import React from 'react';
 import { Volume2, VolumeX, Volume } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 interface SoundControlsProps {
   muted: boolean;
@@ -20,27 +20,29 @@ const SoundControls: React.FC<SoundControlsProps> = ({
 }) => {
   return (
     <div className="flex items-center space-x-2 bg-puzzle-black/20 px-3 py-1 rounded-full">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={onToggleMute} 
-            className="h-8 w-8 text-puzzle-aqua hover:text-white"
-          >
-            {muted ? (
-              <VolumeX className="h-4 w-4" />
-            ) : volume < 0.2 ? (
-              <Volume className="h-4 w-4" />
-            ) : (
-              <Volume2 className="h-4 w-4" />
-            )}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          {muted ? 'Unmute sounds' : 'Mute sounds'}
-        </TooltipContent>
-      </Tooltip>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onToggleMute} 
+              className="h-8 w-8 text-puzzle-aqua hover:text-white"
+            >
+              {muted ? (
+                <VolumeX className="h-4 w-4" />
+              ) : volume < 0.2 ? (
+                <Volume className="h-4 w-4" />
+              ) : (
+                <Volume2 className="h-4 w-4" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            {muted ? 'Unmute sounds' : 'Mute sounds'}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       
       <Slider
         disabled={muted}
