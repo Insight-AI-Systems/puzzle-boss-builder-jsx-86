@@ -1,105 +1,180 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { toast } from '@/hooks/use-toast';
 
-import { useEffect, useRef, useState } from 'react';
+interface SoundEffectConfig {
+  name: string;
+  url: string;
+  volume?: number;
+  preload?: boolean;
+}
 
-// Define the types of sounds our puzzle can play
-export type PuzzleSoundType = 
-  | 'pickup' 
-  | 'place' 
-  | 'correct' 
-  | 'complete';
+interface SoundEffectsHook {
+  play: (name: string) => void;
+  setVolume: (volume: number) => void;
+  isMuted: boolean;
+  toggleMute: () => void;
+  isLoaded: boolean;
+  error: string | null;
+}
 
-// Mapping of sound types to their file paths
-const SOUND_FILES: Record<PuzzleSoundType, string> = {
-  pickup: '/sounds/pickup.mp3',
-  place: '/sounds/place.mp3',
-  correct: '/sounds/correct.mp3',
-  complete: '/sounds/complete.mp3',
-};
-
-export const useSoundEffects = () => {
-  const [muted, setMuted] = useState<boolean>(() => {
-    // Check if user has previously muted sounds
-    const savedMute = localStorage.getItem('puzzle-sounds-muted');
-    return savedMute === 'true';
+/**
+ * Custom hook for handling sound effects in the puzzle game
+ * Optimized for production with preloading and error handling
+ */
+export const useSoundEffects = (
+  sounds: SoundEffectConfig[],
+  initialVolume: number = 0.5
+): SoundEffectsHook => {
+  const [isMuted, setIsMuted] = useState<boolean>(() => {
+    // Load mute preference from local storage
+    const savedMute = localStorage.getItem('puzzle_sounds_muted');
+    return savedMute ? JSON.parse(savedMute) : false;
   });
   
-  const [volume, setVolume] = useState<number>(() => {
-    // Get previously set volume or default to 70%
-    const savedVolume = localStorage.getItem('puzzle-sounds-volume');
-    return savedVolume ? parseFloat(savedVolume) : 0.7;
+  const [volume, setVolumeState] = useState<number>(() => {
+    // Load volume preference from local storage
+    const savedVolume = localStorage.getItem('puzzle_sounds_volume');
+    return savedVolume ? parseFloat(savedVolume) : initialVolume;
   });
   
-  // Create audio elements for each sound
-  const audioRefs = useRef<Record<PuzzleSoundType, HTMLAudioElement | null>>({
-    pickup: null,
-    place: null,
-    correct: null,
-    complete: null,
-  });
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   
-  // Initialize audio elements on component mount
+  // Use refs to keep track of audio objects and loading status
+  const audioRefs = useRef<Map<string, HTMLAudioElement>>(new Map());
+  const loadedCount = useRef<number>(0);
+  const totalSounds = useRef<number>(sounds.length);
+  
+  // Preload all sound effects
   useEffect(() => {
-    // Initialize all audio elements
-    Object.entries(SOUND_FILES).forEach(([key, path]) => {
-      const audio = new Audio(path);
-      audio.preload = 'auto';
-      audio.volume = volume;
-      audioRefs.current[key as PuzzleSoundType] = audio;
-    });
-    
-    // Cleanup on unmount
-    return () => {
-      Object.values(audioRefs.current).forEach(audio => {
-        if (audio) {
-          audio.pause();
-          audio.src = '';
+    const loadSounds = async () => {
+      // Reset loading state
+      setIsLoaded(false);
+      loadedCount.current = 0;
+      
+      try {
+        // Check if audio context is available (for browser support)
+        if (typeof AudioContext !== 'undefined' || typeof (window as any).webkitAudioContext !== 'undefined') {
+          // Create or clear the audio map
+          audioRefs.current = new Map();
+          
+          // Load each sound
+          for (const sound of sounds) {
+            const audio = new Audio();
+            audio.src = sound.url;
+            audio.volume = sound.volume ?? volume;
+            
+            // Add load event
+            audio.addEventListener('canplaythrough', () => {
+              loadedCount.current += 1;
+              if (loadedCount.current >= totalSounds.current) {
+                setIsLoaded(true);
+              }
+            });
+            
+            // Add error handling
+            audio.addEventListener('error', (e) => {
+              console.error(`Error loading sound: ${sound.name}`, e);
+              setError(`Failed to load sound: ${sound.name}`);
+            });
+            
+            // Store in our map
+            audioRefs.current.set(sound.name, audio);
+            
+            // Start loading
+            if (sound.preload !== false) {
+              audio.load();
+            }
+          }
+        } else {
+          console.warn('Audio not supported in this browser');
+          setIsLoaded(true); // Mark as loaded anyway to prevent blocking
+          setError('Audio not supported in this browser');
         }
-      });
-    };
-  }, []);
-  
-  // Update volume when it changes
-  useEffect(() => {
-    Object.values(audioRefs.current).forEach(audio => {
-      if (audio) {
-        audio.volume = muted ? 0 : volume;
+      } catch (err) {
+        console.error('Error setting up audio:', err);
+        setError('Failed to initialize audio system');
+        setIsLoaded(true); // Mark as loaded to avoid blocking
       }
-    });
+    };
     
-    // Save settings to localStorage
-    localStorage.setItem('puzzle-sounds-muted', muted.toString());
-    localStorage.setItem('puzzle-sounds-volume', volume.toString());
-  }, [volume, muted]);
+    loadSounds();
+    
+    // Cleanup audio elements on unmount
+    return () => {
+      audioRefs.current.forEach((audio) => {
+        audio.pause();
+        audio.src = '';
+      });
+      audioRefs.current.clear();
+    };
+  }, [sounds]); // Only reload when sounds array changes
   
-  // Function to play a sound
-  const playSound = (type: PuzzleSoundType) => {
-    if (muted) return;
+  // Save preferences when they change
+  useEffect(() => {
+    localStorage.setItem('puzzle_sounds_muted', JSON.stringify(isMuted));
+  }, [isMuted]);
+  
+  useEffect(() => {
+    localStorage.setItem('puzzle_sounds_volume', volume.toString());
     
-    const audio = audioRefs.current[type];
-    if (audio) {
+    // Update volume for all audio elements
+    audioRefs.current.forEach(audio => {
+      audio.volume = volume;
+    });
+  }, [volume]);
+  
+  // Play a sound by name
+  const play = useCallback((name: string) => {
+    if (isMuted) return;
+    
+    const audio = audioRefs.current.get(name);
+    if (!audio) {
+      console.warn(`Sound not found: ${name}`);
+      return;
+    }
+    
+    try {
       // Reset and play
       audio.currentTime = 0;
-      audio.play().catch(err => {
-        console.warn(`Error playing sound: ${err.message}`);
-      });
+      const playPromise = audio.play();
+      
+      // Handle autoplay policy issues
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          if (err.name === 'NotAllowedError') {
+            // Autoplay was prevented by browser policy
+            console.warn('Audio autoplay prevented by browser. User interaction required.');
+          } else {
+            console.error('Error playing sound:', err);
+          }
+        });
+      }
+    } catch (err) {
+      console.error(`Error playing sound ${name}:`, err);
     }
-  };
+  }, [isMuted]);
+  
+  // Set volume for all sounds
+  const setVolume = useCallback((newVolume: number) => {
+    // Ensure volume is between 0 and 1
+    const clampedVolume = Math.max(0, Math.min(1, newVolume));
+    setVolumeState(clampedVolume);
+  }, []);
   
   // Toggle mute state
-  const toggleMute = () => {
-    setMuted(prev => !prev);
-  };
-  
-  // Change volume (0-1 range)
-  const changeVolume = (newVolume: number) => {
-    setVolume(Math.max(0, Math.min(1, newVolume)));
-  };
+  const toggleMute = useCallback(() => {
+    setIsMuted(prev => !prev);
+  }, []);
   
   return {
-    playSound,
-    muted,
+    play,
+    setVolume,
+    isMuted,
     toggleMute,
-    volume,
-    changeVolume
+    isLoaded,
+    error
   };
 };
+
+export default useSoundEffects;

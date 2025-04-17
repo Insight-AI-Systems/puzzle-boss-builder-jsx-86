@@ -11,6 +11,18 @@ import { supabase } from '@/integrations/supabase/client';
 export class TestRunner {
   private static verificationEnabled = true;
   private static testManager = new TestManager();
+  private static environment = process.env.NODE_ENV || 'development';
+  
+  // Set the environment for the test runner
+  static setEnvironment(env: 'development' | 'test' | 'production'): void {
+    TestRunner.environment = env;
+    console.info(`Test environment set to: ${env}`);
+    
+    // In production, disable verification unless explicitly enabled
+    if (env === 'production') {
+      TestRunner.verificationEnabled = false;
+    }
+  }
   
   static enableVerification(enable: boolean): void {
     TestRunner.verificationEnabled = enable;
@@ -18,6 +30,10 @@ export class TestRunner {
   
   static isVerificationEnabled(): boolean {
     return TestRunner.verificationEnabled;
+  }
+  
+  static getEnvironment(): string {
+    return TestRunner.environment;
   }
   
   static async runAllTaskTests(taskId: string): Promise<boolean> {
@@ -102,6 +118,15 @@ export class TestRunner {
 
 export const runInitialTests = async () => {
   console.info('Running initial environment tests...');
+  
+  // Log current environment
+  console.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Skip some tests in production
+  if (process.env.NODE_ENV === 'production') {
+    console.info('Running in production mode - skipping development tests');
+    return;
+  }
   
   // Test database connection
   const dbConnected = await DatabaseTestRunner.testDatabaseConnection();

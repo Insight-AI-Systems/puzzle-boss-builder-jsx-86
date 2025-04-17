@@ -31,6 +31,35 @@ describe('Piece Style Utils', () => {
       const result4 = getImagePieceStyle(piece4, 'https://example.com/image.jpg', 3);
       expect(result4.backgroundPosition).toBe('50% 50%');
     });
+
+    test('handles empty image URLs gracefully', () => {
+      const testPiece = {
+        id: 'piece-0',
+        position: 0,
+        originalPosition: 0,
+        isDragging: false
+      };
+      
+      const result = getImagePieceStyle(testPiece, '', 3);
+      expect(result.backgroundImage).toBe('none');
+    });
+    
+    test('applies proper styles for different grid sizes', () => {
+      const testPiece = {
+        id: 'piece-0',
+        position: 0,
+        originalPosition: 0,
+        isDragging: false
+      };
+      
+      // Test with 4x4 grid
+      const result4x4 = getImagePieceStyle(testPiece, 'https://example.com/image.jpg', 4);
+      expect(result4x4.backgroundSize).toBe('400% 400%');
+      
+      // Test with 5x5 grid
+      const result5x5 = getImagePieceStyle(testPiece, 'https://example.com/image.jpg', 5);
+      expect(result5x5.backgroundSize).toBe('500% 500%');
+    });
   });
   
   describe('getRotationStyle', () => {
@@ -58,6 +87,23 @@ describe('Piece Style Utils', () => {
       // Handles undefined
       expect(getRotationStyle(undefined)).toEqual({
         transform: 'rotate(0deg)'
+      });
+    });
+    
+    test('handles arbitrary rotation values', () => {
+      // Should handle any rotation value
+      expect(getRotationStyle(45)).toEqual({
+        transform: 'rotate(45deg)'
+      });
+      
+      expect(getRotationStyle(137)).toEqual({
+        transform: 'rotate(137deg)'
+      });
+    });
+    
+    test('handles negative rotation values', () => {
+      expect(getRotationStyle(-90)).toEqual({
+        transform: 'rotate(-90deg)'
       });
     });
   });

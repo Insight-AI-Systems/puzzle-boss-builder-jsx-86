@@ -1,195 +1,252 @@
+import { TestManager } from '../managers/TestManager';
+import { testPieceInteractions } from './puzzleTests/pieceInteractionTests';
+import { testPuzzleComponents } from './puzzleTests/componentTests';
+import { testSavedPuzzles } from './puzzleTests/savedPuzzlesTests';
+import { testSimplePuzzle } from './puzzleTests/simplePuzzleTests';
+import { testPuzzleIntegration } from './puzzleTests/integrationTests';
+import { projectTracker } from '@/utils/ProjectTracker';
+import { toast } from '@/hooks/use-toast';
+import { VerificationResult } from './types/testTypes';
+import { DatabaseTestRunner } from './runners/DatabaseTestRunner';
+import { ComponentTestRunner } from './runners/ComponentTestRunner';
+import { ProgressTestRunner } from './runners/ProgressTestRunner';
+import { supabase } from '@/integrations/supabase/client';
 
-import { formatTime } from '@/components/puzzles/hooks/usePuzzleState';
-import { getImagePieceStyle } from '@/components/puzzles/utils/pieceStyleUtils';
-import { getRotationStyle } from '@/components/puzzles/utils/pieceRotationUtils';
-import { BrowserCompatibilityTests } from './BrowserCompatibilityTests';
+/**
+ * Runs all puzzle-related tests
+ * @returns A promise that resolves when all tests are complete
+ */
+export const runPuzzleTestSuite = async (): Promise<void> => {
+  console.log('🧩 Running puzzle test suite...');
+  
+  const testManager = new TestManager();
+  
+  // Run component tests
+  await testPuzzleComponents(testManager);
+  
+  // Run piece interaction tests
+  await testPieceInteractions(testManager);
+  
+  // Run saved puzzle tests
+  await testSavedPuzzles(testManager);
+  
+  // Run simple puzzle tests
+  await testSimplePuzzle(testManager);
+  
+  // Run integration tests
+  await testPuzzleIntegration(testManager);
+  
+  // Summarize test results
+  const summary = testManager.summarizeResults();
+  
+  console.log('🧩 Puzzle test suite complete.');
+  console.log(`✅ Passed: ${summary.passedTests} / ${summary.totalTests}`);
+  
+  if (summary.failedTests > 0) {
+    console.warn(`❌ Failed: ${summary.failedTests} / ${summary.totalTests}`);
+  }
+  
+  return Promise.resolve();
+};
 
-interface TestResult {
-  name: string;
-  passed: boolean;
-  message?: string;
-}
+/**
+ * Runs component test suite in development mode
+ */
+export const runComponentTestSuite = async (): Promise<void> => {
+  console.log('🧪 Running component test suite...');
+  
+  // Add component tests here
+  
+  return Promise.resolve();
+};
 
-export class PuzzleTestRunner {
-  static async runTests(): Promise<TestResult[]> {
-    const results: TestResult[] = [];
+export class TestRunner {
+  private static verificationEnabled = true;
+  private static testManager = new TestManager();
+  private static environment = process.env.NODE_ENV || 'development';
+  
+  // Set the environment for the test runner
+  static setEnvironment(env: 'development' | 'test' | 'production'): void {
+    TestRunner.environment = env;
+    console.info(`Test environment set to: ${env}`);
     
-    try {
-      // Run simple utility function tests that don't require a full test environment
-      results.push(this.testFormatTime());
-      results.push(this.testImagePieceStyle());
-      results.push(this.testRotationStyle());
-      
-      // Run browser compatibility tests
-      const compatibilityResult = await BrowserCompatibilityTests.runCompatibilityTests();
-      results.push({
-        name: 'Browser Compatibility',
-        passed: compatibilityResult.success,
-        message: compatibilityResult.success 
-          ? 'Browser is compatible with all required features'
-          : compatibilityResult.failureReason
+    // In production, disable verification unless explicitly enabled
+    if (env === 'production') {
+      TestRunner.verificationEnabled = false;
+    }
+  }
+  
+  static enableVerification(enable: boolean): void {
+    TestRunner.verificationEnabled = enable;
+  }
+  
+  static isVerificationEnabled(): boolean {
+    return TestRunner.verificationEnabled;
+  }
+  
+  static getEnvironment(): string {
+    return TestRunner.environment;
+  }
+  
+  static async runAllTaskTests(taskId: string): Promise<boolean> {
+    const result = await projectTracker.runTaskTests(taskId);
+    
+    if (result) {
+      toast({
+        title: "Tests passed",
+        description: `All tests for this task have passed successfully.`,
       });
-      
-      return results;
-    } catch (error) {
-      console.error('Error running puzzle tests:', error);
-      results.push({
-        name: 'Test Runner',
-        passed: false,
-        message: `Test execution failed: ${error instanceof Error ? error.message : String(error)}`
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Tests failed",
+        description: `Some tests for this task have failed. Check the console for details.`,
       });
-      return results;
     }
+    
+    return result;
   }
   
-  private static testFormatTime(): TestResult {
-    try {
-      const tests = [
-        { input: 0, expected: '00:00' },
-        { input: 30, expected: '00:30' },
-        { input: 60, expected: '01:00' },
-        { input: 90, expected: '01:30' },
-        { input: 3661, expected: '61:01' }
-      ];
-      
-      for (const test of tests) {
-        const result = formatTime(test.input);
-        if (result !== test.expected) {
-          return {
-            name: 'Format Time',
-            passed: false,
-            message: `Expected formatTime(${test.input}) to be "${test.expected}", got "${result}"`
-          };
+  static async verifyChange(changeId: string, description: string): Promise<VerificationResult> {
+    console.log(`Verifying change: ${changeId} (${description})`);
+    
+    if (!TestRunner.verificationEnabled) {
+      console.log('Verification disabled, skipping tests');
+      return {
+        status: 'SKIPPED',
+        message: 'Verification is disabled',
+        changeId,
+        description
+      };
+    }
+    
+    const dbConnected = await DatabaseTestRunner.testDatabaseConnection();
+    if (!dbConnected) {
+      return {
+        status: 'FAILED',
+        message: 'Database connection failed',
+        changeId,
+        description,
+        details: {
+          dbConnectionError: true
+        }
+      };
+    }
+    
+    const summary = await TestRunner.testManager.runAllTests();
+    
+    let status: 'VERIFIED' | 'PARTIAL' | 'FAILED';
+    let message: string;
+    
+    if (summary.status === TestManager.RESULT_VERIFIED) {
+      status = 'VERIFIED';
+      message = `All ${summary.totalTests} tests passed`;
+    } else if (summary.status === TestManager.RESULT_PARTIAL) {
+      status = 'PARTIAL';
+      message = `${summary.passedTests} of ${summary.totalTests} tests passed`;
+    } else {
+      status = 'FAILED';
+      message = `All ${summary.totalTests} tests failed`;
+    }
+    
+    return {
+      status,
+      message,
+      changeId,
+      description,
+      details: {
+        summary,
+        reports: TestRunner.testManager.getAllTestReports()
+      }
+    };
+  }
+
+  // Re-export static methods from other test runners for convenience
+  static readonly testDatabaseConnection = DatabaseTestRunner.testDatabaseConnection;
+  static readonly testAuthStatus = DatabaseTestRunner.testAuthStatus;
+  static readonly testComponentRender = ComponentTestRunner.testComponentRender;
+  static readonly testProgressItemOrder = ProgressTestRunner.testProgressItemOrder;
+}
+
+export const runInitialTests = async () => {
+  console.info('Running initial environment tests...');
+  
+  // Log current environment
+  console.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Skip some tests in production
+  if (process.env.NODE_ENV === 'production') {
+    console.info('Running in production mode - skipping development tests');
+    return;
+  }
+  
+  // Test database connection
+  const dbConnected = await DatabaseTestRunner.testDatabaseConnection();
+  console.info(`Database connection: ${dbConnected ? 'OK' : 'FAILED'}`);
+  
+  // Test auth status
+  const authOk = await DatabaseTestRunner.testAuthStatus();
+  console.info(`Auth system: ${authOk ? 'OK' : 'FAILED'}`);
+  
+  // Create a demo admin account if it doesn't exist
+  await createDemoAdminAccount();
+}
+
+const createDemoAdminAccount = async () => {
+  try {
+    // First check if the demo admin account exists
+    const { data: existingUser, error: checkError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', 'admin')
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error('Error checking for demo admin account:', checkError);
+      return;
+    }
+    
+    // If the account already exists, do nothing
+    if (existingUser) {
+      console.info('Demo admin account already exists');
+      return;
+    }
+    
+    // Create the admin user
+    const { data: userData, error: signUpError } = await supabase.auth.signUp({
+      email: 'admin@puzzleboss.com',
+      password: 'Puzzle123!',
+      options: {
+        data: {
+          username: 'admin',
+          role: 'super_admin'
         }
       }
-      
-      return {
-        name: 'Format Time',
-        passed: true,
-        message: 'All format time tests passed'
-      };
-    } catch (error) {
-      return {
-        name: 'Format Time',
-        passed: false,
-        message: `Test failed with error: ${error instanceof Error ? error.message : String(error)}`
-      };
-    }
-  }
-  
-  private static testImagePieceStyle(): TestResult {
-    try {
-      const testPiece = {
-        id: 'piece-0',
-        position: 0,
-        originalPosition: 0,
-        isDragging: false
-      };
-      
-      const result = getImagePieceStyle(testPiece, 'https://example.com/image.jpg', 3);
-      
-      if (!result.backgroundImage) {
-        return {
-          name: 'Image Piece Style',
-          passed: false,
-          message: 'Missing backgroundImage property'
-        };
-      }
-      
-      if (!result.backgroundSize) {
-        return {
-          name: 'Image Piece Style',
-          passed: false,
-          message: 'Missing backgroundSize property'
-        };
-      }
-      
-      if (result.backgroundPosition !== '0% 0%') {
-        return {
-          name: 'Image Piece Style',
-          passed: false,
-          message: `Expected backgroundPosition to be "0% 0%", got "${result.backgroundPosition}"`
-        };
-      }
-      
-      return {
-        name: 'Image Piece Style',
-        passed: true,
-        message: 'Image piece style calculation is correct'
-      };
-    } catch (error) {
-      return {
-        name: 'Image Piece Style',
-        passed: false,
-        message: `Test failed with error: ${error instanceof Error ? error.message : String(error)}`
-      };
-    }
-  }
-  
-  private static testRotationStyle(): TestResult {
-    try {
-      const rotations = [0, 90, 180, 270, undefined];
-      const expected = [
-        'rotate(0deg)',
-        'rotate(90deg)',
-        'rotate(180deg)',
-        'rotate(270deg)',
-        'rotate(0deg)'
-      ];
-      
-      for (let i = 0; i < rotations.length; i++) {
-        const result = getRotationStyle(rotations[i]);
-        
-        if (!result.transform) {
-          return {
-            name: 'Rotation Style',
-            passed: false,
-            message: 'Missing transform property'
-          };
-        }
-        
-        if (result.transform !== expected[i]) {
-          return {
-            name: 'Rotation Style',
-            passed: false,
-            message: `Expected transform to be "${expected[i]}", got "${result.transform}"`
-          };
-        }
-      }
-      
-      return {
-        name: 'Rotation Style',
-        passed: true,
-        message: 'Rotation style calculation is correct'
-      };
-    } catch (error) {
-      return {
-        name: 'Rotation Style',
-        passed: false,
-        message: `Test failed with error: ${error instanceof Error ? error.message : String(error)}`
-      };
-    }
-  }
-  
-  static runBrowserCompatibilityTest(): Promise<TestResult> {
-    return BrowserCompatibilityTests.runCompatibilityTests().then(result => {
-      return {
-        name: 'Browser Compatibility',
-        passed: result.success,
-        message: result.success 
-          ? 'Browser is compatible with all required features'
-          : result.failureReason
-      };
-    }).catch(error => {
-      return {
-        name: 'Browser Compatibility',
-        passed: false,
-        message: `Test failed with error: ${error instanceof Error ? error.message : String(error)}`
-      };
     });
-  }
-  
-  static getBrowserInfo() {
-    return BrowserCompatibilityTests.getBrowserInfo();
+    
+    if (signUpError) {
+      console.error('Error creating demo admin account:', signUpError);
+      return;
+    }
+    
+    console.info('Demo admin account created successfully');
+    
+    // Update the profile if needed
+    if (userData?.user?.id) {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ role: 'super_admin' })
+        .eq('id', userData.user.id);
+      
+      if (updateError) {
+        console.error('Error updating demo admin profile:', updateError);
+      }
+    }
+  } catch (err) {
+    console.error('Unexpected error creating demo admin:', err);
   }
 }
+
+export type { VerificationResult } from './testing/types/testTypes';
+
+export default runPuzzleTestSuite;
