@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 
@@ -15,6 +16,11 @@ interface SoundEffectsHook {
   toggleMute: () => void;
   isLoaded: boolean;
   error: string | null;
+  // Adding these to match what the components are using
+  playSound: (name: string) => void;
+  muted: boolean;
+  volume: number;
+  changeVolume: (volume: number) => void;
 }
 
 /**
@@ -22,7 +28,7 @@ interface SoundEffectsHook {
  * Optimized for production with preloading and error handling
  */
 export const useSoundEffects = (
-  sounds: SoundEffectConfig[],
+  sounds: SoundEffectConfig[] = [],
   initialVolume: number = 0.5
 ): SoundEffectsHook => {
   const [isMuted, setIsMuted] = useState<boolean>(() => {
@@ -108,7 +114,7 @@ export const useSoundEffects = (
       });
       audioRefs.current.clear();
     };
-  }, [sounds]); // Only reload when sounds array changes
+  }, [sounds, volume]); // Only reload when sounds array changes
   
   // Save preferences when they change
   useEffect(() => {
@@ -173,7 +179,12 @@ export const useSoundEffects = (
     isMuted,
     toggleMute,
     isLoaded,
-    error
+    error,
+    // Adding these aliases to match what the game components are looking for
+    playSound: play,
+    muted: isMuted,
+    volume,
+    changeVolume: setVolume
   };
 };
 

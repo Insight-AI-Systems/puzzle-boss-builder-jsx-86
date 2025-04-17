@@ -1,3 +1,4 @@
+
 import { ProjectTest } from '../types/projectTypes';
 import { TestReport, TestSummary, TestSuite, TestCategory } from '../testing/types/testTypes';
 
@@ -65,6 +66,22 @@ export class TestManager {
       
       return false;
     }
+  }
+
+  // Add summarizeResults method
+  summarizeResults(): TestSummary {
+    const results = Object.values(this.testReports);
+    const passed = results.filter(report => report.result).length;
+    const total = results.length;
+    
+    return {
+      totalTests: total,
+      passedTests: passed,
+      failedTests: total - passed,
+      duration: results.reduce((sum, report) => sum + report.duration, 0),
+      timestamp: new Date(),
+      status: this.getTestStatus(passed, total)
+    };
   }
 
   async runTestSuite(suiteId: string): Promise<TestSummary> {

@@ -7,10 +7,8 @@ import { testPuzzleIntegration } from './puzzleTests/integrationTests';
 import { projectTracker } from '@/utils/ProjectTracker';
 import { toast } from '@/hooks/use-toast';
 import { VerificationResult } from './types/testTypes';
-import { DatabaseTestRunner } from './runners/DatabaseTestRunner';
-import { ComponentTestRunner } from './runners/ComponentTestRunner';
-import { ProgressTestRunner } from './runners/ProgressTestRunner';
-import { supabase } from '@/integrations/supabase/client';
+import { runComponentTests } from './puzzleTests/componentTests';
+import { runIntegrationTests } from './puzzleTests/integrationTests';
 
 /**
  * Runs all puzzle-related tests
@@ -55,7 +53,12 @@ export const runPuzzleTestSuite = async (): Promise<void> => {
 export const runComponentTestSuite = async (): Promise<void> => {
   console.log('🧪 Running component test suite...');
   
-  // Add component tests here
+  // Mock for browser display only
+  const componentTestResults = runComponentTests();
+  const integrationTestResults = runIntegrationTests();
+  
+  console.log('Component tests complete:', componentTestResults);
+  console.log('Integration tests complete:', integrationTestResults);
   
   return Promise.resolve();
 };
@@ -247,6 +250,6 @@ const createDemoAdminAccount = async () => {
   }
 }
 
-export type { VerificationResult } from './testing/types/testTypes';
+export type { VerificationResult } from './types/testTypes';
 
 export default runPuzzleTestSuite;
