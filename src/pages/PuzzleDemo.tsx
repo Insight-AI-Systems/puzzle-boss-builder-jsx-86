@@ -11,15 +11,11 @@ import ImageSelector from '@/components/puzzles/components/ImageSelector';
 import PuzzleDemoInfo from '@/components/puzzles/PuzzleDemoInfo';
 
 const SimplePuzzleGame = lazy(() => 
-  import('@/components/puzzles/SimplePuzzleGame').then(module => {
-    return new Promise(resolve => setTimeout(() => resolve({ default: module.default }), 1000));
-  })
+  import('@/components/puzzles/SimplePuzzleGame')
 );
 
 const ImagePuzzleGame = lazy(() => 
-  import('@/components/puzzles/ImagePuzzleGame').then(module => {
-    return new Promise(resolve => setTimeout(() => resolve({ default: module.default }), 1000));
-  })
+  import('@/components/puzzles/ImagePuzzleGame')
 );
 
 const AUDIO_FILES = [
@@ -30,9 +26,7 @@ const AUDIO_FILES = [
 ];
 
 const PerformanceMonitor = lazy(() => 
-  import('@/components/puzzles/components/PerformanceMonitor').then(module => ({
-    default: module.default
-  }))
+  import('@/components/puzzles/components/PerformanceMonitor')
 );
 
 const PuzzleDemo: React.FC = () => {
