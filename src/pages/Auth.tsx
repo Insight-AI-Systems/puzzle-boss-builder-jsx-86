@@ -11,10 +11,10 @@ const Auth = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    // Add a small delay to ensure components are fully loaded
+    // Add a smaller delay to ensure components are fully loaded
     const timer = setTimeout(() => {
       setIsPageLoading(false);
-    }, 500);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, []);
@@ -26,7 +26,8 @@ const Auth = () => {
     }
   }, [currentUserId, isLoading, navigate]);
 
-  if (isPageLoading || isLoading) {
+  // Show loading indicator only for a short period
+  if (isPageLoading && isLoading) {
     return (
       <div className="min-h-screen bg-puzzle-black flex items-center justify-center p-4">
         <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
@@ -34,6 +35,8 @@ const Auth = () => {
     );
   }
 
+  // Force render the auth form even if still technically loading
+  // This prevents the loading state from getting stuck
   if (currentUserId) {
     return <Navigate to="/" replace />;
   }

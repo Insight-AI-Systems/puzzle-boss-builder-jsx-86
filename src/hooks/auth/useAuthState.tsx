@@ -30,6 +30,7 @@ export function useAuthState() {
       } catch (error) {
         console.error('Unexpected error getting session:', error);
       } finally {
+        // Ensure loading state ends even if there's an error
         setIsLoading(false);
       }
     };

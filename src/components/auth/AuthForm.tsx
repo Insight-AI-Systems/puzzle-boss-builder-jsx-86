@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,14 +28,13 @@ export const AuthForm = () => {
         ? await supabase.auth.signUp({ email, password })
         : await supabase.auth.signInWithPassword({ email, password });
 
+      console.log('Auth response:', data, error);
+      
       if (error) {
         console.error('Auth error:', error);
         setErrorMessage(error.message);
         throw error;
       }
-
-      // Log successful result for debugging
-      console.log('Auth successful:', data);
 
       toast({
         title: isSignUp ? 'Account created!' : 'Welcome back!',
