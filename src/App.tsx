@@ -15,6 +15,18 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Membership from "./pages/Membership";
 import AccountDashboard from "./pages/AccountDashboard";
 import InitialTestRunner from "@/components/InitialTestRunner";
+import Puzzles from "./pages/Puzzles";
+import Prizes from "./pages/Prizes";
+import HowItWorks from "./pages/HowItWorks";
+import Settings from "./pages/Settings";
+import Terms from "./pages/legal/Terms";
+import Privacy from "./pages/legal/Privacy";
+import CookiePolicy from "./pages/legal/CookiePolicy";
+import ContestRules from "./pages/legal/ContestRules";
+import Support from "./pages/Support";
+import Partnerships from "./pages/Partnerships";
+import Careers from "./pages/Careers";
+import Press from "./pages/Press";
 
 // Create a new QueryClient instance at the module level to avoid recreation on renders
 const queryClient = new QueryClient();
@@ -37,6 +49,23 @@ const App: React.FC = () => {
               <Route path="/dev-dashboard" element={<DevDashboard />} />
               <Route path="/membership" element={<Membership />} />
               <Route path="/account" element={<AccountDashboard />} />
+              <Route path="/puzzles" element={<Puzzles />} />
+              <Route path="/prizes" element={<Prizes />} />
+              <Route path="/how-it-works" element={<HowItWorks />} />
+              <Route path="/settings" element={<Settings />} />
+              
+              {/* Legal Pages */}
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/cookie-policy" element={<CookiePolicy />} />
+              <Route path="/contest-rules" element={<ContestRules />} />
+              
+              {/* Support & Company Pages */}
+              <Route path="/support" element={<Support />} />
+              <Route path="/partnerships" element={<Partnerships />} />
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/press" element={<Press />} />
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
