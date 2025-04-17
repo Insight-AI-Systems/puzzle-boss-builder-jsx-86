@@ -63,7 +63,7 @@ export const AuthForm = () => {
             errorMessage={errorMessage}
             isLoading={isLoading}
             setEmail={setEmail}
-            handlePasswordResetRequest={handlePasswordResetRequest}
+            handlePasswordResetRequest={() => handlePasswordResetRequest(email)}
             goBack={() => {
               resetForm();
               setCurrentView('signin');
