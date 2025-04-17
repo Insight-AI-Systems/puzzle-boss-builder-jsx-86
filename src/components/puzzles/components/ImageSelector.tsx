@@ -24,7 +24,7 @@ const ImageSelector: React.FC<ImageSelectorProps> = ({
               key={image.id}
               className={`relative rounded-md overflow-hidden border-2 transition-all h-16 w-16 flex-shrink-0
                 ${selectedImage === image.url 
-                  ? 'border-puzzle-gold shadow-md scale-105' 
+                  ? 'border-puzzle-gold shadow-md scale-105 puzzle-piece-hint' 
                   : 'border-puzzle-black/60 hover:border-puzzle-aqua'
                 }`}
               onClick={() => onSelect(image.url)}

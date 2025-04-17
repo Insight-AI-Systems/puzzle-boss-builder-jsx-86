@@ -1,6 +1,7 @@
 
 import { BasePuzzlePiece } from '../types/puzzle-types';
 import React from 'react';
+import { PuzzleSoundType } from './useSoundEffects';
 
 export const createPieceHandlers = <T extends BasePuzzlePiece>(
   pieces: T[],
@@ -8,7 +9,8 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
   draggedPiece: T | null,
   setDraggedPiece: React.Dispatch<React.SetStateAction<T | null>>,
   setMoveCount: React.Dispatch<React.SetStateAction<number>>,
-  isSolved: boolean
+  isSolved: boolean,
+  playSound?: (sound: PuzzleSoundType) => void
 ) => {
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent, piece: T) => {
     if (isSolved) return;
@@ -17,6 +19,9 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     if (e.preventDefault) e.preventDefault();
     console.log('Drag start:', piece.id);
     setDraggedPiece(piece);
+    
+    // Play pickup sound
+    playSound?.('pickup');
     
     // Update piece state
     setPieces(prev => prev.map(p => 
@@ -57,16 +62,47 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
       newPieces[sourceIndex].position = sourceIndex;
       newPieces[targetIndex].position = targetIndex;
       
+      // Check if the piece is in the correct position for sound effect
+      const pieceNumber = parseInt(draggedPiece.id.split('-')[1]);
+      const isCorrectPlacement = pieceNumber === targetIndex;
+      
+      // Play appropriate sound
+      if (isCorrectPlacement) {
+        playSound?.('correct');
+      } else {
+        playSound?.('place');
+      }
+      
       // Reset dragging state
-      setPieces(newPieces.map(p => ({ ...p, isDragging: false })) as T[]);
+      setPieces(newPieces.map(p => ({ 
+        ...p, 
+        isDragging: false,
+        // Add correctlyPlaced for animation
+        correctlyPlaced: isCorrectPlacement && p.id === draggedPiece.id 
+          ? true 
+          : (p as any).correctlyPlaced 
+      })) as T[]);
+      
       setDraggedPiece(null);
       
       // Increment move count
       setMoveCount(prev => prev + 1);
+      
+      // Clear the correctlyPlaced flag after animation
+      if (isCorrectPlacement) {
+        setTimeout(() => {
+          setPieces(currentPieces => 
+            currentPieces.map(p => ({ ...p, correctlyPlaced: false })) as T[]
+          );
+        }, 600);
+      }
     } else {
       // Reset dragging state without counting as a move
       setPieces(prev => prev.map(p => ({ ...p, isDragging: false })) as T[]);
       setDraggedPiece(null);
+      
+      // Play placement sound even when dropping in the same spot
+      playSound?.('place');
     }
   };
   
@@ -94,12 +130,40 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
         newPieces[sourceIndex].position = sourceIndex;
         newPieces[targetIndex].position = targetIndex;
         
+        // Check if the piece is in the correct position for sound effect
+        const pieceNumber = parseInt(draggedPiece.id.split('-')[1]);
+        const isCorrectPlacement = pieceNumber === targetIndex;
+        
+        // Play appropriate sound
+        if (isCorrectPlacement) {
+          playSound?.('correct');
+        } else {
+          playSound?.('place');
+        }
+        
         // Reset dragging state
-        setPieces(newPieces.map(p => ({ ...p, isDragging: false })) as T[]);
+        setPieces(newPieces.map(p => ({ 
+          ...p, 
+          isDragging: false,
+          // Add correctlyPlaced for animation
+          correctlyPlaced: isCorrectPlacement && p.id === draggedPiece.id 
+            ? true 
+            : (p as any).correctlyPlaced 
+        })) as T[]);
+        
         setDraggedPiece(null);
         
         // Increment move count
         setMoveCount(prev => prev + 1);
+        
+        // Clear the correctlyPlaced flag after animation
+        if (isCorrectPlacement) {
+          setTimeout(() => {
+            setPieces(currentPieces => 
+              currentPieces.map(p => ({ ...p, correctlyPlaced: false })) as T[]
+            );
+          }, 600);
+        }
       }
     } else {
       // Select or deselect the piece
@@ -107,6 +171,9 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
         // Deselect if clicking the same piece
         setPieces(pieces.map(p => ({ ...p, isDragging: false })) as T[]);
         setDraggedPiece(null);
+        
+        // Play placement sound when deselecting
+        playSound?.('place');
       } else {
         // Select a new piece
         setDraggedPiece(piece);
@@ -115,6 +182,9 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
             ? { ...p, isDragging: true } 
             : { ...p, isDragging: false }
         ) as T[]);
+        
+        // Play pickup sound
+        playSound?.('pickup');
       }
     }
   };
@@ -163,17 +233,58 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     }
   };
   
+  // New function to check for and highlight hints for nearby correct pieces
+  const checkForHints = () => {
+    if (isSolved || !pieces.length) return;
+    
+    // Find pieces that are one position away from their correct position
+    const hintsToShow = pieces.filter(piece => {
+      const pieceNumber = parseInt(piece.id.split('-')[1]);
+      const currentPosition = piece.position;
+      
+      // Check if piece is one position away horizontally or vertically
+      const pieceRow = Math.floor(pieceNumber / Math.sqrt(pieces.length));
+      const pieceCol = pieceNumber % Math.sqrt(pieces.length);
+      const currentRow = Math.floor(currentPosition / Math.sqrt(pieces.length));
+      const currentCol = currentPosition % Math.sqrt(pieces.length);
+      
+      const isOneAway = (
+        (Math.abs(pieceRow - currentRow) === 1 && pieceCol === currentCol) ||
+        (Math.abs(pieceCol - currentCol) === 1 && pieceRow === currentRow)
+      );
+      
+      return isOneAway;
+    });
+    
+    // Apply hints to pieces
+    if (hintsToShow.length > 0) {
+      setPieces(prev => prev.map(p => {
+        const shouldHint = hintsToShow.some(hint => hint.id === p.id);
+        return {
+          ...p,
+          showHint: shouldHint && Math.random() > 0.7 // Only show some hints randomly
+        } as T;
+      }));
+      
+      // Clear hints after a short time
+      setTimeout(() => {
+        setPieces(prev => prev.map(p => ({ ...p, showHint: false })) as T);
+      }, 1000);
+    }
+  };
+  
   return {
     handleDragStart,
     handleMove,
     handleDrop,
     handlePieceClick,
     handleDirectionalMove,
+    checkForHints
   };
 };
 
 // Helper for image piece style based on position
-export const getImagePieceStyle = (piece: BasePuzzlePiece, selectedImage: string, gridSize: number): React.CSSProperties => {
+export const getImagePieceStyle = (piece: BasePuzzlePiece & { correctlyPlaced?: boolean, showHint?: boolean }, selectedImage: string, gridSize: number): React.CSSProperties => {
   const pieceNumber = parseInt(piece.id.split('-')[1]);
   const row = Math.floor(pieceNumber / gridSize);
   const col = pieceNumber % gridSize;
@@ -184,6 +295,7 @@ export const getImagePieceStyle = (piece: BasePuzzlePiece, selectedImage: string
     backgroundPosition: `${col * 100 / (gridSize - 1)}% ${row * 100 / (gridSize - 1)}%`,
     opacity: piece.isDragging ? 0.8 : 1,
     transform: piece.isDragging ? 'scale(0.95)' : 'scale(1)',
+    animation: piece.correctlyPlaced ? 'correctPlacement 0.5s ease-out' : 
+               (piece.showHint ? 'hintPulse 1s ease-in-out infinite' : 'none'),
   };
 };
-

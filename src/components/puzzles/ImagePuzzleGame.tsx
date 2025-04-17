@@ -6,11 +6,14 @@ import { usePuzzlePieces } from './hooks/usePuzzlePieces';
 import { usePuzzleState } from './hooks/usePuzzleState';
 import { createPieceHandlers, getImagePieceStyle } from './utils/pieceInteractionHandlers';
 import { calculateContainerSize } from './utils/puzzleSizeUtils';
+import { useSoundEffects } from './utils/useSoundEffects';
 import PuzzleControls from './components/PuzzleControls';
 import PuzzleGrid from './components/PuzzleGrid';
 import DirectionalControls from './components/DirectionalControls';
 import PuzzleStatusMessage from './components/PuzzleStatusMessage';
 import PuzzleStateDisplay from './components/PuzzleStateDisplay';
+import SoundControls from './components/SoundControls';
+import './styles/puzzle-animations.css';
 
 interface ImagePuzzleGameProps {
   sampleImages?: string[];
@@ -32,6 +35,9 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
   
   const imgRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // Initialize sound effects
+  const { playSound, muted, toggleMute, volume, changeVolume } = useSoundEffects();
   
   // If initialImage changes from external, update it
   useEffect(() => {
@@ -69,6 +75,7 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
     handleDrop,
     handlePieceClick,
     handleDirectionalMove,
+    checkForHints
   } = createPieceHandlers(
     pieces,
     setPieces,
@@ -78,7 +85,8 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
       setMoveCount(count);
       puzzleState.incrementMoves();
     },
-    isSolved
+    isSolved,
+    playSound // Pass the playSound function
   );
   
   // Reset loading state and load new puzzle when difficulty or image changes
@@ -117,8 +125,10 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
   useEffect(() => {
     if (isSolved && !puzzleState.isComplete) {
       puzzleState.checkCompletion(gridSize * gridSize, gridSize * gridSize);
+      // Play completion sound when puzzle is solved
+      playSound('complete');
     }
-  }, [isSolved, puzzleState, gridSize]);
+  }, [isSolved, puzzleState, gridSize, playSound]);
   
   // Update correct pieces count
   useEffect(() => {
@@ -130,6 +140,17 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
       puzzleState.updateCorrectPieces(correctCount);
     }
   }, [pieces, isSolved, puzzleState]);
+  
+  // Periodically check for pieces that could be hinted
+  useEffect(() => {
+    if (!isSolved && pieces.length > 0 && puzzleState.isActive) {
+      const hintInterval = setInterval(() => {
+        checkForHints();
+      }, 5000); // Check every 5 seconds
+      
+      return () => clearInterval(hintInterval);
+    }
+  }, [pieces, isSolved, puzzleState.isActive, checkForHints]);
   
   // Calculate container size based on device and difficulty
   const containerSize = calculateContainerSize(isMobile, difficulty);
@@ -159,6 +180,16 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
         onDifficultyChange={handleDifficultyChange}
         onTogglePause={puzzleState.togglePause}
       />
+      
+      {/* Sound controls */}
+      <div className="mb-4">
+        <SoundControls
+          muted={muted}
+          volume={volume}
+          onToggleMute={toggleMute}
+          onVolumeChange={changeVolume}
+        />
+      </div>
       
       {/* Controls and info */}
       <PuzzleControls

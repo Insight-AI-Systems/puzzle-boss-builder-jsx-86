@@ -1,0 +1,45 @@
+
+/* Piece hover and selection animation */
+.puzzle-piece {
+  transition: transform 0.15s ease-out, filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+.puzzle-piece-dragging {
+  transform: scale(1.02) !important;
+  filter: brightness(1.1);
+  z-index: 10;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Highlight for correct piece placement */
+@keyframes correctPlacement {
+  0% { box-shadow: 0 0 0 2px rgba(102, 255, 255, 0); }
+  50% { box-shadow: 0 0 0 3px rgba(102, 255, 255, 0.7); }
+  100% { box-shadow: 0 0 0 2px rgba(102, 255, 255, 0); }
+}
+
+.puzzle-piece-correct {
+  animation: correctPlacement 0.5s ease-out;
+}
+
+/* Puzzle completion celebration animation */
+@keyframes celebrationPulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.03); filter: brightness(1.2); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+.puzzle-complete {
+  animation: celebrationPulse 1.5s ease-in-out infinite;
+}
+
+/* Hint animation for nearby pieces */
+@keyframes hintPulse {
+  0% { transform: scale(1); }
+  70% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+.puzzle-piece-hint {
+  animation: hintPulse 1s ease-in-out infinite;
+}

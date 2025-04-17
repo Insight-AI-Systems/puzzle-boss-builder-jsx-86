@@ -1,11 +1,12 @@
-
 export type DifficultyLevel = '3x3' | '4x4' | '5x5';
 
-// Base interface for all puzzle pieces
+// Base piece interface
 export interface BasePuzzlePiece {
   id: string;
   position: number;
   isDragging: boolean;
+  correctlyPlaced?: boolean; // New property for animations
+  showHint?: boolean; // New property for hint animations
 }
 
 // Extended interface for image puzzle pieces

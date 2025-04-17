@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { PuzzlePiece, difficultyConfig, DifficultyLevel } from '../types/puzzle-types';
+import '../styles/puzzle-animations.css';
 
 interface PuzzleGridProps {
   pieces: PuzzlePiece[];
@@ -41,7 +42,7 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({
   return (
     <div 
       className={`grid gap-1 bg-puzzle-black/60 p-2 rounded-lg border-2 
-        ${isSolved ? 'border-puzzle-gold animate-pulse' : 'border-puzzle-aqua'}
+        ${isSolved ? 'border-puzzle-gold puzzle-complete' : 'border-puzzle-aqua'}
         ${difficultyConfig[difficulty].containerClass}`}
       style={{ 
         width: containerSize.width, 
@@ -56,8 +57,10 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({
           onMouseUp={(e) => onDrop(e, index)}
           onTouchEnd={(e) => onDrop(e, index)}
           onClick={() => onPieceClick(piece)}
-          className={`flex items-center justify-center rounded cursor-pointer shadow-md transition-all
-            ${piece.isDragging ? 'ring-2 ring-white scale-95' : 'scale-100'}
+          className={`puzzle-piece flex items-center justify-center rounded cursor-pointer shadow-md transition-all
+            ${piece.isDragging ? 'puzzle-piece-dragging ring-2 ring-white' : ''}
+            ${(piece as any).correctlyPlaced ? 'puzzle-piece-correct' : ''}
+            ${(piece as any).showHint ? 'puzzle-piece-hint' : ''}
             ${isSolved ? 'ring-1 ring-puzzle-gold/50' : ''}`}
           style={{ 
             ...getPieceStyle(piece),

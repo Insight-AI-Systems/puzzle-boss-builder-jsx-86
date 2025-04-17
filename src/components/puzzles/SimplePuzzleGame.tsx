@@ -4,12 +4,15 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useSimplePuzzlePieces } from './hooks/useSimplePuzzlePieces';
 import { usePuzzleState } from './hooks/usePuzzleState';
 import { createPieceHandlers } from './utils/pieceInteractionHandlers';
+import { useSoundEffects } from './utils/useSoundEffects';
 import SimplePuzzleGrid from './components/SimplePuzzleGrid';
 import SimplePuzzleControls from './components/SimplePuzzleControls';
 import SimpleDirectionalControls from './components/SimpleDirectionalControls';
 import PuzzleStatusMessage from './components/PuzzleStatusMessage';
 import PuzzleStateDisplay from './components/PuzzleStateDisplay';
+import SoundControls from './components/SoundControls';
 import { difficultyConfig } from './types/puzzle-types';
+import './styles/puzzle-animations.css';
 
 const SimplePuzzleGame: React.FC = () => {
   const isMobile = useIsMobile();
@@ -24,6 +27,9 @@ const SimplePuzzleGame: React.FC = () => {
     handleShuffleClick
   } = useSimplePuzzlePieces();
   
+  // Initialize sound effects
+  const { playSound, muted, toggleMute, volume, changeVolume } = useSoundEffects();
+  
   // New puzzle state management
   const puzzleState = usePuzzleState('3x3');
   
@@ -32,7 +38,8 @@ const SimplePuzzleGame: React.FC = () => {
     handleMove,
     handleDrop,
     handlePieceClick,
-    handleDirectionalMove
+    handleDirectionalMove,
+    checkForHints
   } = createPieceHandlers(
     pieces,
     setPieces,
@@ -42,7 +49,8 @@ const SimplePuzzleGame: React.FC = () => {
       setMoveCount(count);
       puzzleState.incrementMoves();
     },
-    isSolved
+    isSolved,
+    playSound // Pass the playSound function
   );
   
   // Start a new puzzle when shuffling
@@ -62,8 +70,10 @@ const SimplePuzzleGame: React.FC = () => {
     if (isSolved && !puzzleState.isComplete) {
       const gridSize = difficultyConfig[puzzleState.difficulty].gridSize;
       puzzleState.checkCompletion(gridSize * gridSize, gridSize * gridSize);
+      // Play completion sound
+      playSound('complete');
     }
-  }, [isSolved, puzzleState]);
+  }, [isSolved, puzzleState, playSound]);
   
   // Update correct pieces count
   useEffect(() => {
@@ -75,6 +85,17 @@ const SimplePuzzleGame: React.FC = () => {
       puzzleState.updateCorrectPieces(correctCount);
     }
   }, [pieces, isSolved, puzzleState]);
+  
+  // Periodically check for pieces that could be hinted
+  useEffect(() => {
+    if (!isSolved && pieces.length > 0 && puzzleState.isActive) {
+      const hintInterval = setInterval(() => {
+        checkForHints();
+      }, 5000); // Check every 5 seconds
+      
+      return () => clearInterval(hintInterval);
+    }
+  }, [pieces, isSolved, puzzleState.isActive, checkForHints]);
   
   // Total pieces based on difficulty
   const totalPieces = difficultyConfig[puzzleState.difficulty].gridSize ** 2;
@@ -92,6 +113,16 @@ const SimplePuzzleGame: React.FC = () => {
         onDifficultyChange={handleDifficultyChange}
         onTogglePause={puzzleState.togglePause}
       />
+      
+      {/* Sound controls */}
+      <div className="mb-4">
+        <SoundControls
+          muted={muted}
+          volume={volume}
+          onToggleMute={toggleMute}
+          onVolumeChange={changeVolume}
+        />
+      </div>
       
       <SimplePuzzleControls 
         moveCount={moveCount}
