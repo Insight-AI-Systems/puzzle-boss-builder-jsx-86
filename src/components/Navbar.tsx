@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -14,12 +13,11 @@ import {
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, Settings, Shield, User } from 'lucide-react';
+import { ChevronDown, LogOut, Settings, Shield, User } from 'lucide-react';
 
 const Navbar: React.FC = () => {
-  const { profile, isLoading, isAdmin, currentUserId } = useUserProfile();
+  const { profile, isLoading, isAdmin } = useUserProfile();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     try {
@@ -40,12 +38,13 @@ const Navbar: React.FC = () => {
     }
   };
 
-  const handleSignIn = () => {
-    navigate('/auth');
-  };
-
-  const handleSignUp = () => {
-    navigate('/auth?tab=signup');
+  const checkAdminStatus = () => {
+    if (profile) {
+      toast({
+        title: 'Admin Status Check',
+        description: `Role: ${profile.role}, isAdmin: ${isAdmin}`,
+      });
+    }
   };
 
   return (
@@ -78,14 +77,14 @@ const Navbar: React.FC = () => {
         </nav>
         
         <div className="flex items-center gap-4">
-          {!isLoading && currentUserId ? (
+          {!isLoading && profile ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-9 w-9 border border-puzzle-aqua/50">
-                    <AvatarImage src={profile?.avatar_url || ''} alt={profile?.display_name || ''} />
+                    <AvatarImage src={profile.avatar_url || ''} alt={profile.display_name || ''} />
                     <AvatarFallback className="bg-puzzle-aqua/20 text-puzzle-aqua">
-                      {profile?.display_name?.charAt(0).toUpperCase() || 'U'}
+                      {profile.display_name?.charAt(0).toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -93,9 +92,9 @@ const Navbar: React.FC = () => {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{profile?.display_name || 'User'}</p>
+                    <p className="text-sm font-medium leading-none">{profile.display_name || 'User'}</p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      {profile?.role || 'user'}
+                      {profile.role}
                     </p>
                   </div>
                 </DropdownMenuLabel>
@@ -107,7 +106,7 @@ const Navbar: React.FC = () => {
                   </Link>
                 </DropdownMenuItem>
                 
-                {(isAdmin || profile?.role === 'super_admin') && (
+                {(isAdmin || profile.role === 'super_admin') && (
                   <DropdownMenuItem asChild>
                     <Link to="/admin-dashboard" className="flex w-full cursor-pointer">
                       <Shield className="mr-2 h-4 w-4" />
@@ -130,25 +129,21 @@ const Navbar: React.FC = () => {
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-blue-600 cursor-pointer" 
+                  onClick={checkAdminStatus}
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  <span>Check Admin Status</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="default" 
-                className="bg-puzzle-aqua hover:bg-puzzle-aqua/80"
-                onClick={handleSignIn}
-              >
+            <Link to="/auth">
+              <Button variant="default" className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
                 Sign In
               </Button>
-              <Button 
-                variant="outline" 
-                className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold/10"
-                onClick={handleSignUp}
-              >
-                Sign Up
-              </Button>
-            </div>
+            </Link>
           )}
         </div>
       </div>
