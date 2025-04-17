@@ -8,6 +8,9 @@ import { DashboardContent } from './dashboard/DashboardContent';
 import { getTabDefinitions } from './dashboard/TabDefinitions';
 import { useToast } from '@/hooks/use-toast';
 
+// Protected super admin email list
+const PROTECTED_SUPER_ADMINS = ['alan@insight-ai-systems'];
+
 export const RoleBasedDashboard: React.FC = () => {
   // All hooks must be called at the top level, consistently
   const { profile } = useUserProfile();
@@ -33,10 +36,23 @@ export const RoleBasedDashboard: React.FC = () => {
     // Get all tab definitions
     const tabs = getTabDefinitions();
     
+    // Special handling for protected super admins - they get ALL tabs
+    if (profile.id && PROTECTED_SUPER_ADMINS.includes(profile.id)) {
+      console.log('Protected super admin detected, granting all tabs');
+      setAccessibleTabs(tabs);
+      if (tabs.length > 0 && !tabs.some(tab => tab.id === activeTab)) {
+        setActiveTab(tabs[0].id);
+      }
+      return;
+    }
+    
     // Filter tabs based on user role
-    const filtered = tabs.filter(tab => 
-      tab.roles.includes(profile.role as UserRole)
-    );
+    const isSuperAdmin = profile.role === 'super_admin';
+    
+    // Super admins get all tabs, others get filtered tabs
+    const filtered = isSuperAdmin 
+      ? tabs 
+      : tabs.filter(tab => tab.roles.includes(profile.role as UserRole));
     
     console.log('Filtered tabs:', filtered.map(t => t.id));
     setAccessibleTabs(filtered);

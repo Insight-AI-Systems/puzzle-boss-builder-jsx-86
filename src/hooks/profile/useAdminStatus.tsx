@@ -10,8 +10,8 @@ export function useAdminStatus(profile: UserProfile | null) {
       // Debug logging to help trace role issues
       console.log('Checking admin status for role:', profile.role);
       
-      // Force super_admin to always have admin privileges
-      if (profile.role === 'super_admin') {
+      // Special handling for super_admin
+      if (profile.role === 'super_admin' || profile.id === 'alan@insight-ai-systems') {
         console.log('Super admin detected, granting admin privileges');
         setIsAdmin(true);
         return;
