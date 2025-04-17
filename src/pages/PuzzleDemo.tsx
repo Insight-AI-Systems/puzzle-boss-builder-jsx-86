@@ -1,4 +1,3 @@
-
 import React, { useState, Suspense, lazy, useCallback, useEffect } from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
 import Breadcrumb from '@/components/common/Breadcrumb';
@@ -11,22 +10,18 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 import ImageSelector from '@/components/puzzles/components/ImageSelector';
 import PuzzleDemoInfo from '@/components/puzzles/PuzzleDemoInfo';
 
-// Lazy load heavy components for better performance
 const SimplePuzzleGame = lazy(() => 
   import('@/components/puzzles/SimplePuzzleGame').then(module => {
-    // Artificial delay to ensure loading states are visible for testing
-    return new Promise(resolve => setTimeout(() => resolve(module), 1000));
+    return new Promise(resolve => setTimeout(() => resolve({ default: module.default }), 1000));
   })
 );
 
 const ImagePuzzleGame = lazy(() => 
   import('@/components/puzzles/ImagePuzzleGame').then(module => {
-    // Artificial delay to ensure loading states are visible for testing
-    return new Promise(resolve => setTimeout(() => resolve(module), 1000));
+    return new Promise(resolve => setTimeout(() => resolve({ default: module.default }), 1000));
   })
 );
 
-// List of audio files to preload
 const AUDIO_FILES = [
   { name: 'pickup', url: '/sounds/pickup.mp3' },
   { name: 'place', url: '/sounds/place.mp3' },
@@ -34,9 +29,10 @@ const AUDIO_FILES = [
   { name: 'complete', url: '/sounds/complete.mp3' }
 ];
 
-// Performance monitoring component
 const PerformanceMonitor = lazy(() => 
-  import('@/components/puzzles/components/PerformanceMonitor')
+  import('@/components/puzzles/components/PerformanceMonitor').then(module => ({
+    default: module.default
+  }))
 );
 
 const PuzzleDemo: React.FC = () => {
@@ -58,9 +54,7 @@ const PuzzleDemo: React.FC = () => {
     setSelectedImage(imageUrl);
   }, []);
   
-  // Preload all puzzle images in the background
   useEffect(() => {
-    // Create a hidden image preloader
     const preloadImages = () => {
       PUZZLE_IMAGES.forEach(img => {
         const image = new Image();
@@ -68,11 +62,9 @@ const PuzzleDemo: React.FC = () => {
       });
     };
     
-    // Use requestIdleCallback for non-blocking preloading when browser is idle
     if ('requestIdleCallback' in window) {
       (window as any).requestIdleCallback(preloadImages);
     } else {
-      // Fallback for browsers that don't support requestIdleCallback
       setTimeout(preloadImages, 1000);
     }
   }, []);
