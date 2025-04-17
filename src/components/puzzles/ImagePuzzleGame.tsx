@@ -14,16 +14,39 @@ import PuzzleStateDisplay from './components/PuzzleStateDisplay';
 
 interface ImagePuzzleGameProps {
   sampleImages?: string[];
+  initialImage?: string;
+  isImageLoading?: boolean;
+  onImageLoaded?: () => void;
 }
 
-const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({ sampleImages = DEFAULT_IMAGES }) => {
+const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({ 
+  sampleImages = DEFAULT_IMAGES,
+  initialImage,
+  isImageLoading: externalLoading,
+  onImageLoaded
+}) => {
   const isMobile = useIsMobile();
   const [difficulty, setDifficulty] = useState<DifficultyLevel>('3x3');
-  const [selectedImage, setSelectedImage] = useState<string>(sampleImages[0]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<string>(initialImage || sampleImages[0]);
+  const [isLoading, setIsLoading] = useState(externalLoading !== undefined ? externalLoading : true);
   
   const imgRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // If initialImage changes from external, update it
+  useEffect(() => {
+    if (initialImage && initialImage !== selectedImage) {
+      setSelectedImage(initialImage);
+      setIsLoading(true);
+    }
+  }, [initialImage, selectedImage]);
+  
+  // If external loading state changes
+  useEffect(() => {
+    if (externalLoading !== undefined) {
+      setIsLoading(externalLoading);
+    }
+  }, [externalLoading]);
   
   // New puzzle state management
   const puzzleState = usePuzzleState(difficulty);
@@ -75,6 +98,13 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({ sampleImages = DEFAUL
     handleShuffleClick();
     puzzleState.startNewPuzzle(difficulty);
   };
+  
+  // Notify when image loading is complete
+  useEffect(() => {
+    if (!isLoading && onImageLoaded) {
+      onImageLoaded();
+    }
+  }, [isLoading, onImageLoaded]);
   
   // When a new puzzle is loaded, start the timer
   useEffect(() => {
