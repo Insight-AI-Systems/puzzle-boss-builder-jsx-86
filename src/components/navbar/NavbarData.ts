@@ -1,5 +1,7 @@
 
-export const mainNavItems = [
+import { NavItem } from './NavLinks';
+
+export const mainNavItems: NavItem[] = [
   { name: 'Home', path: '/' },
   { name: 'Puzzles', path: '/puzzles' },
   { name: 'Prizes', path: '/prizes' },

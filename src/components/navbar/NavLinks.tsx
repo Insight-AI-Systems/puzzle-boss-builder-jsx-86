@@ -2,10 +2,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
-type NavItem = {
+export interface NavItem {
   name: string;
   path: string;
-};
+}
 
 interface NavLinksProps {
   items: NavItem[];

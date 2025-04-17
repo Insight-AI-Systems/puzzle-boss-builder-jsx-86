@@ -1,8 +1,10 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useMobileMenu } from '@/hooks/use-mobile-menu';
 import Logo from './Logo';
 import NavLinks from './NavLinks';
 import UserMenu from './UserMenu';
@@ -11,10 +13,9 @@ import MobileMenu from './MobileMenu';
 import { mainNavItems } from './NavbarData';
 
 const Navbar: React.FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { profile, isLoading } = useUserProfile();
-  
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const isMobile = useIsMobile();
+  const { isMenuOpen, toggleMenu, closeMenu } = useMobileMenu();
   
   return (
     <nav className="bg-puzzle-black border-b border-puzzle-aqua/20">
@@ -63,7 +64,7 @@ const Navbar: React.FC = () => {
         isOpen={isMenuOpen} 
         navItems={mainNavItems} 
         isLoggedIn={!!profile} 
-        onClose={() => setIsMenuOpen(false)} 
+        onClose={closeMenu} 
       />
     </nav>
   );

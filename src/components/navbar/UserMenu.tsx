@@ -12,10 +12,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ProfileData } from '@/integrations/supabase/types';
+import { UserProfile } from '@/types/userTypes';
 
 interface UserMenuProps {
-  profile: ProfileData | null;
+  profile: UserProfile | null;
   isMobile?: boolean;
 }
 
