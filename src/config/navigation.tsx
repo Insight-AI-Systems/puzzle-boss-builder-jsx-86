@@ -2,15 +2,22 @@
 import { 
   Home, Users, Puzzle, ImageIcon, FileText, Star, ShoppingCart, 
   Settings, BarChart, User, Mail, Eye, Bell, Trophy, HelpCircle,
-  BookOpen, BadgeHelp, ScrollText, Phone
+  BookOpen, BadgeHelp, ScrollText, Phone, Shield, Layers, Database,
+  LayoutDashboard
 } from 'lucide-react';
 import { UserRole } from '@/types/userTypes';
+
+export interface NavSubItem {
+  title: string;
+  href: string;
+}
 
 export interface NavItem {
   title: string;
   icon: React.ComponentType;
   href: string;
   roles?: UserRole[];
+  subItems?: NavSubItem[];
 }
 
 export const mainNavItems: NavItem[] = [
@@ -38,8 +45,8 @@ export const mainNavItems: NavItem[] = [
 
 export const adminNavItems: NavItem[] = [
   {
-    title: "Dashboard",
-    icon: BarChart,
+    title: "Admin Dashboard",
+    icon: LayoutDashboard,
     href: "/admin-dashboard",
     roles: ["super_admin", "admin"],
   },
@@ -80,9 +87,21 @@ export const adminNavItems: NavItem[] = [
     roles: ["super_admin", "admin"],
   },
   {
+    title: "Security",
+    icon: Shield,
+    href: "/admin-dashboard?tab=security",
+    roles: ["super_admin"],
+  },
+  {
     title: "Monitoring",
     icon: Eye,
     href: "/admin-dashboard?tab=monitoring",
+    roles: ["super_admin"],
+  },
+  {
+    title: "Database",
+    icon: Database,
+    href: "/admin-dashboard?tab=database",
     roles: ["super_admin"],
   }
 ];
