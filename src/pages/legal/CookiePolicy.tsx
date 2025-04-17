@@ -7,6 +7,7 @@ const CookiePolicy = () => {
     <LegalPageLayout 
       title="Cookie Policy" 
       subtitle="This policy explains how we use cookies on our website"
+      lastUpdated="April 15, 2025"
     >
       <h2>1. What Are Cookies</h2>
       <p>
