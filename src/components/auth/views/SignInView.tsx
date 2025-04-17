@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SignInForm } from '../forms/SignInForm';
 import { SignUpForm } from '../forms/SignUpForm';
 import { GoogleAuthButton } from '../buttons/GoogleAuthButton';
 import { DemoAccountInfo } from '../demo/DemoAccountInfo';
+import { useSearchParams } from 'react-router-dom';
 
 interface SignInViewProps {
   email: string;
@@ -33,7 +34,15 @@ export const SignInView: React.FC<SignInViewProps> = ({
   currentView,
   setCurrentView,
 }) => {
-  const defaultTab = currentView === 'signin' ? 'signin' : 'signup';
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get('signup') === 'true' ? 'signup' : 'signin';
+  
+  // Set initial tab based on URL params or current view
+  useEffect(() => {
+    if (searchParams.get('signup') === 'true' && currentView !== 'signup') {
+      setCurrentView('signup');
+    }
+  }, [searchParams, currentView, setCurrentView]);
 
   return (
     <Tabs defaultValue={defaultTab} className="w-full" onValueChange={setCurrentView}>

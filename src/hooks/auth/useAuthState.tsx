@@ -17,7 +17,7 @@ export function useAuthState() {
       (event: AuthChangeEvent, session: Session | null) => {
         if (!isActive) return;
         
-        console.log('Auth state changed:', event, session?.user?.id);
+        console.log('Auth state changed:', event);
         setCurrentUserId(session?.user?.id || null);
         setSession(session);
         
@@ -27,8 +27,8 @@ export function useAuthState() {
       }
     );
 
-    // Then check for existing session
-    const getSession = async () => {
+    // Then check for existing session - use a small timeout to prevent blocking
+    setTimeout(async () => {
       try {
         if (!isActive) return;
         
@@ -41,10 +41,11 @@ export function useAuthState() {
             setIsLoading(false);
           }
         } else {
-          console.log('Got session:', data.session?.user?.id);
+          console.log('Got session:', data.session?.user?.id || 'No session');
           if (isActive) {
             setCurrentUserId(data.session?.user?.id || null);
             setSession(data.session);
+            setIsLoading(false);
           }
         }
       } catch (error) {
@@ -53,22 +54,21 @@ export function useAuthState() {
           setError(error instanceof Error ? error : new Error('Unknown auth error'));
           setIsLoading(false);
         }
-      } finally {
-        // Ensure loading state ends after a maximum wait time
-        // This ensures the spinner doesn't get stuck
-        if (isActive) {
-          setTimeout(() => {
-            setIsLoading(false);
-          }, 500);
-        }
       }
-    };
-    
-    getSession();
+    }, 50);
+
+    // Guarantee loading state ends after a maximum wait time
+    const safetyTimer = setTimeout(() => {
+      if (isActive && isLoading) {
+        console.log('Safety timeout triggered in useAuthState');
+        setIsLoading(false);
+      }
+    }, 1000);
 
     return () => {
       isActive = false;
       authListener.subscription.unsubscribe();
+      clearTimeout(safetyTimer);
     };
   }, []);
 

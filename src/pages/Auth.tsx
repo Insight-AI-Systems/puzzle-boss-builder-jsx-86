@@ -22,14 +22,13 @@ const Auth = () => {
     // Set a short timeout for initial page load
     const pageTimer = setTimeout(() => {
       setIsPageLoading(false);
-      console.log('Initial page loading timeout complete');
-    }, 200);
+    }, 100); // Shorter timeout for faster rendering
 
     // Set a longer safety timeout to prevent infinite loading
     const safetyTimer = setTimeout(() => {
       setLoadingTimeout(true);
       console.log('Safety timeout triggered - forcing auth page to render');
-    }, 3000);
+    }, 1500); // Shorter timeout to prevent long "wheel of death"
 
     return () => {
       clearTimeout(pageTimer);
@@ -48,14 +47,6 @@ const Auth = () => {
       });
     }
   }, [authError, toast]);
-
-  // Redirect to home if already authenticated and not in recovery flow
-  useEffect(() => {
-    if (currentUserId && !authLoading && !isPasswordRecovery) {
-      console.log('User is authenticated, redirecting to home');
-      navigate('/', { replace: true });
-    }
-  }, [currentUserId, authLoading, navigate, isPasswordRecovery]);
 
   // Force render the auth form if we've been loading too long
   if (loadingTimeout) {
@@ -88,8 +79,9 @@ const Auth = () => {
     );
   }
 
-  // Allow password recovery flow to proceed even if authenticated
-  if (currentUserId && !isPasswordRecovery) {
+  // Handle redirection only if not in recovery mode and we're not loading
+  if (!isPasswordRecovery && currentUserId && !authLoading) {
+    console.log('User authenticated, redirecting to home');
     return <Navigate to="/" replace />;
   }
 
