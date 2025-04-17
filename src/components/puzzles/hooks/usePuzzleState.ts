@@ -1,8 +1,13 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { DifficultyLevel, PuzzleState } from '../types/puzzle-types';
+import { DifficultyLevel, PuzzleState, GameMode } from '../types/puzzle-types';
 
-export const usePuzzleState = (initialDifficulty: DifficultyLevel = '3x3') => {
+export const usePuzzleState = (
+  initialDifficulty: DifficultyLevel = '3x3',
+  initialGameMode: GameMode = 'classic',
+  initialTimeLimit: number = 300
+) => {
   const { toast } = useToast();
   const [state, setState] = useState<PuzzleState>({
     isComplete: false,
@@ -10,7 +15,9 @@ export const usePuzzleState = (initialDifficulty: DifficultyLevel = '3x3') => {
     correctPieces: 0,
     difficulty: initialDifficulty,
     moveCount: 0,
-    isActive: false
+    isActive: false,
+    gameMode: initialGameMode,
+    timeLimit: initialTimeLimit
   });
   
   const timerRef = useRef<number | null>(null);
@@ -36,30 +43,47 @@ export const usePuzzleState = (initialDifficulty: DifficultyLevel = '3x3') => {
   }, [state.isActive, state.isComplete]);
   
   // Start a new puzzle
-  const startNewPuzzle = useCallback((difficulty: DifficultyLevel = state.difficulty) => {
-    setState({
-      isComplete: false,
-      timeSpent: 0,
-      correctPieces: 0,
-      difficulty,
-      moveCount: 0,
-      isActive: true
-    });
-  }, [state.difficulty]);
+  const startNewPuzzle = useCallback(
+    (
+      difficulty: DifficultyLevel = state.difficulty,
+      gameMode: GameMode = state.gameMode || 'classic',
+      timeLimit: number = state.timeLimit || 300
+    ) => {
+      setState({
+        isComplete: false,
+        timeSpent: 0,
+        correctPieces: 0,
+        difficulty,
+        moveCount: 0,
+        isActive: true,
+        gameMode,
+        timeLimit
+      });
+    }, 
+    [state.difficulty, state.gameMode, state.timeLimit]
+  );
   
   // Check if puzzle is complete
   const checkCompletion = useCallback((pieceCount: number, correctCount: number) => {
     if (correctCount === pieceCount && !state.isComplete) {
       setState(prev => ({ ...prev, isComplete: true, isActive: false }));
+      
+      let message = `You completed the puzzle in ${state.moveCount} moves and ${formatTime(state.timeSpent)}.`;
+      
+      if (state.gameMode === 'timed') {
+        const timeLeft = (state.timeLimit || 300) - state.timeSpent;
+        message += ` You had ${formatTime(timeLeft)} left on the clock.`;
+      }
+      
       toast({
         title: "Puzzle Completed!",
-        description: `You completed the puzzle in ${state.moveCount} moves and ${formatTime(state.timeSpent)}.`,
+        description: message,
         variant: "default",
       });
       return true;
     }
     return false;
-  }, [state.isComplete, state.moveCount, state.timeSpent, toast]);
+  }, [state.isComplete, state.moveCount, state.timeSpent, state.gameMode, state.timeLimit, toast]);
   
   // Update the correct pieces count
   const updateCorrectPieces = useCallback((count: number) => {
@@ -83,14 +107,23 @@ export const usePuzzleState = (initialDifficulty: DifficultyLevel = '3x3') => {
     }
   }, [state.isComplete]);
   
-  // Load state from saved time spent
-  const loadState = useCallback((savedTimeSpent: number) => {
-    setState(prev => ({
-      ...prev,
-      timeSpent: savedTimeSpent,
-      isActive: true
-    }));
-  }, []);
+  // Load state from saved game
+  const loadState = useCallback(
+    (
+      savedTimeSpent: number, 
+      savedGameMode?: GameMode, 
+      savedTimeLimit?: number
+    ) => {
+      setState(prev => ({
+        ...prev,
+        timeSpent: savedTimeSpent,
+        isActive: true,
+        gameMode: savedGameMode || prev.gameMode,
+        timeLimit: savedTimeLimit || prev.timeLimit
+      }));
+    }, 
+    []
+  );
 
   // Format time for display (mm:ss)
   const formattedTime = formatTime(state.timeSpent);

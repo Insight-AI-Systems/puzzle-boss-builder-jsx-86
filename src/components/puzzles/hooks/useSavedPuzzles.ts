@@ -42,13 +42,15 @@ export const useSavedPuzzles = () => {
         const filteredSaves = prev.saves.filter(save => save.id !== newState.id);
         const newSaves = [...filteredSaves, newState];
         
-        // Store in localStorage
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        // Store in localStorage with correct type handling
+        const updatedState = {
           saves: newSaves,
-          lastAutoSave: Date.now()
-        }));
+          lastAutoSave: Date.now().toString()
+        };
         
-        return { saves: newSaves, lastAutoSave: Date.now() };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedState));
+        
+        return updatedState;
       });
 
       toast({
