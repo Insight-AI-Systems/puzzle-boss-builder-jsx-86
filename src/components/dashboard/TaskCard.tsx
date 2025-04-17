@@ -4,6 +4,7 @@ import { Card, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Play, CheckCircle, RotateCw } from 'lucide-react';
 import { ProjectTask, ProjectTest } from '@/utils/types/projectTypes';
 import { TaskStatusBadge } from './TaskStatusBadge';
 
@@ -22,6 +23,21 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onRunTests,
   onUpdateStatus
 }) => {
+  const handleRunTests = () => {
+    console.log('Running tests for task:', task.id);
+    onRunTests(task.id);
+  };
+
+  const handleStartTask = () => {
+    console.log('Starting task:', task.id);
+    onUpdateStatus(task.id, 'in-progress');
+  };
+
+  const handleCompleteTask = () => {
+    console.log('Completing task:', task.id);
+    onUpdateStatus(task.id, 'completed');
+  };
+
   return (
     <Card key={task.id} className="overflow-hidden">
       <div className="flex justify-between items-start p-4">
@@ -53,16 +69,18 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         </>
       )}
       
-      <CardFooter className="flex justify-between bg-gray-50 border-t">
+      <CardFooter className="flex justify-between bg-gray-50 border-t p-3">
         <div className="flex space-x-2">
           {task.status !== 'completed' && (
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => onUpdateStatus(task.id, 'in-progress')}
+              onClick={handleStartTask}
               disabled={task.status === 'in-progress'}
+              className="hover:bg-puzzle-aqua/10 hover:text-puzzle-aqua"
             >
-              Start
+              <Play className="h-4 w-4 mr-1" />
+              {task.status === 'in-progress' ? 'In Progress' : 'Start'}
             </Button>
           )}
           
@@ -70,9 +88,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => onUpdateStatus(task.id, 'completed')}
+              onClick={handleCompleteTask}
+              className="hover:bg-green-100 hover:text-green-800"
             >
-              Mark Complete
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Complete
             </Button>
           )}
         </div>
@@ -81,10 +101,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <Button 
             variant="secondary" 
             size="sm"
-            onClick={() => onRunTests(task.id)}
+            onClick={handleRunTests}
             disabled={isTestRunning}
+            className="bg-puzzle-black/50 text-puzzle-white hover:bg-puzzle-aqua/20"
           >
-            Run Tests
+            <RotateCw className={`h-4 w-4 mr-1 ${isTestRunning ? 'animate-spin' : ''}`} />
+            {isTestRunning ? 'Running...' : 'Run Tests'}
           </Button>
         )}
       </CardFooter>

@@ -26,18 +26,31 @@ export const PhaseTabs: React.FC<PhaseTabsProps> = ({
   onRunTests,
   onUpdateStatus
 }) => {
+  const handlePhaseChange = (phase: string) => {
+    console.log('Phase changed to:', phase);
+    onPhaseChange(phase);
+  };
+
   return (
-    <Tabs value={activePhase} onValueChange={onPhaseChange}>
+    <Tabs value={activePhase} onValueChange={handlePhaseChange}>
       <TabsList className="mb-4">
         {phases.map(phase => (
-          <TabsTrigger key={phase} value={phase.toString()}>
+          <TabsTrigger 
+            key={phase} 
+            value={phase.toString()}
+            data-state={activePhase === phase.toString() ? 'active' : 'inactive'}
+          >
             Phase {phase}
           </TabsTrigger>
         ))}
       </TabsList>
       
       {phases.map(phase => (
-        <TabsContent key={phase} value={phase.toString()}>
+        <TabsContent 
+          key={phase} 
+          value={phase.toString()}
+          forceMount={activePhase === phase.toString()}
+        >
           <h3 className="text-lg font-semibold mb-2">
             Phase {phase} Tasks
           </h3>

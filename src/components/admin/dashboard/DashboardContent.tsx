@@ -20,11 +20,13 @@ import { TabDefinition } from './TabDefinitions';
 interface DashboardContentProps {
   accessibleTabs: TabDefinition[];
   profile: UserProfile;
+  activeTab: string;
 }
 
 export const DashboardContent: React.FC<DashboardContentProps> = ({ 
   accessibleTabs, 
-  profile 
+  profile,
+  activeTab
 }) => {
   // Map tab IDs to their corresponding components
   const getComponentForTab = (tabId: string) => {
@@ -63,7 +65,12 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
   return (
     <>
       {accessibleTabs.map(tab => (
-        <TabsContent key={tab.id} value={tab.id} className="pt-4">
+        <TabsContent 
+          key={tab.id} 
+          value={tab.id} 
+          className="pt-4"
+          forceMount={tab.id === activeTab}
+        >
           {getComponentForTab(tab.id)}
         </TabsContent>
       ))}

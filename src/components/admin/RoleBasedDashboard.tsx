@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs } from "@/components/ui/tabs";
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { UserRole } from '@/types/userTypes';
@@ -9,6 +9,7 @@ import { getTabDefinitions, TabDefinition } from './dashboard/TabDefinitions';
 
 export const RoleBasedDashboard: React.FC = () => {
   const { profile } = useUserProfile();
+  const [activeTab, setActiveTab] = useState<string>("overview");
   
   if (!profile) return null;
   
@@ -20,10 +21,24 @@ export const RoleBasedDashboard: React.FC = () => {
   // Filter tabs based on user role
   const accessibleTabs = tabs.filter(tab => tab.roles.includes(userRole as UserRole));
 
+  // Handle tab change
+  const handleTabChange = (tabId: string) => {
+    console.log('Changing to tab:', tabId);
+    setActiveTab(tabId);
+  };
+
   return (
-    <Tabs defaultValue="overview" className="w-full">
-      <DashboardTabSelector accessibleTabs={accessibleTabs} />
-      <DashboardContent accessibleTabs={accessibleTabs} profile={profile} />
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+      <DashboardTabSelector 
+        accessibleTabs={accessibleTabs} 
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+      />
+      <DashboardContent 
+        accessibleTabs={accessibleTabs} 
+        profile={profile} 
+        activeTab={activeTab}
+      />
     </Tabs>
   );
 };
