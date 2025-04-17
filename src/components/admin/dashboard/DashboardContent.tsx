@@ -69,7 +69,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
           key={tab.id} 
           value={tab.id} 
           className="pt-4"
-          forceMount={tab.id === activeTab}
+          // Only apply forceMount={true} if this is the active tab
+          {...(tab.id === activeTab ? { forceMount: true } : {})}
         >
           {getComponentForTab(tab.id)}
         </TabsContent>
