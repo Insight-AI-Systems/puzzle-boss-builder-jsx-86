@@ -5,7 +5,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { UserRole } from '@/types/userTypes';
 import { DashboardTabSelector } from './dashboard/DashboardTabSelector';
 import { DashboardContent } from './dashboard/DashboardContent';
-import { getTabDefinitions, TabDefinition } from './dashboard/TabDefinitions';
+import { getTabDefinitions } from './dashboard/TabDefinitions';
 import { useToast } from '@/hooks/use-toast';
 
 export const RoleBasedDashboard: React.FC = () => {
@@ -19,9 +19,10 @@ export const RoleBasedDashboard: React.FC = () => {
     return null;
   }
   
+  // Get user role from profile
   const userRole = profile.role;
   
-  // Get tab definitions
+  // Get all tab definitions
   const tabs = getTabDefinitions();
   
   // Filter tabs based on user role
