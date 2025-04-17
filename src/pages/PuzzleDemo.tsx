@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
 import SimplePuzzleGame from '@/components/puzzles/SimplePuzzleGame';
+import ImagePuzzleGame from '@/components/puzzles/ImagePuzzleGame';
 import PuzzleDemoInfo from '@/components/puzzles/PuzzleDemoInfo';
 import Breadcrumb from '@/components/common/Breadcrumb';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const PuzzleDemo: React.FC = () => {
   const breadcrumbItems = [
@@ -19,9 +21,20 @@ const PuzzleDemo: React.FC = () => {
     >
       <Breadcrumb items={breadcrumbItems} />
 
-      <div className="flex justify-center mb-8">
-        <SimplePuzzleGame />
-      </div>
+      <Tabs defaultValue="image" className="w-full">
+        <TabsList className="grid w-full max-w-sm mx-auto grid-cols-2 mb-4">
+          <TabsTrigger value="simple">Simple Puzzle</TabsTrigger>
+          <TabsTrigger value="image">Image Puzzle</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="simple" className="flex justify-center mb-8">
+          <SimplePuzzleGame />
+        </TabsContent>
+        
+        <TabsContent value="image" className="flex justify-center mb-8">
+          <ImagePuzzleGame />
+        </TabsContent>
+      </Tabs>
 
       <PuzzleDemoInfo />
     </PageLayout>
