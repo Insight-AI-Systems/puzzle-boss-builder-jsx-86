@@ -13,6 +13,15 @@ export interface PuzzlePiece extends BasePuzzlePiece {
   originalPosition: number;
 }
 
+export interface PuzzleState {
+  isComplete: boolean;
+  timeSpent: number;
+  correctPieces: number;
+  difficulty: DifficultyLevel;
+  moveCount: number;
+  isActive: boolean;
+}
+
 export const difficultyConfig = {
   '3x3': { gridSize: 3, containerClass: 'grid-cols-3' },
   '4x4': { gridSize: 4, containerClass: 'grid-cols-4' },
@@ -25,4 +34,3 @@ export const DEFAULT_IMAGES = [
   'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7', // code
   'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5', // matrix
 ];
-
