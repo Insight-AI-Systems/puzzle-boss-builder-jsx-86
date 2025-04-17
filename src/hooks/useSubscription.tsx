@@ -26,9 +26,22 @@ export const useSubscription = () => {
     setIsCheckingSubscription(true);
     
     try {
+      // Call the edge function to check subscription status
       const { data, error } = await supabase.functions.invoke('check-subscription');
       
-      if (error) throw error;
+      if (error) {
+        // Log the error, but continue with default subscription data
+        console.error("Error checking subscription:", error);
+        
+        toast({
+          title: "Unable to refresh membership status",
+          description: "Using default membership information. This won't affect your admin access.",
+          variant: "destructive",
+        });
+        
+        // Continue with default subscription data
+        return;
+      }
       
       if (data) {
         setSubscriptionData({
@@ -48,7 +61,7 @@ export const useSubscription = () => {
       console.error("Error checking subscription:", error);
       toast({
         title: "Update Failed",
-        description: "Unable to refresh your membership status. Please try again.",
+        description: "Unable to refresh your membership status. This won't affect your admin access.",
         variant: "destructive",
       });
     } finally {
