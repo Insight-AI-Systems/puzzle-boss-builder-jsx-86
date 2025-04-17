@@ -12,14 +12,6 @@ export function useAuthState() {
   useEffect(() => {
     let isActive = true;
     
-    // Immediately set a fast timeout to prevent hanging UI
-    const quickTimeout = setTimeout(() => {
-      if (isActive && isLoading) {
-        console.log('Quick timeout triggered - ensuring UI is responsive');
-        setIsLoading(false);
-      }
-    }, 200); // Ultra-short timeout for immediate response
-    
     // Set up auth state listener first
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event: AuthChangeEvent, session: Session | null) => {
@@ -67,7 +59,6 @@ export function useAuthState() {
 
     return () => {
       isActive = false;
-      clearTimeout(quickTimeout);
       authListener.subscription.unsubscribe();
     };
   }, []);

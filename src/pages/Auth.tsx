@@ -1,9 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { useAuthState } from '@/hooks/auth/useAuthState';
-import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {

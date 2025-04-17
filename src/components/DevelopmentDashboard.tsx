@@ -1,10 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { projectTracker } from '@/utils/ProjectTracker';
 import { TestRunner } from '@/utils/testRunner';
 import { ProjectTask, ProjectTest } from '@/utils/types/projectTypes';
@@ -12,33 +14,44 @@ import { ProjectTask, ProjectTest } from '@/utils/types/projectTypes';
 const DevelopmentDashboard: React.FC = () => {
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [tests, setTests] = useState<ProjectTest[]>([]);
-  const [activePhase, setActivePhase] = useState<number>(1);
+  const [activePhase, setActivePhase] = useState<string>("1");
   const [isTestRunning, setIsTestRunning] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const loadData = useCallback(() => {
+    try {
+      // Load all tasks and tests from the project tracker
+      const loadedTasks = projectTracker.getAllTasks();
+      const loadedTests = projectTracker.getAllTests();
+      
+      setTasks(loadedTasks);
+      setTests(loadedTests);
+      
+      // Find the active phase (lowest phase with incomplete tasks)
+      const pendingPhases = Array.from(
+        new Set(
+          loadedTasks
+            .filter(task => task.status !== 'completed')
+            .map(task => task.phase)
+        )
+      ).sort();
+      
+      if (pendingPhases.length > 0) {
+        setActivePhase(pendingPhases[0].toString());
+      }
+      
+      console.log('Loaded tasks:', loadedTasks.length);
+      console.log('Loaded tests:', loadedTests.length);
+      setError(null);
+    } catch (e) {
+      console.error('Error loading project data:', e);
+      setError('Failed to load project data. Please refresh the page.');
+    }
+  }, []);
   
   useEffect(() => {
-    // Load all tasks and tests from the project tracker
-    const loadedTasks = projectTracker.getAllTasks();
-    const loadedTests = projectTracker.getAllTests();
-    
-    setTasks(loadedTasks);
-    setTests(loadedTests);
-    
-    // Find the active phase (lowest phase with incomplete tasks)
-    const pendingPhases = Array.from(
-      new Set(
-        loadedTasks
-          .filter(task => task.status !== 'completed')
-          .map(task => task.phase)
-      )
-    ).sort();
-    
-    if (pendingPhases.length > 0) {
-      setActivePhase(pendingPhases[0]);
-    }
-    
-    console.log('Loaded tasks:', loadedTasks.length);
-    console.log('Loaded tests:', loadedTests.length);
-  }, []);
+    loadData();
+  }, [loadData]);
   
   const getTaskStatusColor = (status: string) => {
     switch (status) {
@@ -56,19 +69,24 @@ const DevelopmentDashboard: React.FC = () => {
       await TestRunner.runAllTaskTests(taskId);
       
       // Refresh tasks after tests
-      setTasks(projectTracker.getAllTasks());
-      setTests(projectTracker.getAllTests());
+      loadData();
     } catch (error) {
       console.error('Error running tests:', error);
+      setError('Failed to run tests. Please try again.');
     } finally {
       setIsTestRunning(false);
     }
   };
   
   const updateTaskStatus = (taskId: string, status: ProjectTask['status']) => {
-    console.log(`Updating task ${taskId} status to ${status}`);
-    projectTracker.updateTaskStatus(taskId, status);
-    setTasks(projectTracker.getAllTasks());
+    try {
+      console.log(`Updating task ${taskId} status to ${status}`);
+      projectTracker.updateTaskStatus(taskId, status);
+      loadData();
+    } catch (e) {
+      console.error('Error updating task status:', e);
+      setError('Failed to update task status. Please try again.');
+    }
   };
   
   const phases = Array.from(new Set(tasks.map(task => task.phase))).sort();
@@ -82,7 +100,14 @@ const DevelopmentDashboard: React.FC = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue={activePhase.toString()} onValueChange={(value) => setActivePhase(parseInt(value))}>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        <Tabs value={activePhase} onValueChange={setActivePhase}>
           <TabsList className="mb-4">
             {phases.map(phase => (
               <TabsTrigger key={phase} value={phase.toString()}>
