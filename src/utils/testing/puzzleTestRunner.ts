@@ -1,3 +1,4 @@
+
 import { TestManager } from '../managers/TestManager';
 import { testPieceInteractions } from './puzzleTests/pieceInteractionTests';
 import { testPuzzleComponents } from './puzzleTests/componentTests';
@@ -9,6 +10,10 @@ import { toast } from '@/hooks/use-toast';
 import { VerificationResult } from './types/testTypes';
 import { runComponentTests } from './puzzleTests/componentTests';
 import { runIntegrationTests } from './puzzleTests/integrationTests';
+import { DatabaseTestRunner } from './runners/DatabaseTestRunner';
+import { ComponentTestRunner } from './runners/ComponentTestRunner';
+import { ProgressTestRunner } from './runners/ProgressTestRunner';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Runs all puzzle-related tests
