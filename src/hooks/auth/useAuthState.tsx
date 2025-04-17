@@ -11,6 +11,7 @@ export function useAuthState() {
 
   useEffect(() => {
     let isActive = true;
+    let isInitialized = false;
     
     // Set up auth state listener first
     const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -21,14 +22,16 @@ export function useAuthState() {
         setCurrentUserId(session?.user?.id || null);
         setSession(session);
         
+        // Mark as initialized for certain events
         if (['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED', 'PASSWORD_RECOVERY'].includes(event)) {
+          isInitialized = true;
           setIsLoading(false);
         }
       }
     );
 
-    // Check for existing session with minimal delay
-    const sessionTimer = setTimeout(async () => {
+    // Immediately check for existing session, don't use timeout
+    const checkSession = async () => {
       try {
         if (!isActive) return;
         
@@ -55,20 +58,22 @@ export function useAuthState() {
           setIsLoading(false);
         }
       }
-    }, 10); // Very small timeout for non-blocking behavior
+    };
+    
+    // Start session check immediately
+    checkSession();
 
-    // Guarantee loading state ends after a maximum wait time
+    // Ultra short safety timer - 300ms max for authentication
     const safetyTimer = setTimeout(() => {
       if (isActive && isLoading) {
-        console.log('Safety timeout triggered in useAuthState');
+        console.log('Safety timeout triggered in useAuthState - forcing completion');
         setIsLoading(false);
       }
-    }, 800); // Even shorter timeout to prevent wheel of death
+    }, 300); // Even shorter timeout to prevent wheel of death
 
     return () => {
       isActive = false;
       authListener.subscription.unsubscribe();
-      clearTimeout(sessionTimer);
       clearTimeout(safetyTimer);
     };
   }, []);

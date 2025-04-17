@@ -19,19 +19,16 @@ const Auth = () => {
   
   // Add safety timeout to prevent infinite loading
   useEffect(() => {
-    // Set a very short timeout for initial page load
-    const pageTimer = setTimeout(() => {
-      setIsPageLoading(false);
-    }, 50); // Ultra-short timeout for faster rendering
+    // Set an immediate timeout for initial page load
+    setIsPageLoading(false);
 
-    // Set a short safety timeout to prevent infinite loading
+    // Set a very short safety timeout to prevent infinite loading
     const safetyTimer = setTimeout(() => {
       setLoadingTimeout(true);
       console.log('Safety timeout triggered - forcing auth page to render');
-    }, 1000); // Even shorter timeout to prevent long "wheel of death"
+    }, 500); // Ultra-short timeout to prevent "wheel of death"
 
     return () => {
-      clearTimeout(pageTimer);
       clearTimeout(safetyTimer);
     };
   }, []);
