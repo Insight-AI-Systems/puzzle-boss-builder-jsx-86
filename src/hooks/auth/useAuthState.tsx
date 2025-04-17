@@ -30,8 +30,11 @@ export function useAuthState() {
       } catch (error) {
         console.error('Unexpected error getting session:', error);
       } finally {
-        // Ensure loading state ends even if there's an error
-        setIsLoading(false);
+        // Ensure loading state ends after a maximum wait time
+        // This ensures the spinner doesn't get stuck
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 1000);
       }
     };
     

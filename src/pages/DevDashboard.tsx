@@ -12,6 +12,7 @@ const DevDashboardPage: React.FC = () => {
   // Redirect to auth page if not authenticated
   useEffect(() => {
     if (!isLoading && !currentUserId) {
+      console.log('Not authenticated, redirecting to auth page');
       navigate('/auth', { replace: true });
     }
   }, [currentUserId, isLoading, navigate]);
@@ -26,6 +27,7 @@ const DevDashboardPage: React.FC = () => {
 
   // Only render dashboard if authenticated
   if (!currentUserId) {
+    console.log('No current user, not rendering dashboard');
     return null; // This prevents flash of content before redirect happens
   }
 

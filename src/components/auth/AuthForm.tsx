@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,9 +34,11 @@ export const AuthForm = () => {
       if (error) {
         console.error('Auth error:', error);
         setErrorMessage(error.message);
-        throw error;
+        setIsLoading(false);
+        return;
       }
 
+      // Show success toast
       toast({
         title: isSignUp ? 'Account created!' : 'Welcome back!',
         description: isSignUp 
@@ -45,7 +48,7 @@ export const AuthForm = () => {
 
       // Redirect to home page on successful sign-in
       if (!isSignUp && data.session) {
-        navigate('/');
+        navigate('/', { replace: true });
       }
     } catch (error) {
       console.error('Authentication error:', error);
@@ -56,6 +59,7 @@ export const AuthForm = () => {
         variant: 'destructive',
       });
     } finally {
+      // Always ensure loading state is reset
       setIsLoading(false);
     }
   };
@@ -65,6 +69,8 @@ export const AuthForm = () => {
       setIsLoading(true);
       setErrorMessage('');
       
+      console.log('Attempting Google sign in');
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -72,7 +78,11 @@ export const AuthForm = () => {
         },
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Google auth error:', error);
+        setErrorMessage(error.message);
+        throw error;
+      }
     } catch (error) {
       console.error('Google auth error:', error);
       
