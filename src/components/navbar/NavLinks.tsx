@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export interface NavItem {
   name: string;
@@ -15,27 +15,10 @@ interface NavLinksProps {
 
 const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) => {
   const location = useLocation();
-  const navigate = useNavigate();
   
   const isLinkActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
-  };
-  
-  const handleClick = (e: React.MouseEvent, path: string) => {
-    e.preventDefault();
-    
-    // Log navigation attempt
-    console.log(`Navigating to: ${path}`);
-    
-    // Close mobile menu if applicable
-    if (onClick) onClick();
-    
-    // Use setTimeout to ensure event completes before navigation
-    setTimeout(() => {
-      // Use navigate for programmatic navigation
-      navigate(path);
-    }, 0);
   };
   
   return (
@@ -49,7 +32,7 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
               ? 'text-puzzle-aqua bg-puzzle-aqua/10'
               : 'text-muted-foreground hover:text-puzzle-white hover:bg-white/10'
           }`}
-          onClick={(e) => handleClick(e, item.path)}
+          onClick={onClick}
         >
           {item.name}
         </Link>

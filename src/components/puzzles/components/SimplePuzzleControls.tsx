@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Shuffle, RefreshCw } from 'lucide-react';
+import { Shuffle } from 'lucide-react';
 
 interface SimplePuzzleControlsProps {
   moveCount: number;
@@ -21,8 +21,8 @@ const SimplePuzzleControls: React.FC<SimplePuzzleControlsProps> = ({
         onClick={onShuffle}
         className="bg-puzzle-gold hover:bg-puzzle-gold/80 text-black"
       >
-        <RefreshCw className="w-4 h-4 mr-2" />
-        New Game
+        <Shuffle className="w-4 h-4 mr-2" />
+        Shuffle
       </Button>
     </div>
   );
