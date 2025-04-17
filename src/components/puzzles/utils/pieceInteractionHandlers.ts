@@ -1,3 +1,4 @@
+
 import { BasePuzzlePiece } from '../types/puzzle-types';
 
 // Function to create handlers for piece interactions
@@ -184,15 +185,12 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
       hintablePieceIds.splice(2);
     }
     
-    // Fix type error: Make sure we're returning an array of T, not a single T
-    setPieces((prev: T[]) => {
-      // Create a new array with updated hints
+    // Update pieces with hints
+    setPieces(prev => {
       return prev.map(piece => {
-        // If this piece ID is in our hintablePieceIds array, show a hint
         if (hintablePieceIds.includes(piece.id)) {
           return { ...piece, showHint: true };
         }
-        // Otherwise, make sure showHint is false/undefined
         return { ...piece, showHint: false };
       });
     });
@@ -205,5 +203,25 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     handlePieceClick,
     handleDirectionalMove,
     checkForHints
+  };
+};
+
+// Add the missing getImagePieceStyle function
+export const getImagePieceStyle = (piece: BasePuzzlePiece, imageUrl: string, gridSize: number): React.CSSProperties => {
+  const pieceNumber = parseInt(piece.id.split('-')[1]);
+  
+  // Calculate row and column for the original position
+  const row = Math.floor(pieceNumber / gridSize);
+  const col = pieceNumber % gridSize;
+  
+  // Calculate the background position to show the correct part of the image
+  const xOffset = -(col * 100 / (gridSize - 1));
+  const yOffset = -(row * 100 / (gridSize - 1));
+  
+  return {
+    backgroundImage: `url(${imageUrl})`,
+    backgroundSize: `${gridSize * 100}%`,
+    backgroundPosition: `${xOffset}% ${yOffset}%`,
+    opacity: piece.isDragging ? 0.8 : 1,
   };
 };

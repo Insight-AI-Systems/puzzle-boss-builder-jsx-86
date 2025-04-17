@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DEFAULT_IMAGES, DifficultyLevel, difficultyConfig } from './types/puzzle-types';
@@ -36,10 +35,8 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
   const imgRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  // Initialize sound effects
   const { playSound, muted, toggleMute, volume, changeVolume } = useSoundEffects();
   
-  // If initialImage changes from external, update it
   useEffect(() => {
     if (initialImage && initialImage !== selectedImage) {
       setSelectedImage(initialImage);
@@ -47,17 +44,14 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
     }
   }, [initialImage, selectedImage]);
   
-  // If external loading state changes
   useEffect(() => {
     if (externalLoading !== undefined) {
       setIsLoading(externalLoading);
     }
   }, [externalLoading]);
   
-  // New puzzle state management
   const puzzleState = usePuzzleState(difficulty);
   
-  // Use custom hooks for state management and event handlers
   const {
     pieces,
     setPieces,
@@ -86,10 +80,23 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
       puzzleState.incrementMoves();
     },
     isSolved,
-    playSound // Pass the playSound function
+    playSound
   );
   
-  // Reset loading state and load new puzzle when difficulty or image changes
+  const handleGridDragStart = (e: React.MouseEvent | React.TouchEvent, piece: any) => {
+    handleDragStart(piece);
+  };
+  
+  const handleGridDrop = (e: React.MouseEvent | React.TouchEvent, index: number) => {
+    if (draggedPiece) {
+      handleDrop(draggedPiece);
+    }
+  };
+  
+  const handleGridPieceClick = (piece: any) => {
+    handlePieceClick(piece);
+  };
+  
   const handleDifficultyChange = (newDifficulty: DifficultyLevel) => {
     setDifficulty(newDifficulty);
     puzzleState.changeDifficulty(newDifficulty);
@@ -101,36 +108,30 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
     setIsLoading(true);
   };
   
-  // Start a new puzzle
   const handleNewGame = () => {
     handleShuffleClick();
     puzzleState.startNewPuzzle(difficulty);
   };
   
-  // Notify when image loading is complete
   useEffect(() => {
     if (!isLoading && onImageLoaded) {
       onImageLoaded();
     }
   }, [isLoading, onImageLoaded]);
   
-  // When a new puzzle is loaded, start the timer
   useEffect(() => {
     if (!isLoading && pieces.length > 0) {
       puzzleState.startNewPuzzle(difficulty);
     }
   }, [isLoading, pieces.length]);
   
-  // Check for puzzle completion
   useEffect(() => {
     if (isSolved && !puzzleState.isComplete) {
       puzzleState.checkCompletion(gridSize * gridSize, gridSize * gridSize);
-      // Play completion sound when puzzle is solved
       playSound('complete');
     }
   }, [isSolved, puzzleState, gridSize, playSound]);
   
-  // Update correct pieces count
   useEffect(() => {
     if (!isSolved && pieces.length > 0) {
       const correctCount = pieces.filter((piece) => {
@@ -141,39 +142,33 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
     }
   }, [pieces, isSolved, puzzleState]);
   
-  // Periodically check for pieces that could be hinted
   useEffect(() => {
     if (!isSolved && pieces.length > 0 && puzzleState.isActive) {
       const hintInterval = setInterval(() => {
         checkForHints();
-      }, 5000); // Check every 5 seconds
+      }, 5000);
       
       return () => clearInterval(hintInterval);
     }
   }, [pieces, isSolved, puzzleState.isActive, checkForHints]);
   
-  // Calculate container size based on device and difficulty
   const containerSize = calculateContainerSize(isMobile, difficulty);
   
-  // Wrapper for directional moves to pass gridSize
   const handleDirectionalMoveWithGrid = (direction: 'up' | 'down' | 'left' | 'right') => {
     handleDirectionalMove(direction, gridSize);
   };
   
-  // Total pieces based on difficulty
   const totalPieces = gridSize * gridSize;
   
   return (
     <div className="flex flex-col items-center">
-      {/* Hidden canvas for image processing */}
       <canvas ref={canvasRef} width="600" height="600" className="hidden" />
       <img ref={imgRef} className="hidden" alt="Source" />
       
-      {/* New puzzle state display */}
       <PuzzleStateDisplay 
         state={{
           ...puzzleState,
-          isComplete: isSolved // Use isSolved for completion status
+          isComplete: isSolved
         }}
         totalPieces={totalPieces}
         onNewGame={handleNewGame}
@@ -181,7 +176,6 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
         onTogglePause={puzzleState.togglePause}
       />
       
-      {/* Sound controls */}
       <div className="mb-4">
         <SoundControls
           muted={muted}
@@ -191,7 +185,6 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
         />
       </div>
       
-      {/* Controls and info */}
       <PuzzleControls
         moveCount={moveCount}
         difficulty={difficulty}
@@ -203,20 +196,18 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
         isLoading={isLoading}
       />
       
-      {/* Puzzle grid */}
       <PuzzleGrid
         pieces={pieces}
         difficulty={difficulty}
         isSolved={isSolved}
         isLoading={isLoading}
         containerSize={containerSize}
-        onDragStart={handleDragStart}
-        onDrop={handleDrop}
-        onPieceClick={handlePieceClick}
+        onDragStart={handleGridDragStart}
+        onDrop={handleGridDrop}
+        onPieceClick={handleGridPieceClick}
         getPieceStyle={(piece) => getImagePieceStyle(piece, selectedImage, gridSize)}
       />
       
-      {/* Mobile-friendly directional controls */}
       {(isMobile || draggedPiece) && !isSolved && !isLoading && (
         <DirectionalControls 
           draggedPiece={draggedPiece}
@@ -224,7 +215,6 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
         />
       )}
       
-      {/* Status messages */}
       <PuzzleStatusMessage
         isSolved={isSolved}
         isLoading={isLoading}

@@ -53,6 +53,27 @@ const SimplePuzzleGame: React.FC = () => {
     playSound // Pass the playSound function
   );
   
+  // Adaptors for the SimplePuzzleGrid component's event handlers
+  const handleGridDragStart = (e: React.MouseEvent | React.TouchEvent, piece: any) => {
+    handleDragStart(piece);
+  };
+  
+  const handleGridMove = (e: React.MouseEvent | React.TouchEvent, index: number) => {
+    if (draggedPiece) {
+      handleMove(draggedPiece, index);
+    }
+  };
+  
+  const handleGridDrop = (e: React.MouseEvent | React.TouchEvent, index: number) => {
+    if (draggedPiece) {
+      handleDrop(draggedPiece);
+    }
+  };
+  
+  const handleGridPieceClick = (piece: any) => {
+    handlePieceClick(piece);
+  };
+  
   // Start a new puzzle when shuffling
   const handleNewGame = () => {
     handleShuffleClick();
@@ -133,10 +154,10 @@ const SimplePuzzleGame: React.FC = () => {
         pieces={pieces}
         isSolved={isSolved}
         isMobile={isMobile}
-        onDragStart={handleDragStart}
-        onMove={handleMove}
-        onDrop={handleDrop}
-        onPieceClick={handlePieceClick}
+        onDragStart={handleGridDragStart}
+        onMove={handleGridMove}
+        onDrop={handleGridDrop}
+        onPieceClick={handleGridPieceClick}
       />
       
       <SimpleDirectionalControls 
