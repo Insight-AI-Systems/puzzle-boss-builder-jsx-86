@@ -1,19 +1,24 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Session } from '@supabase/supabase-js';
+import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 
 export function useAuthState() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Set up auth state listener first
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (event: AuthChangeEvent, session: Session | null) => {
         console.log('Auth state changed:', event, session?.user?.id);
         setCurrentUserId(session?.user?.id || null);
-        setIsLoading(false);
+        setSession(session);
+        
+        if (['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED', 'PASSWORD_RECOVERY'].includes(event)) {
+          setIsLoading(false);
+        }
       }
     );
 
@@ -26,6 +31,7 @@ export function useAuthState() {
         } else {
           console.log('Got session:', data.session?.user?.id);
           setCurrentUserId(data.session?.user?.id || null);
+          setSession(data.session);
         }
       } catch (error) {
         console.error('Unexpected error getting session:', error);
@@ -34,7 +40,7 @@ export function useAuthState() {
         // This ensures the spinner doesn't get stuck
         setTimeout(() => {
           setIsLoading(false);
-        }, 1000);
+        }, 500);
       }
     };
     
@@ -45,5 +51,5 @@ export function useAuthState() {
     };
   }, []);
 
-  return { currentUserId, isLoading };
+  return { currentUserId, session, isLoading };
 }

@@ -7,26 +7,22 @@ import { Loader2, Mail } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
-interface SignInFormProps {
+interface ResetPasswordRequestFormProps {
   email: string;
-  password: string;
   errorMessage: string;
   isLoading: boolean;
   setEmail: (email: string) => void;
-  setPassword: (password: string) => void;
   handleSubmit: () => void;
-  onForgotPassword: () => void;
+  goBack: () => void;
 }
 
-export const SignInForm: React.FC<SignInFormProps> = ({
+export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> = ({
   email,
-  password,
   errorMessage,
   isLoading,
   setEmail,
-  setPassword,
   handleSubmit,
-  onForgotPassword,
+  goBack,
 }) => {
   return (
     <div className="space-y-4">
@@ -38,9 +34,9 @@ export const SignInForm: React.FC<SignInFormProps> = ({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="signin-email">Email</Label>
+        <Label htmlFor="reset-email">Email</Label>
         <Input
-          id="signin-email"
+          id="reset-email"
           type="email"
           placeholder="you@example.com"
           value={email}
@@ -48,26 +44,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           disabled={isLoading}
         />
       </div>
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="signin-password">Password</Label>
-          <Button 
-            variant="link" 
-            className="p-0 h-auto text-xs"
-            onClick={onForgotPassword}
-            disabled={isLoading}
-          >
-            Forgot password?
-          </Button>
-        </div>
-        <Input
-          id="signin-password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={isLoading}
-        />
-      </div>
+      
       <Button
         className="w-full"
         onClick={handleSubmit}
@@ -78,7 +55,16 @@ export const SignInForm: React.FC<SignInFormProps> = ({
         ) : (
           <Mail className="mr-2 h-4 w-4" />
         )}
-        Sign In
+        Send Reset Instructions
+      </Button>
+      
+      <Button
+        variant="ghost"
+        className="w-full mt-2"
+        onClick={goBack}
+        disabled={isLoading}
+      >
+        Back to Sign In
       </Button>
     </div>
   );

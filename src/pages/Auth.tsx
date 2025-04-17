@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Loader2 } from 'lucide-react';
@@ -9,6 +9,10 @@ const Auth = () => {
   const { currentUserId, isLoading } = useUserProfile();
   const [isPageLoading, setIsPageLoading] = useState(true);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  // If we're in password recovery flow, we don't want to redirect
+  const isPasswordRecovery = searchParams.get('type') === 'recovery';
   
   useEffect(() => {
     // Shorter delay to ensure components load without too long a wait
@@ -19,12 +23,12 @@ const Auth = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Redirect to home if already authenticated
+  // Redirect to home if already authenticated and not in recovery flow
   useEffect(() => {
-    if (currentUserId && !isLoading) {
+    if (currentUserId && !isLoading && !isPasswordRecovery) {
       navigate('/', { replace: true });
     }
-  }, [currentUserId, isLoading, navigate]);
+  }, [currentUserId, isLoading, navigate, isPasswordRecovery]);
 
   // Show loading indicator only initially and for a very short time
   if (isPageLoading && isLoading) {
@@ -35,9 +39,8 @@ const Auth = () => {
     );
   }
 
-  // Always show the form if user is not authenticated
-  // This ensures the form is displayed even if loading gets stuck
-  if (currentUserId) {
+  // Allow password recovery flow to proceed even if authenticated
+  if (currentUserId && !isPasswordRecovery) {
     return <Navigate to="/" replace />;
   }
 

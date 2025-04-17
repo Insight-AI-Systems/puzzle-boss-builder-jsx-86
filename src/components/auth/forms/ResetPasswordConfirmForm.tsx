@@ -3,30 +3,28 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Mail } from 'lucide-react';
+import { Loader2, Key } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
-interface SignInFormProps {
-  email: string;
+interface ResetPasswordConfirmFormProps {
   password: string;
+  confirmPassword: string;
   errorMessage: string;
   isLoading: boolean;
-  setEmail: (email: string) => void;
   setPassword: (password: string) => void;
+  setConfirmPassword: (confirmPassword: string) => void;
   handleSubmit: () => void;
-  onForgotPassword: () => void;
 }
 
-export const SignInForm: React.FC<SignInFormProps> = ({
-  email,
+export const ResetPasswordConfirmForm: React.FC<ResetPasswordConfirmFormProps> = ({
   password,
+  confirmPassword,
   errorMessage,
   isLoading,
-  setEmail,
   setPassword,
+  setConfirmPassword,
   handleSubmit,
-  onForgotPassword,
 }) => {
   return (
     <div className="space-y-4">
@@ -38,47 +36,40 @@ export const SignInForm: React.FC<SignInFormProps> = ({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="signin-email">Email</Label>
+        <Label htmlFor="new-password">New Password</Label>
         <Input
-          id="signin-email"
-          type="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          disabled={isLoading}
-        />
-      </div>
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="signin-password">Password</Label>
-          <Button 
-            variant="link" 
-            className="p-0 h-auto text-xs"
-            onClick={onForgotPassword}
-            disabled={isLoading}
-          >
-            Forgot password?
-          </Button>
-        </div>
-        <Input
-          id="signin-password"
+          id="new-password"
           type="password"
+          placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={isLoading}
         />
       </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="confirm-password">Confirm Password</Label>
+        <Input
+          id="confirm-password"
+          type="password"
+          placeholder="••••••••"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          disabled={isLoading}
+        />
+      </div>
+      
       <Button
         className="w-full"
         onClick={handleSubmit}
-        disabled={isLoading}
+        disabled={isLoading || password !== confirmPassword || !password}
       >
         {isLoading ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (
-          <Mail className="mr-2 h-4 w-4" />
+          <Key className="mr-2 h-4 w-4" />
         )}
-        Sign In
+        Reset Password
       </Button>
     </div>
   );
