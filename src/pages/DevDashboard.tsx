@@ -29,7 +29,7 @@ const DevDashboardPage: React.FC = () => {
     return (
       <>
         <Navbar />
-        <div className="container mx-auto py-8 px-4 flex items-center justify-center min-h-screen">
+        <div className="container mx-auto py-8 px-4 flex items-center justify-center min-h-[calc(100vh-64px)]">
           <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
         </div>
       </>

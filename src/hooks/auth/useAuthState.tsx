@@ -20,7 +20,7 @@ export function useAuthState() {
         console.log('Auth state changed:', event);
         setCurrentUserId(session?.user?.id || null);
         setSession(session);
-        setIsLoading(false); // Always set loading to false on any auth event
+        setIsLoading(false);
       }
     );
 
@@ -59,7 +59,9 @@ export function useAuthState() {
 
     return () => {
       isActive = false;
-      authListener.subscription.unsubscribe();
+      if (authListener && authListener.subscription) {
+        authListener.subscription.unsubscribe();
+      }
     };
   }, []);
 

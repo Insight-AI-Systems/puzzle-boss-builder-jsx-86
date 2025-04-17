@@ -26,7 +26,7 @@ const Auth = () => {
   }, [authError, toast]);
 
   // For simplicity, we'll render the auth form immediately - no loading states
-  // Handle redirection only if not in recovery mode and we're not loading
+  // Handle redirection only if not in recovery mode and we have a user ID
   if (!isPasswordRecovery && currentUserId && !authLoading) {
     console.log('User authenticated, redirecting to home');
     return <Navigate to="/" replace />;

@@ -44,8 +44,13 @@ export const SignInView: React.FC<SignInViewProps> = ({
     }
   }, [searchParams, currentView, setCurrentView]);
 
+  const handleTabChange = (value: string) => {
+    console.log('Tab changed to:', value);
+    setCurrentView(value);
+  };
+
   return (
-    <Tabs value={currentView} onValueChange={setCurrentView} className="w-full">
+    <Tabs value={currentView} onValueChange={handleTabChange} className="w-full">
       <TabsList className="grid w-full grid-cols-2 mb-6">
         <TabsTrigger value="signin">Sign In</TabsTrigger>
         <TabsTrigger value="signup">Sign Up</TabsTrigger>

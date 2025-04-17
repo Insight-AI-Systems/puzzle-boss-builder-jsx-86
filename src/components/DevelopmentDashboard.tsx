@@ -42,12 +42,13 @@ const DevelopmentDashboard: React.FC = () => {
       
       console.log('Loaded tasks:', loadedTasks.length);
       console.log('Loaded tests:', loadedTests.length);
+      console.log('Active phase set to:', pendingPhases[0] || activePhase);
       setError(null);
     } catch (e) {
       console.error('Error loading project data:', e);
       setError('Failed to load project data. Please refresh the page.');
     }
-  }, []);
+  }, [activePhase]);
   
   useEffect(() => {
     loadData();
@@ -91,6 +92,11 @@ const DevelopmentDashboard: React.FC = () => {
   
   const phases = Array.from(new Set(tasks.map(task => task.phase))).sort();
   
+  const handlePhaseChange = (value: string) => {
+    console.log('Changing active phase to:', value);
+    setActivePhase(value);
+  };
+  
   return (
     <Card className="w-full">
       <CardHeader>
@@ -107,7 +113,7 @@ const DevelopmentDashboard: React.FC = () => {
           </Alert>
         )}
         
-        <Tabs value={activePhase} onValueChange={setActivePhase}>
+        <Tabs value={activePhase} onValueChange={handlePhaseChange}>
           <TabsList className="mb-4">
             {phases.map(phase => (
               <TabsTrigger key={phase} value={phase.toString()}>
