@@ -11,7 +11,7 @@ interface PuzzleGridProps {
   onDragStart: (e: React.MouseEvent | React.TouchEvent, piece: PuzzlePiece) => void;
   onDrop: (e: React.MouseEvent | React.TouchEvent, index: number) => void;
   onPieceClick: (piece: PuzzlePiece) => void;
-  getPieceStyle: (piece: PuzzlePiece, index: number) => React.CSSProperties;
+  getPieceStyle: (piece: PuzzlePiece) => React.CSSProperties;
 }
 
 const PuzzleGrid: React.FC<PuzzleGridProps> = ({
@@ -60,7 +60,7 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({
             ${piece.isDragging ? 'ring-2 ring-white scale-95' : 'scale-100'}
             ${isSolved ? 'ring-1 ring-puzzle-gold/50' : ''}`}
           style={{ 
-            ...getPieceStyle(piece, index),
+            ...getPieceStyle(piece),
             width: containerSize.pieceSize - 2,
             height: containerSize.pieceSize - 2,
           }}

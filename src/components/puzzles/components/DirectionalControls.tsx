@@ -2,10 +2,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import { PuzzlePiece } from '../types/puzzle-types';
+import { BasePuzzlePiece } from '../types/puzzle-types';
 
 interface DirectionalControlsProps {
-  draggedPiece: PuzzlePiece | null;
+  draggedPiece: BasePuzzlePiece | null;
   onDirectionalMove: (direction: 'up' | 'down' | 'left' | 'right') => void;
 }
 

@@ -1,11 +1,16 @@
 
 export type DifficultyLevel = '3x3' | '4x4' | '5x5';
 
-export interface PuzzlePiece {
+// Base interface for all puzzle pieces
+export interface BasePuzzlePiece {
   id: string;
   position: number;
-  originalPosition: number;
   isDragging: boolean;
+}
+
+// Extended interface for image puzzle pieces
+export interface PuzzlePiece extends BasePuzzlePiece {
+  originalPosition: number;
 }
 
 export const difficultyConfig = {
@@ -20,3 +25,4 @@ export const DEFAULT_IMAGES = [
   'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7', // code
   'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5', // matrix
 ];
+

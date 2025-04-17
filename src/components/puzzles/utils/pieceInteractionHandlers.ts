@@ -1,16 +1,16 @@
 
-import { PuzzlePiece } from '../types/puzzle-types';
+import { BasePuzzlePiece } from '../types/puzzle-types';
 import React from 'react';
 
-export const createPieceHandlers = (
-  pieces: PuzzlePiece[],
-  setPieces: React.Dispatch<React.SetStateAction<PuzzlePiece[]>>,
-  draggedPiece: PuzzlePiece | null,
-  setDraggedPiece: React.Dispatch<React.SetStateAction<PuzzlePiece | null>>,
+export const createPieceHandlers = <T extends BasePuzzlePiece>(
+  pieces: T[],
+  setPieces: React.Dispatch<React.SetStateAction<T[]>>,
+  draggedPiece: T | null,
+  setDraggedPiece: React.Dispatch<React.SetStateAction<T | null>>,
   setMoveCount: React.Dispatch<React.SetStateAction<number>>,
   isSolved: boolean
 ) => {
-  const handleDragStart = (e: React.MouseEvent | React.TouchEvent, piece: PuzzlePiece) => {
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent, piece: T) => {
     if (isSolved) return;
     
     // Prevent default to avoid issues in dev panel
@@ -23,7 +23,7 @@ export const createPieceHandlers = (
       p.id === piece.id 
         ? { ...p, isDragging: true } 
         : p
-    ));
+    ) as T[]);
   };
   
   const handleDrop = (e: React.MouseEvent | React.TouchEvent, targetIndex: number) => {
@@ -58,19 +58,19 @@ export const createPieceHandlers = (
       newPieces[targetIndex].position = targetIndex;
       
       // Reset dragging state
-      setPieces(newPieces.map(p => ({ ...p, isDragging: false })));
+      setPieces(newPieces.map(p => ({ ...p, isDragging: false })) as T[]);
       setDraggedPiece(null);
       
       // Increment move count
       setMoveCount(prev => prev + 1);
     } else {
       // Reset dragging state without counting as a move
-      setPieces(prev => prev.map(p => ({ ...p, isDragging: false })));
+      setPieces(prev => prev.map(p => ({ ...p, isDragging: false })) as T[]);
       setDraggedPiece(null);
     }
   };
   
-  const handlePieceClick = (piece: PuzzlePiece) => {
+  const handlePieceClick = (piece: T) => {
     if (isSolved) return;
     
     console.log('Piece clicked:', piece.id);
@@ -95,7 +95,7 @@ export const createPieceHandlers = (
         newPieces[targetIndex].position = targetIndex;
         
         // Reset dragging state
-        setPieces(newPieces.map(p => ({ ...p, isDragging: false })));
+        setPieces(newPieces.map(p => ({ ...p, isDragging: false })) as T[]);
         setDraggedPiece(null);
         
         // Increment move count
@@ -105,7 +105,7 @@ export const createPieceHandlers = (
       // Select or deselect the piece
       if (draggedPiece?.id === piece.id) {
         // Deselect if clicking the same piece
-        setPieces(pieces.map(p => ({ ...p, isDragging: false })));
+        setPieces(pieces.map(p => ({ ...p, isDragging: false })) as T[]);
         setDraggedPiece(null);
       } else {
         // Select a new piece
@@ -114,7 +114,7 @@ export const createPieceHandlers = (
           p.id === piece.id 
             ? { ...p, isDragging: true } 
             : { ...p, isDragging: false }
-        ));
+        ) as T[]);
       }
     }
   };
@@ -153,27 +153,37 @@ export const createPieceHandlers = (
       handleDrop({ preventDefault: () => {} } as React.MouseEvent, targetIndex);
     }
   };
-  
-  // Helper for piece style based on position
-  const getPieceStyle = (piece: PuzzlePiece, selectedImage: string, gridSize: number): React.CSSProperties => {
-    const pieceNumber = parseInt(piece.id.split('-')[1]);
-    const row = Math.floor(pieceNumber / gridSize);
-    const col = pieceNumber % gridSize;
-    
-    return {
-      backgroundImage: `url(${selectedImage}?w=600&h=600&fit=crop&auto=format)`,
-      backgroundSize: `${gridSize * 100}%`,
-      backgroundPosition: `${col * 100 / (gridSize - 1)}% ${row * 100 / (gridSize - 1)}%`,
-      opacity: piece.isDragging ? 0.8 : 1,
-      transform: piece.isDragging ? 'scale(0.95)' : 'scale(1)',
-    };
+
+  const handleMove = (e: React.MouseEvent | React.TouchEvent, targetIndex: number) => {
+    // Prevent default to avoid issues in dev panel
+    if (e.preventDefault) e.preventDefault();
+    // Provide visual feedback on hover
+    if (draggedPiece && !isSolved) {
+      // Optional: Add more hover effects or visual feedback here
+    }
   };
   
   return {
     handleDragStart,
+    handleMove,
     handleDrop,
     handlePieceClick,
     handleDirectionalMove,
-    getPieceStyle,
   };
 };
+
+// Helper for image piece style based on position
+export const getImagePieceStyle = (piece: BasePuzzlePiece, selectedImage: string, gridSize: number): React.CSSProperties => {
+  const pieceNumber = parseInt(piece.id.split('-')[1]);
+  const row = Math.floor(pieceNumber / gridSize);
+  const col = pieceNumber % gridSize;
+  
+  return {
+    backgroundImage: `url(${selectedImage}?w=600&h=600&fit=crop&auto=format)`,
+    backgroundSize: `${gridSize * 100}%`,
+    backgroundPosition: `${col * 100 / (gridSize - 1)}% ${row * 100 / (gridSize - 1)}%`,
+    opacity: piece.isDragging ? 0.8 : 1,
+    transform: piece.isDragging ? 'scale(0.95)' : 'scale(1)',
+  };
+};
+

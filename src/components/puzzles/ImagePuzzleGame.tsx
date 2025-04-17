@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DEFAULT_IMAGES, DifficultyLevel } from './types/puzzle-types';
 import { usePuzzlePieces } from './hooks/usePuzzlePieces';
-import { createPieceHandlers } from './utils/pieceInteractionHandlers';
+import { createPieceHandlers, getImagePieceStyle } from './utils/pieceInteractionHandlers';
 import { calculateContainerSize } from './utils/puzzleSizeUtils';
 import PuzzleControls from './components/PuzzleControls';
 import PuzzleGrid from './components/PuzzleGrid';
@@ -41,7 +41,6 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({ sampleImages = DEFAUL
     handleDrop,
     handlePieceClick,
     handleDirectionalMove,
-    getPieceStyle
   } = createPieceHandlers(
     pieces,
     setPieces,
@@ -98,7 +97,7 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({ sampleImages = DEFAUL
         onDragStart={handleDragStart}
         onDrop={handleDrop}
         onPieceClick={handlePieceClick}
-        getPieceStyle={(piece, index) => getPieceStyle(piece, selectedImage, gridSize)}
+        getPieceStyle={(piece) => getImagePieceStyle(piece, selectedImage, gridSize)}
       />
       
       {/* Mobile-friendly directional controls */}

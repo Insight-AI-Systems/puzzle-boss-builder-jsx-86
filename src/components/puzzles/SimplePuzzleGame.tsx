@@ -2,7 +2,7 @@
 import React from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSimplePuzzlePieces } from './hooks/useSimplePuzzlePieces';
-import { createSimplePieceHandlers } from './utils/simplePieceInteractionHandlers';
+import { createPieceHandlers } from './utils/pieceInteractionHandlers';
 import SimplePuzzleGrid from './components/SimplePuzzleGrid';
 import SimplePuzzleControls from './components/SimplePuzzleControls';
 import SimpleDirectionalControls from './components/SimpleDirectionalControls';
@@ -27,7 +27,7 @@ const SimplePuzzleGame: React.FC = () => {
     handleDrop,
     handlePieceClick,
     handleDirectionalMove
-  } = createSimplePieceHandlers(
+  } = createPieceHandlers(
     pieces,
     setPieces,
     draggedPiece,
@@ -57,13 +57,13 @@ const SimplePuzzleGame: React.FC = () => {
         draggedPiece={draggedPiece}
         isSolved={isSolved}
         isMobile={isMobile}
-        onDirectionalMove={(direction) => handleDirectionalMove(direction)}
+        onDirectionalMove={(direction) => handleDirectionalMove(direction, 3)}
       />
       
       <PuzzleStatusMessage 
         isSolved={isSolved}
         isLoading={false}
-        isMobile={isMobile}
+        isMobile={!!isMobile}
         moveCount={moveCount}
       />
     </div>
