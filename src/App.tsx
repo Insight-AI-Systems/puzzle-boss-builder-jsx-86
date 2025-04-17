@@ -1,3 +1,4 @@
+
 import * as React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -62,6 +63,7 @@ const App: React.FC = () => {
               <Route path="/prizes" element={<Prizes />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/puzzle-demo" element={<PuzzleDemo />} />
               
               {/* New Pages */}
               <Route path="/about" element={<About />} />
