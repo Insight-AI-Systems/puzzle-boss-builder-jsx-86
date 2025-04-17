@@ -95,10 +95,10 @@ const CookiePolicy = () => {
         Most web browsers allow you to manage cookies through their settings preferences. Here's how to do it in popular browsers:
       </p>
       <ul>
-        <li><strong>Google Chrome:</strong> Settings > Privacy and security > Cookies and other site data</li>
-        <li><strong>Mozilla Firefox:</strong> Options > Privacy & Security > Cookies and Site Data</li>
-        <li><strong>Safari:</strong> Preferences > Privacy > Cookies and website data</li>
-        <li><strong>Microsoft Edge:</strong> Settings > Cookies and site permissions > Cookies and site data</li>
+        <li><strong>Google Chrome:</strong> Settings &gt; Privacy and security &gt; Cookies and other site data</li>
+        <li><strong>Mozilla Firefox:</strong> Options &gt; Privacy &amp; Security &gt; Cookies and Site Data</li>
+        <li><strong>Safari:</strong> Preferences &gt; Privacy &gt; Cookies and website data</li>
+        <li><strong>Microsoft Edge:</strong> Settings &gt; Cookies and site permissions &gt; Cookies and site data</li>
       </ul>
       
       <h2>6. Cookie Consent</h2>
