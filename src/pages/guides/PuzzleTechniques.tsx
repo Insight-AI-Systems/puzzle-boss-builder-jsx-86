@@ -1,10 +1,10 @@
-
 import React from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronRight, Zap, Clock, Puzzle, Brain, Award, Target } from 'lucide-react';
+import { ChevronRight, Zap, Clock, Brain, Award, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import InteractivePuzzle from '@/components/InteractivePuzzle';
 
 const PuzzleTechniques = () => {
   return (
@@ -35,6 +35,14 @@ const PuzzleTechniques = () => {
           </CardContent>
         </Card>
 
+        <div className="mb-8">
+          <h2 className="text-puzzle-white text-2xl font-bold mb-4">Try It Yourself</h2>
+          <p className="text-muted-foreground mb-6">
+            Practice with this simple sliding puzzle. Try to arrange the numbers in order by moving pieces into the empty space.
+          </p>
+          <InteractivePuzzle />
+        </div>
+
         <h2 className="text-puzzle-white text-2xl font-bold mb-4">Fundamental Techniques</h2>
         <p className="text-muted-foreground mb-4">
           These basic techniques form the foundation of efficient puzzle solving:
@@ -43,7 +51,7 @@ const PuzzleTechniques = () => {
         <div className="space-y-6 mb-8">
           <div className="flex items-start gap-4">
             <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
-              <Puzzle className="h-5 w-5 text-puzzle-aqua" />
+              <Target className="h-5 w-5 text-puzzle-aqua" />
             </div>
             <div>
               <h3 className="text-puzzle-white text-xl font-bold mb-1">Edge First Approach</h3>
@@ -56,7 +64,7 @@ const PuzzleTechniques = () => {
           
           <div className="flex items-start gap-4">
             <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
-              <Puzzle className="h-5 w-5 text-puzzle-aqua" />
+              <Target className="h-5 w-5 text-puzzle-aqua" />
             </div>
             <div>
               <h3 className="text-puzzle-white text-xl font-bold mb-1">Color Sorting</h3>
@@ -69,7 +77,7 @@ const PuzzleTechniques = () => {
           
           <div className="flex items-start gap-4">
             <div className="bg-puzzle-aqua/20 p-2 rounded-full mt-1">
-              <Puzzle className="h-5 w-5 text-puzzle-aqua" />
+              <Target className="h-5 w-5 text-puzzle-aqua" />
             </div>
             <div>
               <h3 className="text-puzzle-white text-xl font-bold mb-1">Shape Recognition</h3>
