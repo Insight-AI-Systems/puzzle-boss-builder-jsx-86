@@ -28,6 +28,8 @@ const InteractivePuzzle: React.FC = () => {
     setPieces(shuffledPieces);
     setEmptyPosition(8);
     setIsSolved(false);
+    
+    console.log("Puzzle reset and shuffled");
   };
   
   // Fisher-Yates shuffle algorithm
@@ -53,7 +55,12 @@ const InteractivePuzzle: React.FC = () => {
   };
   
   const movePiece = (position: number) => {
-    if (!isAdjacent(position)) return;
+    if (!isAdjacent(position)) {
+      console.log(`Piece at position ${position} is not adjacent to empty space at ${emptyPosition}`);
+      return;
+    }
+    
+    console.log(`Moving piece from position ${position} to empty position ${emptyPosition}`);
     
     // Move the piece to the empty position
     const updatedPieces = pieces.map(piece => 
@@ -66,6 +73,10 @@ const InteractivePuzzle: React.FC = () => {
     // Check if the puzzle is solved
     const isSolved = updatedPieces.every(piece => piece.id === piece.position + 1);
     setIsSolved(isSolved);
+    
+    if (isSolved) {
+      console.log("Puzzle solved!");
+    }
   };
   
   // Render the puzzle grid

@@ -55,9 +55,10 @@ const SimplePuzzleGame = () => {
 
   const [draggedPiece, setDraggedPiece] = React.useState(null);
 
-  // Explicitly using pointer events instead of drag events for better compatibility
+  // Handle both mouse and touch events for better compatibility
   const handleDragStart = (e, piece) => {
     e.preventDefault();
+    console.log('Drag start:', piece.id);
     setDraggedPiece(piece);
     
     // Update piece state
@@ -70,17 +71,26 @@ const SimplePuzzleGame = () => {
 
   const handleMove = (e, targetIndex) => {
     e.preventDefault();
+    // Optional: Add hover effects or visual feedback here
   };
 
   const handleDrop = (e, targetIndex) => {
     e.preventDefault();
     
-    if (!draggedPiece) return;
+    if (!draggedPiece) {
+      console.log('No dragged piece to drop');
+      return;
+    }
     
     // Find the source piece position
     const sourceIndex = pieces.findIndex(p => p.id === draggedPiece.id);
     
-    if (sourceIndex === -1) return;
+    if (sourceIndex === -1) {
+      console.log('Source piece not found');
+      return;
+    }
+    
+    console.log(`Swapping piece from position ${sourceIndex} to ${targetIndex}`);
     
     // Create a new array with swapped positions
     const newPieces = [...pieces];
@@ -98,13 +108,18 @@ const SimplePuzzleGame = () => {
   };
   
   const handleDragEnd = () => {
+    console.log('Drag end');
     setPieces(pieces.map(p => ({ ...p, isDragging: false })));
     setDraggedPiece(null);
   };
 
   const handlePieceClick = (piece) => {
+    console.log('Piece clicked:', piece.id);
+    
     // For touch screens and dev panel - implement click to select and then click to place
     if (draggedPiece && draggedPiece.id !== piece.id) {
+      console.log(`Swapping pieces via click: ${draggedPiece.id} with ${piece.id}`);
+      
       // Find the source and target indices
       const sourceIndex = pieces.findIndex(p => p.id === draggedPiece.id);
       const targetIndex = pieces.findIndex(p => p.id === piece.id);
@@ -135,14 +150,25 @@ const SimplePuzzleGame = () => {
     }
   };
 
+  const handleShuffleClick = () => {
+    console.log("Shuffling pieces");
+    setPieces(prevPieces => {
+      const shuffled = [...prevPieces].sort(() => Math.random() - 0.5);
+      // Update positions after shuffle
+      return shuffled.map((p, index) => ({
+        ...p,
+        position: index,
+        isDragging: false
+      }));
+    });
+    setDraggedPiece(null);
+  };
+
   return (
     <div className="flex flex-col items-center">
       <div className="mb-4">
         <Button 
-          onClick={() => {
-            console.log("Shuffling pieces");
-            setPieces(p => [...p].sort(() => Math.random() - 0.5));
-          }}
+          onClick={handleShuffleClick}
           className="bg-puzzle-gold hover:bg-puzzle-gold/80 text-black"
         >
           Shuffle Pieces
