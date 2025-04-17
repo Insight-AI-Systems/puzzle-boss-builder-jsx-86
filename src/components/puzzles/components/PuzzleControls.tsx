@@ -6,6 +6,7 @@ import { RefreshCw, Image } from 'lucide-react';
 import { DifficultyLevel } from '../types/puzzle-types';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import ImageSelector from './ImageSelector';
+import { PuzzleImage } from '../constants/puzzle-images';
 
 interface PuzzleControlsProps {
   moveCount: number;
@@ -36,6 +37,13 @@ const PuzzleControls: React.FC<PuzzleControlsProps> = ({
     setSelectedImage(image);
     setIsDialogOpen(false);
   };
+
+  // Convert string URLs to PuzzleImage objects
+  const convertedImages: PuzzleImage[] = sampleImages.map((url, index) => ({
+    id: `image-${index}`,
+    name: `Image ${index + 1}`,
+    url
+  }));
   
   // More compact controls for mobile
   if (isMobile) {
@@ -56,7 +64,7 @@ const PuzzleControls: React.FC<PuzzleControlsProps> = ({
           <DialogContent className="max-w-[90vw] p-4">
             <DialogTitle>Select Puzzle Image</DialogTitle>
             <ImageSelector
-              images={sampleImages.map(url => ({ url }))}
+              images={convertedImages}
               selectedImage={selectedImage}
               onSelect={handleImageSelected}
               compact={true}
@@ -112,7 +120,7 @@ const PuzzleControls: React.FC<PuzzleControlsProps> = ({
           <DialogContent className="max-w-[80vw]">
             <DialogTitle>Select Puzzle Image</DialogTitle>
             <ImageSelector
-              images={sampleImages.map(url => ({ url }))}
+              images={convertedImages}
               selectedImage={selectedImage}
               onSelect={handleImageSelected}
             />

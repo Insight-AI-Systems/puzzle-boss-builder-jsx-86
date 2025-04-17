@@ -7,27 +7,30 @@ interface ImageSelectorProps {
   images: PuzzleImage[];
   selectedImage: string;
   onSelect: (imageUrl: string) => void;
+  compact?: boolean;
 }
 
 const ImageSelector: React.FC<ImageSelectorProps> = ({ 
   images, 
   selectedImage, 
-  onSelect 
+  onSelect,
+  compact = false
 }) => {
   return (
-    <div className="w-full max-w-lg mb-6">
-      <h3 className="text-puzzle-aqua font-medium mb-2">Select Puzzle Image</h3>
+    <div className={`w-full max-w-lg ${compact ? 'mb-2' : 'mb-6'}`}>
+      <h3 className={`text-puzzle-aqua font-medium ${compact ? 'text-sm mb-1' : 'mb-2'}`}>Select Puzzle Image</h3>
       <ScrollArea className="w-full">
         <div className="flex space-x-2 pb-2">
           {images.map((image) => (
             <button
               key={image.id}
-              className={`relative rounded-md overflow-hidden border-2 transition-all h-16 w-16 flex-shrink-0
+              className={`relative rounded-md overflow-hidden border-2 transition-all ${compact ? 'h-12 w-12' : 'h-16 w-16'} flex-shrink-0
                 ${selectedImage === image.url 
                   ? 'border-puzzle-gold shadow-md scale-105 puzzle-piece-hint' 
                   : 'border-puzzle-black/60 hover:border-puzzle-aqua'
                 }`}
               onClick={() => onSelect(image.url)}
+              title={image.name}
             >
               <img 
                 src={image.thumbnail || image.url} 
