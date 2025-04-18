@@ -21,7 +21,7 @@ export function usePermissions() {
           description,
           role_permissions!inner(role)
         `)
-        .eq('role_permissions.role', user.role);
+        .eq('role_permissions.role', user.role as UserRole);
       
       if (error) throw error;
       
