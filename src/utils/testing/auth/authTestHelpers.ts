@@ -57,20 +57,31 @@ export const setupAuthTest = (
   const cleanupMock = mockSupabaseClient();
   
   if (authenticated) {
-    // Mock session data with a complete User object
+    // Create a complete base user object with all required properties
+    const baseUser: User = {
+      id: 'test-user-id',
+      email: 'test@example.com',
+      user_metadata: { role },
+      app_metadata: {},
+      aud: 'authenticated',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      confirmed_at: new Date().toISOString(),
+      last_sign_in_at: new Date().toISOString(),
+      role: ''
+    };
+    
+    // Merge any user overrides with the base user to ensure all required properties exist
+    const userWithOverrides = {
+      ...baseUser,
+      ...sessionOverrides.user
+    };
+    
+    // Mock session data with the complete user object
     const mockSession: Partial<Session> = {
       access_token: 'test-access-token',
       refresh_token: 'test-refresh-token',
-      user: {
-        id: 'test-user-id',
-        email: 'test@example.com',
-        user_metadata: { role },
-        app_metadata: {},
-        aud: 'authenticated',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        ...sessionOverrides.user
-      },
+      user: userWithOverrides,
       ...sessionOverrides
     };
     
