@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -95,8 +94,21 @@ const RegistrationForm: React.FC = () => {
       setUsername(formData.name);
       setAcceptTerms(formData.agreeTerms);
       
-      // Use the auth system to sign up
-      await handleEmailAuth(true);
+      try {
+        // Use the auth system to sign up
+        await handleEmailAuth(true);
+        
+        // Show success toast
+        toast({
+          title: "Registration successful!",
+          description: "Please sign in to continue",
+        });
+        
+        // Redirect to auth page with signin panel active
+        navigate('/auth');
+      } catch (error) {
+        console.error('Registration error:', error);
+      }
     }
   };
 
