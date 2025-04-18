@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -220,11 +219,7 @@ export function useEmailAuth(): EmailAuthState & EmailAuthActions {
         // Regular sign in
         const { data, error } = await supabase.auth.signInWithPassword({ 
           email, 
-          password,
-          options: {
-            // Use session persistence based on remember me setting  
-            persistSession: rememberMe
-          }
+          password
         });
         
         console.log('Sign in response:', data, error);
