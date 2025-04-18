@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      feedback: {
+        Row: {
+          browser_info: string | null
+          created_at: string | null
+          description: string
+          email: string | null
+          id: string
+          page_url: string | null
+          status: string | null
+          type: Database["public"]["Enums"]["feedback_type"]
+          user_id: string | null
+        }
+        Insert: {
+          browser_info?: string | null
+          created_at?: string | null
+          description: string
+          email?: string | null
+          id?: string
+          page_url?: string | null
+          status?: string | null
+          type: Database["public"]["Enums"]["feedback_type"]
+          user_id?: string | null
+        }
+        Update: {
+          browser_info?: string | null
+          created_at?: string | null
+          description?: string
+          email?: string | null
+          id?: string
+          page_url?: string | null
+          status?: string | null
+          type?: Database["public"]["Enums"]["feedback_type"]
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       password_reset_attempts: {
         Row: {
           attempt_count: number | null
@@ -293,6 +329,7 @@ export type Database = {
       }
     }
     Enums: {
+      feedback_type: "bug" | "suggestion" | "question" | "other"
       user_role:
         | "admin"
         | "category_manager"
@@ -417,6 +454,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      feedback_type: ["bug", "suggestion", "question", "other"],
       user_role: [
         "admin",
         "category_manager",

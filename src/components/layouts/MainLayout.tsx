@@ -2,6 +2,8 @@
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { FeedbackButton } from '@/components/feedback/FeedbackButton';
+import { BetaBanner } from '@/components/BetaBanner';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -10,11 +12,13 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col w-full">
+      <BetaBanner />
       <Navbar />
       <main className="flex-1">
         {children}
       </main>
       <Footer />
+      <FeedbackButton />
     </div>
   );
 }

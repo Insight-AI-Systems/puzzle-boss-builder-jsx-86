@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   BrowserRouter,
@@ -38,6 +37,7 @@ import {
   Partnerships,
   NotFound,
   Auth,
+  KnownIssues,
 } from '@/pages';
 import Unauthorized from '@/pages/Unauthorized';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -129,6 +129,7 @@ function App() {
                       <Route path="/press" element={<Press />} />
                       <Route path="/partnerships" element={<Partnerships />} />
                       <Route path="/unauthorized" element={<Unauthorized />} />
+                      <Route path="/known-issues" element={<KnownIssues />} />
                       
                       <Route path="*" element={<NotFound />} />
                     </Routes>
