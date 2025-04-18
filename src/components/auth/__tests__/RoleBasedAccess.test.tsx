@@ -3,7 +3,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import RoleBasedAccess from '@/components/auth/RoleBasedAccess';
-import { createMockAuthContext } from '@/utils/testing/auth/mockAuth';
+import { createMockAuthContext } from '@/utils/testing/auth/authTestHelpers';
 import { AuthContext } from '@/contexts/AuthContext';
 
 // Mock the authContext

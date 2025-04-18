@@ -7,3 +7,4 @@ export * from './mockData';
 export * from './mockSupabase';
 export * from './mockAuthContext';
 export * from './authTestUtils';
+export * from './mockAuth';
