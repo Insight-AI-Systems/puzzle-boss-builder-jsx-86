@@ -58,7 +58,7 @@ export const AuthForm = () => {
     setResetPassword,
     setResetConfirmPassword,
     setResetErrorMessage,
-    handlePasswordResetRequest,
+    handlePasswordResetRequest: requestPasswordReset,
     handlePasswordReset
   } = useAuth();
   
@@ -97,8 +97,8 @@ export const AuthForm = () => {
     }
   }, [searchParams]);
 
-  const handlePasswordResetRequest = async () => {
-    await handlePasswordResetRequest();
+  const handlePasswordResetProcess = async () => {
+    await requestPasswordReset();
     // Only show the verification pending view if there was no error
     if (!resetErrorMessage) {
       setCurrentView('verification-pending');
@@ -141,7 +141,7 @@ export const AuthForm = () => {
             successMessage={resetSuccessMessage}
             isLoading={isLoading}
             setEmail={setEmail}
-            handlePasswordResetRequest={handlePasswordResetRequest}
+            handlePasswordResetRequest={handlePasswordResetProcess}
             goBack={() => {
               resetForm();
               setCurrentView('signin');
