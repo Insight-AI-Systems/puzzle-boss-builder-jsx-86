@@ -1,5 +1,4 @@
 import React from 'react';
-import { MainLayout } from '@/components/layouts/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
@@ -120,72 +119,70 @@ const faqCategories = [
 
 const FAQ = () => {
   return (
-    <MainLayout>
-      <div className="container mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-game text-puzzle-aqua mb-4">Frequently Asked Questions</h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Find answers to the most common questions about The Puzzle Boss
-          </p>
-        </div>
+    <div className="container mx-auto px-4 py-12">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl md:text-5xl font-game text-puzzle-aqua mb-4">Frequently Asked Questions</h1>
+        <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          Find answers to the most common questions about The Puzzle Boss
+        </p>
+      </div>
 
-        {/* Search Bar */}
-        <div className="max-w-2xl mx-auto mb-10">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-            <Input 
-              placeholder="Search the FAQ..." 
-              className="pl-10 bg-puzzle-black/30 border-puzzle-aqua/30 focus:border-puzzle-aqua"
-            />
-          </div>
-        </div>
-        
-        {/* FAQ Tabs and Content */}
-        <Tabs defaultValue="general" className="w-full">
-          <TabsList className="w-full flex justify-center mb-8 bg-puzzle-black/50 border border-puzzle-aqua/20 p-1">
-            {faqCategories.map((category) => (
-              <TabsTrigger 
-                key={category.id} 
-                value={category.id}
-                className="flex items-center data-[state=active]:bg-puzzle-aqua/20"
-              >
-                <category.icon className="h-4 w-4 mr-2" />
-                {category.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          
-          {faqCategories.map((category) => (
-            <TabsContent key={category.id} value={category.id} className="mt-0">
-              <Accordion type="single" collapsible className="w-full">
-                {category.questions.map((item, index) => (
-                  <AccordionItem key={index} value={`item-${index}`} className="border-puzzle-aqua/20">
-                    <AccordionTrigger className="text-lg font-medium text-puzzle-white hover:text-puzzle-aqua hover:no-underline">
-                      {item.question}
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground">
-                      {item.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </TabsContent>
-          ))}
-        </Tabs>
-        
-        {/* Contact Section */}
-        <div className="mt-16 p-8 bg-gradient-to-r from-puzzle-black/80 to-puzzle-aqua/10 rounded-lg text-center">
-          <h2 className="text-2xl font-bold text-puzzle-white mb-4">Still Have Questions?</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto mb-6">
-            If you couldn't find the answer to your question in our FAQ, please don't hesitate to reach out to our support team.
-          </p>
-          <Button className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Contact Support
-          </Button>
+      {/* Search Bar */}
+      <div className="max-w-2xl mx-auto mb-10">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+          <Input 
+            placeholder="Search the FAQ..." 
+            className="pl-10 bg-puzzle-black/30 border-puzzle-aqua/30 focus:border-puzzle-aqua"
+          />
         </div>
       </div>
-    </MainLayout>
+      
+      {/* FAQ Tabs and Content */}
+      <Tabs defaultValue="general" className="w-full">
+        <TabsList className="w-full flex justify-center mb-8 bg-puzzle-black/50 border border-puzzle-aqua/20 p-1">
+          {faqCategories.map((category) => (
+            <TabsTrigger 
+              key={category.id} 
+              value={category.id}
+              className="flex items-center data-[state=active]:bg-puzzle-aqua/20"
+            >
+              <category.icon className="h-4 w-4 mr-2" />
+              {category.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        
+        {faqCategories.map((category) => (
+          <TabsContent key={category.id} value={category.id} className="mt-0">
+            <Accordion type="single" collapsible className="w-full">
+              {category.questions.map((item, index) => (
+                <AccordionItem key={index} value={`item-${index}`} className="border-puzzle-aqua/20">
+                  <AccordionTrigger className="text-lg font-medium text-puzzle-white hover:text-puzzle-aqua hover:no-underline">
+                    {item.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">
+                    {item.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </TabsContent>
+        ))}
+      </Tabs>
+      
+      {/* Contact Section */}
+      <div className="mt-16 p-8 bg-gradient-to-r from-puzzle-black/80 to-puzzle-aqua/10 rounded-lg text-center">
+        <h2 className="text-2xl font-bold text-puzzle-white mb-4">Still Have Questions?</h2>
+        <p className="text-muted-foreground max-w-2xl mx-auto mb-6">
+          If you couldn't find the answer to your question in our FAQ, please don't hesitate to reach out to our support team.
+        </p>
+        <Button className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
+          <MessageSquare className="h-4 w-4 mr-2" />
+          Contact Support
+        </Button>
+      </div>
+    </div>
   );
 };
 
