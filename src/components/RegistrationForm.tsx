@@ -23,18 +23,18 @@ const RegistrationForm: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       [name]: value
-    });
+    }));
     clearError(name);
   };
 
   const handleCheckboxChange = (checked: boolean) => {
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       agreeTerms: checked
-    });
+    }));
     clearError('agreeTerms');
   };
 
