@@ -102,7 +102,9 @@ export const createAuthWrapper = (isAuthenticated = true, role: UserRole = 'play
   const mockContext = createMockAuthContext(isAuthenticated, role);
   
   // Return a HOC (Higher Order Component) that wraps around the component to be tested
-  return (Component: React.ComponentType<any>) => (props: any) => (
-    <Component {...props} auth={mockContext} />
-  );
+  return function(Component: React.ComponentType<any>) {
+    return function(props: any) {
+      return <Component {...props} auth={mockContext} />;
+    };
+  };
 };
