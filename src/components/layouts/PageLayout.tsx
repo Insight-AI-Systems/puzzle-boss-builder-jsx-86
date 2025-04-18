@@ -5,9 +5,10 @@ interface PageLayoutProps {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
+  className?: string;
 }
 
-const PageLayout: React.FC<PageLayoutProps> = ({ title, subtitle, children }) => {
+const PageLayout: React.FC<PageLayoutProps> = ({ title, subtitle, children, className }) => {
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="text-center mb-12">
@@ -18,7 +19,9 @@ const PageLayout: React.FC<PageLayoutProps> = ({ title, subtitle, children }) =>
           </p>
         )}
       </div>
-      {children}
+      <div className={className}>
+        {children}
+      </div>
     </div>
   );
 };
