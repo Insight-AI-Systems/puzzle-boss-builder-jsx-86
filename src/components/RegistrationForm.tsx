@@ -4,10 +4,16 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
-import { useToast } from './ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/auth/useAuth';
+import { Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const RegistrationForm: React.FC = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { isLoading, handleEmailAuth, setEmail, setPassword, setConfirmPassword, setUsername, setAcceptTerms } = useAuth();
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -78,28 +84,19 @@ const RegistrationForm: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (validateForm()) {
-      // Form is valid, submit it
-      console.log('Form submitted:', formData);
+      // Set auth form data
+      setEmail(formData.email);
+      setPassword(formData.password);
+      setConfirmPassword(formData.confirmPassword);
+      setUsername(formData.name);
+      setAcceptTerms(formData.agreeTerms);
       
-      // Show success toast
-      toast({
-        title: "Registration successful!",
-        description: "Welcome to The Puzzle Boss. Get ready to solve and win!",
-        duration: 5000,
-      });
-      
-      // Reset form
-      setFormData({
-        name: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        agreeTerms: false
-      });
+      // Use the auth system to sign up
+      await handleEmailAuth(true);
     }
   };
 
@@ -115,6 +112,7 @@ const RegistrationForm: React.FC = () => {
             value={formData.name}
             onChange={handleChange}
             className={errors.name ? 'border-red-500' : ''}
+            disabled={isLoading}
           />
           {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
         </div>
@@ -128,6 +126,7 @@ const RegistrationForm: React.FC = () => {
             value={formData.email}
             onChange={handleChange}
             className={errors.email ? 'border-red-500' : ''}
+            disabled={isLoading}
           />
           {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
         </div>
@@ -141,6 +140,7 @@ const RegistrationForm: React.FC = () => {
             value={formData.password}
             onChange={handleChange}
             className={errors.password ? 'border-red-500' : ''}
+            disabled={isLoading}
           />
           {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
         </div>
@@ -154,6 +154,7 @@ const RegistrationForm: React.FC = () => {
             value={formData.confirmPassword}
             onChange={handleChange}
             className={errors.confirmPassword ? 'border-red-500' : ''}
+            disabled={isLoading}
           />
           {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword}</p>}
         </div>
@@ -163,6 +164,7 @@ const RegistrationForm: React.FC = () => {
             id="agreeTerms"
             checked={formData.agreeTerms}
             onCheckedChange={handleCheckboxChange}
+            disabled={isLoading}
           />
           <Label htmlFor="agreeTerms" className="text-sm">
             I agree to the Terms & Conditions and Privacy Policy
@@ -170,8 +172,15 @@ const RegistrationForm: React.FC = () => {
         </div>
         {errors.agreeTerms && <p className="text-red-500 text-sm">{errors.agreeTerms}</p>}
         
-        <Button type="submit" className="w-full bg-puzzle-gold text-puzzle-black hover:bg-puzzle-gold/90">
-          Create Account
+        <Button type="submit" className="w-full bg-puzzle-gold text-puzzle-black hover:bg-puzzle-gold/90" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Creating Account...
+            </>
+          ) : (
+            'Create Account'
+          )}
         </Button>
       </form>
     </div>
