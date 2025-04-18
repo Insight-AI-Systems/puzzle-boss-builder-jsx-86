@@ -1,24 +1,23 @@
+
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserProfileForm } from '@/components/profile/UserProfileForm';
-import { UserManagement } from '@/components/admin/UserManagement';
-import { RoleManagement } from '@/components/admin/RoleManagement';
-import { PermissionsExplorer } from '@/components/admin/PermissionsExplorer';
+import { ProfileInfoTab } from '@/components/profile/tabs/ProfileInfoTab';
+import { MyPuzzlesTab } from '@/components/profile/tabs/MyPuzzlesTab';
+import { AchievementsTab } from '@/components/profile/tabs/AchievementsTab';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { Loader2, UserCog, User, ShieldAlert, LayoutDashboard, Shield, KeyRound } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Loader2, User, PuzzlePiece, Trophy, Settings } from 'lucide-react';
 import { MainLayout } from '@/components/layouts/MainLayout';
 
 const Profile: React.FC = () => {
-  const { isAdmin, isLoading } = useUserProfile();
+  const { isLoading } = useUserProfile();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
-      </div>
+      <MainLayout>
+        <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+        </div>
+      </MainLayout>
     );
   }
 
@@ -29,90 +28,43 @@ const Profile: React.FC = () => {
           <div className="max-w-6xl mx-auto space-y-8">
             <div className="flex justify-between items-center">
               <h1 className="text-3xl font-game text-puzzle-aqua">User Profile</h1>
-              
-              <div className="flex space-x-2">
-                <Link to="/settings">
-                  <Button variant="outline" className="border-puzzle-aqua/50 hover:bg-puzzle-aqua/10">
-                    <Shield className="h-4 w-4 mr-2" />
-                    Security Settings
-                  </Button>
-                </Link>
-                
-                {isAdmin && (
-                  <Link to="/admin-dashboard">
-                    <Button variant="outline" className="border-puzzle-aqua/50 hover:bg-puzzle-aqua/10">
-                      <LayoutDashboard className="h-4 w-4 mr-2" />
-                      Admin Dashboard
-                    </Button>
-                  </Link>
-                )}
-              </div>
             </div>
             
             <Tabs defaultValue="profile" className="w-full">
               <TabsList className="bg-puzzle-black/50 border border-puzzle-aqua/20">
                 <TabsTrigger value="profile" className="data-[state=active]:bg-puzzle-aqua/10">
                   <User className="h-4 w-4 mr-2" />
-                  My Profile
+                  Profile Info
                 </TabsTrigger>
-                {isAdmin && (
-                  <>
-                    <TabsTrigger value="users" className="data-[state=active]:bg-puzzle-aqua/10">
-                      <UserCog className="h-4 w-4 mr-2" />
-                      User Management
-                    </TabsTrigger>
-                    <TabsTrigger value="roles" className="data-[state=active]:bg-puzzle-aqua/10">
-                      <Shield className="h-4 w-4 mr-2" />
-                      Role Management
-                    </TabsTrigger>
-                    <TabsTrigger value="permissions" className="data-[state=active]:bg-puzzle-aqua/10">
-                      <KeyRound className="h-4 w-4 mr-2" />
-                      Permissions
-                    </TabsTrigger>
-                  </>
-                )}
+                <TabsTrigger value="puzzles" className="data-[state=active]:bg-puzzle-aqua/10">
+                  <PuzzlePiece className="h-4 w-4 mr-2" />
+                  My Puzzles
+                </TabsTrigger>
+                <TabsTrigger value="achievements" className="data-[state=active]:bg-puzzle-aqua/10">
+                  <Trophy className="h-4 w-4 mr-2" />
+                  Achievements
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="data-[state=active]:bg-puzzle-aqua/10">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="profile" className="pt-4">
-                <UserProfileForm />
+                <ProfileInfoTab />
               </TabsContent>
               
-              {isAdmin && (
-                <>
-                  <TabsContent value="users" className="pt-4">
-                    <Alert className="mb-6 bg-amber-900/30 border-amber-500">
-                      <ShieldAlert className="h-4 w-4" />
-                      <AlertTitle>Admin Access</AlertTitle>
-                      <AlertDescription>
-                        You have administrative privileges. Be careful when modifying user accounts.
-                      </AlertDescription>
-                    </Alert>
-                    <UserManagement />
-                  </TabsContent>
-                  
-                  <TabsContent value="roles" className="pt-4">
-                    <Alert className="mb-6 bg-amber-900/30 border-amber-500">
-                      <ShieldAlert className="h-4 w-4" />
-                      <AlertTitle>Role Management</AlertTitle>
-                      <AlertDescription>
-                        Changing user roles affects what they can access and modify in the system.
-                      </AlertDescription>
-                    </Alert>
-                    <RoleManagement />
-                  </TabsContent>
-                  
-                  <TabsContent value="permissions" className="pt-4">
-                    <Alert className="mb-6 bg-amber-900/30 border-amber-500">
-                      <ShieldAlert className="h-4 w-4" />
-                      <AlertTitle>Permissions Explorer</AlertTitle>
-                      <AlertDescription>
-                        This tool shows all system roles and their associated permissions.
-                      </AlertDescription>
-                    </Alert>
-                    <PermissionsExplorer />
-                  </TabsContent>
-                </>
-              )}
+              <TabsContent value="puzzles" className="pt-4">
+                <MyPuzzlesTab />
+              </TabsContent>
+              
+              <TabsContent value="achievements" className="pt-4">
+                <AchievementsTab />
+              </TabsContent>
+              
+              <TabsContent value="settings" className="pt-4">
+                <SecuritySettings />
+              </TabsContent>
             </Tabs>
           </div>
         </div>
