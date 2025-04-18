@@ -1,6 +1,4 @@
-
 import React from 'react';
-import PageLayout from '@/components/layouts/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,10 +8,14 @@ import { Mail, MessageSquare, PhoneCall, MapPin, Clock } from 'lucide-react';
 
 const Contact = () => {
   return (
-    <PageLayout 
-      title="Contact Us" 
-      subtitle="Have questions or feedback? Reach out to our team"
-    >
+    <div className="container mx-auto p-6">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl md:text-5xl font-game text-puzzle-aqua mb-4">Contact Us</h1>
+        <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          Have questions or feedback? Reach out to our team
+        </p>
+      </div>
+      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Contact Form */}
         <Card className="border-puzzle-aqua/20">
@@ -157,7 +159,7 @@ const Contact = () => {
           </Card>
         </div>
       </div>
-    </PageLayout>
+    </div>
   );
 };
 
