@@ -52,7 +52,7 @@ export const mockSupabaseClient = () => {
 export const setupAuthTest = (
   authenticated = true,
   role: UserRole = 'player',
-  sessionOverrides = {}
+  sessionOverrides: { user?: Partial<User>, [key: string]: any } = {}
 ) => {
   const cleanupMock = mockSupabaseClient();
   
