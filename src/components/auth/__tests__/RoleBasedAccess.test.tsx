@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import RoleBasedAccess from '@/components/auth/RoleBasedAccess';
 import { createMockAuthContext } from '@/utils/testing/auth/authTestHelpers';
 import { AuthContext } from '@/contexts/AuthContext';
@@ -36,7 +35,7 @@ describe('RoleBasedAccess Component', () => {
       </RoleBasedAccess>
     );
     
-    expect(screen.getByText(CONTENT)).toBeInTheDocument();
+    expect(screen.queryByText(CONTENT)).not.toBeNull();
   });
   
   it('renders children when user has required role', () => {
@@ -53,7 +52,7 @@ describe('RoleBasedAccess Component', () => {
       </AuthContext.Provider>
     );
     
-    expect(screen.getByText(CONTENT)).toBeInTheDocument();
+    expect(screen.queryByText(CONTENT)).not.toBeNull();
   });
   
   it('renders fallback when user does not have required role', () => {
@@ -73,8 +72,8 @@ describe('RoleBasedAccess Component', () => {
       </AuthContext.Provider>
     );
     
-    expect(screen.getByText(FALLBACK)).toBeInTheDocument();
-    expect(screen.queryByText(CONTENT)).not.toBeInTheDocument();
+    expect(screen.queryByText(FALLBACK)).not.toBeNull();
+    expect(screen.queryByText(CONTENT)).toBeNull();
   });
   
   it('renders children when user has required permission', () => {
@@ -84,7 +83,7 @@ describe('RoleBasedAccess Component', () => {
       </RoleBasedAccess>
     );
     
-    expect(screen.getByText(CONTENT)).toBeInTheDocument();
+    expect(screen.queryByText(CONTENT)).not.toBeNull();
   });
   
   it('renders fallback when user does not have required permission', () => {
@@ -97,8 +96,8 @@ describe('RoleBasedAccess Component', () => {
       </RoleBasedAccess>
     );
     
-    expect(screen.getByText(FALLBACK)).toBeInTheDocument();
-    expect(screen.queryByText(CONTENT)).not.toBeInTheDocument();
+    expect(screen.queryByText(FALLBACK)).not.toBeNull();
+    expect(screen.queryByText(CONTENT)).toBeNull();
   });
   
   it('respects requireAllPermissions flag when true', () => {
@@ -112,8 +111,8 @@ describe('RoleBasedAccess Component', () => {
       </RoleBasedAccess>
     );
     
-    expect(screen.getByText(FALLBACK)).toBeInTheDocument();
-    expect(screen.queryByText(CONTENT)).not.toBeInTheDocument();
+    expect(screen.queryByText(FALLBACK)).not.toBeNull();
+    expect(screen.queryByText(CONTENT)).toBeNull();
   });
   
   it('respects requireAllPermissions flag when false', () => {
@@ -126,7 +125,7 @@ describe('RoleBasedAccess Component', () => {
       </RoleBasedAccess>
     );
     
-    expect(screen.getByText(CONTENT)).toBeInTheDocument();
+    expect(screen.queryByText(CONTENT)).not.toBeNull();
   });
   
   it('renders fallback when user is not authenticated', () => {
@@ -143,7 +142,7 @@ describe('RoleBasedAccess Component', () => {
       </AuthContext.Provider>
     );
     
-    expect(screen.getByText(FALLBACK)).toBeInTheDocument();
-    expect(screen.queryByText(CONTENT)).not.toBeInTheDocument();
+    expect(screen.queryByText(FALLBACK)).not.toBeNull();
+    expect(screen.queryByText(CONTENT)).toBeNull();
   });
 });
