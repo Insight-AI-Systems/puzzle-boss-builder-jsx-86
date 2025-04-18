@@ -6,6 +6,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { ProfileHeader } from './form/ProfileHeader';
 import { ProfileAvatar } from './form/ProfileAvatar';
 import { ProfileEditForm } from './form/ProfileEditForm';
+import { DatabaseTestRunner } from '@/utils/testing/runners/DatabaseTestRunner';
 
 export function UserProfileForm({ userId }: { userId?: string }) {
   const { profile, isLoading, updateProfile } = useUserProfile(userId);
@@ -26,8 +27,25 @@ export function UserProfileForm({ userId }: { userId?: string }) {
     }
   }, [profile]);
 
+  // Test database connection on component mount
+  React.useEffect(() => {
+    const testConnection = async () => {
+      try {
+        const isConnected = await DatabaseTestRunner.testDatabaseConnection();
+        const authStatus = await DatabaseTestRunner.testAuthStatus();
+        console.log('Database connection:', isConnected ? 'OK' : 'Failed');
+        console.log('Auth status:', authStatus ? 'OK' : 'Failed');
+      } catch (error) {
+        console.error('Error testing database connection:', error);
+      }
+    };
+    
+    testConnection();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    console.log(`Updating field ${name} to: ${value}`);
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -35,8 +53,16 @@ export function UserProfileForm({ userId }: { userId?: string }) {
     e.preventDefault();
     if (!profile) return;
     
+    console.log('Submitting profile update:', formData);
+    
     updateProfile.mutate(formData, {
-      onSuccess: () => setIsEditing(false)
+      onSuccess: () => {
+        console.log('Profile updated successfully');
+        setIsEditing(false);
+      },
+      onError: (error) => {
+        console.error('Profile update error:', error);
+      }
     });
   };
 

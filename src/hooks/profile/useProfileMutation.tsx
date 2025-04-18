@@ -26,10 +26,14 @@ export function useProfileMutation(profileId: string | null) {
         throw new Error('Avatar URL must be a valid URL');
       }
       
+      console.log('Updating profile with data:', updatedProfile);
+      
+      // Map UserProfile fields to profiles table columns
       const profileUpdate = {
         username: updatedProfile.display_name,
         avatar_url: updatedProfile.avatar_url,
         bio: updatedProfile.bio,
+        updated_at: new Date().toISOString()
       };
       
       const { data, error } = await supabase
@@ -39,7 +43,12 @@ export function useProfileMutation(profileId: string | null) {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating profile:', error);
+        throw error;
+      }
+      
+      console.log('Profile updated successfully:', data);
       
       const updatedUserProfile: UserProfile = {
         id: data.id,
