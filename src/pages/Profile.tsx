@@ -4,12 +4,14 @@ import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserProfileForm } from '@/components/profile/UserProfileForm';
 import { UserManagement } from '@/components/admin/UserManagement';
+import { RoleManagement } from '@/components/admin/RoleManagement';
+import { PermissionsExplorer } from '@/components/admin/PermissionsExplorer';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { Loader2, UserCog, User, ShieldAlert, LayoutDashboard, Shield } from 'lucide-react';
+import { Loader2, UserCog, User, ShieldAlert, LayoutDashboard, Shield, KeyRound } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
-const Profile = () => {
+const Profile: React.FC = () => {
   const { isAdmin, isLoading } = useUserProfile();
 
   if (isLoading) {
@@ -53,10 +55,20 @@ const Profile = () => {
                 My Profile
               </TabsTrigger>
               {isAdmin && (
-                <TabsTrigger value="users" className="data-[state=active]:bg-puzzle-aqua/10">
-                  <UserCog className="h-4 w-4 mr-2" />
-                  User Management
-                </TabsTrigger>
+                <>
+                  <TabsTrigger value="users" className="data-[state=active]:bg-puzzle-aqua/10">
+                    <UserCog className="h-4 w-4 mr-2" />
+                    User Management
+                  </TabsTrigger>
+                  <TabsTrigger value="roles" className="data-[state=active]:bg-puzzle-aqua/10">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Role Management
+                  </TabsTrigger>
+                  <TabsTrigger value="permissions" className="data-[state=active]:bg-puzzle-aqua/10">
+                    <KeyRound className="h-4 w-4 mr-2" />
+                    Permissions
+                  </TabsTrigger>
+                </>
               )}
             </TabsList>
             
@@ -65,16 +77,40 @@ const Profile = () => {
             </TabsContent>
             
             {isAdmin && (
-              <TabsContent value="users" className="pt-4">
-                <Alert className="mb-6 bg-amber-900/30 border-amber-500">
-                  <ShieldAlert className="h-4 w-4" />
-                  <AlertTitle>Admin Access</AlertTitle>
-                  <AlertDescription>
-                    You have administrative privileges. Be careful when modifying user roles and permissions.
-                  </AlertDescription>
-                </Alert>
-                <UserManagement />
-              </TabsContent>
+              <>
+                <TabsContent value="users" className="pt-4">
+                  <Alert className="mb-6 bg-amber-900/30 border-amber-500">
+                    <ShieldAlert className="h-4 w-4" />
+                    <AlertTitle>Admin Access</AlertTitle>
+                    <AlertDescription>
+                      You have administrative privileges. Be careful when modifying user accounts.
+                    </AlertDescription>
+                  </Alert>
+                  <UserManagement />
+                </TabsContent>
+                
+                <TabsContent value="roles" className="pt-4">
+                  <Alert className="mb-6 bg-amber-900/30 border-amber-500">
+                    <ShieldAlert className="h-4 w-4" />
+                    <AlertTitle>Role Management</AlertTitle>
+                    <AlertDescription>
+                      Changing user roles affects what they can access and modify in the system.
+                    </AlertDescription>
+                  </Alert>
+                  <RoleManagement />
+                </TabsContent>
+                
+                <TabsContent value="permissions" className="pt-4">
+                  <Alert className="mb-6 bg-amber-900/30 border-amber-500">
+                    <ShieldAlert className="h-4 w-4" />
+                    <AlertTitle>Permissions Explorer</AlertTitle>
+                    <AlertDescription>
+                      This tool shows all system roles and their associated permissions.
+                    </AlertDescription>
+                  </Alert>
+                  <PermissionsExplorer />
+                </TabsContent>
+              </>
             )}
           </Tabs>
         </div>

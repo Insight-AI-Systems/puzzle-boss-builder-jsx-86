@@ -1,8 +1,10 @@
+
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { UserRole } from '@/types/userTypes';
 
 interface AuthContextType {
   user: User | null;
@@ -20,6 +22,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   hasRole: (role: string) => boolean;
+  userRole: UserRole | null;
   
   clearAuthError: () => void;
 }
@@ -37,6 +40,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [error, setError] = useState<AuthError | Error | null>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [lastAuthAttempt, setLastAuthAttempt] = useState<number>(0);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -44,7 +48,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const MIN_TIME_BETWEEN_AUTH_ATTEMPTS = 2000;
 
   const isAuthenticated = useMemo(() => !!user && !!session, [user, session]);
-  const isAdmin = useMemo(() => userRoles.includes('admin') || userRoles.includes('super_admin'), [userRoles]);
+  const isAdmin = useMemo(() => userRole === 'admin' || userRole === 'super_admin', [userRole]);
 
   const clearAuthError = () => setError(null);
 
@@ -62,10 +66,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       if (profile && profile.role) {
+        // Store both the role array for backward compatibility and the single role
         setUserRoles([profile.role]);
+        setUserRole(profile.role as UserRole);
         return;
       }
 
+      // Legacy support for user_roles table
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
         .select('role')
@@ -79,12 +86,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (roles && roles.length > 0) {
         const extractedRoles = roles.map(roleObj => roleObj.role);
         setUserRoles(extractedRoles);
+        // For backward compatibility, use the first role as the primary role
+        setUserRole(extractedRoles[0] as UserRole);
       } else {
-        setUserRoles([]);
+        setUserRoles(['player']);
+        setUserRole('player');
       }
     } catch (error) {
       console.error('Error fetching user roles:', error);
-      setUserRoles([]);
+      setUserRoles(['player']);
+      setUserRole('player');
     }
   };
 
@@ -121,10 +132,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }, 0);
       } else {
         setUserRoles([]);
+        setUserRole(null);
       }
       
       if (event === 'SIGNED_OUT') {
         setUserRoles([]);
+        setUserRole(null);
       }
       
       setIsLoading(false);
@@ -456,6 +469,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const hasRole = (role: string): boolean => {
+    // If the user has the exact role
+    if (userRole === role) return true;
+    
+    // Super admins have all roles
+    if (userRole === 'super_admin') return true;
+    
+    // Admins have access to most roles except super_admin
+    if (userRole === 'admin' && role !== 'super_admin') return true;
+    
+    // For legacy support, also check the userRoles array
     return userRoles.includes(role);
   };
 
@@ -473,6 +496,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAuthenticated,
     isAdmin,
     hasRole,
+    userRole,
     clearAuthError
   };
 
