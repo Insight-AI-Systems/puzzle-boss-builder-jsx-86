@@ -3,7 +3,9 @@ import React from 'react';
 import { createMockAuthContext } from './mockAuthContext';
 import { mockSupabaseClient } from './mockSupabase';
 import { UserRole } from '@/types/userTypes';
-import { Session } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
+import { createMockUser, createMockSession } from './mockData';
+import { supabase } from '@/integrations/supabase/client';
 
 export const setupAuthTest = (
   authenticated = true,
