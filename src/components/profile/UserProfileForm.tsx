@@ -6,7 +6,6 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { ProfileHeader } from './form/ProfileHeader';
 import { ProfileAvatar } from './form/ProfileAvatar';
 import { ProfileEditForm } from './form/ProfileEditForm';
-import { DatabaseTestRunner } from '@/utils/testing/runners/DatabaseTestRunner';
 
 export function UserProfileForm({ userId }: { userId?: string }) {
   const { profile, isLoading, updateProfile } = useUserProfile(userId);
@@ -24,24 +23,9 @@ export function UserProfileForm({ userId }: { userId?: string }) {
         bio: profile.bio || '',
         avatar_url: profile.avatar_url || '',
       });
+      console.log("Profile data loaded:", profile);
     }
   }, [profile]);
-
-  // Test database connection on component mount
-  React.useEffect(() => {
-    const testConnection = async () => {
-      try {
-        const isConnected = await DatabaseTestRunner.testDatabaseConnection();
-        const authStatus = await DatabaseTestRunner.testAuthStatus();
-        console.log('Database connection:', isConnected ? 'OK' : 'Failed');
-        console.log('Auth status:', authStatus ? 'OK' : 'Failed');
-      } catch (error) {
-        console.error('Error testing database connection:', error);
-      }
-    };
-    
-    testConnection();
-  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

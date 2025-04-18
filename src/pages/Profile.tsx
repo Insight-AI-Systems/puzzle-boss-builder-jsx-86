@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileInfoTab } from '@/components/profile/tabs/ProfileInfoTab';
 import { MyPuzzlesTab } from '@/components/profile/tabs/MyPuzzlesTab';
@@ -10,6 +10,7 @@ import { Loader2, User, Trophy, Settings, Puzzle } from 'lucide-react';
 
 const Profile: React.FC = () => {
   const { isLoading } = useUserProfile();
+  const [activeTab, setActiveTab] = useState('profile');
 
   if (isLoading) {
     return (
@@ -27,8 +28,8 @@ const Profile: React.FC = () => {
             <h1 className="text-3xl font-game text-puzzle-aqua">User Profile</h1>
           </div>
           
-          <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="bg-puzzle-black/50 border border-puzzle-aqua/20">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="bg-puzzle-black/50 border border-puzzle-aqua/20 mb-6">
               <TabsTrigger value="profile" className="data-[state=active]:bg-puzzle-aqua/10">
                 <User className="h-4 w-4 mr-2" />
                 Profile Info

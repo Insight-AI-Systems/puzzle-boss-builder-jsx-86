@@ -29,12 +29,23 @@ export function useProfileMutation(profileId: string | null) {
       console.log('Updating profile with data:', updatedProfile);
       
       // Map UserProfile fields to profiles table columns
-      const profileUpdate = {
-        username: updatedProfile.display_name,
-        avatar_url: updatedProfile.avatar_url,
-        bio: updatedProfile.bio,
-        updated_at: new Date().toISOString()
-      };
+      const profileUpdate: Record<string, any> = {};
+      
+      if (updatedProfile.display_name !== undefined) {
+        profileUpdate.username = updatedProfile.display_name;
+      }
+      
+      if (updatedProfile.avatar_url !== undefined) {
+        profileUpdate.avatar_url = updatedProfile.avatar_url;
+      }
+      
+      if (updatedProfile.bio !== undefined) {
+        profileUpdate.bio = updatedProfile.bio;
+      }
+      
+      profileUpdate.updated_at = new Date().toISOString();
+      
+      console.log('Mapped profile update for Supabase:', profileUpdate);
       
       const { data, error } = await supabase
         .from('profiles')
@@ -44,11 +55,11 @@ export function useProfileMutation(profileId: string | null) {
         .single();
       
       if (error) {
-        console.error('Error updating profile:', error);
+        console.error('Error updating profile in Supabase:', error);
         throw error;
       }
       
-      console.log('Profile updated successfully:', data);
+      console.log('Profile updated successfully, response:', data);
       
       const updatedUserProfile: UserProfile = {
         id: data.id,
@@ -67,6 +78,8 @@ export function useProfileMutation(profileId: string | null) {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['profile', profileId], data);
+      queryClient.invalidateQueries({queryKey: ['profile', profileId]});
+      
       toast({
         title: 'Profile updated',
         description: 'Your profile has been successfully updated.',
