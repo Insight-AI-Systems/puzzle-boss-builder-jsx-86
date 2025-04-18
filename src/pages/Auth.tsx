@@ -1,36 +1,47 @@
 
 import React, { useEffect } from 'react';
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { AuthForm } from '@/components/auth/AuthForm';
-import { useAuthState } from '@/hooks/auth/useAuthState';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 const Auth = () => {
-  const { currentUserId, isLoading: authLoading, error: authError } = useAuthState();
+  const { isAuthenticated, isLoading, error } = useAuth();
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  
+  // Get the intended destination from location state, or default to home
+  const from = location.state?.from?.pathname || '/';
   
   // If we're in password recovery flow, we don't want to redirect
   const isPasswordRecovery = searchParams.get('type') === 'recovery';
   
   // Handle authentication errors
   useEffect(() => {
-    if (authError) {
-      console.error('Auth error:', authError);
+    if (error) {
+      console.error('Auth error:', error);
       toast({
         title: 'Authentication Error',
-        description: 'There was a problem loading authentication state. Please try again.',
+        description: 'There was a problem with authentication. Please try again.',
         variant: 'destructive',
       });
     }
-  }, [authError, toast]);
+  }, [error, toast]);
 
-  // For simplicity, we'll render the auth form immediately - no loading states
-  // Handle redirection only if not in recovery mode and we have a user ID
-  if (!isPasswordRecovery && currentUserId && !authLoading) {
-    console.log('User authenticated, redirecting to home');
-    return <Navigate to="/" replace />;
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-puzzle-black flex items-center justify-center p-4">
+        <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+      </div>
+    );
+  }
+
+  // Redirect if already authenticated and not in recovery mode
+  if (isAuthenticated && !isPasswordRecovery) {
+    return <Navigate to={from} replace />;
   }
 
   return (

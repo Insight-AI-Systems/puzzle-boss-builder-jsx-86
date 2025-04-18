@@ -3,12 +3,20 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AuthButtonsProps {
   isMobile?: boolean;
 }
 
 const AuthButtons: React.FC<AuthButtonsProps> = ({ isMobile = false }) => {
+  const { isAuthenticated } = useAuth();
+  
+  // Don't show auth buttons if already authenticated
+  if (isAuthenticated) {
+    return null;
+  }
+  
   if (isMobile) {
     return (
       <Button variant="ghost" className="mr-2 text-muted-foreground" asChild>

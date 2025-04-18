@@ -13,9 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { UserProfile } from '@/types/userTypes';
-import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UserMenuProps {
   profile: UserProfile | null;
@@ -23,35 +21,10 @@ interface UserMenuProps {
 }
 
 const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const { signOut, isAdmin } = useAuth();
 
   if (!profile) return null;
 
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        throw error;
-      }
-      
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out.",
-      });
-      
-      navigate('/', { replace: true });
-    } catch (error) {
-      console.error('Error logging out:', error);
-      toast({
-        title: "Logout failed",
-        description: "There was a problem logging you out. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-  
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -82,8 +55,16 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
         <DropdownMenuItem asChild>
           <Link to="/settings">Settings</Link>
         </DropdownMenuItem>
+        {isAdmin && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/admin-dashboard">Admin Dashboard</Link>
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout}>
+        <DropdownMenuItem onClick={() => signOut()}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>

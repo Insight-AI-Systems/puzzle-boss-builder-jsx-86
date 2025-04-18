@@ -29,3 +29,4 @@ export { default as Press } from './Press';
 export { default as Partnerships } from './Partnerships';
 export { default as NotFound } from './NotFound';
 export { default as Auth } from './Auth';
+export { default as Unauthorized } from './Unauthorized';
