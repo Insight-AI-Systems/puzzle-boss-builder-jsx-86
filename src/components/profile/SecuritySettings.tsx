@@ -1,11 +1,13 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Shield } from 'lucide-react';
+import { Shield, LogOut, X } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { useAccountSecurity } from '@/hooks/auth/useAccountSecurity';
-import { useSessionManagement } from '@/hooks/auth/useSessionManagement';
+import { useSessionManagement, SessionInfo } from '@/hooks/auth/useSessionManagement';
 import { getPasswordStrength } from '@/utils/authValidation';
 import { SecurityHeader } from './security/SecurityHeader';
 import { EmailChangeDialog } from './security/EmailChangeDialog';
@@ -24,6 +26,13 @@ export function SecuritySettings() {
     toggleTwoFactorAuth,
     deleteAccount
   } = useAccountSecurity();
+  
+  const {
+    sessions,
+    isLoading: sessionsLoading,
+    terminateSession,
+    terminateAllOtherSessions
+  } = useSessionManagement();
   
   // State management for each dialog
   const [showEmailDialog, setShowEmailDialog] = useState(false);
