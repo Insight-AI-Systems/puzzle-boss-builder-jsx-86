@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import InteractivePuzzle from './InteractivePuzzle';
@@ -35,7 +34,7 @@ const Hero: React.FC = () => {
                 className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold/10 text-lg px-6 py-3 h-auto"
                 asChild
               >
-                <Link to="/how-it-works">
+                <Link to="/about">
                   Learn More <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
