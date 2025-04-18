@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Hero from '@/components/Hero';
@@ -43,7 +42,7 @@ function Index() {
       <Benefits />
       <Testimonials />
       <RegistrationCTA />
-      <div className="mt-6">
+      <div className="mt-6 container mx-auto px-4 text-center">
         <Link 
           to="/puzzle-demo" 
           className="inline-flex items-center px-4 py-2 bg-puzzle-aqua text-puzzle-black rounded-md hover:bg-puzzle-aqua/80 transition-colors"
