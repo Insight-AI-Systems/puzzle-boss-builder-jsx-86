@@ -74,8 +74,8 @@ export const setupAuthTest = (
     // Merge any user overrides with the base user to ensure all required properties exist
     const userWithOverrides = {
       ...baseUser,
-      ...sessionOverrides.user
-    };
+      ...(sessionOverrides.user || {})
+    } as User;
     
     // Mock session data with the complete user object
     const mockSession: Partial<Session> = {
@@ -234,3 +234,4 @@ export const withAuthStates = (testFn: (helpers: {
     if (currentCleanup) currentCleanup();
   };
 };
+
