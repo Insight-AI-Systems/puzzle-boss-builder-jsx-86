@@ -4,18 +4,36 @@ import PageLayout from '@/components/layouts/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BellRing, ShieldCheck, UserCog, CreditCard, Globe } from 'lucide-react';
+import { SecuritySettings } from '@/components/profile/SecuritySettings';
+import { useAuth } from '@/contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 
 const Settings = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-puzzle-black flex items-center justify-center p-4">
+        <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" replace />;
+  }
+
   return (
     <PageLayout 
       title="Account Settings" 
-      subtitle="Manage your account preferences and settings"
+      subtitle="Manage your account preferences and security settings"
     >
-      <Tabs defaultValue="profile" className="w-full">
+      <Tabs defaultValue="security" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="privacy">Privacy</TabsTrigger>
           <TabsTrigger value="payment">Payment</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
         </TabsList>
@@ -43,6 +61,11 @@ const Settings = () => {
           </Card>
         </TabsContent>
         
+        {/* Security Tab */}
+        <TabsContent value="security" className="space-y-4 mt-6">
+          <SecuritySettings />
+        </TabsContent>
+        
         {/* Notifications Tab */}
         <TabsContent value="notifications" className="space-y-4 mt-6">
           <Card>
@@ -61,29 +84,6 @@ const Settings = () => {
               </p>
               <div className="h-40 border border-dashed border-puzzle-aqua/30 rounded-md flex items-center justify-center">
                 <p className="text-puzzle-aqua/70">Notification Settings Controls Placeholder</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Privacy Tab */}
-        <TabsContent value="privacy" className="space-y-4 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <ShieldCheck className="h-5 w-5 mr-2 text-puzzle-aqua" />
-                Privacy & Security
-              </CardTitle>
-              <CardDescription>
-                Manage your account security and privacy settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                This section will contain password change controls, two-factor authentication setup, and privacy settings for your account.
-              </p>
-              <div className="h-40 border border-dashed border-puzzle-aqua/30 rounded-md flex items-center justify-center">
-                <p className="text-puzzle-aqua/70">Security Controls Placeholder</p>
               </div>
             </CardContent>
           </Card>

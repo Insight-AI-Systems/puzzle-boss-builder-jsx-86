@@ -12,6 +12,20 @@ export function useProfileMutation(profileId: string | null) {
     mutationFn: async (updatedProfile: Partial<UserProfile>) => {
       if (!profileId) throw new Error('No user ID provided');
       
+      // Validate fields
+      if (updatedProfile.display_name && updatedProfile.display_name.length < 2) {
+        throw new Error('Display name must be at least 2 characters long');
+      }
+      
+      if (updatedProfile.bio && updatedProfile.bio.length > 500) {
+        throw new Error('Bio must be no more than 500 characters long');
+      }
+      
+      // Check if avatar_url is a valid URL
+      if (updatedProfile.avatar_url && !isValidUrl(updatedProfile.avatar_url)) {
+        throw new Error('Avatar URL must be a valid URL');
+      }
+      
       const profileUpdate = {
         username: updatedProfile.display_name,
         avatar_url: updatedProfile.avatar_url,
@@ -60,5 +74,86 @@ export function useProfileMutation(profileId: string | null) {
     },
   });
 
-  return { updateProfile };
+  // Helper function to check if a string is a valid URL
+  const isValidUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const uploadAvatar = useMutation({
+    mutationFn: async (file: File) => {
+      if (!profileId) throw new Error('No user ID provided');
+      
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed');
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error('File too large. Maximum size is 5MB');
+      }
+      
+      // Generate unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${profileId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+      
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+        
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+        
+      // Update profile with new avatar URL
+      const { data: profile, error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          avatar_url: publicUrlData.publicUrl
+        })
+        .eq('id', profileId)
+        .select()
+        .single();
+        
+      if (updateError) throw updateError;
+      
+      return {
+        avatar_url: publicUrlData.publicUrl,
+        profile
+      };
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['profile', profileId], (oldData: any) => ({
+        ...oldData,
+        avatar_url: data.avatar_url
+      }));
+      
+      toast({
+        title: 'Avatar updated',
+        description: 'Your profile picture has been successfully updated.',
+        duration: 3000,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Avatar update failed',
+        description: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: 'destructive',
+        duration: 5000,
+      });
+    }
+  });
+
+  return { updateProfile, uploadAvatar };
 }

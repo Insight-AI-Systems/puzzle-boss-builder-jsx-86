@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +16,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
+  refreshSession: () => Promise<void>;
   
   isAuthenticated: boolean;
   isAdmin: boolean;
@@ -87,6 +89,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  // Track session activity
+  const trackSessionActivity = async (sessionId: string) => {
+    if (!user) return;
+    
+    try {
+      // Update last_active for the current session
+      await supabase
+        .from('user_sessions')
+        .update({
+          last_active: new Date().toISOString()
+        })
+        .eq('user_id', user.id)
+        .eq('session_token', sessionId);
+    } catch (error) {
+      console.error('Error updating session activity:', error);
+    }
+  };
+
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, newSession) => {
       console.log('Auth state changed:', event);
@@ -97,6 +117,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (newSession?.user) {
         setTimeout(() => {
           fetchUserRoles(newSession.user.id);
+          
+          // Track session activity
+          if (newSession.access_token) {
+            trackSessionActivity(newSession.access_token);
+          }
         }, 0);
       } else {
         setUserRoles([]);
@@ -122,6 +147,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         if (data.session?.user) {
           await fetchUserRoles(data.session.user.id);
+          
+          // Track initial session activity
+          if (data.session.access_token) {
+            trackSessionActivity(data.session.access_token);
+          }
         }
       } catch (e) {
         console.error('Error initializing auth:', e);
@@ -150,6 +180,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return true;
   };
 
+  const refreshSession = async () => {
+    try {
+      setIsLoading(true);
+      
+      const { data, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        console.error('Session refresh error:', error);
+        throw error;
+      }
+      
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
+      
+      if (data.session?.user) {
+        await fetchUserRoles(data.session.user.id);
+      }
+      
+      return data.session;
+    } catch (e) {
+      console.error('Session refresh error:', e);
+      if (e instanceof AuthError && e.status === 401) {
+        // Session expired, redirect to login
+        navigate('/auth', { replace: true });
+      }
+      throw e;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const signIn = async (email: string, password: string, options?: { rememberMe?: boolean }) => {
     if (!checkRateLimit()) return;
     
@@ -172,6 +233,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
         email: email.substring(0, 3) + '***',
         success: true
       });
+      
+      // Save session information
+      if (data.session && data.user) {
+        // Create a session record
+        const { error: sessionError } = await supabase
+          .from('user_sessions')
+          .insert({
+            user_id: data.user.id,
+            session_token: data.session.access_token,
+            user_agent: navigator.userAgent,
+            ip_address: 'client-side', // We don't have access to real IP on client
+            device_info: {
+              platform: navigator.platform,
+              userAgent: navigator.userAgent,
+              language: navigator.language
+            },
+            is_active: true
+          });
+          
+        if (sessionError) {
+          console.error('Error creating session record:', sessionError);
+        }
+      }
       
       toast({
         title: 'Welcome back!',
@@ -255,6 +339,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setIsLoading(true);
       setError(null);
+      
+      // Mark the current session as inactive
+      if (session?.access_token && user) {
+        await supabase
+          .from('user_sessions')
+          .update({ is_active: false })
+          .eq('user_id', user.id)
+          .eq('session_token', session.access_token);
+      }
       
       const { error } = await supabase.auth.signOut();
       
@@ -344,6 +437,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw error;
       }
       
+      // Update last password change timestamp
+      if (user) {
+        await supabase
+          .from('profiles')
+          .update({
+            last_password_change: new Date().toISOString()
+          })
+          .eq('id', user.id);
+      }
+      
       toast({
         title: 'Password updated',
         description: 'Your password has been updated successfully.',
@@ -378,6 +481,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signOut,
     resetPassword,
     updatePassword,
+    refreshSession,
     isAuthenticated,
     isAdmin,
     hasRole,

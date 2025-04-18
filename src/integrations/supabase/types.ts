@@ -9,34 +9,88 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      password_reset_attempts: {
+        Row: {
+          attempt_count: number | null
+          email: string
+          id: string
+          ip_address: string | null
+          last_attempt_at: string | null
+        }
+        Insert: {
+          attempt_count?: number | null
+          email: string
+          id?: string
+          ip_address?: string | null
+          last_attempt_at?: string | null
+        }
+        Update: {
+          attempt_count?: number | null
+          email?: string
+          id?: string
+          ip_address?: string | null
+          last_attempt_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          account_locked: boolean | null
+          active_sessions: Json | null
           avatar_url: string | null
           bio: string | null
           created_at: string | null
           credits: number | null
+          email_change_new_email: string | null
+          email_change_token: string | null
+          email_change_token_expires_at: string | null
+          failed_login_attempts: number | null
           id: string
+          last_password_change: string | null
+          last_sign_in: string | null
           role: string | null
+          security_questions: Json | null
+          two_factor_enabled: boolean | null
           updated_at: string | null
           username: string | null
         }
         Insert: {
+          account_locked?: boolean | null
+          active_sessions?: Json | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
           credits?: number | null
+          email_change_new_email?: string | null
+          email_change_token?: string | null
+          email_change_token_expires_at?: string | null
+          failed_login_attempts?: number | null
           id: string
+          last_password_change?: string | null
+          last_sign_in?: string | null
           role?: string | null
+          security_questions?: Json | null
+          two_factor_enabled?: boolean | null
           updated_at?: string | null
           username?: string | null
         }
         Update: {
+          account_locked?: boolean | null
+          active_sessions?: Json | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
           credits?: number | null
+          email_change_new_email?: string | null
+          email_change_token?: string | null
+          email_change_token_expires_at?: string | null
+          failed_login_attempts?: number | null
           id?: string
+          last_password_change?: string | null
+          last_sign_in?: string | null
           role?: string | null
+          security_questions?: Json | null
+          two_factor_enabled?: boolean | null
           updated_at?: string | null
           username?: string | null
         }
@@ -131,6 +185,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sessions: {
+        Row: {
+          created_at: string | null
+          device_info: Json | null
+          id: string
+          ip_address: string | null
+          is_active: boolean | null
+          last_active: string | null
+          location_info: Json | null
+          session_token: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean | null
+          last_active?: string | null
+          location_info?: Json | null
+          session_token: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean | null
+          last_active?: string | null
+          location_info?: Json | null
+          session_token?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -139,6 +232,10 @@ export type Database = {
       is_admin: {
         Args: { user_id: string }
         Returns: boolean
+      }
+      terminate_other_sessions: {
+        Args: { current_session_id: string }
+        Returns: undefined
       }
     }
     Enums: {
