@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { AlertTriangle } from 'lucide-react';
 
 export default function KnownIssues() {
   return (
@@ -10,17 +12,46 @@ export default function KnownIssues() {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Current Limitations</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-puzzle-aqua" />
+              <span>Current Limitations</span>
+            </CardTitle>
             <CardDescription>
               We are actively working on resolving these issues
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <ul className="list-disc list-inside space-y-2">
-              <li>Mobile responsiveness improvements in progress</li>
-              <li>Limited browser compatibility - best experience in Chrome/Firefox</li>
-              <li>Performance optimizations ongoing</li>
-            </ul>
+          <CardContent className="space-y-4">
+            <div>
+              <h3 className="font-medium mb-2">Mobile Experience</h3>
+              <ul className="list-disc list-inside space-y-1 pl-2">
+                <li>Mobile responsiveness improvements in progress</li>
+                <li>Touch controls for puzzles being optimized</li>
+                <li>Mobile performance enhancements planned</li>
+              </ul>
+            </div>
+            
+            <Separator />
+            
+            <div>
+              <h3 className="font-medium mb-2">Browser Compatibility</h3>
+              <ul className="list-disc list-inside space-y-1 pl-2">
+                <li>Best experience in Chrome/Firefox</li>
+                <li>Safari: minor visual differences may occur</li>
+                <li>Internet Explorer: not supported</li>
+                <li>Older browsers: limited functionality</li>
+              </ul>
+            </div>
+            
+            <Separator />
+            
+            <div>
+              <h3 className="font-medium mb-2">Performance</h3>
+              <ul className="list-disc list-inside space-y-1 pl-2">
+                <li>Large puzzles may require more system resources</li>
+                <li>Performance optimizations ongoing</li>
+                <li>Memory usage improvements in development</li>
+              </ul>
+            </div>
           </CardContent>
         </Card>
       </div>
