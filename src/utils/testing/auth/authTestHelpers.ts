@@ -154,10 +154,13 @@ export const simulateLogin = async (email: string = 'test@example.com', role: Us
     role: ''
   };
 
-  const mockSession: Partial<Session> = {
+  const mockSession: Session = {
     access_token: 'test-login-token',
     refresh_token: 'test-refresh-token',
-    user: mockUser
+    user: mockUser,
+    expires_in: 3600,
+    expires_at: Math.floor(Date.now() / 1000) + 3600,
+    token_type: 'bearer'
   };
   
   // Mock successful login
@@ -176,7 +179,7 @@ export const simulateLogin = async (email: string = 'test@example.com', role: Us
   // Call all registered listeners
   authChangeListeners.forEach((listener: any) => {
     if (typeof listener === 'function') {
-      listener('SIGNED_IN', mockSession as Session);
+      listener('SIGNED_IN', mockSession);
     }
   });
   
