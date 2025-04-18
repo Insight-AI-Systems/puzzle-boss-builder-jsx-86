@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import InteractivePuzzle from './InteractivePuzzle';
 import { Button } from './ui/button';
 import { ArrowRight } from 'lucide-react';
@@ -23,11 +24,20 @@ const Hero: React.FC = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-              <Button className="bg-puzzle-aqua text-puzzle-black hover:bg-puzzle-aqua/90 text-lg px-6 py-3 h-auto">
-                Join Now
+              <Button 
+                className="bg-puzzle-aqua text-puzzle-black hover:bg-puzzle-aqua/90 text-lg px-6 py-3 h-auto" 
+                asChild
+              >
+                <Link to="/auth?signup=true">Join Now</Link>
               </Button>
-              <Button variant="outline" className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold/10 text-lg px-6 py-3 h-auto">
-                Learn More <ArrowRight className="ml-2 h-5 w-5" />
+              <Button 
+                variant="outline" 
+                className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold/10 text-lg px-6 py-3 h-auto"
+                asChild
+              >
+                <Link to="/how-it-works">
+                  Learn More <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
               </Button>
             </div>
           </div>
