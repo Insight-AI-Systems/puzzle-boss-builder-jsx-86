@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { validatePassword, validatePasswordMatch } from '../utils/passwordValidation';
 
 interface ValidationErrors {
   [key: string]: string;
@@ -29,14 +30,14 @@ export const useRegistrationValidation = () => {
       newErrors.email = 'Email is invalid';
     }
     
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+    const passwordValidation = validatePassword(formData.password);
+    if (!passwordValidation.isValid) {
+      newErrors.password = passwordValidation.error!;
     }
     
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+    const passwordMatchValidation = validatePasswordMatch(formData.password, formData.confirmPassword);
+    if (!passwordMatchValidation.isValid) {
+      newErrors.confirmPassword = passwordMatchValidation.error!;
     }
     
     if (!formData.agreeTerms) {
