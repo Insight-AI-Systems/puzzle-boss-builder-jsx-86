@@ -4,8 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileInfoTab } from '@/components/profile/tabs/ProfileInfoTab';
 import { MyPuzzlesTab } from '@/components/profile/tabs/MyPuzzlesTab';
 import { AchievementsTab } from '@/components/profile/tabs/AchievementsTab';
+import { SecuritySettings } from '@/components/profile/SecuritySettings';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { Loader2, User, PuzzlePiece, Trophy, Settings } from 'lucide-react';
+import { Loader2, User, Trophy, Settings, Puzzle } from 'lucide-react';
 import { MainLayout } from '@/components/layouts/MainLayout';
 
 const Profile: React.FC = () => {
@@ -37,7 +38,7 @@ const Profile: React.FC = () => {
                   Profile Info
                 </TabsTrigger>
                 <TabsTrigger value="puzzles" className="data-[state=active]:bg-puzzle-aqua/10">
-                  <PuzzlePiece className="h-4 w-4 mr-2" />
+                  <Puzzle className="h-4 w-4 mr-2" />
                   My Puzzles
                 </TabsTrigger>
                 <TabsTrigger value="achievements" className="data-[state=active]:bg-puzzle-aqua/10">
