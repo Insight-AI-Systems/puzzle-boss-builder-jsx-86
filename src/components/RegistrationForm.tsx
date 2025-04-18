@@ -1,28 +1,31 @@
 
 import React, { useState } from 'react';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/auth/useAuth';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { FormField } from './auth/FormField';
+import { useRegistrationValidation } from '@/hooks/useRegistrationValidation';
+import { RegistrationFormData } from '@/types/registration';
+import { Label } from './ui/label';
 
 const RegistrationForm: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { isLoading, handleEmailAuth, setEmail, setPassword, setConfirmPassword, setUsername, setAcceptTerms } = useAuth();
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RegistrationFormData>({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
     agreeTerms: false
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const { errors, validateForm, clearError } = useRegistrationValidation();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -30,14 +33,7 @@ const RegistrationForm: React.FC = () => {
       ...formData,
       [name]: value
     });
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: ''
-      });
-    }
+    clearError(name);
   };
 
   const handleCheckboxChange = (checked: boolean) => {
@@ -45,50 +41,13 @@ const RegistrationForm: React.FC = () => {
       ...formData,
       agreeTerms: checked
     });
-    
-    if (errors.agreeTerms) {
-      setErrors({
-        ...errors,
-        agreeTerms: ''
-      });
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-    
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-    
-    if (!formData.agreeTerms) {
-      newErrors.agreeTerms = 'You must agree to the terms and conditions';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    clearError('agreeTerms');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (validateForm()) {
+    if (validateForm(formData)) {
       // Set auth form data
       setEmail(formData.email);
       setPassword(formData.password);
@@ -124,7 +83,7 @@ const RegistrationForm: React.FC = () => {
           description: "Please sign in to continue",
         });
         
-        // Redirect to auth page with signin panel active
+        // Redirect to auth page
         navigate('/auth');
       } catch (error) {
         console.error('Registration error:', error);
@@ -140,61 +99,49 @@ const RegistrationForm: React.FC = () => {
   return (
     <div className="w-full max-w-md mx-auto">
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="name">Full Name</Label>
-          <Input
-            id="name"
-            name="name"
-            type="text"
-            value={formData.name}
-            onChange={handleChange}
-            className={errors.name ? 'border-red-500' : ''}
-            disabled={isLoading}
-          />
-          {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
-        </div>
+        <FormField
+          id="name"
+          name="name"
+          label="Full Name"
+          type="text"
+          value={formData.name}
+          onChange={handleChange}
+          error={errors.name}
+          disabled={isLoading}
+        />
         
-        <div className="space-y-2">
-          <Label htmlFor="email">Email Address</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            className={errors.email ? 'border-red-500' : ''}
-            disabled={isLoading}
-          />
-          {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
-        </div>
+        <FormField
+          id="email"
+          name="email"
+          label="Email Address"
+          type="email"
+          value={formData.email}
+          onChange={handleChange}
+          error={errors.email}
+          disabled={isLoading}
+        />
         
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            className={errors.password ? 'border-red-500' : ''}
-            disabled={isLoading}
-          />
-          {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
-        </div>
+        <FormField
+          id="password"
+          name="password"
+          label="Password"
+          type="password"
+          value={formData.password}
+          onChange={handleChange}
+          error={errors.password}
+          disabled={isLoading}
+        />
         
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm Password</Label>
-          <Input
-            id="confirmPassword"
-            name="confirmPassword"
-            type="password"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            className={errors.confirmPassword ? 'border-red-500' : ''}
-            disabled={isLoading}
-          />
-          {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword}</p>}
-        </div>
+        <FormField
+          id="confirmPassword"
+          name="confirmPassword"
+          label="Confirm Password"
+          type="password"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          error={errors.confirmPassword}
+          disabled={isLoading}
+        />
         
         <div className="flex items-center space-x-2">
           <Checkbox
