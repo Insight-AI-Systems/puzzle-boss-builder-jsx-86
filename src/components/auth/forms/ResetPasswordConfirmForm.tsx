@@ -6,11 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Key } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
+import { getPasswordStrength } from '@/utils/authValidation';
 
 interface ResetPasswordConfirmFormProps {
   password: string;
   confirmPassword: string;
   errorMessage: string;
+  successMessage: string;
   isLoading: boolean;
   setPassword: (password: string) => void;
   setConfirmPassword: (confirmPassword: string) => void;
@@ -21,6 +24,7 @@ export const ResetPasswordConfirmForm: React.FC<ResetPasswordConfirmFormProps> =
   password,
   confirmPassword,
   errorMessage,
+  successMessage,
   isLoading,
   setPassword,
   setConfirmPassword,
@@ -30,6 +34,9 @@ export const ResetPasswordConfirmForm: React.FC<ResetPasswordConfirmFormProps> =
     e.preventDefault();
     handleSubmit();
   };
+  
+  // Calculate password strength for the indicator
+  const passwordStrength = getPasswordStrength(password);
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
@@ -37,6 +44,13 @@ export const ResetPasswordConfirmForm: React.FC<ResetPasswordConfirmFormProps> =
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
+      
+      {successMessage && (
+        <Alert variant="default" className="bg-green-900/30 border-green-500 text-green-50">
+          <AlertCircle className="h-4 w-4 text-green-500" />
+          <AlertDescription>{successMessage}</AlertDescription>
         </Alert>
       )}
 
@@ -48,8 +62,14 @@ export const ResetPasswordConfirmForm: React.FC<ResetPasswordConfirmFormProps> =
           placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          disabled={isLoading}
+          disabled={isLoading || !!successMessage}
+          autoComplete="new-password"
         />
+        <PasswordStrengthIndicator score={passwordStrength.score} label={passwordStrength.label} />
+        <p className="text-xs text-muted-foreground">
+          Password must be at least 8 characters and include uppercase, lowercase, 
+          number, and special character
+        </p>
       </div>
       
       <div className="space-y-2">
@@ -60,14 +80,15 @@ export const ResetPasswordConfirmForm: React.FC<ResetPasswordConfirmFormProps> =
           placeholder="••••••••"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          disabled={isLoading}
+          disabled={isLoading || !!successMessage}
+          autoComplete="new-password"
         />
       </div>
       
       <Button
         type="submit"
         className="w-full"
-        disabled={isLoading || password !== confirmPassword || !password}
+        disabled={isLoading || password !== confirmPassword || !password || !!successMessage}
       >
         {isLoading ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />

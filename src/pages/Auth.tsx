@@ -15,8 +15,9 @@ const Auth = () => {
   // Get the intended destination from location state, or default to home
   const from = location.state?.from?.pathname || '/';
   
-  // If we're in password recovery flow, we don't want to redirect
-  const isPasswordRecovery = searchParams.get('type') === 'recovery';
+  // Detect verification and recovery flows
+  const isInVerificationFlow = searchParams.get('verificationSuccess') === 'true';
+  const isInPasswordRecovery = searchParams.get('type') === 'recovery';
   
   // Handle authentication errors
   useEffect(() => {
@@ -29,6 +30,16 @@ const Auth = () => {
       });
     }
   }, [error, toast]);
+  
+  // Show success toast when email is verified
+  useEffect(() => {
+    if (isInVerificationFlow) {
+      toast({
+        title: 'Email Verified',
+        description: 'Your email has been successfully verified.',
+      });
+    }
+  }, [isInVerificationFlow, toast]);
 
   // Show loading state
   if (isLoading) {
@@ -40,7 +51,7 @@ const Auth = () => {
   }
 
   // Redirect if already authenticated and not in recovery mode
-  if (isAuthenticated && !isPasswordRecovery) {
+  if (isAuthenticated && !isInPasswordRecovery && !isInVerificationFlow) {
     return <Navigate to={from} replace />;
   }
 
@@ -54,7 +65,9 @@ const Auth = () => {
             <span className="text-puzzle-gold">Boss</span>
           </h2>
           <p className="mt-2 text-muted-foreground">
-            Sign in or create an account to start playing
+            {searchParams.get('signup') === 'true' 
+              ? 'Create an account to start playing' 
+              : 'Sign in to continue to your account'}
           </p>
         </div>
         <AuthForm />

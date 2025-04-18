@@ -5,6 +5,7 @@ import { ResetPasswordRequestForm } from '../forms/ResetPasswordRequestForm';
 interface ResetPasswordRequestViewProps {
   email: string;
   errorMessage: string;
+  successMessage: string;
   isLoading: boolean;
   setEmail: (email: string) => void;
   handlePasswordResetRequest: () => void;
@@ -14,6 +15,7 @@ interface ResetPasswordRequestViewProps {
 export const ResetPasswordRequestView: React.FC<ResetPasswordRequestViewProps> = ({
   email,
   errorMessage,
+  successMessage,
   isLoading,
   setEmail,
   handlePasswordResetRequest,
@@ -31,6 +33,7 @@ export const ResetPasswordRequestView: React.FC<ResetPasswordRequestViewProps> =
       <ResetPasswordRequestForm 
         email={email}
         errorMessage={errorMessage}
+        successMessage={successMessage}
         isLoading={isLoading}
         setEmail={setEmail}
         handleSubmit={handlePasswordResetRequest}

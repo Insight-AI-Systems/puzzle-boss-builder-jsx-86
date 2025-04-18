@@ -10,10 +10,18 @@ import { useSearchParams } from 'react-router-dom';
 interface SignInViewProps {
   email: string;
   password: string;
+  confirmPassword: string;
+  username: string;
+  rememberMe: boolean;
+  acceptTerms: boolean;
   errorMessage: string;
   isLoading: boolean;
   setEmail: (email: string) => void;
   setPassword: (password: string) => void;
+  setConfirmPassword: (confirmPassword: string) => void;
+  setUsername: (username: string) => void;
+  setRememberMe: (remember: boolean) => void;
+  setAcceptTerms: (accept: boolean) => void;
   handleEmailAuth: (isSignUp: boolean) => void;
   handleGoogleAuth: () => void;
   onForgotPassword: () => void;
@@ -24,10 +32,18 @@ interface SignInViewProps {
 export const SignInView: React.FC<SignInViewProps> = ({
   email,
   password,
+  confirmPassword,
+  username,
+  rememberMe,
+  acceptTerms,
   errorMessage,
   isLoading,
   setEmail,
   setPassword,
+  setConfirmPassword,
+  setUsername,
+  setRememberMe,
+  setAcceptTerms,
   handleEmailAuth,
   handleGoogleAuth,
   onForgotPassword,
@@ -60,10 +76,12 @@ export const SignInView: React.FC<SignInViewProps> = ({
         <SignInForm 
           email={email}
           password={password}
+          rememberMe={rememberMe}
           errorMessage={errorMessage}
           isLoading={isLoading}
           setEmail={setEmail}
           setPassword={setPassword}
+          setRememberMe={setRememberMe}
           handleSubmit={() => handleEmailAuth(false)}
           onForgotPassword={onForgotPassword}
         />
@@ -73,10 +91,16 @@ export const SignInView: React.FC<SignInViewProps> = ({
         <SignUpForm 
           email={email}
           password={password}
+          confirmPassword={confirmPassword}
+          username={username}
+          acceptTerms={acceptTerms}
           errorMessage={errorMessage}
           isLoading={isLoading}
           setEmail={setEmail}
           setPassword={setPassword}
+          setConfirmPassword={setConfirmPassword}
+          setUsername={setUsername}
+          setAcceptTerms={setAcceptTerms}
           handleSubmit={() => handleEmailAuth(true)}
         />
       </TabsContent>

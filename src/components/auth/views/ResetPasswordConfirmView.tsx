@@ -6,6 +6,7 @@ interface ResetPasswordConfirmViewProps {
   password: string;
   confirmPassword: string;
   errorMessage: string;
+  successMessage: string;
   isLoading: boolean;
   setPassword: (password: string) => void;
   setConfirmPassword: (confirmPassword: string) => void;
@@ -16,6 +17,7 @@ export const ResetPasswordConfirmView: React.FC<ResetPasswordConfirmViewProps> =
   password,
   confirmPassword,
   errorMessage,
+  successMessage,
   isLoading,
   setPassword,
   setConfirmPassword,
@@ -34,6 +36,7 @@ export const ResetPasswordConfirmView: React.FC<ResetPasswordConfirmViewProps> =
         password={password}
         confirmPassword={confirmPassword}
         errorMessage={errorMessage}
+        successMessage={successMessage}
         isLoading={isLoading}
         setPassword={setPassword}
         setConfirmPassword={setConfirmPassword}

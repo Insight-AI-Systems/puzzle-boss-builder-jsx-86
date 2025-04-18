@@ -12,14 +12,21 @@ export function useAuth() {
     email,
     password,
     confirmPassword,
+    username,
+    rememberMe,
+    acceptTerms,
     errorMessage,
     isLoading: emailLoading,
     setEmail,
     setPassword,
     setConfirmPassword,
+    setUsername,
+    setRememberMe,
+    setAcceptTerms,
     setErrorMessage,
     resetForm,
-    handleEmailAuth 
+    handleEmailAuth,
+    validateForm
   } = useEmailAuth();
   
   const {
@@ -28,32 +35,59 @@ export function useAuth() {
   } = useSocialAuth();
   
   const {
+    password: resetPassword,
+    confirmPassword: resetConfirmPassword,
+    errorMessage: resetErrorMessage,
+    successMessage: resetSuccessMessage,
     isLoading: passwordResetLoading,
+    setPassword: setResetPassword,
+    setConfirmPassword: setResetConfirmPassword,
+    setErrorMessage: setResetErrorMessage,
     handlePasswordResetRequest,
-    handlePasswordReset: handlePasswordResetConfirm
+    handlePasswordReset
   } = usePasswordReset();
   
   // Derive loading state from all sources
   const isLoading = emailLoading || socialLoading || passwordResetLoading;
-  
-  // Adapter method for password reset to maintain API compatibility
-  const handlePasswordReset = async () => {
-    await handlePasswordResetConfirm(password, confirmPassword);
-  };
 
   return {
+    // Email auth
     email,
     password,
     confirmPassword,
+    username,
+    rememberMe,
+    acceptTerms,
     errorMessage,
+    
+    // Password reset
+    resetPassword,
+    resetConfirmPassword,
+    resetErrorMessage,
+    resetSuccessMessage,
+    
+    // Loading state
     isLoading,
+    
+    // Email auth methods
     setEmail,
     setPassword,
     setConfirmPassword,
+    setUsername,
+    setRememberMe,
+    setAcceptTerms,
     setErrorMessage,
     resetForm,
     handleEmailAuth,
+    validateForm,
+    
+    // Social auth methods
     handleGoogleAuth,
+    
+    // Password reset methods
+    setResetPassword,
+    setResetConfirmPassword,
+    setResetErrorMessage,
     handlePasswordResetRequest,
     handlePasswordReset
   };

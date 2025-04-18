@@ -3,13 +3,14 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Mail } from 'lucide-react';
+import { Loader2, Mail, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
 interface ResetPasswordRequestFormProps {
   email: string;
   errorMessage: string;
+  successMessage: string;
   isLoading: boolean;
   setEmail: (email: string) => void;
   handleSubmit: () => void;
@@ -19,6 +20,7 @@ interface ResetPasswordRequestFormProps {
 export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> = ({
   email,
   errorMessage,
+  successMessage,
   isLoading,
   setEmail,
   handleSubmit,
@@ -37,6 +39,13 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
           <AlertDescription>{errorMessage}</AlertDescription>
         </Alert>
       )}
+      
+      {successMessage && (
+        <Alert variant="default" className="bg-puzzle-aqua/10 border-puzzle-aqua text-puzzle-white">
+          <Info className="h-4 w-4" />
+          <AlertDescription>{successMessage}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="reset-email">Email</Label>
@@ -47,13 +56,15 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={isLoading}
+          required
+          autoComplete="email"
         />
       </div>
       
       <Button
         type="submit"
         className="w-full"
-        disabled={isLoading}
+        disabled={isLoading || !!successMessage}
       >
         {isLoading ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -72,6 +83,11 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
       >
         Back to Sign In
       </Button>
+      
+      <div className="text-xs text-center text-muted-foreground">
+        <Info className="inline-block h-3 w-3 mr-1" />
+        For security reasons, we won't disclose if an email exists
+      </div>
     </form>
   );
 };

@@ -13,7 +13,7 @@ interface AuthContextType {
   error: AuthError | Error | null;
   
   // Auth methods
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string, options?: { rememberMe?: boolean }) => Promise<void>;
   signUp: (email: string, password: string, metadata?: { [key: string]: any }) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -23,6 +23,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   hasRole: (role: string) => boolean;
+  
+  // Security methods
+  clearAuthError: () => void;
 }
 
 // Create context with a default value
@@ -44,14 +47,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<AuthError | Error | null>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
+  const [lastAuthAttempt, setLastAuthAttempt] = useState<number>(0);
 
   // Hooks
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Security constants
+  const MIN_TIME_BETWEEN_AUTH_ATTEMPTS = 2000; // 2 seconds, to prevent brute force
+
   // Computed properties
   const isAuthenticated = useMemo(() => !!user && !!session, [user, session]);
   const isAdmin = useMemo(() => userRoles.includes('admin') || userRoles.includes('super_admin'), [userRoles]);
+
+  // Function to clear auth errors
+  const clearAuthError = () => setError(null);
 
   // Function to fetch user roles
   const fetchUserRoles = async (userId: string) => {
@@ -63,16 +73,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
         .eq('id', userId)
         .single();
 
-      if (profileError) {
+      if (profileError && profileError.code !== 'PGRST116') {
         console.error('Error fetching user profile:', profileError);
         return;
       }
 
       if (profile && profile.role) {
         setUserRoles([profile.role]);
+        return;
+      }
+
+      // If no profile role, check user_roles table
+      const { data: roles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+
+      if (rolesError) {
+        console.error('Error fetching user roles:', rolesError);
+        return;
+      }
+
+      if (roles && roles.length > 0) {
+        // Extract role strings from the array of role objects
+        const extractedRoles = roles.map(roleObj => roleObj.role);
+        setUserRoles(extractedRoles);
+      } else {
+        // Default to empty array if no roles found
+        setUserRoles([]);
       }
     } catch (error) {
       console.error('Error fetching user roles:', error);
+      // Default to empty array if error
+      setUserRoles([]);
     }
   };
 
@@ -94,6 +127,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }, 0);
       } else {
         setUserRoles([]);
+      }
+      
+      // Special handling for certain events
+      if (event === 'SIGNED_OUT') {
+        // Clear any cached user data
+        setUserRoles([]);
+        
+        // Note: We don't navigate here because onAuthStateChange
+        // fires during initial page load, which would cause
+        // unwanted redirects
       }
       
       setIsLoading(false);
@@ -133,19 +176,49 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, []);
 
+  // Security function: Rate limiting for auth attempts
+  const checkRateLimit = (): boolean => {
+    const now = Date.now();
+    if (now - lastAuthAttempt < MIN_TIME_BETWEEN_AUTH_ATTEMPTS) {
+      setError(new Error('Too many auth attempts. Please wait before trying again.'));
+      return false;
+    }
+    setLastAuthAttempt(now);
+    return true;
+  };
+
   /**
    * Sign in with email and password
+   * Includes rate limiting and security logging
    */
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, options?: { rememberMe?: boolean }) => {
+    // Prevent rapid fire auth attempts (rate limiting)
+    if (!checkRateLimit()) return;
+    
     try {
       setIsLoading(true);
       setError(null);
       
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password,
+        options: {
+          // Use session persistence based on remember me setting  
+          persistSession: options?.rememberMe !== false
+        }
+      });
       
       if (error) {
         throw error;
       }
+      
+      // Log successful login for security monitoring
+      console.info('Auth successful:', {
+        timestamp: new Date().toISOString(),
+        userId: data.user?.id,
+        email: email.substring(0, 3) + '***', // Log partial email for security
+        success: true
+      });
       
       toast({
         title: 'Welcome back!',
@@ -157,9 +230,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Sign in error:', e);
       setError(e instanceof Error ? e : new Error('Unknown sign in error'));
       
+      // Log failed attempt (for security monitoring)
+      console.warn('Failed auth attempt:', {
+        timestamp: new Date().toISOString(),
+        email: email.substring(0, 3) + '***', // Log partial email for security
+        success: false,
+        error: e instanceof Error ? e.message : 'Unknown error'
+      });
+      
       toast({
         title: 'Authentication failed',
-        description: e instanceof Error ? e.message : 'Failed to sign in',
+        description: 'Invalid email or password',
         variant: 'destructive',
       });
     } finally {
@@ -169,8 +250,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   /**
    * Sign up with email and password
+   * Includes security validations
    */
   const signUp = async (email: string, password: string, metadata?: { [key: string]: any }) => {
+    // Prevent rapid fire auth attempts
+    if (!checkRateLimit()) return;
+
     try {
       setIsLoading(true);
       setError(null);
@@ -186,7 +271,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         email,
         password,
         options: {
-          data: userMetadata
+          data: userMetadata,
+          emailRedirectTo: `${window.location.origin}/auth?verificationSuccess=true`
         }
       });
       
@@ -194,10 +280,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw error;
       }
       
+      // Check if email confirmation is required
+      const requiresConfirmation = !data.session;
+      
+      // Show appropriate toast
       toast({
         title: 'Account created!',
-        description: 'Please check your email to verify your account.',
+        description: requiresConfirmation 
+          ? 'Please check your email to verify your account.' 
+          : 'Your account has been created successfully.',
       });
+
+      // If email confirmation is required, navigate to verification page
+      if (requiresConfirmation) {
+        navigate('/auth?view=verification-pending', { replace: true });
+      }
     } catch (e) {
       console.error('Sign up error:', e);
       setError(e instanceof Error ? e : new Error('Unknown sign up error'));
@@ -214,6 +311,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   /**
    * Sign out current user
+   * Includes session cleanup
    */
   const signOut = async () => {
     try {
@@ -227,7 +325,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       
       toast({
-        title: 'Logged out',
+        title: 'Signed out',
         description: 'You have been successfully logged out.',
       });
 
@@ -249,11 +347,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   /**
    * Send password reset email
+   * Includes rate limiting and timing attack prevention
    */
   const resetPassword = async (email: string) => {
+    // Prevent rapid fire auth attempts
+    if (!checkRateLimit()) return;
+
     try {
       setIsLoading(true);
       setError(null);
+      
+      const startTime = Date.now();
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth?type=recovery`,
@@ -263,18 +367,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw error;
       }
       
+      // Prevent timing attacks by ensuring minimum processing time
+      const elapsedTime = Date.now() - startTime;
+      if (elapsedTime < 1000) {
+        await new Promise(resolve => setTimeout(resolve, 1000 - elapsedTime));
+      }
+      
+      // Always show success message whether email exists or not (prevent user enumeration)
       toast({
         title: 'Password reset email sent',
-        description: 'Please check your email for password reset instructions.',
+        description: 'If an account with this email exists, you will receive password reset instructions.',
       });
+      
+      // Redirect to verification pending page
+      navigate('/auth?view=verification-pending', { replace: true });
     } catch (e) {
       console.error('Password reset error:', e);
       setError(e instanceof Error ? e : new Error('Unknown password reset error'));
       
+      // Ensure same response time even on error (prevent timing attacks)
+      const elapsedTime = Date.now() - lastAuthAttempt;
+      if (elapsedTime < 1000) {
+        await new Promise(resolve => setTimeout(resolve, 1000 - elapsedTime));
+      }
+      
+      // Still show success message to prevent user enumeration
       toast({
-        title: 'Password reset failed',
-        description: e instanceof Error ? e.message : 'Failed to send reset email',
-        variant: 'destructive',
+        title: 'Password reset email sent',
+        description: 'If an account with this email exists, you will receive password reset instructions.',
       });
     } finally {
       setIsLoading(false);
@@ -283,11 +403,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   /**
    * Update user password (after reset)
+   * Includes validation and notification
    */
   const updatePassword = async (password: string) => {
     try {
       setIsLoading(true);
       setError(null);
+      
+      // Validate password strength
+      if (!password || password.length < 8) {
+        setError(new Error('Password must be at least 8 characters'));
+        return;
+      }
       
       const { error } = await supabase.auth.updateUser({ password });
       
@@ -318,6 +445,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   /**
    * Check if user has a specific role
+   * Used for role-based access control
    */
   const hasRole = (role: string): boolean => {
     return userRoles.includes(role);
@@ -336,7 +464,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     updatePassword,
     isAuthenticated,
     isAdmin,
-    hasRole
+    hasRole,
+    clearAuthError
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

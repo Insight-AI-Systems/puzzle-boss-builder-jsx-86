@@ -24,6 +24,8 @@ export function getSupabaseClient() {
       persistSession: true,
       autoRefreshToken: true,
       storage: localStorage,
+      detectSessionInUrl: true,
+      flowType: 'pkce',  // More secure PKCE flow for auth
     },
   });
   

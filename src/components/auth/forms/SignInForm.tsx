@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Mail } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
@@ -10,10 +11,12 @@ import { AlertCircle } from 'lucide-react';
 interface SignInFormProps {
   email: string;
   password: string;
+  rememberMe: boolean;
   errorMessage: string;
   isLoading: boolean;
   setEmail: (email: string) => void;
   setPassword: (password: string) => void;
+  setRememberMe: (remember: boolean) => void;
   handleSubmit: () => void;
   onForgotPassword: () => void;
 }
@@ -21,10 +24,12 @@ interface SignInFormProps {
 export const SignInForm: React.FC<SignInFormProps> = ({
   email,
   password,
+  rememberMe,
   errorMessage,
   isLoading,
   setEmail,
   setPassword,
+  setRememberMe,
   handleSubmit,
   onForgotPassword,
 }) => {
@@ -51,8 +56,11 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={isLoading}
+          required
+          autoComplete="email"
         />
       </div>
+      
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label htmlFor="signin-password">Password</Label>
@@ -72,8 +80,26 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={isLoading}
+          required
+          autoComplete="current-password"
         />
       </div>
+      
+      <div className="flex items-center space-x-2">
+        <Checkbox 
+          id="remember" 
+          checked={rememberMe}
+          onCheckedChange={(checked) => setRememberMe(checked === true)}
+          disabled={isLoading}
+        />
+        <Label 
+          htmlFor="remember" 
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          Remember me
+        </Label>
+      </div>
+
       <Button
         type="submit"
         className="w-full"
