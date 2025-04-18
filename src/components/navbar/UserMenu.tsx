@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { UserProfile } from '@/types/userTypes';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminStatus } from '@/hooks/profile/useAdminStatus';
 
 interface UserMenuProps {
   profile: UserProfile | null;
@@ -21,7 +22,22 @@ interface UserMenuProps {
 }
 
 const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
-  const { signOut, isAdmin } = useAuth();
+  const { signOut } = useAuth();
+  const { isAdmin } = useAdminStatus(profile);
+
+  // Debug logging for admin status
+  console.log('UserMenu - Profile:', profile);
+  console.log('UserMenu - Is Admin:', isAdmin);
+  console.log('UserMenu - Is Super Admin:', profile?.role === 'super_admin');
+  console.log('UserMenu - Profile ID:', profile?.id);
+
+  // Check for super admin by email
+  const isSuperAdminEmail = profile?.id === 'alan@insight-ai-systems.com';
+  
+  // Either they have the admin role or they're the special super admin account
+  const showAdminMenu = isAdmin || profile?.role === 'super_admin' || isSuperAdminEmail;
+  
+  console.log('UserMenu - Show Admin Menu:', showAdminMenu);
 
   if (!profile) return null;
 
@@ -55,14 +71,24 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
         <DropdownMenuItem asChild>
           <Link to="/settings">Settings</Link>
         </DropdownMenuItem>
-        {isAdmin && (
+        
+        {/* Super Admin/Admin Menu Section */}
+        {showAdminMenu && (
           <>
             <DropdownMenuSeparator />
+            <DropdownMenuLabel className="flex items-center text-puzzle-aqua">
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              Admin Access
+            </DropdownMenuLabel>
             <DropdownMenuItem asChild>
               <Link to="/admin-dashboard">Admin Dashboard</Link>
             </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/test-dashboard">Dev Dashboard</Link>
+            </DropdownMenuItem>
           </>
         )}
+        
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => signOut()}>
           <LogOut className="mr-2 h-4 w-4" />
