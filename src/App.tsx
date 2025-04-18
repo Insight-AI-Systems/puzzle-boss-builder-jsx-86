@@ -54,6 +54,7 @@ function App() {
         <ThemeProvider defaultTheme="dark" storageKey="puzzleboss-theme">
           <AuthProvider>
             <Routes>
+              <Route path="/auth" element={<Auth />} />
               <Route 
                 path="/*" 
                 element={
@@ -134,7 +135,6 @@ function App() {
                   </MainLayout>
                 } 
               />
-              <Route path="/auth" element={<Auth />} />
             </Routes>
             <Toaster />
           </AuthProvider>
