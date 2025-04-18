@@ -54,30 +54,60 @@ export function useEmailAuth(): EmailAuthState & EmailAuthActions {
       
       console.log(`Attempting to ${isSignUp ? 'sign up' : 'sign in'} with email: ${email}`);
       
-      const { data, error } = isSignUp 
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
-
-      console.log('Auth response:', data, error);
-      
-      if (error) {
-        console.error('Auth error:', error);
-        setErrorMessage(error.message);
-        setIsLoading(false);
-        return;
-      }
-
-      // Show success toast
-      toast({
-        title: isSignUp ? 'Account created!' : 'Welcome back!',
-        description: isSignUp 
-          ? 'Please check your email to verify your account.'
-          : 'Successfully signed in.',
-      });
-
-      // Redirect to home page on successful sign-in
-      if (!isSignUp && data.session) {
-        navigate('/', { replace: true });
+      if (isSignUp) {
+        // Extract username from email for profile creation
+        const username = email.split('@')[0];
+        
+        // Sign up with additional metadata for profile creation
+        const { data, error } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            data: {
+              username: username,
+              avatar_url: null,
+              bio: null
+            }
+          }
+        });
+        
+        console.log('Sign up response:', data, error);
+        
+        if (error) {
+          console.error('Auth error:', error);
+          setErrorMessage(error.message);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Show success toast
+        toast({
+          title: 'Account created!',
+          description: 'Please check your email to verify your account.',
+        });
+      } else {
+        // Regular sign in
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        
+        console.log('Sign in response:', data, error);
+        
+        if (error) {
+          console.error('Auth error:', error);
+          setErrorMessage(error.message);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Show success toast
+        toast({
+          title: 'Welcome back!',
+          description: 'Successfully signed in.',
+        });
+        
+        // Redirect to home page on successful sign-in
+        if (data.session) {
+          navigate('/', { replace: true });
+        }
       }
     } catch (error) {
       console.error('Authentication error:', error);
