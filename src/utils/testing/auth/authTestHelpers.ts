@@ -1,4 +1,3 @@
-
 /**
  * Authentication Test Helpers
  * Provides utilities for testing authentication flows
@@ -234,4 +233,3 @@ export const withAuthStates = (testFn: (helpers: {
     if (currentCleanup) currentCleanup();
   };
 };
-
