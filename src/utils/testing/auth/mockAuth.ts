@@ -3,6 +3,7 @@
  * Authentication Testing Utilities
  * Provides mock functions and utilities for testing authentication
  */
+import React from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { UserRole } from '@/types/userTypes';
 
@@ -103,8 +104,8 @@ export const createAuthWrapper = (isAuthenticated = true, role: UserRole = 'play
   
   // Return a HOC (Higher Order Component) that wraps around the component to be tested
   return function(Component: React.ComponentType<any>) {
-    return function(props: any) {
-      return <Component {...props} auth={mockContext} />;
+    return function WrappedComponent(props: any) {
+      return React.createElement(Component, { ...props, auth: mockContext });
     };
   };
 };
