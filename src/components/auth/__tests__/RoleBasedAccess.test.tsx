@@ -1,11 +1,9 @@
-
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom'; // Import jest-dom for the matchers
+import '@testing-library/jest-dom';
 import RoleBasedAccess from '@/components/auth/RoleBasedAccess';
 import { createMockAuthContext } from '@/utils/testing/auth/mockAuth';
 import { AuthContext } from '@/contexts/AuthContext';
-import { UserRole } from '@/types/userTypes';
 
 // Mock the authContext
 jest.mock('@/contexts/AuthContext', () => ({
