@@ -46,15 +46,16 @@ export function useAvatarUpload() {
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
       
-      // Upload to storage
+      // Create upload handler to track progress
+      const handleProgress = (progress: { loaded: number; total: number }) => {
+        const percent = Math.round((progress.loaded / progress.total) * 100);
+        setProgress(percent);
+      };
+      
+      // Upload to storage using standard FileOptions (no onUploadProgress)
       const { error: uploadError, data } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, {
-          onUploadProgress: (progress) => {
-            const percent = Math.round((progress.loaded / progress.total) * 100);
-            setProgress(percent);
-          },
-        });
+        .upload(filePath, file);
       
       if (uploadError) {
         throw uploadError;

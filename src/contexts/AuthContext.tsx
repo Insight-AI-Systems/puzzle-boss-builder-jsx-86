@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
@@ -89,12 +88,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  // Track session activity
   const trackSessionActivity = async (sessionId: string) => {
     if (!user) return;
     
     try {
-      // Update last_active for the current session
       await supabase
         .from('user_sessions')
         .update({
@@ -118,7 +115,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setTimeout(() => {
           fetchUserRoles(newSession.user.id);
           
-          // Track session activity
           if (newSession.access_token) {
             trackSessionActivity(newSession.access_token);
           }
@@ -148,7 +144,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (data.session?.user) {
           await fetchUserRoles(data.session.user.id);
           
-          // Track initial session activity
           if (data.session.access_token) {
             trackSessionActivity(data.session.access_token);
           }
@@ -180,7 +175,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return true;
   };
 
-  const refreshSession = async () => {
+  const refreshSession = async (): Promise<void> => {
     try {
       setIsLoading(true);
       
@@ -197,12 +192,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (data.session?.user) {
         await fetchUserRoles(data.session.user.id);
       }
-      
-      return data.session;
     } catch (e) {
       console.error('Session refresh error:', e);
       if (e instanceof AuthError && e.status === 401) {
-        // Session expired, redirect to login
         navigate('/auth', { replace: true });
       }
       throw e;
@@ -234,16 +226,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         success: true
       });
       
-      // Save session information
       if (data.session && data.user) {
-        // Create a session record
         const { error: sessionError } = await supabase
           .from('user_sessions')
           .insert({
             user_id: data.user.id,
             session_token: data.session.access_token,
             user_agent: navigator.userAgent,
-            ip_address: 'client-side', // We don't have access to real IP on client
+            ip_address: 'client-side',
             device_info: {
               platform: navigator.platform,
               userAgent: navigator.userAgent,
@@ -340,7 +330,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(true);
       setError(null);
       
-      // Mark the current session as inactive
       if (session?.access_token && user) {
         await supabase
           .from('user_sessions')
@@ -437,7 +426,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw error;
       }
       
-      // Update last password change timestamp
       if (user) {
         await supabase
           .from('profiles')
