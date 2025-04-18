@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Hero from '@/components/Hero';
@@ -10,7 +11,6 @@ import ConceptSection from '@/components/ConceptSection';
 import RegistrationCTA from '@/components/RegistrationCTA';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Link } from 'react-router-dom';
-import { MainLayout } from '@/components/layouts/MainLayout';
 
 function Index() {
   const { isAdmin, profile, isLoading } = useUserProfile();
@@ -34,26 +34,24 @@ function Index() {
   }, [isLoading, profile, navigate]);
 
   return (
-    <MainLayout>
-      <main>
-        <Hero />
-        <ConceptSection />
-        <HowItWorks />
-        <FeaturedPuzzles />
-        <Categories />
-        <Benefits />
-        <Testimonials />
-        <RegistrationCTA />
-        <div className="mt-6">
-          <Link 
-            to="/puzzle-demo" 
-            className="inline-flex items-center px-4 py-2 bg-puzzle-aqua text-puzzle-black rounded-md hover:bg-puzzle-aqua/80 transition-colors"
-          >
-            Try Our Puzzle Demo
-          </Link>
-        </div>
-      </main>
-    </MainLayout>
+    <main>
+      <Hero />
+      <ConceptSection />
+      <HowItWorks />
+      <FeaturedPuzzles />
+      <Categories />
+      <Benefits />
+      <Testimonials />
+      <RegistrationCTA />
+      <div className="mt-6">
+        <Link 
+          to="/puzzle-demo" 
+          className="inline-flex items-center px-4 py-2 bg-puzzle-aqua text-puzzle-black rounded-md hover:bg-puzzle-aqua/80 transition-colors"
+        >
+          Try Our Puzzle Demo
+        </Link>
+      </div>
+    </main>
   );
 }
 

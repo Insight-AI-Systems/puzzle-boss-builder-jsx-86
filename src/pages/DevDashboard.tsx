@@ -5,7 +5,6 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import Navbar from '@/components/Navbar';
 
 const DevDashboardPage: React.FC = () => {
   const { currentUserId, isLoading } = useUserProfile();
@@ -27,35 +26,26 @@ const DevDashboardPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <>
-        <Navbar />
-        <div className="container mx-auto py-8 px-4 flex items-center justify-center min-h-[calc(100vh-64px)]">
-          <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
-        </div>
-      </>
+      <div className="container mx-auto py-8 px-4 flex items-center justify-center min-h-[calc(100vh-64px)]">
+        <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+      </div>
     );
   }
 
   // Only render dashboard if authenticated
   if (!currentUserId) {
     return (
-      <>
-        <Navbar />
-        <div className="container mx-auto py-8 px-4 flex items-center justify-center min-h-[calc(100vh-64px)]">
-          <p className="text-center">Please log in to access the development dashboard.</p>
-        </div>
-      </>
+      <div className="container mx-auto py-8 px-4 flex items-center justify-center min-h-[calc(100vh-64px)]">
+        <p className="text-center">Please log in to access the development dashboard.</p>
+      </div>
     );
   }
 
   return (
-    <>
-      <Navbar />
-      <div className="container mx-auto py-8 px-4">
-        <h1 className="text-2xl font-bold mb-6">Development Dashboard</h1>
-        <DevelopmentDashboard />
-      </div>
-    </>
+    <div className="container mx-auto py-8 px-4">
+      <h1 className="text-2xl font-bold mb-6">Development Dashboard</h1>
+      <DevelopmentDashboard />
+    </div>
   );
 };
 
