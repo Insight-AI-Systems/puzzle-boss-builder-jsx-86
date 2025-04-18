@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
@@ -27,7 +26,7 @@ interface AuthContextType {
   clearAuthError: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
   children: React.ReactNode;

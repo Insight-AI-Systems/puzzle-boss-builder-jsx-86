@@ -4,7 +4,7 @@
  * Tools for auditing and validating security configurations
  */
 
-interface SecurityAuditResult {
+export interface SecurityAuditResult {
   pass: boolean;
   category: string;
   test: string;

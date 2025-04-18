@@ -5,7 +5,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { cleanup } from '@testing-library/react';
-import { Session } from '@supabase/supabase-js';
+import { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import { UserRole } from '@/types/userTypes';
 
 // Mock Supabase client for testing
@@ -23,7 +23,13 @@ export const mockSupabaseClient = () => {
     getSession: jest.fn(),
     refreshSession: jest.fn(),
     onAuthStateChange: jest.fn(() => ({
-      data: { subscription: { unsubscribe: jest.fn() } }
+      data: { 
+        subscription: { 
+          unsubscribe: jest.fn(),
+          id: 'mock-subscription-id',
+          callback: jest.fn()
+        } 
+      }
     }))
   };
   
@@ -51,7 +57,7 @@ export const setupAuthTest = (
   const cleanupMock = mockSupabaseClient();
   
   if (authenticated) {
-    // Mock session data
+    // Mock session data with a complete User object
     const mockSession: Partial<Session> = {
       access_token: 'test-access-token',
       refresh_token: 'test-refresh-token',
@@ -59,7 +65,11 @@ export const setupAuthTest = (
         id: 'test-user-id',
         email: 'test@example.com',
         user_metadata: { role },
-        ...sessionOverrides
+        app_metadata: {},
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...sessionOverrides.user
       },
       ...sessionOverrides
     };
@@ -75,11 +85,13 @@ export const setupAuthTest = (
       // Simulate an auth state change event
       setTimeout(() => callback('SIGNED_IN', mockSession as Session), 0);
       
-      // Return a subscription object
+      // Return a subscription object that matches the Supabase type
       return {
         data: {
           subscription: {
-            unsubscribe: jest.fn()
+            unsubscribe: jest.fn(),
+            id: 'mock-subscription-id',
+            callback: jest.fn()
           }
         }
       };
@@ -95,11 +107,13 @@ export const setupAuthTest = (
       // Simulate a signed out state
       setTimeout(() => callback('SIGNED_OUT', null), 0);
       
-      // Return a subscription object
+      // Return a subscription object that matches the Supabase type
       return {
         data: {
           subscription: {
-            unsubscribe: jest.fn()
+            unsubscribe: jest.fn(),
+            id: 'mock-subscription-id',
+            callback: jest.fn()
           }
         }
       };
@@ -115,21 +129,31 @@ export const setupAuthTest = (
 
 // Helper to simulate login
 export const simulateLogin = async (email: string = 'test@example.com', role: UserRole = 'player') => {
+  // Create a complete User object that matches the User type
+  const mockUser: User = {
+    id: 'test-user-id',
+    email,
+    user_metadata: { role },
+    app_metadata: {},
+    aud: 'authenticated',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    confirmed_at: new Date().toISOString(),
+    last_sign_in_at: new Date().toISOString(),
+    role: ''
+  };
+
   const mockSession: Partial<Session> = {
     access_token: 'test-login-token',
     refresh_token: 'test-refresh-token',
-    user: {
-      id: 'test-user-id',
-      email,
-      user_metadata: { role }
-    }
+    user: mockUser
   };
   
   // Mock successful login
   supabase.auth.signInWithPassword = jest.fn().mockResolvedValue({
     data: { 
       session: mockSession,
-      user: mockSession.user
+      user: mockUser
     },
     error: null
   });
