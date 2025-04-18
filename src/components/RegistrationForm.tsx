@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -7,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/auth/useAuth';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const RegistrationForm: React.FC = () => {
   const { toast } = useToast();
@@ -98,7 +100,25 @@ const RegistrationForm: React.FC = () => {
         // Use the auth system to sign up
         await handleEmailAuth(true);
         
-        // Show success toast
+        // Verify user creation in auth.users and profiles
+        const { data: authUser, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !authUser.user) {
+          throw new Error('Failed to verify user creation');
+        }
+
+        // Verify profile creation
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authUser.user.id)
+          .single();
+
+        if (profileError || !profile) {
+          throw new Error('Failed to verify profile creation');
+        }
+        
+        // Show success toast only after verification
         toast({
           title: "Registration successful!",
           description: "Please sign in to continue",
@@ -108,6 +128,11 @@ const RegistrationForm: React.FC = () => {
         navigate('/auth');
       } catch (error) {
         console.error('Registration error:', error);
+        toast({
+          title: "Registration failed",
+          description: "There was an error creating your account. Please try again.",
+          variant: "destructive"
+        });
       }
     }
   };
