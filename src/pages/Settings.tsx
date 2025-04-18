@@ -1,6 +1,5 @@
 
 import React from 'react';
-import PageLayout from '@/components/layouts/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BellRing, ShieldCheck, UserCog, CreditCard, Globe, ShieldAlert } from 'lucide-react';
@@ -28,10 +27,12 @@ const Settings = () => {
 
   return (
     <SecurityProvider>
-      <PageLayout 
-        title="Account Settings" 
-        subtitle="Manage your account preferences and security settings"
-      >
+      <div className="container mx-auto p-6">
+        <h1 className="text-3xl font-game text-puzzle-aqua text-center mb-6">Account Settings</h1>
+        <p className="text-center text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
+          Manage your account preferences and security settings
+        </p>
+        
         <Tabs defaultValue="security" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="profile">Profile</TabsTrigger>
@@ -139,9 +140,10 @@ const Settings = () => {
             </Card>
           </TabsContent>
         </Tabs>
-      </PageLayout>
+      </div>
     </SecurityProvider>
   );
 };
 
 export default Settings;
+
