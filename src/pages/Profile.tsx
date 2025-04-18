@@ -8,7 +8,6 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { Loader2, UserCog, User, ShieldAlert, LayoutDashboard } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import Navbar from '@/components/Navbar';
 
 const Profile = () => {
   const { isAdmin, isLoading } = useUserProfile();
@@ -23,7 +22,6 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-puzzle-black text-white">
-      <Navbar />
       <div className="container mx-auto p-6">
         <div className="max-w-6xl mx-auto space-y-8">
           <div className="flex justify-between items-center">
