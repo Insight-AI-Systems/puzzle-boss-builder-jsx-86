@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, LogOut, ShieldCheck } from 'lucide-react';
+import { User, LogOut, ShieldCheck, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -69,7 +69,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
           <Link to="/settings">Settings</Link>
         </DropdownMenuItem>
         
-        {/* Super Admin/Admin Menu Section */}
+        {/* Admin Menu Section */}
         {showAdminMenu && (
           <>
             <DropdownMenuSeparator />
@@ -78,10 +78,10 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
               Admin Access
             </DropdownMenuLabel>
             <DropdownMenuItem asChild>
-              <Link to="/admin-dashboard">Admin Dashboard</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/test-dashboard">Dev Dashboard</Link>
+              <Link to="/admin-dashboard">
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                Admin Dashboard
+              </Link>
             </DropdownMenuItem>
           </>
         )}
