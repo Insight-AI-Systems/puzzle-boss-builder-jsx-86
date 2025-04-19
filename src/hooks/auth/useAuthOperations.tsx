@@ -157,7 +157,8 @@ export function useAuthOperations({
         description: 'You have been successfully logged out.',
       });
 
-      navigate('/', { replace: true });
+      // Fix: Remove the second argument from navigate
+      navigate('/');
     } catch (e) {
       console.error('Sign out error:', e);
       setError(e instanceof Error ? e : new Error('Unknown sign out error'));
@@ -241,7 +242,8 @@ export function useAuthOperations({
         description: 'Your password has been updated successfully.',
       });
       
-      navigate('/', { replace: true });
+      // Fix: Remove the second argument from navigate
+      navigate('/');
     } catch (e) {
       console.error('Update password error:', e);
       setError(e instanceof Error ? e : new Error('Unknown update password error'));
