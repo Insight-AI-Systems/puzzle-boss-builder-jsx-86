@@ -1,11 +1,12 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import NavLinks, { NavItem } from './NavLinks';
+import NavLinks from './NavLinks';
+import { MainNavItem } from './NavbarData';
 
 interface MobileMenuProps {
   isOpen: boolean;
-  navItems: NavItem[];
+  navItems: MainNavItem[];
   isLoggedIn: boolean;
   onClose: () => void;
 }

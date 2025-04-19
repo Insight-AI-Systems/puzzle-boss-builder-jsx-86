@@ -1,7 +1,13 @@
 
-import { NavItem } from './NavLinks';
 import { UserRole } from '@/types/userTypes';
 
+// Define the base NavItem interface
+export interface NavItem {
+  name: string;
+  path: string;
+}
+
+// Extend NavItem for admin-specific functionality
 export interface MainNavItem extends NavItem {
   roles?: UserRole[];
 }
@@ -18,4 +24,3 @@ export const mainNavItems: MainNavItem[] = [
     roles: ['super_admin', 'admin']
   },
 ];
-

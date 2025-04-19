@@ -46,4 +46,3 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
 };
 
 export default NavLinks;
-
