@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -83,6 +84,12 @@ export function useEmailAuth(): EmailAuthState & {
       if (isSignUp) {
         const userDisplayName = username || email.split('@')[0];
         
+        console.log('Signup data:', {
+          email,
+          userDisplayName,
+          redirectTo: `${window.location.origin}/auth?verificationSuccess=true`
+        });
+        
         const { data, error } = await supabase.auth.signUp({ 
           email, 
           password,
@@ -97,8 +104,45 @@ export function useEmailAuth(): EmailAuthState & {
         });
         
         if (error) {
+          console.error('Signup error:', error);
           handleAuthError(error, setErrorMessage);
           return;
+        }
+
+        console.log('Signup response:', {
+          user: data.user ? {
+            id: data.user.id,
+            email: data.user.email,
+            identities: data.user.identities?.length,
+            confirmationSent: data.user.confirmation_sent_at
+          } : null,
+          session: data.session ? 'Session exists' : 'No session'
+        });
+
+        // Explicitly create profile if user was created but profile might not have been
+        if (data.user?.id) {
+          try {
+            console.log('Creating profile for new user:', data.user.id);
+            
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .upsert({
+                id: data.user.id,
+                username: userDisplayName,
+                email: email,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                avatar_url: null
+              });
+              
+            if (profileError) {
+              console.error('Profile creation error:', profileError);
+            } else {
+              console.log('Profile created successfully');
+            }
+          } catch (profileErr) {
+            console.error('Exception creating profile:', profileErr);
+          }
         }
 
         const requiresConfirmation = data.user?.identities?.length === 0 || 
@@ -146,6 +190,7 @@ export function useEmailAuth(): EmailAuthState & {
         }
       }
     } catch (error) {
+      console.error('Authentication exception:', error);
       handleAuthError(error as AuthError | Error, setErrorMessage);
       
       toast({
