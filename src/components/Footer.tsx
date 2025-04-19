@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
@@ -34,9 +33,6 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="font-bold text-puzzle-white mb-4">Quick Links</h4>
             <ul className="space-y-2">
-              <li><Link to="/" className="text-muted-foreground hover:text-puzzle-aqua transition-colors">Home</Link></li>
-              <li><Link to="/puzzles" className="text-muted-foreground hover:text-puzzle-aqua transition-colors">Puzzles</Link></li>
-              <li><Link to="/prizes" className="text-muted-foreground hover:text-puzzle-aqua transition-colors">Prizes</Link></li>
               <li><Link to="/how-it-works" className="text-muted-foreground hover:text-puzzle-aqua transition-colors">How It Works</Link></li>
               <li><Link to="/about" className="text-muted-foreground hover:text-puzzle-aqua transition-colors">About Us</Link></li>
               <li><Link to="/faq" className="text-muted-foreground hover:text-puzzle-aqua transition-colors">FAQ</Link></li>
