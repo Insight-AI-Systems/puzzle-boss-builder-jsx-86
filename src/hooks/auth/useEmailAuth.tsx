@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +14,7 @@ type ErrorCodeMessages = {
 const ERROR_MESSAGES: ErrorCodeMessages = {
   'invalid_credentials': 'The email or password you entered is incorrect',
   'email_taken': 'An account with this email already exists',
+  'user_already_exists': 'An account with this email already exists',
   'user_not_found': 'No account found with this email',
   'too_many_attempts': 'Too many attempts. Please try again later',
   'default': 'An error occurred during authentication'
@@ -133,6 +135,13 @@ export function useEmailAuth(): EmailAuthState & EmailAuthActions {
       }
       
       // Map known error codes to user-friendly messages
+      // Directly check for user_already_exists code first
+      if (errorCode === 'user_already_exists') {
+        setErrorMessage(ERROR_MESSAGES.user_already_exists);
+        return;
+      }
+      
+      // Then check for other errors
       const errorKey = Object.keys(ERROR_MESSAGES).find(key => errorCode.includes(key));
       setErrorMessage(errorKey ? ERROR_MESSAGES[errorKey] : ERROR_MESSAGES.default);
     } else {

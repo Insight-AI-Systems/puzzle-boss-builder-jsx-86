@@ -62,6 +62,10 @@ export const SignInView: React.FC<SignInViewProps> = ({
 
   const handleTabChange = (value: string) => {
     console.log('Tab changed to:', value);
+    if (errorMessage) {
+      // Clear error message when switching tabs
+      console.log('Clearing error on tab change');
+    }
     setCurrentView(value);
   };
 

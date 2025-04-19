@@ -56,8 +56,8 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
     <>
       <form onSubmit={onSubmit} className="space-y-4">
         {errorMessage && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
+          <Alert variant="destructive" className="animate-pulse">
+            <AlertCircle className="h-4 w-4 mr-2" />
             <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>
         )}

@@ -70,6 +70,12 @@ export const AuthForm = () => {
     }
   }, [email]);
   
+  // Clear error messages when changing views
+  useEffect(() => {
+    // Reset error message when changing views
+    setErrorMessage('');
+  }, [currentView, setErrorMessage]);
+  
   // Check for password reset token in URL (only once on initial load)
   useEffect(() => {
     // Check for verification success
