@@ -97,7 +97,27 @@ export function useEmailAuth(): EmailAuthState & {
           }
         });
         
-        if (error) throw error;
+        if (error) {
+          // Handle the error and update errorMessage
+          handleAuthError(error, setErrorMessage);
+          
+          // Also show a toast notification for "email already registered" errors
+          if (error.message.includes('email') && (error.message.includes('taken') || error.message.includes('already exists'))) {
+            toast({
+              title: 'Email Already Registered',
+              description: errorMessage || '🔑 Looks like you already have an account with this email. Want to sign in or reset your password?',
+              variant: 'destructive',
+            });
+          } else {
+            toast({
+              title: 'Registration Error',
+              description: errorMessage || 'An error occurred during registration',
+              variant: 'destructive',
+            });
+          }
+          
+          return;
+        }
         
         const requiresConfirmation = data.user?.identities?.length === 0 || 
                                    data.session === null;
@@ -123,7 +143,16 @@ export function useEmailAuth(): EmailAuthState & {
           password
         });
         
-        if (error) throw error;
+        if (error) {
+          handleAuthError(error, setErrorMessage);
+          
+          toast({
+            title: 'Authentication Error',
+            description: errorMessage || 'An error occurred during authentication',
+            variant: 'destructive',
+          });
+          return;
+        }
         
         toast({
           title: 'Welcome back!',
