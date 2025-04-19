@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,8 +6,63 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { HandshakeIcon, Building, BadgeCheck, TrendingUp, BarChart3 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Partnerships = () => {
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    company: '',
+    position: '',
+    interest: '',
+    budget: '',
+    message: '',
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase.functions.invoke('handle-partnership', {
+        body: formData,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Partnership inquiry submitted!",
+        description: "Thank you for your interest. We'll be in touch soon!",
+      });
+
+      setFormData({
+        name: '',
+        email: '',
+        company: '',
+        position: '',
+        interest: '',
+        budget: '',
+        message: '',
+      });
+    } catch (error) {
+      console.error('Error submitting partnership form:', error);
+      toast({
+        title: "Error submitting form",
+        description: "Please try again or contact us directly.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   return (
     <PageLayout 
       title="Partnerships" 
@@ -150,31 +204,56 @@ const Partnerships = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label htmlFor="name" className="block text-sm font-medium">
                   Your Name
                 </label>
-                <Input id="name" placeholder="Enter your name" />
+                <Input 
+                  id="name" 
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder="Enter your name"
+                  required 
+                />
               </div>
               <div className="space-y-2">
                 <label htmlFor="email" className="block text-sm font-medium">
                   Email Address
                 </label>
-                <Input id="email" type="email" placeholder="your@email.com" />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="your@email.com"
+                  required 
+                />
               </div>
               <div className="space-y-2">
                 <label htmlFor="company" className="block text-sm font-medium">
                   Company Name
                 </label>
-                <Input id="company" placeholder="Your company" />
+                <Input 
+                  id="company" 
+                  value={formData.company}
+                  onChange={(e) => handleInputChange('company', e.target.value)}
+                  placeholder="Your company"
+                  required 
+                />
               </div>
               <div className="space-y-2">
                 <label htmlFor="position" className="block text-sm font-medium">
                   Your Position
                 </label>
-                <Input id="position" placeholder="e.g. Marketing Director" />
+                <Input 
+                  id="position" 
+                  value={formData.position}
+                  onChange={(e) => handleInputChange('position', e.target.value)}
+                  placeholder="e.g. Marketing Director"
+                  required 
+                />
               </div>
             </div>
             
@@ -182,7 +261,7 @@ const Partnerships = () => {
               <label htmlFor="interest" className="block text-sm font-medium">
                 Partnership Interest
               </label>
-              <Select>
+              <Select value={formData.interest} onValueChange={(value) => handleInputChange('interest', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select your partnership interest" />
                 </SelectTrigger>
@@ -200,7 +279,7 @@ const Partnerships = () => {
               <label htmlFor="budget" className="block text-sm font-medium">
                 Estimated Budget Range
               </label>
-              <Select>
+              <Select value={formData.budget} onValueChange={(value) => handleInputChange('budget', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select your budget range" />
                 </SelectTrigger>
@@ -220,13 +299,20 @@ const Partnerships = () => {
               </label>
               <Textarea 
                 id="message" 
+                value={formData.message}
+                onChange={(e) => handleInputChange('message', e.target.value)}
                 placeholder="Please describe your partnership proposal or inquiry..."
                 rows={5}
+                required
               />
             </div>
             
-            <Button className="w-full bg-puzzle-aqua hover:bg-puzzle-aqua/80">
-              Submit Partnership Inquiry
+            <Button 
+              type="submit"
+              className="w-full bg-puzzle-aqua hover:bg-puzzle-aqua/80"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit Partnership Inquiry'}
             </Button>
           </form>
         </CardContent>
