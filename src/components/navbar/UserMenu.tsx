@@ -63,9 +63,6 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/account">Dashboard</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
           <Link to="/membership">Membership</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
