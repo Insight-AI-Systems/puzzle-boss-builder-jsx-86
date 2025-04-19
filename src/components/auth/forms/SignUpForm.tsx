@@ -55,12 +55,10 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
     handleSubmit();
   };
 
-  // Calculate password strength for the indicator
   const passwordStrength = getPasswordStrength(password);
 
   const canAcceptTerms = hasReadTerms && hasReadPrivacy;
 
-  // Updated handler with toast notification
   const handleTermsCheckAttempt = (checked: boolean) => {
     if (!canAcceptTerms && checked) {
       const unreadDocs = [];
@@ -173,6 +171,12 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
         </div>
 
         <div className="flex flex-col space-y-2 pt-2">
+          {!canAcceptTerms && (
+            <div className="text-puzzle-aqua text-sm font-medium animate-pulse-gentle mb-2 flex items-center">
+              <Info className="inline-block h-4 w-4 mr-2" />
+              Please read both documents before accepting
+            </div>
+          )}
           <div className="flex items-start space-x-2">
             <Checkbox
               id="signup-terms"
