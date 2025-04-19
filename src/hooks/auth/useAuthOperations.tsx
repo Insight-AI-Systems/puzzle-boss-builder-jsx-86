@@ -137,12 +137,15 @@ export function useAuthOperations({
     try {
       setError(null);
       
-      if (supabase.auth.session?.access_token && supabase.auth.session?.user) {
+      // Get current session first
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (sessionData.session?.access_token && sessionData.session?.user) {
         await supabase
           .from('user_sessions')
           .update({ is_active: false })
-          .eq('user_id', supabase.auth.session.user.id)
-          .eq('session_token', supabase.auth.session.access_token);
+          .eq('user_id', sessionData.session.user.id)
+          .eq('session_token', sessionData.session.access_token);
       }
       
       const { error } = await supabase.auth.signOut();
@@ -221,13 +224,16 @@ export function useAuthOperations({
       
       if (error) throw error;
       
-      if (supabase.auth.session?.user) {
+      // Get current session to access user ID
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (sessionData.session?.user) {
         await supabase
           .from('profiles')
           .update({
             last_password_change: new Date().toISOString()
           })
-          .eq('id', supabase.auth.session.user.id);
+          .eq('id', sessionData.session.user.id);
       }
       
       toast({
