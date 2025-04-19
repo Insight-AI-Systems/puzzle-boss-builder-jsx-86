@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/userTypes';
+import { useAuthState } from '@/hooks/auth/useAuthState';
 
 export interface AuthContextType {
   user: User | null;
@@ -33,20 +34,18 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<AuthError | Error | null>(null);
+  const { currentUserId, session, isLoading: authStateLoading, error: authStateError } = useAuthState();
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [lastAuthAttempt, setLastAuthAttempt] = useState<number>(0);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [error, setError] = useState<AuthError | Error | null>(authStateError);
 
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const MIN_TIME_BETWEEN_AUTH_ATTEMPTS = 2000;
 
-  const isAuthenticated = useMemo(() => !!user && !!session, [user, session]);
+  const isAuthenticated = useMemo(() => !!currentUserId && !!session, [currentUserId, session]);
   const isAdmin = useMemo(() => userRole === 'admin' || userRole === 'super_admin', [userRole]);
 
   const clearAuthError = () => setError(null);
@@ -99,7 +98,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const trackSessionActivity = async (sessionId: string) => {
-    if (!user) return;
+    if (!session?.user) return;
     
     try {
       await supabase
@@ -107,7 +106,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         .update({
           last_active: new Date().toISOString()
         })
-        .eq('user_id', user.id)
+        .eq('user_id', session.user.id)
         .eq('session_token', sessionId);
     } catch (error) {
       console.error('Error updating session activity:', error);
@@ -115,67 +114,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, newSession) => {
-      console.log('Auth state changed:', event);
-      
-      setSession(newSession);
-      setUser(newSession?.user ?? null);
-      
-      if (newSession?.user) {
-        setTimeout(() => {
-          fetchUserRoles(newSession.user.id);
-          
-          if (newSession.access_token) {
-            trackSessionActivity(newSession.access_token);
-          }
-        }, 0);
-      } else {
-        setUserRoles([]);
-        setUserRole(null);
-      }
-      
-      if (event === 'SIGNED_OUT') {
-        setUserRoles([]);
-        setUserRole(null);
-      }
-      
-      setIsLoading(false);
-    });
-
-    const initializeAuth = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
+    if (session?.user) {
+      setTimeout(() => {
+        fetchUserRoles(session.user.id);
         
-        if (error) {
-          throw error;
+        if (session.access_token) {
+          trackSessionActivity(session.access_token);
         }
-        
-        setSession(data.session);
-        setUser(data.session?.user ?? null);
-        
-        if (data.session?.user) {
-          await fetchUserRoles(data.session.user.id);
-          
-          if (data.session.access_token) {
-            trackSessionActivity(data.session.access_token);
-          }
-        }
-      } catch (e) {
-        console.error('Error initializing auth:', e);
-        setError(e instanceof Error ? e : new Error('Unknown auth error'));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeAuth();
-    
-    return () => {
-      if (authListener && 'subscription' in authListener && authListener.subscription) {
-        authListener.subscription.unsubscribe();
-      }
-    };
-  }, []);
+      }, 0);
+    } else {
+      setUserRoles([]);
+      setUserRole(null);
+    }
+  }, [session?.user, session?.access_token]);
 
   const checkRateLimit = (): boolean => {
     const now = Date.now();
@@ -189,17 +140,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const refreshSession = async (): Promise<void> => {
     try {
-      setIsLoading(true);
-      
       const { data, error } = await supabase.auth.refreshSession();
       
       if (error) {
         console.error('Session refresh error:', error);
         throw error;
       }
-      
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
       
       if (data.session?.user) {
         await fetchUserRoles(data.session.user.id);
@@ -210,8 +156,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         navigate('/auth', { replace: true });
       }
       throw e;
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -219,7 +163,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (!checkRateLimit()) return;
     
     try {
-      setIsLoading(true);
       setError(null);
       
       const { data, error } = await supabase.auth.signInWithPassword({ 
@@ -280,8 +223,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         description: 'Invalid email or password',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -289,7 +230,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (!checkRateLimit()) return;
 
     try {
-      setIsLoading(true);
       setError(null);
       
       const userMetadata = metadata || {
@@ -332,21 +272,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         description: e instanceof Error ? e.message : 'Failed to create account',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
-      setIsLoading(true);
       setError(null);
       
-      if (session?.access_token && user) {
+      if (session?.access_token && session?.user) {
         await supabase
           .from('user_sessions')
           .update({ is_active: false })
-          .eq('user_id', user.id)
+          .eq('user_id', session.user.id)
           .eq('session_token', session.access_token);
       }
       
@@ -371,8 +308,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         description: e instanceof Error ? e.message : 'Failed to log out',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -380,7 +315,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (!checkRateLimit()) return;
 
     try {
-      setIsLoading(true);
       setError(null);
       
       const startTime = Date.now();
@@ -417,14 +351,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         title: 'Password reset email sent',
         description: 'If an account with this email exists, you will receive password reset instructions.',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const updatePassword = async (password: string) => {
     try {
-      setIsLoading(true);
       setError(null);
       
       if (!password || password.length < 8) {
@@ -438,13 +369,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw error;
       }
       
-      if (user) {
+      if (session?.user) {
         await supabase
           .from('profiles')
           .update({
             last_password_change: new Date().toISOString()
           })
-          .eq('id', user.id);
+          .eq('id', session.user.id);
       }
       
       toast({
@@ -462,29 +393,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
         description: e instanceof Error ? e.message : 'Failed to update password',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const hasRole = (role: string): boolean => {
-    // If the user has the exact role
     if (userRole === role) return true;
-    
-    // Super admins have all roles
     if (userRole === 'super_admin') return true;
-    
-    // Admins have access to most roles except super_admin
     if (userRole === 'admin' && role !== 'super_admin') return true;
-    
-    // For legacy support, also check the userRoles array
     return userRoles.includes(role);
   };
 
   const value: AuthContextType = {
-    user,
+    user: session?.user ?? null,
     session,
-    isLoading,
+    isLoading: authStateLoading,
     error,
     signIn,
     signUp,
