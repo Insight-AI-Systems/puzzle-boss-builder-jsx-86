@@ -1,3 +1,4 @@
+
 import { AuthError } from '@supabase/supabase-js';
 
 export type ErrorCodeMessages = {
@@ -36,11 +37,28 @@ export const handleAuthError = (error: AuthError | Error, setErrorMessage: (mess
       setErrorMessage(ERROR_MESSAGES.user_already_exists);
       return;
     }
+
+    // Check for email_taken (variant of already exists)
+    if (errorCode === 'email_taken') {
+      setErrorMessage(ERROR_MESSAGES.email_taken);
+      return;
+    }
     
     // Check for other errors
     const errorKey = Object.keys(ERROR_MESSAGES).find(key => errorCode.includes(key));
     setErrorMessage(errorKey ? ERROR_MESSAGES[errorKey] : ERROR_MESSAGES.default);
   } else {
+    // Handle non-AuthError instances
+    const errorMessage = error.message || '';
+    
+    // Check for email already exists in plain error message
+    if (errorMessage.includes('email') && 
+       (errorMessage.includes('taken') || errorMessage.includes('already exists') || 
+        errorMessage.includes('already registered'))) {
+      setErrorMessage(ERROR_MESSAGES.email_taken);
+      return;
+    }
+    
     setErrorMessage(ERROR_MESSAGES.default);
   }
 };
