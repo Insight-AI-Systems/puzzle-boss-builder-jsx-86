@@ -1,17 +1,16 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Mail, Info } from 'lucide-react';
+import { Loader2, Mail } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
-import { getPasswordStrength } from '@/utils/authValidation';
 import LegalDocumentModal from '../modals/LegalDocumentModal';
 import Terms from '@/pages/legal/Terms';
 import Privacy from '@/pages/legal/Privacy';
-import { useToast } from '@/hooks/use-toast';
+import { PasswordSection } from './PasswordSection';
+import { TermsAcceptanceSection } from './TermsAcceptanceSection';
 
 interface SignUpFormProps {
   email: string;
@@ -48,55 +47,10 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
   const [hasReadPrivacy, setHasReadPrivacy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
-  const { toast } = useToast();
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     handleSubmit();
-  };
-
-  const passwordStrength = getPasswordStrength(password);
-
-  const canAcceptTerms = hasReadTerms && hasReadPrivacy;
-
-  const handleTermsCheckAttempt = (checked: boolean) => {
-    if (!canAcceptTerms && checked) {
-      const unreadDocs = [];
-      if (!hasReadTerms) unreadDocs.push('Terms of Service');
-      if (!hasReadPrivacy) unreadDocs.push('Privacy Policy');
-
-      toast({
-        title: "Documents Required",
-        description: (
-          <div className="flex flex-col space-y-2">
-            <p>Please read the following before accepting:</p>
-            <div className="flex flex-col space-y-1">
-              {!hasReadTerms && (
-                <Button 
-                  variant="link" 
-                  className="h-auto p-0 text-left text-puzzle-aqua underline"
-                  onClick={() => setShowTerms(true)}
-                >
-                  Terms of Service
-                </Button>
-              )}
-              {!hasReadPrivacy && (
-                <Button 
-                  variant="link" 
-                  className="h-auto p-0 text-left text-puzzle-aqua underline"
-                  onClick={() => setShowPrivacy(true)}
-                >
-                  Privacy Policy
-                </Button>
-              )}
-            </div>
-          </div>
-        ),
-        variant: "default",
-      });
-      return;
-    }
-    setAcceptTerms(checked);
   };
 
   return (
@@ -139,87 +93,23 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
           </p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="signup-password">Password</Label>
-          <Input
-            id="signup-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={isLoading}
-            required
-            autoComplete="new-password"
-          />
-          <PasswordStrengthIndicator score={passwordStrength.score} label={passwordStrength.label} />
-          <p className="text-xs text-muted-foreground">
-            Password must be at least 8 characters and include uppercase, lowercase, 
-            number, and special character
-          </p>
-        </div>
+        <PasswordSection
+          password={password}
+          confirmPassword={confirmPassword}
+          setPassword={setPassword}
+          setConfirmPassword={setConfirmPassword}
+          isLoading={isLoading}
+        />
 
-        <div className="space-y-2">
-          <Label htmlFor="signup-confirm-password">Confirm Password</Label>
-          <Input
-            id="signup-confirm-password"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            disabled={isLoading}
-            required
-            autoComplete="new-password"
-          />
-        </div>
-
-        <div className="flex flex-col space-y-2 pt-2">
-          {!canAcceptTerms && (
-            <div className="text-puzzle-aqua text-sm font-medium animate-pulse-gentle mb-2 flex items-center">
-              <Info className="inline-block h-4 w-4 mr-2" />
-              Please read both documents before accepting
-            </div>
-          )}
-          <div className="flex items-start space-x-2">
-            <Checkbox
-              id="signup-terms"
-              checked={acceptTerms}
-              onCheckedChange={handleTermsCheckAttempt}
-              disabled={!canAcceptTerms || isLoading}
-            />
-            <div className="grid gap-1.5 leading-none">
-              <Label 
-                htmlFor="signup-terms" 
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                I accept the{" "}
-                <Button 
-                  variant="link" 
-                  className="p-0 h-auto font-medium text-puzzle-aqua underline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShowTerms(true);
-                  }}
-                >
-                  Terms of Service
-                </Button>
-                {" "}and{" "}
-                <Button 
-                  variant="link" 
-                  className="p-0 h-auto font-medium text-puzzle-aqua underline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShowPrivacy(true);
-                  }}
-                >
-                  Privacy Policy
-                </Button>
-              </Label>
-              {!canAcceptTerms && (
-                <p className="text-sm text-muted-foreground">
-                  Please read both documents before accepting
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
+        <TermsAcceptanceSection
+          hasReadTerms={hasReadTerms}
+          hasReadPrivacy={hasReadPrivacy}
+          acceptTerms={acceptTerms}
+          isLoading={isLoading}
+          setAcceptTerms={setAcceptTerms}
+          setShowTerms={setShowTerms}
+          setShowPrivacy={setShowPrivacy}
+        />
 
         <Button
           type="submit"
@@ -235,7 +125,6 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
         </Button>
 
         <div className="text-xs text-center text-muted-foreground">
-          <Info className="inline-block h-3 w-3 mr-1" />
           We'll send a verification email to activate your account
         </div>
       </form>
