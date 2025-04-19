@@ -1,4 +1,3 @@
-
 import { AuthError } from '@supabase/supabase-js';
 
 export type ErrorCodeMessages = {
@@ -8,8 +7,8 @@ export type ErrorCodeMessages = {
 // Standardized error messages to avoid revealing sensitive info
 export const ERROR_MESSAGES: ErrorCodeMessages = {
   'invalid_credentials': 'The email or password you entered is incorrect',
-  'email_taken': 'An account with this email already exists',
-  'user_already_exists': 'An account with this email already exists',
+  'email_taken': '🔑 Looks like you already have an account with this email. Want to sign in or reset your password?',
+  'user_already_exists': '🔑 Looks like you already have an account with this email. Want to sign in or reset your password?',
   'user_not_found': 'No account found with this email',
   'too_many_attempts': 'Too many attempts. Please try again later',
   'default': 'An error occurred during authentication'
