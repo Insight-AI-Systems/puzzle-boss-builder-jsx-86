@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +9,7 @@ import Terms from '@/pages/legal/Terms';
 import Privacy from '@/pages/legal/Privacy';
 import { PasswordSection } from './PasswordSection';
 import { TermsAcceptanceSection } from './TermsAcceptanceSection';
+import { EmailExistsDialog } from '../dialogs/EmailExistsDialog';
 
 interface SignUpFormProps {
   email: string;
@@ -46,10 +46,15 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
   const [hasReadPrivacy, setHasReadPrivacy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showEmailExistsDialog, setShowEmailExistsDialog] = useState(false);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleSubmit();
+    if (errorMessage?.includes('already registered') || errorMessage?.includes('already exists')) {
+      setShowEmailExistsDialog(true);
+    } else {
+      handleSubmit();
+    }
   };
 
   return (
@@ -149,6 +154,21 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
       >
         <Privacy />
       </LegalDocumentModal>
+
+      <EmailExistsDialog
+        isOpen={showEmailExistsDialog}
+        onClose={() => setShowEmailExistsDialog(false)}
+        onSignIn={() => {
+          setShowEmailExistsDialog(false);
+          window.history.pushState({}, '', '/auth');
+          window.location.reload();
+        }}
+        onResetPassword={() => {
+          setShowEmailExistsDialog(false);
+          window.history.pushState({}, '', '/auth?view=reset-request');
+          window.location.reload();
+        }}
+      />
     </>
   );
 };

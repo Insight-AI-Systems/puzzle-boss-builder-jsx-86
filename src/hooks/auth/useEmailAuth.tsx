@@ -98,16 +98,9 @@ export function useEmailAuth(): EmailAuthState & {
         
         if (error) {
           handleAuthError(error, setErrorMessage);
-          
-          toast({
-            title: 'Registration Error',
-            description: '🔑 Looks like you already have an account with this email. Want to sign in or reset your password?',
-            variant: 'destructive',
-          });
-          
           return;
         }
-        
+
         const requiresConfirmation = data.user?.identities?.length === 0 || 
                                    data.session === null;
                                    
