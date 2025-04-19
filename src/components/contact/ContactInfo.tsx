@@ -1,11 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, PhoneCall, MapPin, Clock } from 'lucide-react';
-
 const ContactInfo = () => {
-  return (
-    <div className="space-y-8">
+  return <div className="space-y-8">
       <Card className="border-puzzle-aqua/20">
         <CardHeader>
           <CardTitle className="text-puzzle-aqua flex items-center">
@@ -20,9 +17,7 @@ const ContactInfo = () => {
             </div>
             <div>
               <h3 className="font-medium mb-1">Email Us</h3>
-              <a href="mailto:contact@puzzleboss.com" className="text-puzzle-aqua hover:underline">
-                contact@puzzleboss.com
-              </a>
+              <a href="mailto:contact@puzzleboss.com" className="text-puzzle-aqua hover:underline">admin@thepuzzleboss.com</a>
               <p className="text-sm text-muted-foreground mt-1">
                 We'll respond within 24 hours
               </p>
@@ -64,11 +59,11 @@ const ContactInfo = () => {
               <h3 className="font-medium mb-1">Business Hours</h3>
               <div className="grid grid-cols-2 gap-x-4 text-sm">
                 <p>Monday - Friday</p>
-                <p>9:00 AM - 5:00 PM</p>
+                <p>24 hours</p>
                 <p>Saturday</p>
-                <p>10:00 AM - 2:00 PM</p>
+                <p>24 Hours</p>
                 <p>Sunday</p>
-                <p>Closed</p>
+                <p>24 Hours</p>
               </div>
             </div>
           </div>
@@ -83,8 +78,6 @@ const ContactInfo = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default ContactInfo;
