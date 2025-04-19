@@ -44,7 +44,12 @@ export const TermsAcceptanceSection: React.FC<TermsAcceptanceSectionProps> = ({
                 <Button 
                   variant="link" 
                   className="h-auto p-0 text-left text-puzzle-aqua underline"
-                  onClick={() => setShowTerms(true)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowTerms(true);
+                  }}
+                  type="button"
                 >
                   Terms of Service
                 </Button>
@@ -53,7 +58,12 @@ export const TermsAcceptanceSection: React.FC<TermsAcceptanceSectionProps> = ({
                 <Button 
                   variant="link" 
                   className="h-auto p-0 text-left text-puzzle-aqua underline"
-                  onClick={() => setShowPrivacy(true)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowPrivacy(true);
+                  }}
+                  type="button"
                 >
                   Privacy Policy
                 </Button>
@@ -94,8 +104,10 @@ export const TermsAcceptanceSection: React.FC<TermsAcceptanceSectionProps> = ({
               className="p-0 h-auto font-medium text-puzzle-aqua underline"
               onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 setShowTerms(true);
               }}
+              type="button"
             >
               Terms of Service
             </Button>
@@ -105,8 +117,10 @@ export const TermsAcceptanceSection: React.FC<TermsAcceptanceSectionProps> = ({
               className="p-0 h-auto font-medium text-puzzle-aqua underline"
               onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 setShowPrivacy(true);
               }}
+              type="button"
             >
               Privacy Policy
             </Button>
