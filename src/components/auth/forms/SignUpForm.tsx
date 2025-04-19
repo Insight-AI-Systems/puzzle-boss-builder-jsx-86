@@ -11,6 +11,7 @@ import { getPasswordStrength } from '@/utils/authValidation';
 import LegalDocumentModal from '../modals/LegalDocumentModal';
 import Terms from '@/pages/legal/Terms';
 import Privacy from '@/pages/legal/Privacy';
+import { useToast } from '@/hooks/use-toast';
 
 interface SignUpFormProps {
   email: string;
@@ -47,6 +48,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
   const [hasReadPrivacy, setHasReadPrivacy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const { toast } = useToast();
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,10 +60,42 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
 
   const canAcceptTerms = hasReadTerms && hasReadPrivacy;
 
-  // If they try to check the box before reading both documents
+  // Updated handler with toast notification
   const handleTermsCheckAttempt = (checked: boolean) => {
     if (!canAcceptTerms && checked) {
-      alert("Please read both the Terms of Service and Privacy Policy before accepting");
+      const unreadDocs = [];
+      if (!hasReadTerms) unreadDocs.push('Terms of Service');
+      if (!hasReadPrivacy) unreadDocs.push('Privacy Policy');
+
+      toast({
+        title: "Documents Required",
+        description: (
+          <div className="flex flex-col space-y-2">
+            <p>Please read the following before accepting:</p>
+            <div className="flex flex-col space-y-1">
+              {!hasReadTerms && (
+                <Button 
+                  variant="link" 
+                  className="h-auto p-0 text-left text-puzzle-aqua underline"
+                  onClick={() => setShowTerms(true)}
+                >
+                  Terms of Service
+                </Button>
+              )}
+              {!hasReadPrivacy && (
+                <Button 
+                  variant="link" 
+                  className="h-auto p-0 text-left text-puzzle-aqua underline"
+                  onClick={() => setShowPrivacy(true)}
+                >
+                  Privacy Policy
+                </Button>
+              )}
+            </div>
+          </div>
+        ),
+        variant: "default",
+      });
       return;
     }
     setAcceptTerms(checked);
