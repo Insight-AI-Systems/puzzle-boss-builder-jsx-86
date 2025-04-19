@@ -23,7 +23,7 @@ export function useAuth() {
     setUsername,
     setRememberMe,
     setAcceptTerms,
-    setErrorMessage,
+    setErrorMessage, // Make sure this is included here
     resetForm,
     handleEmailAuth,
     validateForm
@@ -76,7 +76,7 @@ export function useAuth() {
     setUsername,
     setRememberMe,
     setAcceptTerms,
-    setErrorMessage,
+    setErrorMessage, // Make sure this is included here
     resetForm,
     handleEmailAuth,
     validateForm,

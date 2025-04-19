@@ -51,6 +51,7 @@ export const AuthForm = () => {
     setAcceptTerms,
     resetForm,
     handleEmailAuth,
+    setErrorMessage,
     
     // Social auth methods
     handleGoogleAuth,
