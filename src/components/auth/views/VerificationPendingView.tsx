@@ -3,6 +3,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Mail, ArrowLeft, RefreshCcw } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface VerificationPendingViewProps {
   email?: string;
@@ -15,6 +17,52 @@ export const VerificationPendingView: React.FC<VerificationPendingViewProps> = (
   goToSignIn,
   resendVerificationEmail
 }) => {
+  const { toast } = useToast();
+  
+  const handleResendEmail = async () => {
+    if (!email) {
+      toast({
+        title: 'Error',
+        description: 'Email address is missing. Please go back and try again.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (resendVerificationEmail) {
+      resendVerificationEmail();
+      return;
+    }
+    
+    try {
+      console.log('Resending verification email to:', email);
+      
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth?verificationSuccess=true`
+        }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: 'Verification email resent',
+        description: 'Please check your inbox and spam folder for the verification link.',
+      });
+    } catch (error) {
+      console.error('Failed to resend verification email:', error);
+      toast({
+        title: 'Failed to resend email',
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
+        variant: 'destructive'
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -38,16 +86,14 @@ export const VerificationPendingView: React.FC<VerificationPendingViewProps> = (
       </Alert>
       
       <div className="space-y-3">
-        {resendVerificationEmail && (
-          <Button 
-            variant="outline" 
-            className="w-full border-puzzle-aqua/30 hover:bg-puzzle-aqua/10"
-            onClick={resendVerificationEmail}
-          >
-            <RefreshCcw className="h-4 w-4 mr-2" />
-            Resend verification email
-          </Button>
-        )}
+        <Button 
+          variant="outline" 
+          className="w-full border-puzzle-aqua/30 hover:bg-puzzle-aqua/10"
+          onClick={handleResendEmail}
+        >
+          <RefreshCcw className="h-4 w-4 mr-2" />
+          Resend verification email
+        </Button>
         
         <Button 
           variant="ghost" 

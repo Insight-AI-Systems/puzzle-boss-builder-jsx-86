@@ -98,6 +98,10 @@ export function useAuthOperations({
         bio: null
       };
       
+      console.log('Starting sign up process for email:', email);
+      console.log('With redirect URL:', `${window.location.origin}/auth?verificationSuccess=true`);
+      
+      // Enhanced signup with more detailed logging
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -107,19 +111,63 @@ export function useAuthOperations({
         }
       });
       
+      console.log('Sign up response details:', {
+        user: data.user ? {
+          id: data.user.id,
+          email: data.user.email,
+          confirmationSentAt: data.user.confirmation_sent_at,
+          identitiesLength: data.user.identities?.length
+        } : null,
+        session: data.session ? 'Session exists' : 'No session',
+        error: error ? error.message : 'No error'
+      });
+      
       if (error) throw error;
       
       const requiresConfirmation = !data.session;
       
-      toast({
-        title: 'Account created!',
-        description: requiresConfirmation 
-          ? 'Please check your email to verify your account.' 
-          : 'Your account has been created successfully.',
-      });
-
+      // Check if confirmation was sent
+      if (data.user?.confirmation_sent_at) {
+        console.log('Confirmation email timestamp:', data.user.confirmation_sent_at);
+        
+        toast({
+          title: 'Verification email sent!',
+          description: `A verification email has been sent to ${email}. Please check your inbox and spam folder.`,
+        });
+      } else {
+        console.warn('No confirmation_sent_at timestamp in response');
+      }
+      
       if (requiresConfirmation) {
+        toast({
+          title: 'Account created!',
+          description: 'Please check your email to verify your account. If you don\'t see it, check your spam folder.',
+        });
         navigate('/auth?view=verification-pending');
+      } else {
+        toast({
+          title: 'Account created!',
+          description: 'Your account has been created successfully.',
+        });
+      }
+
+      // Track sign up in profile if available
+      if (data.user?.id) {
+        try {
+          await supabase
+            .from('profiles')
+            .upsert({
+              id: data.user.id,
+              username: userMetadata.username,
+              email: email,
+              created_at: new Date().toISOString(),
+              last_sign_in: new Date().toISOString(),
+              avatar_url: userMetadata.avatar_url
+            });
+        } catch (profileError) {
+          console.error('Error creating profile:', profileError);
+          // Non-critical error, don't throw
+        }
       }
     } catch (e) {
       console.error('Sign up error:', e);

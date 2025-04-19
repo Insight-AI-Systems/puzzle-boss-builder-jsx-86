@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SignInView } from './views/SignInView';
@@ -7,6 +6,7 @@ import { ResetPasswordConfirmView } from './views/ResetPasswordConfirmView';
 import { ResetPasswordSuccessView } from './views/ResetPasswordSuccessView';
 import { VerificationPendingView } from './views/VerificationPendingView';
 import { useAuth } from '@/hooks/auth/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 type AuthView = 
   | 'signin' 
@@ -18,6 +18,7 @@ type AuthView =
   | 'verification-success';
 
 export const AuthForm = () => {
+  
   const [searchParams] = useSearchParams();
   const [currentView, setCurrentView] = useState<AuthView>('signin');
   const [lastEnteredEmail, setLastEnteredEmail] = useState<string>('');
@@ -61,7 +62,7 @@ export const AuthForm = () => {
     handlePasswordResetRequest: requestPasswordReset,
     handlePasswordReset
   } = useAuth();
-  
+
   // Track the last email entered for verification view
   useEffect(() => {
     if (email) {
@@ -105,6 +106,31 @@ export const AuthForm = () => {
     }
   };
 
+  const handleVerificationResend = async () => {
+    console.log('Attempting to resend verification email to:', lastEnteredEmail);
+    
+    if (!lastEnteredEmail) {
+      console.error('No email address available for resending verification');
+      return;
+    }
+    
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: lastEnteredEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth?verificationSuccess=true`
+        }
+      });
+      
+      if (error) throw error;
+      
+      console.log('Verification email resent successfully');
+    } catch (error) {
+      console.error('Failed to resend verification email:', error);
+    }
+  };
+  
   const renderAuthView = () => {
     switch (currentView) {
       case 'signin':
@@ -184,8 +210,7 @@ export const AuthForm = () => {
               resetForm();
               setCurrentView('signin');
             }}
-            // We could implement resend verification here
-            // resendVerificationEmail={() => {}}
+            resendVerificationEmail={handleVerificationResend}
           />
         );
         
