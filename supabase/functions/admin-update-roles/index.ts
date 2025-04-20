@@ -23,6 +23,7 @@ serve(async (req) => {
     // Extract auth token from request
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.error("No authorization header provided");
       return new Response(
         JSON.stringify({ error: "No authorization header provided" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -41,6 +42,9 @@ serve(async (req) => {
       );
     }
 
+    // Log user trying to perform action
+    console.log(`User ${user.id} (${user.email}) attempting to update roles`);
+
     // Check if user is admin or super_admin
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
@@ -56,12 +60,14 @@ serve(async (req) => {
       );
     }
 
-    // Special case for our protected super admin email
-    const isProtectedAdmin = user.email === "alan@insight-ai-systems.com";
-    const isSuperAdmin = profile.role === "super_admin" || isProtectedAdmin;
+    // Special case for specific super admin email
+    const isProtectedSuperAdmin = user.email === "alan@insight-ai-systems.com";
+    const isSuperAdmin = profile.role === "super_admin" || isProtectedSuperAdmin;
     const isAdmin = profile.role === "admin" || isSuperAdmin;
 
-    if (!isAdmin) {
+    console.log(`User roles: isAdmin=${isAdmin}, isSuperAdmin=${isSuperAdmin}, isProtectedSuperAdmin=${isProtectedSuperAdmin}`);
+
+    if (!isAdmin && !isSuperAdmin) {
       console.error("Permissions error: Not an admin");
       return new Response(
         JSON.stringify({ error: "Unauthorized - not an admin" }),
@@ -72,7 +78,10 @@ serve(async (req) => {
     // Parse the request body
     const { userIds, newRole } = await req.json();
     
+    console.log(`Attempting to update roles: userIds=${JSON.stringify(userIds)}, newRole=${newRole}`);
+    
     if (!userIds || !Array.isArray(userIds) || !newRole) {
+      console.error("Invalid request body:", { userIds, newRole });
       return new Response(
         JSON.stringify({ error: "Invalid request body" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -82,6 +91,7 @@ serve(async (req) => {
     // Validate the role before proceeding
     const validRoles = ["super_admin", "admin", "category_manager", "social_media_manager", "partner_manager", "cfo", "player"];
     if (!validRoles.includes(newRole)) {
+      console.error("Invalid role specified:", newRole);
       return new Response(
         JSON.stringify({ error: "Invalid role specified" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -89,9 +99,9 @@ serve(async (req) => {
     }
 
     // Role assignment permissions
-    // Super admins can assign any role
-    // Regular admins can't assign super_admin roles
+    // Only super admins can assign super_admin roles
     if (!isSuperAdmin && newRole === "super_admin") {
+      console.error("Not authorized to assign super_admin role");
       return new Response(
         JSON.stringify({ error: "Not authorized to assign super_admin role" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -101,8 +111,9 @@ serve(async (req) => {
     // Update roles with upsert in case profiles don't exist yet
     const results = [];
     for (const userId of userIds) {
-      // Special protection for protected admin
-      if (userId === "alan@insight-ai-systems.com" && !isProtectedAdmin) {
+      // Special protection for protected admin - only the protected admin itself can change its role
+      if (userId === "alan@insight-ai-systems.com" && !isProtectedSuperAdmin) {
+        console.error("Cannot modify protected super admin account");
         results.push({
           id: userId,
           success: false,
@@ -112,26 +123,38 @@ serve(async (req) => {
         continue;
       }
       
-      const { data, error } = await supabaseAdmin
-        .from("profiles")
-        .upsert({
+      console.log(`Updating role for user ${userId} to ${newRole}`);
+      
+      try {
+        const { data, error } = await supabaseAdmin
+          .from("profiles")
+          .upsert({
+            id: userId,
+            role: newRole,
+            // Don't override other fields if record exists
+          })
+          .select("id, role");
+
+        results.push({
           id: userId,
-          role: newRole,
-          // Don't override other fields if record exists
-        })
-        .select("id, role");
+          success: !error,
+          error: error ? error.message : null,
+          data
+        });
 
-      results.push({
-        id: userId,
-        success: !error,
-        error: error ? error.message : null,
-        data
-      });
-
-      if (error) {
-        console.error(`Error updating role for user ${userId}:`, error);
-      } else {
-        console.log(`Successfully updated role for user ${userId} to ${newRole}`);
+        if (error) {
+          console.error(`Error updating role for user ${userId}:`, error);
+        } else {
+          console.log(`Successfully updated role for user ${userId} to ${newRole}`);
+        }
+      } catch (err) {
+        console.error(`Exception updating role for user ${userId}:`, err);
+        results.push({
+          id: userId,
+          success: false, 
+          error: err.message || "Unknown error",
+          data: null
+        });
       }
     }
 

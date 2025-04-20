@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +60,8 @@ export function UsersTable({
   const canAssignRole = (role: UserRole, userId: string): boolean => {
     // Special case for protected admin
     if (userId === 'alan@insight-ai-systems.com') {
-      return currentUserRole === 'super_admin';
+      return currentUserRole === 'super_admin' || 
+             userId === 'alan@insight-ai-systems.com'; // Allow self-assignment
     }
     
     // Super admins can assign any role
@@ -71,6 +73,10 @@ export function UsersTable({
     // Other roles cannot assign roles
     return false;
   };
+
+  // Debug logs for role permissions
+  console.log(`UsersTable - Current user role: ${currentUserRole}`);
+  console.log(`UsersTable - Is super admin: ${isSuperAdmin}`);
 
   return (
     <div className="rounded-md border overflow-x-auto">
@@ -108,84 +114,100 @@ export function UsersTable({
               </TableCell>
             </TableRow>
           ) : (
-            users.map(user => (
-              <TableRow key={user.id} className={selectedUsers.has(user.id) ? "bg-muted/20" : undefined}>
-                {selectionEnabled && (
+            users.map(user => {
+              // Check permissions for role changes for this user
+              const canChangeToSuperAdmin = canAssignRole('super_admin', user.id);
+              
+              console.log(`User ${user.id} - Can change to super_admin: ${canChangeToSuperAdmin}`);
+              
+              return (
+                <TableRow key={user.id} className={selectedUsers.has(user.id) ? "bg-muted/20" : undefined}>
+                  {selectionEnabled && (
+                    <TableCell>
+                      <Checkbox 
+                        checked={selectedUsers.has(user.id)} 
+                        onCheckedChange={(checked) => handleUserSelectionChange(user.id, !!checked)}
+                        aria-label={`Select ${user.display_name || 'user'}`}
+                      />
+                    </TableCell>
+                  )}
                   <TableCell>
-                    <Checkbox 
-                      checked={selectedUsers.has(user.id)} 
-                      onCheckedChange={(checked) => handleUserSelectionChange(user.id, !!checked)}
-                      aria-label={`Select ${user.display_name || 'user'}`}
+                    <UserAvatar 
+                      avatarUrl={user.avatar_url} 
+                      displayName={user.display_name || 'N/A'} 
+                      userId={user.id} 
                     />
                   </TableCell>
-                )}
-                <TableCell>
-                  <UserAvatar 
-                    avatarUrl={user.avatar_url} 
-                    displayName={user.display_name || 'N/A'} 
-                    userId={user.id} 
-                  />
-                </TableCell>
-                <TableCell className="font-mono text-xs">
-                  {(user as any).email || 'N/A'}
-                </TableCell>
-                <TableCell>
-                  <Badge 
-                    className={
-                      user.role === 'super_admin' ? 'bg-red-600' :
-                      user.role === 'admin' ? 'bg-purple-600' :
-                      user.role === 'category_manager' ? 'bg-blue-600' :
-                      user.role === 'social_media_manager' ? 'bg-green-600' :
-                      user.role === 'partner_manager' ? 'bg-amber-600' :
-                      user.role === 'cfo' ? 'bg-emerald-600' :
-                      'bg-slate-600'
-                    }
-                  >
-                    {user.role ? (ROLE_DEFINITIONS[user.role]?.label || user.role) : 'Player'}
-                  </Badge>
-                </TableCell>
-                <TableCell>{user.country || 'Not specified'}</TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {user.categories_played && user.categories_played.length > 0 ? (
-                      user.categories_played.map((category) => (
-                        <Badge key={category} variant="outline" className="text-xs">
-                          {category}
-                        </Badge>
-                      ))
-                    ) : (
-                      <span className="text-muted-foreground text-sm">No categories</span>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="flex items-center gap-1">
-                        <Shield className="h-4 w-4" />
-                        Change Role
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {Object.values(ROLE_DEFINITIONS).map((roleDef) => (
-                        <DropdownMenuItem
-                          key={roleDef.role}
-                          onClick={() => onRoleChange(user.id, roleDef.role)}
-                          disabled={
-                            !canAssignRole(roleDef.role, user.id) || 
-                            user.role === roleDef.role
-                          }
-                        >
-                          {roleDef.label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))
+                  <TableCell className="font-mono text-xs">
+                    {(user as any).email || 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge 
+                      className={
+                        user.role === 'super_admin' ? 'bg-red-600' :
+                        user.role === 'admin' ? 'bg-purple-600' :
+                        user.role === 'category_manager' ? 'bg-blue-600' :
+                        user.role === 'social_media_manager' ? 'bg-green-600' :
+                        user.role === 'partner_manager' ? 'bg-amber-600' :
+                        user.role === 'cfo' ? 'bg-emerald-600' :
+                        'bg-slate-600'
+                      }
+                    >
+                      {user.role ? (ROLE_DEFINITIONS[user.role]?.label || user.role) : 'Player'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{user.country || 'Not specified'}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {user.categories_played && user.categories_played.length > 0 ? (
+                        user.categories_played.map((category) => (
+                          <Badge key={category} variant="outline" className="text-xs">
+                            {category}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-muted-foreground text-sm">No categories</span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="flex items-center gap-1">
+                          <Shield className="h-4 w-4" />
+                          Change Role
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {Object.values(ROLE_DEFINITIONS).map((roleDef) => {
+                          // Determine if this role can be assigned to this user
+                          const canAssign = canAssignRole(roleDef.role, user.id);
+                          const isCurrentRole = user.role === roleDef.role;
+                          
+                          console.log(`User ${user.id} - Role ${roleDef.role} - Can assign: ${canAssign}`);
+                          
+                          return (
+                            <DropdownMenuItem
+                              key={roleDef.role}
+                              onClick={() => {
+                                console.log(`Changing role for ${user.id} to ${roleDef.role}`);
+                                onRoleChange(user.id, roleDef.role);
+                              }}
+                              disabled={!canAssign || isCurrentRole}
+                            >
+                              {roleDef.label}
+                              {isCurrentRole && " (current)"}
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>

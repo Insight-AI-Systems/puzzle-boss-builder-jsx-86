@@ -10,15 +10,23 @@ export function useRoleManagement() {
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: UserRole }) => {
       console.log(`Updating role for user ${userId} to ${newRole}`);
       
-      const { data, error } = await supabase.functions.invoke('admin-update-roles', {
-        body: { userIds: [userId], newRole }
-      });
-      
-      if (error) {
-        console.error("Error in updateUserRole:", error);
-        throw error;
+      // Improved error handling and logging
+      try {
+        const { data, error } = await supabase.functions.invoke('admin-update-roles', {
+          body: { userIds: [userId], newRole }
+        });
+        
+        if (error) {
+          console.error("Error in updateUserRole:", error);
+          throw error;
+        }
+        
+        console.log("Role update success:", data);
+        return data;
+      } catch (err) {
+        console.error("Exception in updateUserRole:", err);
+        throw err;
       }
-      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-users'] });
@@ -32,15 +40,23 @@ export function useRoleManagement() {
     mutationFn: async ({ userIds, newRole }: { userIds: string[]; newRole: UserRole }) => {
       console.log(`Bulk updating role to ${newRole} for ${userIds.length} users`);
       
-      const { data, error } = await supabase.functions.invoke('admin-update-roles', {
-        body: { userIds, newRole }
-      });
-      
-      if (error) {
-        console.error("Error in bulkUpdateRoles:", error);
-        throw error;
+      // Improved error handling and logging
+      try {
+        const { data, error } = await supabase.functions.invoke('admin-update-roles', {
+          body: { userIds, newRole }
+        });
+        
+        if (error) {
+          console.error("Error in bulkUpdateRoles:", error);
+          throw error;
+        }
+        
+        console.log("Bulk role update success:", data);
+        return data;
+      } catch (err) {
+        console.error("Exception in bulkUpdateRoles:", err);
+        throw err;
       }
-      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-users'] });

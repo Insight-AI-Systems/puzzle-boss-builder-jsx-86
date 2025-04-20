@@ -27,18 +27,29 @@ export function RoleSelector({
 }: RoleSelectorProps) {
   // Helper function to determine if current user can assign a role
   const canAssignRole = (role: UserRole): boolean => {
-    // Special case for protected admin email
-    if (userId === 'alan@insight-ai-systems.com') {
-      return currentUserRole === 'super_admin' || role === 'super_admin';
+    // Special case for protected admin email (simplified logic)
+    const isProtectedAdmin = userId === 'alan@insight-ai-systems.com';
+    
+    // Log the permission check for debugging
+    console.log(`RoleSelector - Permission check: role=${role}, currentUserRole=${currentUserRole}, isProtectedAdmin=${isProtectedAdmin}`);
+    
+    // Super admins can assign any role - special handling for protected admin
+    const isSuperAdmin = currentUserRole === 'super_admin' || 
+                         isProtectedAdmin;
+    
+    if (isSuperAdmin) {
+      console.log('RoleSelector - User is super_admin, can assign any role');
+      return true;
     }
     
-    // Super admins can assign any role
-    if (currentUserRole === 'super_admin') return true;
-    
     // Admins can assign most roles except super_admin
-    if (currentUserRole === 'admin' && role !== 'super_admin') return true;
+    if (currentUserRole === 'admin' && role !== 'super_admin') {
+      console.log('RoleSelector - User is admin, can assign non-super_admin roles');
+      return true;
+    }
     
     // Other roles cannot assign roles
+    console.log('RoleSelector - User cannot assign this role');
     return false;
   };
 
@@ -63,7 +74,10 @@ export function RoleSelector({
           {Object.values(ROLE_DEFINITIONS).map((roleDef) => (
             <DropdownMenuItem
               key={roleDef.role}
-              onClick={() => onRoleChange(userId, roleDef.role)}
+              onClick={() => {
+                console.log(`RoleSelector - Selected role: ${roleDef.role}`);
+                onRoleChange(userId, roleDef.role);
+              }}
               disabled={
                 !canAssignRole(roleDef.role) || 
                 currentRole === roleDef.role ||
