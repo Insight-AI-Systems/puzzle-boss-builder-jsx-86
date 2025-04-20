@@ -126,7 +126,11 @@ function App() {
                       <Route path="/press" element={<Press />} />
                       <Route path="/partnerships" element={<Partnerships />} />
                       <Route path="/unauthorized" element={<Unauthorized />} />
-                      <Route path="/known-issues" element={<KnownIssues />} />
+                      <Route path="/known-issues" element={
+                        <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
+                          <KnownIssues />
+                        </ProtectedRoute>
+                      } />
                       <Route path="/beta-notes" element={
                         <ProtectedRoute>
                           <BetaNotes />

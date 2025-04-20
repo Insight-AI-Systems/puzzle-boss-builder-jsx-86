@@ -349,6 +349,36 @@ export type Database = {
           },
         ]
       }
+      tickets: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string
+          heading: string
+          id: string
+          status: Database["public"]["Enums"]["ticket_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description: string
+          heading: string
+          id?: string
+          status?: Database["public"]["Enums"]["ticket_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string
+          heading?: string
+          id?: string
+          status?: Database["public"]["Enums"]["ticket_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -448,6 +478,7 @@ export type Database = {
       feedback_type: "bug" | "suggestion" | "question" | "other"
       issue_status: "wip" | "completed"
       note_status: "wip" | "completed"
+      ticket_status: "WIP" | "Completed"
       user_role:
         | "admin"
         | "category_manager"
@@ -576,6 +607,7 @@ export const Constants = {
       feedback_type: ["bug", "suggestion", "question", "other"],
       issue_status: ["wip", "completed"],
       note_status: ["wip", "completed"],
+      ticket_status: ["WIP", "Completed"],
       user_role: [
         "admin",
         "category_manager",

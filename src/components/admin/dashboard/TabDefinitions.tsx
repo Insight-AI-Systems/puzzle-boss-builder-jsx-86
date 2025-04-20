@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { UserRole } from '@/types/userTypes';
 import { 
   LayoutDashboard, Users, Puzzle, ImageIcon, FileText, Star, 
-  ShoppingCart, Settings, BarChart, Lock, Mail, Eye, Bell
+  ShoppingCart, Settings, BarChart, Lock, Mail, Eye, Bell, AlertCircle
 } from "lucide-react";
 
 export interface TabDefinition {
@@ -90,6 +89,12 @@ export const getTabDefinitions = (): TabDefinition[] => [
     id: "notifications",
     label: "Notifications",
     icon: <Bell className="h-4 w-4 mr-2" />,
+    roles: ['super_admin', 'admin']
+  },
+  {
+    id: "known-issues",
+    label: "Known Issues",
+    icon: <AlertCircle className="h-4 w-4 mr-2" />,
     roles: ['super_admin', 'admin']
   }
 ];
