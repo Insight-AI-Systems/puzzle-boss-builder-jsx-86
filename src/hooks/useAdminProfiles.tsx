@@ -6,8 +6,6 @@ import { useRoleManagement } from './admin/useRoleManagement';
 import { useEmailManagement } from './admin/useEmailManagement';
 import { filterUserData, transformToUserProfile, extractUniqueValues } from '@/utils/admin/userDataProcessing';
 
-export { AdminProfilesOptions };
-
 export function useAdminProfiles(
   isAdmin: boolean, 
   currentUserId: string | null,
