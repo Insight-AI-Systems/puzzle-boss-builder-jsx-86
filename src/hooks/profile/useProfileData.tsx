@@ -25,6 +25,8 @@ export function useProfileData(profileId: string | null) {
         bio: data.bio || null,
         avatar_url: data.avatar_url,
         role: (data.role || 'player') as UserRole,
+        country: data.country || null,
+        categories_played: data.categories_played || [],
         credits: data.credits || 0,
         achievements: [],
         referral_code: null,

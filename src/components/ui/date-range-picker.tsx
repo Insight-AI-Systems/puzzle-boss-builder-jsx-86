@@ -14,9 +14,10 @@ import {
 } from "@/components/ui/popover"
 import { format } from "date-fns"
 
-interface CalendarDateRangePickerProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CalendarDateRangePickerProps {
   date?: DateRange
   onChange?: (date: DateRange | undefined) => void
+  className?: string
 }
 
 export function CalendarDateRangePicker({

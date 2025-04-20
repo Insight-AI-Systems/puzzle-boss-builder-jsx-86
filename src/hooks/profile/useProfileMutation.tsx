@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types/userTypes';
@@ -67,6 +66,8 @@ export function useProfileMutation(profileId: string | null) {
         bio: data.bio || null,
         avatar_url: data.avatar_url,
         role: (data.role || 'player') as UserRole,
+        country: data.country || null,
+        categories_played: data.categories_played || [],
         credits: data.credits || 0,
         achievements: [],
         referral_code: null,

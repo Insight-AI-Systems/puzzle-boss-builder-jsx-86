@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,19 +17,7 @@ interface RoleUpdateParams {
   newRole: UserRole;
 }
 
-export interface AdminProfilesOptions {
-  page?: number;
-  pageSize?: number;
-  searchTerm?: string;
-  userId?: string;
-  dateRange?: { from?: Date; to?: Date };
-  country?: string | null;
-  category?: string | null;
-  role?: UserRole | null;
-  roleSortDirection?: 'asc' | 'desc';
-}
-
-export function useUserProfile(adminProfilesOptions?: AdminProfilesOptions) {
+export function useUserProfile(adminOptions?: AdminProfilesOptions) {
   const { user } = useAuth();
   const [error, setError] = useState<Error | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -60,6 +49,8 @@ export function useUserProfile(adminProfilesOptions?: AdminProfilesOptions) {
           bio: data.bio,
           avatar_url: data.avatar_url,
           role: (data.role || 'player') as UserRole,
+          country: data.country || null,
+          categories_played: data.categories_played || [],
           credits: data.credits || 0,
           achievements: [],
           referral_code: null,
@@ -84,7 +75,7 @@ export function useUserProfile(adminProfilesOptions?: AdminProfilesOptions) {
     data: allProfiles,
     isLoading: isLoadingProfiles,
     refetch: refetchProfiles
-  } = useAdminProfiles(isAdmin, user?.id || null, adminProfilesOptions);
+  } = useAdminProfiles(isAdmin, user?.id || null, adminOptions);
 
   // Update profile mutation
   const updateProfile = useMutation({

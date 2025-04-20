@@ -14,6 +14,11 @@ export interface AdminProfilesOptions {
   roleSortDirection?: 'asc' | 'desc';
 }
 
+export interface ProfilesResult {
+  data: UserProfile[];
+  count: number;
+}
+
 export function useAdminProfiles(
   isAdmin: boolean, 
   currentUserId: string | null,
@@ -35,10 +40,21 @@ export function useAdminProfiles(
     queryFn: async () => {
       if (!isAdmin && !currentUserId) {
         console.log('Not authorized to fetch profiles or no user ID');
-        return { data: [], count: 0 };
+        return { data: [], count: 0 } as ProfilesResult;
       }
 
       try {
+        type FilteredUserData = {
+          id: string;
+          email: string;
+          display_name: string;
+          role: string;
+          country: string | null;
+          categories_played: string[];
+          created_at: string;
+          avatar_url: string | null;
+        };
+
         const { data: filteredData, error } = await supabase.rpc('filter_users', {
           start_date: dateRange?.from?.toISOString(),
           end_date: dateRange?.to?.toISOString(),
@@ -46,7 +62,7 @@ export function useAdminProfiles(
           category: category,
           user_role: role,
           sort_direction: roleSortDirection
-        });
+        }) as { data: FilteredUserData[] | null, error: any };
 
         if (error) {
           console.error('Error fetching filtered users:', error);
@@ -71,10 +87,10 @@ export function useAdminProfiles(
         return { 
           data: profiles,
           count: profiles.length
-        };
+        } as ProfilesResult;
       } catch (error) {
         console.error('Error in useAdminProfiles:', error);
-        return { data: [], count: 0 };
+        return { data: [], count: 0 } as ProfilesResult;
       }
     },
     enabled: !!currentUserId,

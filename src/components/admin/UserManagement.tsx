@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserCog } from "lucide-react";
@@ -16,11 +15,12 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from "@/components/ui/pagination";
+import { DateRange } from 'react-day-picker';
 
 export function UserManagement() {
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
@@ -51,10 +51,13 @@ export function UserManagement() {
   const totalPages = Math.ceil((allProfiles?.count || 0) / pageSize);
 
   // Get unique countries and categories from all profiles
-  const countries = Array.from(new Set(allProfiles?.data.map(p => p.country).filter(Boolean) || []));
-  const categories = Array.from(new Set(
-    allProfiles?.data.flatMap(p => p.categories_played || []) || []
-  ));
+  const countries = Array.from(
+    new Set((allProfiles?.data || []).map(p => p.country).filter(Boolean) as string[])
+  );
+  
+  const categories = Array.from(
+    new Set((allProfiles?.data || []).flatMap(p => p.categories_played || []))
+  );
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     updateUserRole.mutate(
@@ -161,6 +164,7 @@ export function UserManagement() {
             onRoleChange={setSelectedRole}
             countries={countries}
             categories={categories}
+            dateRange={dateRange}
           />
           
           <UsersTable 

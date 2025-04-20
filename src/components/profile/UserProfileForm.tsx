@@ -7,9 +7,7 @@ import { ProfileAvatar } from './form/ProfileAvatar';
 import { ProfileEditForm } from './form/ProfileEditForm';
 
 export function UserProfileForm({ userId }: { userId?: string }) {
-  const { profile, isLoading, updateProfile } = useUserProfile(
-    userId ? { userId } : undefined
-  );
+  const { profile, isLoading, updateProfile } = useUserProfile();
   const [isEditing, setIsEditing] = React.useState(false);
   const [formData, setFormData] = React.useState<Partial<UserProfile>>({
     display_name: '',
