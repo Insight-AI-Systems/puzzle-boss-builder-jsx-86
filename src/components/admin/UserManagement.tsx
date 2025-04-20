@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 import { Card, CardContent } from "@/components/ui/card";
@@ -57,10 +56,8 @@ export function UserManagement() {
     userStats
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
 
-  // Define a wrapper function for the bulk role setting to handle type conversion
-  const handleSetBulkRole = (role: string) => {
-    setBulkRole(role as UserRole);
-  };
+  // Create a unique, type-safe wrapper for setBulkRole
+  const handleSetBulkRoleTypeSafe = (role: string) => setBulkRole(role as UserRole);
 
   if (isLoadingProfiles) {
     return (
@@ -153,7 +150,7 @@ export function UserManagement() {
         onOpenChange={setConfirmRoleDialogOpen}
         selectedCount={selectedUsers.size}
         bulkRole={bulkRole}
-        setBulkRole={handleSetBulkRole}
+        setBulkRole={(role: string) => setBulkRole(role as UserRole)}
         onUpdateRoles={handleBulkRoleChange}
         isUpdating={isBulkRoleChanging}
       />
