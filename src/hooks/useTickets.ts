@@ -3,7 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
+// Define the possible UI statuses, which may differ from DB statuses
 export type TicketStatus = 'WIP' | 'Completed' | 'In Review';
+
+// Define the possible DB statuses (based on Supabase enum)
+export type DBTicketStatus = 'WIP' | 'Completed';
 
 export interface Ticket {
   id: string;
@@ -17,6 +21,17 @@ export interface Ticket {
     username: string;
   };
 }
+
+// Utility function to convert UI status to DB status
+export const uiStatusToDbStatus = (status: TicketStatus): DBTicketStatus => {
+  return status === 'In Review' ? 'WIP' : status;
+};
+
+// Utility function to convert DB status to UI status
+// This would need custom logic if you want to show "In Review" for some WIP tickets
+export const dbStatusToUiStatus = (status: DBTicketStatus): TicketStatus => {
+  return status as TicketStatus;
+};
 
 export function useTickets() {
   const queryClient = useQueryClient();
@@ -41,11 +56,11 @@ export function useTickets() {
 
   const createTicket = useMutation({
     mutationFn: async (ticket: Omit<Ticket, 'id' | 'created_at' | 'updated_at'>) => {
-      // Type assertion to match Supabase's expected schema
+      // Convert UI status to DB status
       const ticketForDatabase = {
         ...ticket,
-        status: ticket.status === 'In Review' ? 'WIP' : ticket.status // Convert 'In Review' to 'WIP' for storage
-      } as any;
+        status: uiStatusToDbStatus(ticket.status)
+      };
 
       const { data, error } = await supabase
         .from('tickets')
@@ -63,11 +78,11 @@ export function useTickets() {
 
   const updateTicket = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Ticket> & { id: string }) => {
-      // Type assertion to match Supabase's expected schema
+      // Convert UI status to DB status if status is being updated
       const updatesForDatabase = {
         ...updates,
-        status: updates.status === 'In Review' ? 'WIP' : updates.status // Convert 'In Review' to 'WIP' for storage
-      } as any;
+        status: updates.status ? uiStatusToDbStatus(updates.status) : undefined
+      };
 
       const { data, error } = await supabase
         .from('tickets')

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { TicketList } from '@/components/admin/tickets/TicketList';
 import { TicketForm } from '@/components/admin/tickets/TicketForm';
-import { useTickets } from '@/hooks/useTickets';
+import { useTickets, TicketStatus } from '@/hooks/useTickets';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -12,7 +12,7 @@ const KnownIssues = () => {
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  const handleCreateTicket = (values: { heading: string; description: string; status: 'WIP' | 'Completed' }) => {
+  const handleCreateTicket = (values: { heading: string; description: string; status: TicketStatus }) => {
     if (!user?.id) {
       toast({
         title: "Error",
