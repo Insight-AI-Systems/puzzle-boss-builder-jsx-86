@@ -57,9 +57,10 @@ export function UserManagement() {
     userStats
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
 
-  // Create a properly typed wrapper function for setBulkRole
-  const handleSetBulkRole = (roleString: string) => {
-    setBulkRole(roleString as UserRole);
+  // Type-safe wrapper for setBulkRole
+  const handleSetBulkRole = (role: string) => {
+    // Type assertion to convert string to UserRole
+    setBulkRole(role as UserRole);
   };
 
   if (isLoadingProfiles) {
