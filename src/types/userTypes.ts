@@ -1,4 +1,3 @@
-
 export type UserRole = 
   | 'super_admin'
   | 'admin'
@@ -14,6 +13,14 @@ export type Gender =
   | 'non-binary'
   | 'prefer-not-to-say'
   | 'custom';
+
+export type AgeGroup = 
+  | '13-17'
+  | '18-24'
+  | '25-34'
+  | '35-44'
+  | '45-60'
+  | '60+';
 
 export interface UserProfile {
   id: string;
@@ -31,7 +38,7 @@ export interface UserProfile {
   updated_at: string;
   gender?: Gender | null;
   custom_gender?: string | null;
-  age_group?: string | null;
+  age_group?: AgeGroup | null;
 }
 
 export interface RolePermission {

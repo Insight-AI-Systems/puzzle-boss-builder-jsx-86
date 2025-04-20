@@ -145,6 +145,7 @@ export type Database = {
         Row: {
           account_locked: boolean | null
           active_sessions: Json | null
+          age_group: Database["public"]["Enums"]["age_group"] | null
           avatar_url: string | null
           bio: string | null
           categories_played: string[] | null
@@ -168,6 +169,7 @@ export type Database = {
         Insert: {
           account_locked?: boolean | null
           active_sessions?: Json | null
+          age_group?: Database["public"]["Enums"]["age_group"] | null
           avatar_url?: string | null
           bio?: string | null
           categories_played?: string[] | null
@@ -191,6 +193,7 @@ export type Database = {
         Update: {
           account_locked?: boolean | null
           active_sessions?: Json | null
+          age_group?: Database["public"]["Enums"]["age_group"] | null
           avatar_url?: string | null
           bio?: string | null
           categories_played?: string[] | null
@@ -395,6 +398,8 @@ export type Database = {
           display_name: string
           role: string
           created_at: string
+          gender: string
+          age_group: string
         }[]
       }
       terminate_other_sessions: {
@@ -403,6 +408,7 @@ export type Database = {
       }
     }
     Enums: {
+      age_group: "13-17" | "18-24" | "25-34" | "35-44" | "45-60" | "60+"
       feedback_type: "bug" | "suggestion" | "question" | "other"
       note_status: "wip" | "completed"
       user_role:
@@ -529,6 +535,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      age_group: ["13-17", "18-24", "25-34", "35-44", "45-60", "60+"],
       feedback_type: ["bug", "suggestion", "question", "other"],
       note_status: ["wip", "completed"],
       user_role: [

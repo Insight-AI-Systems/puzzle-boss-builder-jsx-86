@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pencil, Save, Info } from 'lucide-react';
-import { UserProfile, Gender } from '@/types/userTypes';
+import { UserProfile, Gender, AgeGroup } from '@/types/userTypes';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ProfileEditFormProps {
@@ -28,32 +28,15 @@ export function ProfileEditForm({
   onChange,
   onSubmit
 }: ProfileEditFormProps) {
-  // Handle select change for gender
-  const handleGenderChange = (value: string) => {
-    const newFormData = {
-      ...formData,
-      gender: value as Gender,
-      // Reset custom_gender if not selecting 'custom'
-      custom_gender: value === 'custom' ? formData.custom_gender : null
-    };
-    
-    // Call the parent onChange with a simulated event
+  // Handle select change for gender and age group
+  const handleSelectChange = (field: string, value: string) => {
     const simulatedEvent = {
-      target: { name: 'gender', value }
+      target: { name: field, value }
     } as React.ChangeEvent<HTMLInputElement>;
-    
     onChange(simulatedEvent);
   };
 
-  // Handle change for custom gender text
-  const handleCustomGenderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newFormData = {
-      ...formData,
-      custom_gender: e.target.value
-    };
-    
-    onChange(e);
-  };
+  const ageGroupOptions: AgeGroup[] = ['13-17', '18-24', '25-34', '35-44', '45-60', '60+'];
 
   if (!isEditing) {
     return (
@@ -65,32 +48,41 @@ export function ProfileEditForm({
           </p>
         </div>
 
-        {profile.gender && (
-          <div>
-            <h3 className="text-sm font-medium text-puzzle-white mb-1">
-              Gender
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 ml-1 inline cursor-help text-puzzle-white/60" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    We gather information on age, gender, location, and flagged interests to help offer you the most relevant puzzles and improve our products.
-                  </TooltipContent>
-                </Tooltip>
+        <div className="space-y-2">
+          {profile.gender && (
+            <div>
+              <h3 className="text-sm font-medium text-puzzle-white mb-1">
+                Gender
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 ml-1 inline cursor-help text-puzzle-white/60" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      We ask about your age range, gender, and location to help offer you the best puzzles and user experience.
+                    </TooltipContent>
+                  </Tooltip>
               </TooltipProvider>
-            </h3>
-            <p className="text-puzzle-white/80">
-              {profile.gender === 'custom' && profile.custom_gender
-                ? profile.custom_gender
-                : profile.gender === 'prefer-not-to-say'
-                  ? 'Prefer not to say'
-                  : profile.gender === 'non-binary'
-                    ? 'Non-binary'
-                    : profile.gender}
-            </p>
-          </div>
-        )}
+              </h3>
+              <p className="text-puzzle-white/80">
+                {profile.gender === 'custom' && profile.custom_gender
+                  ? profile.custom_gender
+                  : profile.gender === 'prefer-not-to-say'
+                    ? 'Prefer not to say'
+                    : profile.gender === 'non-binary'
+                      ? 'Non-binary'
+                      : profile.gender}
+              </p>
+            </div>
+          )}
+
+          {profile.age_group && (
+            <div>
+              <h3 className="text-sm font-medium text-puzzle-white mb-1">Age Range</h3>
+              <p className="text-puzzle-white/80">{profile.age_group}</p>
+            </div>
+          )}
+        </div>
         
         <Button 
           onClick={onEditToggle}
@@ -138,14 +130,14 @@ export function ProfileEditForm({
                 <Info className="h-4 w-4 ml-1 cursor-help text-puzzle-white/60" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
-                We gather information on age, gender, location, and flagged interests to help offer you the most relevant puzzles and improve our products.
+                We ask about your age range, gender, and location to help offer you the best puzzles and user experience.
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
         <Select 
           value={formData.gender || undefined}
-          onValueChange={handleGenderChange}
+          onValueChange={(value) => handleSelectChange('gender', value)}
         >
           <SelectTrigger className="bg-puzzle-black/50 border-puzzle-aqua/30 text-puzzle-white w-full">
             <SelectValue placeholder="Select your gender" />
@@ -166,13 +158,32 @@ export function ProfileEditForm({
               id="custom_gender"
               name="custom_gender"
               value={formData.custom_gender || ''}
-              onChange={handleCustomGenderChange}
+              onChange={onChange}
               className="bg-puzzle-black/50 border-puzzle-aqua/30 text-puzzle-white mt-1"
             />
           </div>
         )}
       </div>
-      
+
+      <div className="space-y-2">
+        <Label htmlFor="age_group" className="text-puzzle-white">Age Range</Label>
+        <Select 
+          value={formData.age_group || undefined}
+          onValueChange={(value) => handleSelectChange('age_group', value)}
+        >
+          <SelectTrigger className="bg-puzzle-black/50 border-puzzle-aqua/30 text-puzzle-white w-full">
+            <SelectValue placeholder="Select your age range" />
+          </SelectTrigger>
+          <SelectContent>
+            {ageGroupOptions.map((ageGroup) => (
+              <SelectItem key={ageGroup} value={ageGroup}>
+                {ageGroup}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="bio" className="text-puzzle-white">Bio</Label>
         <Textarea
