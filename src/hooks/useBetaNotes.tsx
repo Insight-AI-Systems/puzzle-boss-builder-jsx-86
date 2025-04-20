@@ -26,6 +26,7 @@ export function useBetaNotes() {
 
     setIsLoading(true);
     try {
+      // Using a direct join approach instead of the profiles:user_id syntax
       const { data, error } = await supabase
         .from('beta_notes')
         .select(`
@@ -34,7 +35,7 @@ export function useBetaNotes() {
           status, 
           created_at, 
           user_id,
-          profiles:user_id (username, avatar_url)
+          profiles!beta_notes_user_id_fkey (username, avatar_url)
         `)
         .order('created_at', { ascending: false });
 
@@ -73,7 +74,7 @@ export function useBetaNotes() {
           status, 
           created_at, 
           user_id,
-          profiles:user_id (username, avatar_url)
+          profiles!beta_notes_user_id_fkey (username, avatar_url)
         `)
         .single();
 
