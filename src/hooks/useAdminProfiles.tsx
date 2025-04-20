@@ -16,7 +16,14 @@ export function useAdminProfiles(
   const fetchUsers = async (): Promise<ProfilesResult> => {
     if (!isAdmin || !currentUserId) {
       console.log('Not authorized to fetch profiles or no user ID');
-      return { data: [], count: 0, countries: [], categories: [] };
+      return { 
+        data: [], 
+        count: 0, 
+        countries: [], 
+        categories: [],
+        genders: [],
+        signup_stats: []
+      };
     }
 
     try {
@@ -30,7 +37,14 @@ export function useAdminProfiles(
 
       if (!rpcData || !Array.isArray(rpcData)) {
         console.error('Invalid response from get-all-users:', rpcData);
-        return { data: [], count: 0, countries: [], categories: [] };
+        return { 
+          data: [], 
+          count: 0, 
+          countries: [], 
+          categories: [],
+          genders: [],
+          signup_stats: []
+        };
       }
 
       console.log(`Retrieved ${rpcData.length} users from get-all-users`);
@@ -62,19 +76,42 @@ export function useAdminProfiles(
       const profiles = paginatedData.map(transformToUserProfile);
       
       // Extract unique values
-      const { countries, categories } = extractUniqueValues(rpcData);
+      const { countries, categories, genders } = extractUniqueValues(rpcData);
+
+      // Calculate signup stats by month
+      const signupStats = calculateSignupStats(rpcData);
 
       return { 
         data: profiles,
         count: totalCount,
         countries,
-        categories
+        categories,
+        genders: genders || [],
+        signup_stats: signupStats
       };
       
     } catch (error) {
       console.error('Error in useAdminProfiles:', error);
       throw error;
     }
+  };
+
+  // Calculate signup statistics by month
+  const calculateSignupStats = (userData: RpcUserData[]) => {
+    const monthStats: { [key: string]: number } = {};
+    
+    userData.forEach(user => {
+      if (user.created_at) {
+        const date = new Date(user.created_at);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        
+        monthStats[monthKey] = (monthStats[monthKey] || 0) + 1;
+      }
+    });
+    
+    return Object.entries(monthStats)
+      .map(([month, count]) => ({ month, count }))
+      .sort((a, b) => a.month.localeCompare(b.month));
   };
 
   const usersQuery = useQuery({
