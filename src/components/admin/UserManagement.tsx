@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { UserRole } from '@/types/userTypes';
 import { Card, CardContent } from "@/components/ui/card";
@@ -58,9 +57,7 @@ export function UserManagement() {
     userStats
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
 
-  // Type-safe wrapper for setBulkRole that converts string to UserRole
   const handleSetBulkRole = (roleString: string) => {
-    // Validate that the string is a valid UserRole before setting
     if (Object.keys(ROLE_DEFINITIONS).includes(roleString)) {
       setBulkRole(roleString as UserRole);
     } else {

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Issue, IssueFormData, IssueStatus, IssueFilters } from '@/types/issueTypes';
+import { Issue, IssueFormData, IssueStatus, IssueFilters, IssueWithProfiles } from '@/types/issueTypes';
 
 export function useIssues() {
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -54,8 +54,8 @@ export function useIssues() {
 
       if (error) throw error;
 
-      // Format issues with creator and modifier names
-      const formattedIssues: Issue[] = issuesData.map(issue => ({
+      // Safely handle the data and handle potential null values
+      const formattedIssues: Issue[] = (issuesData as IssueWithProfiles[]).map(issue => ({
         ...issue,
         creator_name: issue.creator?.username || issue.creator?.email || 'Unknown User',
         modifier_name: issue.modifier?.username || issue.modifier?.email || 'Unknown User'
@@ -64,8 +64,12 @@ export function useIssues() {
       setIssues(formattedIssues);
 
       // Extract unique categories
-      const categories = [...new Set(issuesData.filter(issue => issue.category).map(issue => issue.category))];
-      setUniqueCategories(categories as string[]);
+      const categories = [...new Set(issuesData
+        .filter(issue => issue.category)
+        .map(issue => issue.category as string)
+      )];
+      
+      setUniqueCategories(categories);
     } catch (error) {
       console.error('Error fetching issues:', error);
       toast({

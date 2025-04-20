@@ -24,7 +24,7 @@ const formSchema = z.object({
 
 interface IssueFormProps {
   onSubmit: (data: IssueFormData) => Promise<void> | void;
-  initialData?: Partial<IssueFormData>;
+  initialData?: IssueFormData; // Ensure this has the correct type
   isSubmitting?: boolean;
 }
 
@@ -39,7 +39,14 @@ export function IssueForm({ onSubmit, initialData, isSubmitting = false }: Issue
   });
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-    await onSubmit(values);
+    // Ensure we're passing a value for all required fields in IssueFormData
+    const formData: IssueFormData = {
+      title: values.title,
+      description: values.description,
+      category: values.category
+    };
+    
+    await onSubmit(formData);
     if (!initialData) {
       form.reset();
     }
