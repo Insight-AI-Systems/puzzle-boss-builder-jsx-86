@@ -83,7 +83,7 @@ const BetaNotes: React.FC = () => {
                   <CardContent className="flex items-start space-x-4 p-4">
                     <Avatar>
                       <AvatarImage src={note.user.avatar_url || ''} alt={note.user.username || 'User'} />
-                      <AvatarFallback>{note.user.username?.[0] || 'U'}</AvatarFallback>
+                      <AvatarFallback>{(note.user.username?.[0] || 'U').toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex justify-between items-start">

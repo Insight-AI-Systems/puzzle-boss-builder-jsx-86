@@ -10,7 +10,10 @@ export interface BetaNote {
   content: string;
   status: 'wip' | 'completed';
   created_at: string;
-  user: Pick<UserProfile, 'username' | 'avatar_url'>;
+  user: {
+    username?: string | null;
+    avatar_url?: string | null;
+  };
 }
 
 export function useBetaNotes() {
@@ -31,7 +34,7 @@ export function useBetaNotes() {
           status, 
           created_at, 
           user_id,
-          profiles (username, avatar_url)
+          profiles:user_id (username, avatar_url)
         `)
         .order('created_at', { ascending: false });
 
@@ -43,7 +46,10 @@ export function useBetaNotes() {
         content: note.content,
         status: note.status,
         created_at: note.created_at,
-        user: note.profiles
+        user: {
+          username: note.profiles?.username || 'Unknown User',
+          avatar_url: note.profiles?.avatar_url || null
+        }
       }));
 
       setNotes(formattedNotes);
@@ -67,7 +73,7 @@ export function useBetaNotes() {
           status, 
           created_at, 
           user_id,
-          profiles (username, avatar_url)
+          profiles:user_id (username, avatar_url)
         `)
         .single();
 
@@ -79,7 +85,10 @@ export function useBetaNotes() {
         content: data.content,
         status: data.status,
         created_at: data.created_at,
-        user: data.profiles
+        user: {
+          username: data.profiles?.username || 'Unknown User',
+          avatar_url: data.profiles?.avatar_url || null
+        }
       };
 
       setNotes(prev => [newNote, ...prev]);
