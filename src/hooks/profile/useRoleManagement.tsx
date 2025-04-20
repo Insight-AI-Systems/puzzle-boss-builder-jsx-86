@@ -14,7 +14,7 @@ export function useRoleManagement() {
         .from('profiles')
         .update({ role: newRole })
         .eq('id', targetUserId)
-        .select('id, username, bio, avatar_url, role, country, categories_played, credits, created_at, updated_at')
+        .select('id, username, bio, avatar_url, role, credits, created_at, updated_at')
         .single();
       
       if (error) throw error;
@@ -25,8 +25,8 @@ export function useRoleManagement() {
         bio: data.bio || null,
         avatar_url: data.avatar_url,
         role: (data.role || 'player') as UserRole,
-        country: data.country || null,
-        categories_played: data.categories_played || [],
+        country: null, // Default value since column may not exist yet
+        categories_played: [], // Default value since column may not exist yet
         credits: data.credits || 0,
         achievements: [],
         referral_code: null,

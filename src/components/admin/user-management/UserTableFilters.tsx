@@ -31,7 +31,7 @@ export const UserTableFilters: React.FC<UserTableFiltersProps> = ({
         <div>
           <CalendarDateRangePicker 
             date={dateRange}
-            onChange={onDateRangeChange}
+            onDateChange={onDateRangeChange}
           />
         </div>
         
@@ -79,4 +79,4 @@ export const UserTableFilters: React.FC<UserTableFiltersProps> = ({
       </div>
     </Card>
   );
-};
+}

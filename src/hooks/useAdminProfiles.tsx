@@ -29,14 +29,12 @@ export function useAdminProfiles(
     pageSize = 10, 
     searchTerm = '',
     dateRange,
-    country,
-    category,
     role,
     roleSortDirection = 'asc'
   } = options;
 
   return useQuery({
-    queryKey: ['profiles', page, pageSize, searchTerm, dateRange, country, category, role, roleSortDirection],
+    queryKey: ['profiles', page, pageSize, searchTerm, dateRange, role, roleSortDirection],
     queryFn: async () => {
       if (!isAdmin && !currentUserId) {
         console.log('Not authorized to fetch profiles or no user ID');
@@ -62,11 +60,6 @@ export function useAdminProfiles(
         
         if (dateRange?.to) {
           query = query.lte('created_at', dateRange.to.toISOString());
-        }
-        
-        // Apply country filter if provided
-        if (country) {
-          query = query.eq('country', country);
         }
         
         // Apply role filter if provided  
@@ -96,8 +89,8 @@ export function useAdminProfiles(
             bio: profile.bio || null,
             avatar_url: profile.avatar_url,
             role: (profile.role || 'player') as UserRole,
-            country: profile.country || null,
-            categories_played: Array.isArray(profile.categories_played) ? profile.categories_played : [],
+            country: null, // Default value since column may not exist yet
+            categories_played: [], // Default value since column may not exist yet
             credits: profile.credits || 0,
             achievements: [],
             referral_code: null,
@@ -106,10 +99,9 @@ export function useAdminProfiles(
           } as UserProfile;
         });
 
-        // For category filtering, we need to do it post-query since it's an array
-        const filteredProfiles = category 
-          ? profiles.filter(p => p.categories_played?.includes(category))
-          : profiles;
+        // For category filtering, we handle it in UI since we're providing empty arrays
+        // until the column exists in the database
+        const filteredProfiles = profiles;
 
         return { 
           data: filteredProfiles,

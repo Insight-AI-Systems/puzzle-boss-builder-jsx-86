@@ -42,13 +42,14 @@ export function useProfileMutation(profileId: string | null) {
         profileUpdate.bio = updatedProfile.bio;
       }
       
-      if (updatedProfile.country !== undefined) {
-        profileUpdate.country = updatedProfile.country;
-      }
+      // Remove country and categories_played until columns exist
+      // if (updatedProfile.country !== undefined) {
+      //   profileUpdate.country = updatedProfile.country;
+      // }
       
-      if (updatedProfile.categories_played !== undefined) {
-        profileUpdate.categories_played = updatedProfile.categories_played;
-      }
+      // if (updatedProfile.categories_played !== undefined) {
+      //   profileUpdate.categories_played = updatedProfile.categories_played;
+      // }
       
       profileUpdate.updated_at = new Date().toISOString();
       
@@ -58,7 +59,7 @@ export function useProfileMutation(profileId: string | null) {
         .from('profiles')
         .update(profileUpdate)
         .eq('id', profileId)
-        .select('id, username, bio, avatar_url, role, country, categories_played, credits, created_at, updated_at')
+        .select('id, username, bio, avatar_url, role, credits, created_at, updated_at')
         .single();
       
       if (error) {
@@ -74,8 +75,8 @@ export function useProfileMutation(profileId: string | null) {
         bio: data.bio || null,
         avatar_url: data.avatar_url,
         role: (data.role || 'player') as UserRole,
-        country: data.country || null,
-        categories_played: data.categories_played || [],
+        country: null, // Default value since column may not exist yet
+        categories_played: [], // Default value since column may not exist yet
         credits: data.credits || 0,
         achievements: [],
         referral_code: null,

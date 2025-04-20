@@ -40,8 +40,9 @@ export function UserManagement() {
     pageSize,
     searchTerm,
     dateRange,
-    country: selectedCountry,
-    category: selectedCategory,
+    // Temporarily disable these filters until columns exist
+    // country: selectedCountry,
+    // category: selectedCategory,
     role: selectedRole,
     roleSortDirection
   });
@@ -50,14 +51,9 @@ export function UserManagement() {
   const currentUserRole = currentUserProfile?.role || 'player';
   const totalPages = Math.ceil((allProfiles?.count || 0) / pageSize);
 
-  // Get unique countries and categories from all profiles
-  const countries = Array.from(
-    new Set((allProfiles?.data || []).map(p => p.country).filter(Boolean) as string[])
-  );
-  
-  const categories = Array.from(
-    new Set((allProfiles?.data || []).flatMap(p => p.categories_played || []))
-  );
+  // Get unique countries and categories - will be empty arrays until columns exist
+  const countries: string[] = [];
+  const categories: string[] = [];
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     updateUserRole.mutate(

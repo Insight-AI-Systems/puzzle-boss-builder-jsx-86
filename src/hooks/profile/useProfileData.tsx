@@ -11,7 +11,7 @@ export function useProfileData(profileId: string | null) {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, bio, avatar_url, role, country, categories_played, credits, created_at, updated_at')
+        .select('id, username, bio, avatar_url, role, credits, created_at, updated_at')
         .eq('id', profileId)
         .single();
       
@@ -26,8 +26,8 @@ export function useProfileData(profileId: string | null) {
         bio: data.bio || null,
         avatar_url: data.avatar_url,
         role: (data.role || 'player') as UserRole,
-        country: data.country || null,
-        categories_played: data.categories_played || [],
+        country: null, // Default value since column may not exist yet
+        categories_played: [], // Default value since column may not exist yet
         credits: data.credits || 0,
         achievements: [],
         referral_code: null,

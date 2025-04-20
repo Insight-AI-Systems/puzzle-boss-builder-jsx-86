@@ -32,7 +32,7 @@ export function useUserProfile(adminOptions?: AdminProfilesOptions) {
         console.log('Profile data request for ID:', user.id);
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, username, bio, avatar_url, role, country, categories_played, credits, created_at, updated_at')
+          .select('id, username, bio, avatar_url, role, credits, created_at, updated_at')
           .eq('id', user.id)
           .single();
 
@@ -49,8 +49,8 @@ export function useUserProfile(adminOptions?: AdminProfilesOptions) {
           bio: data.bio || null,
           avatar_url: data.avatar_url,
           role: (data.role || 'player') as UserRole,
-          country: data.country || null,
-          categories_played: Array.isArray(data.categories_played) ? data.categories_played : [],
+          country: null, // Default value since column may not exist yet
+          categories_played: [], // Default value since column may not exist yet
           credits: data.credits || 0,
           achievements: [],
           referral_code: null,
@@ -86,7 +86,7 @@ export function useUserProfile(adminOptions?: AdminProfilesOptions) {
         .from('profiles')
         .update(profileData)
         .eq('id', user.id)
-        .select('id, username, bio, avatar_url, role, country, categories_played, credits, created_at, updated_at')
+        .select('id, username, bio, avatar_url, role, credits, created_at, updated_at')
         .single();
 
       if (error) throw error;
@@ -116,7 +116,7 @@ export function useUserProfile(adminOptions?: AdminProfilesOptions) {
         .from('profiles')
         .update({ role: newRole })
         .eq('id', targetUserId)
-        .select('id, username, bio, avatar_url, role, country, categories_played, credits, created_at, updated_at')
+        .select('id, username, bio, avatar_url, role, credits, created_at, updated_at')
         .single();
 
       if (error) throw error;

@@ -15,7 +15,7 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
       console.log('Fetching all profiles from Supabase');
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, bio, avatar_url, role, country, categories_played, credits, created_at, updated_at')
+        .select('id, username, bio, avatar_url, role, credits, created_at, updated_at')
         .order('username', { ascending: true });
       
       if (error) {
@@ -31,8 +31,8 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
         bio: profile.bio || null,
         avatar_url: profile.avatar_url,
         role: (profile.role || 'player') as UserRole,
-        country: profile.country || null,
-        categories_played: Array.isArray(profile.categories_played) ? profile.categories_played : [],
+        country: null, // Default value since column may not exist yet
+        categories_played: [], // Default value since column may not exist yet
         credits: profile.credits || 0,
         achievements: [],
         referral_code: null,
