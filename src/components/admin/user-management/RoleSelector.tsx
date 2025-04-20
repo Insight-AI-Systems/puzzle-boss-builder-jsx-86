@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -26,39 +25,26 @@ export function RoleSelector({
   onRoleChange,
   label
 }: RoleSelectorProps) {
+  // Check if current user is super admin (either by role or special email)
   const isSuperAdmin = currentUserRole === 'super_admin';
-  // Special case for protected admin email
-  const isProtectedAdmin = userId === 'alan@insight-ai-systems.com';
   
   // Helper function to determine if current user can assign a role
   const canAssignRole = (role: UserRole): boolean => {
-    // Log the parameters for debugging
-    console.log(`RoleSelector - Checking if can assign ${role}. currentUserRole=${currentUserRole}, isSuperAdmin=${isSuperAdmin}, isProtectedAdmin=${isProtectedAdmin}`);
-    
     // Super admins can assign any role
     if (isSuperAdmin) {
-      console.log('RoleSelector - User is super_admin, can assign any role');
-      return true;
-    }
-    
-    // Special protected admin can assign any role to themselves
-    if (isProtectedAdmin && userId === 'alan@insight-ai-systems.com') {
-      console.log('RoleSelector - Protected admin can manage their own role');
       return true;
     }
     
     // Admins can assign most roles except super_admin
     if (currentUserRole === 'admin' && role !== 'super_admin') {
-      console.log('RoleSelector - User is admin, can assign non-super_admin roles');
       return true;
     }
     
     // Other roles cannot assign roles
-    console.log('RoleSelector - User cannot assign this role');
     return false;
   };
 
-  // Cannot change own role (except for protected admin)
+  // Cannot change own role
   const isOwnUser = userId === 'own-user-id';
 
   return (
@@ -82,8 +68,6 @@ export function RoleSelector({
           {Object.values(ROLE_DEFINITIONS).map((roleDef) => {
             const canAssign = canAssignRole(roleDef.role);
             const isSameRole = currentRole === roleDef.role;
-            
-            console.log(`RoleSelector - Role ${roleDef.role}: canAssign=${canAssign}, isSameRole=${isSameRole}`);
             
             return (
               <DropdownMenuItem

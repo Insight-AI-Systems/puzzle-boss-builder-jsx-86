@@ -60,7 +60,7 @@ serve(async (req) => {
       );
     }
 
-    // Special case for specific super admin email - always granted super admin privileges
+    // Special case for specific super admin email
     const isProtectedSuperAdmin = user.email === "alan@insight-ai-systems.com";
     const isSuperAdmin = profile.role === "super_admin" || isProtectedSuperAdmin;
     const isAdmin = profile.role === "admin" || isSuperAdmin;
@@ -98,7 +98,7 @@ serve(async (req) => {
       );
     }
 
-    // Server-side role assignment permissions check
+    // Only super admins can assign super_admin role
     if (newRole === "super_admin" && !isSuperAdmin) {
       console.error("Permission denied: Only super_admin can assign super_admin role");
       return new Response(
@@ -111,9 +111,7 @@ serve(async (req) => {
     const results = [];
     for (const userId of userIds) {
       // Special protection for protected admin - only the protected admin itself can change its role
-      const isTargetProtectedAdmin = userId === "alan@insight-ai-systems.com";
-      
-      if (isTargetProtectedAdmin && !isProtectedSuperAdmin) {
+      if (userId === "alan@insight-ai-systems.com" && !isProtectedSuperAdmin) {
         console.error(`Cannot modify protected admin account. Requester: ${user.email}, isProtectedSuperAdmin: ${isProtectedSuperAdmin}`);
         results.push({
           id: userId,
@@ -132,7 +130,6 @@ serve(async (req) => {
           .upsert({
             id: userId,
             role: newRole,
-            // Don't override other fields if record exists
           })
           .select("id, role");
 
