@@ -20,7 +20,7 @@ interface BulkRoleDialogProps {
   onOpenChange: (open: boolean) => void;
   selectedCount: number;
   bulkRole: UserRole;
-  setBulkRole: (role: UserRole) => void;
+  setBulkRole: (role: string) => void;
   onUpdateRoles: () => void;
   isUpdating: boolean;
 }
@@ -35,7 +35,7 @@ export const BulkRoleDialog: React.FC<BulkRoleDialogProps> = ({
   isUpdating,
 }) => {
   const handleRoleChange = (value: string) => {
-    setBulkRole(value as UserRole);
+    setBulkRole(value);
   };
 
   return (

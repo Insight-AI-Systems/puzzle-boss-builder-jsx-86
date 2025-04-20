@@ -8,7 +8,7 @@ export interface ProgressItem {
   created_at: string;
   updated_at: string;
   last_edited_by?: string;
-  order_index?: number; // Optional, as it might not exist in the database yet
+  order_index?: number;
   progress_comments: ProgressComment[];
 }
 

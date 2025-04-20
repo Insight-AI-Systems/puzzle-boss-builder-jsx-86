@@ -4,7 +4,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Calendar, User } from "lucide-react";
-import { ProgressItem } from '@/hooks/useProgressItems';
+import { ProgressItem } from '@/types/progressTypes';
 import { toast } from "@/hooks/use-toast";
 
 interface CommentsSectionProps {

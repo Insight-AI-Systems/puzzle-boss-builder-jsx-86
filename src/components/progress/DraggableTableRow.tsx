@@ -2,7 +2,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ProgressItem } from '@/hooks/useProgressItems';
+import { ProgressItem } from '@/types/progressTypes';
 import { TableCell, TableRow } from "@/components/ui/table";
 import { GripVertical } from 'lucide-react';
 
