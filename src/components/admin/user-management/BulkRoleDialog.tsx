@@ -21,7 +21,8 @@ interface BulkRoleDialogProps {
   onOpenChange: (open: boolean) => void;
   selectedCount: number;
   bulkRole: UserRole;
-  setBulkRole: Dispatch<SetStateAction<UserRole>>;
+  // Update the type to explicitly expect a function that takes a string
+  setBulkRole: (role: string) => void;
   onUpdateRoles: () => void;
   isUpdating: boolean;
 }
@@ -35,10 +36,9 @@ export const BulkRoleDialog: React.FC<BulkRoleDialogProps> = ({
   onUpdateRoles,
   isUpdating,
 }) => {
-  // Create a handler function that properly converts the string value to UserRole
+  // Now handleRoleChange just passes the string value directly
   const handleRoleChange = (value: string) => {
-    // Cast the string value to UserRole type before passing to setBulkRole
-    setBulkRole(value as UserRole);
+    setBulkRole(value);
   };
 
   return (
