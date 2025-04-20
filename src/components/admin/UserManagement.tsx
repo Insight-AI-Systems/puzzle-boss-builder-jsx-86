@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
+import { UserRole } from '@/types/userTypes';
 import { Card, CardContent } from "@/components/ui/card";
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
@@ -56,8 +56,8 @@ export function UserManagement() {
     userStats
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
 
-  const handleSetBulkRole = (role: string) => {
-    setBulkRole(role as UserRole);
+  const handleSetBulkRole = (role: UserRole) => {
+    setBulkRole(role);
   };
 
   if (isLoadingProfiles) {
@@ -151,7 +151,7 @@ export function UserManagement() {
         onOpenChange={setConfirmRoleDialogOpen}
         selectedCount={selectedUsers.size}
         bulkRole={bulkRole}
-        setBulkRole={setBulkRole}
+        setBulkRole={handleSetBulkRole}
         onUpdateRoles={handleBulkRoleChange}
         isUpdating={isBulkRoleChanging}
       />
