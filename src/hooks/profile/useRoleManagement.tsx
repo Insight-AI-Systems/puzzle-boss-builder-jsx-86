@@ -2,57 +2,46 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types/userTypes';
-import { useToast } from '@/hooks/use-toast';
 
 export function useRoleManagement() {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const updateUserRole = useMutation({
-    mutationFn: async ({ targetUserId, newRole }: { targetUserId: string; newRole: UserRole }) => {
+  
+  return useMutation({
+    mutationFn: async ({ userId, newRole }: { userId: string; newRole: UserRole }) => {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) throw userError;
+      
       const { data, error } = await supabase
         .from('profiles')
         .update({ role: newRole })
-        .eq('id', targetUserId)
-        .select('id, username, bio, avatar_url, role, credits, created_at, updated_at')
+        .eq('id', userId)
+        .select()
         .single();
       
       if (error) throw error;
       
-      const updatedUserProfile: UserProfile = {
+      const profile: UserProfile = {
         id: data.id,
+        email: userData.user?.email || null,
         display_name: data.username || null,
         bio: data.bio || null,
-        avatar_url: data.avatar_url,
-        role: (data.role || 'player') as UserRole,
-        country: null, // Default value since column may not exist yet
-        categories_played: [], // Default value since column may not exist yet
+        avatar_url: data.avatar_url || null,
+        role: data.role as UserRole,
+        country: null,
+        categories_played: [],
         credits: data.credits || 0,
         achievements: [],
         referral_code: null,
-        created_at: data.created_at || new Date().toISOString(),
-        updated_at: data.updated_at || new Date().toISOString()
+        created_at: data.created_at,
+        updated_at: data.updated_at
       };
       
-      return updatedUserProfile;
+      return profile;
     },
-    onSuccess: (data, variables) => {
-      queryClient.setQueryData(['profile', variables.targetUserId], data);
-      toast({
-        title: 'Role updated',
-        description: `User role has been updated to ${data.role}.`,
-        duration: 3000,
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Role update failed',
-        description: `Error: ${error instanceof Error ? error.message : 'You do not have permission to update this role.'}`,
-        variant: 'destructive',
-        duration: 5000,
-      });
-    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['profile', data.id], data);
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
+    }
   });
-
-  return { updateUserRole };
 }

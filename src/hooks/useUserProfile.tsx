@@ -4,7 +4,8 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserProfile, UserRole } from '@/types/userTypes';
-import { useAdminProfiles, AdminProfilesOptions } from './useAdminProfiles';
+import { useAdminProfiles } from '@/hooks/useAdminProfiles';
+import { AdminProfilesOptions } from '@/types/adminTypes';
 
 export interface ProfileUpdateData {
   username?: string;
@@ -45,6 +46,7 @@ export function useUserProfile(adminOptions?: AdminProfilesOptions) {
         
         const userProfile: UserProfile = {
           id: data.id,
+          email: user.email || null,
           display_name: data.username || null,
           bio: data.bio || null,
           avatar_url: data.avatar_url,

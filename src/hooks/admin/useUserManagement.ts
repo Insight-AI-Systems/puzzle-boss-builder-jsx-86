@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { DateRange } from 'react-day-picker';
 import { UserRole } from '@/types/userTypes';
-import { useAdminProfiles } from './useAdminProfiles';
+import { useAdminProfiles } from '@/hooks/useAdminProfiles';
 import { AdminProfilesOptions } from '@/types/adminTypes';
 
 export function useUserManagement(isAdmin: boolean, currentUserId: string | null) {

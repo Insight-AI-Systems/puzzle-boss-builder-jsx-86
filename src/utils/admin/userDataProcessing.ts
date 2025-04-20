@@ -1,4 +1,3 @@
-
 import { RpcUserData, AdminProfilesOptions } from '@/types/adminTypes';
 import { UserProfile, UserRole } from '@/types/userTypes';
 
@@ -59,7 +58,8 @@ export const filterUserData = (data: RpcUserData[], options: AdminProfilesOption
 
 export const transformToUserProfile = (user: RpcUserData): UserProfile => ({
   id: user.id,
-  display_name: user.display_name || 'N/A',
+  email: user.email || null,
+  display_name: user.display_name || null,
   bio: null,
   avatar_url: null,
   role: (user.role || 'player') as UserRole,
@@ -69,8 +69,7 @@ export const transformToUserProfile = (user: RpcUserData): UserProfile => ({
   achievements: [],
   referral_code: null,
   created_at: user.created_at,
-  updated_at: user.created_at,
-  email: user.email || null
+  updated_at: user.created_at
 });
 
 export const extractUniqueValues = (data: RpcUserData[]) => {

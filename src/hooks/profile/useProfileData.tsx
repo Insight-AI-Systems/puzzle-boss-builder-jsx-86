@@ -3,40 +3,42 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types/userTypes';
 
-export function useProfileData(profileId: string | null) {
+export function useProfileData(userId: string | null) {
   return useQuery({
-    queryKey: ['profile', profileId],
+    queryKey: ['profile', userId],
     queryFn: async () => {
-      if (!profileId) return null;
+      if (!userId) return null;
+      
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) throw userError;
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, bio, avatar_url, role, credits, created_at, updated_at')
-        .eq('id', profileId)
+        .select('*')
+        .eq('id', userId)
         .single();
       
       if (error) throw error;
       
-      console.log('Profile data retrieved:', data);
-      
-      // Ensure we handle potential missing fields from the database
-      const userProfile: UserProfile = {
+      const profile: UserProfile = {
         id: data.id,
+        email: userData.user?.email || null,
         display_name: data.username || null,
         bio: data.bio || null,
-        avatar_url: data.avatar_url,
+        avatar_url: data.avatar_url || null,
         role: (data.role || 'player') as UserRole,
-        country: null, // Default value since column may not exist yet
-        categories_played: [], // Default value since column may not exist yet
+        country: null,
+        categories_played: [],
         credits: data.credits || 0,
         achievements: [],
         referral_code: null,
-        created_at: data.created_at || new Date().toISOString(),
-        updated_at: data.updated_at || new Date().toISOString()
+        created_at: data.created_at,
+        updated_at: data.updated_at || data.created_at
       };
       
-      return userProfile;
+      return profile;
     },
-    enabled: !!profileId,
+    enabled: !!userId,
   });
 }
