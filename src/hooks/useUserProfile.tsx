@@ -16,6 +16,18 @@ interface RoleUpdateParams {
   newRole: UserRole;
 }
 
+export interface AdminProfilesOptions {
+  page?: number;
+  pageSize?: number;
+  searchTerm?: string;
+  userId?: string;
+  dateRange?: { from?: Date; to?: Date };
+  country?: string | null;
+  category?: string | null;
+  role?: UserRole | null;
+  roleSortDirection?: 'asc' | 'desc';
+}
+
 export function useUserProfile(adminProfilesOptions?: AdminProfilesOptions) {
   const { user } = useAuth();
   const [error, setError] = useState<Error | null>(null);

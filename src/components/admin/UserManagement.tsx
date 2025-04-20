@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserCog } from "lucide-react";
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/userTypes';
 import { SearchBar } from './user-management/SearchBar';
 import { UsersTable } from './user-management/UsersTable';
+import { UserTableFilters } from './user-management/UserTableFilters';
 import { Button } from '@/components/ui/button';
 import { 
   Pagination, 
@@ -19,6 +20,12 @@ import {
 export function UserManagement() {
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const [roleSortDirection, setRoleSortDirection] = useState<'asc' | 'desc'>('asc');
+  
   const pageSize = 10;
   
   const { 
@@ -31,12 +38,23 @@ export function UserManagement() {
   } = useUserProfile({
     page,
     pageSize,
-    searchTerm
+    searchTerm,
+    dateRange,
+    country: selectedCountry,
+    category: selectedCategory,
+    role: selectedRole,
+    roleSortDirection
   });
   
   const { toast } = useToast();
   const currentUserRole = currentUserProfile?.role || 'player';
   const totalPages = Math.ceil((allProfiles?.count || 0) / pageSize);
+
+  // Get unique countries and categories from all profiles
+  const countries = Array.from(new Set(allProfiles?.data.map(p => p.country).filter(Boolean) || []));
+  const categories = Array.from(new Set(
+    allProfiles?.data.flatMap(p => p.categories_played || []) || []
+  ));
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     updateUserRole.mutate(
@@ -64,7 +82,7 @@ export function UserManagement() {
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    setPage(0); // Reset to first page when searching
+    setPage(0);
     
     if (term) {
       toast({
@@ -73,6 +91,10 @@ export function UserManagement() {
         duration: 2000,
       });
     }
+  };
+
+  const handleSortByRole = () => {
+    setRoleSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
   };
 
   if (isLoadingProfiles) {
@@ -114,9 +136,6 @@ export function UserManagement() {
     );
   }
 
-  const searchResults = allProfiles?.data || [];
-  const noResultsFound = searchTerm && searchResults.length === 0;
-
   return (
     <Card className="w-full">
       <CardHeader>
@@ -125,7 +144,7 @@ export function UserManagement() {
           User Management
         </CardTitle>
         <CardDescription>
-          Search for users by email address or name. For exact email matches, enter the complete email.
+          Search and filter users by various criteria. For exact email matches, enter the complete email.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -135,21 +154,20 @@ export function UserManagement() {
             placeholder="Search by email or name..."
           />
           
-          {noResultsFound && (
-            <div className="p-4 border border-amber-200 bg-amber-50 text-amber-800 rounded-md">
-              <h3 className="font-bold mb-2">No matching users found</h3>
-              <p>Could not find any users matching "{searchTerm}"</p>
-              <p className="text-sm mt-2">
-                If searching for an email address, please enter the complete address. 
-                The system searches both profile records and user accounts.
-              </p>
-            </div>
-          )}
+          <UserTableFilters
+            onDateRangeChange={setDateRange}
+            onCountryChange={setSelectedCountry}
+            onCategoryChange={setSelectedCategory}
+            onRoleChange={setSelectedRole}
+            countries={countries}
+            categories={categories}
+          />
           
           <UsersTable 
-            users={searchResults}
+            users={allProfiles?.data || []}
             currentUserRole={currentUserRole}
             onRoleChange={handleRoleChange}
+            onSortByRole={handleSortByRole}
           />
           
           {totalPages > 1 && (
