@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 import { Card, CardContent } from "@/components/ui/card";
@@ -55,18 +56,6 @@ export function UserManagement() {
     totalPages,
     userStats
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
-
-  const handleSetBulkRole = (roleString: string) => {
-    const validRole = Object.keys(ROLE_DEFINITIONS).includes(roleString)
-      ? roleString as UserRole
-      : 'player'; // Default to 'player' if an invalid role is provided
-
-    setBulkRole(validRole);
-    
-    if (!Object.keys(ROLE_DEFINITIONS).includes(roleString)) {
-      console.error(`Invalid role: ${roleString}. Defaulting to 'player'.`);
-    }
-  };
 
   if (isLoadingProfiles) {
     return (
@@ -159,7 +148,7 @@ export function UserManagement() {
         onOpenChange={setConfirmRoleDialogOpen}
         selectedCount={selectedUsers.size}
         bulkRole={bulkRole}
-        setBulkRole={handleSetBulkRole}
+        setBulkRole={setBulkRole} // Direct pass of state setter
         onUpdateRoles={handleBulkRoleChange}
         isUpdating={isBulkRoleChanging}
       />

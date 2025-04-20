@@ -20,8 +20,7 @@ interface BulkRoleDialogProps {
   onOpenChange: (open: boolean) => void;
   selectedCount: number;
   bulkRole: UserRole;
-  // Explicitly define as a function that takes a string parameter
-  setBulkRole: (role: string) => void;
+  setBulkRole: (role: UserRole) => void; // Updated type to accept UserRole directly
   onUpdateRoles: () => void;
   isUpdating: boolean;
 }
@@ -35,9 +34,15 @@ export const BulkRoleDialog: React.FC<BulkRoleDialogProps> = ({
   onUpdateRoles,
   isUpdating,
 }) => {
-  // Now handleRoleChange just passes the string value directly
+  // This function converts the string value from RadioGroup to UserRole
   const handleRoleChange = (value: string) => {
-    setBulkRole(value);
+    // Validate that the role is a valid UserRole
+    if (Object.keys(ROLE_DEFINITIONS).includes(value)) {
+      setBulkRole(value as UserRole);
+    } else {
+      console.error(`Invalid role: ${value}, defaulting to 'player'`);
+      setBulkRole('player');
+    }
   };
 
   return (
