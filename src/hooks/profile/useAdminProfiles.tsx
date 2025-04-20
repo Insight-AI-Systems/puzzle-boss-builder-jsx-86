@@ -7,8 +7,12 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
   return useQuery({
     queryKey: ['all-profiles'],
     queryFn: async () => {
-      if (!isAdmin) return [];
+      if (!isAdmin && !currentUserId) {
+        console.log('Not authorized to fetch profiles or no user ID');
+        return [];
+      }
       
+      console.log('Fetching all profiles from Supabase');
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -18,6 +22,8 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
         console.error('Error fetching profiles:', error);
         throw error;
       }
+      
+      console.log('Profiles fetched:', data?.length || 0);
       
       return data.map(profile => ({
         id: profile.id,
@@ -32,6 +38,6 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
         updated_at: profile.updated_at || new Date().toISOString()
       } as UserProfile));
     },
-    enabled: isAdmin && !!currentUserId,
+    enabled: !!currentUserId,
   });
 }

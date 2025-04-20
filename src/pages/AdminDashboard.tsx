@@ -16,18 +16,22 @@ const AdminDashboard = () => {
   const isSuperAdmin = profile?.role === 'super_admin' || 
                       (profile?.id && profile.id === 'alan@insight-ai-systems.com');
 
-  // Consolidated useEffect for access checks and logging
+  // Add debug logging
   useEffect(() => {
     if (isLoading) return;
     
     console.log('Admin Dashboard - Auth State:', { 
       isLoggedIn: !!currentUserId,
-      profile, 
+      profileId: profile?.id, 
       isAdmin,
       isSuperAdmin,
       role: profile?.role,
-      userId: profile?.id
     });
+  }, [isLoading, isAdmin, isSuperAdmin, profile, currentUserId]);
+
+  // Consolidated useEffect for access checks and logging
+  useEffect(() => {
+    if (isLoading) return;
     
     // Force grant access to special account
     if (profile?.id && profile.id === 'alan@insight-ai-systems.com') {
