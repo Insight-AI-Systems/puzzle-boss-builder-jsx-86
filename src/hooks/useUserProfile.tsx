@@ -7,19 +7,27 @@ import { useRoleManagement } from './profile/useRoleManagement';
 import { useAdminProfiles, AdminProfilesOptions } from './useAdminProfiles';
 import { useState, useEffect } from 'react';
 
-export function useUserProfile(options?: AdminProfilesOptions) {
+export function useUserProfile(options?: AdminProfilesOptions | string) {
   const { currentUserId } = useAuthState();
-  const profileId = options?.userId || currentUserId;
+  
+  // Handle both string (userId) and options object
+  const userId = typeof options === 'string' ? options : options?.userId;
+  const profileId = userId || currentUserId;
   
   const { data: profile, isLoading, error, refetch } = useProfileData(profileId);
   const { isAdmin } = useAdminStatus(profile);
   const { updateProfile } = useProfileMutation(profileId);
   const { updateUserRole } = useRoleManagement();
+  
+  // Convert string userId to AdminProfilesOptions if needed
+  const adminProfilesOptions: AdminProfilesOptions = 
+    typeof options === 'string' ? { userId: options } : options || {};
+  
   const { 
     data: allProfiles, 
     isLoading: isLoadingProfiles,
     refetch: refetchProfiles 
-  } = useAdminProfiles(isAdmin, currentUserId, options);
+  } = useAdminProfiles(isAdmin, currentUserId, adminProfilesOptions);
 
   // Additional debugging
   useEffect(() => {

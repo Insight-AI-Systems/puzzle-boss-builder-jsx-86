@@ -27,7 +27,10 @@ export function RoleManagement() {
   const currentUserRole = currentUserProfile?.role || 'player';
   
   // Filter profiles based on search term
-  const filteredProfiles = allProfiles?.filter(profile => 
+  // Check if allProfiles is the new ProfilesResult type or the old array type
+  const profilesData = allProfiles?.data || [];
+  
+  const filteredProfiles = profilesData.filter(profile => 
     profile.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     profile.id.includes(searchTerm)
   );
@@ -93,7 +96,7 @@ export function RoleManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProfiles?.map((user) => (
+              {filteredProfiles.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center space-x-2">

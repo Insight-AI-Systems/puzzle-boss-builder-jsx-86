@@ -8,6 +8,7 @@ import { ProfileAvatar } from './form/ProfileAvatar';
 import { ProfileEditForm } from './form/ProfileEditForm';
 
 export function UserProfileForm({ userId }: { userId?: string }) {
+  // Pass userId directly as string, not as an object
   const { profile, isLoading, updateProfile } = useUserProfile(userId);
   const [isEditing, setIsEditing] = React.useState(false);
   const [formData, setFormData] = React.useState<Partial<UserProfile>>({
