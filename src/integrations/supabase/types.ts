@@ -98,6 +98,7 @@ export type Database = {
           bio: string | null
           created_at: string | null
           credits: number | null
+          email: string | null
           email_change_new_email: string | null
           email_change_token: string | null
           email_change_token_expires_at: string | null
@@ -118,6 +119,7 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           credits?: number | null
+          email?: string | null
           email_change_new_email?: string | null
           email_change_token?: string | null
           email_change_token_expires_at?: string | null
@@ -138,6 +140,7 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           credits?: number | null
+          email?: string | null
           email_change_new_email?: string | null
           email_change_token?: string | null
           email_change_token_expires_at?: string | null
@@ -326,6 +329,16 @@ export type Database = {
       is_admin: {
         Args: { user_id: string }
         Returns: boolean
+      }
+      search_and_sync_users: {
+        Args: { search_term: string }
+        Returns: {
+          id: string
+          email: string
+          display_name: string
+          role: string
+          created_at: string
+        }[]
       }
       terminate_other_sessions: {
         Args: { current_session_id: string }

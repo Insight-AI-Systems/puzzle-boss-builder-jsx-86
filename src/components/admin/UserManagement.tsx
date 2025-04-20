@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserCog } from "lucide-react";
@@ -27,7 +26,11 @@ export function UserManagement() {
     updateUserRole, 
     profile: currentUserProfile,
     refetch 
-  } = useUserProfile();
+  } = useUserProfile({
+    page,
+    pageSize,
+    searchTerm
+  });
   
   const { toast } = useToast();
   const currentUserRole = currentUserProfile?.role || 'player';
@@ -85,14 +88,16 @@ export function UserManagement() {
           <UserCog className="h-5 w-5 mr-2" />
           User Management
         </CardTitle>
-        <CardDescription>Manage user accounts and permissions</CardDescription>
+        <CardDescription>
+          Search users by email or name to manage their roles. New users will be automatically added to the system.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <SearchBar 
             value={searchTerm} 
             onChange={handleSearch} 
-            placeholder="Search by username or ID..."
+            placeholder="Search by email or name..."
           />
           
           <UsersTable 

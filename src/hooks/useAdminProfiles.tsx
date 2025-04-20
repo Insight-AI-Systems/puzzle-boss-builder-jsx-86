@@ -28,17 +28,42 @@ export function useAdminProfiles(
         console.log('Not authorized to fetch profiles or no user ID');
         return { data: [], count: 0 } as ProfilesResult;
       }
+
+      if (searchTerm) {
+        // Use the new search_and_sync_users function when there's a search term
+        const { data: searchResults, error: searchError } = await supabase
+          .rpc('search_and_sync_users', { search_term: searchTerm });
+
+        if (searchError) {
+          console.error('Error searching users:', searchError);
+          throw searchError;
+        }
+
+        // Map the search results to UserProfile type
+        const profiles = searchResults.map(result => ({
+          id: result.id,
+          display_name: result.display_name,
+          bio: null,
+          avatar_url: null,
+          role: result.role || 'player',
+          credits: 0,
+          achievements: [],
+          referral_code: null,
+          created_at: result.created_at,
+          updated_at: result.created_at
+        } as UserProfile));
+
+        return {
+          data: profiles,
+          count: profiles.length
+        } as ProfilesResult;
+      }
       
+      // If no search term, fetch regular paginated profiles
       let query = supabase
         .from('profiles')
         .select('*', { count: 'exact' });
       
-      // Add search filter if searchTerm is provided
-      if (searchTerm) {
-        query = query.or(`username.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%`);
-      }
-      
-      // Add pagination
       const from = page * pageSize;
       const to = from + pageSize - 1;
       
