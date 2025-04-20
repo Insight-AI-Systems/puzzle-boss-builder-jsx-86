@@ -42,6 +42,7 @@ export function TicketList({ tickets, isLoading, onUpdateStatus }: TicketListPro
         <TableHeader>
           <TableRow>
             <TableHead>Issue</TableHead>
+            <TableHead>Created By</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Created</TableHead>
             <TableHead>Actions</TableHead>
@@ -58,6 +59,11 @@ export function TicketList({ tickets, isLoading, onUpdateStatus }: TicketListPro
                       {ticket.description}
                     </div>
                   )}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="text-sm">
+                  {ticket.createdByUser?.username || 'Unknown'}
                 </div>
               </TableCell>
               <TableCell>

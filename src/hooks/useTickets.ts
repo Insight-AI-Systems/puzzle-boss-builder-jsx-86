@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +10,9 @@ export interface Ticket {
   created_by: string;
   created_at: string;
   updated_at: string;
+  createdByUser?: {
+    username: string;
+  };
 }
 
 export function useTickets() {
@@ -20,13 +22,18 @@ export function useTickets() {
   const { data: tickets, isLoading: isLoadingTickets } = useQuery({
     queryKey: ['tickets'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: ticketsData, error: ticketsError } = await supabase
         .from('tickets')
-        .select('*')
+        .select('*, profiles:created_by(username)')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data as Ticket[];
+      if (ticketsError) throw ticketsError;
+
+      // Transform the data to match our Ticket type
+      return ticketsData.map((ticket: any) => ({
+        ...ticket,
+        createdByUser: ticket.profiles
+      }));
     }
   });
 
