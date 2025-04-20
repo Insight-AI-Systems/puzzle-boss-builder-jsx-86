@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      beta_notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["note_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["note_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["note_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       feedback: {
         Row: {
           browser_info: string | null
@@ -347,6 +374,7 @@ export type Database = {
     }
     Enums: {
       feedback_type: "bug" | "suggestion" | "question" | "other"
+      note_status: "wip" | "completed"
       user_role:
         | "admin"
         | "category_manager"
@@ -472,6 +500,7 @@ export const Constants = {
   public: {
     Enums: {
       feedback_type: ["bug", "suggestion", "question", "other"],
+      note_status: ["wip", "completed"],
       user_role: [
         "admin",
         "category_manager",

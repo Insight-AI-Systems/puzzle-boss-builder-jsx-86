@@ -1,9 +1,5 @@
 import React from 'react';
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import {
@@ -38,6 +34,7 @@ import {
   NotFound,
   Auth,
   KnownIssues,
+  BetaNotes
 } from '@/pages';
 import Unauthorized from '@/pages/Unauthorized';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -130,6 +127,11 @@ function App() {
                       <Route path="/partnerships" element={<Partnerships />} />
                       <Route path="/unauthorized" element={<Unauthorized />} />
                       <Route path="/known-issues" element={<KnownIssues />} />
+                      <Route path="/beta-notes" element={
+                        <ProtectedRoute>
+                          <BetaNotes />
+                        </ProtectedRoute>
+                      } />
                       
                       <Route path="*" element={<NotFound />} />
                     </Routes>

@@ -1,8 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 export default function KnownIssues() {
   return (
@@ -20,7 +21,13 @@ export default function KnownIssues() {
               We are actively working on resolving these issues
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
+            <Link to="/beta-notes" className="block mt-4">
+              <Button variant="outline" className="w-full">
+                Submit Beta Testing Notes
+              </Button>
+            </Link>
+            
             <div>
               <h3 className="font-medium mb-2">Mobile Experience</h3>
               <ul className="list-disc list-inside space-y-1 pl-2">
