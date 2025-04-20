@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserRole } from '@/types/userTypes';
+import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 import { Card, CardContent } from "@/components/ui/card";
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
@@ -11,7 +11,6 @@ import { UserPagination } from './user-management/UserPagination';
 import { EmailDialog } from './user-management/EmailDialog';
 import { BulkRoleDialog } from './user-management/BulkRoleDialog';
 import { UserInsightsDashboard } from './user-management/UserInsightsDashboard';
-import { ROLE_DEFINITIONS } from '@/types/userTypes';
 
 export function UserManagement() {
   const { profile: currentUserProfile, isAdmin } = useUserProfile();
@@ -57,13 +56,13 @@ export function UserManagement() {
     userStats
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
 
-  const handleSetBulkRole = (roleString: string) => {
+  const handleSetBulkRole = React.useCallback((roleString: string) => {
     if (Object.keys(ROLE_DEFINITIONS).includes(roleString)) {
       setBulkRole(roleString as UserRole);
     } else {
       console.error(`Invalid role: ${roleString}`);
     }
-  };
+  }, [setBulkRole]);
 
   if (isLoadingProfiles) {
     return (
