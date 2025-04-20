@@ -1,4 +1,3 @@
-
 export type UserRole = 
   | 'super_admin'
   | 'admin'
@@ -10,6 +9,7 @@ export type UserRole =
 
 export interface UserProfile {
   id: string;
+  email: string | null;
   display_name: string | null;
   bio: string | null;
   avatar_url: string | null;

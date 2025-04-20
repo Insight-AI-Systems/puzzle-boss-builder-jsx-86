@@ -29,3 +29,4 @@ export interface RpcUserData {
   country: string | null;
   categories_played: string[] | null;
 }
+
