@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { UserProfile } from '@/types/userTypes';
+import { UserProfile, UserRole } from '@/types/userTypes';
 
 export interface AdminProfilesOptions {
   page?: number;
@@ -34,34 +34,35 @@ export function useAdminProfiles(
         try {
           console.log('Direct email search:', searchTerm);
           
-          // First try to find user in auth.users via the RPC function
-          const { data: authUser, error: authError } = await supabase
-            .rpc('find_user_by_email', { email_to_find: searchTerm });
+          // First try to find user in auth.users via the search_and_sync_users function
+          // This is safer than calling find_user_by_email which doesn't exist in this project
+          const { data: searchResults, error: searchError } = await supabase
+            .rpc('search_and_sync_users', { search_term: searchTerm });
             
-          if (authError) {
-            console.error('Error in auth user search:', authError);
+          if (searchError) {
+            console.error('Error in auth user search:', searchError);
           }
           
-          if (authUser && authUser.length > 0) {
-            console.log('Found user in auth.users:', authUser);
+          if (searchResults && Array.isArray(searchResults) && searchResults.length > 0) {
+            console.log('Found user in auth.users:', searchResults);
             
             // Check if the user already has a profile
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
               .select('*')
-              .eq('id', authUser[0].id)
+              .eq('id', searchResults[0].id)
               .single();
               
             // If no profile exists, create one
             if (!profileData && !profileError) {
-              console.log('Creating profile for auth user:', authUser[0].id);
+              console.log('Creating profile for auth user:', searchResults[0].id);
               const { data: newProfile, error: insertError } = await supabase
                 .from('profiles')
                 .insert({
-                  id: authUser[0].id,
-                  username: authUser[0].email,
-                  email: authUser[0].email,
-                  role: 'player'
+                  id: searchResults[0].id,
+                  username: searchResults[0].email,
+                  email: searchResults[0].email,
+                  role: 'player' as UserRole
                 })
                 .select('*')
                 .single();
@@ -77,7 +78,7 @@ export function useAdminProfiles(
                   display_name: newProfile.username || newProfile.email || 'Anonymous User',
                   bio: newProfile.bio || null,
                   avatar_url: newProfile.avatar_url,
-                  role: newProfile.role || 'player',
+                  role: (newProfile.role || 'player') as UserRole,
                   credits: newProfile.credits || 0,
                   achievements: [],
                   referral_code: null,
@@ -97,7 +98,7 @@ export function useAdminProfiles(
                 display_name: profileData.username || profileData.email || 'Anonymous User',
                 bio: profileData.bio || null,
                 avatar_url: profileData.avatar_url,
-                role: profileData.role || 'player',
+                role: (profileData.role || 'player') as UserRole,
                 credits: profileData.credits || 0,
                 achievements: [],
                 referral_code: null,
@@ -118,7 +119,7 @@ export function useAdminProfiles(
       
       if (searchTerm) {
         try {
-          // Use the regular search_and_sync_users function for all other searches
+          // Use the regular search_and_sync_users function for all searches
           console.log('Searching for users with term:', searchTerm);
           const { data: searchResults, error: searchError } = await supabase
             .rpc('search_and_sync_users', { search_term: searchTerm });
@@ -144,7 +145,7 @@ export function useAdminProfiles(
               display_name: profile.username || profile.email || 'Anonymous User',
               bio: profile.bio || null,
               avatar_url: profile.avatar_url,
-              role: profile.role || 'player',
+              role: (profile.role || 'player') as UserRole,
               credits: profile.credits || 0,
               achievements: [],
               referral_code: null,
@@ -157,7 +158,7 @@ export function useAdminProfiles(
 
           console.log('Search results:', searchResults);
 
-          if (!searchResults || searchResults.length === 0) {
+          if (!searchResults || !Array.isArray(searchResults) || searchResults.length === 0) {
             console.log('No search results found, falling back to profile search');
             // Try searching directly in profiles table as a fallback
             const { data: profileData, count, error: profileError } = await supabase
@@ -176,7 +177,7 @@ export function useAdminProfiles(
               display_name: profile.username || profile.email || 'Anonymous User',
               bio: profile.bio || null,
               avatar_url: profile.avatar_url,
-              role: profile.role || 'player',
+              role: (profile.role || 'player') as UserRole,
               credits: profile.credits || 0,
               achievements: [],
               referral_code: null,
@@ -193,7 +194,7 @@ export function useAdminProfiles(
             display_name: result.display_name || result.email || 'Anonymous User',
             bio: null,
             avatar_url: null,
-            role: result.role || 'player',
+            role: (result.role || 'player') as UserRole,
             credits: 0,
             achievements: [],
             referral_code: null,
@@ -225,7 +226,7 @@ export function useAdminProfiles(
             display_name: profile.username || profile.email || 'Anonymous User',
             bio: profile.bio || null,
             avatar_url: profile.avatar_url,
-            role: profile.role || 'player',
+            role: (profile.role || 'player') as UserRole,
             credits: profile.credits || 0,
             achievements: [],
             referral_code: null,
@@ -262,7 +263,7 @@ export function useAdminProfiles(
         display_name: profile.username || profile.email || null,
         bio: profile.bio || null,
         avatar_url: profile.avatar_url,
-        role: profile.role || 'player',
+        role: (profile.role || 'player') as UserRole,
         credits: profile.credits || 0,
         achievements: [],
         referral_code: null,
