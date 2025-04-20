@@ -30,22 +30,23 @@ export function useAdminProfiles(
       }
 
       try {
-        // If email search, try direct profile search first
+        // If searching for an email, try direct email match first
         if (searchTerm && searchTerm.includes('@')) {
           console.log('Email search detected:', searchTerm);
           
-          const { data: profileData, count, error: profileError } = await supabase
+          // Try exact email match in profiles table
+          const { data: exactProfileData, count: exactCount, error: exactProfileError } = await supabase
             .from('profiles')
             .select('*', { count: 'exact' })
-            .eq('email', searchTerm)
+            .ilike('email', searchTerm)
             .range(page * pageSize, (page * pageSize) + pageSize - 1);
           
-          if (profileError) {
-            console.error('Error searching profiles by email:', profileError);
-          } else if (profileData && profileData.length > 0) {
-            console.log('Found profiles by exact email match:', profileData.length);
+          if (exactProfileError) {
+            console.error('Error searching profiles by exact email:', exactProfileError);
+          } else if (exactProfileData && exactProfileData.length > 0) {
+            console.log('Found profiles by exact email match:', exactProfileData.length);
             
-            const profiles = profileData.map(profile => ({
+            const profiles = exactProfileData.map(profile => ({
               id: profile.id,
               display_name: profile.username || profile.email || 'Anonymous User',
               bio: profile.bio || null,
@@ -60,29 +61,29 @@ export function useAdminProfiles(
             
             return { 
               data: profiles, 
-              count: count || profiles.length 
+              count: exactCount || profiles.length 
             } as ProfilesResult;
           }
           
-          // If no direct match, try auth users search via search_and_sync_users function
-          console.log('No exact profile match, attempting to search auth users');
-          
+          // Try auth.users lookup via RPC (requires function in Supabase)
           try {
-            const { data: searchResults, error: searchError } = await supabase
-              .rpc('search_and_sync_users', { search_term: searchTerm });
+            console.log('Trying auth users lookup via RPC for:', searchTerm);
+            
+            const { data: authUserResults, error: authUserError } = await supabase
+              .rpc('search_users_by_email', { search_email: searchTerm });
               
-            if (searchError) {
-              console.error('Error in search_and_sync_users:', searchError);
-            } else if (searchResults && Array.isArray(searchResults) && searchResults.length > 0) {
-              console.log('Found users via search_and_sync_users:', searchResults);
+            if (authUserError) {
+              console.error('Error in auth users lookup:', authUserError);
+            } else if (authUserResults && Array.isArray(authUserResults) && authUserResults.length > 0) {
+              console.log('Found users via auth lookup:', authUserResults.length);
               
               // Map the search results to UserProfile
-              const profiles = searchResults.map(result => ({
+              const profiles = authUserResults.map(result => ({
                 id: result.id,
-                display_name: result.display_name || result.email || 'Anonymous User',
+                display_name: result.email || 'Anonymous User',
                 bio: null,
                 avatar_url: null,
-                role: (result.role || 'player') as UserRole,
+                role: 'player' as UserRole,
                 credits: 0,
                 achievements: [],
                 referral_code: null,
@@ -95,12 +96,12 @@ export function useAdminProfiles(
                 count: profiles.length
               } as ProfilesResult;
             }
-          } catch (searchErr) {
-            console.error('Exception in search_and_sync_users:', searchErr);
+          } catch (authLookupErr) {
+            console.error('Exception in auth users lookup:', authLookupErr);
           }
           
-          // Last resort: fuzzy search in profiles table
-          console.log('Falling back to fuzzy profile search');
+          // Try fuzzy email search as fallback
+          console.log('Falling back to fuzzy email search for:', searchTerm);
           const { data: fuzzyData, count: fuzzyCount, error: fuzzyError } = await supabase
             .from('profiles')
             .select('*', { count: 'exact' })
@@ -108,7 +109,7 @@ export function useAdminProfiles(
             .range(page * pageSize, (page * pageSize) + pageSize - 1);
             
           if (fuzzyError) {
-            console.error('Error in fuzzy profile search:', fuzzyError);
+            console.error('Error in fuzzy email search:', fuzzyError);
           } else if (fuzzyData && fuzzyData.length > 0) {
             console.log('Found profiles by fuzzy email match:', fuzzyData.length);
             
@@ -132,9 +133,10 @@ export function useAdminProfiles(
           }
         }
         
-        // General search across all profiles (fallback or non-email search)
+        // General search across all profiles (for names or partial email matches)
         if (searchTerm) {
           console.log('Performing general search with term:', searchTerm);
+          // Search by username, email, or display_name
           const { data: profileData, count, error: profileError } = await supabase
             .from('profiles')
             .select('*', { count: 'exact' })
@@ -146,20 +148,26 @@ export function useAdminProfiles(
             throw profileError;
           }
           
-          const profiles = profileData?.map(profile => ({
-            id: profile.id,
-            display_name: profile.username || profile.email || 'Anonymous User',
-            bio: profile.bio || null,
-            avatar_url: profile.avatar_url,
-            role: (profile.role || 'player') as UserRole,
-            credits: profile.credits || 0,
-            achievements: [],
-            referral_code: null,
-            created_at: profile.created_at || new Date().toISOString(),
-            updated_at: profile.updated_at || new Date().toISOString()
-          } as UserProfile)) || [];
-          
-          return { data: profiles, count: count || 0 } as ProfilesResult;
+          if (profileData && profileData.length > 0) {
+            console.log('Found profiles in general search:', profileData.length);
+            
+            const profiles = profileData.map(profile => ({
+              id: profile.id,
+              display_name: profile.username || profile.email || 'Anonymous User',
+              bio: profile.bio || null,
+              avatar_url: profile.avatar_url,
+              role: (profile.role || 'player') as UserRole,
+              credits: profile.credits || 0,
+              achievements: [],
+              referral_code: null,
+              created_at: profile.created_at || new Date().toISOString(),
+              updated_at: profile.updated_at || new Date().toISOString()
+            } as UserProfile));
+            
+            return { data: profiles, count: count || profiles.length } as ProfilesResult;
+          } else {
+            console.log('No profiles found in general search for:', searchTerm);
+          }
         }
         
         // Default: fetch all profiles with pagination

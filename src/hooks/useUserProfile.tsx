@@ -1,76 +1,144 @@
 
-import { useAuthState } from './auth/useAuthState';
-import { useProfileData } from './profile/useProfileData';
-import { useAdminStatus } from './profile/useAdminStatus';
-import { useProfileMutation } from './profile/useProfileMutation';
-import { useRoleManagement } from './profile/useRoleManagement';
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { UserProfile, UserRole } from '@/types/userTypes';
 import { useAdminProfiles, AdminProfilesOptions } from './useAdminProfiles';
-import { useState, useEffect } from 'react';
 
-export function useUserProfile(options?: AdminProfilesOptions | string) {
-  const { currentUserId } = useAuthState();
+export interface ProfileUpdateData {
+  username?: string;
+  bio?: string;
+  avatar_url?: string | null;
+}
+
+interface RoleUpdateParams {
+  targetUserId: string;
+  newRole: UserRole;
+}
+
+export function useUserProfile(adminProfilesOptions?: AdminProfilesOptions) {
+  const { user } = useAuth();
+  const [error, setError] = useState<Error | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   
-  // Handle both string (userId) and options object
-  const targetUserId = typeof options === 'string' ? options : undefined;
-  const profileId = targetUserId || currentUserId;
-  
-  const { data: profile, isLoading, error: profileError, refetch } = useProfileData(profileId);
-  const { isAdmin } = useAdminStatus(profile);
-  const { updateProfile } = useProfileMutation(profileId);
-  const { updateUserRole } = useRoleManagement();
-  
-  // Convert string userId to AdminProfilesOptions if needed
-  const adminProfilesOptions: AdminProfilesOptions = 
-    typeof options === 'string' ? {} : options || {};
-  
-  const { 
-    data: allProfiles, 
+  // Fetch basic profile
+  const { data: profile, isLoading, refetch } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+
+      try {
+        console.log('Profile data request for ID:', user.id);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching profile:', error);
+          throw new Error(`Failed to fetch profile: ${error.message}`);
+        }
+
+        console.log('Profile data retrieved:', data);
+        
+        const userProfile: UserProfile = {
+          id: data.id,
+          display_name: data.username,
+          bio: data.bio,
+          avatar_url: data.avatar_url,
+          role: (data.role || 'player') as UserRole,
+          credits: data.credits || 0,
+          achievements: [],
+          referral_code: null,
+          created_at: data.created_at,
+          updated_at: data.updated_at
+        };
+
+        setIsAdmin(['admin', 'super_admin'].includes(userProfile.role));
+        
+        return userProfile;
+      } catch (err) {
+        console.error('Error in useUserProfile:', err);
+        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+        return null;
+      }
+    },
+    enabled: !!user,
+  });
+
+  // Use the useAdminProfiles hook to fetch all profiles if the user is an admin
+  const {
+    data: allProfiles,
     isLoading: isLoadingProfiles,
-    error: profilesError,
-    refetch: refetchProfiles 
-  } = useAdminProfiles(isAdmin, currentUserId, adminProfilesOptions);
+    refetch: refetchProfiles
+  } = useAdminProfiles(isAdmin, user?.id || null, adminProfilesOptions);
 
-  // Additional debugging
-  useEffect(() => {
-    console.log('useUserProfile - Current User ID:', currentUserId);
-    console.log('useUserProfile - Profile ID being used:', profileId);
-  }, [currentUserId, profileId]);
-  
-  // Monitor for profile updates
-  useEffect(() => {
-    if (profile) {
-      console.log('useUserProfile hook - Profile loaded:', profile);
-      console.log('useUserProfile hook - Is Admin:', isAdmin);
-    }
-  }, [profile, isAdmin]);
-  
-  // Monitor for mutation state
-  useEffect(() => {
-    console.log('useUserProfile hook - Update Profile Mutation State:', 
-      updateProfile.isPending ? 'Pending' : 
-      updateProfile.isError ? 'Error' : 
-      updateProfile.isSuccess ? 'Success' : 'Idle');
-    
-    if (updateProfile.isSuccess) {
-      console.log('Profile update was successful - refetching data');
+  // Update profile mutation
+  const updateProfile = useMutation({
+    mutationFn: async (profileData: ProfileUpdateData) => {
+      if (!user) throw new Error('No authenticated user');
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
       refetch();
-    }
-    
-    if (updateProfile.isError) {
-      console.error('Profile update error:', updateProfile.error);
-    }
-  }, [updateProfile.isPending, updateProfile.isError, updateProfile.isSuccess, refetch]);
+    },
+    onError: (err) => {
+      setError(err instanceof Error ? err : new Error('Failed to update profile'));
+    },
+  });
+
+  // Update user role mutation for admins
+  const updateUserRole = useMutation({
+    mutationFn: async ({ targetUserId, newRole }: RoleUpdateParams) => {
+      if (!isAdmin && profile?.role !== 'super_admin') {
+        throw new Error('Only admins can update user roles');
+      }
+
+      // Check if user is trying to change own role
+      if (targetUserId === user?.id && profile?.role !== 'super_admin') {
+        throw new Error('You cannot change your own role');
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', targetUserId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      // Refetch all profiles to update the UI
+      refetchProfiles();
+    },
+    onError: (err) => {
+      setError(err instanceof Error ? err : new Error('Failed to update user role'));
+    },
+  });
 
   return {
     profile,
     isLoading,
-    error: profileError || profilesError, // Combined error property
     isAdmin,
-    allProfiles,
-    isLoadingProfiles,
+    currentUserId: user?.id || null,
     updateProfile,
     updateUserRole,
-    currentUserId,
+    allProfiles,
+    isLoadingProfiles,
+    error,
     refetch: () => {
       refetch();
       refetchProfiles();
