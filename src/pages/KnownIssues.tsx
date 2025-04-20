@@ -1,67 +1,69 @@
+
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { AlertTriangle } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { useIssues } from '@/hooks/useIssues';
+import { NewIssueDialog } from '@/components/issues/NewIssueDialog';
+import { IssueFiltersComponent } from '@/components/issues/IssueFilters';
+import { IssuesList } from '@/components/issues/IssuesList';
 
 export default function KnownIssues() {
+  const {
+    issues,
+    isLoading,
+    filters,
+    setFilters,
+    uniqueCategories,
+    createIssue,
+    updateIssue,
+    updateIssueStatus,
+    deleteIssue
+  } = useIssues();
+
+  const handleFilterChange = (newFilters: Partial<typeof filters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  };
+
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-4xl font-game text-puzzle-aqua mb-8">Known Issues</h1>
-      
-      <div className="space-y-6">
+    <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
+      <div className="container mx-auto p-6">
+        <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-4">
+          <div>
+            <h1 className="text-4xl font-game text-puzzle-aqua">Known Issues</h1>
+            <p className="text-muted-foreground">
+              Track and manage known issues and their resolutions
+            </p>
+          </div>
+          <NewIssueDialog onCreateIssue={createIssue} />
+        </div>
+        
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-puzzle-aqua" />
-              <span>Current Limitations</span>
-            </CardTitle>
-            <CardDescription>
-              We are actively working on resolving these issues
-            </CardDescription>
+            <CardTitle>Issues Tracker</CardTitle>
           </CardHeader>
-          <CardContent>
-            <Link to="/beta-notes" className="block mt-4">
-              <Button variant="outline" className="w-full">
-                Submit Beta Testing Notes
-              </Button>
-            </Link>
+          <CardContent className="space-y-6">
+            <IssueFiltersComponent 
+              filters={filters} 
+              onFilterChange={handleFilterChange} 
+              categories={uniqueCategories}
+            />
             
-            <div>
-              <h3 className="font-medium mb-2">Mobile Experience</h3>
-              <ul className="list-disc list-inside space-y-1 pl-2">
-                <li>Mobile responsiveness improvements in progress</li>
-                <li>Touch controls for puzzles being optimized</li>
-                <li>Mobile performance enhancements planned</li>
-              </ul>
-            </div>
-            
-            <Separator />
-            
-            <div>
-              <h3 className="font-medium mb-2">Browser Compatibility</h3>
-              <ul className="list-disc list-inside space-y-1 pl-2">
-                <li>Best experience in Chrome/Firefox</li>
-                <li>Safari: minor visual differences may occur</li>
-                <li>Internet Explorer: not supported</li>
-                <li>Older browsers: limited functionality</li>
-              </ul>
-            </div>
-            
-            <Separator />
-            
-            <div>
-              <h3 className="font-medium mb-2">Performance</h3>
-              <ul className="list-disc list-inside space-y-1 pl-2">
-                <li>Large puzzles may require more system resources</li>
-                <li>Performance optimizations ongoing</li>
-                <li>Memory usage improvements in development</li>
-              </ul>
-            </div>
+            {isLoading ? (
+              <div className="flex justify-center items-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-puzzle-aqua" />
+              </div>
+            ) : (
+              <IssuesList 
+                issues={issues} 
+                onUpdateStatus={updateIssueStatus}
+                onUpdateIssue={updateIssue}
+                onDeleteIssue={deleteIssue}
+              />
+            )}
           </CardContent>
         </Card>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }
