@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from 'lucide-react';
+import { Loader2, Mail } from "lucide-react";
 
 interface EmailDialogProps {
   open: boolean;
@@ -31,16 +31,15 @@ export function EmailDialog({
   const [body, setBody] = useState('');
   const [isSending, setIsSending] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSend = () => {
     if (!subject.trim() || !body.trim()) {
+      alert('Please enter both subject and body');
       return;
     }
-    
+
     setIsSending(true);
     
-    // Simulate sending process
+    // Simulate sending delay
     setTimeout(() => {
       onSend(subject, body);
       setIsSending(false);
@@ -53,60 +52,61 @@ export function EmailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Send Email to Users</DialogTitle>
+          <DialogTitle>Send Email</DialogTitle>
           <DialogDescription>
-            This will send an email to {selectedCount} selected user{selectedCount !== 1 ? 's' : ''}.
+            You are about to send an email to {selectedCount} selected user{selectedCount !== 1 ? 's' : ''}.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="subject">Subject</Label>
             <Input
               id="subject"
+              placeholder="Email subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Email subject line"
-              required
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="body">Email Content</Label>
+            <Label htmlFor="body">Message</Label>
             <Textarea
               id="body"
+              placeholder="Type your message here"
+              rows={8}
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Write your email content here..."
-              rows={6}
-              required
             />
           </div>
+        </div>
 
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="secondary" 
-              onClick={() => onOpenChange(false)}
-              disabled={isSending}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit"
-              disabled={!subject.trim() || !body.trim() || isSending}
-            >
-              {isSending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                `Send to ${selectedCount} user${selectedCount !== 1 ? 's' : ''}`
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
+        <DialogFooter>
+          <Button 
+            variant="secondary" 
+            onClick={() => onOpenChange(false)}
+            disabled={isSending}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="default"
+            onClick={handleSend}
+            disabled={isSending || !subject.trim() || !body.trim()}
+          >
+            {isSending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sending...
+              </>
+            ) : (
+              <>
+                <Mail className="mr-2 h-4 w-4" />
+                Send Email
+              </>
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

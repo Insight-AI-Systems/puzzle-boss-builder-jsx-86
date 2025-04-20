@@ -44,7 +44,7 @@ export function BulkRoleDialog({
 
         <div className="py-4">
           <RoleSelector 
-            selectedRole={bulkRole} 
+            currentRole={bulkRole as UserRole}
             onRoleChange={setBulkRole} 
             label="Select the new role to assign" 
           />

@@ -9,45 +9,43 @@ interface UserStatsDisplayProps {
 
 export function UserStatsDisplay({ stats }: UserStatsDisplayProps) {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-2xl font-bold">{stats.total}</div>
-          <div className="text-sm text-muted-foreground">Total Users</div>
-        </CardContent>
-      </Card>
-      
-      {stats.genderBreakdown && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-sm font-medium mb-2">Gender Distribution</div>
-            <div className="space-y-2">
-              {Object.entries(stats.genderBreakdown).map(([gender, count]) => (
-                <div key={gender} className="flex items-center justify-between">
-                  <div className="text-sm">{gender === 'null' ? 'Unspecified' : gender}</div>
-                  <div className="text-sm font-medium">{count}</div>
-                </div>
-              ))}
+    <Card className="bg-muted/30">
+      <CardContent className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <h3 className="text-sm font-medium mb-2">Total Users</h3>
+            <p className="text-2xl font-bold">{stats.total}</p>
+          </div>
+          
+          {stats.genderBreakdown && Object.keys(stats.genderBreakdown).length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium mb-2">Gender Distribution</h3>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(stats.genderBreakdown).map(([gender, count]) => (
+                  <div key={gender} className="bg-background p-2 rounded flex gap-2 items-center">
+                    <span className="text-sm">{gender === 'null' ? 'Not Specified' : gender}</span>
+                    <span className="text-xs bg-primary/10 px-2 py-0.5 rounded-full">{count}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {stats.ageBreakdown && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-sm font-medium mb-2">Age Distribution</div>
-            <div className="space-y-2">
-              {Object.entries(stats.ageBreakdown).map(([age, count]) => (
-                <div key={age} className="flex items-center justify-between">
-                  <div className="text-sm">{age}</div>
-                  <div className="text-sm font-medium">{count}</div>
-                </div>
-              ))}
+          )}
+          
+          {stats.ageBreakdown && Object.keys(stats.ageBreakdown).length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium mb-2">Age Distribution</h3>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(stats.ageBreakdown).map(([age, count]) => (
+                  <div key={age} className="bg-background p-2 rounded flex gap-2 items-center">
+                    <span className="text-sm">{age}</span>
+                    <span className="text-xs bg-primary/10 px-2 py-0.5 rounded-full">{count}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

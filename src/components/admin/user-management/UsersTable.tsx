@@ -4,10 +4,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Shield, ChevronDown } from "lucide-react";
 import { UserProfile, UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 import { UserAvatar } from './UserAvatar';
-import { RoleSelector } from './RoleSelector';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 
 interface UsersTableProps {
   users: UserProfile[];
@@ -136,12 +141,30 @@ export function UsersTable({
                 </TableCell>
                 <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
-                  <RoleSelector 
-                    currentRole={user.role} 
-                    currentUserRole={currentUserRole} 
-                    userId={user.id}
-                    onRoleChange={onRoleChange}
-                  />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="flex items-center gap-1">
+                        <Shield className="h-4 w-4" />
+                        Change Role
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {Object.values(ROLE_DEFINITIONS).map((roleDef) => (
+                        <DropdownMenuItem
+                          key={roleDef.role}
+                          onClick={() => onRoleChange(user.id, roleDef.role)}
+                          disabled={
+                            (currentUserRole !== 'super_admin' && 
+                            (roleDef.role === 'super_admin' || roleDef.role === 'admin')) || 
+                            user.role === roleDef.role
+                          }
+                        >
+                          {roleDef.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))

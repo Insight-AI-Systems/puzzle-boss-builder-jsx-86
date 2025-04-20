@@ -4,8 +4,9 @@ import { DateRange } from 'react-day-picker';
 import { UserRole } from '@/types/userTypes';
 import { AdminProfilesOptions } from '@/types/adminTypes';
 
-export function useUserFilters(pageSize: number = 10) {
+export function useUserFilters(initialPageSize: number = 10) {
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(initialPageSize);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
@@ -27,6 +28,8 @@ export function useUserFilters(pageSize: number = 10) {
   return {
     page,
     setPage,
+    pageSize,
+    setPageSize,
     searchTerm,
     setSearchTerm,
     dateRange,
@@ -39,7 +42,6 @@ export function useUserFilters(pageSize: number = 10) {
     setSelectedRole,
     roleSortDirection,
     setRoleSortDirection,
-    filterOptions,
-    pageSize
+    filterOptions
   };
 }
