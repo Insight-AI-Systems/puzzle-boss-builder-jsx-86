@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserCog } from "lucide-react";
@@ -122,14 +121,13 @@ export function UserManagement() {
           User Management
         </CardTitle>
         <CardDescription>
-          Search users by email or name to manage their roles. New users will be automatically added to the system.
+          Enter a search term and click the search button to find users by email or name.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <SearchBar 
-            value={searchTerm} 
-            onChange={handleSearch} 
+            onSearch={handleSearch}
             placeholder="Search by email or name..."
           />
           
