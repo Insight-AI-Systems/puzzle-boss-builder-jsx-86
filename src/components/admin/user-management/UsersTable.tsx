@@ -54,15 +54,18 @@ export function UsersTable({
 
   // Check if current user is super admin (either by role or special email)
   const isSuperAdmin = currentUserRole === 'super_admin';
+  const currentUserId = 'current-user-id'; // Just for reference, not used in this component
   
   // Helper function to determine if current user can assign a role
   const canAssignRole = (role: UserRole, userId: string): boolean => {
     // Log detailed permissions for debugging
-    console.log(`UsersTable - Checking if can assign ${role} to ${userId} (currentUserRole: ${currentUserRole})`);
+    console.log(`UsersTable - Checking if can assign ${role} to ${userId} (currentUserRole: ${currentUserRole}, isSuperAdmin: ${isSuperAdmin})`);
     
     // Special case for protected admin
-    if (userId === 'alan@insight-ai-systems.com') {
-      return currentUserRole === 'super_admin'; // Only another super admin can change protected admin
+    const isProtectedAdmin = userId === 'alan@insight-ai-systems.com';
+    if (isProtectedAdmin && currentUserRole !== 'super_admin') {
+      console.log(`UsersTable - Cannot modify protected admin (${userId}) unless you are a super admin`);
+      return false;
     }
     
     // Super admins can assign any role
@@ -119,11 +122,6 @@ export function UsersTable({
             </TableRow>
           ) : (
             users.map(user => {
-              // Check if this user can be assigned super_admin role
-              const canChangeToSuperAdmin = canAssignRole('super_admin', user.id);
-              
-              console.log(`UsersTable - User ${user.id} - Can change to super_admin: ${canChangeToSuperAdmin}`);
-              
               return (
                 <TableRow key={user.id} className={selectedUsers.has(user.id) ? "bg-muted/20" : undefined}>
                   {selectionEnabled && (
@@ -189,6 +187,8 @@ export function UsersTable({
                           // Determine if this role can be assigned to this user
                           const canAssign = canAssignRole(roleDef.role, user.id);
                           const isCurrentRole = user.role === roleDef.role;
+                          
+                          console.log(`UsersTable - Role ${roleDef.role} for ${user.id}: canAssign=${canAssign}, isCurrentRole=${isCurrentRole}`);
                           
                           return (
                             <DropdownMenuItem

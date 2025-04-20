@@ -12,6 +12,7 @@ export function useRoleManagement() {
       
       // Improved error handling and logging
       try {
+        // Directly call the edge function without any pre-filtering
         const { data, error } = await supabase.functions.invoke('admin-update-roles', {
           body: { userIds: [userId], newRole }
         });
@@ -40,7 +41,7 @@ export function useRoleManagement() {
     mutationFn: async ({ userIds, newRole }: { userIds: string[]; newRole: UserRole }) => {
       console.log(`Bulk updating role to ${newRole} for ${userIds.length} users`);
       
-      // Improved error handling and logging
+      // Pass the request directly to the edge function without any pre-filtering
       try {
         const { data, error } = await supabase.functions.invoke('admin-update-roles', {
           body: { userIds, newRole }

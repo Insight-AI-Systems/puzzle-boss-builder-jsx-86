@@ -60,12 +60,12 @@ serve(async (req) => {
       );
     }
 
-    // Special case for specific super admin email
+    // Special case for specific super admin email - always granted super admin privileges
     const isProtectedSuperAdmin = user.email === "alan@insight-ai-systems.com";
     const isSuperAdmin = profile.role === "super_admin" || isProtectedSuperAdmin;
     const isAdmin = profile.role === "admin" || isSuperAdmin;
 
-    console.log(`User permissions check: isAdmin=${isAdmin}, isSuperAdmin=${isSuperAdmin}, isProtectedSuperAdmin=${isProtectedSuperAdmin}`);
+    console.log(`User permissions check: isAdmin=${isAdmin}, isSuperAdmin=${isSuperAdmin}, isProtectedSuperAdmin=${isProtectedSuperAdmin}, role=${profile.role}, email=${user.email}`);
 
     if (!isAdmin && !isSuperAdmin) {
       console.error("Permissions error: Not an admin");
@@ -98,7 +98,7 @@ serve(async (req) => {
       );
     }
 
-    // Role assignment permissions check
+    // Server-side role assignment permissions check
     if (newRole === "super_admin" && !isSuperAdmin) {
       console.error("Permission denied: Only super_admin can assign super_admin role");
       return new Response(
@@ -111,10 +111,10 @@ serve(async (req) => {
     const results = [];
     for (const userId of userIds) {
       // Special protection for protected admin - only the protected admin itself can change its role
-      const isProtectedAdminUser = userId === "alan@insight-ai-systems.com";
+      const isTargetProtectedAdmin = userId === "alan@insight-ai-systems.com";
       
-      if (isProtectedAdminUser && !isProtectedSuperAdmin) {
-        console.error("Cannot modify protected admin account");
+      if (isTargetProtectedAdmin && !isProtectedSuperAdmin) {
+        console.error(`Cannot modify protected admin account. Requester: ${user.email}, isProtectedSuperAdmin: ${isProtectedSuperAdmin}`);
         results.push({
           id: userId,
           success: false,
@@ -124,7 +124,7 @@ serve(async (req) => {
         continue;
       }
       
-      console.log(`Updating role for user ${userId} to ${newRole}`);
+      console.log(`Updating role for user ${userId} to ${newRole} by ${user.email} (${isSuperAdmin ? 'super_admin' : profile.role})`);
       
       try {
         const { data, error } = await supabaseAdmin
