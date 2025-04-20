@@ -158,9 +158,11 @@ export function UserManagement() {
       },
     },
     onPaginationChange: updater => {
-      const newState = updater({ pageIndex: tablePageIndex, pageSize: tablePageSize });
-      setTablePageIndex(newState.pageIndex);
-      setTablePageSize(newState.pageSize);
+      if (typeof updater === 'function') {
+        const newState = updater({ pageIndex: tablePageIndex, pageSize: tablePageSize });
+        setTablePageIndex(newState.pageIndex);
+        setTablePageSize(newState.pageSize);
+      }
     },
     manualPagination: true,
     pageCount: totalPages,

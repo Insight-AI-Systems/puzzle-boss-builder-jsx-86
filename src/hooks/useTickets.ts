@@ -34,10 +34,7 @@ export function useTickets() {
     mutationFn: async (ticket: Omit<Ticket, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('tickets')
-        .insert({
-          ...ticket,
-          created_by: user?.id || 'unknown'
-        })
+        .insert(ticket)
         .select()
         .single();
 
