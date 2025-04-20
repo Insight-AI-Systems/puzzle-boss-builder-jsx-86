@@ -14,6 +14,8 @@ export interface UserProfile {
   bio: string | null;
   avatar_url: string | null;
   role: UserRole;
+  country: string | null;
+  categories_played: string[];
   credits: number;
   achievements: any[];
   referral_code: string | null;

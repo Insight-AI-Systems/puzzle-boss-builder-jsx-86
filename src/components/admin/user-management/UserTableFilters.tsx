@@ -4,14 +4,16 @@ import { CalendarDateRangePicker } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { ROLE_DEFINITIONS, UserRole } from '@/types/userTypes';
+import { DateRange } from 'react-day-picker';
 
 interface UserTableFiltersProps {
-  onDateRangeChange: (range: { from: Date | undefined; to: Date | undefined }) => void;
+  onDateRangeChange: (range: DateRange | undefined) => void;
   onCountryChange: (country: string | null) => void;
   onCategoryChange: (category: string | null) => void;
   onRoleChange: (role: UserRole | null) => void;
   countries: string[];
   categories: string[];
+  dateRange: DateRange | undefined;
 }
 
 export const UserTableFilters: React.FC<UserTableFiltersProps> = ({
@@ -21,12 +23,14 @@ export const UserTableFilters: React.FC<UserTableFiltersProps> = ({
   onRoleChange,
   countries,
   categories,
+  dateRange,
 }) => {
   return (
     <Card className="p-4 mb-4 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <CalendarDateRangePicker 
+            date={dateRange}
             onChange={onDateRangeChange}
           />
         </div>

@@ -2,7 +2,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types/userTypes';
-import { AdminProfilesOptions } from './useUserProfile';
+
+export interface AdminProfilesOptions {
+  page?: number;
+  pageSize?: number;
+  searchTerm?: string;
+  dateRange?: { from?: Date; to?: Date };
+  country?: string | null;
+  category?: string | null;
+  role?: UserRole | null;
+  roleSortDirection?: 'asc' | 'desc';
+}
 
 export function useAdminProfiles(
   isAdmin: boolean, 
@@ -43,7 +53,7 @@ export function useAdminProfiles(
           throw error;
         }
 
-        const profiles = filteredData.map(profile => ({
+        const profiles = (filteredData || []).map(profile => ({
           id: profile.id,
           display_name: profile.display_name || 'Anonymous User',
           bio: null,
