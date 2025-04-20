@@ -33,8 +33,6 @@ export const usePartnershipForm = () => {
         'Content-Type': 'application/json'
       };
 
-      console.log('Submitting partnership form with data:', sanitizedData);
-
       const { data, error } = await supabase.functions.invoke('handle-partnership', {
         body: sanitizedData,
         headers: requestHeaders,
@@ -42,16 +40,16 @@ export const usePartnershipForm = () => {
 
       if (error) {
         console.error('Error submitting partnership form:', error);
-        throw new Error('Failed to submit form. Please try again later.');
+        setFormError('🤗 We're experiencing a temporary issue with sending your message. Our team has been notified and will work to resolve this soon. Thank you for your patience.');
+        return false;
       }
 
       if (data && data.error) {
         console.error('Server error:', data.error);
-        throw new Error(data.error);
+        setFormError('🤗 We're experiencing a temporary issue with sending your message. Our team has been notified and will work to resolve this soon. Thank you for your patience.');
+        return false;
       }
 
-      console.log('Partnership form submission successful:', data);
-      
       setFormSuccess(data?.message || "Thank you for your interest. We'll be in touch soon!");
       
       toast({
@@ -63,11 +61,11 @@ export const usePartnershipForm = () => {
     } catch (error: any) {
       console.error('Error submitting partnership form:', error);
       
-      setFormError(error.message || "There was a problem submitting your inquiry. Please try again later.");
+      setFormError('🤗 We're experiencing a temporary issue with sending your message. Our team has been notified and will work to resolve this soon. Thank you for your patience.');
       
       toast({
         title: "Error submitting form",
-        description: error.message || "Please try again or contact us directly.",
+        description: '🤗 We're experiencing a temporary issue with sending your message. Our team has been notified and will work to resolve this soon. Thank you for your patience.',
         variant: "destructive",
       });
 
