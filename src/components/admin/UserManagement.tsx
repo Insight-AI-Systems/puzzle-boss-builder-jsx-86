@@ -57,7 +57,7 @@ export function UserManagement() {
     userStats
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
 
-  // Wrapper function that converts string to UserRole
+  // Properly typed wrapper function for setBulkRole to match the expected string input
   const handleSetBulkRole = (role: string) => {
     if (Object.keys(ROLE_DEFINITIONS).includes(role)) {
       setBulkRole(role as UserRole);
@@ -158,7 +158,7 @@ export function UserManagement() {
         onOpenChange={setConfirmRoleDialogOpen}
         selectedCount={selectedUsers.size}
         bulkRole={bulkRole}
-        setBulkRole={handleSetBulkRole}
+        setBulkRole={handleSetBulkRole} 
         onUpdateRoles={handleBulkRoleChange}
         isUpdating={isBulkRoleChanging}
       />
