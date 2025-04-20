@@ -29,22 +29,136 @@ export function useAdminProfiles(
         return { data: [], count: 0 } as ProfilesResult;
       }
 
+      // Special case: direct email search for authenticated users
+      if (searchTerm && searchTerm.includes('@')) {
+        try {
+          console.log('Direct email search:', searchTerm);
+          
+          // First try to find user in auth.users via the RPC function
+          const { data: authUser, error: authError } = await supabase
+            .rpc('find_user_by_email', { email_to_find: searchTerm });
+            
+          if (authError) {
+            console.error('Error in auth user search:', authError);
+          }
+          
+          if (authUser && authUser.length > 0) {
+            console.log('Found user in auth.users:', authUser);
+            
+            // Check if the user already has a profile
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', authUser[0].id)
+              .single();
+              
+            // If no profile exists, create one
+            if (!profileData && !profileError) {
+              console.log('Creating profile for auth user:', authUser[0].id);
+              const { data: newProfile, error: insertError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: authUser[0].id,
+                  username: authUser[0].email,
+                  email: authUser[0].email,
+                  role: 'player'
+                })
+                .select('*')
+                .single();
+                
+              if (insertError) {
+                console.error('Error creating profile:', insertError);
+              } else {
+                console.log('Created new profile:', newProfile);
+                
+                // Format the new profile as UserProfile
+                const userProfile: UserProfile = {
+                  id: newProfile.id,
+                  display_name: newProfile.username || newProfile.email || 'Anonymous User',
+                  bio: newProfile.bio || null,
+                  avatar_url: newProfile.avatar_url,
+                  role: newProfile.role || 'player',
+                  credits: newProfile.credits || 0,
+                  achievements: [],
+                  referral_code: null,
+                  created_at: newProfile.created_at || new Date().toISOString(),
+                  updated_at: newProfile.updated_at || new Date().toISOString()
+                };
+                
+                return { data: [userProfile], count: 1 } as ProfilesResult;
+              }
+            }
+            
+            // If profile exists or was just created, return it
+            if (profileData) {
+              console.log('Using existing profile:', profileData);
+              const userProfile: UserProfile = {
+                id: profileData.id,
+                display_name: profileData.username || profileData.email || 'Anonymous User',
+                bio: profileData.bio || null,
+                avatar_url: profileData.avatar_url,
+                role: profileData.role || 'player',
+                credits: profileData.credits || 0,
+                achievements: [],
+                referral_code: null,
+                created_at: profileData.created_at || new Date().toISOString(),
+                updated_at: profileData.updated_at || new Date().toISOString()
+              };
+              
+              return { data: [userProfile], count: 1 } as ProfilesResult;
+            }
+          }
+          
+          // If we got here, we didn't find the user via RPC, try the regular search
+          console.log('Falling back to regular search with term:', searchTerm);
+        } catch (error) {
+          console.error('Error in direct email search:', error);
+        }
+      }
+      
       if (searchTerm) {
         try {
-          // Use the search_and_sync_users function when there's a search term
+          // Use the regular search_and_sync_users function for all other searches
           console.log('Searching for users with term:', searchTerm);
           const { data: searchResults, error: searchError } = await supabase
             .rpc('search_and_sync_users', { search_term: searchTerm });
 
           if (searchError) {
             console.error('Error searching users:', searchError);
-            throw searchError;
+            
+            // Fall back to direct profile search
+            console.log('Falling back to direct profile search with term:', searchTerm);
+            const { data: profileData, count, error: profileError } = await supabase
+              .from('profiles')
+              .select('*', { count: 'exact' })
+              .or(`username.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
+              .range(page * pageSize, (page * pageSize) + pageSize - 1);
+              
+            if (profileError) {
+              console.error('Error in profile fallback search:', profileError);
+              throw profileError;
+            }
+            
+            const profiles = profileData?.map(profile => ({
+              id: profile.id,
+              display_name: profile.username || profile.email || 'Anonymous User',
+              bio: profile.bio || null,
+              avatar_url: profile.avatar_url,
+              role: profile.role || 'player',
+              credits: profile.credits || 0,
+              achievements: [],
+              referral_code: null,
+              created_at: profile.created_at || new Date().toISOString(),
+              updated_at: profile.updated_at || new Date().toISOString()
+            } as UserProfile)) || [];
+            
+            return { data: profiles, count: count || 0 } as ProfilesResult;
           }
 
           console.log('Search results:', searchResults);
 
           if (!searchResults || searchResults.length === 0) {
-            console.log('No search results found, trying direct profile search');
+            console.log('No search results found, falling back to profile search');
             // Try searching directly in profiles table as a fallback
             const { data: profileData, count, error: profileError } = await supabase
               .from('profiles')
