@@ -1,9 +1,10 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserCog } from "lucide-react";
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useToast } from '@/hooks/use-toast';
-import { UserRole } from '@/types/userTypes';
+import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 import { SearchBar } from './user-management/SearchBar';
 import { UsersTable } from './user-management/UsersTable';
 
