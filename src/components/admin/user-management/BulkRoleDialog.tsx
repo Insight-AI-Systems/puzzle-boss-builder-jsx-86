@@ -34,6 +34,11 @@ export const BulkRoleDialog: React.FC<BulkRoleDialogProps> = ({
   onUpdateRoles,
   isUpdating,
 }) => {
+  // Handle the type mismatch by creating a wrapper function
+  const handleRoleChange = (value: string) => {
+    setBulkRole(value as UserRole);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -47,7 +52,7 @@ export const BulkRoleDialog: React.FC<BulkRoleDialogProps> = ({
         <div className="py-4">
           <RadioGroup 
             value={bulkRole} 
-            onValueChange={(value) => setBulkRole(value as UserRole)}
+            onValueChange={handleRoleChange}
             className="space-y-2"
           >
             {Object.entries(ROLE_DEFINITIONS).map(([role, roleDef]) => (

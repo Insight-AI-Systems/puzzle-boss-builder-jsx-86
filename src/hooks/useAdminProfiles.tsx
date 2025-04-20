@@ -1,7 +1,6 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { AdminProfilesOptions, ProfilesResult, RpcUserData } from '@/types/adminTypes';
+import type { AdminProfilesOptions, ProfilesResult, RpcUserData } from '@/types/adminTypes';
 import { useRoleManagement } from './admin/useRoleManagement';
 import { useEmailManagement } from './admin/useEmailManagement';
 import { filterUserData, transformToUserProfile, extractUniqueValues } from '@/utils/admin/userDataProcessing';
