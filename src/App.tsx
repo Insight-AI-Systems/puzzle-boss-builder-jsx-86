@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider"
@@ -33,7 +34,6 @@ import {
   Partnerships,
   NotFound,
   Auth,
-  KnownIssues,
   BetaNotes
 } from '@/pages';
 import Unauthorized from '@/pages/Unauthorized';
@@ -126,11 +126,6 @@ function App() {
                       <Route path="/press" element={<Press />} />
                       <Route path="/partnerships" element={<Partnerships />} />
                       <Route path="/unauthorized" element={<Unauthorized />} />
-                      <Route path="/known-issues" element={
-                        <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
-                          <KnownIssues />
-                        </ProtectedRoute>
-                      } />
                       <Route path="/beta-notes" element={
                         <ProtectedRoute>
                           <BetaNotes />
