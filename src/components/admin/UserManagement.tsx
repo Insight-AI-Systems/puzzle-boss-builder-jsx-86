@@ -57,6 +57,11 @@ export function UserManagement() {
     userStats
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
 
+  // Create a type-safe wrapper function for setBulkRole
+  const handleSetBulkRole = (role: string) => {
+    setBulkRole(role as UserRole);
+  };
+
   if (isLoadingProfiles) {
     return (
       <Card className="w-full">
@@ -148,7 +153,7 @@ export function UserManagement() {
         onOpenChange={setConfirmRoleDialogOpen}
         selectedCount={selectedUsers.size}
         bulkRole={bulkRole}
-        setBulkRole={(role: string) => setBulkRole(role as UserRole)}
+        setBulkRole={handleSetBulkRole}
         onUpdateRoles={handleBulkRoleChange}
         isUpdating={isBulkRoleChanging}
       />
