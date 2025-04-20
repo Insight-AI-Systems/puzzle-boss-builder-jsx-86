@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { UserRole } from '@/types/userTypes';
 import { Card, CardContent } from "@/components/ui/card";
@@ -55,6 +54,7 @@ export function UserManagement() {
     totalPages
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
 
+  // Create a properly typed wrapper function for setBulkRole
   const handleSetBulkRole = (roleString: string) => {
     setBulkRole(roleString as UserRole);
   };
