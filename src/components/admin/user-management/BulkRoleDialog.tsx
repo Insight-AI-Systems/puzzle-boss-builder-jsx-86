@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Dialog,
@@ -17,8 +16,8 @@ interface BulkRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedCount: number;
-  bulkRole: UserRole | '';
-  setBulkRole: (role: string) => void;
+  bulkRole: UserRole;
+  setBulkRole: (role: UserRole) => void;
   onUpdateRoles: () => void;
   isUpdating: boolean;
 }
@@ -44,7 +43,7 @@ export function BulkRoleDialog({
 
         <div className="py-4">
           <RoleSelector 
-            currentRole={bulkRole as UserRole}
+            currentRole={bulkRole}
             onRoleChange={setBulkRole} 
             label="Select the new role to assign" 
           />

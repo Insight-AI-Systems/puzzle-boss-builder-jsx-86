@@ -1,18 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Search, Filter, Download, ChevronDown } from "lucide-react";
-import { UserProfile, UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
-import { UserManagementHeader } from './user-management/UserManagementHeader';
+import { UserStatsDisplay } from './user-management/UserStatsDisplay';
 import { UsersTable } from './user-management/UsersTable';
 import { EmailDialog } from './user-management/EmailDialog';
-import { UserStatsDisplay } from './user-management/UserStatsDisplay';
 import { BulkRoleDialog } from './user-management/BulkRoleDialog';
+import { UserRole } from '@/types/userTypes';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
 
 export function UserManagement() {
@@ -44,31 +36,34 @@ export function UserManagement() {
     userStats
   } = useUserManagement(true, 'alan@insight-ai-systems.com');
 
+  // Local state for search input
   const [localSearchTerm, setLocalSearchTerm] = useState('');
+
+  // Local state for filters visibility
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  // Handle search submit
+  // Handle search submit with proper event type
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSearchTerm(localSearchTerm);
   };
 
-  // Handle sorting by role
+  // Handle role sorting
   const handleSortByRole = () => {
     setRoleSortDirection(roleSortDirection === 'asc' ? 'desc' : 'asc');
   };
 
-  // Handle selecting all users
+  // Handle bulk selection
   const handleSelectAll = (isSelected: boolean) => {
-    if (isSelected) {
-      const userIds = (allProfilesData?.data || []).map(user => user.id);
+    if (isSelected && allProfilesData?.data) {
+      const userIds = allProfilesData.data.map(user => user.id);
       setSelectedUsers(new Set(userIds));
     } else {
       setSelectedUsers(new Set());
     }
   };
 
-  // Handle selecting a single user
+  // Handle individual user selection
   const handleUserSelection = (userId: string, isSelected: boolean) => {
     const newSelectedUsers = new Set(selectedUsers);
     if (isSelected) {
@@ -79,7 +74,7 @@ export function UserManagement() {
     setSelectedUsers(newSelectedUsers);
   };
 
-  // Function to handle email sending - stub implementation
+  // Handle bulk email sending with proper typing
   const handleBulkEmailSend = (subject: string, body: string) => {
     console.log(`Sending email with subject "${subject}" to ${selectedUsers.size} users`);
     setEmailDialogOpen(false);
@@ -87,7 +82,6 @@ export function UserManagement() {
 
   return (
     <Card className="w-full">
-      <UserManagementHeader />
       <CardContent className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between gap-4">
           <form onSubmit={handleSearchSubmit} className="relative flex flex-1 gap-2">
