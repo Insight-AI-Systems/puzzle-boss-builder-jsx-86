@@ -41,9 +41,15 @@ export function useTickets() {
 
   const createTicket = useMutation({
     mutationFn: async (ticket: Omit<Ticket, 'id' | 'created_at' | 'updated_at'>) => {
+      // Type assertion to match Supabase's expected schema
+      const ticketForDatabase = {
+        ...ticket,
+        status: ticket.status === 'In Review' ? 'WIP' : ticket.status // Convert 'In Review' to 'WIP' for storage
+      } as any;
+
       const { data, error } = await supabase
         .from('tickets')
-        .insert(ticket)
+        .insert(ticketForDatabase)
         .select()
         .single();
 
@@ -57,9 +63,15 @@ export function useTickets() {
 
   const updateTicket = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Ticket> & { id: string }) => {
+      // Type assertion to match Supabase's expected schema
+      const updatesForDatabase = {
+        ...updates,
+        status: updates.status === 'In Review' ? 'WIP' : updates.status // Convert 'In Review' to 'WIP' for storage
+      } as any;
+
       const { data, error } = await supabase
         .from('tickets')
-        .update(updates)
+        .update(updatesForDatabase)
         .eq('id', id)
         .select()
         .single();

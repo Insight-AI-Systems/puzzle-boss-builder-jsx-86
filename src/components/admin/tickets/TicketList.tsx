@@ -49,7 +49,7 @@ export function TicketList({ tickets, isLoading, onUpdateStatus, onUpdateTicket 
       case 'Completed':
         return 'default';
       case 'In Review':
-        return 'warning';
+        return 'secondary';
       case 'WIP':
         return 'outline';
       default:
