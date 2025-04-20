@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -14,25 +14,114 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, ChevronDown, User, Shield, UserCog } from "lucide-react";
+import { Search, ChevronDown, User, Shield, UserCog, ChevronUp, SortAsc, SortDesc } from "lucide-react";
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { UserProfile, UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
+import { useToast } from '@/hooks/use-toast';
 
 export function UserManagement() {
   const { allProfiles, isLoadingProfiles, updateUserRole, profile: currentUserProfile } = useUserProfile();
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'ascending' | 'descending' }>({
+    key: 'display_name',
+    direction: 'ascending'
+  });
+  const { toast } = useToast();
   
-  const handleRoleChange = (userId: string, newRole: UserRole) => {
-    updateUserRole.mutate({ targetUserId: userId, newRole });
-  };
-
   const currentUserRole = currentUserProfile?.role || 'player';
   
-  // Filter profiles based on search term
-  const filteredProfiles = allProfiles?.filter(profile => 
-    profile.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    profile.id.includes(searchTerm)
-  );
+  // Handle sort request for a column
+  const requestSort = (key: string) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Get sort icon for a column
+  const getSortIcon = (columnName: string) => {
+    if (sortConfig.key !== columnName) {
+      return null;
+    }
+    return sortConfig.direction === 'ascending' ? 
+      <SortAsc className="h-4 w-4 inline ml-1" /> : 
+      <SortDesc className="h-4 w-4 inline ml-1" />;
+  };
+
+  // Filter and sort profiles based on search term and sort config
+  const filteredAndSortedProfiles = useMemo(() => {
+    if (!allProfiles) return [];
+    
+    // First filter based on search term
+    let result = allProfiles.filter(profile => 
+      profile.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      profile.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (ROLE_DEFINITIONS[profile.role]?.label || profile.role).toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    // Then sort based on sort config
+    result.sort((a, b) => {
+      if (sortConfig.key === 'display_name') {
+        const aValue = a.display_name || '';
+        const bValue = b.display_name || '';
+        if (sortConfig.direction === 'ascending') {
+          return aValue.localeCompare(bValue);
+        } else {
+          return bValue.localeCompare(aValue);
+        }
+      } else if (sortConfig.key === 'role') {
+        const aValue = ROLE_DEFINITIONS[a.role]?.label || a.role;
+        const bValue = ROLE_DEFINITIONS[b.role]?.label || b.role;
+        return sortConfig.direction === 'ascending' ? 
+          aValue.localeCompare(bValue) : 
+          bValue.localeCompare(aValue);
+      } else if (sortConfig.key === 'credits') {
+        const aValue = a.credits || 0;
+        const bValue = b.credits || 0;
+        return sortConfig.direction === 'ascending' ? 
+          aValue - bValue : 
+          bValue - aValue;
+      } else if (sortConfig.key === 'created_at') {
+        const aValue = new Date(a.created_at).getTime();
+        const bValue = new Date(b.created_at).getTime();
+        return sortConfig.direction === 'ascending' ? 
+          aValue - bValue : 
+          bValue - aValue;
+      }
+      return 0;
+    });
+    
+    return result;
+  }, [allProfiles, searchTerm, sortConfig]);
+
+  const handleRoleChange = (userId: string, newRole: UserRole) => {
+    updateUserRole.mutate(
+      { targetUserId: userId, newRole },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Role updated",
+            description: `User role has been updated to ${ROLE_DEFINITIONS[newRole]?.label || newRole}`,
+            duration: 3000,
+          });
+        },
+        onError: (error) => {
+          toast({
+            title: "Role update failed",
+            description: `Error: ${error instanceof Error ? error.message : 'You do not have permission to update this role.'}`,
+            variant: 'destructive',
+            duration: 5000,
+          });
+        }
+      }
+    );
+  };
+
+  // Helper function to determine if current user can assign a role
+  const canAssignRole = (role: UserRole): boolean => {
+    return ROLE_DEFINITIONS[role].canBeAssignedBy.includes(currentUserRole as UserRole);
+  };
 
   if (isLoadingProfiles) {
     return (
@@ -41,6 +130,11 @@ export function UserManagement() {
           <CardTitle>User Management</CardTitle>
           <CardDescription>Loading user data...</CardDescription>
         </CardHeader>
+        <CardContent>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-puzzle-aqua"></div>
+          </div>
+        </CardContent>
       </Card>
     );
   }
@@ -56,11 +150,6 @@ export function UserManagement() {
     );
   }
 
-  // Helper function to determine if current user can assign a role
-  const canAssignRole = (role: UserRole): boolean => {
-    return ROLE_DEFINITIONS[role].canBeAssignedBy.includes(currentUserRole as UserRole);
-  };
-
   return (
     <Card className="w-full">
       <CardHeader>
@@ -75,7 +164,7 @@ export function UserManagement() {
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search users..."
+              placeholder="Search users by name, ID, or role..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-8 bg-background/50"
@@ -87,15 +176,23 @@ export function UserManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Credits</TableHead>
-                <TableHead>Joined</TableHead>
+                <TableHead onClick={() => requestSort('display_name')} className="cursor-pointer">
+                  User {getSortIcon('display_name')}
+                </TableHead>
+                <TableHead onClick={() => requestSort('role')} className="cursor-pointer">
+                  Role {getSortIcon('role')}
+                </TableHead>
+                <TableHead onClick={() => requestSort('credits')} className="cursor-pointer">
+                  Credits {getSortIcon('credits')}
+                </TableHead>
+                <TableHead onClick={() => requestSort('created_at')} className="cursor-pointer">
+                  Joined {getSortIcon('created_at')}
+                </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProfiles?.map((user) => (
+              {filteredAndSortedProfiles.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center space-x-2">
@@ -137,12 +234,12 @@ export function UserManagement() {
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
                           <Shield className="h-4 w-4 mr-1" />
-                          Role
+                          Change Role
                           <ChevronDown className="h-4 w-4 ml-1" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Change role</DropdownMenuLabel>
+                        <DropdownMenuLabel>Assign Role</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         {Object.values(ROLE_DEFINITIONS).map((roleInfo) => (
                           <DropdownMenuItem
@@ -151,7 +248,20 @@ export function UserManagement() {
                             disabled={!canAssignRole(roleInfo.role) || user.role === roleInfo.role}
                             className={user.role === roleInfo.role ? 'bg-muted font-medium' : ''}
                           >
-                            {roleInfo.label}
+                            <Badge 
+                              variant="outline" 
+                              className={`mr-2 ${
+                                roleInfo.role === 'super_admin' ? 'border-red-600' :
+                                roleInfo.role === 'admin' ? 'border-purple-600' :
+                                roleInfo.role === 'category_manager' ? 'border-blue-600' :
+                                roleInfo.role === 'social_media_manager' ? 'border-green-600' :
+                                roleInfo.role === 'partner_manager' ? 'border-amber-600' :
+                                roleInfo.role === 'cfo' ? 'border-emerald-600' :
+                                'border-slate-600'
+                              }`}
+                            >
+                              {roleInfo.label}
+                            </Badge>
                             {user.role === roleInfo.role && " (current)"}
                           </DropdownMenuItem>
                         ))}

@@ -12,14 +12,17 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('username', { ascending: true });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching profiles:', error);
+        throw error;
+      }
       
       return data.map(profile => ({
         id: profile.id,
         display_name: profile.username || null,
-        bio: null,
+        bio: profile.bio || null,
         avatar_url: profile.avatar_url,
         role: (profile.role || 'player'),
         credits: profile.credits || 0,
@@ -32,4 +35,3 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
     enabled: isAdmin && !!currentUserId,
   });
 }
-
