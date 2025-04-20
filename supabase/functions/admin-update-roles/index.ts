@@ -48,8 +48,21 @@ serve(async (req) => {
       .eq("id", user.id)
       .single();
 
-    if (profileError || !profile || !["admin", "super_admin"].includes(profile.role)) {
-      console.error("Permissions error:", profileError || "Not an admin");
+    if (profileError || !profile) {
+      console.error("Profile error:", profileError);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - profile not found" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Special case for our protected super admin email
+    const isProtectedAdmin = user.email === "alan@insight-ai-systems.com";
+    const isSuperAdmin = profile.role === "super_admin" || isProtectedAdmin;
+    const isAdmin = profile.role === "admin" || isSuperAdmin;
+
+    if (!isAdmin) {
+      console.error("Permissions error: Not an admin");
       return new Response(
         JSON.stringify({ error: "Unauthorized - not an admin" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -75,8 +88,10 @@ serve(async (req) => {
       );
     }
 
-    // Super admins can assign any role, admins can't assign super_admin or admin
-    if (profile.role !== "super_admin" && (newRole === "super_admin" || newRole === "admin")) {
+    // Role assignment permissions
+    // Super admins can assign any role
+    // Regular admins can't assign super_admin or admin roles
+    if (!isSuperAdmin && (newRole === "super_admin" || newRole === "admin")) {
       return new Response(
         JSON.stringify({ error: "Not authorized to assign this role" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }

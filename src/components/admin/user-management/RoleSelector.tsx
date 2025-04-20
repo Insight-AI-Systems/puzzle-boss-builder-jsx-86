@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -28,8 +27,13 @@ export function RoleSelector({
 }: RoleSelectorProps) {
   // Helper function to determine if current user can assign a role
   const canAssignRole = (role: UserRole): boolean => {
+    // Super admins can assign any role
     if (currentUserRole === 'super_admin') return true;
+    
+    // Admins can assign most roles except admin and super_admin
     if (currentUserRole === 'admin' && role !== 'super_admin' && role !== 'admin') return true;
+    
+    // Other roles cannot assign roles
     return false;
   };
 

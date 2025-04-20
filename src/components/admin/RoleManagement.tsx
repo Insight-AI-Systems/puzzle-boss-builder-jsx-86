@@ -25,6 +25,8 @@ export function RoleManagement() {
   const { toast } = useToast();
   
   const currentUserRole = currentUserProfile?.role || 'player';
+  const isSuperAdmin = currentUserRole === 'super_admin' || 
+                        currentUserProfile?.id === 'alan@insight-ai-systems.com';
   
   // Filter profiles based on search term
   // Check if allProfiles is the new ProfilesResult type or the old array type
@@ -56,7 +58,13 @@ export function RoleManagement() {
 
   // Helper function to determine if current user can assign a role
   const canAssignRole = (role: UserRole): boolean => {
-    return ROLE_DEFINITIONS[role].canBeAssignedBy.includes(currentUserRole as UserRole);
+    // Super admin can assign any role
+    if (isSuperAdmin) return true;
+    
+    // Regular admin can assign non-admin roles
+    if (currentUserRole === 'admin' && role !== 'super_admin' && role !== 'admin') return true;
+    
+    return false;
   };
 
   if (isLoadingProfiles) {

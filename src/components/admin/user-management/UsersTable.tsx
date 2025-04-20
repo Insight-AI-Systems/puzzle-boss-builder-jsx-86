@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +50,21 @@ export function UsersTable({
     if (onUserSelection) {
       onUserSelection(userId, checked);
     }
+  };
+
+  // Check if current user is super admin (either by role or special email)
+  const isSuperAdmin = currentUserRole === 'super_admin';
+  
+  // Helper function to determine if current user can assign a role
+  const canAssignRole = (role: UserRole): boolean => {
+    // Super admins can assign any role
+    if (isSuperAdmin) return true;
+    
+    // Admins can assign most roles except admin and super_admin
+    if (currentUserRole === 'admin' && role !== 'super_admin' && role !== 'admin') return true;
+    
+    // Other roles cannot assign roles
+    return false;
   };
 
   return (
@@ -155,8 +169,7 @@ export function UsersTable({
                           key={roleDef.role}
                           onClick={() => onRoleChange(user.id, roleDef.role)}
                           disabled={
-                            (currentUserRole !== 'super_admin' && 
-                            (roleDef.role === 'super_admin' || roleDef.role === 'admin')) || 
+                            !canAssignRole(roleDef.role) || 
                             user.role === roleDef.role
                           }
                         >
