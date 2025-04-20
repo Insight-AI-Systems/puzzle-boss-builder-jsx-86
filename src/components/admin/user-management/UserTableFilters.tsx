@@ -40,7 +40,7 @@ export const UserTableFilters: React.FC<UserTableFiltersProps> = ({
             <SelectValue placeholder="Select country" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Countries</SelectItem>
+            <SelectItem value="all_countries">All Countries</SelectItem>
             {countries.map((country) => (
               <SelectItem key={country} value={country}>
                 {country}
@@ -54,7 +54,7 @@ export const UserTableFilters: React.FC<UserTableFiltersProps> = ({
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Categories</SelectItem>
+            <SelectItem value="all_categories">All Categories</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category} value={category}>
                 {category}
@@ -68,7 +68,7 @@ export const UserTableFilters: React.FC<UserTableFiltersProps> = ({
             <SelectValue placeholder="Select role" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Roles</SelectItem>
+            <SelectItem value="all_roles">All Roles</SelectItem>
             {Object.values(ROLE_DEFINITIONS).map((roleDef) => (
               <SelectItem key={roleDef.role} value={roleDef.role}>
                 {roleDef.label}

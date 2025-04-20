@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserCog } from "lucide-react";
@@ -41,9 +42,9 @@ export function UserManagement() {
     searchTerm,
     dateRange,
     // Temporarily disable these filters until columns exist
-    // country: selectedCountry,
-    // category: selectedCategory,
-    role: selectedRole,
+    // country: selectedCountry !== 'all_countries' ? selectedCountry : null,
+    // category: selectedCategory !== 'all_categories' ? selectedCategory : null,
+    role: selectedRole !== 'all_roles' ? selectedRole : null,
     roleSortDirection
   });
   
@@ -90,6 +91,21 @@ export function UserManagement() {
         duration: 2000,
       });
     }
+  };
+
+  const handleCountryChange = (country: string | null) => {
+    setSelectedCountry(country !== 'all_countries' ? country : null);
+    setPage(0);
+  };
+
+  const handleCategoryChange = (category: string | null) => {
+    setSelectedCategory(category !== 'all_categories' ? category : null);
+    setPage(0);
+  };
+
+  const handleRoleFilter = (role: UserRole | null) => {
+    setSelectedRole(role !== 'all_roles' ? role : null);
+    setPage(0);
   };
 
   const handleSortByRole = () => {
@@ -155,9 +171,9 @@ export function UserManagement() {
           
           <UserTableFilters
             onDateRangeChange={setDateRange}
-            onCountryChange={setSelectedCountry}
-            onCategoryChange={setSelectedCategory}
-            onRoleChange={setSelectedRole}
+            onCountryChange={handleCountryChange}
+            onCategoryChange={handleCategoryChange}
+            onRoleChange={handleRoleFilter}
             countries={countries}
             categories={categories}
             dateRange={dateRange}
