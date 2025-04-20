@@ -5,6 +5,7 @@ import { useUserRoles } from './useUserRoles';
 import { useUserSelection } from './useUserSelection';
 import { useUserExport } from './useUserExport';
 import { useAdminProfiles } from '@/hooks/useAdminProfiles';
+import { UserRole } from '@/types/userTypes';
 
 export function useUserManagement(isAdmin: boolean, currentUserId: string | null) {
   const filters = useUserFilters();
@@ -26,8 +27,12 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
   });
 
   const roles = useUserRoles({ 
-    updateUserRole, 
-    bulkUpdateRoles, 
+    updateUserRole: async (userId: string, newRole: UserRole) => {
+      updateUserRole.mutate({ userId, newRole });
+    }, 
+    bulkUpdateRoles: async (userIds: string[], newRole: UserRole) => {
+      bulkUpdateRoles.mutate({ userIds, newRole });
+    }, 
     refetch,
     selectedUsers: selection.selectedUsers 
   });

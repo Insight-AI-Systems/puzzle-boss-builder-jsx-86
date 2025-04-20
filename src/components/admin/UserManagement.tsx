@@ -1,9 +1,8 @@
-
 import React from 'react';
+import { UserRole } from '@/types/userTypes';
 import { Card, CardContent } from "@/components/ui/card";
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { UserRole } from '@/types/userTypes';
 import { UserManagementHeader } from './user-management/UserManagementHeader';
 import { UserActionBar } from './user-management/UserActionBar';
 import { UserTableFilters } from './user-management/UserTableFilters';
@@ -55,6 +54,10 @@ export function UserManagement() {
     totalPages
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
 
+  const handleSetBulkRole = (roleString: string) => {
+    setBulkRole(roleString as UserRole);
+  };
+
   if (isLoadingProfiles) {
     return (
       <Card className="w-full">
@@ -81,10 +84,6 @@ export function UserManagement() {
       </Card>
     );
   }
-
-  const handleSetBulkRole = (roleString: string) => {
-    setBulkRole(roleString as UserRole);
-  };
 
   return (
     <Card className="w-full">

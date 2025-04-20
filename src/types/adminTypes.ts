@@ -1,5 +1,16 @@
+import { DateRange } from 'react-day-picker';
+import { UserRole } from './userTypes';
 
-import { UserProfile } from './userTypes';
+export interface AdminProfilesOptions {
+  page?: number;
+  pageSize?: number;
+  searchTerm?: string;
+  dateRange?: DateRange;
+  role?: UserRole;
+  roleSortDirection?: 'asc' | 'desc';
+  country?: string | null;
+  category?: string | null;
+}
 
 export interface RpcUserData {
   id: string;
@@ -18,18 +29,4 @@ export interface ProfilesResult {
   count: number;
   countries: string[];
   categories: string[];
-}
-
-export interface AdminProfilesOptions {
-  page?: number;
-  pageSize?: number;
-  searchTerm?: string;
-  dateRange?: {
-    from: Date | undefined;
-    to: Date | undefined;
-  };
-  selectedCountry?: string;
-  selectedCategory?: string;
-  role?: string;
-  roleSortDirection?: 'asc' | 'desc';
 }
