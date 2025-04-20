@@ -61,11 +61,11 @@ serve(async (req) => {
     }
 
     // Special case for specific super admin email
-    const isProtectedSuperAdmin = user.email === "alan@insight-ai-systems.com";
-    const isSuperAdmin = profile.role === "super_admin" || isProtectedSuperAdmin;
+    const isSpecificAdminEmail = user.email === "alan@insight-ai-systems.com";
+    const isSuperAdmin = profile.role === "super_admin" || isSpecificAdminEmail;
     const isAdmin = profile.role === "admin" || isSuperAdmin;
 
-    console.log(`User permissions check: isAdmin=${isAdmin}, isSuperAdmin=${isSuperAdmin}, isProtectedSuperAdmin=${isProtectedSuperAdmin}, role=${profile.role}, email=${user.email}`);
+    console.log(`User permissions check: isAdmin=${isAdmin}, isSuperAdmin=${isSuperAdmin}, isSpecificAdminEmail=${isSpecificAdminEmail}, role=${profile.role}, email=${user.email}`);
 
     if (!isAdmin && !isSuperAdmin) {
       console.error("Permissions error: Not an admin");
@@ -111,8 +111,8 @@ serve(async (req) => {
     const results = [];
     for (const userId of userIds) {
       // Special protection for protected admin - only the protected admin itself can change its role
-      if (userId === "alan@insight-ai-systems.com" && !isProtectedSuperAdmin) {
-        console.error(`Cannot modify protected admin account. Requester: ${user.email}, isProtectedSuperAdmin: ${isProtectedSuperAdmin}`);
+      if (userId === "alan@insight-ai-systems.com" && !isSpecificAdminEmail) {
+        console.error(`Cannot modify protected admin account. Requester: ${user.email}, isSpecificAdminEmail: ${isSpecificAdminEmail}`);
         results.push({
           id: userId,
           success: false,

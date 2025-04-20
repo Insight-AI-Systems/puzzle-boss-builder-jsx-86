@@ -25,22 +25,27 @@ export function RoleSelector({
   onRoleChange,
   label
 }: RoleSelectorProps) {
-  // Check if current user is super admin (either by role or special email)
+  // Check if current user is super admin
   const isSuperAdmin = currentUserRole === 'super_admin';
   
   // Helper function to determine if current user can assign a role
   const canAssignRole = (role: UserRole): boolean => {
+    console.log(`RoleSelector - Checking if can assign ${role}. Current user role: ${currentUserRole}, isSuperAdmin: ${isSuperAdmin}`);
+    
     // Super admins can assign any role
     if (isSuperAdmin) {
+      console.log(`RoleSelector - Super admin can assign ${role}`);
       return true;
     }
     
     // Admins can assign most roles except super_admin
     if (currentUserRole === 'admin' && role !== 'super_admin') {
+      console.log(`RoleSelector - Admin can assign ${role}`);
       return true;
     }
     
     // Other roles cannot assign roles
+    console.log(`RoleSelector - ${currentUserRole} cannot assign ${role}`);
     return false;
   };
 
@@ -73,8 +78,10 @@ export function RoleSelector({
               <DropdownMenuItem
                 key={roleDef.role}
                 onClick={() => {
-                  console.log(`RoleSelector - Selected role: ${roleDef.role}`);
-                  onRoleChange(userId, roleDef.role);
+                  console.log(`RoleSelector - Selected role: ${roleDef.role}. Can assign: ${canAssign}, isSameRole: ${isSameRole}, isOwnUser: ${isOwnUser}`);
+                  if (canAssign && !isSameRole && !isOwnUser) {
+                    onRoleChange(userId, roleDef.role);
+                  }
                 }}
                 disabled={!canAssign || isSameRole || isOwnUser}
                 className="flex items-center justify-between"

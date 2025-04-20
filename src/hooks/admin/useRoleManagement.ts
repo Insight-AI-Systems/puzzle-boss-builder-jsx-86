@@ -10,7 +10,6 @@ export function useRoleManagement() {
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: UserRole }) => {
       console.log(`Updating role for user ${userId} to ${newRole}`);
       
-      // Send role update directly to edge function without any pre-filtering
       try {
         const { data, error } = await supabase.functions.invoke('admin-update-roles', {
           body: { userIds: [userId], newRole }
@@ -30,9 +29,6 @@ export function useRoleManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-users'] });
-    },
-    onError: (error) => {
-      console.error("Role update mutation error:", error);
     }
   });
 
@@ -40,7 +36,6 @@ export function useRoleManagement() {
     mutationFn: async ({ userIds, newRole }: { userIds: string[]; newRole: UserRole }) => {
       console.log(`Bulk updating role to ${newRole} for ${userIds.length} users`);
       
-      // Pass request directly to edge function
       try {
         const { data, error } = await supabase.functions.invoke('admin-update-roles', {
           body: { userIds, newRole }
@@ -60,9 +55,6 @@ export function useRoleManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-users'] });
-    },
-    onError: (error) => {
-      console.error("Bulk role update mutation error:", error);
     }
   });
 

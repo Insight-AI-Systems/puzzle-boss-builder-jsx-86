@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,11 @@ export function UsersTable({
   onUserSelection,
   onSelectAll
 }: UsersTableProps) {
+  // Debug the current user role
+  useEffect(() => {
+    console.log(`UsersTable - Initialized with currentUserRole: ${currentUserRole}`);
+  }, [currentUserRole]);
+
   // Check if selection is enabled (both handlers are provided)
   const selectionEnabled = !!onUserSelection && !!onSelectAll;
   
@@ -54,21 +60,22 @@ export function UsersTable({
 
   // Check if current user is super admin
   const isSuperAdmin = currentUserRole === 'super_admin';
+  const isSpecificAdmin = currentUserRole === 'alan@insight-ai-systems.com';
   
   // Helper function to determine if current user can assign a role
   const canAssignRole = (role: UserRole, userId: string): boolean => {
     // Log detailed permissions for debugging
-    console.log(`UsersTable - Checking if can assign ${role} to ${userId} (currentUserRole: ${currentUserRole}, isSuperAdmin: ${isSuperAdmin})`);
+    console.log(`UsersTable - Checking if can assign ${role} to ${userId} (currentUserRole: ${currentUserRole}, isSuperAdmin: ${isSuperAdmin}, isSpecificAdmin: ${isSpecificAdmin})`);
     
     // Special case for protected admin
     const isProtectedAdmin = userId === 'alan@insight-ai-systems.com';
-    if (isProtectedAdmin && currentUserRole !== 'super_admin') {
+    if (isProtectedAdmin && !(isSuperAdmin || isSpecificAdmin)) {
       console.log(`UsersTable - Cannot modify protected admin (${userId}) unless you are a super admin`);
       return false;
     }
     
     // Super admins can assign any role
-    if (isSuperAdmin) {
+    if (isSuperAdmin || isSpecificAdmin) {
       console.log(`UsersTable - Super admin can assign ${role}`);
       return true;
     }
@@ -185,12 +192,16 @@ export function UsersTable({
                         const canAssign = canAssignRole(roleDef.role, user.id);
                         const isCurrentRole = user.role === roleDef.role;
                         
+                        console.log(`Role option for ${roleDef.role}: canAssign=${canAssign}, isCurrentRole=${isCurrentRole}`);
+                        
                         return (
                           <DropdownMenuItem
                             key={roleDef.role}
                             onClick={() => {
-                              console.log(`UsersTable - Changing role for ${user.id} to ${roleDef.role}`);
-                              onRoleChange(user.id, roleDef.role);
+                              console.log(`UsersTable - Changing role for ${user.id} to ${roleDef.role}, canAssign: ${canAssign}`);
+                              if (canAssign && !isCurrentRole) {
+                                onRoleChange(user.id, roleDef.role);
+                              }
                             }}
                             disabled={!canAssign || isCurrentRole}
                           >
