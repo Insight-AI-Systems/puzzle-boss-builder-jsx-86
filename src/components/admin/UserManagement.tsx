@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { UserRole } from '@/types/userTypes';
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +11,7 @@ import { UserPagination } from './user-management/UserPagination';
 import { EmailDialog } from './user-management/EmailDialog';
 import { BulkRoleDialog } from './user-management/BulkRoleDialog';
 import { UserInsightsDashboard } from './user-management/UserInsightsDashboard';
+import { ROLE_DEFINITIONS } from '@/types/userTypes';
 
 export function UserManagement() {
   const { profile: currentUserProfile, isAdmin } = useUserProfile();
@@ -57,10 +57,14 @@ export function UserManagement() {
     userStats
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
 
-  // Type-safe wrapper for setBulkRole
-  const handleSetBulkRole = (role: string) => {
-    // Type assertion to convert string to UserRole
-    setBulkRole(role as UserRole);
+  // Type-safe wrapper for setBulkRole that converts string to UserRole
+  const handleSetBulkRole = (roleString: string) => {
+    // Validate that the string is a valid UserRole before setting
+    if (Object.keys(ROLE_DEFINITIONS).includes(roleString)) {
+      setBulkRole(roleString as UserRole);
+    } else {
+      console.error(`Invalid role: ${roleString}`);
+    }
   };
 
   if (isLoadingProfiles) {
