@@ -41,14 +41,10 @@ export function useAdminProfiles(
       }
 
       try {
-        const { data, error } = await supabase.rpc('get_all_users', {
-          page_number: page,
-          page_size: pageSize,
-          search_term: searchTerm,
-          from_date: dateRange?.from,
-          to_date: dateRange?.to,
-          role_filter: role,
-          sort_direction: roleSortDirection
+        // Instead of using an RPC that doesn't exist yet, use search_and_sync_users
+        // which will search users and ensure profiles are created
+        const { data, error } = await supabase.rpc('search_and_sync_users', {
+          search_term: searchTerm
         });
 
         if (error) {
@@ -56,25 +52,63 @@ export function useAdminProfiles(
           throw error;
         }
 
+        // Apply client-side filtering until we implement a more comprehensive RPC function
+        let filteredData = [...data];
+        
+        // Date range filtering
+        if (dateRange?.from) {
+          const fromDate = new Date(dateRange.from);
+          filteredData = filteredData.filter(user => {
+            const userDate = new Date(user.created_at);
+            return userDate >= fromDate;
+          });
+        }
+        
+        if (dateRange?.to) {
+          const toDate = new Date(dateRange.to);
+          filteredData = filteredData.filter(user => {
+            const userDate = new Date(user.created_at);
+            return userDate <= toDate;
+          });
+        }
+        
+        // Role filtering
+        if (role) {
+          filteredData = filteredData.filter(user => user.role === role);
+        }
+        
+        // Role sorting
+        filteredData.sort((a, b) => {
+          if (roleSortDirection === 'asc') {
+            return a.role.localeCompare(b.role);
+          } else {
+            return b.role.localeCompare(a.role);
+          }
+        });
+        
+        // Pagination
+        const start = page * pageSize;
+        const paginatedData = filteredData.slice(start, start + pageSize);
+        
         // Transform the response into UserProfile objects
-        const profiles = data.map(row => ({
-          id: row.id,
-          display_name: row.username || 'Anonymous User',
-          bio: row.bio || null,
-          avatar_url: row.avatar_url,
-          role: (row.role || 'player') as UserRole,
-          country: row.country || null,
-          categories_played: row.categories_played || [],
-          credits: row.credits || 0,
+        const profiles = paginatedData.map(user => ({
+          id: user.id,
+          display_name: user.display_name || 'Anonymous User',
+          bio: null,
+          avatar_url: null,
+          role: (user.role || 'player') as UserRole,
+          country: null,
+          categories_played: [],
+          credits: 0,
           achievements: [],
           referral_code: null,
-          created_at: row.created_at,
-          updated_at: row.updated_at || row.created_at
+          created_at: user.created_at,
+          updated_at: user.created_at
         }));
 
         return { 
           data: profiles,
-          count: data[0]?.total_count || 0
+          count: filteredData.length
         } as ProfilesResult;
         
       } catch (error) {
@@ -82,6 +116,6 @@ export function useAdminProfiles(
         throw error;
       }
     },
-    enabled: !!currentUserId,
+    enabled: !!currentUserId && isAdmin,
   });
 }
