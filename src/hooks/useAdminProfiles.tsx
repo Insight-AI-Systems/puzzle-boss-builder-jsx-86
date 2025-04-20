@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types/userTypes';
@@ -56,27 +57,35 @@ export function useAdminProfiles(
 
     try {
       console.log('Fetching users with get_all_users RPC');
-      const { data, error } = await supabase.rpc('get_all_users');
+      // Call the get_all_users RPC function
+      const { data: rpcData, error } = await supabase.rpc('get_all_users');
 
       if (error) {
         console.error('Error fetching users:', error);
         throw error;
       }
 
-      console.log(`Retrieved ${data?.length || 0} users from get_all_users`);
+      if (!rpcData || !Array.isArray(rpcData)) {
+        console.error('Invalid response from get_all_users:', rpcData);
+        return { data: [], count: 0, countries: [], categories: [] };
+      }
+
+      console.log(`Retrieved ${rpcData.length} users from get_all_users`);
 
       const uniqueCountries = new Set<string>();
       const uniqueCategories = new Set<string>();
       
-      data.forEach(user => {
+      // Collect unique countries and categories
+      rpcData.forEach(user => {
         if (user.country) uniqueCountries.add(user.country);
         if (user.categories_played && Array.isArray(user.categories_played)) {
           user.categories_played.forEach(cat => uniqueCategories.add(cat));
         }
       });
 
-      let filteredData = [...data];
+      let filteredData = [...rpcData];
       
+      // Apply filters
       if (searchTerm) {
         filteredData = filteredData.filter(user => 
           user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -118,6 +127,7 @@ export function useAdminProfiles(
         );
       }
       
+      // Sort by role if requested
       if (role || roleSortDirection) {
         filteredData.sort((a, b) => {
           const roleA = a.role || 'player';
@@ -133,9 +143,11 @@ export function useAdminProfiles(
       
       const totalCount = filteredData.length;
       
+      // Apply pagination
       const start = page * pageSize;
       const paginatedData = filteredData.slice(start, start + pageSize);
       
+      // Transform to UserProfile format
       const profiles = paginatedData.map(user => ({
         id: user.id,
         display_name: user.display_name || 'N/A',

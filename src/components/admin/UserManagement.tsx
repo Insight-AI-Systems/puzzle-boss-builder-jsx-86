@@ -392,7 +392,7 @@ export function UserManagement() {
                         </div>
                       </div>
                       
-                      <Alert>
+                      <Alert variant="destructive">
                         <AlertTriangle className="h-4 w-4" />
                         <AlertTitle>Important</AlertTitle>
                         <AlertDescription>
@@ -442,7 +442,7 @@ export function UserManagement() {
                         </RadioGroup>
                       </div>
                       
-                      <Alert>
+                      <Alert variant="destructive">
                         <AlertTriangle className="h-4 w-4" />
                         <AlertTitle>Warning</AlertTitle>
                         <AlertDescription>

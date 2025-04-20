@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { UserRole } from "../../src/types/userTypes";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -59,8 +58,7 @@ serve(async (req) => {
 
     // Parse the request body
     const { userIds, newRole } = await req.json();
-    console.log(`Updating role to ${newRole} for ${userIds.length} users`);
-
+    
     if (!userIds || !Array.isArray(userIds) || !newRole) {
       return new Response(
         JSON.stringify({ error: "Invalid request body" }),
@@ -92,7 +90,7 @@ serve(async (req) => {
         .from("profiles")
         .upsert({
           id: userId,
-          role: newRole as UserRole,
+          role: newRole,
           // Don't override other fields if record exists
         })
         .select("id, role");
