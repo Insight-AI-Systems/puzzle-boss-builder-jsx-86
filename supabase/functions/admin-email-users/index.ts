@@ -1,139 +1,130 @@
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface EmailRequest {
-  userIds: string[];
-  subject: string;
-  body: string;
-}
-
-const handler = async (req: Request): Promise<Response> => {
+serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Create a Supabase client with the Admin key
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Verify that the request is from an admin user
-    const authHeader = req.headers.get('Authorization') || '';
+    // Create a Supabase client with the Admin API key
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    );
+
+    // Extract auth token from request
+    const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        JSON.stringify({ error: "No authorization header provided" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+    // Verify the user is authenticated and an admin
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     
     if (userError || !user) {
+      console.error("Auth error:", userError);
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        JSON.stringify({ error: "Unauthorized - invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    
-    // Check if the user is an admin
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
+
+    // Check if user is admin or super_admin
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
       .single();
-    
-    if (profileError || !profileData || !['super_admin', 'admin'].includes(profileData.role)) {
+
+    if (profileError || !profile || !["admin", "super_admin"].includes(profile.role)) {
+      console.error("Permissions error:", profileError || "Not an admin");
       return new Response(
-        JSON.stringify({ error: 'Only admins can send bulk emails' }),
-        { status: 403, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        JSON.stringify({ error: "Unauthorized - not an admin" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Parse the request body
+    const { userIds, subject, body } = await req.json();
     
-    // Parse request body
-    const { userIds, subject, body }: EmailRequest = await req.json();
-    
-    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+    if (!userIds || !Array.isArray(userIds) || !subject || !body) {
       return new Response(
-        JSON.stringify({ error: 'No user IDs provided' }),
-        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        JSON.stringify({ error: "Invalid request body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    
-    if (!subject || !body) {
-      return new Response(
-        JSON.stringify({ error: 'Subject and body are required' }),
-        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      );
-    }
-    
-    // Get user emails from IDs
-    const { data: users, error: usersError } = await supabase.auth.admin
-      .listUsers();
-    
+
+    console.log(`Preparing to send email to ${userIds.length} users`);
+
+    // Get the email addresses for all users
+    const { data: users, error: usersError } = await supabaseAdmin.auth
+      .admin.listUsers();
+
     if (usersError) {
-      console.error('Error fetching users:', usersError);
+      console.error("Error fetching users:", usersError);
       return new Response(
-        JSON.stringify({ error: 'Error fetching user data' }),
-        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        JSON.stringify({ error: "Failed to fetch users" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    
-    // Filter users by the provided userIds
-    const targetUsers = users?.users?.filter(u => userIds.includes(u.id)) || [];
-    
-    if (targetUsers.length === 0) {
+
+    // Filter out the target users
+    const targetUsers = users.users.filter(u => userIds.includes(u.id));
+    const emailAddresses = targetUsers.map(u => u.email).filter(Boolean);
+
+    console.log(`Found ${emailAddresses.length} valid email addresses out of ${userIds.length} user IDs`);
+
+    if (emailAddresses.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'No matching users found' }),
-        { status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        JSON.stringify({ error: "No valid email addresses found" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    
-    // In a real implementation, you would integrate with an email service
-    // For demonstration, we're just logging the email details
-    console.log(`
-      Would send email to ${targetUsers.length} users:
-      Subject: ${subject}
-      Body: ${body}
-      Recipients: ${targetUsers.map(u => u.email).join(', ')}
-    `);
-    
-    // Record the email sending in a table (if you had one)
-    // const { data: emailLog, error: logError } = await supabase
-    //   .from('email_logs')
-    //   .insert({
-    //     sent_by: user.id,
-    //     user_count: targetUsers.length,
-    //     subject,
-    //     body_snippet: body.substring(0, 100),
-    //     sent_at: new Date()
-    //   });
-    
+
+    // In a real implementation, you would integrate with an email service here
+    // For demo purposes, we'll just return success
+    console.log("Would send email with:", {
+      to: emailAddresses,
+      subject,
+      body
+    });
+
+    /*
+    // Example with a hypothetical email service
+    const emailResults = await sendEmailToUsers({
+      to: emailAddresses,
+      subject,
+      body,
+      from: "noreply@yourdomain.com"
+    });
+    */
+
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Email queued for ${targetUsers.length} users`,
-        recipients: targetUsers.length
+      JSON.stringify({
+        message: `Email queued to be sent to ${emailAddresses.length} users`,
+        recipients: emailAddresses.length,
+        // In a real implementation, you might include more detailed info from the email service
       }),
-      { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-    
+
   } catch (error) {
-    console.error('Error in admin-email-users function:', error);
+    console.error("Unexpected error:", error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      JSON.stringify({ error: error.message || "An unexpected error occurred" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-};
-
-serve(handler);
+});

@@ -123,6 +123,8 @@ export type Database = {
           active_sessions: Json | null
           avatar_url: string | null
           bio: string | null
+          categories_played: string[] | null
+          country: string | null
           created_at: string | null
           credits: number | null
           email: string | null
@@ -144,6 +146,8 @@ export type Database = {
           active_sessions?: Json | null
           avatar_url?: string | null
           bio?: string | null
+          categories_played?: string[] | null
+          country?: string | null
           created_at?: string | null
           credits?: number | null
           email?: string | null
@@ -165,6 +169,8 @@ export type Database = {
           active_sessions?: Json | null
           avatar_url?: string | null
           bio?: string | null
+          categories_played?: string[] | null
+          country?: string | null
           created_at?: string | null
           credits?: number | null
           email?: string | null

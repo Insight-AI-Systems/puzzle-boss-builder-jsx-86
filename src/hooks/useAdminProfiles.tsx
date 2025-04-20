@@ -1,5 +1,4 @@
-
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types/userTypes';
 import { DateRange } from 'react-day-picker';
@@ -11,11 +10,25 @@ export interface AdminProfilesOptions {
   dateRange?: DateRange;
   role?: UserRole | null;
   roleSortDirection?: 'asc' | 'desc';
+  country?: string | null;
+  category?: string | null;
 }
 
 export interface ProfilesResult {
   data: UserProfile[];
   count: number;
+  countries: string[];
+  categories: string[];
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  created_at: string;
+  display_name: string | null;
+  role: UserRole | null;
+  country: string | null;
+  categories_played: string[] | null;
 }
 
 export function useAdminProfiles(
@@ -23,99 +36,203 @@ export function useAdminProfiles(
   currentUserId: string | null,
   options: AdminProfilesOptions = {}
 ) {
+  const queryClient = useQueryClient();
   const { 
     page = 0, 
     pageSize = 10, 
     searchTerm = '',
     dateRange,
     role,
-    roleSortDirection = 'asc'
+    roleSortDirection = 'asc',
+    country,
+    category
   } = options;
 
-  return useQuery({
-    queryKey: ['profiles', page, pageSize, searchTerm, dateRange, role, roleSortDirection],
-    queryFn: async () => {
-      if (!isAdmin || !currentUserId) {
-        console.log('Not authorized to fetch profiles or no user ID');
-        return { data: [], count: 0 } as ProfilesResult;
-      }
+  const fetchUsers = async (): Promise<ProfilesResult> => {
+    if (!isAdmin || !currentUserId) {
+      console.log('Not authorized to fetch profiles or no user ID');
+      return { data: [], count: 0, countries: [], categories: [] };
+    }
 
-      try {
-        // Instead of using an RPC that doesn't exist yet, use search_and_sync_users
-        // which will search users and ensure profiles are created
-        const { data, error } = await supabase.rpc('search_and_sync_users', {
-          search_term: searchTerm
-        });
+    try {
+      console.log('Fetching users with get_all_users RPC');
+      const { data, error } = await supabase.rpc('get_all_users');
 
-        if (error) {
-          console.error('Error fetching users:', error);
-          throw error;
-        }
-
-        // Apply client-side filtering until we implement a more comprehensive RPC function
-        let filteredData = [...data];
-        
-        // Date range filtering
-        if (dateRange?.from) {
-          const fromDate = new Date(dateRange.from);
-          filteredData = filteredData.filter(user => {
-            const userDate = new Date(user.created_at);
-            return userDate >= fromDate;
-          });
-        }
-        
-        if (dateRange?.to) {
-          const toDate = new Date(dateRange.to);
-          filteredData = filteredData.filter(user => {
-            const userDate = new Date(user.created_at);
-            return userDate <= toDate;
-          });
-        }
-        
-        // Role filtering
-        if (role) {
-          filteredData = filteredData.filter(user => user.role === role);
-        }
-        
-        // Role sorting
-        filteredData.sort((a, b) => {
-          if (roleSortDirection === 'asc') {
-            return a.role.localeCompare(b.role);
-          } else {
-            return b.role.localeCompare(a.role);
-          }
-        });
-        
-        // Pagination
-        const start = page * pageSize;
-        const paginatedData = filteredData.slice(start, start + pageSize);
-        
-        // Transform the response into UserProfile objects
-        const profiles = paginatedData.map(user => ({
-          id: user.id,
-          display_name: user.display_name || 'Anonymous User',
-          bio: null,
-          avatar_url: null,
-          role: (user.role || 'player') as UserRole,
-          country: null,
-          categories_played: [],
-          credits: 0,
-          achievements: [],
-          referral_code: null,
-          created_at: user.created_at,
-          updated_at: user.created_at
-        }));
-
-        return { 
-          data: profiles,
-          count: filteredData.length
-        } as ProfilesResult;
-        
-      } catch (error) {
-        console.error('Error in useAdminProfiles:', error);
+      if (error) {
+        console.error('Error fetching users:', error);
         throw error;
       }
-    },
+
+      console.log(`Retrieved ${data?.length || 0} users from get_all_users`);
+
+      const uniqueCountries = new Set<string>();
+      const uniqueCategories = new Set<string>();
+      
+      data.forEach(user => {
+        if (user.country) uniqueCountries.add(user.country);
+        if (user.categories_played && Array.isArray(user.categories_played)) {
+          user.categories_played.forEach(cat => uniqueCategories.add(cat));
+        }
+      });
+
+      let filteredData = [...data];
+      
+      if (searchTerm) {
+        filteredData = filteredData.filter(user => 
+          user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.id.includes(searchTerm)
+        );
+      }
+      
+      if (dateRange?.from) {
+        const fromDate = new Date(dateRange.from);
+        filteredData = filteredData.filter(user => {
+          const userDate = new Date(user.created_at);
+          return userDate >= fromDate;
+        });
+      }
+      
+      if (dateRange?.to) {
+        const toDate = new Date(dateRange.to);
+        toDate.setHours(23, 59, 59, 999);
+        filteredData = filteredData.filter(user => {
+          const userDate = new Date(user.created_at);
+          return userDate <= toDate;
+        });
+      }
+      
+      if (role) {
+        filteredData = filteredData.filter(user => user.role === role);
+      }
+
+      if (country) {
+        filteredData = filteredData.filter(user => user.country === country);
+      }
+
+      if (category) {
+        filteredData = filteredData.filter(user => 
+          user.categories_played && 
+          Array.isArray(user.categories_played) && 
+          user.categories_played.includes(category)
+        );
+      }
+      
+      if (role || roleSortDirection) {
+        filteredData.sort((a, b) => {
+          const roleA = a.role || 'player';
+          const roleB = b.role || 'player';
+          
+          if (roleSortDirection === 'asc') {
+            return roleA.localeCompare(roleB);
+          } else {
+            return roleB.localeCompare(roleA);
+          }
+        });
+      }
+      
+      const totalCount = filteredData.length;
+      
+      const start = page * pageSize;
+      const paginatedData = filteredData.slice(start, start + pageSize);
+      
+      const profiles = paginatedData.map(user => ({
+        id: user.id,
+        display_name: user.display_name || 'N/A',
+        bio: null,
+        avatar_url: null,
+        role: (user.role || 'player') as UserRole,
+        country: user.country || null,
+        categories_played: user.categories_played || [],
+        credits: 0,
+        achievements: [],
+        referral_code: null,
+        created_at: user.created_at,
+        updated_at: user.created_at,
+        email: user.email || null
+      } as UserProfile & { email: string | null }));
+
+      return { 
+        data: profiles,
+        count: totalCount,
+        countries: Array.from(uniqueCountries),
+        categories: Array.from(uniqueCategories)
+      };
+      
+    } catch (error) {
+      console.error('Error in useAdminProfiles:', error);
+      throw error;
+    }
+  };
+
+  const usersQuery = useQuery({
+    queryKey: ['all-users', page, pageSize, searchTerm, dateRange, role, roleSortDirection, country, category],
+    queryFn: fetchUsers,
     enabled: !!currentUserId && isAdmin,
   });
+
+  const updateUserRole = useMutation({
+    mutationFn: async ({ userId, newRole }: { userId: string; newRole: UserRole }) => {
+      console.log(`Updating role for user ${userId} to ${newRole}`);
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert({ 
+          id: userId, 
+          role: newRole 
+        })
+        .select('*')
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
+    }
+  });
+
+  const bulkUpdateRoles = useMutation({
+    mutationFn: async ({ userIds, newRole }: { userIds: string[]; newRole: UserRole }) => {
+      console.log(`Bulk updating role to ${newRole} for ${userIds.length} users`);
+      
+      const { data, error } = await supabase.functions.invoke('admin-update-roles', {
+        body: { userIds, newRole }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
+    }
+  });
+
+  const sendBulkEmail = useMutation({
+    mutationFn: async ({ 
+      userIds, 
+      subject, 
+      body 
+    }: { 
+      userIds: string[]; 
+      subject: string; 
+      body: string; 
+    }) => {
+      console.log(`Sending email to ${userIds.length} users`);
+      
+      const { data, error } = await supabase.functions.invoke('admin-email-users', {
+        body: { userIds, subject, body }
+      });
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  return {
+    ...usersQuery,
+    updateUserRole,
+    bulkUpdateRoles,
+    sendBulkEmail
+  };
 }

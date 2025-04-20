@@ -113,8 +113,8 @@ export const UserTableFilters: React.FC<UserTableFiltersProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all_roles">All Roles</SelectItem>
-                  {Object.values(ROLE_DEFINITIONS).map((roleDef) => (
-                    <SelectItem key={roleDef.role} value={roleDef.role}>
+                  {Object.entries(ROLE_DEFINITIONS).map(([role, roleDef]) => (
+                    <SelectItem key={role} value={role}>
                       {roleDef.label}
                     </SelectItem>
                   ))}

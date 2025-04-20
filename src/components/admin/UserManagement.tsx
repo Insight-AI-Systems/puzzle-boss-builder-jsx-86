@@ -1,6 +1,7 @@
-import React, { useState, useCallback } from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, UserCog, Mail, Shield, Download } from "lucide-react";
+import { UserCog, Mail, Shield, Download, Filter, AlertTriangle } from "lucide-react";
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
@@ -27,11 +28,10 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useAdminProfiles } from '@/hooks/useAdminProfiles';
 
 export function UserManagement() {
   const [page, setPage] = useState(0);
@@ -53,31 +53,43 @@ export function UserManagement() {
   const pageSize = 10;
   
   const { 
-    allProfiles, 
-    isLoadingProfiles, 
-    updateUserRole, 
     profile: currentUserProfile,
+    isAdmin,
+  } = useUserProfile();
+  
+  const {
+    data: allProfilesData,
+    isLoading: isLoadingProfiles,
     error: profileError,
-    refetch 
-  } = useUserProfile({
-    page,
-    pageSize,
-    searchTerm,
-    dateRange,
-    role: selectedRole,
-    roleSortDirection
-  });
+    updateUserRole,
+    bulkUpdateRoles,
+    sendBulkEmail,
+    refetch
+  } = useAdminProfiles(
+    isAdmin, 
+    currentUserProfile?.id || null,
+    {
+      page,
+      pageSize,
+      searchTerm,
+      dateRange,
+      role: selectedRole,
+      roleSortDirection,
+      country: selectedCountry,
+      category: selectedCategory
+    }
+  );
   
   const { toast } = useToast();
   const currentUserRole = currentUserProfile?.role || 'player';
-  const totalPages = Math.ceil((allProfiles?.count || 0) / pageSize);
+  const totalPages = Math.ceil((allProfilesData?.count || 0) / pageSize);
   
-  const countries: string[] = [];
-  const categories: string[] = [];
+  const countries = allProfilesData?.countries || [];
+  const categories = allProfilesData?.categories || [];
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     updateUserRole.mutate(
-      { targetUserId: userId, newRole },
+      { userId, newRole },
       {
         onSuccess: () => {
           toast({
@@ -112,11 +124,10 @@ export function UserManagement() {
     setIsBulkRoleChanging(true);
     
     try {
-      const promises = Array.from(selectedUsers).map(userId => 
-        updateUserRole.mutateAsync({ targetUserId: userId, newRole: bulkRole })
-      );
-      
-      await Promise.all(promises);
+      await bulkUpdateRoles.mutateAsync({ 
+        userIds: Array.from(selectedUsers), 
+        newRole: bulkRole 
+      });
       
       toast({
         title: "Roles updated",
@@ -161,7 +172,11 @@ export function UserManagement() {
     setIsSendingEmail(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await sendBulkEmail.mutateAsync({
+        userIds: Array.from(selectedUsers),
+        subject: emailSubject,
+        body: emailBody
+      });
       
       toast({
         title: "Emails queued",
@@ -172,6 +187,7 @@ export function UserManagement() {
       setEmailDialogOpen(false);
       setEmailSubject('');
       setEmailBody('');
+      setSelectedUsers(new Set());
     } catch (error) {
       toast({
         title: "Email sending failed",
@@ -195,8 +211,8 @@ export function UserManagement() {
   };
   
   const handleSelectAllUsers = (isSelected: boolean) => {
-    if (isSelected && allProfiles?.data) {
-      const allUserIds = allProfiles.data.map(user => user.id);
+    if (isSelected && allProfilesData?.data) {
+      const allUserIds = allProfilesData.data.map(user => user.id);
       setSelectedUsers(new Set(allUserIds));
     } else {
       setSelectedUsers(new Set());
@@ -237,7 +253,7 @@ export function UserManagement() {
   };
 
   const handleExportUsers = () => {
-    if (!allProfiles?.data || allProfiles.data.length === 0) {
+    if (!allProfilesData?.data || allProfilesData.data.length === 0) {
       toast({
         title: "No data to export",
         description: "There are no users to export",
@@ -246,11 +262,12 @@ export function UserManagement() {
       return;
     }
     
-    const headers = ["ID", "Display Name", "Role", "Country", "Categories", "Created At"];
-    const rows = allProfiles.data.map(user => [
+    const headers = ["ID", "Email", "Display Name", "Role", "Country", "Categories", "Created At"];
+    const rows = allProfilesData.data.map(user => [
       user.id,
-      user.display_name || 'Anonymous',
-      user.role,
+      (user as any).email || 'N/A',
+      user.display_name || 'N/A',
+      user.role || 'player',
       user.country || 'Not specified',
       (user.categories_played || []).join(', '),
       new Date(user.created_at).toLocaleDateString()
@@ -272,7 +289,7 @@ export function UserManagement() {
     
     toast({
       title: "Export successful",
-      description: `Exported ${allProfiles.data.length} user records`,
+      description: `Exported ${allProfilesData.data.length} user records`,
     });
   };
 
@@ -331,7 +348,7 @@ export function UserManagement() {
           <div className="flex flex-wrap gap-2 justify-between">
             <SearchBar 
               onSearch={handleSearch}
-              placeholder="Search by email or name..."
+              placeholder="Search by email, name or ID..."
             />
             
             <div className="flex gap-2">
@@ -470,7 +487,7 @@ export function UserManagement() {
           />
           
           <UsersTable 
-            users={allProfiles?.data || []}
+            users={allProfilesData?.data || []}
             currentUserRole={currentUserRole}
             onRoleChange={handleRoleChange}
             onSortByRole={handleSortByRole}

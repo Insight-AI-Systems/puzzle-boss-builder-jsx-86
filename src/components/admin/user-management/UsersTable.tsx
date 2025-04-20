@@ -63,6 +63,7 @@ export function UsersTable({
               </TableHead>
             )}
             <TableHead>User</TableHead>
+            <TableHead>Email</TableHead>
             <TableHead>
               <Button variant="ghost" onClick={onSortByRole} className="flex items-center gap-1">
                 Role
@@ -78,7 +79,7 @@ export function UsersTable({
         <TableBody>
           {users.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={selectionEnabled ? 7 : 6} className="text-center py-6">
+              <TableCell colSpan={selectionEnabled ? 8 : 7} className="text-center py-6">
                 No users found matching your search.
               </TableCell>
             </TableRow>
@@ -97,9 +98,12 @@ export function UsersTable({
                 <TableCell>
                   <UserAvatar 
                     avatarUrl={user.avatar_url} 
-                    displayName={user.display_name || 'Anonymous'} 
+                    displayName={user.display_name || 'N/A'} 
                     userId={user.id} 
                   />
+                </TableCell>
+                <TableCell className="font-mono text-xs">
+                  {(user as any).email || 'N/A'}
                 </TableCell>
                 <TableCell>
                   <Badge 
@@ -113,7 +117,7 @@ export function UsersTable({
                       'bg-slate-600'
                     }
                   >
-                    {ROLE_DEFINITIONS[user.role]?.label || 'User'}
+                    {user.role ? (ROLE_DEFINITIONS[user.role]?.label || user.role) : 'Player'}
                   </Badge>
                 </TableCell>
                 <TableCell>{user.country || 'Not specified'}</TableCell>
