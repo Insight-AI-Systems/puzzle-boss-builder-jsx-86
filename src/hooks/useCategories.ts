@@ -32,6 +32,6 @@ export function useCategories() {
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     staleTime: 0, // Always consider data stale
-    cacheTime: 1000, // Only cache for 1 second
+    gcTime: 1000, // Only cache for 1 second (renamed from cacheTime in React Query v5)
   });
 }
