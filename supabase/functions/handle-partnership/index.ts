@@ -7,6 +7,7 @@ const adminEmail = 'admin@thepuzzleboss.com';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
 interface PartnershipFormData {
@@ -20,6 +21,11 @@ interface PartnershipFormData {
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
+  if (!sendgridApiKey) {
+    console.error("SENDGRID_API_KEY environment variable is not set");
+    throw new Error("Email service configuration error");
+  }
+
   console.log(`Attempting to send email to: ${to}`);
   
   try {
@@ -40,11 +46,11 @@ async function sendEmail(to: string, subject: string, html: string) {
     if (!response.ok) {
       const errorData = await response.text();
       console.error(`SendGrid API error response: ${errorData}`);
-      throw new Error(`SendGrid API error: ${errorData}`);
+      throw new Error(`SendGrid API error: ${response.status} ${errorData}`);
     }
 
     console.log(`Email successfully sent to: ${to}`);
-    return response;
+    return true;
   } catch (error) {
     console.error(`Error sending email to ${to}:`, error);
     throw error;
@@ -57,15 +63,49 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      { 
+        status: 405, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+
   try {
     console.log("Partnership form submission received");
+    
+    // Parse form data
     const formData: PartnershipFormData = await req.json();
     console.log("Form data:", formData);
 
-    // For debugging - let's return success without actually sending emails
-    // This will help determine if the issue is with SendGrid or something else
+    // Validate required fields
+    const requiredFields = ['name', 'email', 'company', 'position', 'interest', 'budget', 'message'];
+    for (const field of requiredFields) {
+      if (!formData[field as keyof PartnershipFormData]) {
+        return new Response(
+          JSON.stringify({ error: `Missing required field: ${field}` }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+    }
+
+    // Prepare result object for response
+    const result = {
+      success: false,
+      adminEmailSent: false,
+      userEmailSent: false,
+      message: "",
+      error: null
+    };
+
+    // Check if SendGrid API key is configured
     if (!sendgridApiKey) {
-      console.error("SENDGRID_API_KEY environment variable is not set");
       return new Response(
         JSON.stringify({ 
           error: "Email service configuration error. Please contact support." 
@@ -77,12 +117,7 @@ serve(async (req) => {
       );
     }
 
-    // Try to send emails, but catch errors individually for each email
-    let adminEmailSent = false;
-    let userEmailSent = false;
-    let errorMessage = null;
-
-    // Try to send admin email
+    // Try to send admin notification email
     try {
       const adminEmailHtml = `
         <h2>New Partnership Inquiry</h2>
@@ -102,11 +137,11 @@ serve(async (req) => {
         adminEmailHtml
       );
       
-      adminEmailSent = true;
+      result.adminEmailSent = true;
       console.log("Admin notification email sent successfully");
     } catch (error) {
       console.error("Error sending admin email:", error);
-      errorMessage = error.message;
+      result.error = error.message;
     }
 
     // Try to send user acknowledgment email
@@ -127,22 +162,20 @@ serve(async (req) => {
         submitterEmailHtml
       );
       
-      userEmailSent = true;
+      result.userEmailSent = true;
       console.log("User acknowledgment email sent successfully");
     } catch (error) {
       console.error("Error sending user acknowledgment email:", error);
-      if (!errorMessage) errorMessage = error.message;
+      if (!result.error) result.error = error.message;
     }
 
     // If at least one email was sent, consider it a partial success
-    if (adminEmailSent || userEmailSent) {
+    if (result.adminEmailSent || result.userEmailSent) {
+      result.success = true;
+      result.message = "Your inquiry has been recorded. Thank you for your interest!";
+      
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          adminEmailSent, 
-          userEmailSent,
-          message: "Your inquiry has been recorded. Thank you for your interest!"
-        }), 
+        JSON.stringify(result), 
         {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -150,7 +183,7 @@ serve(async (req) => {
       );
     } else {
       // If both emails failed, return an error
-      throw new Error(errorMessage || "Failed to send emails");
+      throw new Error(result.error || "Failed to send emails");
     }
   } catch (error) {
     console.error('Error in handle-partnership function:', error);

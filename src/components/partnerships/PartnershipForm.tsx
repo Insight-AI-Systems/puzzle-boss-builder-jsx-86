@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { HandshakeIcon, AlertTriangle } from 'lucide-react';
+import { HandshakeIcon, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
@@ -38,6 +38,7 @@ const PartnershipForm = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -55,6 +56,7 @@ const PartnershipForm = () => {
   const handleSubmit = async (values: FormData) => {
     setIsSubmitting(true);
     setFormError(null);
+    setFormSuccess(null);
 
     try {
       // Sanitize inputs to prevent XSS
@@ -71,7 +73,10 @@ const PartnershipForm = () => {
       // Add CSRF token and security headers
       const requestHeaders = {
         'X-CSRF-Token': getCsrfToken(),
+        'Content-Type': 'application/json'
       };
+
+      console.log('Submitting partnership form with data:', sanitizedData);
 
       const { data, error } = await supabase.functions.invoke('handle-partnership', {
         body: sanitizedData,
@@ -83,18 +88,22 @@ const PartnershipForm = () => {
         throw new Error('Failed to submit form. Please try again later.');
       }
 
-      if (data.error) {
+      if (data && data.error) {
         console.error('Server error:', data.error);
         throw new Error(data.error);
       }
 
+      console.log('Partnership form submission successful:', data);
+      
+      setFormSuccess(data?.message || "Thank you for your interest. We'll be in touch soon!");
+      
       toast({
         title: "Partnership inquiry submitted!",
-        description: data.message || "Thank you for your interest. We'll be in touch soon!",
+        description: data?.message || "Thank you for your interest. We'll be in touch soon!",
       });
 
       form.reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting partnership form:', error);
       
       setFormError(error.message || "There was a problem submitting your inquiry. Please try again later.");
@@ -122,6 +131,13 @@ const PartnershipForm = () => {
           <div className="bg-destructive/10 p-3 rounded-md mb-6 flex items-start">
             <AlertTriangle className="h-5 w-5 text-destructive mr-2 mt-0.5 flex-shrink-0" />
             <p className="text-sm text-destructive">{formError}</p>
+          </div>
+        )}
+        
+        {formSuccess && (
+          <div className="bg-green-500/10 p-3 rounded-md mb-6 flex items-start">
+            <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-green-500">{formSuccess}</p>
           </div>
         )}
         
