@@ -16,14 +16,14 @@ export const DashboardTabSelector: React.FC<DashboardTabSelectorProps> = ({
   onTabChange
 }) => {
   return (
-    <TabsList className="bg-puzzle-black/50 border border-puzzle-aqua/20 mb-6 flex flex-wrap">
+    <TabsList className="bg-puzzle-black/50 border border-puzzle-aqua/20 mb-6 flex flex-wrap w-full h-auto">
       {accessibleTabs.map(tab => (
         <TabsTrigger 
           key={tab.id} 
           value={tab.id}
           onClick={() => onTabChange(tab.id)}
           data-state={activeTab === tab.id ? 'active' : 'inactive'}
-          className="data-[state=active]:bg-puzzle-aqua/10 data-[state=active]:text-puzzle-aqua"
+          className="data-[state=active]:bg-puzzle-aqua/10 data-[state=active]:text-puzzle-aqua p-2 flex-grow md:flex-none"
         >
           {tab.icon}
           <span className="ml-1">{tab.label}</span>

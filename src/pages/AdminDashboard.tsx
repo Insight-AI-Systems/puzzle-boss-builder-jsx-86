@@ -36,10 +36,6 @@ const AdminDashboard = () => {
     // Force grant access to special account
     if (profile?.id && profile.id === 'alan@insight-ai-systems.com') {
       console.log('Protected super admin detected, access granted');
-      toast({
-        title: "Super Admin Access Granted",
-        description: "Welcome to the Admin Dashboard",
-      });
       return;
     }
     
@@ -54,10 +50,6 @@ const AdminDashboard = () => {
       navigate('/', { replace: true });
     } else if (isAdmin || isSuperAdmin) {
       console.log('Admin access granted');
-      toast({
-        title: "Admin Access Granted",
-        description: `Welcome to the Admin Dashboard. Your role: ${profile?.role}`,
-      });
     }
   }, [isLoading, isAdmin, isSuperAdmin, navigate, profile, currentUserId, toast]);
 
@@ -70,26 +62,14 @@ const AdminDashboard = () => {
     );
   }
 
-  // Super admin access is always permitted
-  if (isSuperAdmin) {
-    console.log('Rendering super admin dashboard');
+  // Super admin or admin dashboard
+  if (isSuperAdmin || isAdmin) {
     return (
       <div className="min-h-screen bg-puzzle-black p-6">
         <div className="max-w-6xl mx-auto space-y-8">
-          <h1 className="text-3xl font-game text-puzzle-aqua">Super Admin Dashboard</h1>
-          <RoleBasedDashboard />
-        </div>
-      </div>
-    );
-  }
-
-  // Regular admin dashboard
-  if (isAdmin) {
-    console.log('Rendering regular admin dashboard');
-    return (
-      <div className="min-h-screen bg-puzzle-black p-6">
-        <div className="max-w-6xl mx-auto space-y-8">
-          <h1 className="text-3xl font-game text-puzzle-aqua">Admin Dashboard</h1>
+          <h1 className="text-3xl font-game text-puzzle-aqua">
+            {isSuperAdmin ? 'Super Admin Dashboard' : 'Admin Dashboard'}
+          </h1>
           <RoleBasedDashboard />
         </div>
       </div>
@@ -97,7 +77,6 @@ const AdminDashboard = () => {
   }
 
   // Access denied case (fallback)
-  console.log('Rendering access denied screen');
   return (
     <div className="min-h-screen bg-puzzle-black p-6">
       <Alert variant="destructive">
