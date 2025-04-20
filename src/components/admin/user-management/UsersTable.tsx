@@ -10,59 +10,28 @@ interface UsersTableProps {
   users: UserProfile[];
   currentUserRole: UserRole;
   onRoleChange: (userId: string, newRole: UserRole) => void;
-  sortConfig: { key: string; direction: 'ascending' | 'descending' };
-  onRequestSort: (key: string) => void;
 }
 
 export function UsersTable({ 
   users, 
   currentUserRole, 
-  onRoleChange, 
-  sortConfig, 
-  onRequestSort 
+  onRoleChange,
 }: UsersTableProps) {
-  // Helper to render sort indicator
-  const renderSortIndicator = (columnKey: string) => {
-    if (sortConfig.key !== columnKey) return null;
-    return sortConfig.direction === 'ascending' ? ' ↑' : ' ↓';
-  };
-
   return (
     <div className="rounded-md border overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead 
-              className="cursor-pointer"
-              onClick={() => onRequestSort('display_name')}
-            >
-              User {renderSortIndicator('display_name')}
-            </TableHead>
-            <TableHead 
-              className="cursor-pointer"
-              onClick={() => onRequestSort('role')}
-            >
-              Role {renderSortIndicator('role')}
-            </TableHead>
-            <TableHead 
-              className="cursor-pointer"
-              onClick={() => onRequestSort('credits')}
-            >
-              Credits {renderSortIndicator('credits')}
-            </TableHead>
-            <TableHead 
-              className="cursor-pointer"
-              onClick={() => onRequestSort('created_at')}
-            >
-              Joined {renderSortIndicator('created_at')}
-            </TableHead>
+            <TableHead>User</TableHead>
+            <TableHead>Role</TableHead>
+            <TableHead>Joined</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {users.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-6">
+              <TableCell colSpan={4} className="text-center py-6">
                 No users found matching your search.
               </TableCell>
             </TableRow>
@@ -91,7 +60,6 @@ export function UsersTable({
                     {ROLE_DEFINITIONS[user.role]?.label || user.role}
                   </Badge>
                 </TableCell>
-                <TableCell>{user.credits || 0}</TableCell>
                 <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
                   <RoleSelector 
