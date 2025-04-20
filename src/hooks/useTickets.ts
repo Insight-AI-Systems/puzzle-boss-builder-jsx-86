@@ -1,12 +1,15 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+
+export type TicketStatus = 'WIP' | 'Completed' | 'In Review';
 
 export interface Ticket {
   id: string;
   heading: string;
   description: string;
-  status: 'WIP' | 'Completed';
+  status: TicketStatus;
   created_by: string;
   created_at: string;
   updated_at: string;
