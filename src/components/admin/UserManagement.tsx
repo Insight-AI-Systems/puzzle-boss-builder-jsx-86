@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 import { Card, CardContent } from "@/components/ui/card";
@@ -55,6 +56,11 @@ export function UserManagement() {
     totalPages,
     userStats
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
+
+  // Define type-safe wrapper function for the role setting
+  const handleBulkRoleChange = (role: string) => {
+    setBulkRole(role as UserRole);
+  };
 
   if (isLoadingProfiles) {
     return (
