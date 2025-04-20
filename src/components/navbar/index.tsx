@@ -1,10 +1,12 @@
 
 import React from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMobileMenu } from '@/hooks/use-mobile-menu';
+import { useAdminStatus } from '@/hooks/profile/useAdminStatus';
+import { Link } from 'react-router-dom';
 import Logo from './Logo';
 import NavLinks from './NavLinks';
 import UserMenu from './UserMenu';
@@ -14,6 +16,7 @@ import { mainNavItems } from './NavbarData';
 
 const Navbar: React.FC = () => {
   const { profile, isLoading } = useUserProfile();
+  const { isAdmin } = useAdminStatus(profile);
   const isMobile = useIsMobile();
   const { isMenuOpen, toggleMenu, closeMenu } = useMobileMenu();
   
@@ -34,6 +37,15 @@ const Navbar: React.FC = () => {
           
           {/* User Menu / Auth Buttons */}
           <div className="hidden md:flex items-center space-x-2">
+            {!isLoading && profile && isAdmin && (
+              <Link 
+                to="/admin-dashboard"
+                className="flex items-center px-3 py-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
+              >
+                <LayoutDashboard className="h-5 w-5 mr-2" />
+                Admin
+              </Link>
+            )}
             {!isLoading && profile ? (
               <UserMenu profile={profile} />
             ) : (
@@ -44,7 +56,17 @@ const Navbar: React.FC = () => {
           {/* Mobile Navigation Toggle */}
           <div className="md:hidden flex items-center">
             {!isLoading && profile ? (
-              <UserMenu profile={profile} isMobile={true} />
+              <>
+                {isAdmin && (
+                  <Link 
+                    to="/admin-dashboard"
+                    className="flex items-center px-3 py-2 mr-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
+                  >
+                    <LayoutDashboard className="h-5 w-5" />
+                  </Link>
+                )}
+                <UserMenu profile={profile} isMobile={true} />
+              </>
             ) : (
               <AuthButtons isMobile={true} />
             )}
