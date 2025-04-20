@@ -57,6 +57,16 @@ export function UserManagement() {
     userStats
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
 
+  // Wrapper function that converts string to UserRole
+  const handleSetBulkRole = (role: string) => {
+    if (Object.keys(ROLE_DEFINITIONS).includes(role)) {
+      setBulkRole(role as UserRole);
+    } else {
+      console.error(`Invalid role: ${role}, defaulting to 'player'`);
+      setBulkRole('player');
+    }
+  };
+
   if (isLoadingProfiles) {
     return (
       <Card className="w-full">
@@ -148,7 +158,7 @@ export function UserManagement() {
         onOpenChange={setConfirmRoleDialogOpen}
         selectedCount={selectedUsers.size}
         bulkRole={bulkRole}
-        setBulkRole={setBulkRole} // Direct pass of state setter
+        setBulkRole={handleSetBulkRole}
         onUpdateRoles={handleBulkRoleChange}
         isUpdating={isBulkRoleChanging}
       />
