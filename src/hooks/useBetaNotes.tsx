@@ -80,6 +80,7 @@ export function useBetaNotes() {
 
       if (error) throw error;
 
+      // Make sure to handle potentially missing profile data
       const newNote: BetaNote = {
         id: data.id,
         user_id: data.user_id,
