@@ -11,8 +11,8 @@ export function useUserProfile(options?: AdminProfilesOptions | string) {
   const { currentUserId } = useAuthState();
   
   // Handle both string (userId) and options object
-  const userId = typeof options === 'string' ? options : options?.userId;
-  const profileId = userId || currentUserId;
+  const targetUserId = typeof options === 'string' ? options : undefined;
+  const profileId = targetUserId || currentUserId;
   
   const { data: profile, isLoading, error, refetch } = useProfileData(profileId);
   const { isAdmin } = useAdminStatus(profile);
@@ -21,7 +21,7 @@ export function useUserProfile(options?: AdminProfilesOptions | string) {
   
   // Convert string userId to AdminProfilesOptions if needed
   const adminProfilesOptions: AdminProfilesOptions = 
-    typeof options === 'string' ? { userId: options } : options || {};
+    typeof options === 'string' ? {} : options || {};
   
   const { 
     data: allProfiles, 
