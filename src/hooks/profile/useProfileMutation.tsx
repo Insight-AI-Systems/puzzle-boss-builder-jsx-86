@@ -58,7 +58,7 @@ export function useProfileMutation(profileId: string | null) {
         .from('profiles')
         .update(profileUpdate)
         .eq('id', profileId)
-        .select()
+        .select('id, username, bio, avatar_url, role, country, categories_played, credits, created_at, updated_at')
         .single();
       
       if (error) {

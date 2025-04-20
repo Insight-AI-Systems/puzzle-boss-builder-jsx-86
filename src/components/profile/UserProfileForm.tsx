@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { UserProfile } from '@/types/userTypes';
@@ -6,7 +7,7 @@ import { ProfileHeader } from './form/ProfileHeader';
 import { ProfileAvatar } from './form/ProfileAvatar';
 import { ProfileEditForm } from './form/ProfileEditForm';
 
-export function UserProfileForm({ userId }: { userId?: string }) {
+export function UserProfileForm() {
   const { profile, isLoading, updateProfile } = useUserProfile();
   const [isEditing, setIsEditing] = React.useState(false);
   const [formData, setFormData] = React.useState<Partial<UserProfile>>({

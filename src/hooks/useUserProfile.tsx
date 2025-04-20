@@ -32,7 +32,7 @@ export function useUserProfile(adminOptions?: AdminProfilesOptions) {
         console.log('Profile data request for ID:', user.id);
         const { data, error } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id, username, bio, avatar_url, role, country, categories_played, credits, created_at, updated_at')
           .eq('id', user.id)
           .single();
 
@@ -45,17 +45,17 @@ export function useUserProfile(adminOptions?: AdminProfilesOptions) {
         
         const userProfile: UserProfile = {
           id: data.id,
-          display_name: data.username,
-          bio: data.bio,
+          display_name: data.username || null,
+          bio: data.bio || null,
           avatar_url: data.avatar_url,
           role: (data.role || 'player') as UserRole,
           country: data.country || null,
-          categories_played: data.categories_played || [],
+          categories_played: Array.isArray(data.categories_played) ? data.categories_played : [],
           credits: data.credits || 0,
           achievements: [],
           referral_code: null,
           created_at: data.created_at,
-          updated_at: data.updated_at
+          updated_at: data.updated_at || data.created_at
         };
 
         setIsAdmin(['admin', 'super_admin'].includes(userProfile.role));
@@ -86,7 +86,7 @@ export function useUserProfile(adminOptions?: AdminProfilesOptions) {
         .from('profiles')
         .update(profileData)
         .eq('id', user.id)
-        .select()
+        .select('id, username, bio, avatar_url, role, country, categories_played, credits, created_at, updated_at')
         .single();
 
       if (error) throw error;
@@ -116,7 +116,7 @@ export function useUserProfile(adminOptions?: AdminProfilesOptions) {
         .from('profiles')
         .update({ role: newRole })
         .eq('id', targetUserId)
-        .select()
+        .select('id, username, bio, avatar_url, role, country, categories_played, credits, created_at, updated_at')
         .single();
 
       if (error) throw error;

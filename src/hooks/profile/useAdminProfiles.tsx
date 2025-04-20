@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { UserProfile } from '@/types/userTypes';
+import { UserProfile, UserRole } from '@/types/userTypes';
 
 export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null) {
   return useQuery({
@@ -15,7 +15,7 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
       console.log('Fetching all profiles from Supabase');
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, username, bio, avatar_url, role, country, categories_played, credits, created_at, updated_at')
         .order('username', { ascending: true });
       
       if (error) {
@@ -30,7 +30,9 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
         display_name: profile.username || null,
         bio: profile.bio || null,
         avatar_url: profile.avatar_url,
-        role: (profile.role || 'player'),
+        role: (profile.role || 'player') as UserRole,
+        country: profile.country || null,
+        categories_played: Array.isArray(profile.categories_played) ? profile.categories_played : [],
         credits: profile.credits || 0,
         achievements: [],
         referral_code: null,

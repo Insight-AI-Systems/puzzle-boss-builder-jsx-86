@@ -14,23 +14,24 @@ export function useRoleManagement() {
         .from('profiles')
         .update({ role: newRole })
         .eq('id', targetUserId)
-        .select();
+        .select('id, username, bio, avatar_url, role, country, categories_played, credits, created_at, updated_at')
+        .single();
       
       if (error) throw error;
       
       const updatedUserProfile: UserProfile = {
-        id: data[0].id,
-        display_name: data[0].username || null,
-        bio: null,
-        avatar_url: data[0].avatar_url,
-        role: (data[0].role || 'player') as UserRole,
-        country: data[0].country || null,
-        categories_played: data[0].categories_played || [],
-        credits: data[0].credits || 0,
+        id: data.id,
+        display_name: data.username || null,
+        bio: data.bio || null,
+        avatar_url: data.avatar_url,
+        role: (data.role || 'player') as UserRole,
+        country: data.country || null,
+        categories_played: data.categories_played || [],
+        credits: data.credits || 0,
         achievements: [],
         referral_code: null,
-        created_at: data[0].created_at || new Date().toISOString(),
-        updated_at: data[0].updated_at || new Date().toISOString()
+        created_at: data.created_at || new Date().toISOString(),
+        updated_at: data.updated_at || new Date().toISOString()
       };
       
       return updatedUserProfile;

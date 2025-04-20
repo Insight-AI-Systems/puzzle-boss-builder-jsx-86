@@ -11,7 +11,7 @@ export function useProfileData(profileId: string | null) {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, username, bio, avatar_url, role, country, categories_played, credits, created_at, updated_at')
         .eq('id', profileId)
         .single();
       

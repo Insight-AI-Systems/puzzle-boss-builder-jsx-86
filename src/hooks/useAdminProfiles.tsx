@@ -88,20 +88,23 @@ export function useAdminProfiles(
           throw error;
         }
 
-        const profiles = (data || []).map(profile => ({
-          id: profile.id,
-          display_name: profile.username || 'Anonymous User',
-          bio: profile.bio || null,
-          avatar_url: profile.avatar_url,
-          role: (profile.role || 'player') as UserRole,
-          country: profile.country || null,
-          categories_played: profile.categories_played || [],
-          credits: profile.credits || 0,
-          achievements: [],
-          referral_code: null,
-          created_at: profile.created_at,
-          updated_at: profile.updated_at || profile.created_at
-        } as UserProfile));
+        // Transform the database rows into UserProfile objects
+        const profiles = (data || []).map(profile => {
+          return {
+            id: profile.id,
+            display_name: profile.username || 'Anonymous User',
+            bio: profile.bio || null,
+            avatar_url: profile.avatar_url,
+            role: (profile.role || 'player') as UserRole,
+            country: profile.country || null,
+            categories_played: Array.isArray(profile.categories_played) ? profile.categories_played : [],
+            credits: profile.credits || 0,
+            achievements: [],
+            referral_code: null,
+            created_at: profile.created_at,
+            updated_at: profile.updated_at || profile.created_at
+          } as UserProfile;
+        });
 
         // For category filtering, we need to do it post-query since it's an array
         const filteredProfiles = category 
