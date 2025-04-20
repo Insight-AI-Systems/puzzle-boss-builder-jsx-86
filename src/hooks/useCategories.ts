@@ -24,7 +24,11 @@ export function useCategories() {
         throw error;
       }
 
+      console.log('Categories fetched from database:', data);
       return data || [];
-    }
+    },
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 0 // This ensures data is always considered stale and will be refetched
   });
 }

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useCategories } from '@/hooks/useCategories';
 import { Loader2 } from 'lucide-react';
 
@@ -35,7 +35,17 @@ const getColorForIndex = (index: number): string => {
 };
 
 const Categories: React.FC = () => {
-  const { data: categories, isLoading, error } = useCategories();
+  const { data: categories, isLoading, error, refetch } = useCategories();
+  
+  // Add effect to log categories when they change
+  useEffect(() => {
+    console.log('Categories in component:', categories);
+  }, [categories]);
+  
+  // Force refetch on mount
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   if (isLoading) {
     return (
@@ -46,6 +56,7 @@ const Categories: React.FC = () => {
   }
 
   if (error) {
+    console.error('Error loading categories:', error);
     return (
       <div className="text-center text-red-500 py-8">
         Failed to load categories. Please try again later.
