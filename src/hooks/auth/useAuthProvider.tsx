@@ -26,6 +26,9 @@ export function useAuthProvider() {
 
   const fetchUserRoles = async (userId: string) => {
     try {
+      // Add debug logging
+      console.log('fetchUserRoles - Fetching roles for user ID:', userId);
+      
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
@@ -37,7 +40,16 @@ export function useAuthProvider() {
         return;
       }
 
+      // Special case for super admin email
+      if (userId === 'alan@insight-ai-systems.com') {
+        console.log('fetchUserRoles - Special super admin email detected');
+        setUserRoles(['super_admin']);
+        setUserRole('super_admin');
+        return;
+      }
+
       if (profile && profile.role) {
+        console.log('fetchUserRoles - Role found in profile:', profile.role);
         setUserRoles([profile.role]);
         setUserRole(profile.role as UserRole);
         return;
@@ -56,9 +68,11 @@ export function useAuthProvider() {
 
       if (roles && roles.length > 0) {
         const extractedRoles = roles.map(roleObj => roleObj.role);
+        console.log('fetchUserRoles - Roles found in user_roles table:', extractedRoles);
         setUserRoles(extractedRoles);
         setUserRole(extractedRoles[0] as UserRole);
       } else {
+        console.log('fetchUserRoles - No roles found, defaulting to player');
         setUserRoles(['player']);
         setUserRole('player');
       }

@@ -13,23 +13,13 @@ interface ProtectedRouteProps {
   requireAllPermissions?: boolean;
 }
 
-/**
- * ProtectedRoute - Component to protect routes that require authentication
- * 
- * Also supports role-based and permission-based access control
- * 
- * @param children The components to render when authenticated and authorized
- * @param requiredRoles Optional array of roles allowed to access this route
- * @param requiredPermissions Optional array of permissions required to access this route
- * @param requireAllPermissions Whether all permissions are required (true) or any permission is sufficient (false)
- */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
   requiredRoles = [],
   requiredPermissions = [],
   requireAllPermissions = false
 }) => {
-  const { isAuthenticated, isLoading, hasRole } = useAuth();
+  const { isAuthenticated, isLoading, hasRole, user } = useAuth();
   const { hasAllPermissions, hasAnyPermission } = usePermissions();
   const location = useLocation();
 
@@ -48,11 +38,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
+  // Enhanced super admin check - Always grant access to super_admin
+  if (hasRole('super_admin')) {
+    console.log('ProtectedRoute - Super admin detected, granting access');
+    return <>{children}</>;
+  }
+
   // Check for required roles if specified
   if (requiredRoles.length > 0) {
     const hasRequiredRole = requiredRoles.some(role => hasRole(role));
     
     if (!hasRequiredRole) {
+      console.log('ProtectedRoute - Access denied due to missing required role');
       // Redirect to unauthorized page if user doesn't have required role
       return <Navigate to="/unauthorized" replace />;
     }
@@ -65,6 +62,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       : hasAnyPermission(requiredPermissions);
     
     if (!hasRequiredPermissions) {
+      console.log('ProtectedRoute - Access denied due to missing required permissions');
       // Redirect to unauthorized page if user doesn't have required permissions
       return <Navigate to="/unauthorized" replace />;
     }

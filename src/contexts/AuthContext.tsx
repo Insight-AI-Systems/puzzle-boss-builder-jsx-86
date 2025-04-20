@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect } from 'react';
 import { AuthError, User, Session } from '@supabase/supabase-js';
 import { UserRole } from '@/types/userTypes';
@@ -77,10 +78,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [session?.user]);
 
   const hasRole = (role: string): boolean => {
-    if (userRole === role) return true;
-    if (userRole === 'super_admin') return true;
-    if (userRole === 'admin' && role !== 'super_admin') return true;
-    return userRoles.includes(role);
+    // Special case check for super_admin
+    if (userRole === 'super_admin') {
+      console.log('hasRole - User is super_admin, granting access to all roles');
+      return true;
+    }
+    
+    // Special case for protected admin email
+    if (user?.email === 'alan@insight-ai-systems.com') {
+      console.log('hasRole - Protected admin email detected, granting access to all roles');
+      return true;
+    }
+    
+    // Role-specific check
+    if (userRole === role) {
+      console.log(`hasRole - User has exact role: ${role}`);
+      return true;
+    }
+    
+    // Admin has access to all non-super_admin roles
+    if (userRole === 'admin' && role !== 'super_admin') {
+      console.log(`hasRole - Admin granted access to role: ${role}`);
+      return true;
+    }
+    
+    // Check user roles array as a fallback
+    const hasRoleInArray = userRoles.includes(role);
+    console.log(`hasRole - Role ${role} check from array: ${hasRoleInArray}`);
+    return hasRoleInArray;
   };
 
   const value: AuthContextType = {

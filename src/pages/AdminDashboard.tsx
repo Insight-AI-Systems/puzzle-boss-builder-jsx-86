@@ -6,15 +6,18 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { RoleBasedDashboard } from '@/components/admin/RoleBasedDashboard';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const AdminDashboard = () => {
   const { profile, isLoading, isAdmin, currentUserId } = useUserProfile();
+  const { hasRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Special super_admin handling 
-  const isSuperAdmin = profile?.role === 'super_admin' || 
-                      (profile?.id && profile.id === 'alan@insight-ai-systems.com');
+  // Add enhanced logging for debugging
+  const isSuperAdmin = hasRole('super_admin') || 
+                      (profile?.role === 'super_admin') || 
+                      (profile?.id === 'alan@insight-ai-systems.com');
 
   // Add debug logging
   useEffect(() => {
@@ -26,15 +29,18 @@ const AdminDashboard = () => {
       isAdmin,
       isSuperAdmin,
       role: profile?.role,
+      hasRoleSuperAdmin: hasRole('super_admin'),
+      profileRoleIsSuperAdmin: profile?.role === 'super_admin',
+      isProtectedAdmin: profile?.id === 'alan@insight-ai-systems.com'
     });
-  }, [isLoading, isAdmin, isSuperAdmin, profile, currentUserId]);
+  }, [isLoading, isAdmin, isSuperAdmin, profile, currentUserId, hasRole]);
 
   // Consolidated useEffect for access checks and logging
   useEffect(() => {
     if (isLoading) return;
     
-    // Force grant access to special account
-    if (profile?.id && profile.id === 'alan@insight-ai-systems.com') {
+    // Force grant access to special account or super admin
+    if (isSuperAdmin) {
       console.log('Protected super admin detected, access granted');
       return;
     }
