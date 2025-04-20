@@ -1,5 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, Filter, Download, ChevronDown } from "lucide-react";
 import { UserStatsDisplay } from './user-management/UserStatsDisplay';
 import { UsersTable } from './user-management/UsersTable';
 import { EmailDialog } from './user-management/EmailDialog';
