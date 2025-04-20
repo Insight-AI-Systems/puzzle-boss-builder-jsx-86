@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserCog } from "lucide-react";
@@ -25,6 +26,7 @@ export function UserManagement() {
     isLoadingProfiles, 
     updateUserRole, 
     profile: currentUserProfile,
+    error: profileError,
     refetch 
   } = useUserProfile({
     page,
@@ -63,6 +65,14 @@ export function UserManagement() {
   const handleSearch = (term: string) => {
     setSearchTerm(term);
     setPage(0); // Reset to first page when searching
+    
+    if (term) {
+      toast({
+        title: "Searching users",
+        description: `Searching for "${term}" in user records...`,
+        duration: 2000,
+      });
+    }
   };
 
   if (isLoadingProfiles) {
@@ -75,6 +85,29 @@ export function UserManagement() {
         <CardContent>
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-puzzle-aqua"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (profileError) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>User Management</CardTitle>
+          <CardDescription>Error loading users</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="p-4 border border-red-300 bg-red-50 text-red-800 rounded-md">
+            <h3 className="font-bold mb-2">Error fetching user data</h3>
+            <p>{profileError instanceof Error ? profileError.message : 'An unknown error occurred'}</p>
+            <Button 
+              onClick={() => refetch()} 
+              className="mt-4 bg-red-600 hover:bg-red-700"
+            >
+              Try Again
+            </Button>
           </div>
         </CardContent>
       </Card>

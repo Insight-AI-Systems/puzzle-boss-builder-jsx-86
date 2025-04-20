@@ -26,6 +26,7 @@ export function useUserProfile(options?: AdminProfilesOptions | string) {
   const { 
     data: allProfiles, 
     isLoading: isLoadingProfiles,
+    error: profilesError,
     refetch: refetchProfiles 
   } = useAdminProfiles(isAdmin, currentUserId, adminProfilesOptions);
 
@@ -67,6 +68,7 @@ export function useUserProfile(options?: AdminProfilesOptions | string) {
     isAdmin,
     allProfiles,
     isLoadingProfiles,
+    error: error || profilesError, // Expose combined error
     updateProfile,
     updateUserRole,
     currentUserId,

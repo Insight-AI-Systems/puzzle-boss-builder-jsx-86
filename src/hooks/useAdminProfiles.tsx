@@ -30,33 +30,69 @@ export function useAdminProfiles(
       }
 
       if (searchTerm) {
-        // Use the new search_and_sync_users function when there's a search term
-        const { data: searchResults, error: searchError } = await supabase
-          .rpc('search_and_sync_users', { search_term: searchTerm });
+        try {
+          // Use the search_and_sync_users function when there's a search term
+          console.log('Searching for users with term:', searchTerm);
+          const { data: searchResults, error: searchError } = await supabase
+            .rpc('search_and_sync_users', { search_term: searchTerm });
 
-        if (searchError) {
-          console.error('Error searching users:', searchError);
-          throw searchError;
+          if (searchError) {
+            console.error('Error searching users:', searchError);
+            throw searchError;
+          }
+
+          console.log('Search results:', searchResults);
+
+          // Map the search results to UserProfile type
+          const profiles = searchResults.map(result => ({
+            id: result.id,
+            display_name: result.display_name || result.email || 'Anonymous User',
+            bio: null,
+            avatar_url: null,
+            role: result.role || 'player',
+            credits: 0,
+            achievements: [],
+            referral_code: null,
+            created_at: result.created_at,
+            updated_at: result.created_at
+          } as UserProfile));
+
+          return {
+            data: profiles,
+            count: profiles.length
+          } as ProfilesResult;
+        } catch (error) {
+          console.error('Error in search_and_sync_users function:', error);
+          
+          // Fallback to regular search if the RPC fails
+          console.log('Falling back to regular profile search');
+          const query = supabase
+            .from('profiles')
+            .select('*', { count: 'exact' })
+            .or(`username.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%`);
+            
+          const { data, error: fallbackError, count } = await query;
+          
+          if (fallbackError) {
+            console.error('Error in fallback search:', fallbackError);
+            throw fallbackError;
+          }
+          
+          const profiles = data?.map(profile => ({
+            id: profile.id,
+            display_name: profile.username || profile.email || null,
+            bio: profile.bio || null,
+            avatar_url: profile.avatar_url,
+            role: profile.role || 'player',
+            credits: profile.credits || 0,
+            achievements: [],
+            referral_code: null,
+            created_at: profile.created_at || new Date().toISOString(),
+            updated_at: profile.updated_at || new Date().toISOString()
+          } as UserProfile)) || [];
+          
+          return { data: profiles, count: count || 0 } as ProfilesResult;
         }
-
-        // Map the search results to UserProfile type
-        const profiles = searchResults.map(result => ({
-          id: result.id,
-          display_name: result.display_name,
-          bio: null,
-          avatar_url: null,
-          role: result.role || 'player',
-          credits: 0,
-          achievements: [],
-          referral_code: null,
-          created_at: result.created_at,
-          updated_at: result.created_at
-        } as UserProfile));
-
-        return {
-          data: profiles,
-          count: profiles.length
-        } as ProfilesResult;
       }
       
       // If no search term, fetch regular paginated profiles
@@ -78,7 +114,7 @@ export function useAdminProfiles(
       
       const profiles = data?.map(profile => ({
         id: profile.id,
-        display_name: profile.username || null,
+        display_name: profile.username || profile.email || null,
         bio: profile.bio || null,
         avatar_url: profile.avatar_url,
         role: profile.role || 'player',
