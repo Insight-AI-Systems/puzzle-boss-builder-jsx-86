@@ -56,13 +56,17 @@ export function UserManagement() {
     userStats
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
 
-  const handleSetBulkRole = React.useCallback((roleString: string) => {
-    if (Object.keys(ROLE_DEFINITIONS).includes(roleString)) {
-      setBulkRole(roleString as UserRole);
-    } else {
-      console.error(`Invalid role: ${roleString}`);
+  const handleSetBulkRole = (roleString: string) => {
+    const validRole = Object.keys(ROLE_DEFINITIONS).includes(roleString)
+      ? roleString as UserRole
+      : 'player'; // Default to 'player' if an invalid role is provided
+
+    setBulkRole(validRole);
+    
+    if (!Object.keys(ROLE_DEFINITIONS).includes(roleString)) {
+      console.error(`Invalid role: ${roleString}. Defaulting to 'player'.`);
     }
-  }, [setBulkRole]);
+  };
 
   if (isLoadingProfiles) {
     return (
