@@ -57,8 +57,8 @@ export function UserManagement() {
     userStats
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
 
-  // Define type-safe wrapper function for the role setting
-  const handleBulkRoleChange = (role: string) => {
+  // Define a wrapper function for the bulk role setting to handle type conversion
+  const handleSetBulkRole = (role: string) => {
     setBulkRole(role as UserRole);
   };
 
@@ -153,7 +153,7 @@ export function UserManagement() {
         onOpenChange={setConfirmRoleDialogOpen}
         selectedCount={selectedUsers.size}
         bulkRole={bulkRole}
-        setBulkRole={(role: string) => setBulkRole(role as UserRole)}
+        setBulkRole={handleSetBulkRole}
         onUpdateRoles={handleBulkRoleChange}
         isUpdating={isBulkRoleChanging}
       />
