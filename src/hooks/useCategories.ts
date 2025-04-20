@@ -14,6 +14,8 @@ export function useCategories() {
   return useQuery({
     queryKey: ['categories'],
     queryFn: async (): Promise<Category[]> => {
+      console.log('Fetching categories from Supabase...');
+      
       const { data, error } = await supabase
         .from('categories')
         .select('*')
@@ -24,11 +26,12 @@ export function useCategories() {
         throw error;
       }
 
-      console.log('Categories fetched from database:', data);
+      console.log('Categories fetched successfully:', data);
       return data || [];
     },
     refetchOnWindowFocus: true,
     refetchOnMount: true,
-    staleTime: 0 // This ensures data is always considered stale and will be refetched
+    staleTime: 0, // Always consider data stale
+    cacheTime: 1000, // Only cache for 1 second
   });
 }
