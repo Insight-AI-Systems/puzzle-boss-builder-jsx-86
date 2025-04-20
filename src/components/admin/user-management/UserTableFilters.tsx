@@ -10,7 +10,7 @@ interface UserTableFiltersProps {
   onDateRangeChange: (range: DateRange | undefined) => void;
   onCountryChange: (country: string | null) => void;
   onCategoryChange: (category: string | null) => void;
-  onRoleChange: (role: UserRole | null) => void;
+  onRoleChange: (role: string | null) => void; // Changed from UserRole | null to string | null
   countries: string[];
   categories: string[];
   dateRange: DateRange | undefined;
@@ -63,7 +63,7 @@ export const UserTableFilters: React.FC<UserTableFiltersProps> = ({
           </SelectContent>
         </Select>
 
-        <Select onValueChange={(value) => onRoleChange((value as UserRole) || null)}>
+        <Select onValueChange={(value) => onRoleChange(value || null)}>
           <SelectTrigger>
             <SelectValue placeholder="Select role" />
           </SelectTrigger>

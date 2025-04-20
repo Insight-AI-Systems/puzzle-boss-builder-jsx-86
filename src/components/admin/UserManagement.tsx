@@ -44,7 +44,7 @@ export function UserManagement() {
     // Temporarily disable these filters until columns exist
     // country: selectedCountry !== 'all_countries' ? selectedCountry : null,
     // category: selectedCategory !== 'all_categories' ? selectedCategory : null,
-    role: selectedRole !== 'all_roles' ? selectedRole : null,
+    role: selectedRole, // Fixed: Pass selectedRole directly, which is already UserRole | null
     roleSortDirection
   });
   
@@ -103,8 +103,10 @@ export function UserManagement() {
     setPage(0);
   };
 
-  const handleRoleFilter = (role: UserRole | null) => {
-    setSelectedRole(role !== 'all_roles' ? role : null);
+  const handleRoleFilter = (roleValue: string | null) => {
+    // Fixed: Convert string to UserRole type or null
+    const newRole = roleValue === 'all_roles' ? null : roleValue as UserRole;
+    setSelectedRole(newRole);
     setPage(0);
   };
 
