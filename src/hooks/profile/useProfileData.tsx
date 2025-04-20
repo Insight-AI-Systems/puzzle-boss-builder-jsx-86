@@ -19,6 +19,7 @@ export function useProfileData(profileId: string | null) {
       
       console.log('Profile data retrieved:', data);
       
+      // Ensure we handle potential missing fields from the database
       const userProfile: UserProfile = {
         id: data.id,
         display_name: data.username || null,

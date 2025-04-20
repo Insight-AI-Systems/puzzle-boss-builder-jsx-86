@@ -44,50 +44,75 @@ export function useAdminProfiles(
       }
 
       try {
-        type FilteredUserData = {
-          id: string;
-          email: string;
-          display_name: string;
-          role: string;
-          country: string | null;
-          categories_played: string[];
-          created_at: string;
-          avatar_url: string | null;
-        };
-
-        const { data: filteredData, error } = await supabase.rpc('filter_users', {
-          start_date: dateRange?.from?.toISOString(),
-          end_date: dateRange?.to?.toISOString(),
-          user_country: country,
-          category: category,
-          user_role: role,
-          sort_direction: roleSortDirection
-        }) as { data: FilteredUserData[] | null, error: any };
+        // Instead of using the RPC that's causing TypeScript issues,
+        // we'll use a direct query approach
+        let query = supabase
+          .from('profiles')
+          .select('*', { count: 'exact' });
+          
+        // Apply filters
+        if (searchTerm) {
+          query = query.or(`username.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        }
+        
+        // Apply date range filter if provided
+        if (dateRange?.from) {
+          query = query.gte('created_at', dateRange.from.toISOString());
+        }
+        
+        if (dateRange?.to) {
+          query = query.lte('created_at', dateRange.to.toISOString());
+        }
+        
+        // Apply country filter if provided
+        if (country) {
+          query = query.eq('country', country);
+        }
+        
+        // Apply role filter if provided  
+        if (role) {
+          query = query.eq('role', role);
+        }
+        
+        // Apply ordering
+        query = query.order('role', { ascending: roleSortDirection === 'asc' });
+        
+        // Apply pagination
+        query = query
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+        
+        const { data, error, count } = await query;
 
         if (error) {
           console.error('Error fetching filtered users:', error);
           throw error;
         }
 
-        const profiles = (filteredData || []).map(profile => ({
+        const profiles = (data || []).map(profile => ({
           id: profile.id,
-          display_name: profile.display_name || 'Anonymous User',
-          bio: null,
+          display_name: profile.username || 'Anonymous User',
+          bio: profile.bio || null,
           avatar_url: profile.avatar_url,
           role: (profile.role || 'player') as UserRole,
-          country: profile.country,
+          country: profile.country || null,
           categories_played: profile.categories_played || [],
-          credits: 0,
+          credits: profile.credits || 0,
           achievements: [],
           referral_code: null,
           created_at: profile.created_at,
-          updated_at: profile.created_at
-        }));
+          updated_at: profile.updated_at || profile.created_at
+        } as UserProfile));
+
+        // For category filtering, we need to do it post-query since it's an array
+        const filteredProfiles = category 
+          ? profiles.filter(p => p.categories_played?.includes(category))
+          : profiles;
 
         return { 
-          data: profiles,
-          count: profiles.length
+          data: filteredProfiles,
+          count: count || filteredProfiles.length
         } as ProfilesResult;
+        
       } catch (error) {
         console.error('Error in useAdminProfiles:', error);
         return { data: [], count: 0 } as ProfilesResult;

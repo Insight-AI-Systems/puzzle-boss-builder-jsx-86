@@ -42,6 +42,14 @@ export function useProfileMutation(profileId: string | null) {
         profileUpdate.bio = updatedProfile.bio;
       }
       
+      if (updatedProfile.country !== undefined) {
+        profileUpdate.country = updatedProfile.country;
+      }
+      
+      if (updatedProfile.categories_played !== undefined) {
+        profileUpdate.categories_played = updatedProfile.categories_played;
+      }
+      
       profileUpdate.updated_at = new Date().toISOString();
       
       console.log('Mapped profile update for Supabase:', profileUpdate);
