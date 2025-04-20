@@ -315,6 +315,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ensure_super_admin: {
+        Args: { user_email: string }
+        Returns: undefined
+      }
       has_permission: {
         Args: { user_id: string; permission_name: string }
         Returns: boolean
