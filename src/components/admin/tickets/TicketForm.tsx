@@ -42,7 +42,8 @@ export function TicketForm({ onSubmit, defaultValues, isSubmitting }: TicketForm
 
   const handleSubmit = (values: TicketFormValues) => {
     onSubmit({
-      ...values,
+      heading: values.heading,
+      description: values.description,
       status: values.status ? 'Completed' : 'WIP'
     });
   };

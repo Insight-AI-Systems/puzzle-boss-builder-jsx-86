@@ -1,6 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface Ticket {
   id: string;
@@ -14,6 +15,7 @@ export interface Ticket {
 
 export function useTickets() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: tickets, isLoading: isLoadingTickets } = useQuery({
     queryKey: ['tickets'],
@@ -29,10 +31,13 @@ export function useTickets() {
   });
 
   const createTicket = useMutation({
-    mutationFn: async (ticket: Omit<Ticket, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
+    mutationFn: async (ticket: Omit<Ticket, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('tickets')
-        .insert(ticket)
+        .insert({
+          ...ticket,
+          created_by: user?.id || 'unknown'
+        })
         .select()
         .single();
 

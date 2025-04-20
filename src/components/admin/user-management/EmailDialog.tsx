@@ -1,10 +1,8 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertTriangle } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -13,77 +11,71 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface EmailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedCount: number;
-  emailSubject: string;
-  setEmailSubject: (subject: string) => void;
-  emailBody: string;
-  setEmailBody: (body: string) => void;
-  onSendEmail: () => void;
-  isSending: boolean;
+  onSend: (subject: string, body: string) => void;
 }
 
-export const EmailDialog: React.FC<EmailDialogProps> = ({
+export function EmailDialog({
   open,
   onOpenChange,
   selectedCount,
-  emailSubject,
-  setEmailSubject,
-  emailBody,
-  setEmailBody,
-  onSendEmail,
-  isSending,
-}) => {
+  onSend,
+}: EmailDialogProps) {
+  const [subject, setSubject] = React.useState('');
+  const [body, setBody] = React.useState('');
+  const [isSending, setIsSending] = React.useState(false);
+
+  const handleSend = () => {
+    setIsSending(true);
+    onSend(subject, body);
+    setIsSending(false);
+    onOpenChange(false);
+    setSubject('');
+    setBody('');
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Send Email to {selectedCount} Users</DialogTitle>
+          <DialogTitle>Email Selected Users ({selectedCount})</DialogTitle>
           <DialogDescription>
-            This will send an email to all selected users. Please compose your message carefully.
+            Compose an email to send to the selected users.
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="subject">Email Subject</Label>
-            <Input 
-              id="subject" 
-              value={emailSubject} 
-              onChange={e => setEmailSubject(e.target.value)} 
-              placeholder="Enter email subject" 
+            <label htmlFor="subject" className="text-sm font-medium">Subject</label>
+            <Input
+              id="subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Email subject..."
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="body">Email Body</Label>
-            <Textarea 
-              id="body" 
-              value={emailBody} 
-              onChange={e => setEmailBody(e.target.value)} 
-              placeholder="Write your message here..." 
-              rows={6} 
+            <label htmlFor="body" className="text-sm font-medium">Message</label>
+            <Textarea
+              id="body"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Email content..."
+              rows={8}
             />
           </div>
         </div>
         
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Important</AlertTitle>
-          <AlertDescription>
-            Sending bulk emails may be subject to anti-spam regulations. Ensure you have permission to contact these users.
-          </AlertDescription>
-        </Alert>
-        
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button 
-            onClick={onSendEmail} 
-            disabled={isSending || !emailSubject.trim() || !emailBody.trim()}
+            onClick={handleSend}
+            disabled={!subject.trim() || !body.trim() || isSending}
           >
             {isSending ? 'Sending...' : 'Send Email'}
           </Button>
@@ -91,4 +83,4 @@ export const EmailDialog: React.FC<EmailDialogProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+}

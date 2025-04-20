@@ -83,4 +83,4 @@ export const BulkRoleDialog: React.FC<BulkRoleDialogProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+}
