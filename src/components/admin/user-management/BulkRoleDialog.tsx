@@ -20,7 +20,7 @@ interface BulkRoleDialogProps {
   onOpenChange: (open: boolean) => void;
   selectedCount: number;
   bulkRole: UserRole;
-  setBulkRole: (role: string) => void; // Keep this type as (role: string) => void
+  setBulkRole: (role: string) => void; // This expects a string parameter
   onUpdateRoles: () => void;
   isUpdating: boolean;
 }
