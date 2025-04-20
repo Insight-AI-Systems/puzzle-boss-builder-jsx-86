@@ -1,45 +1,48 @@
 
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
 
 interface UserPaginationProps {
   page: number;
+  setPage: (page: number) => void;
   totalPages: number;
-  onPageChange: (newPage: number) => void;
+  currentCount: number;
+  totalCount: number;
 }
 
-export function UserPagination({ page, totalPages, onPageChange }: UserPaginationProps) {
-  return totalPages > 1 ? (
-    <Pagination className="mt-4">
-      <PaginationContent>
-        <PaginationItem>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => onPageChange(Math.max(0, page - 1))}
-            disabled={page === 0}
-            className="gap-1 pl-2.5"
-          >
-            <span>Previous</span>
-          </Button>
-        </PaginationItem>
-        <PaginationItem className="flex items-center">
-          <span className="text-sm">
-            Page {page + 1} of {totalPages}
-          </span>
-        </PaginationItem>
-        <PaginationItem>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => onPageChange(Math.min(totalPages - 1, page + 1))}
-            disabled={page >= totalPages - 1}
-            className="gap-1 pr-2.5"
-          >
-            <span>Next</span>
-          </Button>
-        </PaginationItem>
-      </PaginationContent>
-    </Pagination>
-  ) : null;
+export function UserPagination({ 
+  page, 
+  setPage, 
+  totalPages,
+  currentCount,
+  totalCount
+}: UserPaginationProps) {
+  return (
+    <div className="flex items-center justify-between mt-4">
+      <div className="text-sm text-muted-foreground">
+        Showing {currentCount} of {totalCount} users
+      </div>
+      <div className="flex items-center space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPage(Math.max(0, page - 1))}
+          disabled={page === 0}
+        >
+          Previous
+        </Button>
+        <span className="text-sm">
+          Page {page + 1} of {Math.max(1, totalPages)}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+          disabled={page >= totalPages - 1}
+        >
+          Next
+        </Button>
+      </div>
+    </div>
+  );
 }

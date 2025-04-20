@@ -1,14 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, Filter, Download, ChevronDown } from "lucide-react";
 import { UserStatsDisplay } from './user-management/UserStatsDisplay';
 import { UsersTable } from './user-management/UsersTable';
 import { EmailDialog } from './user-management/EmailDialog';
 import { BulkRoleDialog } from './user-management/BulkRoleDialog';
-import { UserRole } from '@/types/userTypes';
+import { UserActions } from './user-management/UserActions';
+import { UserFilters } from './user-management/UserFilters';
+import { UserPagination } from './user-management/UserPagination';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
 
 export function UserManagement() {
@@ -40,24 +39,18 @@ export function UserManagement() {
     userStats
   } = useUserManagement(true, 'alan@insight-ai-systems.com');
 
-  // Local state for search input
   const [localSearchTerm, setLocalSearchTerm] = useState('');
-
-  // Local state for filters visibility
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  // Handle search submit with proper event type
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSearchTerm(localSearchTerm);
   };
 
-  // Handle role sorting
   const handleSortByRole = () => {
     setRoleSortDirection(roleSortDirection === 'asc' ? 'desc' : 'asc');
   };
 
-  // Handle bulk selection
   const handleSelectAll = (isSelected: boolean) => {
     if (isSelected && allProfilesData?.data) {
       const userIds = allProfilesData.data.map(user => user.id);
@@ -67,7 +60,6 @@ export function UserManagement() {
     }
   };
 
-  // Handle individual user selection
   const handleUserSelection = (userId: string, isSelected: boolean) => {
     const newSelectedUsers = new Set(selectedUsers);
     if (isSelected) {
@@ -78,7 +70,6 @@ export function UserManagement() {
     setSelectedUsers(newSelectedUsers);
   };
 
-  // Handle bulk email sending with proper typing
   const handleBulkEmailSend = (subject: string, body: string) => {
     console.log(`Sending email with subject "${subject}" to ${selectedUsers.size} users`);
     setEmailDialogOpen(false);
@@ -87,70 +78,20 @@ export function UserManagement() {
   return (
     <Card className="w-full">
       <CardContent className="space-y-6">
-        <div className="flex flex-col md:flex-row justify-between gap-4">
-          <form onSubmit={handleSearchSubmit} className="relative flex flex-1 gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by email, name or ID..."
-                value={localSearchTerm}
-                onChange={(e) => setLocalSearchTerm(e.target.value)}
-                className="pl-8 bg-background/50"
-              />
-            </div>
-            <Button type="submit" className="flex gap-2 items-center">
-              <Search className="h-4 w-4" />
-              Search
-            </Button>
-          </form>
-          
-          <div className="flex gap-2">
-            {selectedUsers.size > 0 && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => setEmailDialogOpen(true)}
-                  className="whitespace-nowrap"
-                >
-                  Email Selected ({selectedUsers.size})
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setConfirmRoleDialogOpen(true)}
-                  className="whitespace-nowrap"
-                >
-                  Change Roles ({selectedUsers.size})
-                </Button>
-              </>
-            )}
-            <Button
-              variant="outline"
-              onClick={handleExportUsers}
-              className="flex gap-1 items-center whitespace-nowrap"
-            >
-              <Download className="h-4 w-4" />
-              Export Users
-            </Button>
-          </div>
-        </div>
+        <UserActions
+          localSearchTerm={localSearchTerm}
+          setLocalSearchTerm={setLocalSearchTerm}
+          handleSearchSubmit={handleSearchSubmit}
+          selectedUsers={selectedUsers}
+          setEmailDialogOpen={setEmailDialogOpen}
+          setConfirmRoleDialogOpen={setConfirmRoleDialogOpen}
+          handleExportUsers={handleExportUsers}
+        />
         
-        <div>
-          <Button 
-            variant="outline" 
-            onClick={() => setFiltersOpen(!filtersOpen)}
-            className="flex gap-1 items-center mb-4"
-          >
-            <Filter className="h-4 w-4" />
-            Filters
-            <ChevronDown className="h-4 w-4" />
-          </Button>
-          
-          {filtersOpen && (
-            <div className="bg-muted/50 p-4 rounded-md mb-4">
-              <p>Advanced filters will appear here</p>
-            </div>
-          )}
-        </div>
+        <UserFilters 
+          filtersOpen={filtersOpen}
+          setFiltersOpen={setFiltersOpen}
+        />
 
         {userStats && (
           <UserStatsDisplay stats={userStats} />
@@ -166,32 +107,13 @@ export function UserManagement() {
           onSelectAll={handleSelectAll}
         />
 
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-muted-foreground">
-            Showing {(allProfilesData?.data || []).length} of {allProfilesData?.count || 0} users
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(Math.max(0, page - 1))}
-              disabled={page === 0}
-            >
-              Previous
-            </Button>
-            <span className="text-sm">
-              Page {page + 1} of {Math.max(1, totalPages)}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-              disabled={page >= totalPages - 1}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+        <UserPagination
+          page={page}
+          setPage={setPage}
+          totalPages={totalPages}
+          currentCount={(allProfilesData?.data || []).length}
+          totalCount={allProfilesData?.count || 0}
+        />
       </CardContent>
 
       <EmailDialog
