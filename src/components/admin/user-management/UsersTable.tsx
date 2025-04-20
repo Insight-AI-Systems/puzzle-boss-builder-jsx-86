@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -60,22 +59,22 @@ export function UsersTable({
 
   // Check if current user is super admin
   const isSuperAdmin = currentUserRole === 'super_admin';
-  const isSpecificAdmin = currentUserRole === 'alan@insight-ai-systems.com';
+  // Fix: We need to separate the check for the protected admin email
+  const isProtectedAdminId = (userId: string) => userId === 'alan@insight-ai-systems.com';
   
   // Helper function to determine if current user can assign a role
   const canAssignRole = (role: UserRole, userId: string): boolean => {
     // Log detailed permissions for debugging
-    console.log(`UsersTable - Checking if can assign ${role} to ${userId} (currentUserRole: ${currentUserRole}, isSuperAdmin: ${isSuperAdmin}, isSpecificAdmin: ${isSpecificAdmin})`);
+    console.log(`UsersTable - Checking if can assign ${role} to ${userId} (currentUserRole: ${currentUserRole}, isSuperAdmin: ${isSuperAdmin})`);
     
     // Special case for protected admin
-    const isProtectedAdmin = userId === 'alan@insight-ai-systems.com';
-    if (isProtectedAdmin && !(isSuperAdmin || isSpecificAdmin)) {
+    if (isProtectedAdminId(userId) && !isSuperAdmin && !isProtectedAdminId(currentUserRole as string)) {
       console.log(`UsersTable - Cannot modify protected admin (${userId}) unless you are a super admin`);
       return false;
     }
     
     // Super admins can assign any role
-    if (isSuperAdmin || isSpecificAdmin) {
+    if (isSuperAdmin || isProtectedAdminId(currentUserRole as string)) {
       console.log(`UsersTable - Super admin can assign ${role}`);
       return true;
     }
