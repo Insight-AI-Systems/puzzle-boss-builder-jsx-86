@@ -40,13 +40,13 @@ export const usePartnershipForm = () => {
 
       if (error) {
         console.error('Error submitting partnership form:', error);
-        setFormError('🤗 We're experiencing a temporary issue with sending your message. Our team has been notified and will work to resolve this soon. Thank you for your patience.');
+        setFormError("🤗 We're experiencing a temporary issue with sending your message. Our team has been notified and will work to resolve this soon. Thank you for your patience.");
         return false;
       }
 
       if (data && data.error) {
         console.error('Server error:', data.error);
-        setFormError('🤗 We're experiencing a temporary issue with sending your message. Our team has been notified and will work to resolve this soon. Thank you for your patience.');
+        setFormError("🤗 We're experiencing a temporary issue with sending your message. Our team has been notified and will work to resolve this soon. Thank you for your patience.");
         return false;
       }
 
@@ -61,11 +61,11 @@ export const usePartnershipForm = () => {
     } catch (error: any) {
       console.error('Error submitting partnership form:', error);
       
-      setFormError('🤗 We're experiencing a temporary issue with sending your message. Our team has been notified and will work to resolve this soon. Thank you for your patience.');
+      setFormError("🤗 We're experiencing a temporary issue with sending your message. Our team has been notified and will work to resolve this soon. Thank you for your patience.");
       
       toast({
         title: "Error submitting form",
-        description: '🤗 We're experiencing a temporary issue with sending your message. Our team has been notified and will work to resolve this soon. Thank you for your patience.',
+        description: "🤗 We're experiencing a temporary issue with sending your message. Our team has been notified and will work to resolve this soon. Thank you for your patience.",
         variant: "destructive",
       });
 
