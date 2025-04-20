@@ -1,75 +1,62 @@
 
 import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/userTypes';
+import { useToast } from '@/hooks/use-toast';
 
-interface RoleHookProps {
-  updateUserRole: any; // We'll keep the existing type from the parent
-  bulkUpdateRoles: any;
-  refetch: () => void;
+type UseUserRolesProps = {
+  updateUserRole: (userId: string, newRole: UserRole) => Promise<void>;
+  bulkUpdateRoles: (userIds: string[], newRole: UserRole) => Promise<void>;
+  refetch: () => Promise<any>;
   selectedUsers: Set<string>;
-}
+};
 
-export function useUserRoles({ updateUserRole, bulkUpdateRoles, refetch, selectedUsers }: RoleHookProps) {
-  const [confirmRoleDialogOpen, setConfirmRoleDialogOpen] = useState(false);
+export function useUserRoles({ 
+  updateUserRole,
+  bulkUpdateRoles,
+  refetch,
+  selectedUsers 
+}: UseUserRolesProps) {
   const [bulkRole, setBulkRole] = useState<UserRole>('player');
+  const [confirmRoleDialogOpen, setConfirmRoleDialogOpen] = useState(false);
   const [isBulkRoleChanging, setIsBulkRoleChanging] = useState(false);
   const { toast } = useToast();
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
-    updateUserRole.mutate(
-      { userId, newRole },
-      {
-        onSuccess: () => {
-          toast({
-            title: "Role updated",
-            description: `User role has been updated to ${newRole}`,
-            duration: 3000,
-          });
-          refetch();
-        },
-        onError: (error) => {
-          toast({
-            title: "Role update failed",
-            description: `Error: ${error instanceof Error ? error.message : 'You do not have permission to update this role.'}`,
-            variant: 'destructive',
-            duration: 5000,
-          });
-        }
-      }
-    );
+    try {
+      await updateUserRole(userId, newRole);
+      toast({
+        title: "Role updated",
+        description: `User's role has been changed to ${newRole}`,
+      });
+      refetch();
+    } catch (error) {
+      console.error("Error updating role:", error);
+      toast({
+        title: "Error updating role",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleBulkRoleChange = async () => {
-    if (selectedUsers.size === 0) {
-      toast({
-        title: "No users selected",
-        description: "Please select at least one user to update roles",
-        variant: 'destructive'
-      });
-      return;
-    }
-
+    if (selectedUsers.size === 0) return;
+    
     setIsBulkRoleChanging(true);
     try {
-      await bulkUpdateRoles.mutateAsync({
-        userIds: Array.from(selectedUsers),
-        newRole: bulkRole
-      });
-
+      await bulkUpdateRoles(Array.from(selectedUsers), bulkRole);
       toast({
         title: "Roles updated",
-        description: `Updated ${selectedUsers.size} users to role: ${bulkRole}`,
-        duration: 3000
+        description: `${selectedUsers.size} users have been updated to ${bulkRole}`,
       });
-
       setConfirmRoleDialogOpen(false);
+      refetch();
     } catch (error) {
+      console.error("Error updating roles:", error);
       toast({
-        title: "Bulk role update failed",
-        description: `Error: ${error instanceof Error ? error.message : 'An error occurred during the operation.'}`,
-        variant: 'destructive',
-        duration: 5000
+        title: "Error updating roles",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
       });
     } finally {
       setIsBulkRoleChanging(false);
@@ -77,10 +64,10 @@ export function useUserRoles({ updateUserRole, bulkUpdateRoles, refetch, selecte
   };
 
   return {
-    confirmRoleDialogOpen,
-    setConfirmRoleDialogOpen,
     bulkRole,
     setBulkRole,
+    confirmRoleDialogOpen,
+    setConfirmRoleDialogOpen,
     isBulkRoleChanging,
     handleRoleChange,
     handleBulkRoleChange
