@@ -29,7 +29,6 @@ export function useTickets() {
 
       if (ticketsError) throw ticketsError;
 
-      // Transform the data to match our Ticket type
       return ticketsData.map((ticket: any) => ({
         ...ticket,
         createdByUser: ticket.profiles

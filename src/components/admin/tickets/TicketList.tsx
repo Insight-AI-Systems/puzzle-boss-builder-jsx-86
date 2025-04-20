@@ -3,6 +3,7 @@ import React from 'react';
 import { Ticket } from '@/hooks/useTickets';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EditTicketDialog } from './EditTicketDialog';
 import {
   Table,
   TableBody,
@@ -17,9 +18,10 @@ export interface TicketListProps {
   tickets: Ticket[];
   isLoading: boolean;
   onUpdateStatus: (id: string, status: 'WIP' | 'Completed') => void;
+  onUpdateTicket: (id: string, updates: Partial<Ticket>) => void;
 }
 
-export function TicketList({ tickets, isLoading, onUpdateStatus }: TicketListProps) {
+export function TicketList({ tickets, isLoading, onUpdateStatus, onUpdateTicket }: TicketListProps) {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-8">
@@ -75,23 +77,26 @@ export function TicketList({ tickets, isLoading, onUpdateStatus }: TicketListPro
                 {new Date(ticket.created_at).toLocaleDateString()}
               </TableCell>
               <TableCell>
-                {ticket.status === 'WIP' ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onUpdateStatus(ticket.id, 'Completed')}
-                  >
-                    Mark Complete
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onUpdateStatus(ticket.id, 'WIP')}
-                  >
-                    Reopen
-                  </Button>
-                )}
+                <div className="flex items-center gap-2">
+                  <EditTicketDialog ticket={ticket} onSave={onUpdateTicket} />
+                  {ticket.status === 'WIP' ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onUpdateStatus(ticket.id, 'Completed')}
+                    >
+                      Mark Complete
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onUpdateStatus(ticket.id, 'WIP')}
+                    >
+                      Reopen
+                    </Button>
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           ))}

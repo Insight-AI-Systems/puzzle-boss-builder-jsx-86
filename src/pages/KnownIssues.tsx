@@ -46,6 +46,27 @@ const KnownIssues = () => {
     );
   };
 
+  const handleUpdateTicket = (id: string, updates: Partial<typeof tickets[0]>) => {
+    updateTicket.mutate(
+      { id, ...updates },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Success",
+            description: "Ticket updated successfully",
+          });
+        },
+        onError: (error) => {
+          toast({
+            title: "Error",
+            description: `Failed to update ticket: ${error.message}`,
+            variant: "destructive"
+          });
+        }
+      }
+    );
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-6">
@@ -69,8 +90,9 @@ const KnownIssues = () => {
         tickets={tickets || []} 
         isLoading={isLoadingTickets} 
         onUpdateStatus={(id, status) => {
-          updateTicket.mutate({ id, status });
-        }} 
+          handleUpdateTicket(id, { status });
+        }}
+        onUpdateTicket={handleUpdateTicket}
       />
     </div>
   );
