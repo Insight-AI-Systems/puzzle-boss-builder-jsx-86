@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { UserRole } from '@/types/userTypes';
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { UsersTable } from './user-management/UsersTable';
 import { UserPagination } from './user-management/UserPagination';
 import { EmailDialog } from './user-management/EmailDialog';
 import { BulkRoleDialog } from './user-management/BulkRoleDialog';
+import { UserInsightsDashboard } from './user-management/UserInsightsDashboard';
 
 export function UserManagement() {
   const { profile: currentUserProfile, isAdmin } = useUserProfile();
@@ -51,7 +53,8 @@ export function UserManagement() {
     handleExportUsers,
     handleUserSelection,
     handleSelectAllUsers,
-    totalPages
+    totalPages,
+    userStats
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
 
   // Create a properly typed wrapper function for setBulkRole
@@ -90,7 +93,13 @@ export function UserManagement() {
     <Card className="w-full">
       <UserManagementHeader />
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-6">
+          {/* Add User Insights Dashboard */}
+          <UserInsightsDashboard 
+            userStats={userStats} 
+            signupStats={allProfilesData?.signup_stats || []} 
+          />
+          
           <UserActionBar 
             onSearch={setSearchTerm}
             selectedUsers={selectedUsers}
@@ -107,6 +116,7 @@ export function UserManagement() {
             countries={allProfilesData?.countries || []}
             categories={allProfilesData?.categories || []}
             dateRange={dateRange}
+            genders={allProfilesData?.genders || []}
           />
           
           <UsersTable 

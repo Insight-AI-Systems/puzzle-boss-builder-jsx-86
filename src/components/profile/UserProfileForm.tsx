@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { UserProfile } from '@/types/userTypes';
+import { UserProfile, Gender } from '@/types/userTypes';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { ProfileHeader } from './form/ProfileHeader';
 import { ProfileAvatar } from './form/ProfileAvatar';
@@ -14,6 +14,8 @@ export function UserProfileForm() {
     display_name: '',
     bio: '',
     avatar_url: '',
+    gender: null,
+    custom_gender: null,
   });
 
   React.useEffect(() => {
@@ -22,6 +24,8 @@ export function UserProfileForm() {
         display_name: profile.display_name || '',
         bio: profile.bio || '',
         avatar_url: profile.avatar_url || '',
+        gender: profile.gender || null,
+        custom_gender: profile.custom_gender || null,
       });
       console.log("Profile data loaded:", profile);
     }
@@ -39,7 +43,14 @@ export function UserProfileForm() {
     
     console.log('Submitting profile update:', formData);
     
-    updateProfile.mutate(formData, {
+    // Process form data before submission
+    const dataToSubmit = {
+      ...formData,
+      // If not custom gender, ensure custom_gender is null
+      custom_gender: formData.gender === 'custom' ? formData.custom_gender : null
+    };
+    
+    updateProfile.mutate(dataToSubmit, {
       onSuccess: () => {
         console.log('Profile updated successfully');
         setIsEditing(false);

@@ -1,3 +1,4 @@
+
 export type UserRole = 
   | 'super_admin'
   | 'admin'
@@ -6,6 +7,13 @@ export type UserRole =
   | 'partner_manager'
   | 'cfo'
   | 'player';
+
+export type Gender = 
+  | 'male'
+  | 'female'
+  | 'non-binary'
+  | 'prefer-not-to-say'
+  | 'custom';
 
 export interface UserProfile {
   id: string;
@@ -21,6 +29,9 @@ export interface UserProfile {
   referral_code: string | null;
   created_at: string;
   updated_at: string;
+  gender?: Gender | null;
+  custom_gender?: string | null;
+  age_group?: string | null;
 }
 
 export interface RolePermission {

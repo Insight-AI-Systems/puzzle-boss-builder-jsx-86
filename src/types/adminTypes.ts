@@ -11,6 +11,7 @@ export interface AdminProfilesOptions {
   roleSortDirection?: 'asc' | 'desc';
   country?: string | null;
   category?: string | null;
+  gender?: string | null;
 }
 
 export interface RpcUserData {
@@ -23,6 +24,9 @@ export interface RpcUserData {
   credits: number;
   created_at: string;
   updated_at: string;
+  gender?: string | null;
+  custom_gender?: string | null;
+  age_group?: string | null;
 }
 
 export interface ProfilesResult {
@@ -30,4 +34,17 @@ export interface ProfilesResult {
   count: number;
   countries: string[];
   categories: string[];
+  genders: string[];
+  signup_stats: MonthlySignupData[];
+}
+
+export interface MonthlySignupData {
+  month: string;
+  count: number;
+}
+
+export interface UserStats {
+  total: number;
+  genderBreakdown: { [key: string]: number };
+  ageBreakdown?: { [key: string]: number };
 }
