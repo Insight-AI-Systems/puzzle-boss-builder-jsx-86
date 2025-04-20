@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,77 +22,67 @@ import {
   DialogTrigger, 
   DialogClose 
 } from "@/components/ui/dialog";
-import { Trash2, Edit, Plus, ImageIcon } from "lucide-react";
+import { Trash2, Edit, Plus, ImageIcon, RefreshCw, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
-// Sample puzzle categories data
-const sampleCategories = [
-  { 
-    id: "1", 
-    name: "Smartphones", 
-    imageUrl: "/placeholder.svg", 
-    puzzleCount: 12, 
-    activeCount: 4,
-    status: "active" 
-  },
-  { 
-    id: "2", 
-    name: "Laptops", 
-    imageUrl: "/placeholder.svg", 
-    puzzleCount: 8, 
-    activeCount: 2,
-    status: "active" 
-  },
-  { 
-    id: "3", 
-    name: "Headphones", 
-    imageUrl: "/placeholder.svg", 
-    puzzleCount: 6, 
-    activeCount: 3,
-    status: "active" 
-  },
-  { 
-    id: "4", 
-    name: "Smartwatches", 
-    imageUrl: "/placeholder.svg", 
-    puzzleCount: 5, 
-    activeCount: 2,
-    status: "inactive" 
-  },
-  { 
-    id: "5", 
-    name: "Gaming Consoles", 
-    imageUrl: "/placeholder.svg", 
-    puzzleCount: 7, 
-    activeCount: 4,
-    status: "active" 
-  },
-];
+import { useCategoryManagement, AdminCategory } from '@/hooks/admin/useCategoryManagement';
+import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 
 export const CategoryManagement: React.FC = () => {
-  const [categories, setCategories] = useState(sampleCategories);
-  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const { 
+    categories, 
+    isLoading, 
+    isError, 
+    error, 
+    refetch, 
+    editingCategory, 
+    setEditingCategory,
+    createCategory,
+    updateCategory,
+    deleteCategory
+  } = useCategoryManagement();
   
-  const handleEditCategory = (category: any) => {
+  // Log component lifecycle and data changes
+  useEffect(() => {
+    console.log('CategoryManagement component mounted');
+    return () => console.log('CategoryManagement component unmounted');
+  }, []);
+  
+  useEffect(() => {
+    console.log('Admin categories data changed:', categories);
+  }, [categories]);
+  
+  // Force refetch on mount
+  useEffect(() => {
+    console.log('Forcing initial admin categories fetch');
+    refetch();
+  }, [refetch]);
+  
+  const handleEditCategory = (category: AdminCategory) => {
     setEditingCategory({...category});
   };
   
   const handleSaveCategory = () => {
     if (editingCategory) {
-      setCategories(categories.map(cat => 
-        cat.id === editingCategory.id ? editingCategory : cat
-      ));
+      if (editingCategory.id) {
+        // Update existing category
+        updateCategory.mutate(editingCategory);
+      } else {
+        // Create new category
+        createCategory.mutate(editingCategory);
+      }
       setEditingCategory(null);
     }
   };
   
   const handleDeleteCategory = (categoryId: string) => {
-    setCategories(categories.filter(cat => cat.id !== categoryId));
+    if (confirm('Are you sure you want to delete this category?')) {
+      deleteCategory.mutate(categoryId);
+    }
   };
   
   const handleAddCategory = () => {
-    const newCategory = {
-      id: `${Date.now()}`,
+    const newCategory: Partial<AdminCategory> = {
       name: "New Category",
       imageUrl: "/placeholder.svg",
       puzzleCount: 0,
@@ -100,19 +90,59 @@ export const CategoryManagement: React.FC = () => {
       status: "inactive"
     };
     
-    setCategories([...categories, newCategory]);
-    setEditingCategory(newCategory);
+    setEditingCategory(newCategory as AdminCategory);
   };
   
+  const handleManualRefresh = () => {
+    console.log('Manual refresh of admin categories requested');
+    refetch();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[300px]">
+        <Loader2 className="h-8 w-8 animate-spin text-puzzle-aqua" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center py-8">
+        <div className="flex flex-col items-center gap-2 mb-4">
+          <AlertCircle className="h-8 w-8 text-red-500" />
+          <div className="text-red-500">
+            Failed to load categories. Please try again later.
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Error: {error instanceof Error ? error.message : 'Unknown error'}
+          </div>
+        </div>
+        <Button onClick={handleManualRefresh} variant="outline" className="flex items-center gap-2">
+          <RefreshCw className="h-4 w-4" />
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <ImageIcon className="h-5 w-5 mr-2" />
-            Category Management
-          </CardTitle>
-          <CardDescription>Manage puzzle categories and items</CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="flex items-center">
+                <ImageIcon className="h-5 w-5 mr-2" />
+                Category Management
+              </CardTitle>
+              <CardDescription>Manage puzzle categories and items</CardDescription>
+            </div>
+            <Button onClick={handleManualRefresh} variant="outline" size="sm" className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-center mb-4">
@@ -128,113 +158,119 @@ export const CategoryManagement: React.FC = () => {
             </Button>
           </div>
           
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Image</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Puzzles</TableHead>
-                  <TableHead>Active</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {categories.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell>
-                      <div className="w-10 h-10 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
-                        <img 
-                          src={category.imageUrl} 
-                          alt={category.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell>{category.puzzleCount} puzzles</TableCell>
-                    <TableCell>{category.activeCount} active</TableCell>
-                    <TableCell>
-                      <Badge variant={category.status === "active" ? "default" : "secondary"}>
-                        {category.status === "active" ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => handleEditCategory(category)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Edit Category</DialogTitle>
-                            <DialogDescription>
-                              Make changes to the category details below.
-                            </DialogDescription>
-                          </DialogHeader>
-                          
-                          {editingCategory && (
-                            <div className="grid gap-4 py-4">
-                              <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                  id="name"
-                                  value={editingCategory.name}
-                                  onChange={(e) => setEditingCategory({
-                                    ...editingCategory,
-                                    name: e.target.value
-                                  })}
-                                />
-                              </div>
-                              
-                              <div className="grid gap-2">
-                                <Label htmlFor="status">Status</Label>
-                                <select
-                                  id="status"
-                                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                  value={editingCategory.status}
-                                  onChange={(e) => setEditingCategory({
-                                    ...editingCategory,
-                                    status: e.target.value
-                                  })}
-                                >
-                                  <option value="active">Active</option>
-                                  <option value="inactive">Inactive</option>
-                                </select>
-                              </div>
-                            </div>
-                          )}
-                          
-                          <DialogFooter>
-                            <DialogClose asChild>
-                              <Button variant="outline">Cancel</Button>
-                            </DialogClose>
-                            <DialogClose asChild>
-                              <Button onClick={handleSaveCategory}>Save Changes</Button>
-                            </DialogClose>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                      
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteCategory(category.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </TableCell>
+          {categories.length === 0 ? (
+            <div className="text-center py-6 border rounded-md">
+              <p className="text-muted-foreground">No categories available. Add your first category to get started.</p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Image</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Puzzles</TableHead>
+                    <TableHead>Active</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {categories.map((category) => (
+                    <TableRow key={category.id}>
+                      <TableCell>
+                        <div className="w-10 h-10 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
+                          <img 
+                            src={category.imageUrl || "/placeholder.svg"} 
+                            alt={category.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">{category.name}</TableCell>
+                      <TableCell>{category.puzzleCount || 0} puzzles</TableCell>
+                      <TableCell>{category.activeCount || 0} active</TableCell>
+                      <TableCell>
+                        <Badge variant={category.status === "active" ? "default" : "secondary"}>
+                          {category.status === "active" ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => handleEditCategory(category)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Edit Category</DialogTitle>
+                              <DialogDescription>
+                                Make changes to the category details below.
+                              </DialogDescription>
+                            </DialogHeader>
+                            
+                            {editingCategory && (
+                              <div className="grid gap-4 py-4">
+                                <div className="grid gap-2">
+                                  <Label htmlFor="name">Name</Label>
+                                  <Input
+                                    id="name"
+                                    value={editingCategory.name}
+                                    onChange={(e) => setEditingCategory({
+                                      ...editingCategory,
+                                      name: e.target.value
+                                    })}
+                                  />
+                                </div>
+                                
+                                <div className="grid gap-2">
+                                  <Label htmlFor="status">Status</Label>
+                                  <select
+                                    id="status"
+                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={editingCategory.status}
+                                    onChange={(e) => setEditingCategory({
+                                      ...editingCategory,
+                                      status: e.target.value as 'active' | 'inactive'
+                                    })}
+                                  >
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                  </select>
+                                </div>
+                              </div>
+                            )}
+                            
+                            <DialogFooter>
+                              <DialogClose asChild>
+                                <Button variant="outline">Cancel</Button>
+                              </DialogClose>
+                              <DialogClose asChild>
+                                <Button onClick={handleSaveCategory}>Save Changes</Button>
+                              </DialogClose>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                        
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteCategory(category.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
         <CardFooter>
           <p className="text-sm text-muted-foreground">
