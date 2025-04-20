@@ -14,13 +14,14 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
+import { Dispatch, SetStateAction } from 'react';
 
 interface BulkRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedCount: number;
   bulkRole: UserRole;
-  setBulkRole: (role: UserRole) => void;
+  setBulkRole: Dispatch<SetStateAction<UserRole>>;
   onUpdateRoles: () => void;
   isUpdating: boolean;
 }
