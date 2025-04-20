@@ -26,32 +26,50 @@ export function useBetaNotes() {
 
     setIsLoading(true);
     try {
-      // Using a direct join approach instead of the profiles:user_id syntax
-      const { data, error } = await supabase
+      // Use a simpler query approach that doesn't require foreign key references
+      const { data: notesData, error: notesError } = await supabase
         .from('beta_notes')
         .select(`
           id, 
           content, 
           status, 
           created_at, 
-          user_id,
-          profiles!beta_notes_user_id_fkey (username, avatar_url)
+          user_id
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (notesError) throw notesError;
 
-      const formattedNotes: BetaNote[] = data.map(note => ({
-        id: note.id,
-        user_id: note.user_id,
-        content: note.content,
-        status: note.status,
-        created_at: note.created_at,
-        user: {
-          username: note.profiles?.username || 'Unknown User',
-          avatar_url: note.profiles?.avatar_url || null
-        }
-      }));
+      // Fetch user profiles in a separate query
+      const userIds = [...new Set(notesData.map(note => note.user_id))];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of user profiles for easy lookup
+      const profileMap = new Map();
+      profilesData?.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+
+      // Combine notes with user profile data
+      const formattedNotes: BetaNote[] = notesData.map(note => {
+        const profile = profileMap.get(note.user_id);
+        return {
+          id: note.id,
+          user_id: note.user_id,
+          content: note.content,
+          status: note.status,
+          created_at: note.created_at,
+          user: {
+            username: profile?.username || 'Unknown User',
+            avatar_url: profile?.avatar_url || null
+          }
+        };
+      });
 
       setNotes(formattedNotes);
     } catch (error) {
@@ -65,31 +83,36 @@ export function useBetaNotes() {
     if (!user) return null;
 
     try {
-      const { data, error } = await supabase
+      // Insert the new note
+      const { data: newNoteData, error: insertError } = await supabase
         .from('beta_notes')
         .insert({ content, user_id: user.id })
-        .select(`
-          id, 
-          content, 
-          status, 
-          created_at, 
-          user_id,
-          profiles!beta_notes_user_id_fkey (username, avatar_url)
-        `)
+        .select('id, content, status, created_at, user_id')
         .single();
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
-      // Make sure to handle potentially missing profile data
+      // Get the user profile for the new note
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('username, avatar_url')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error fetching user profile:', profileError);
+      }
+
+      // Create the new note object with user profile data
       const newNote: BetaNote = {
-        id: data.id,
-        user_id: data.user_id,
-        content: data.content,
-        status: data.status,
-        created_at: data.created_at,
+        id: newNoteData.id,
+        user_id: newNoteData.user_id,
+        content: newNoteData.content,
+        status: newNoteData.status,
+        created_at: newNoteData.created_at,
         user: {
-          username: data.profiles?.username || 'Unknown User',
-          avatar_url: data.profiles?.avatar_url || null
+          username: profileData?.username || 'Unknown User',
+          avatar_url: profileData?.avatar_url || null
         }
       };
 
@@ -108,8 +131,7 @@ export function useBetaNotes() {
       const { error } = await supabase
         .from('beta_notes')
         .update({ status })
-        .eq('id', noteId)
-        .eq('user_id', user.id);
+        .eq('id', noteId);
 
       if (error) throw error;
 
