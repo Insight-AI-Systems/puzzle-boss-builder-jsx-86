@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { UserRole } from '@/types/userTypes';
 import { Card, CardContent } from "@/components/ui/card";
@@ -55,10 +56,6 @@ export function UserManagement() {
     totalPages,
     userStats
   } = useUserManagement(isAdmin, currentUserProfile?.id || null);
-
-  const handleSetBulkRole = (role: UserRole) => {
-    setBulkRole(role);
-  };
 
   if (isLoadingProfiles) {
     return (
@@ -151,7 +148,7 @@ export function UserManagement() {
         onOpenChange={setConfirmRoleDialogOpen}
         selectedCount={selectedUsers.size}
         bulkRole={bulkRole}
-        setBulkRole={handleSetBulkRole}
+        setBulkRole={setBulkRole}
         onUpdateRoles={handleBulkRoleChange}
         isUpdating={isBulkRoleChanging}
       />
