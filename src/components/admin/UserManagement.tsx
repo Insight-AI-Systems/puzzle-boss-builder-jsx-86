@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
@@ -82,6 +81,10 @@ export function UserManagement() {
     );
   }
 
+  const handleSetBulkRole = (roleString: string) => {
+    setBulkRole(roleString as UserRole);
+  };
+
   return (
     <Card className="w-full">
       <UserManagementHeader />
@@ -140,7 +143,7 @@ export function UserManagement() {
         onOpenChange={setConfirmRoleDialogOpen}
         selectedCount={selectedUsers.size}
         bulkRole={bulkRole}
-        setBulkRole={(roleString: string) => setBulkRole(roleString as UserRole)}
+        setBulkRole={handleSetBulkRole}
         onUpdateRoles={handleBulkRoleChange}
         isUpdating={isBulkRoleChanging}
       />
