@@ -96,6 +96,42 @@ export type Database = {
         }
         Relationships: []
       }
+      issues: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          modified_by: string
+          status: Database["public"]["Enums"]["issue_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by: string
+          description: string
+          id?: string
+          modified_by: string
+          status?: Database["public"]["Enums"]["issue_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          modified_by?: string
+          status?: Database["public"]["Enums"]["issue_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       password_reset_attempts: {
         Row: {
           attempt_count: number | null
@@ -410,6 +446,7 @@ export type Database = {
     Enums: {
       age_group: "13-17" | "18-24" | "25-34" | "35-44" | "45-60" | "60+"
       feedback_type: "bug" | "suggestion" | "question" | "other"
+      issue_status: "wip" | "completed"
       note_status: "wip" | "completed"
       user_role:
         | "admin"
@@ -537,6 +574,7 @@ export const Constants = {
     Enums: {
       age_group: ["13-17", "18-24", "25-34", "35-44", "45-60", "60+"],
       feedback_type: ["bug", "suggestion", "question", "other"],
+      issue_status: ["wip", "completed"],
       note_status: ["wip", "completed"],
       user_role: [
         "admin",

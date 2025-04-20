@@ -28,8 +28,8 @@ export function useIssues() {
         .from('issues')
         .select(`
           *,
-          creator:created_by(username, email),
-          modifier:modified_by(username, email)
+          creator:profiles!issues_created_by_fkey(username, email),
+          modifier:profiles!issues_modified_by_fkey(username, email)
         `);
 
       // Apply status filter
@@ -55,7 +55,7 @@ export function useIssues() {
       if (error) throw error;
 
       // Format issues with creator and modifier names
-      const formattedIssues = issuesData.map(issue => ({
+      const formattedIssues: Issue[] = issuesData.map(issue => ({
         ...issue,
         creator_name: issue.creator?.username || issue.creator?.email || 'Unknown User',
         modifier_name: issue.modifier?.username || issue.modifier?.email || 'Unknown User'
