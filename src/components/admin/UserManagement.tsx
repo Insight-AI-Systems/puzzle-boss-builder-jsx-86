@@ -22,16 +22,16 @@ export function UserManagement() {
   const pageSize = 10;
   
   const { 
-    allProfiles: { data: users = [], count = 0 } = {}, 
+    allProfiles, 
     isLoadingProfiles, 
     updateUserRole, 
     profile: currentUserProfile,
     refetch 
-  } = useUserProfile({ page, pageSize, searchTerm });
+  } = useUserProfile();
   
   const { toast } = useToast();
   const currentUserRole = currentUserProfile?.role || 'player';
-  const totalPages = Math.ceil((count || 0) / pageSize);
+  const totalPages = Math.ceil((allProfiles?.count || 0) / pageSize);
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     updateUserRole.mutate(
@@ -96,7 +96,7 @@ export function UserManagement() {
           />
           
           <UsersTable 
-            users={users}
+            users={allProfiles?.data || []}
             currentUserRole={currentUserRole}
             onRoleChange={handleRoleChange}
           />
@@ -105,10 +105,15 @@ export function UserManagement() {
             <Pagination className="mt-4">
               <PaginationContent>
                 <PaginationItem>
-                  <PaginationPrevious 
+                  <Button 
+                    variant="outline" 
+                    size="sm"
                     onClick={() => setPage(p => Math.max(0, p - 1))}
                     disabled={page === 0}
-                  />
+                    className="gap-1 pl-2.5"
+                  >
+                    <span>Previous</span>
+                  </Button>
                 </PaginationItem>
                 <PaginationItem className="flex items-center">
                   <span className="text-sm">
@@ -116,10 +121,15 @@ export function UserManagement() {
                   </span>
                 </PaginationItem>
                 <PaginationItem>
-                  <PaginationNext 
+                  <Button 
+                    variant="outline" 
+                    size="sm"
                     onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                     disabled={page >= totalPages - 1}
-                  />
+                    className="gap-1 pr-2.5"
+                  >
+                    <span>Next</span>
+                  </Button>
                 </PaginationItem>
               </PaginationContent>
             </Pagination>

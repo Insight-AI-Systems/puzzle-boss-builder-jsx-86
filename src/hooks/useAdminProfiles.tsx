@@ -3,17 +3,30 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/userTypes';
 
+export interface AdminProfilesOptions {
+  page?: number;
+  pageSize?: number;
+  searchTerm?: string;
+}
+
+export interface ProfilesResult {
+  data: UserProfile[];
+  count: number;
+}
+
 export function useAdminProfiles(
   isAdmin: boolean, 
   currentUserId: string | null,
-  { page = 0, pageSize = 10, searchTerm = '' } = {}
+  options: AdminProfilesOptions = {}
 ) {
+  const { page = 0, pageSize = 10, searchTerm = '' } = options;
+  
   return useQuery({
     queryKey: ['profiles', page, pageSize, searchTerm],
     queryFn: async () => {
       if (!isAdmin && !currentUserId) {
         console.log('Not authorized to fetch profiles or no user ID');
-        return { data: [], count: 0 };
+        return { data: [], count: 0 } as ProfilesResult;
       }
       
       let query = supabase
@@ -51,7 +64,7 @@ export function useAdminProfiles(
         updated_at: profile.updated_at || new Date().toISOString()
       } as UserProfile)) || [];
       
-      return { data: profiles, count: count || 0 };
+      return { data: profiles, count: count || 0 } as ProfilesResult;
     },
     enabled: !!currentUserId,
   });

@@ -4,18 +4,22 @@ import { useProfileData } from './profile/useProfileData';
 import { useAdminStatus } from './profile/useAdminStatus';
 import { useProfileMutation } from './profile/useProfileMutation';
 import { useRoleManagement } from './profile/useRoleManagement';
-import { useAdminProfiles } from './profile/useAdminProfiles';
+import { useAdminProfiles, AdminProfilesOptions } from './useAdminProfiles';
 import { useState, useEffect } from 'react';
 
-export function useUserProfile(userId?: string) {
+export function useUserProfile(options?: AdminProfilesOptions) {
   const { currentUserId } = useAuthState();
-  const profileId = userId || currentUserId;
+  const profileId = options?.userId || currentUserId;
   
   const { data: profile, isLoading, error, refetch } = useProfileData(profileId);
   const { isAdmin } = useAdminStatus(profile);
   const { updateProfile } = useProfileMutation(profileId);
   const { updateUserRole } = useRoleManagement();
-  const { data: allProfiles, isLoading: isLoadingProfiles } = useAdminProfiles(isAdmin, currentUserId);
+  const { 
+    data: allProfiles, 
+    isLoading: isLoadingProfiles,
+    refetch: refetchProfiles 
+  } = useAdminProfiles(isAdmin, currentUserId, options);
 
   // Additional debugging
   useEffect(() => {
@@ -58,6 +62,9 @@ export function useUserProfile(userId?: string) {
     updateProfile,
     updateUserRole,
     currentUserId,
-    refetch
+    refetch: () => {
+      refetch();
+      refetchProfiles();
+    }
   };
 }
