@@ -1,8 +1,5 @@
 
-import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +8,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from 'lucide-react';
 
 interface EmailDialogProps {
   open: boolean;
@@ -23,63 +25,88 @@ export function EmailDialog({
   open,
   onOpenChange,
   selectedCount,
-  onSend,
+  onSend
 }: EmailDialogProps) {
-  const [subject, setSubject] = React.useState('');
-  const [body, setBody] = React.useState('');
-  const [isSending, setIsSending] = React.useState(false);
+  const [subject, setSubject] = useState('');
+  const [body, setBody] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
-  const handleSend = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!subject.trim() || !body.trim()) {
+      return;
+    }
+    
     setIsSending(true);
-    onSend(subject, body);
-    setIsSending(false);
-    onOpenChange(false);
-    setSubject('');
-    setBody('');
+    
+    // Simulate sending process
+    setTimeout(() => {
+      onSend(subject, body);
+      setIsSending(false);
+      setSubject('');
+      setBody('');
+    }, 1000);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Email Selected Users ({selectedCount})</DialogTitle>
+          <DialogTitle>Send Email to Users</DialogTitle>
           <DialogDescription>
-            Compose an email to send to the selected users.
+            This will send an email to {selectedCount} selected user{selectedCount !== 1 ? 's' : ''}.
           </DialogDescription>
         </DialogHeader>
-        
-        <div className="space-y-4 py-4">
+
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="subject" className="text-sm font-medium">Subject</label>
+            <Label htmlFor="subject">Subject</Label>
             <Input
               id="subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Email subject..."
+              placeholder="Email subject line"
+              required
             />
           </div>
           
           <div className="space-y-2">
-            <label htmlFor="body" className="text-sm font-medium">Message</label>
+            <Label htmlFor="body">Email Content</Label>
             <Textarea
               id="body"
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Email content..."
-              rows={8}
+              placeholder="Write your email content here..."
+              rows={6}
+              required
             />
           </div>
-        </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button 
-            onClick={handleSend}
-            disabled={!subject.trim() || !body.trim() || isSending}
-          >
-            {isSending ? 'Sending...' : 'Send Email'}
-          </Button>
-        </DialogFooter>
+
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="secondary" 
+              onClick={() => onOpenChange(false)}
+              disabled={isSending}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit"
+              disabled={!subject.trim() || !body.trim() || isSending}
+            >
+              {isSending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                `Send to ${selectedCount} user${selectedCount !== 1 ? 's' : ''}`
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

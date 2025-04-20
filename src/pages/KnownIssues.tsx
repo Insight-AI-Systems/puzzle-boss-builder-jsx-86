@@ -12,7 +12,7 @@ const KnownIssues = () => {
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  const handleCreateTicket = (heading: string, description: string, status: 'WIP' | 'Completed') => {
+  const handleCreateTicket = (values: { heading: string; description: string; status: 'WIP' | 'Completed' }) => {
     if (!user?.id) {
       toast({
         title: "Error",
@@ -24,9 +24,7 @@ const KnownIssues = () => {
 
     createTicket.mutate(
       {
-        heading,
-        description,
-        status,
+        ...values,
         created_by: user.id
       },
       {

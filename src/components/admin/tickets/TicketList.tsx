@@ -1,6 +1,8 @@
 
-import React, { useState } from 'react';
-import { Input } from "@/components/ui/input";
+import React from 'react';
+import { Ticket } from '@/hooks/useTickets';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,96 +11,81 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import type { Ticket } from '@/hooks/useTickets';
+import { Loader2 } from "lucide-react";
 
-interface TicketListProps {
+export interface TicketListProps {
   tickets: Ticket[];
+  isLoading: boolean;
   onUpdateStatus: (id: string, status: 'WIP' | 'Completed') => void;
 }
 
-export function TicketList({ tickets, onUpdateStatus }: TicketListProps) {
-  const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState<keyof Ticket>("created_at");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+export function TicketList({ tickets, isLoading, onUpdateStatus }: TicketListProps) {
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-  const filteredTickets = tickets.filter(ticket =>
-    ticket.heading.toLowerCase().includes(search.toLowerCase()) ||
-    ticket.description.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const sortedTickets = [...filteredTickets].sort((a, b) => {
-    const aVal = a[sortBy];
-    const bVal = b[sortBy];
-    return sortDirection === "asc" 
-      ? aVal > bVal ? 1 : -1
-      : aVal < bVal ? 1 : -1;
-  });
-
-  const toggleSort = (field: keyof Ticket) => {
-    if (sortBy === field) {
-      setSortDirection(prev => prev === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(field);
-      setSortDirection("asc");
-    }
-  };
+  if (tickets.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No issues found.
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <Input
-        placeholder="Search tickets..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="max-w-sm"
-      />
-
+    <div className="border rounded-md">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>
-              <Button 
-                variant="ghost" 
-                onClick={() => toggleSort("heading")}
-              >
-                Heading
-              </Button>
-            </TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>
-              <Button 
-                variant="ghost" 
-                onClick={() => toggleSort("status")}
-              >
-                Status
-              </Button>
-            </TableHead>
-            <TableHead>
-              <Button 
-                variant="ghost" 
-                onClick={() => toggleSort("created_at")}
-              >
-                Created At
-              </Button>
-            </TableHead>
+            <TableHead>Issue</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedTickets.map((ticket) => (
+          {tickets.map(ticket => (
             <TableRow key={ticket.id}>
-              <TableCell>{ticket.heading}</TableCell>
-              <TableCell className="max-w-md truncate">{ticket.description}</TableCell>
               <TableCell>
-                <Switch
-                  checked={ticket.status === 'Completed'}
-                  onCheckedChange={(checked) => 
-                    onUpdateStatus(ticket.id, checked ? 'Completed' : 'WIP')
-                  }
-                />
+                <div>
+                  <div className="font-medium">{ticket.heading}</div>
+                  {ticket.description && (
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {ticket.description}
+                    </div>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>
+                <Badge variant={ticket.status === 'WIP' ? 'outline' : 'default'}>
+                  {ticket.status === 'WIP' ? 'In Progress' : 'Completed'}
+                </Badge>
               </TableCell>
               <TableCell>
                 {new Date(ticket.created_at).toLocaleDateString()}
+              </TableCell>
+              <TableCell>
+                {ticket.status === 'WIP' ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onUpdateStatus(ticket.id, 'Completed')}
+                  >
+                    Mark Complete
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onUpdateStatus(ticket.id, 'WIP')}
+                  >
+                    Reopen
+                  </Button>
+                )}
               </TableCell>
             </TableRow>
           ))}

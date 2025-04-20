@@ -1,102 +1,80 @@
 
-import React from 'react';
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-
-const ticketSchema = z.object({
-  heading: z.string().min(1, "Heading is required"),
-  description: z.string().min(1, "Description is required"),
-  status: z.boolean().default(false)
-});
-
-type TicketFormValues = z.infer<typeof ticketSchema>;
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface TicketFormProps {
   onSubmit: (values: { heading: string; description: string; status: 'WIP' | 'Completed' }) => void;
-  defaultValues?: Partial<TicketFormValues>;
-  isSubmitting?: boolean;
 }
 
-export function TicketForm({ onSubmit, defaultValues, isSubmitting }: TicketFormProps) {
-  const form = useForm<TicketFormValues>({
-    resolver: zodResolver(ticketSchema),
-    defaultValues: {
-      heading: defaultValues?.heading || "",
-      description: defaultValues?.description || "",
-      status: defaultValues?.status || false
-    }
-  });
+export function TicketForm({ onSubmit }: TicketFormProps) {
+  const [heading, setHeading] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState<'WIP' | 'Completed'>('WIP');
 
-  const handleSubmit = (values: TicketFormValues) => {
-    onSubmit({
-      heading: values.heading,
-      description: values.description,
-      status: values.status ? 'Completed' : 'WIP'
-    });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!heading.trim()) {
+      alert('Please enter a heading');
+      return;
+    }
+    
+    onSubmit({ heading, description, status });
+    
+    // Reset form
+    setHeading('');
+    setDescription('');
+    setStatus('WIP');
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="heading"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Heading</FormLabel>
-              <FormControl>
-                <Input placeholder="Ticket heading..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+    <form onSubmit={handleSubmit} className="space-y-4 p-4 border rounded-md bg-card">
+      <div className="space-y-2">
+        <Label htmlFor="heading">Issue Heading</Label>
+        <Input
+          id="heading"
+          value={heading}
+          onChange={(e) => setHeading(e.target.value)}
+          placeholder="Enter issue heading"
+          required
         />
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Ticket description..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Describe the issue in detail"
+          rows={4}
         />
-
-        <FormField
-          control={form.control}
-          name="status"
-          render={({ field }) => (
-            <FormItem className="flex items-center justify-between">
-              <FormLabel>Completed</FormLabel>
-              <FormControl>
-                <Switch checked={field.value} onCheckedChange={field.onChange} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : "Save Ticket"}
-        </Button>
-      </form>
-    </Form>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="status">Status</Label>
+        <Select value={status} onValueChange={(value: 'WIP' | 'Completed') => setStatus(value)}>
+          <SelectTrigger id="status">
+            <SelectValue placeholder="Select status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="WIP">Work In Progress</SelectItem>
+            <SelectItem value="Completed">Completed</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <Button type="submit" className="w-full">Submit Issue</Button>
+    </form>
   );
 }
