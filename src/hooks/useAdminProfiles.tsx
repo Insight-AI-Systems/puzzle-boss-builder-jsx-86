@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { AdminProfilesOptions, ProfilesResult, RpcUserData } from '@/types/adminTypes';
@@ -21,7 +22,7 @@ export function useAdminProfiles(
     }
 
     try {
-      console.log('Fetching users with get_all_users edge function');
+      console.log('Fetching users with get-all-users edge function');
       const { data: rpcData, error } = await supabase.functions.invoke<RpcUserData[]>('get-all-users');
 
       if (error) {
@@ -30,11 +31,11 @@ export function useAdminProfiles(
       }
 
       if (!rpcData || !Array.isArray(rpcData)) {
-        console.error('Invalid response from get_all_users:', rpcData);
+        console.error('Invalid response from get-all-users:', rpcData);
         return { data: [], count: 0, countries: [], categories: [] };
       }
 
-      console.log(`Retrieved ${rpcData.length} users from get_all_users`);
+      console.log(`Retrieved ${rpcData.length} users from get-all-users`);
 
       // Apply filters
       let filteredData = filterUserData(rpcData, options);
