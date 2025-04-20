@@ -43,6 +43,36 @@ export function useAdminProfiles(
 
           console.log('Search results:', searchResults);
 
+          if (!searchResults || searchResults.length === 0) {
+            console.log('No search results found, trying direct profile search');
+            // Try searching directly in profiles table as a fallback
+            const { data: profileData, count, error: profileError } = await supabase
+              .from('profiles')
+              .select('*', { count: 'exact' })
+              .or(`username.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
+              .range(page * pageSize, (page * pageSize) + pageSize - 1);
+              
+            if (profileError) {
+              console.error('Error in profile fallback search:', profileError);
+              throw profileError;
+            }
+            
+            const profiles = profileData?.map(profile => ({
+              id: profile.id,
+              display_name: profile.username || profile.email || 'Anonymous User',
+              bio: profile.bio || null,
+              avatar_url: profile.avatar_url,
+              role: profile.role || 'player',
+              credits: profile.credits || 0,
+              achievements: [],
+              referral_code: null,
+              created_at: profile.created_at || new Date().toISOString(),
+              updated_at: profile.updated_at || new Date().toISOString()
+            } as UserProfile)) || [];
+            
+            return { data: profiles, count: count || 0 } as ProfilesResult;
+          }
+
           // Map the search results to UserProfile type
           const profiles = searchResults.map(result => ({
             id: result.id,
@@ -62,25 +92,23 @@ export function useAdminProfiles(
             count: profiles.length
           } as ProfilesResult;
         } catch (error) {
-          console.error('Error in search_and_sync_users function:', error);
+          console.error('Error in search function:', error);
           
-          // Fallback to regular search if the RPC fails
-          console.log('Falling back to regular profile search');
-          const query = supabase
+          // Fallback to regular profile search if all else fails
+          console.log('Falling back to simple profile search');
+          const { data: fallbackData, count: fallbackCount, error: fallbackError } = await supabase
             .from('profiles')
             .select('*', { count: 'exact' })
-            .or(`username.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%`);
+            .range(page * pageSize, (page * pageSize) + pageSize - 1);
             
-          const { data, error: fallbackError, count } = await query;
-          
           if (fallbackError) {
-            console.error('Error in fallback search:', fallbackError);
+            console.error('Error in fallback profile search:', fallbackError);
             throw fallbackError;
           }
           
-          const profiles = data?.map(profile => ({
+          const profiles = fallbackData?.map(profile => ({
             id: profile.id,
-            display_name: profile.username || profile.email || null,
+            display_name: profile.username || profile.email || 'Anonymous User',
             bio: profile.bio || null,
             avatar_url: profile.avatar_url,
             role: profile.role || 'player',
@@ -91,7 +119,10 @@ export function useAdminProfiles(
             updated_at: profile.updated_at || new Date().toISOString()
           } as UserProfile)) || [];
           
-          return { data: profiles, count: count || 0 } as ProfilesResult;
+          return { 
+            data: profiles, 
+            count: fallbackCount || 0 
+          } as ProfilesResult;
         }
       }
       

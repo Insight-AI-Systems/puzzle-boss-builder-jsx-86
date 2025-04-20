@@ -14,7 +14,7 @@ export function useUserProfile(options?: AdminProfilesOptions | string) {
   const targetUserId = typeof options === 'string' ? options : undefined;
   const profileId = targetUserId || currentUserId;
   
-  const { data: profile, isLoading, error, refetch } = useProfileData(profileId);
+  const { data: profile, isLoading, error: profileError, refetch } = useProfileData(profileId);
   const { isAdmin } = useAdminStatus(profile);
   const { updateProfile } = useProfileMutation(profileId);
   const { updateUserRole } = useRoleManagement();
@@ -64,11 +64,10 @@ export function useUserProfile(options?: AdminProfilesOptions | string) {
   return {
     profile,
     isLoading,
-    error,
+    error: profileError || profilesError, // Combined error property
     isAdmin,
     allProfiles,
     isLoadingProfiles,
-    error: error || profilesError, // Expose combined error
     updateProfile,
     updateUserRole,
     currentUserId,

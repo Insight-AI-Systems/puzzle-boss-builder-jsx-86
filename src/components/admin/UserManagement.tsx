@@ -133,6 +133,14 @@ export function UserManagement() {
             placeholder="Search by email or name..."
           />
           
+          {allProfiles?.data.length === 0 && searchTerm && (
+            <div className="p-4 border border-amber-200 bg-amber-50 text-amber-800 rounded-md">
+              <h3 className="font-bold mb-2">No matching users found</h3>
+              <p>Could not find any users matching "{searchTerm}"</p>
+              <p className="text-sm mt-2">Try searching for a complete email address or partial name.</p>
+            </div>
+          )}
+          
           <UsersTable 
             users={allProfiles?.data || []}
             currentUserRole={currentUserRole}
