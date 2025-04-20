@@ -35,9 +35,9 @@ export const BulkRoleDialog: React.FC<BulkRoleDialogProps> = ({
   onUpdateRoles,
   isUpdating,
 }) => {
-  // Updated to correctly handle the dispatch function type
+  // Create a handler function that properly converts the string value to UserRole
   const handleRoleChange = (value: string) => {
-    // This cast is safe because we control the input values in the RadioGroup
+    // Cast the string value to UserRole type before passing to setBulkRole
     setBulkRole(value as UserRole);
   };
 
