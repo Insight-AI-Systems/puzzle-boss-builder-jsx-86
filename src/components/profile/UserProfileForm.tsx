@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { UserProfile } from '@/types/userTypes';
@@ -8,8 +7,9 @@ import { ProfileAvatar } from './form/ProfileAvatar';
 import { ProfileEditForm } from './form/ProfileEditForm';
 
 export function UserProfileForm({ userId }: { userId?: string }) {
-  // Pass userId directly as string, not as an object
-  const { profile, isLoading, updateProfile } = useUserProfile(userId);
+  const { profile, isLoading, updateProfile } = useUserProfile(
+    userId ? { userId } : undefined
+  );
   const [isEditing, setIsEditing] = React.useState(false);
   const [formData, setFormData] = React.useState<Partial<UserProfile>>({
     display_name: '',

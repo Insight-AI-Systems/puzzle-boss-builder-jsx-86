@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types/userTypes';
@@ -7,6 +6,7 @@ export interface AdminProfilesOptions {
   page?: number;
   pageSize?: number;
   searchTerm?: string;
+  userId?: string;
 }
 
 export interface ProfilesResult {
@@ -69,8 +69,9 @@ export function useAdminProfiles(
           try {
             console.log('Trying auth users lookup via RPC for:', searchTerm);
             
+            // Use the search_and_sync_users function instead as it's in the allowed list
             const { data: authUserResults, error: authUserError } = await supabase
-              .rpc('search_users_by_email', { search_email: searchTerm });
+              .rpc('search_and_sync_users', { search_term: searchTerm });
               
             if (authUserError) {
               console.error('Error in auth users lookup:', authUserError);
@@ -80,10 +81,10 @@ export function useAdminProfiles(
               // Map the search results to UserProfile
               const profiles = authUserResults.map(result => ({
                 id: result.id,
-                display_name: result.email || 'Anonymous User',
+                display_name: result.display_name || result.email || 'Anonymous User',
                 bio: null,
                 avatar_url: null,
-                role: 'player' as UserRole,
+                role: (result.role || 'player') as UserRole,
                 credits: 0,
                 achievements: [],
                 referral_code: null,
