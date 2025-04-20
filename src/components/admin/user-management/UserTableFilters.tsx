@@ -10,7 +10,7 @@ interface UserTableFiltersProps {
   onDateRangeChange: (range: DateRange | undefined) => void;
   onCountryChange: (country: string | null) => void;
   onCategoryChange: (category: string | null) => void;
-  onRoleChange: (role: string | null) => void; // Changed from UserRole | null to string | null
+  onRoleChange: (role: string | null) => void;
   countries: string[];
   categories: string[];
   dateRange: DateRange | undefined;

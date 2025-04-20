@@ -52,7 +52,7 @@ export function UsersTable({
                 <TableCell>
                   <UserAvatar 
                     avatarUrl={user.avatar_url} 
-                    displayName={user.display_name} 
+                    displayName={user.display_name || 'Anonymous'} 
                     userId={user.id} 
                   />
                 </TableCell>
@@ -68,17 +68,21 @@ export function UsersTable({
                       'bg-slate-600'
                     }
                   >
-                    {ROLE_DEFINITIONS[user.role]?.label || user.role}
+                    {ROLE_DEFINITIONS[user.role]?.label || 'User'}
                   </Badge>
                 </TableCell>
                 <TableCell>{user.country || 'Not specified'}</TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    {user.categories_played?.map((category) => (
-                      <Badge key={category} variant="outline" className="text-xs">
-                        {category}
-                      </Badge>
-                    )) || 'None'}
+                    {user.categories_played && user.categories_played.length > 0 ? (
+                      user.categories_played.map((category) => (
+                        <Badge key={category} variant="outline" className="text-xs">
+                          {category}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-muted-foreground text-sm">No categories</span>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
