@@ -18,7 +18,7 @@ export function useRoleManagement() {
         
         if (error) {
           console.error("Error in updateUserRole:", error);
-          throw error;
+          throw new Error(`Failed to update role: ${error.message}`);
         }
         
         console.log("Role update success:", data);
@@ -48,7 +48,7 @@ export function useRoleManagement() {
         
         if (error) {
           console.error("Error in bulkUpdateRoles:", error);
-          throw error;
+          throw new Error(`Failed to update roles: ${error.message}`);
         }
         
         console.log("Bulk role update success:", data);

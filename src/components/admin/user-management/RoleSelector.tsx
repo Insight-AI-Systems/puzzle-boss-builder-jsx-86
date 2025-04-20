@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -27,18 +28,21 @@ export function RoleSelector({
 }: RoleSelectorProps) {
   // Helper function to determine if current user can assign a role
   const canAssignRole = (role: UserRole): boolean => {
-    // Special case for protected admin email (simplified logic)
+    // Special case for protected admin email
     const isProtectedAdmin = userId === 'alan@insight-ai-systems.com';
     
     // Log the permission check for debugging
     console.log(`RoleSelector - Permission check: role=${role}, currentUserRole=${currentUserRole}, isProtectedAdmin=${isProtectedAdmin}`);
     
-    // Super admins can assign any role - special handling for protected admin
-    const isSuperAdmin = currentUserRole === 'super_admin' || 
-                         isProtectedAdmin;
-    
-    if (isSuperAdmin) {
+    // Super admins can assign any role
+    if (currentUserRole === 'super_admin') {
       console.log('RoleSelector - User is super_admin, can assign any role');
+      return true;
+    }
+    
+    // Special protected admin can assign any role to themselves
+    if (isProtectedAdmin && userId === 'alan@insight-ai-systems.com') {
+      console.log('RoleSelector - Protected admin can manage their own role');
       return true;
     }
     

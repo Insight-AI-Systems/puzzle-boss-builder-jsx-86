@@ -65,7 +65,7 @@ serve(async (req) => {
     const isSuperAdmin = profile.role === "super_admin" || isProtectedSuperAdmin;
     const isAdmin = profile.role === "admin" || isSuperAdmin;
 
-    console.log(`User roles: isAdmin=${isAdmin}, isSuperAdmin=${isSuperAdmin}, isProtectedSuperAdmin=${isProtectedSuperAdmin}`);
+    console.log(`User permissions check: isAdmin=${isAdmin}, isSuperAdmin=${isSuperAdmin}, isProtectedSuperAdmin=${isProtectedSuperAdmin}`);
 
     if (!isAdmin && !isSuperAdmin) {
       console.error("Permissions error: Not an admin");
@@ -98,12 +98,11 @@ serve(async (req) => {
       );
     }
 
-    // Role assignment permissions
-    // Only super admins can assign super_admin roles
-    if (!isSuperAdmin && newRole === "super_admin") {
-      console.error("Not authorized to assign super_admin role");
+    // Role assignment permissions check
+    if (newRole === "super_admin" && !isSuperAdmin) {
+      console.error("Permission denied: Only super_admin can assign super_admin role");
       return new Response(
-        JSON.stringify({ error: "Not authorized to assign super_admin role" }),
+        JSON.stringify({ error: "Permission denied: Only super_admin can assign super_admin role" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -112,8 +111,10 @@ serve(async (req) => {
     const results = [];
     for (const userId of userIds) {
       // Special protection for protected admin - only the protected admin itself can change its role
-      if (userId === "alan@insight-ai-systems.com" && !isProtectedSuperAdmin) {
-        console.error("Cannot modify protected super admin account");
+      const isProtectedAdminUser = userId === "alan@insight-ai-systems.com";
+      
+      if (isProtectedAdminUser && !isProtectedSuperAdmin) {
+        console.error("Cannot modify protected admin account");
         results.push({
           id: userId,
           success: false,
