@@ -1,10 +1,9 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, UserCog, Mail, Shield, Download } from "lucide-react";
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useToast } from '@/hooks/use-toast';
-import { UserRole } from '@/types/userTypes';
+import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 import { SearchBar } from './user-management/SearchBar';
 import { UsersTable } from './user-management/UsersTable';
 import { UserTableFilters } from './user-management/UserTableFilters';
@@ -73,7 +72,6 @@ export function UserManagement() {
   const currentUserRole = currentUserProfile?.role || 'player';
   const totalPages = Math.ceil((allProfiles?.count || 0) / pageSize);
   
-  // Get unique countries and categories - will be empty arrays until columns exist
   const countries: string[] = [];
   const categories: string[] = [];
 
@@ -163,8 +161,6 @@ export function UserManagement() {
     setIsSendingEmail(true);
     
     try {
-      // This would call a Supabase Edge Function to handle email sending
-      // For now, we'll simulate it
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       toast({
@@ -250,7 +246,6 @@ export function UserManagement() {
       return;
     }
     
-    // Create CSV content
     const headers = ["ID", "Display Name", "Role", "Country", "Categories", "Created At"];
     const rows = allProfiles.data.map(user => [
       user.id,
@@ -266,7 +261,6 @@ export function UserManagement() {
       ...rows.map(row => row.join(','))
     ].join('\n');
     
-    // Create download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -381,7 +375,7 @@ export function UserManagement() {
                         </div>
                       </div>
                       
-                      <Alert variant="warning" className="mb-4">
+                      <Alert>
                         <AlertTriangle className="h-4 w-4" />
                         <AlertTitle>Important</AlertTitle>
                         <AlertDescription>
@@ -422,16 +416,16 @@ export function UserManagement() {
                           onValueChange={(value) => setBulkRole(value as UserRole)}
                           className="space-y-2"
                         >
-                          {Object.values(ROLE_DEFINITIONS).map((roleDef) => (
-                            <div key={roleDef.role} className="flex items-center space-x-2">
-                              <RadioGroupItem value={roleDef.role} id={`role-${roleDef.role}`} />
-                              <Label htmlFor={`role-${roleDef.role}`}>{roleDef.label}</Label>
+                          {Object.entries(ROLE_DEFINITIONS).map(([role, roleDef]) => (
+                            <div key={role} className="flex items-center space-x-2">
+                              <RadioGroupItem value={role} id={`role-${role}`} />
+                              <Label htmlFor={`role-${role}`}>{roleDef.label}</Label>
                             </div>
                           ))}
                         </RadioGroup>
                       </div>
                       
-                      <Alert variant="warning" className="mb-4">
+                      <Alert>
                         <AlertTriangle className="h-4 w-4" />
                         <AlertTitle>Warning</AlertTitle>
                         <AlertDescription>
