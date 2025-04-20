@@ -29,7 +29,6 @@ export function RoleManagement() {
                         currentUserProfile?.id === 'alan@insight-ai-systems.com';
   
   // Filter profiles based on search term
-  // Check if allProfiles is the new ProfilesResult type or the old array type
   const profilesData = allProfiles?.data || [];
   
   const filteredProfiles = profilesData.filter(profile => 
@@ -57,12 +56,17 @@ export function RoleManagement() {
   };
 
   // Helper function to determine if current user can assign a role
-  const canAssignRole = (role: UserRole): boolean => {
+  const canAssignRole = (role: UserRole, userId: string): boolean => {
+    // Special case for protected admin
+    if (userId === 'alan@insight-ai-systems.com') {
+      return isSuperAdmin;
+    }
+    
     // Super admin can assign any role
     if (isSuperAdmin) return true;
     
-    // Regular admin can assign non-admin roles
-    if (currentUserRole === 'admin' && role !== 'super_admin' && role !== 'admin') return true;
+    // Regular admin can assign non-super_admin roles
+    if (currentUserRole === 'admin' && role !== 'super_admin') return true;
     
     return false;
   };
@@ -116,7 +120,7 @@ export function RoleManagement() {
                       </Avatar>
                       <div>
                         <div className="font-medium">
-                          {user.display_name || 'Anonymous'}
+                          {user.display_name || 'Anonymous User'}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {user.id.substring(0, 8)}...
@@ -169,7 +173,7 @@ export function RoleManagement() {
                           <DropdownMenuItem
                             key={roleInfo.role}
                             onClick={() => handleRoleChange(user.id, roleInfo.role)}
-                            disabled={!canAssignRole(roleInfo.role) || user.role === roleInfo.role}
+                            disabled={!canAssignRole(roleInfo.role, user.id) || user.role === roleInfo.role}
                             className={user.role === roleInfo.role ? 'bg-muted font-medium' : ''}
                           >
                             {roleInfo.label}

@@ -27,11 +27,16 @@ export function RoleSelector({
 }: RoleSelectorProps) {
   // Helper function to determine if current user can assign a role
   const canAssignRole = (role: UserRole): boolean => {
+    // Special case for protected admin email
+    if (userId === 'alan@insight-ai-systems.com') {
+      return currentUserRole === 'super_admin' || role === 'super_admin';
+    }
+    
     // Super admins can assign any role
     if (currentUserRole === 'super_admin') return true;
     
-    // Admins can assign most roles except admin and super_admin
-    if (currentUserRole === 'admin' && role !== 'super_admin' && role !== 'admin') return true;
+    // Admins can assign most roles except super_admin
+    if (currentUserRole === 'admin' && role !== 'super_admin') return true;
     
     // Other roles cannot assign roles
     return false;
@@ -62,7 +67,7 @@ export function RoleSelector({
               disabled={
                 !canAssignRole(roleDef.role) || 
                 currentRole === roleDef.role ||
-                (currentUserRole !== 'super_admin' && userId === 'own-user-id') // Can't change own role unless super_admin
+                (userId === 'own-user-id') // Can't change own role
               }
               className="flex items-center justify-between"
             >

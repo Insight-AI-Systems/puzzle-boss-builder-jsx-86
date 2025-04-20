@@ -90,10 +90,10 @@ serve(async (req) => {
 
     // Role assignment permissions
     // Super admins can assign any role
-    // Regular admins can't assign super_admin or admin roles
-    if (!isSuperAdmin && (newRole === "super_admin" || newRole === "admin")) {
+    // Regular admins can't assign super_admin roles
+    if (!isSuperAdmin && newRole === "super_admin") {
       return new Response(
-        JSON.stringify({ error: "Not authorized to assign this role" }),
+        JSON.stringify({ error: "Not authorized to assign super_admin role" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -101,6 +101,17 @@ serve(async (req) => {
     // Update roles with upsert in case profiles don't exist yet
     const results = [];
     for (const userId of userIds) {
+      // Special protection for protected admin
+      if (userId === "alan@insight-ai-systems.com" && !isProtectedAdmin) {
+        results.push({
+          id: userId,
+          success: false,
+          error: "Cannot modify protected admin account",
+          data: null
+        });
+        continue;
+      }
+      
       const { data, error } = await supabaseAdmin
         .from("profiles")
         .upsert({

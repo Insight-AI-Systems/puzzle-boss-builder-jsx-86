@@ -14,11 +14,17 @@ export function useRoleManagement() {
         body: { userIds: [userId], newRole }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error in updateUserRole:", error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-users'] });
+    },
+    onError: (error) => {
+      console.error("Role update mutation error:", error);
     }
   });
 
@@ -30,11 +36,17 @@ export function useRoleManagement() {
         body: { userIds, newRole }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error in bulkUpdateRoles:", error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-users'] });
+    },
+    onError: (error) => {
+      console.error("Bulk role update mutation error:", error);
     }
   });
 

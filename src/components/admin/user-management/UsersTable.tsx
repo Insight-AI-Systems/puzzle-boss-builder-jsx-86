@@ -56,12 +56,17 @@ export function UsersTable({
   const isSuperAdmin = currentUserRole === 'super_admin';
   
   // Helper function to determine if current user can assign a role
-  const canAssignRole = (role: UserRole): boolean => {
+  const canAssignRole = (role: UserRole, userId: string): boolean => {
+    // Special case for protected admin
+    if (userId === 'alan@insight-ai-systems.com') {
+      return currentUserRole === 'super_admin';
+    }
+    
     // Super admins can assign any role
     if (isSuperAdmin) return true;
     
-    // Admins can assign most roles except admin and super_admin
-    if (currentUserRole === 'admin' && role !== 'super_admin' && role !== 'admin') return true;
+    // Admins can assign most roles except super_admin
+    if (currentUserRole === 'admin' && role !== 'super_admin') return true;
     
     // Other roles cannot assign roles
     return false;
@@ -169,7 +174,7 @@ export function UsersTable({
                           key={roleDef.role}
                           onClick={() => onRoleChange(user.id, roleDef.role)}
                           disabled={
-                            !canAssignRole(roleDef.role) || 
+                            !canAssignRole(roleDef.role, user.id) || 
                             user.role === roleDef.role
                           }
                         >
