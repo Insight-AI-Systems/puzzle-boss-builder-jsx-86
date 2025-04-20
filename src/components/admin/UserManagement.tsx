@@ -1,8 +1,8 @@
 import React from 'react';
 import { UserRole } from '@/types/userTypes';
 import { Card, CardContent } from "@/components/ui/card";
-import { useUserManagement } from '@/hooks/admin/useUserManagement';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useUserManagement } from '@/hooks/admin/useUserManagement';
 import { UserManagementHeader } from './user-management/UserManagementHeader';
 import { UserActionBar } from './user-management/UserActionBar';
 import { UserTableFilters } from './user-management/UserTableFilters';
