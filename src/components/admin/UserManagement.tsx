@@ -99,7 +99,6 @@ export function UserManagement() {
       <UserManagementHeader />
       <CardContent>
         <div className="space-y-6">
-          {/* Add User Insights Dashboard */}
           <UserInsightsDashboard 
             userStats={userStats} 
             signupStats={allProfilesData?.signup_stats || []} 
