@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Pencil } from 'lucide-react';  // Changed from 'pencil' to 'Pencil'
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,7 +11,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { pencil } from 'lucide-react';
 import { Ticket } from '@/hooks/useTickets';
 
 interface EditTicketDialogProps {
@@ -35,7 +35,7 @@ export function EditTicketDialog({ ticket, onSave }: EditTicketDialogProps) {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm">
-          <pencil className="h-4 w-4" />
+          <Pencil className="h-4 w-4" />  {/* Changed from pencil to Pencil */}
           <span className="sr-only">Edit ticket</span>
         </Button>
       </DialogTrigger>
