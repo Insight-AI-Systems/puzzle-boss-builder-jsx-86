@@ -1,5 +1,6 @@
+
 import { DateRange } from 'react-day-picker';
-import { UserRole } from './userTypes';
+import { UserRole, UserProfile } from './userTypes';
 
 export interface AdminProfilesOptions {
   page?: number;
