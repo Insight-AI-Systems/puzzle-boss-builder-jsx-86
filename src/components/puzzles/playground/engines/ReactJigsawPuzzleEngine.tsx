@@ -1,7 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { JigsawPuzzle } from 'react-jigsaw-puzzle/lib';
 import 'react-jigsaw-puzzle/lib/jigsaw-puzzle.css';
 import { Loader2, Clock, RefreshCcw, Image as ImageIcon } from 'lucide-react';
+import StagingArea from './StagingArea';
+import FirstMoveOverlay from './FirstMoveOverlay';
+import { usePuzzleTimer } from './usePuzzleTimer';
 
 interface ReactJigsawPuzzleEngineProps {
   imageUrl: string;
@@ -15,50 +19,7 @@ const formatTime = (seconds: number): string => {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
-// Simple representation of a puzzle piece for staging logic
-type StagedPiece = {
-  id: number;
-  inPuzzle: boolean;
-};
-
-const StagingArea: React.FC<{
-  stagedPieces: { id: number }[];
-}> = ({ stagedPieces }) => {
-  if (stagedPieces.length === 0) return null;
-  return (
-    <div className="w-full max-w-xl mt-6 p-4 border rounded bg-muted/30 flex flex-wrap gap-2 justify-center">
-      <div className="w-full text-xs mb-2 font-medium text-muted-foreground text-center uppercase tracking-widest">
-        Staging Area ({stagedPieces.length} pieces)
-      </div>
-      {stagedPieces.map(piece => (
-        <div key={piece.id} className="w-8 h-8 bg-background/60 rounded shadow border flex items-center justify-center font-bold text-lg">
-          {piece.id + 1}
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const FirstMoveOverlay: React.FC<{
-  show: boolean;
-  onFirstMove: () => void;
-}> = ({ show, onFirstMove }) =>
-  show ? (
-    <div
-      style={{
-        position: 'absolute',
-        inset: 0,
-        zIndex: 9,
-        background: 'rgba(0,0,0,0)',
-        cursor: 'pointer',
-      }}
-      tabIndex={0}
-      role="button"
-      aria-label="Start Puzzle Timer"
-      onPointerDown={onFirstMove}
-      data-testid="first-move-overlay"
-    />
-  ) : null;
+type StagedPiece = { id: number; inPuzzle: boolean };
 
 const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
   imageUrl, rows, columns
@@ -66,34 +27,28 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
   const [loading, setLoading] = useState(true);
   const [completed, setCompleted] = useState(false);
   const [solveTime, setSolveTime] = useState<number | null>(null);
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const [elapsed, setElapsed] = useState<number>(0);
   const [resetKey, setResetKey] = useState(0);
-
-  const [hasStarted, setHasStarted] = useState(false); // Track if puzzle officially started
-
+  const [hasStarted, setHasStarted] = useState(false);
   const [pieces, setPieces] = useState<StagedPiece[]>([]);
 
-  const timerRef = useRef<number | null>(null);
+  const {
+    elapsed, start, stop, reset, isRunning,
+    startTime, setElapsed, setStartTime
+  } = usePuzzleTimer();
 
-  // Preload image and reset
+  // Preload image and reset puzzle
   useEffect(() => {
     setLoading(true);
     setCompleted(false);
     setSolveTime(null);
-    setStartTime(null);
-    setElapsed(0);
     setHasStarted(false);
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
+    reset();
     const img = new window.Image();
     img.src = imageUrl;
     img.onload = () => {
       setLoading(false);
       setElapsed(0);
       setHasStarted(false);
-      // Initialize pieces: all start in the staging area (not in puzzle)
       const total = rows * columns;
       setPieces(Array.from({ length: total }).map((_, i) => ({ id: i, inPuzzle: false })));
     };
@@ -104,21 +59,9 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
     return () => {
       img.onload = null;
       img.onerror = null;
-      if (timerRef.current) clearInterval(timerRef.current);
+      reset();
     };
-  }, [imageUrl, rows, columns, resetKey]);
-
-  // Timer logic (runs ONLY during active puzzle segment)
-  useEffect(() => {
-    if (!loading && !completed && hasStarted && startTime !== null) {
-      timerRef.current = window.setInterval(() => {
-        setElapsed(Math.floor((Date.now() - (startTime as number)) / 1000));
-      }, 250);
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [loading, completed, hasStarted, startTime]);
+  }, [imageUrl, rows, columns, resetKey, reset, setElapsed]);
 
   // Handle puzzle solve event
   const handleOnChange = (isSolved: boolean) => {
@@ -129,15 +72,16 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
         setSolveTime((endTime - startTime) / 1000);
         setElapsed(Math.floor((endTime - startTime) / 1000));
       }
-      if (timerRef.current) clearInterval(timerRef.current);
+      stop();
       setPieces(p => p.map(piece => ({ ...piece, inPuzzle: true })));
     }
   };
 
-  // Track first move/drag to start timer
+  // Start timer on first move/drag
   const handleStartIfFirstMove = () => {
     if (!hasStarted) {
       setHasStarted(true);
+      start();
       setStartTime(Date.now());
     }
   };
@@ -147,7 +91,6 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
     setResetKey(rk => rk + 1);
   };
 
-  // Custom style typings (fix pointerEvents TS error)
   const customStyles: {
     wrapper: React.CSSProperties;
     ghost: React.CSSProperties;
@@ -181,7 +124,6 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
     }
   };
 
-  // Derived values for child components
   const stagedPieces = pieces.filter(p => !p.inPuzzle);
   const showFirstMoveOverlay = !hasStarted && !loading && !completed;
 
