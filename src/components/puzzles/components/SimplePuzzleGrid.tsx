@@ -126,7 +126,7 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
             onTouchEnd={(e) => onDrop(e, index)}
             onClick={() => onPieceClick(piece)}
             className={`puzzle-piece flex items-center justify-center rounded-lg cursor-pointer shadow-md transition-all
-              ${piece.isDragging ? 'puzzle-piece-dragging ring-2 ring-white' : ''}
+              ${piece.isDragging ? 'puzzle-piece-dragging' : ''}
               ${isCorrectlyPlaced ? 'puzzle-piece-correct' : ''}
               ${(piece as any).showHint ? 'puzzle-piece-hint' : ''}
               ${isSolved ? 'ring-1 ring-puzzle-gold/50' : ''}
@@ -136,7 +136,7 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
               opacity: piece.isDragging ? '0.8' : '1',
               width: pieceSize,
               height: pieceSize,
-              zIndex: (piece as any).zIndex || (isCorrectlyPlaced ? 10 : 20), // Use zIndex property or default
+              zIndex: (piece as any).zIndex || (isCorrectlyPlaced ? 10 : 20), // Use zIndex property or default based on placement
               position: 'relative'
             }}
           >

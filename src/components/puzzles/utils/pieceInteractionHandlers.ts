@@ -61,23 +61,21 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     console.log(`Move ${draggedPiece.id} to ${direction}`);
   };
 
-  // New helper function to update z-indices for all pieces
+  // Enhanced helper function to update z-indices for all pieces
   const updatePieceZIndices = (piecesToUpdate: T[]) => {
     // For each piece, determine if it's in its correct position
     piecesToUpdate.forEach(piece => {
       const pieceNumber = parseInt(piece.id.split('-')[1]);
       const isInCorrectPosition = piece.position === pieceNumber;
       
-      // Placed pieces get lower z-index (10)
-      // Unplaced pieces get higher z-index (20)
-      // Currently dragged pieces get highest z-index (100)
+      // Force TypeScript to recognize the zIndex property
       if ('zIndex' in piece) {
         if (piece.isDragging) {
-          (piece as any).zIndex = 100;
+          (piece as any).zIndex = 100; // Highest for dragged pieces
         } else if (isInCorrectPosition) {
-          (piece as any).zIndex = 10; // Lower z-index for correctly placed pieces
+          (piece as any).zIndex = 10;  // Lowest for correctly placed pieces
         } else {
-          (piece as any).zIndex = 20; // Higher z-index for unplaced pieces
+          (piece as any).zIndex = 20;  // Middle for unplaced pieces
         }
       }
     });
