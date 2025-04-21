@@ -1,4 +1,3 @@
-
 // Splitting file into smaller components/hooks for readability and maintainability.
 // Do not change functionality or UI.
 
@@ -117,8 +116,12 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
         </div>
       </div>
       {/* Staging area for unused pieces */}
-      <StagingArea stagedPieces={stagedPieces} />
-
+      <StagingArea 
+        stagedPieces={stagedPieces} 
+        imageUrl={imageUrl}
+        rows={rows}
+        columns={columns}
+      />
       <PuzzleCompleteBanner solveTime={solveTime} />
       <div className="mt-4 text-sm text-muted-foreground">
         <p className="font-medium flex items-center gap-1">
