@@ -29,7 +29,7 @@ export const CategoryImageUpload: React.FC<CategoryImageUploadProps> = ({
       const { data: publicUrlData } = supabase.storage
         .from("category-thumbnails")
         .getPublicUrl(data.path);
-      
+
       onChange(publicUrlData.publicUrl);
     } else {
       alert('Image upload failed.');
