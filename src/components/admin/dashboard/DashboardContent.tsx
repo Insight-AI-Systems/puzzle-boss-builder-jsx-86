@@ -79,8 +79,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
         </TabsContent>
       ))}
       
-      {/* Special case for puzzle creation which isn't in the tabs list */}
-      {activeTab === 'puzzle-create' && (
+      {/* Special case for puzzle creation which might not be in the tabs list */}
+      {activeTab === 'puzzle-create' && !accessibleTabs.some(tab => tab.id === 'puzzle-create') && (
         <TabsContent 
           value="puzzle-create" 
           className="pt-4"

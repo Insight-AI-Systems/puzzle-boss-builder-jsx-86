@@ -9,12 +9,12 @@ export const PuzzleCreateContent: React.FC = () => {
   const navigate = useNavigate();
   
   const handleBack = () => {
-    navigate('/admin-dashboard');
+    navigate('/admin-dashboard?tab=puzzles');
   };
   
   const handleSave = () => {
-    // After saving, return to dashboard
-    navigate('/admin-dashboard');
+    // After saving, return to puzzles tab
+    navigate('/admin-dashboard?tab=puzzles');
   };
   
   return (

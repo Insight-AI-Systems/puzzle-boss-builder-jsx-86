@@ -11,7 +11,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 export function RoleBasedDashboard() {
   const { profile, isAdmin } = useUserProfile();
-  const [activeTab, setActiveTab] = useState("users");
+  const [activeTab, setActiveTab] = useState("overview");
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -34,8 +34,15 @@ export function RoleBasedDashboard() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
-    if (tabParam && accessibleTabs.some(tab => tab.id === tabParam)) {
-      setActiveTab(tabParam);
+    
+    // Check if tab param exists and is valid or is special case 'puzzle-create'
+    if (tabParam) {
+      if (accessibleTabs.some(tab => tab.id === tabParam) || tabParam === 'puzzle-create') {
+        setActiveTab(tabParam);
+      }
+    } else if (accessibleTabs.length > 0) {
+      // Default to first accessible tab if no tab parameter
+      setActiveTab(accessibleTabs[0].id);
     }
   }, [location.search, accessibleTabs]);
   
