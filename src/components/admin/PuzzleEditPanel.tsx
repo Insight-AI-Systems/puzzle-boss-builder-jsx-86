@@ -1,9 +1,10 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleLeft, ToggleRight, Image, Save, X } from "lucide-react";
 
@@ -28,6 +29,26 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
   const grid = { easy: 3, medium: 4, hard: 5 }[puzzle?.difficulty] || 4;
   const boxSize = 56;
   const total = grid * grid;
+
+  // timer toggle logic
+  const [timerEnabled, setTimerEnabled] = useState(Boolean(puzzle?.timeLimit && puzzle.timeLimit > 0));
+
+  useEffect(() => {
+    // when puzzle changes, update toggled state accordingly
+    setTimerEnabled(Boolean(puzzle?.timeLimit && puzzle.timeLimit > 0));
+  }, [puzzle?.timeLimit]);
+
+  const handleToggleTimer = (checked: boolean) => {
+    setTimerEnabled(checked);
+    if (!checked) {
+      onChange("timeLimit", 0);
+    } else {
+      // Set to default (if necessary) or leave value as is.
+      if (!puzzle.timeLimit || puzzle.timeLimit === 0) {
+        onChange("timeLimit", 300);
+      }
+    }
+  };
 
   return (
     <div className="w-full p-4 mt-2 mb-4 bg-muted border rounded-lg shadow-md grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -148,18 +169,34 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           </Select>
         </div>
 
-        <div>
-          <Label htmlFor="edit-timelimit" className="block mb-1">Timer (seconds)</Label>
-          <Input
-            id="edit-timelimit"
-            type="number"
-            min={0}
-            value={puzzle?.timeLimit ?? ""}
-            onChange={e => onChange("timeLimit", Number(e.target.value))}
-            data-testid={`edit-timelimit`}
-            className="w-28 inline-block"
+        {/* TIMER SWITCH */}
+        <div className="flex items-center gap-3">
+          <Label htmlFor="edit-enable-timer" className="mb-0">Enable Timer</Label>
+          <Switch
+            id="edit-enable-timer"
+            checked={timerEnabled}
+            onCheckedChange={handleToggleTimer}
           />
+          <span className={`text-xs ml-2 ${timerEnabled ? "text-green-600" : "text-gray-400"}`}>
+            {timerEnabled ? "On" : "Off"}
+          </span>
         </div>
+
+        {/* Timer (seconds) input, only active when timerEnabled */}
+        {timerEnabled && (
+          <div>
+            <Label htmlFor="edit-timelimit" className="block mb-1">Timer (seconds)</Label>
+            <Input
+              id="edit-timelimit"
+              type="number"
+              min={0}
+              value={puzzle?.timeLimit ?? ""}
+              onChange={e => onChange("timeLimit", Number(e.target.value))}
+              data-testid={`edit-timelimit`}
+              className="w-28 inline-block"
+            />
+          </div>
+        )}
 
         <div>
           <Label htmlFor="edit-costperplay" className="block mb-1">Cost per Play ($)</Label>
@@ -229,3 +266,4 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
 };
 
 export default PuzzleEditPanel;
+
