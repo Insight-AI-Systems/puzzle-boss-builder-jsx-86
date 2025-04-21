@@ -17,8 +17,10 @@
   overflow: hidden;
 }
 
-.no-border .jigsaw-puzzle_piece {
+/* Border toggle styles */
+.no-border-puzzle .jigsaw-puzzle_piece {
   border: none !important;
+  box-shadow: none !important;
 }
 
 .jigsaw-puzzle-container .jigsaw-puzzle_piece {

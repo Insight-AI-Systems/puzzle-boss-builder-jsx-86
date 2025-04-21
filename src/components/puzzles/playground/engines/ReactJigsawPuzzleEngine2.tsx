@@ -75,7 +75,7 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
         .insert([
           {
             user_id: user.id,
-            puzzle_id: imageUrl, // Using imageUrl as puzzle_id for now
+            puzzle_id: imageUrl,
             completion_time: completionTime,
             moves_count: 0,
             difficulty_level: `${rows}x${columns}`,
@@ -119,6 +119,7 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
 
   const handleToggleBorder = () => {
     setShowBorder(prev => !prev);
+    console.log("Border toggled:", !showBorder);
   };
 
   const handlePlayAgain = () => {
@@ -146,8 +147,8 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
   const showFirstMoveOverlay = !hasStarted && !loading && !completed;
 
   const puzzleContainerStyle: React.CSSProperties = {
-    width: '100vw',
-    maxWidth: 'calc(100vw - 48px)',
+    width: 'calc(100vw - 340px)',
+    maxWidth: 'calc(100vw - 360px)',
     minWidth: '320px',
     height: '80vh',
     minHeight: '500px',
@@ -156,7 +157,7 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    margin: '0 auto',
+    margin: '0 auto 0 20px',
     background: 'var(--background, #18181B)',
     borderRadius: '1.5rem',
     boxShadow: '0 4px 32px rgba(0,0,0,0.14)',
@@ -165,45 +166,48 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
 
   useEffect(() => {
     console.log('Current image URL:', imageUrl);
-  }, [imageUrl]);
+    console.log('Show border:', showBorder);
+  }, [imageUrl, showBorder]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full w-full relative">
+    <div className="flex flex-col items-center justify-center h-full w-full relative pl-0 md:pl-8">
       <PuzzleSidebarLeaderboard solveTime={solveTime} />
 
-      <PuzzleHeaderAndControls
-        elapsed={elapsed}
-        onReset={handleReset}
-        onToggleBorder={handleToggleBorder}
-        showBorder={showBorder}
-      />
+      <div className="flex flex-col items-center justify-center w-full max-w-[calc(100%-340px)] ml-auto mr-4">
+        <PuzzleHeaderAndControls
+          elapsed={elapsed}
+          onReset={handleReset}
+          onToggleBorder={handleToggleBorder}
+          showBorder={showBorder}
+        />
 
-      <PuzzleContainer
-        puzzleContainerRef={puzzleContainerRef}
-        puzzleContainerStyle={puzzleContainerStyle}
-        showFirstMoveOverlay={showFirstMoveOverlay}
-        loading={loading}
-        handleStartIfFirstMove={handleStartIfFirstMove}
-        imageUrl={imageUrl}
-        rows={rows}
-        columns={columns}
-        keyProp={key}
-        onSolved={handlePuzzleComplete}
-        showBorder={showBorder}
-      />
+        <PuzzleContainer
+          puzzleContainerRef={puzzleContainerRef}
+          puzzleContainerStyle={puzzleContainerStyle}
+          showFirstMoveOverlay={showFirstMoveOverlay}
+          loading={loading}
+          handleStartIfFirstMove={handleStartIfFirstMove}
+          imageUrl={imageUrl}
+          rows={rows}
+          columns={columns}
+          keyProp={key}
+          onSolved={handlePuzzleComplete}
+          showBorder={showBorder}
+        />
 
-      <PuzzleFooter
-        solveTime={solveTime}
-        showBorder={showBorder}
-        rows={rows}
-        columns={columns}
-      />
+        <PuzzleFooter
+          solveTime={solveTime}
+          showBorder={showBorder}
+          rows={rows}
+          columns={columns}
+        />
 
-      <PuzzleCongratulationSplash 
-        show={completed} 
-        solveTime={solveTime} 
-        onPlayAgain={handlePlayAgain}
-      />
+        <PuzzleCongratulationSplash 
+          show={completed} 
+          solveTime={solveTime} 
+          onPlayAgain={handlePlayAgain}
+        />
+      </div>
     </div>
   );
 };

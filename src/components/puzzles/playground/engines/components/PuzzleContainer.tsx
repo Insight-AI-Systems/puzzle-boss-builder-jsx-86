@@ -2,6 +2,7 @@
 import React, { RefObject, memo, useEffect, useRef } from 'react';
 import FirstMoveOverlay from '../FirstMoveOverlay';
 import { JigsawPuzzle } from 'react-jigsaw-puzzle/lib';
+import '../styles/jigsaw-puzzle.css';
 
 interface PuzzleContainerProps {
   puzzleContainerRef: RefObject<HTMLDivElement>;
@@ -58,7 +59,7 @@ export const PuzzleContainer: React.FC<PuzzleContainerProps> = memo(({
         <div
           style={{ position: 'relative', width: '100%', maxWidth: '500px' }}
           onClick={handleStartIfFirstMove}
-          className={!showBorder ? 'no-border' : ''}
+          className={!showBorder ? 'no-border-puzzle' : ''}
         >
           {/* Display the image URL for debugging - shortened to reduce re-renders */}
           {imageUrl && (
@@ -73,6 +74,7 @@ export const PuzzleContainer: React.FC<PuzzleContainerProps> = memo(({
             rows={rows}
             columns={columns}
             onSolved={onSolved}
+            className={!showBorder ? 'no-border-puzzle' : ''}
           />
         </div>
       )}

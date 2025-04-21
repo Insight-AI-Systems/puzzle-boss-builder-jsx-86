@@ -34,7 +34,7 @@ export const PuzzleSidebarLeaderboard: React.FC<{ solveTime?: number | null }> =
   }, [solveTime]);
 
   return (
-    <aside className="fixed right-0 top-0 h-full w-[290px] md:w-[330px] bg-gradient-to-tl from-puzzle-aqua to-puzzle-gold/50 shadow-xl z-30 px-3 py-6 flex flex-col items-center border-l-4 border-puzzle-gold">
+    <aside className="fixed right-0 top-0 h-full w-[290px] md:w-[330px] bg-gradient-to-tl from-puzzle-aqua to-puzzle-gold/50 shadow-xl z-20 px-3 py-6 flex flex-col items-center border-l-4 border-puzzle-gold">
       <h2 className="text-2xl font-bold text-puzzle-black mb-4 tracking-tight text-center">Leaderboard</h2>
       <div className="w-full mt-1">
         <ol className="space-y-3">
