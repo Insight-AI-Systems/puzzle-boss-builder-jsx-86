@@ -28,7 +28,7 @@ export function RoleSelector({
 }: RoleSelectorProps) {
   // Check if current user is super admin
   const isSuperAdmin = currentUserRole === 'super_admin';
-  const isProtectedAdmin = (userId === 'alan@insight-ai-systems.com' || currentUserRole === 'alan@insight-ai-systems.com');
+  const isProtectedAdmin = userId === 'alan@insight-ai-systems.com' || currentUserRole === 'super_admin';
   
   // Helper function to determine if current user can assign a role
   const canAssignRole = (role: UserRole): boolean => {
