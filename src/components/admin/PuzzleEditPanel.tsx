@@ -1,5 +1,3 @@
-// Minor foundational code quality refactor for readability and dead code comments.
-// No changes to logic, API, UI, or behavior per Maslow protocol.
 
 import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
@@ -253,7 +251,14 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           <Label htmlFor="edit-category" className="block mb-1">Category</Label>
           <Select
             value={puzzle?.category ?? ""}
-            onValueChange={v => onChange("category", v)}
+            onValueChange={v => {
+              onChange("category", v);
+              // Find the category_id for the selected category name
+              const selectedCategory = categories.find(cat => cat.name === v);
+              if (selectedCategory) {
+                onChange("category_id", selectedCategory.id);
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Category..." />

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -71,7 +72,7 @@ const PuzzlePreview = ({ imageUrl, difficulty }: { imageUrl: string, difficulty:
 };
 
 export const PuzzleManagement: React.FC = () => {
-  const { puzzles, isLoading, error, updatePuzzle, profile } = usePuzzles();
+  const { puzzles, isLoading, error, createPuzzle, updatePuzzle, deletePuzzle, profile } = usePuzzles();
   const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPuzzle, setEditPuzzle] = useState<any>(null);
@@ -124,6 +125,35 @@ export const PuzzleManagement: React.FC = () => {
         description: "Failed to save puzzle changes.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleNewPuzzle = () => {
+    // Create a new puzzle with default values
+    const newPuzzle = {
+      name: "New Puzzle",
+      category: "",
+      category_id: "", // Initialize with empty string
+      difficulty: "medium" as const,
+      imageUrl: "/placeholder.svg",
+      timeLimit: 0,
+      costPerPlay: 1,
+      targetRevenue: 0,
+      status: "draft",
+      prize: "TBD",
+      prizeValue: 0,
+      description: "",
+      puzzleOwner: profile?.display_name || profile?.email || "Admin User",
+      supplier: "",
+    };
+    
+    setEditingId("new");
+    setEditPuzzle(newPuzzle);
+  };
+
+  const handleDeletePuzzle = (id: string) => {
+    if (confirm("Are you sure you want to delete this puzzle?")) {
+      deletePuzzle.mutate(id);
     }
   };
 
@@ -183,11 +213,34 @@ export const PuzzleManagement: React.FC = () => {
               <path d="m21 21-4.35-4.35" />
             </svg>
           </div>
-          <Button>
+          <Button onClick={handleNewPuzzle}>
             <Plus className="h-4 w-4 mr-2" />
             New Puzzle
           </Button>
         </div>
+        
+        {/* New Puzzle Form */}
+        {editingId === "new" && (
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-4">Create New Puzzle</h3>
+            <PuzzleEditPanel
+              puzzle={editPuzzle}
+              categories={categories}
+              onChange={handleEditChange}
+              onSave={() => {
+                // Create new puzzle
+                if (editPuzzle) {
+                  createPuzzle.mutate(editPuzzle);
+                  setEditingId(null);
+                  setEditPuzzle(null);
+                }
+              }}
+              onCancel={cancelEdit}
+              onImageUpload={handleImageUpload}
+              currentUser={profile}
+            />
+          </div>
+        )}
         
         <Tabs defaultValue="active" className="w-full">
           <TabsList className="grid grid-cols-4 mb-4">
@@ -307,7 +360,7 @@ export const PuzzleManagement: React.FC = () => {
                                 <Button variant="ghost" size="icon" onClick={() => startEdit(puzzle)}>
                                   <Edit className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="icon">
+                                <Button variant="ghost" size="icon" onClick={() => handleDeletePuzzle(puzzle.id)}>
                                   <Trash2 className="h-4 w-4 text-red-500" />
                                 </Button>
                                 {puzzle.status === "draft" && (

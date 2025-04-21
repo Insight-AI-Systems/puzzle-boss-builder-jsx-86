@@ -91,7 +91,6 @@ export const usePuzzles = () => {
         .from('puzzles')
         .insert({
           title: puzzle.name,
-          category: puzzle.category,
           category_id: puzzle.category_id,
           difficulty: puzzle.difficulty,
           image_url: puzzle.imageUrl,
@@ -104,6 +103,7 @@ export const usePuzzles = () => {
           description: puzzle.description,
           puzzle_owner: puzzle.puzzleOwner,
           supplier: puzzle.supplier,
+          release_date: new Date().toISOString(), // Add required release_date field
         })
         .select();
 
@@ -136,7 +136,6 @@ export const usePuzzles = () => {
         .from('puzzles')
         .update({
           title: puzzle.name,
-          category: puzzle.category,
           category_id: puzzle.category_id,
           difficulty: puzzle.difficulty,
           image_url: puzzle.imageUrl,

@@ -33,7 +33,6 @@ CREATE TABLE IF NOT EXISTS public.puzzles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   description TEXT,
-  category TEXT,
   category_id UUID REFERENCES public.categories(id),
   difficulty TEXT DEFAULT 'medium',
   image_url TEXT NOT NULL,
@@ -47,6 +46,7 @@ CREATE TABLE IF NOT EXISTS public.puzzles (
   supplier TEXT,
   completions INTEGER DEFAULT 0,
   avg_time INTEGER DEFAULT 0,
+  release_date TIMESTAMP WITH TIME ZONE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
