@@ -329,6 +329,33 @@ export type Database = {
         }
         Relationships: []
       }
+      puzzle_leaderboard: {
+        Row: {
+          created_at: string
+          id: string
+          player_id: string
+          player_name: string | null
+          puzzle_id: string
+          time_seconds: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          player_id: string
+          player_name?: string | null
+          puzzle_id: string
+          time_seconds: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          player_id?: string
+          player_name?: string | null
+          puzzle_id?: string
+          time_seconds?: number
+        }
+        Relationships: []
+      }
       puzzles: {
         Row: {
           avg_time: number | null

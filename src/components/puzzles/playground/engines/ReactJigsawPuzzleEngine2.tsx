@@ -87,6 +87,10 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
     setShowBorder(prev => !prev);
   };
 
+  const handlePlayAgain = () => {
+    handleReset();
+  };
+
   useEffect(() => {
     const container = puzzleContainerRef.current;
     
@@ -161,7 +165,11 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
         columns={columns}
       />
 
-      <PuzzleCongratulationSplash show={completed} solveTime={solveTime} />
+      <PuzzleCongratulationSplash 
+        show={completed} 
+        solveTime={solveTime} 
+        onPlayAgain={handlePlayAgain}
+      />
     </div>
   );
 };

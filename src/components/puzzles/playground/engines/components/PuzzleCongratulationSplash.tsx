@@ -1,32 +1,56 @@
 
 import React from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
-export const PuzzleCongratulationSplash: React.FC<{ show: boolean; solveTime?: number | null }> = ({
+export const PuzzleCongratulationSplash: React.FC<{ show: boolean; solveTime?: number | null; onPlayAgain: () => void }> = ({
   show,
   solveTime,
+  onPlayAgain
 }) => {
+  const navigate = useNavigate();
+  
   if (!show) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fade-in">
       <div className="relative flex flex-col items-center justify-center">
-        {/* Starburst background effect */}
-        <div className="absolute">
-          {/* CSS Only Starburst animation */}
-          <div className="starburst animate-[spin_2s_linear_infinite]"></div>
-          <div className="starburst starburst2 animate-[spin_6s_linear_infinite_reverse]"></div>
-        </div>
-        <div className="relative px-10 py-8 bg-white rounded-2xl shadow-2xl flex flex-col items-center border-4 border-puzzle-gold border-solid z-10 animate-scale-in">
+        <div className="relative px-10 py-8 bg-white rounded-2xl shadow-2xl flex flex-col items-center gap-6 z-10 animate-scale-in">
           <span className="text-5xl md:text-6xl font-bold text-puzzle-gold drop-shadow-glow animate-fade-in">
             🎉 Congratulations!
           </span>
-          <span className="block text-2xl mt-4 font-semibold text-puzzle-aqua">Puzzle Completed!</span>
+          <span className="block text-2xl font-semibold text-puzzle-aqua">Puzzle Completed!</span>
           {typeof solveTime === "number" && (
             <span className="mt-2 text-lg text-puzzle-black">
               Time: <b>{solveTime.toFixed(2)}</b> seconds
             </span>
           )}
+          
+          <div className="flex flex-col gap-3 w-full max-w-xs mt-4">
+            <Button 
+              onClick={onPlayAgain}
+              variant="default"
+              className="w-full bg-puzzle-gold hover:bg-puzzle-gold/90"
+            >
+              Play Again
+            </Button>
+            <Button 
+              onClick={() => navigate('/puzzles')}
+              variant="outline"
+              className="w-full"
+            >
+              More Puzzles
+            </Button>
+            <Button 
+              onClick={() => navigate('/categories')}
+              variant="outline"
+              className="w-full"
+            >
+              Categories
+            </Button>
+          </div>
         </div>
+
         {/* Confetti overlay */}
         <div className="absolute inset-0 pointer-events-none z-40">
           {[...Array(40)].map((_, i) => (
@@ -55,39 +79,8 @@ export const PuzzleCongratulationSplash: React.FC<{ show: boolean; solveTime?: n
             />
           ))}
         </div>
-        {/* Styling */}
         <style>
           {`
-            .starburst {
-              width: 340px;
-              height: 340px;
-              border-radius: 50%;
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-              box-shadow:
-                0 0 90px 48px #ffd70033,
-                0 0 140px 60px #fffda555,
-                0 0 38px 10px #0EA5E966;
-              background: radial-gradient(circle, #fffbe3 60%, #ffd70022 100%);
-              opacity: 1;
-              z-index: 1;
-              pointer-events: none;
-            }
-            .starburst2 {
-              width: 360px;
-              height: 360px;
-              border-radius: 50%;
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-              background: radial-gradient(circle, #fff7, #00b3b322 70%, transparent 100%);
-              filter: blur(8px);
-              opacity:0.5;
-              z-index: 0;
-            }
             @keyframes confetti-drop {
               0% { transform: translateY(-60px) rotateZ(0deg);}
               70% { opacity:1;}
