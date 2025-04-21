@@ -35,8 +35,10 @@ export function useCategoryManagement() {
       console.log('Admin categories fetched successfully:', data);
       
       // Transform database fields to match AdminCategory interface
+      // We need to handle the case where image_url and status might not exist in the database yet
       return data.map(category => ({
         ...category,
+        // Default values for fields that might not exist in the database
         imageUrl: category.image_url || '/placeholder.svg',
         status: category.status || 'inactive',
         puzzleCount: 0,
