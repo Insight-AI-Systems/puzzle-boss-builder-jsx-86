@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { JigsawPuzzle } from 'react-jigsaw-puzzle/lib';
 import 'react-jigsaw-puzzle/lib/jigsaw-puzzle.css';
@@ -9,8 +8,10 @@ import { PuzzleCompleteBanner } from './components/PuzzleCompleteBanner';
 import { usePuzzleTimer } from './usePuzzleTimer';
 import { usePuzzleImagePreload } from './hooks/usePuzzleImagePreload';
 import FirstMoveOverlay from './FirstMoveOverlay';
+import { PuzzleHeaderAndControls } from './components/PuzzleHeaderAndControls';
+import { PuzzleContainer } from './components/PuzzleContainer';
+import { PuzzleFooter } from './components/PuzzleFooter';
 
-// Types
 interface ReactJigsawPuzzleEngine2Props {
   imageUrl: string;
   rows: number;
@@ -28,13 +29,11 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
   const [key, setKey] = useState(Date.now());
   const puzzleContainerRef = useRef<HTMLDivElement>(null);
 
-  // Timer state
   const {
     elapsed, start, stop, reset, isRunning,
     startTime, setElapsed, setStartTime
   } = usePuzzleTimer();
 
-  // Preload image & reset
   usePuzzleImagePreload({
     imageUrl,
     onLoad: () => {
@@ -51,7 +50,6 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
     }
   });
 
-  // Function to start the timer on first interaction
   const handleStartIfFirstMove = () => {
     if (!hasStarted && !completed) {
       setHasStarted(true);
@@ -60,7 +58,6 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
     }
   };
 
-  // Handle puzzle completion
   const handlePuzzleComplete = () => {
     if (!completed) {
       setCompleted(true);
@@ -74,9 +71,8 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
     }
   };
 
-  // Reset the puzzle
   const handleReset = () => {
-    setKey(Date.now()); // Force re-render of puzzle component
+    setKey(Date.now());
     setElapsed(0);
     setHasStarted(false);
     setCompleted(false);
@@ -85,12 +81,10 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
     setStartTime(null);
   };
 
-  // Toggle border
   const handleToggleBorder = () => {
     setShowBorder(prev => !prev);
   };
 
-  // Set up event listeners for keyboard accessibility
   useEffect(() => {
     const container = puzzleContainerRef.current;
     
@@ -111,7 +105,6 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
 
   const showFirstMoveOverlay = !hasStarted && !loading && !completed;
 
-  // Calculate dimensions
   const puzzleContainerStyle: React.CSSProperties = {
     maxWidth: '100%',
     height: 'auto',
@@ -123,76 +116,39 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
     minHeight: '300px',
   };
 
-  // Debug log to ensure we have a valid image
   useEffect(() => {
     console.log('Current image URL:', imageUrl);
   }, [imageUrl]);
 
   return (
     <div className="flex flex-col items-center justify-center h-full">
-      {/* Timer & controls bar */}
-      <div className="flex items-center gap-3 mb-3 w-full justify-between max-w-xl">
-        <PuzzleTimerDisplay seconds={elapsed} />
-        <div className="flex gap-2">
-          <PuzzleControlsBar onReset={handleReset} />
-          <button
-            onClick={handleToggleBorder}
-            className="inline-flex items-center px-3 py-1 rounded-md bg-muted hover:bg-accent text-xs font-medium border border-input shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
-            type="button"
-            aria-label="Toggle Border"
-            tabIndex={0}
-          >
-            {showBorder ? 'Hide Border' : 'Show Border'}
-          </button>
-        </div>
-      </div>
+      <PuzzleHeaderAndControls
+        elapsed={elapsed}
+        onReset={handleReset}
+        onToggleBorder={handleToggleBorder}
+        showBorder={showBorder}
+      />
 
-      {/* Puzzle container */}
-      <div 
-        ref={puzzleContainerRef}
-        style={puzzleContainerStyle}
-        tabIndex={0}
-        className="focus:outline-1 focus:outline-primary relative"
-      >
-        <FirstMoveOverlay show={showFirstMoveOverlay} onFirstMove={handleStartIfFirstMove} />
-        
-        {loading ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-20">
-            <span className="ml-2">Loading puzzle...</span>
-          </div>
-        ) : (
-          <div 
-            style={{ position: 'relative', width: '100%', maxWidth: '500px' }} 
-            onClick={handleStartIfFirstMove}
-            className={!showBorder ? 'no-border' : ''}
-          >
-            {/* Display the image URL for debugging */}
-            <div className="mb-2 text-xs text-muted-foreground">
-              Loading image: {imageUrl.substring(0, 50)}...
-            </div>
-            
-            <JigsawPuzzle
-              key={key}
-              imageSrc={imageUrl}
-              rows={rows}
-              columns={columns}
-              onSolved={handlePuzzleComplete}
-            />
-          </div>
-        )}
-      </div>
+      <PuzzleContainer
+        puzzleContainerRef={puzzleContainerRef}
+        puzzleContainerStyle={puzzleContainerStyle}
+        showFirstMoveOverlay={showFirstMoveOverlay}
+        loading={loading}
+        handleStartIfFirstMove={handleStartIfFirstMove}
+        imageUrl={imageUrl}
+        rows={rows}
+        columns={columns}
+        keyProp={key}
+        onSolved={handlePuzzleComplete}
+        showBorder={showBorder}
+      />
 
-      {/* Completion banner */}
-      <PuzzleCompleteBanner solveTime={solveTime} />
-
-      <div className="mt-4 text-sm text-muted-foreground">
-        <p className="font-medium flex items-center gap-1">
-          <ImageIcon className="h-4 w-4" /> 
-          {showBorder ? 'Border enabled' : 'Border disabled'}
-        </p>
-        <p className="font-medium">Engine: React Jigsaw Puzzle (External)</p>
-        <p className="text-xs">Difficulty: {rows}x{columns}</p>
-      </div>
+      <PuzzleFooter
+        solveTime={solveTime}
+        showBorder={showBorder}
+        rows={rows}
+        columns={columns}
+      />
     </div>
   );
 };
