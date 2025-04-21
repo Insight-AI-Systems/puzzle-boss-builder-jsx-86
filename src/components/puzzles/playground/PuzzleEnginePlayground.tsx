@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,6 +10,7 @@ import { RefreshCcw } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import ReactJigsawPuzzleEngine from './engines/ReactJigsawPuzzleEngine';
 import ReactJigsawPuzzleEngine2 from './engines/ReactJigsawPuzzleEngine2';
+import CustomPuzzleEngine from './engines/CustomPuzzleEngine';
 import './engines/styles/jigsaw-puzzle.css';
 
 // Sample images for testing - in a real implementation, you might want to use your own images
@@ -36,6 +36,7 @@ const SAMPLE_IMAGES = [
 const PUZZLE_ENGINES = [
   { id: 'react-jigsaw-puzzle', name: 'React Jigsaw Puzzle (Custom)' },
   { id: 'react-jigsaw-puzzle-2', name: 'React Jigsaw Puzzle (External)' },
+  { id: 'custom-puzzle-engine', name: 'Custom Lovable Puzzle' },
   { id: 'custom-engine', name: 'Custom Engine (Placeholder)' }
 ];
 
@@ -161,6 +162,15 @@ const PuzzleEnginePlayground: React.FC = () => {
         {selectedEngine === 'react-jigsaw-puzzle-2' && (
           <ReactJigsawPuzzleEngine2 
             key={`jigsaw2-${resetKey}`}
+            imageUrl={currentImage}
+            rows={currentDifficultyPreset.rows}
+            columns={currentDifficultyPreset.columns}
+          />
+        )}
+        
+        {selectedEngine === 'custom-puzzle-engine' && (
+          <CustomPuzzleEngine 
+            key={`custom-${resetKey}`}
             imageUrl={currentImage}
             rows={currentDifficultyPreset.rows}
             columns={currentDifficultyPreset.columns}

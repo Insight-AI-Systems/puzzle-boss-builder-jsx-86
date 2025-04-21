@@ -1,0 +1,139 @@
+
+import React, { useState } from 'react';
+import { PuzzlePiece } from '../hooks/usePuzzleState';
+import { PuzzleTile } from './PuzzleTile';
+
+interface PuzzleBoardProps {
+  imageUrl: string;
+  pieces: PuzzlePiece[];
+  rows: number;
+  columns: number;
+  onPieceDrop: (id: number, position: number) => void;
+  isPieceCorrect: (id: number) => boolean;
+  showGuideImage: boolean;
+  onDragStart: () => void;
+  draggedPiece: number | null;
+  setDraggedPiece: (id: number | null) => void;
+}
+
+export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
+  imageUrl,
+  pieces,
+  rows,
+  columns,
+  onPieceDrop,
+  isPieceCorrect,
+  showGuideImage,
+  onDragStart,
+  draggedPiece,
+  setDraggedPiece
+}) => {
+  const [highlightedPosition, setHighlightedPosition] = useState<number | null>(null);
+  
+  // Set up grid dimensions
+  const containerStyle: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: `repeat(${columns}, 1fr)`,
+    gridTemplateRows: `repeat(${rows}, 1fr)`,
+    gap: '1px',
+    width: '100%',
+    maxWidth: '500px',
+    aspectRatio: '1/1',
+    position: 'relative',
+    background: '#333',
+    border: '2px solid #444',
+    borderRadius: '8px',
+    overflow: 'hidden'
+  };
+  
+  // Set up guide image style
+  const guideImageStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    opacity: 0.3,
+    pointerEvents: 'none',
+    zIndex: 0
+  };
+  
+  // Handle drag over
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, position: number) => {
+    e.preventDefault();
+    setHighlightedPosition(position);
+  };
+  
+  // Handle drag leave
+  const handleDragLeave = () => {
+    setHighlightedPosition(null);
+  };
+  
+  // Handle drop
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, position: number) => {
+    e.preventDefault();
+    setHighlightedPosition(null);
+    
+    const pieceId = e.dataTransfer.getData('puzzle-piece-id');
+    if (pieceId) {
+      onPieceDrop(parseInt(pieceId), position);
+    }
+  };
+  
+  // Set up position to piece mapping
+  const positionMap = pieces.reduce((map, piece) => {
+    map[piece.position] = piece;
+    return map;
+  }, {} as Record<number, PuzzlePiece>);
+  
+  // Create grid cells
+  const cells = [];
+  for (let i = 0; i < rows * columns; i++) {
+    const piece = positionMap[i];
+    
+    cells.push(
+      <div
+        key={`cell-${i}`}
+        className={`puzzle-cell ${highlightedPosition === i ? 'highlight' : ''}`}
+        onDragOver={(e) => handleDragOver(e, i)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, i)}
+      >
+        {piece && (
+          <PuzzleTile
+            piece={piece}
+            imageUrl={imageUrl}
+            rows={rows}
+            columns={columns}
+            isCorrect={isPieceCorrect(piece.id)}
+            isDragging={draggedPiece === piece.id}
+            onDragStart={(e) => {
+              onDragStart();
+              e.dataTransfer.setData('puzzle-piece-id', piece.id.toString());
+              setDraggedPiece(piece.id);
+            }}
+            onDragEnd={() => setDraggedPiece(null)}
+          />
+        )}
+      </div>
+    );
+  }
+  
+  return (
+    <div className="puzzle-board-wrapper relative">
+      <div style={containerStyle} className="puzzle-board">
+        {showGuideImage && (
+          <img 
+            src={imageUrl} 
+            alt="Puzzle guide" 
+            style={guideImageStyle} 
+            className="puzzle-guide-image"
+            draggable={false}
+          />
+        )}
+        {cells}
+      </div>
+    </div>
+  );
+};

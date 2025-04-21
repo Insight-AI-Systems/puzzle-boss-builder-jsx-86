@@ -1,0 +1,110 @@
+
+/* Custom Puzzle Styles */
+.custom-puzzle-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.custom-puzzle-board-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.puzzle-board-wrapper {
+  width: 100%;
+  position: relative;
+}
+
+.puzzle-board {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.puzzle-cell {
+  position: relative;
+  background-color: rgba(255, 255, 255, 0.05);
+  transition: background-color 0.2s ease;
+}
+
+.puzzle-cell.highlight {
+  background-color: rgba(59, 130, 246, 0.3);
+}
+
+.puzzle-tile {
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  position: relative;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.puzzle-tile.correct {
+  box-shadow: inset 0 0 0 2px rgba(0, 255, 0, 0.5);
+}
+
+.puzzle-tile.dragging {
+  z-index: 10;
+}
+
+/* Confetti Animation */
+.confetti-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 100;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.confetti-container.active {
+  opacity: 1;
+}
+
+.confetti-particle {
+  position: absolute;
+  top: -10px;
+  border-radius: 0;
+  animation: confetti-fall 3s ease-in-out forwards;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(400px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Puzzle Guide Image */
+.puzzle-guide-image {
+  transition: opacity 0.3s ease;
+}
+
+/* Accessibility Focus Styles */
+.puzzle-tile:focus,
+.puzzle-controls button:focus {
+  outline: 2px solid var(--color-primary, #228be6);
+  outline-offset: 2px;
+}
+
+/* Mobile/Responsive Adjustments */
+@media (max-width: 768px) {
+  .custom-puzzle-container {
+    max-width: 95vw;
+  }
+  
+  .custom-puzzle-board-container {
+    max-width: 95vw;
+  }
+}
