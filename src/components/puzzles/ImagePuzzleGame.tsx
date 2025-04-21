@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDeviceInfo } from '@/hooks/use-mobile';
 import { difficultyConfig, DifficultyLevel, GameMode, PieceShape, VisualTheme } from './types/puzzle-types';
@@ -249,33 +248,6 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
     setRotationEnabled,
     setTimeLimit
   );
-
-  useEffect(() => {
-    if (!isSolved && pieces.length > 0 && puzzleState.isActive) {
-      const autoSaveInterval = setInterval(() => {
-        const saveState = {
-          id: currentGameId,
-          name: `${gameMode.charAt(0).toUpperCase() + gameMode.slice(1)} Puzzle ${new Date().toLocaleTimeString()}`,
-          timestamp: Date.now(),
-          difficulty,
-          pieces,
-          moveCount,
-          timeSpent: puzzleState.timeSpent,
-          selectedImage,
-          version: '1.0.0',
-          gameMode,
-          pieceShape,
-          visualTheme,
-          rotationEnabled,
-          timeLimit
-        };
-        saveGame(saveState);
-      }, 30000); // Auto save every 30 seconds
-
-      return () => clearInterval(autoSaveInterval);
-    }
-  }, [pieces, isSolved, currentGameId, difficulty, moveCount, puzzleState.timeSpent, 
-      selectedImage, gameMode, pieceShape, visualTheme, rotationEnabled, timeLimit, puzzleState.isActive, saveGame]);
 
   const getThemeStyles = () => {
     switch (visualTheme) {

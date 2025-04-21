@@ -53,7 +53,6 @@ export function useImagePuzzleSave(
     setMoveCount(save.moveCount);
     setDifficulty(save.difficulty as DifficultyLevel);
     
-    // Load additional game settings if available
     if (save.gameMode) setGameMode(save.gameMode);
     if (save.pieceShape) setPieceShape(save.pieceShape);
     if (save.visualTheme) setVisualTheme(save.visualTheme);

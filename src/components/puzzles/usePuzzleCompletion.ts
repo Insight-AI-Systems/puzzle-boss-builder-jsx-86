@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
-import { allPiecesCorrectlyRotated } from './utils/pieceRotationUtils';
-import { PuzzlePiece, DifficultyLevel, GameMode } from './types/puzzle-types';
+import { useToast } from '@/hooks/use-toast';
+import { PuzzlePiece, GameMode } from './types/puzzle-types';
 
 export function usePuzzleCompletion({
   pieces,
@@ -12,33 +12,56 @@ export function usePuzzleCompletion({
   rotationEnabled,
   isSolved
 }: {
-  pieces: PuzzlePiece[],
-  puzzleState: any,
-  gridSize: number,
-  playSound: (sound: string) => void,
-  gameMode: GameMode,
-  rotationEnabled: boolean,
-  isSolved: boolean
+  pieces: PuzzlePiece[];
+  puzzleState: any;
+  gridSize: number;
+  playSound: (sound: string) => void;
+  gameMode: GameMode;
+  rotationEnabled: boolean;
+  isSolved: boolean;
 }) {
+  const { toast } = useToast();
+
   useEffect(() => {
-    // Check puzzle completion
-    const isPuzzleSolved = () => {
-      // Check if pieces are in correct positions
-      const positionsCorrect = pieces.every((piece) => {
+    if (!isSolved && pieces.length > 0) {
+      const correctCount = pieces.filter((piece) => {
         const pieceNumber = parseInt(piece.id.split('-')[1]);
-        return piece.position === pieceNumber;
-      });
-
-      // For challenge mode, also check rotations
-      if (gameMode === 'challenge' || rotationEnabled) {
-        return positionsCorrect && allPiecesCorrectlyRotated(pieces);
-      }
-      return positionsCorrect;
-    };
-
-    if (isPuzzleSolved() && !puzzleState.isComplete) {
-      puzzleState.checkCompletion(gridSize * gridSize, gridSize * gridSize);
-      playSound('complete');
+        const positionCorrect = piece.position === pieceNumber;
+        
+        if (gameMode === 'challenge' || rotationEnabled) {
+          const rotationCorrect = (piece.rotation || 0) === 0;
+          return positionCorrect && rotationCorrect;
+        }
+        
+        return positionCorrect;
+      }).length;
+      
+      puzzleState.updateCorrectPieces(correctCount);
     }
-  }, [pieces, puzzleState, gridSize, playSound, gameMode, rotationEnabled]);
+  }, [pieces, isSolved, puzzleState, gameMode, rotationEnabled]);
+
+  useEffect(() => {
+    if (!isSolved && pieces.length > 0 && puzzleState.isActive) {
+      const isPuzzleSolved = () => {
+        const correctCount = pieces.filter((piece) => {
+          const pieceNumber = parseInt(piece.id.split('-')[1]);
+          const positionCorrect = piece.position === pieceNumber;
+          
+          if (gameMode === 'challenge' || rotationEnabled) {
+            const rotationCorrect = (piece.rotation || 0) === 0;
+            return positionCorrect && rotationCorrect;
+          }
+          
+          return positionCorrect;
+        }).length;
+
+        return correctCount === pieces.length;
+      };
+
+      if (isPuzzleSolved()) {
+        puzzleState.checkCompletion(gridSize * gridSize, gridSize * gridSize);
+        playSound('complete');
+      }
+    }
+  }, [pieces, isSolved, puzzleState, gridSize, playSound, gameMode, rotationEnabled]);
 }
