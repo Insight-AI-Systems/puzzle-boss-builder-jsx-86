@@ -13,7 +13,7 @@ export const createPieceHandlers = (
     setDraggedPiece(piece);
     playSound('pickup');
     
-    setPieces(prev => prev.map(p => 
+    setPieces(pieces.map(p => 
       p.id === piece.id ? { ...p, isDragging: true } : p
     ));
   };
@@ -35,7 +35,7 @@ export const createPieceHandlers = (
 
   const handleDrop = () => {
     if (draggedPiece) {
-      setPieces(prev => prev.map(p => 
+      setPieces(pieces.map(p => 
         p.id === draggedPiece.id ? { ...p, isDragging: false } : p
       ));
       setDraggedPiece(null);

@@ -56,11 +56,14 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
 
   const handlePuzzleSolved = async () => {
     if (!completed) {
-      const totalTime = await handlePuzzleComplete(startTime);
-      if (totalTime) {
-        setElapsed(Math.floor(totalTime));
-      }
       stop();
+      // Use the precise elapsed time for consistency with displayed timer
+      const totalTime = elapsed;
+      const timeResult = await handlePuzzleComplete(startTime);
+      if (totalTime) {
+        // Ensure we use the same timer value for both display and leaderboard
+        setElapsed(totalTime);
+      }
     }
   };
 
@@ -90,7 +93,7 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
       columns={columns}
       keyProp={key}
       onSolved={handlePuzzleSolved}
-      solveTime={solveTime}
+      solveTime={elapsed} // Use consistent timing source
       completed={completed}
       onPlayAgain={handleReset}
       hasStarted={hasStarted}

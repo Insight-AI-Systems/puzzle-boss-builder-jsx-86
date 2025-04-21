@@ -13,10 +13,18 @@ export const usePuzzleCompletion = ({ imageUrl, rows, columns }: UsePuzzleComple
   const [solveTime, setSolveTime] = useState<number | null>(null);
 
   const handlePuzzleComplete = async (startTime: number | null) => {
-    if (!completed && startTime) {
+    if (!completed) {
       setCompleted(true);
-      const endTime = Date.now();
-      const totalTime = (endTime - startTime) / 1000;
+      let totalTime: number;
+      
+      if (startTime) {
+        // Calculate time based on actual elapsed milliseconds
+        totalTime = (Date.now() - startTime) / 1000;
+      } else {
+        // Fallback if no start time is available
+        totalTime = 0;
+      }
+      
       setSolveTime(totalTime);
 
       const { data: { user } } = await supabase.auth.getUser();

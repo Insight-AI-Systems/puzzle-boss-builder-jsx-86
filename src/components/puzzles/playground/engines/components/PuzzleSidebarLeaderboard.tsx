@@ -25,8 +25,12 @@ export const PuzzleSidebarLeaderboard: React.FC<{ solveTime?: number | null }> =
       ];
     }
     
-    // Create a new array with the user's actual time
-    const userEntry = { player: "You", time: solveTime };
+    // Use the exact solve time passed from the puzzle completion
+    const userEntry = { 
+      player: "You", 
+      // Ensure we display with 2 decimal places for consistency
+      time: parseFloat(solveTime.toFixed(2))
+    };
     const allEntries = [userEntry, ...mockLeaderboardBase];
     
     // Sort the leaderboard by time (fastest first)
