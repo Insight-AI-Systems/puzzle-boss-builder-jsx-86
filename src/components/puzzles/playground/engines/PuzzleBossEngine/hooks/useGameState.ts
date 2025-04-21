@@ -24,7 +24,7 @@ export const useGameState = (rows: number, columns: number, imageUrl: string) =>
     // Each piece starts in its own group
     const newGroups = newPieces.map(piece => ({
       id: `group-${piece.id}`,
-      pieceIds: [piece.id],
+      pieceIds: [piece.id], // This is now correctly typed as number[]
       isComplete: false
     }));
     
@@ -68,7 +68,7 @@ export const useGameState = (rows: number, columns: number, imageUrl: string) =>
     setGroups(currentPieces => {
       return currentPieces.map(piece => ({
         id: `group-${piece.id}`,
-        pieceIds: [piece.id],
+        pieceIds: [piece.id], // This is now correctly typed as number[]
         isComplete: false
       }));
     });
