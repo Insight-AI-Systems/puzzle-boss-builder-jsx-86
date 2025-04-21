@@ -34,18 +34,20 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
   const [elapsed, setElapsed] = useState<number>(0);
   const [resetKey, setResetKey] = useState(0);
 
-  // New: track staged pieces (simplistic placeholder — real drag/drop logic would be much deeper)
+  const [hasStarted, setHasStarted] = useState(false); // Track if puzzle officially started
+
   const [pieces, setPieces] = useState<StagedPiece[]>([]);
 
   const timerRef = useRef<number | null>(null);
 
-  // Preload image
+  // Preload image and reset
   useEffect(() => {
     setLoading(true);
     setCompleted(false);
     setSolveTime(null);
     setStartTime(null);
     setElapsed(0);
+    setHasStarted(false);
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
@@ -53,8 +55,8 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
     img.src = imageUrl;
     img.onload = () => {
       setLoading(false);
-      setStartTime(Date.now());
       setElapsed(0);
+      setHasStarted(false);
       // Initialize pieces: all start in the staging area (not in puzzle)
       const total = rows * columns;
       setPieces(Array.from({ length: total }).map((_, i) => ({ id: i, inPuzzle: false })));
@@ -70,9 +72,9 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
     };
   }, [imageUrl, rows, columns, resetKey]);
 
-  // Timer logic (always runs while solving)
+  // Timer logic (runs ONLY during active puzzle segment)
   useEffect(() => {
-    if (!loading && !completed && startTime !== null) {
+    if (!loading && !completed && hasStarted && startTime !== null) {
       timerRef.current = window.setInterval(() => {
         setElapsed(Math.floor((Date.now() - (startTime as number)) / 1000));
       }, 250);
@@ -80,9 +82,9 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [loading, completed, startTime]);
+  }, [loading, completed, hasStarted, startTime]);
 
-  // Mark solve time when completed
+  // Handle puzzle solve event
   const handleOnChange = (isSolved: boolean) => {
     if (isSolved && !completed) {
       setCompleted(true);
@@ -92,20 +94,31 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
         setElapsed(Math.floor((endTime - startTime) / 1000));
       }
       if (timerRef.current) clearInterval(timerRef.current);
-      // Mark all pieces as placed (for simplicity)
       setPieces(p => p.map(piece => ({ ...piece, inPuzzle: true })));
     }
   };
 
-  // RESET button logic
+  // Track first move/drag to start timer
+  const handleStartIfFirstMove = () => {
+    if (!hasStarted) {
+      setHasStarted(true);
+      setStartTime(Date.now());
+    }
+  };
+
+  // Puzzle reset
   const handleReset = () => {
     setResetKey(rk => rk + 1);
   };
 
-  // Custom styles
-  const customStyles = {
+  // Custom style typings (fix pointerEvents TS error)
+  const customStyles: {
+    wrapper: React.CSSProperties;
+    ghost: React.CSSProperties;
+    puzzle: React.CSSProperties;
+  } = {
     wrapper: {
-      position: 'relative' as const,
+      position: 'relative',
       width: '100%',
       maxWidth: '700px',
       aspectRatio: '1 / 1',
@@ -116,7 +129,7 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
       boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
     },
     ghost: {
-      position: 'absolute' as const,
+      position: 'absolute',
       inset: 0,
       zIndex: 1,
       backgroundImage: `url(${imageUrl})`,
@@ -127,7 +140,7 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
       transition: 'opacity 0.2s'
     },
     puzzle: {
-      position: 'relative' as const,
+      position: 'relative',
       zIndex: 2,
     }
   };
@@ -135,6 +148,13 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
   // "Fake" the staged area: all not-in-puzzle pieces
   const stagedPieces = pieces.filter(p => !p.inPuzzle);
 
+  // "Fake" move handler to simulate moving a piece from staging to board.
+  // With current engine, we listen to the puzzle library's event and simulate by marking first interaction.
+  // So add pointer event handler to JigsawPuzzle to start timer if not started.
+  
+  // To start timer on any click or drag on the puzzle area, add a div overlay to capture the first interaction.
+  // Only show transparent overlay if !hasStarted && !loading && !completed
+  
   return (
     <div className="flex flex-col items-center justify-center h-full">
       <div className="flex items-center gap-3 mb-3 w-full justify-between max-w-xl">
@@ -159,8 +179,24 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
       <div style={customStyles.wrapper} className="relative">
         {!loading && (
           <div style={customStyles.ghost} aria-hidden="true">
-            {/* Intentionally empty—background image */}
+            {/* Background image ghost preview */}
           </div>
+        )}
+        {/* If timer hasn't started yet, block puzzle with transparent div that will grab first pointer interaction */}
+        {!hasStarted && !loading && !completed && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 9,
+              background: 'rgba(0,0,0,0)', // transparent, invisible
+              cursor: 'pointer'
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label="Start Puzzle Timer"
+            onPointerDown={handleStartIfFirstMove}
+          />
         )}
         <div style={customStyles.puzzle}>
           {loading && (
