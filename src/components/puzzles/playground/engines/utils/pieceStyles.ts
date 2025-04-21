@@ -13,8 +13,8 @@ export function getPieceStyle(
   const row = Math.floor(pieceId / columns);
   const col = pieceId % columns;
   return {
-    width: size,
-    height: size,
+    width: `${size}px`,
+    height: `${size}px`,
     backgroundImage: `url(${imageUrl})`,
     backgroundSize: `${columns * 100}% ${rows * 100}%`,
     backgroundPosition: `${(col * 100) / (columns - 1)}% ${(row * 100) / (rows - 1)}%`,

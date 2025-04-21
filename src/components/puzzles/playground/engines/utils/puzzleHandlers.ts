@@ -41,14 +41,15 @@ export function createPuzzleHandlers(
   
   // Handle piece drop in assembly area
   const handlePieceDrop = (pieceId: number, targetIdx: number) => {
-    if (placedPieces[targetIdx] !== null) return;
+    // Return early if attempting to place on an already locked piece
+    if (placedPieces[targetIdx]?.isLocked) return;
 
     handleStartIfFirstMove();
 
     setPlacedPieces(prev => {
       let np = [...prev];
 
-      // Remove this piece from any previous cell in the assembly area
+      // Remove this piece from any previous cell in the assembly area if not locked
       const fromAssemblyIdx = prev.findIndex(entry => entry && entry.id === pieceId && !entry.isLocked);
       if (fromAssemblyIdx !== -1) {
         np[fromAssemblyIdx] = null;

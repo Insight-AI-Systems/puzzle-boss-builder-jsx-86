@@ -35,7 +35,7 @@ const AssemblyArea: React.FC<AssemblyAreaProps> = ({
       {placedPieces.map((entry, idx) => (
         <div
           key={idx}
-          className={`relative w-16 h-16 rounded transition-all duration-150 flex items-center justify-center
+          className={`relative w-full h-full rounded transition-all duration-150 flex items-center justify-center
             ${
               !entry
                 ? "border border-dashed border-black/20 bg-transparent opacity-80"
@@ -43,6 +43,10 @@ const AssemblyArea: React.FC<AssemblyAreaProps> = ({
                   ? "border border-solid border-green-400 ring-2 ring-green-200"
                   : "border border-solid border-black/30 bg-white"
             }`}
+          style={{
+            width: `${pieceSize}px`,
+            height: `${pieceSize}px`,
+          }}
           onDragOver={e => {
             e.preventDefault();
             e.dataTransfer.dropEffect = "move";
@@ -50,7 +54,6 @@ const AssemblyArea: React.FC<AssemblyAreaProps> = ({
           onDrop={e => {
             e.preventDefault();
             const pieceId = Number(e.dataTransfer.getData("piece-id"));
-            const fromAssembly = e.dataTransfer.getData("from-assembly") === "true";
             
             if (!isNaN(pieceId)) {
               onPieceDrop(pieceId, idx);

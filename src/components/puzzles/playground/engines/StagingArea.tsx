@@ -20,6 +20,9 @@ const StagingArea: React.FC<StagingAreaProps> = ({
   onPieceDoubleClick,
 }) => {
   if (stagedPieces.length === 0) return null;
+  
+  const pieceSize = 64; // Standard size for staging area
+  
   return (
     <div className="w-full max-w-xl mt-6 p-4 border rounded bg-muted/30 flex flex-wrap gap-2 justify-center">
       <div className="w-full text-xs mb-2 font-medium text-muted-foreground text-center uppercase tracking-widest">
@@ -29,7 +32,7 @@ const StagingArea: React.FC<StagingAreaProps> = ({
         <div
           key={pieceId}
           className="puzzle-staged-piece"
-          style={getPieceStyle(pieceId, imageUrl, rows, columns)}
+          style={getPieceStyle(pieceId, imageUrl, rows, columns, pieceSize)}
           draggable
           onDragStart={onPieceDragStart(pieceId)}
           onDoubleClick={() => onPieceDoubleClick(pieceId)}
