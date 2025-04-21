@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 import StagingArea from './StagingArea';
@@ -19,6 +18,11 @@ interface ReactJigsawPuzzleEngineProps {
 
 const PIECE_SIZE = 64;
 
+type AssemblyPiece = {
+  id: number;
+  isLocked: boolean;
+};
+
 const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
   imageUrl, rows, columns
 }) => {
@@ -28,16 +32,17 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
   const [resetKey, setResetKey] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
 
-  // Now we track two states: staged and placed
+  // Staging area pieces: only those NOT placed
   const [stagedPieces, setStagedPieces] = useState<number[]>([]);
-  const [placedPieces, setPlacedPieces] = useState<(number | null)[]>([]); // grid; null for empty spot
+  // Assembly area: each slot is {id: pieceId, isLocked} or null for empty
+  const [placedPieces, setPlacedPieces] = useState<(AssemblyPiece | null)[]>([]);
 
   const {
     elapsed, start, stop, reset, isRunning,
     startTime, setElapsed, setStartTime
   } = usePuzzleTimer();
 
-  // Preload image & handle reset; reset pieces to staged only
+  // Preload image & reset
   usePuzzleImagePreload({
     imageUrl,
     onLoad: () => {
@@ -59,8 +64,8 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
 
   // Puzzle solve event
   const handleOnChange = () => {
-    const isSolved = placedPieces.every((id, idx) => id === idx);
-    if (isSolved && !completed) {
+    const allLocked = placedPieces.every((entry, idx) => entry && entry.isLocked && entry.id === idx);
+    if (allLocked && !completed) {
       setCompleted(true);
       const endTime = Date.now();
       if (startTime) {
@@ -96,25 +101,43 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
   // Drag handlers
   const handlePieceDrop = (pieceId: number, targetIdx: number) => {
     if (placedPieces[targetIdx] !== null) return;
+
+    const fromAssemblyIdx = placedPieces.findIndex(
+      (entry, idx) => entry && entry.id === pieceId && !entry.isLocked
+    );
+    const isFromAssembly = fromAssemblyIdx !== -1;
+
     handleStartIfFirstMove();
+
     setPlacedPieces(prev => {
-      const np = [...prev];
-      np[targetIdx] = pieceId;
+      let np = [...prev];
+      if (isFromAssembly) {
+        np[fromAssemblyIdx] = null;
+      }
+      const shouldLock = pieceId === targetIdx;
+      np[targetIdx] = { id: pieceId, isLocked: shouldLock };
       return np;
     });
+
     setStagedPieces(prev => prev.filter(id => id !== pieceId));
+
+    if (isFromAssembly) {
+    } else if (pieceId !== targetIdx) {
+      setStagedPieces(prev => prev.filter(id => id !== pieceId));
+    }
+
     setTimeout(handleOnChange, 0);
   };
 
   const handleRemoveFromAssembly = (pieceIdx: number) => {
-    const pieceId = placedPieces[pieceIdx];
-    if (pieceId === null) return;
+    const slot = placedPieces[pieceIdx];
+    if (!slot || slot.isLocked) return;
     setPlacedPieces(prev => {
       const np = [...prev];
       np[pieceIdx] = null;
       return np;
     });
-    setStagedPieces(prev => [...prev, pieceId]);
+    setStagedPieces(prev => [...prev, slot.id]);
   };
 
   const styles = getPuzzleGhostStyles(imageUrl);
@@ -158,7 +181,7 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
               <span className="ml-2">Loading puzzle...</span>
             </div>
           )}
-          {/* Assembly Area: grid for placed pieces, empty spots are droppable and visually minimal */}
+          {/* Assembly Area */}
           <div
             className="grid gap-1"
             style={{
@@ -168,14 +191,16 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
               minWidth: columns * PIECE_SIZE
             }}
           >
-            {placedPieces.map((pieceId, idx) => (
+            {placedPieces.map((entry, idx) => (
               <div
                 key={idx}
                 className={`relative w-16 h-16 rounded transition-all duration-150 flex items-center justify-center
                   ${
-                    pieceId === null
+                    !entry
                       ? "border border-dashed border-black/20 bg-transparent opacity-80"
-                      : ""
+                      : entry.isLocked
+                        ? "border border-solid border-green-400 ring-2 ring-green-200"
+                        : "border border-solid border-black/30 bg-white"
                   }`}
                 onDragOver={e => {
                   e.preventDefault();
@@ -183,20 +208,42 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
                 }}
                 onDrop={e => {
                   const dropId = Number(e.dataTransfer.getData("piece-id"));
-                  handlePieceDrop(dropId, idx);
+                  const fromAssembly = e.dataTransfer.getData("from-assembly") === "true";
+                  if (!placedPieces[idx]) {
+                    if (fromAssembly) {
+                      const fromIdx = placedPieces.findIndex(
+                        (x, i) => x && x.id === dropId && !x.isLocked
+                      );
+                      if (fromIdx !== -1) {
+                        handlePieceDrop(dropId, idx);
+                      }
+                    } else {
+                      handlePieceDrop(dropId, idx);
+                    }
+                  }
                 }}
               >
-                {pieceId !== null && (
+                {entry && (
                   <div
-                    draggable
+                    draggable={!entry.isLocked}
                     onDragStart={e => {
+                      if (entry.isLocked) return;
                       e.dataTransfer.setData("from-assembly", "true");
-                      e.dataTransfer.setData("piece-idx", idx.toString());
+                      e.dataTransfer.setData("piece-id", entry.id.toString());
                     }}
                     className="absolute inset-0"
-                    style={getPieceStyle(pieceId)}
+                    style={{
+                      ...getPieceStyle(entry.id),
+                      opacity: entry.isLocked ? 1 : 0.93,
+                      cursor: entry.isLocked ? "default" : "grab",
+                      pointerEvents: entry.isLocked ? "none" : "auto"
+                    }}
                     onDoubleClick={() => handleRemoveFromAssembly(idx)}
-                    title="Double click to return to staging area"
+                    title={
+                      entry.isLocked
+                        ? "Piece locked in correct position"
+                        : "Double click to return to staging area"
+                    }
                   />
                 )}
               </div>
@@ -216,7 +263,6 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
           e.dataTransfer.setData("from-assembly", "false");
         }}
         onPieceDoubleClick={pieceId => {
-          // Find first empty spot
           const emptyIdx = placedPieces.findIndex(x => x === null);
           if (emptyIdx !== -1) handlePieceDrop(pieceId, emptyIdx);
         }}
@@ -235,4 +281,3 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
 };
 
 export default ReactJigsawPuzzleEngine;
-
