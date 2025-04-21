@@ -1,31 +1,23 @@
 
 import React from "react";
-import { Award, RefreshCw, LogOut, LayoutGrid } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
-interface PuzzleCongratulationSplashProps {
-  show: boolean;
-  solveTime?: number | null;
-  onPlayAgain?: () => void;
-  onExit?: () => void;
-  onMorePuzzles?: () => void;
-}
-
-export const PuzzleCongratulationSplash: React.FC<PuzzleCongratulationSplashProps> = ({
+export const PuzzleCongratulationSplash: React.FC<{ show: boolean; solveTime?: number | null }> = ({
   show,
   solveTime,
-  onPlayAgain,
-  onExit,
-  onMorePuzzles,
 }) => {
   if (!show) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fade-in">
       <div className="relative flex flex-col items-center justify-center">
+        {/* Starburst background effect */}
+        <div className="absolute">
+          {/* CSS Only Starburst animation */}
+          <div className="starburst animate-[spin_2s_linear_infinite]"></div>
+          <div className="starburst starburst2 animate-[spin_6s_linear_infinite_reverse]"></div>
+        </div>
         <div className="relative px-10 py-8 bg-white rounded-2xl shadow-2xl flex flex-col items-center border-4 border-puzzle-gold border-solid z-10 animate-scale-in">
-          <Award className="text-puzzle-gold mb-4" size={50} strokeWidth={2.2} />
-          <span className="text-5xl md:text-6xl font-bold text-puzzle-gold animate-fade-in">
+          <span className="text-5xl md:text-6xl font-bold text-puzzle-gold drop-shadow-glow animate-fade-in">
             🎉 Congratulations!
           </span>
           <span className="block text-2xl mt-4 font-semibold text-puzzle-aqua">Puzzle Completed!</span>
@@ -34,34 +26,6 @@ export const PuzzleCongratulationSplash: React.FC<PuzzleCongratulationSplashProp
               Time: <b>{solveTime.toFixed(2)}</b> seconds
             </span>
           )}
-          
-          {/* Puzzle Completion Menu */}
-          <div className="mt-8 flex flex-col md:flex-row gap-3 w-full">
-            <Button 
-              className="bg-puzzle-aqua hover:bg-puzzle-aqua/80"
-              onClick={onPlayAgain}
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Play Again
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold/10"
-              onClick={onExit}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Exit
-            </Button>
-            
-            <Button 
-              variant="secondary"
-              onClick={onMorePuzzles}
-            >
-              <LayoutGrid className="mr-2 h-4 w-4" />
-              More Puzzles
-            </Button>
-          </div>
         </div>
         {/* Confetti overlay */}
         <div className="absolute inset-0 pointer-events-none z-40">
@@ -94,10 +58,43 @@ export const PuzzleCongratulationSplash: React.FC<PuzzleCongratulationSplashProp
         {/* Styling */}
         <style>
           {`
+            .starburst {
+              width: 340px;
+              height: 340px;
+              border-radius: 50%;
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              box-shadow:
+                0 0 90px 48px #ffd70033,
+                0 0 140px 60px #fffda555,
+                0 0 38px 10px #0EA5E966;
+              background: radial-gradient(circle, #fffbe3 60%, #ffd70022 100%);
+              opacity: 1;
+              z-index: 1;
+              pointer-events: none;
+            }
+            .starburst2 {
+              width: 360px;
+              height: 360px;
+              border-radius: 50%;
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              background: radial-gradient(circle, #fff7, #00b3b322 70%, transparent 100%);
+              filter: blur(8px);
+              opacity:0.5;
+              z-index: 0;
+            }
             @keyframes confetti-drop {
               0% { transform: translateY(-60px) rotateZ(0deg);}
               70% { opacity:1;}
               100% { transform: translateY(480px) rotateZ(360deg); opacity: 0;}
+            }
+            .drop-shadow-glow {
+              text-shadow: 0px 2px 3px #ffd70099, 0px 5px 18px #ffd70033, 0px 0.5px 0.5px #fff;
             }
           `}
         </style>
