@@ -16,6 +16,12 @@ const formatTime = (seconds: number): string => {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
+// Simple representation of a puzzle piece for staging logic
+type StagedPiece = {
+  id: number;
+  inPuzzle: boolean;
+};
+
 const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({ 
   imageUrl, 
   rows, 
@@ -27,6 +33,9 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
   const [startTime, setStartTime] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState<number>(0);
   const [resetKey, setResetKey] = useState(0);
+
+  // New: track staged pieces (simplistic placeholder — real drag/drop logic would be much deeper)
+  const [pieces, setPieces] = useState<StagedPiece[]>([]);
 
   const timerRef = useRef<number | null>(null);
 
@@ -46,6 +55,9 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
       setLoading(false);
       setStartTime(Date.now());
       setElapsed(0);
+      // Initialize pieces: all start in the staging area (not in puzzle)
+      const total = rows * columns;
+      setPieces(Array.from({ length: total }).map((_, i) => ({ id: i, inPuzzle: false })));
     };
     img.onerror = (error) => {
       console.error('Error loading puzzle image:', error);
@@ -56,14 +68,14 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
       img.onerror = null;
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [imageUrl, resetKey]);
+  }, [imageUrl, rows, columns, resetKey]);
 
   // Timer logic (always runs while solving)
   useEffect(() => {
     if (!loading && !completed && startTime !== null) {
       timerRef.current = window.setInterval(() => {
         setElapsed(Math.floor((Date.now() - (startTime as number)) / 1000));
-      }, 250); // update every 0.25s for more responsive UX
+      }, 250);
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -80,6 +92,8 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
         setElapsed(Math.floor((endTime - startTime) / 1000));
       }
       if (timerRef.current) clearInterval(timerRef.current);
+      // Mark all pieces as placed (for simplicity)
+      setPieces(p => p.map(piece => ({ ...piece, inPuzzle: true })));
     }
   };
 
@@ -109,7 +123,7 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       opacity: 0.18,
-      pointerEvents: 'none' as const, // Fix: Use 'none' as const instead of string
+      pointerEvents: 'none',
       transition: 'opacity 0.2s'
     },
     puzzle: {
@@ -118,17 +132,17 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
     }
   };
 
+  // "Fake" the staged area: all not-in-puzzle pieces
+  const stagedPieces = pieces.filter(p => !p.inPuzzle);
+
   return (
     <div className="flex flex-col items-center justify-center h-full">
       <div className="flex items-center gap-3 mb-3 w-full justify-between max-w-xl">
-        {/* Timer */}
         <div className="flex items-center gap-1 text-sm rounded px-2 py-1">
           <Clock className="h-4 w-4 mr-1 text-primary/80" />
           <span className="font-mono tabular-nums">{formatTime(elapsed)}</span>
         </div>
-        {/* Controls */}
         <div className="flex gap-2">
-          {/* Reset button */}
           <button
             onClick={handleReset}
             className="inline-flex items-center px-3 py-1 rounded-md bg-muted hover:bg-accent text-xs font-medium border border-input shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
@@ -143,13 +157,11 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
       </div>
       {/* Puzzle + ghost overlay */}
       <div style={customStyles.wrapper} className="relative">
-        {/* Ghost image */}
         {!loading && (
           <div style={customStyles.ghost} aria-hidden="true">
             {/* Intentionally empty—background image */}
           </div>
         )}
-        {/* Top "Puzzle" layer */}
         <div style={customStyles.puzzle}>
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-20">
@@ -166,6 +178,20 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
           />
         </div>
       </div>
+      {/* Staging area for unused pieces */}
+      {stagedPieces.length > 0 && (
+        <div className="w-full max-w-xl mt-6 p-4 border rounded bg-muted/30 flex flex-wrap gap-2 justify-center">
+          <div className="w-full text-xs mb-2 font-medium text-muted-foreground text-center uppercase tracking-widest">
+            Staging Area ({stagedPieces.length} pieces)
+          </div>
+          {/* Show simple numbered tokens for now. Replace below with interactive logic as engine allows */}
+          {stagedPieces.map(piece => (
+            <div key={piece.id} className="w-8 h-8 bg-background/60 rounded shadow border flex items-center justify-center font-bold text-lg">
+              {piece.id + 1}
+            </div>
+          ))}
+        </div>
+      )}
       {completed && (
         <div className="mt-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-md text-center">
           🎉 Puzzle completed in {solveTime?.toFixed(2)} seconds!
