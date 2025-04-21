@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -178,7 +177,18 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           />
         </div>
 
-        {/* Removed Prize Name Field */}
+        {/* New Puzzle Owner field */}
+        <div>
+          <Label htmlFor="edit-puzzleowner" className="block mb-1">Puzzle Owner</Label>
+          <Input
+            id="edit-puzzleowner"
+            value={puzzle?.puzzleOwner ?? ""}
+            onChange={e => onChange("puzzleOwner", e.target.value)}
+            data-testid="edit-puzzleowner"
+            className="mb-1"
+            placeholder="Administrator who set it up"
+          />
+        </div>
 
         <div>
           <Label htmlFor="edit-prizevalue" className="block mb-1">Prize Value ($)</Label>
@@ -209,6 +219,19 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* New Supplier field */}
+        <div>
+          <Label htmlFor="edit-supplier" className="block mb-1">Supplier</Label>
+          <Input
+            id="edit-supplier"
+            value={puzzle?.supplier ?? ""}
+            onChange={e => onChange("supplier", e.target.value)}
+            data-testid="edit-supplier"
+            className="mb-1"
+            placeholder="e.g. Brand or supplier name"
+          />
         </div>
 
         <div>
@@ -348,4 +371,3 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
 };
 
 export default PuzzleEditPanel;
-
