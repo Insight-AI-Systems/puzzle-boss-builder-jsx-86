@@ -1,7 +1,4 @@
 
-// Minor foundational code quality refactor for readability and dead code comments.
-// No changes to logic, API, UI, or behavior per Maslow protocol.
-
 import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleLeft, ToggleRight, Image, Save, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 interface PuzzleEditPanelProps {
   puzzle: any;
@@ -19,6 +17,7 @@ interface PuzzleEditPanelProps {
   onSave: () => void;
   onCancel: () => void;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  currentUser?: string;
 }
 
 const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
@@ -28,13 +27,16 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
   onSave,
   onCancel,
   onImageUpload,
+  currentUser,
 }) => {
-  // ghost image grid
+  // Grid configuration based on difficulty
   const grid = { easy: 3, medium: 4, hard: 5 }[puzzle?.difficulty] || 4;
   const boxSize = 56;
   const total = grid * grid;
-
-  // timer toggle logic
+  
+  const { toast } = useToast();
+  
+  // Timer toggle logic
   const [timerEnabled, setTimerEnabled] = useState(Boolean(puzzle?.timeLimit && puzzle.timeLimit > 0));
 
   // Track if targetRevenue was manually changed by the admin
@@ -102,6 +104,41 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Basic validation
+    if (!puzzle.name?.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Puzzle name is required",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!puzzle.category) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a category",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!puzzle.prizeValue || puzzle.prizeValue <= 0) {
+      toast({
+        title: "Validation Error",
+        description: "Prize value must be greater than zero",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // If all validation passes, save the puzzle
+    onSave();
+  };
+
   return (
     <div className="w-full p-4 mt-2 mb-4 bg-muted border rounded-lg shadow-md grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Puzzle Ghost Image Preview */}
@@ -154,7 +191,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
 
       {/* Form Fields */}
       <form
-        onSubmit={e => { e.preventDefault(); onSave(); }}
+        onSubmit={handleSubmit}
         className="flex flex-col gap-3"
         tabIndex={-1}
       >
@@ -176,7 +213,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           <Label htmlFor="edit-puzzleowner" className="block mb-1">Puzzle Owner</Label>
           <Input
             id="edit-puzzleowner"
-            value={puzzle?.puzzleOwner ?? ""}
+            value={puzzle?.puzzleOwner ?? currentUser ?? ""}
             onChange={e => onChange("puzzleOwner", e.target.value)}
             data-testid="edit-puzzleowner"
             className="mb-1"

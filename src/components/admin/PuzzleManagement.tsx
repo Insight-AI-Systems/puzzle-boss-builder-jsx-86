@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -23,88 +24,16 @@ import {
   Trash2, 
   Image, 
   ToggleLeft, 
-  ToggleRight 
+  ToggleRight,
+  AlertCircle
 } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
+import { usePuzzles, Puzzle as PuzzleType } from "@/hooks/usePuzzles";
 import PuzzleEditPanel from "./PuzzleEditPanel";
-
-const samplePuzzles = [
-  {
-    id: "p1",
-    name: "iPhone 14 Pro",
-    category: "Smartphones",
-    category_id: "",
-    difficulty: "medium",
-    imageUrl: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop",
-    timeLimit: 300, // seconds
-    costPerPlay: 1.99,
-    targetRevenue: 2000,
-    status: "active",
-    prize: "iPhone 14 Pro",
-    completions: 122,
-    avgTime: 189, // seconds
-  },
-  {
-    id: "p2",
-    name: "MacBook Air M2",
-    category: "Laptops",
-    category_id: "",
-    difficulty: "hard",
-    imageUrl: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=400&fit=crop",
-    timeLimit: 420, // seconds
-    costPerPlay: 3.99,
-    targetRevenue: 3200,
-    status: "scheduled",
-    prize: "MacBook Air M2",
-    completions: 0,
-    avgTime: 0, // seconds
-  },
-  {
-    id: "p3",
-    name: "AirPods Pro",
-    category: "Headphones",
-    category_id: "",
-    difficulty: "easy",
-    imageUrl: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&h=400&fit=crop",
-    timeLimit: 180, // seconds
-    costPerPlay: 0.99,
-    targetRevenue: 900,
-    status: "active",
-    prize: "AirPods Pro",
-    completions: 348,
-    avgTime: 142, // seconds
-  },
-  {
-    id: "p4",
-    name: "PlayStation 5",
-    category: "Gaming Consoles",
-    category_id: "",
-    difficulty: "medium",
-    imageUrl: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=400&h=400&fit=crop",
-    timeLimit: 360, // seconds
-    costPerPlay: 2.99,
-    targetRevenue: 3000,
-    status: "completed",
-    prize: "PlayStation 5",
-    completions: 521,
-    avgTime: 202, // seconds
-  },
-  {
-    id: "p5",
-    name: "Samsung Galaxy S23",
-    category: "Smartphones",
-    category_id: "",
-    difficulty: "medium",
-    imageUrl: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400&h=400&fit=crop",
-    timeLimit: 300, // seconds
-    costPerPlay: 1.99,
-    targetRevenue: 2100,
-    status: "draft",
-    prize: "Samsung Galaxy S23",
-    completions: 0,
-    avgTime: 0, // seconds
-  },
-];
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 const PuzzlePreview = ({ imageUrl, difficulty }: { imageUrl: string, difficulty: string }) => {
   const grid = { easy: 3, medium: 4, hard: 5 }[difficulty] || 4;
@@ -145,17 +74,65 @@ const PuzzlePreview = ({ imageUrl, difficulty }: { imageUrl: string, difficulty:
   );
 };
 
+// Default new puzzle template
+const DEFAULT_NEW_PUZZLE: Partial<PuzzleType> = {
+  name: "New Puzzle",
+  category: "",
+  category_id: "",
+  difficulty: "medium",
+  imageUrl: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop",
+  timeLimit: 300,
+  costPerPlay: 1.99,
+  targetRevenue: 199.99,
+  status: "draft",
+  prize: "New Prize",
+  completions: 0,
+  avgTime: 0,
+  prizeValue: 99.99,
+  description: "",
+  supplier: "",
+  puzzleOwner: ""
+};
+
 export const PuzzleManagement: React.FC = () => {
-  const [puzzles, setPuzzles] = useState(samplePuzzles);
+  const { puzzles, isLoading, isError, createPuzzle, updatePuzzle, deletePuzzle, checkPuzzleTableExists } = usePuzzles();
   const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPuzzle, setEditPuzzle] = useState<any>(null);
+  const [tableExists, setTableExists] = useState<boolean | null>(null);
+  const [newPuzzleDialogOpen, setNewPuzzleDialogOpen] = useState(false);
+  const [newPuzzle, setNewPuzzle] = useState<Partial<PuzzleType>>({...DEFAULT_NEW_PUZZLE});
   const { data: categories = [] } = useCategories();
+  const { profile } = useUserProfile();
+  const { toast } = useToast();
+
+  // Check if puzzles table exists
+  useEffect(() => {
+    const checkTable = async () => {
+      const exists = await checkPuzzleTableExists();
+      setTableExists(exists);
+    };
+    checkTable();
+  }, [checkPuzzleTableExists]);
+
+  useEffect(() => {
+    console.log("Current puzzles:", puzzles);
+  }, [puzzles]);
+
+  // Reset new puzzle when opening dialog
+  useEffect(() => {
+    if (newPuzzleDialogOpen) {
+      setNewPuzzle({
+        ...DEFAULT_NEW_PUZZLE,
+        puzzleOwner: profile?.display_name || profile?.email || "",
+      });
+    }
+  }, [newPuzzleDialogOpen, profile]);
 
   const filteredPuzzles = puzzles.filter(puzzle => 
-    puzzle.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    puzzle.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    puzzle.prize.toLowerCase().includes(searchTerm.toLowerCase())
+    puzzle.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    puzzle.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    puzzle.prize?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const activePuzzles = filteredPuzzles.filter(p => p.status === "active");
@@ -171,6 +148,7 @@ export const PuzzleManagement: React.FC = () => {
   };
 
   const startEdit = (puzzle: any) => {
+    console.log("Starting edit for puzzle:", puzzle);
     setEditingId(puzzle.id);
     setEditPuzzle({ ...puzzle });
   };
@@ -185,20 +163,77 @@ export const PuzzleManagement: React.FC = () => {
   };
 
   const saveEdit = () => {
-    setPuzzles(prev =>
-      prev.map(p =>
-        p.id === editingId ? { ...p, ...editPuzzle } : p
-      )
-    );
-    setEditingId(null);
-    setEditPuzzle(null);
+    if (editPuzzle) {
+      console.log("Saving puzzle:", editPuzzle);
+      updatePuzzle(editPuzzle);
+      setEditingId(null);
+      setEditPuzzle(null);
+    }
+  };
+  
+  const handleNewPuzzleChange = (field: string, value: any) => {
+    setNewPuzzle((prev) => ({ ...prev, [field]: value }));
+  };
+  
+  const saveNewPuzzle = () => {
+    console.log("Creating new puzzle:", newPuzzle);
+    createPuzzle(newPuzzle);
+    setNewPuzzleDialogOpen(false);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.[0]) return;
     const url = URL.createObjectURL(e.target.files[0]);
-    setEditPuzzle((prev: any) => ({ ...prev, imageUrl: url }));
+    
+    if (editingId) {
+      setEditPuzzle((prev: any) => ({ ...prev, imageUrl: url }));
+    } else {
+      setNewPuzzle((prev) => ({ ...prev, imageUrl: url }));
+    }
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Puzzle className="h-5 w-5 mr-2" />
+            Puzzle Management
+          </CardTitle>
+          <CardDescription>Loading puzzles...</CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center p-6">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-puzzle-aqua"></div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError || tableExists === false) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Puzzle className="h-5 w-5 mr-2" />
+            Puzzle Management
+          </CardTitle>
+          <CardDescription>Set up required before managing puzzles</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Database Configuration Required</AlertTitle>
+            <AlertDescription>
+              The puzzles table does not exist in the database yet. Please check that the database is properly configured.
+            </AlertDescription>
+          </Alert>
+          <p className="text-muted-foreground mb-4">
+            Contact your system administrator to set up the necessary database tables for puzzle management.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -232,309 +267,207 @@ export const PuzzleManagement: React.FC = () => {
               <path d="m21 21-4.35-4.35" />
             </svg>
           </div>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            New Puzzle
-          </Button>
+          <Dialog open={newPuzzleDialogOpen} onOpenChange={setNewPuzzleDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                New Puzzle
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Create New Puzzle</DialogTitle>
+                <DialogDescription>
+                  Fill in the details for your new puzzle
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <PuzzleEditPanel
+                  puzzle={newPuzzle}
+                  categories={categories}
+                  onChange={handleNewPuzzleChange}
+                  onSave={saveNewPuzzle}
+                  onCancel={() => setNewPuzzleDialogOpen(false)}
+                  onImageUpload={handleImageUpload}
+                  currentUser={profile?.display_name || profile?.email || ""}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
         
-        <Tabs defaultValue="active" className="w-full">
-          <TabsList className="grid grid-cols-4 mb-4">
-            <TabsTrigger value="active" className="flex items-center">
-              <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
-                {filteredPuzzles.filter(p => p.status === "active").length}
-              </Badge>
-              Active
-            </TabsTrigger>
-            <TabsTrigger value="scheduled" className="flex items-center">
-              <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
-                {filteredPuzzles.filter(p => p.status === "scheduled").length}
-              </Badge>
-              Scheduled
-            </TabsTrigger>
-            <TabsTrigger value="completed" className="flex items-center">
-              <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
-                {filteredPuzzles.filter(p => p.status === "completed").length}
-              </Badge>
-              Completed
-            </TabsTrigger>
-            <TabsTrigger value="drafts" className="flex items-center">
-              <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
-                {filteredPuzzles.filter(p => p.status === "draft").length}
-              </Badge>
-              Drafts
-            </TabsTrigger>
-          </TabsList>
-          
-          {["active", "scheduled", "completed", "drafts"].map(tabValue => (
-            <TabsContent key={tabValue} value={tabValue} className="space-y-4">
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Difficulty</TableHead>
-                      <TableHead>Time Limit</TableHead>
-                      <TableHead>Prize</TableHead>
-                      {tabValue !== "drafts" && tabValue !== "scheduled" && (
-                        <>
-                          <TableHead>Completions</TableHead>
-                          <TableHead>Avg Time</TableHead>
-                        </>
-                      )}
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPuzzles
-                      .filter(puzzle => {
-                        if (tabValue === "active") return puzzle.status === "active";
-                        if (tabValue === "scheduled") return puzzle.status === "scheduled";
-                        if (tabValue === "completed") return puzzle.status === "completed";
-                        if (tabValue === "drafts") return puzzle.status === "draft";
-                        return false;
-                      })
-                      .map(puzzle =>
-                        editingId === puzzle.id ? (
-                          <TableRow key={puzzle.id}>
-                            <TableCell colSpan={tabValue !== "drafts" && tabValue !== "scheduled" ? 9 : 7} className="bg-muted pt-8 pb-8 px-2">
-                              <PuzzleEditPanel
-                                puzzle={editPuzzle}
-                                categories={categories}
-                                onChange={handleEditChange}
-                                onSave={saveEdit}
-                                onCancel={cancelEdit}
-                                onImageUpload={handleImageUpload}
-                              />
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          <TableRow key={puzzle.id}>
-                            <TableCell className="font-medium align-top">
-                              {editingId === puzzle.id ? (
-                                <div className="flex flex-col gap-2">
-                                  <Input
-                                    value={editPuzzle?.name ?? ""}
-                                    onChange={e => handleEditChange("name", e.target.value)}
-                                    data-testid={`edit-name-${puzzle.id}`}
-                                  />
-                                  {editPuzzle?.imageUrl && (
-                                    <div className="mt-2 mb-3 flex flex-col items-center gap-1">
-                                      <PuzzlePreview imageUrl={editPuzzle.imageUrl} difficulty={editPuzzle.difficulty} />
-                                      <div className="flex items-center gap-2 mt-1">
-                                        <label htmlFor="edit-upload-img" className="flex items-center gap-1 cursor-pointer bg-puzzle-aqua/10 border border-puzzle-aqua/60 text-puzzle-aqua text-xs px-2 py-1 rounded transition hover:bg-puzzle-aqua/20">
-                                          <Image className="h-4 w-4" /> Change image
-                                        </label>
-                                        <input
-                                          id="edit-upload-img"
-                                          type="file"
-                                          accept="image/*"
-                                          className="hidden"
-                                          onChange={handleImageUpload}
-                                        />
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
+        {puzzles.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="inline-flex items-center justify-center p-4 mb-4 rounded-full bg-puzzle-aqua/10">
+              <Puzzle className="h-8 w-8 text-puzzle-aqua" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">No puzzles found</h3>
+            <p className="text-muted-foreground mb-6">
+              Get started by creating your first puzzle
+            </p>
+            <Button onClick={() => setNewPuzzleDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Your First Puzzle
+            </Button>
+          </div>
+        ) : (
+          <Tabs defaultValue="active" className="w-full">
+            <TabsList className="grid grid-cols-4 mb-4">
+              <TabsTrigger value="active" className="flex items-center">
+                <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
+                  {activePuzzles.length}
+                </Badge>
+                Active
+              </TabsTrigger>
+              <TabsTrigger value="scheduled" className="flex items-center">
+                <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
+                  {scheduledPuzzles.length}
+                </Badge>
+                Scheduled
+              </TabsTrigger>
+              <TabsTrigger value="completed" className="flex items-center">
+                <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
+                  {completedPuzzles.length}
+                </Badge>
+                Completed
+              </TabsTrigger>
+              <TabsTrigger value="drafts" className="flex items-center">
+                <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
+                  {draftPuzzles.length}
+                </Badge>
+                Drafts
+              </TabsTrigger>
+            </TabsList>
+            
+            {["active", "scheduled", "completed", "drafts"].map(tabValue => (
+              <TabsContent key={tabValue} value={tabValue} className="space-y-4">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Difficulty</TableHead>
+                        <TableHead>Time Limit</TableHead>
+                        <TableHead>Prize</TableHead>
+                        {tabValue !== "drafts" && tabValue !== "scheduled" && (
+                          <>
+                            <TableHead>Completions</TableHead>
+                            <TableHead>Avg Time</TableHead>
+                          </>
+                        )}
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredPuzzles
+                        .filter(puzzle => {
+                          if (tabValue === "active") return puzzle.status === "active";
+                          if (tabValue === "scheduled") return puzzle.status === "scheduled";
+                          if (tabValue === "completed") return puzzle.status === "completed";
+                          if (tabValue === "drafts") return puzzle.status === "draft";
+                          return false;
+                        })
+                        .map(puzzle =>
+                          editingId === puzzle.id ? (
+                            <TableRow key={puzzle.id}>
+                              <TableCell colSpan={tabValue !== "drafts" && tabValue !== "scheduled" ? 9 : 7} className="bg-muted pt-8 pb-8 px-2">
+                                <PuzzleEditPanel
+                                  puzzle={editPuzzle}
+                                  categories={categories}
+                                  onChange={handleEditChange}
+                                  onSave={saveEdit}
+                                  onCancel={cancelEdit}
+                                  onImageUpload={handleImageUpload}
+                                  currentUser={profile?.display_name || profile?.email || ""}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            <TableRow key={puzzle.id}>
+                              <TableCell className="font-medium align-top">
                                 <span className="flex items-center gap-2">
                                   {puzzle.imageUrl && (
                                     <img src={puzzle.imageUrl} alt="Puzzle" className="w-10 h-10 rounded object-cover border border-puzzle-aqua/20" />
                                   )}
                                   {puzzle.name}
                                 </span>
-                              )}
-                            </TableCell>
-                            <TableCell className="align-top">
-                              {editingId === puzzle.id ? (
-                                <select
-                                  className="min-w-[110px] bg-background border border-border rounded p-1"
-                                  value={editPuzzle?.category ?? ""}
-                                  onChange={e => handleEditChange("category", e.target.value)}
-                                  data-testid={`edit-category-${puzzle.id}`}
-                                >
-                                  {categories.map((cat: any) => (
-                                    <option value={cat.name} key={cat.id}>{cat.name}</option>
-                                  ))}
-                                </select>
-                              ) : (
-                                puzzle.category
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {editingId === puzzle.id ? (
-                                <Input
-                                  value={editPuzzle?.difficulty ?? ""}
-                                  onChange={e => handleEditChange("difficulty", e.target.value)}
-                                  data-testid={`edit-difficulty-${puzzle.id}`}
-                                />
-                              ) : (
+                              </TableCell>
+                              <TableCell className="align-top">
+                                {puzzle.category}
+                              </TableCell>
+                              <TableCell>
                                 <Badge variant={
                                   puzzle.difficulty === "easy" ? "outline" :
                                   puzzle.difficulty === "medium" ? "secondary" : "destructive"
                                 }>
                                   {puzzle.difficulty.charAt(0).toUpperCase() + puzzle.difficulty.slice(1)}
                                 </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="flex flex-col gap-1 align-top">
-                              {editingId === puzzle.id ? (
-                                <>
-                                  <Input
-                                    type="number"
-                                    value={editPuzzle?.timeLimit ?? 0}
-                                    min={0}
-                                    onChange={e => handleEditChange("timeLimit", Number(e.target.value))}
-                                    data-testid={`edit-timelimit-${puzzle.id}`}
-                                    className="w-24"
-                                    placeholder="Seconds"
-                                  />
-                                  <Label className="text-xs text-muted-foreground">Timer (seconds)</Label>
-                                </>
-                              ) : (
-                                <>
-                                  <Clock className="h-3 w-3 mr-1 inline" />
-                                  {formatTime(puzzle.timeLimit)}
-                                </>
-                              )}
-                            </TableCell>
-                            <TableCell className="flex flex-col gap-1 align-top">
-                              {editingId === puzzle.id ? (
-                                <>
-                                  <Input
-                                    value={editPuzzle?.prize ?? ""}
-                                    onChange={e => handleEditChange("prize", e.target.value)}
-                                    data-testid={`edit-prize-${puzzle.id}`}
-                                    className="mb-1"
-                                  />
-                                  <Label className="text-xs text-muted-foreground">Prize</Label>
-                                </>
-                              ) : (
+                              </TableCell>
+                              <TableCell className="flex flex-col gap-1 align-top">
+                                <Clock className="h-3 w-3 mr-1 inline" />
+                                {formatTime(puzzle.timeLimit)}
+                              </TableCell>
+                              <TableCell className="flex flex-col gap-1 align-top">
                                 <span className="flex items-center">
                                   <Award className="h-3 w-3 mr-1 text-puzzle-aqua" />
-                                  {puzzle.prize}
+                                  {puzzle.prize || puzzle.name}
                                 </span>
+                              </TableCell>
+                              {tabValue !== "drafts" && tabValue !== "scheduled" && (
+                                <>
+                                  <TableCell>
+                                    {puzzle.completions}
+                                  </TableCell>
+                                  <TableCell>
+                                    {formatTime(puzzle.avgTime || 0)}
+                                  </TableCell>
+                                </>
                               )}
-                            </TableCell>
-                            {tabValue !== "drafts" && tabValue !== "scheduled" && (
-                              <>
-                                <TableCell>
-                                  {editingId === puzzle.id ? (
-                                    <Input
-                                      type="number"
-                                      value={editPuzzle?.completions ?? 0}
-                                      onChange={e => handleEditChange("completions", Number(e.target.value))}
-                                      data-testid={`edit-completions-${puzzle.id}`}
-                                      className="w-16"
-                                    />
-                                  ) : (
-                                    puzzle.completions
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  {editingId === puzzle.id ? (
-                                    <Input
-                                      type="number"
-                                      value={editPuzzle?.avgTime ?? 0}
-                                      onChange={e => handleEditChange("avgTime", Number(e.target.value))}
-                                      data-testid={`edit-avgtime-${puzzle.id}`}
-                                      className="w-16"
-                                    />
-                                  ) : (
-                                    formatTime(puzzle.avgTime)
-                                  )}
-                                </TableCell>
-                              </>
-                            )}
-                            <TableCell className="text-right align-top">
-                              <div className="flex flex-col gap-2 items-end">
-                                {editingId === puzzle.id ? (
-                                  <>
-                                    <div className="flex flex-row gap-2">
-                                      <div className="flex flex-col items-start">
-                                        <Label className="text-xs">Cost/Play</Label>
-                                        <Input
-                                          type="number"
-                                          step={0.01}
-                                          min={0}
-                                          className="w-20"
-                                          value={editPuzzle?.costPerPlay ?? 0}
-                                          onChange={e => handleEditChange("costPerPlay", Number(e.target.value))}
-                                          data-testid={`edit-costperplay-${puzzle.id}`}
-                                        />
-                                      </div>
-                                      <div className="flex flex-col items-start">
-                                        <Label className="text-xs">Target Revenue</Label>
-                                        <Input
-                                          type="number"
-                                          step={1}
-                                          min={0}
-                                          className="w-24"
-                                          value={editPuzzle?.targetRevenue ?? 0}
-                                          onChange={e => handleEditChange("targetRevenue", Number(e.target.value))}
-                                          data-testid={`edit-targetrev-${puzzle.id}`}
-                                        />
-                                      </div>
-                                      <div className="flex flex-col items-center">
-                                        <Label className="text-xs mb-1">Status</Label>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          onClick={() =>
-                                            handleEditChange(
-                                              "status",
-                                              editPuzzle.status === "active" ? "inactive" : "active"
-                                            )
-                                          }
-                                          tabIndex={0}
-                                          aria-pressed={editPuzzle.status === "active" ? "true" : "false"}
-                                          aria-label={editPuzzle.status === "active" ? "Active" : "Inactive"}
-                                        >
-                                          {editPuzzle.status === "active"
-                                            ? <ToggleRight className="h-6 w-6 text-green-500" />
-                                            : <ToggleLeft className="h-6 w-6 text-gray-300" />
-                                          }
-                                        </Button>
-                                      </div>
-                                    </div>
-                                    <div className="flex gap-1 mt-3">
-                                      <Button variant="ghost" size="icon" onClick={saveEdit} aria-label="Save" title="Save">
-                                        <span className="sr-only">Save</span>
-                                        <svg width={20} height={20} stroke="currentColor" fill="none"><path d="M5 11l4 4L19 5" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                      </Button>
-                                      <Button variant="ghost" size="icon" onClick={cancelEdit} aria-label="Cancel" title="Cancel">
-                                        <span className="sr-only">Cancel</span>
-                                        <svg width={20} height={20} stroke="currentColor" fill="none"><path d="M6 6l12 12M6 18L18 6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                      </Button>
-                                    </div>
-                                  </>
-                                ) : (
-                                  <div className="flex justify-end gap-1">
-                                    <Button variant="ghost" size="icon" onClick={() => startEdit(puzzle)}>
-                                      <Edit className="h-4 w-4" />
+                              <TableCell className="text-right align-top">
+                                <div className="flex justify-end gap-1">
+                                  <Button variant="ghost" size="icon" onClick={() => startEdit(puzzle)}>
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => {
+                                      if (window.confirm('Are you sure you want to delete this puzzle?')) {
+                                        deletePuzzle(puzzle.id);
+                                      }
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                  {puzzle.status === "draft" && (
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      onClick={() => {
+                                        const updated = { ...puzzle, status: 'active' };
+                                        updatePuzzle(updated);
+                                        toast({
+                                          title: "Puzzle activated",
+                                          description: `${puzzle.name} is now active and available.`
+                                        });
+                                      }}
+                                    >
+                                      <Shuffle className="h-4 w-4 text-green-500" />
                                     </Button>
-                                    <Button variant="ghost" size="icon">
-                                      <Trash2 className="h-4 w-4 text-red-500" />
-                                    </Button>
-                                    {puzzle.status === "draft" && (
-                                      <Button variant="ghost" size="icon">
-                                        <Shuffle className="h-4 w-4 text-green-500" />
-                                      </Button>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      )}
-                  </TableBody>
-                </Table>
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+        )}
       </CardContent>
     </Card>
   );
