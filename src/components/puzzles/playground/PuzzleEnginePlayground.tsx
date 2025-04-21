@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,6 +12,7 @@ import { useTheme } from 'next-themes';
 import ReactJigsawPuzzleEngine from './engines/ReactJigsawPuzzleEngine';
 import ReactJigsawPuzzleEngine2 from './engines/ReactJigsawPuzzleEngine2';
 import CustomPuzzleEngine from './engines/CustomPuzzleEngine';
+import PuzzleBossEngine from './engines/PuzzleBossEngine';
 import './engines/styles/jigsaw-puzzle.css';
 
 const SAMPLE_IMAGES = [
@@ -35,6 +37,7 @@ const PUZZLE_ENGINES = [
   { id: 'react-jigsaw-puzzle', name: 'React Jigsaw Puzzle (Custom)' },
   { id: 'react-jigsaw-puzzle-2', name: 'React Jigsaw Puzzle (External)' },
   { id: 'custom-puzzle-engine', name: 'Custom Lovable Puzzle' },
+  { id: 'puzzle-boss-engine', name: 'Puzzle Boss Master' },
   { id: 'custom-engine', name: 'Custom Engine (Placeholder)' }
 ];
 
@@ -161,6 +164,15 @@ const PuzzleEnginePlayground: React.FC = () => {
         {selectedEngine === 'custom-puzzle-engine' && (
           <CustomPuzzleEngine 
             key={getEngineKey('custom')}
+            imageUrl={currentImage}
+            rows={currentDifficultyPreset.rows}
+            columns={currentDifficultyPreset.columns}
+          />
+        )}
+        
+        {selectedEngine === 'puzzle-boss-engine' && (
+          <PuzzleBossEngine
+            key={getEngineKey('boss')}
             imageUrl={currentImage}
             rows={currentDifficultyPreset.rows}
             columns={currentDifficultyPreset.columns}
