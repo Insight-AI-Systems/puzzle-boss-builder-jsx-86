@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useDeviceInfo } from '@/hooks/use-mobile';
 import { useSimplePuzzlePieces } from './hooks/useSimplePuzzlePieces';
 import { usePuzzleState } from './hooks/usePuzzleState';
@@ -14,6 +14,7 @@ import './styles/puzzle-animations.css';
 import SimplePuzzleStateDisplay from './components/SimplePuzzleStateDisplay';
 import SimplePuzzleControlPanel from './components/SimplePuzzleControlPanel';
 import SimplePuzzleDirectionalControlsContainer from './components/SimplePuzzleDirectionalControlsContainer';
+import { SimplePuzzlePiece } from './types/simple-puzzle-types';
 
 const SimplePuzzleGame: React.FC = () => {
   const deviceInfo = useDeviceInfo();
@@ -42,7 +43,7 @@ const SimplePuzzleGame: React.FC = () => {
     if (isMobile && puzzleState.difficulty !== recommendedDifficulty) {
       puzzleState.changeDifficulty(recommendedDifficulty);
     }
-  }, [isMobile, recommendedDifficulty]);
+  }, [isMobile, recommendedDifficulty, puzzleState]);
 
   const {
     handleDragStart,
@@ -51,7 +52,7 @@ const SimplePuzzleGame: React.FC = () => {
     handlePieceClick,
     handleDirectionalMove,
     checkForHints
-  } = createPieceHandlers(
+  } = createPieceHandlers<SimplePuzzlePiece>(
     pieces,
     setPieces,
     draggedPiece,
@@ -61,37 +62,37 @@ const SimplePuzzleGame: React.FC = () => {
     playSound
   );
 
-  const handleGridDragStart = (e: React.MouseEvent | React.TouchEvent, piece: any) => {
+  const handleGridDragStart = useCallback((e: React.MouseEvent | React.TouchEvent, piece: SimplePuzzlePiece) => {
     e.preventDefault(); 
     handleDragStart(piece);
-  };
+  }, [handleDragStart]);
 
-  const handleGridMove = (e: React.MouseEvent | React.TouchEvent, index: number) => {
+  const handleGridMove = useCallback((e: React.MouseEvent | React.TouchEvent, index: number) => {
     if (draggedPiece) {
       e.preventDefault(); 
       handleMove(draggedPiece, index);
     }
-  };
+  }, [draggedPiece, handleMove]);
 
-  const handleGridDrop = (e: React.MouseEvent | React.TouchEvent, index: number) => {
+  const handleGridDrop = useCallback((e: React.MouseEvent | React.TouchEvent, index: number) => {
     if (draggedPiece) {
       e.preventDefault();
       handleDrop();
     }
-  };
+  }, [draggedPiece, handleDrop]);
 
-  const handleGridPieceClick = (piece: any) => {
+  const handleGridPieceClick = useCallback((piece: SimplePuzzlePiece) => {
     handlePieceClick(piece);
-  };
+  }, [handlePieceClick]);
 
-  const handleNewGame = () => {
+  const handleNewGame = useCallback(() => {
     handleShuffleClick();
     puzzleState.startNewPuzzle(puzzleState.difficulty);
-  };
+  }, [handleShuffleClick, puzzleState]);
 
-  const handleDifficultyChange = (difficulty: typeof puzzleState.difficulty) => {
+  const handleDifficultyChange = useCallback((difficulty: typeof puzzleState.difficulty) => {
     puzzleState.changeDifficulty(difficulty);
-  };
+  }, [puzzleState]);
 
   useEffect(() => {
     if (isSolved && !puzzleState.isComplete) {

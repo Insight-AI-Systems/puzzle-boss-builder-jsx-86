@@ -1,16 +1,16 @@
 
-import { PuzzlePiece } from '../types/puzzle-types';
+import { BasePuzzlePiece } from '../types/puzzle-types';
 
-export const createPieceHandlers = (
-  pieces: PuzzlePiece[], 
-  setPieces: (pieces: PuzzlePiece[]) => void,
-  draggedPiece: PuzzlePiece | null, 
-  setDraggedPiece: (piece: PuzzlePiece | null) => void,
+export const createPieceHandlers = <T extends BasePuzzlePiece>(
+  pieces: T[], 
+  setPieces: (pieces: T[] | ((prev: T[]) => T[])) => void,
+  draggedPiece: T | null, 
+  setDraggedPiece: (piece: T | null) => void,
   incrementMoves: (count?: number) => void,
   isSolved: boolean,
   playSound: (sound: string) => void
 ) => {
-  const handleDragStart = (piece: PuzzlePiece) => {
+  const handleDragStart = (piece: T) => {
     setDraggedPiece(piece);
     playSound('pickup');
     
@@ -19,7 +19,7 @@ export const createPieceHandlers = (
     ));
   };
 
-  const handleMove = (piece: PuzzlePiece, index: number) => {
+  const handleMove = (piece: T, index: number) => {
     if (draggedPiece && draggedPiece.id === piece.id) {
       const newPieces = [...pieces];
       const draggedIndex = newPieces.findIndex(p => p.id === piece.id);
@@ -43,7 +43,7 @@ export const createPieceHandlers = (
     }
   };
 
-  const handlePieceClick = (piece: PuzzlePiece) => {
+  const handlePieceClick = (piece: T) => {
     playSound('pickup');
   };
 
@@ -89,7 +89,7 @@ export const createPieceHandlers = (
     }
     
     // Update pieces with hints
-    setPieces(prev => {
+    setPieces((prev) => {
       return prev.map(piece => {
         if (hintablePieceIds.includes(piece.id)) {
           return { ...piece, showHint: true };
