@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleLeft, ToggleRight, Image, Save, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 interface PuzzleEditPanelProps {
   puzzle: any;
@@ -299,6 +300,18 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
             onChange={onTargetRevenueInput}
             data-testid="edit-targetrev"
             className="w-32 inline-block"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="edit-description" className="block mb-1">Description</Label>
+          <Textarea
+            id="edit-description"
+            value={puzzle?.description ?? ""}
+            onChange={e => onChange("description", e.target.value)}
+            data-testid="edit-description"
+            className="mb-1"
+            placeholder="Enter a description for this puzzle"
           />
         </div>
 
