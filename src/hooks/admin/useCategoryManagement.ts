@@ -34,14 +34,13 @@ export function useCategoryManagement() {
 
       console.log('Admin categories fetched successfully:', data);
       
-      // Transform to include admin-specific fields
-      // In a real application, these might come from a join with other tables
+      // Transform database fields to match AdminCategory interface
       return data.map(category => ({
         ...category,
-        puzzleCount: 0, // These would be populated from actual puzzle counts
-        activeCount: 0,
-        status: 'active',
-        imageUrl: '/placeholder.svg'
+        imageUrl: category.image_url || '/placeholder.svg',
+        status: category.status || 'inactive',
+        puzzleCount: 0,
+        activeCount: 0
       }));
     },
     refetchOnWindowFocus: true,
@@ -58,7 +57,9 @@ export function useCategoryManagement() {
         .insert({
           name: newCategory.name,
           slug: newCategory.name?.toLowerCase().replace(/\s+/g, '-') || '',
-          // Add any other fields that should be inserted
+          description: newCategory.description || '',
+          image_url: newCategory.imageUrl || '/placeholder.svg',
+          status: newCategory.status || 'inactive'
         })
         .select();
       
@@ -89,12 +90,16 @@ export function useCategoryManagement() {
   // Update an existing category
   const updateCategory = useMutation({
     mutationFn: async (category: AdminCategory) => {
+      console.log('Updating category with data:', category);
+      
       const { data, error } = await supabase
         .from('categories')
         .update({
           name: category.name,
           slug: category.name.toLowerCase().replace(/\s+/g, '-'),
-          // Update other fields as needed
+          description: category.description || '',
+          image_url: category.imageUrl || '/placeholder.svg',
+          status: category.status || 'inactive'
         })
         .eq('id', category.id)
         .select();

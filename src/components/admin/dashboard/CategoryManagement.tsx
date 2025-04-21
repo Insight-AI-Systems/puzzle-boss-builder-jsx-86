@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,7 @@ export const CategoryManagement: React.FC = () => {
     const newCategory: Partial<AdminCategory> = {
       name: "New Category",
       imageUrl: "/placeholder.svg",
+      description: "",
       puzzleCount: 0,
       activeCount: 0,
       status: "inactive"
@@ -180,9 +182,15 @@ export const CategoryManagement: React.FC = () => {
                       <TableCell>
                         <CategoryImageUpload
                           imageUrl={category.imageUrl}
-                          onChange={(url) =>
-                            setEditingCategory({ ...category, imageUrl: url })
-                          }
+                          onChange={(url) => {
+                            console.log("New image URL:", url);
+                            if (editingCategory?.id === category.id) {
+                              setEditingCategory({ 
+                                ...editingCategory, 
+                                imageUrl: url 
+                              });
+                            }
+                          }}
                           disabled={editingCategory?.id !== category.id}
                         />
                       </TableCell>

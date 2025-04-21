@@ -2,6 +2,7 @@
 import React, { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 
 interface CategoryImageUploadProps {
   imageUrl?: string;
@@ -18,21 +19,47 @@ export const CategoryImageUpload: React.FC<CategoryImageUploadProps> = ({
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.[0]) return;
-    const file = e.target.files[0];
-    // Upload to Supabase Storage (simple: category-thumbnails bucket)
-    const filePath = `category-thumbnails/${Date.now()}-${file.name}`;
-    const { data, error } = await supabase.storage
-      .from("category-thumbnails")
-      .upload(filePath, file, { upsert: false });
-    if (!error && data) {
-      // Get the public URL for the uploaded file
-      const { data: publicUrlData } = supabase.storage
+    
+    try {
+      const file = e.target.files[0];
+      // Upload to Supabase Storage (simple: category-thumbnails bucket)
+      const filePath = `category-thumbnails/${Date.now()}-${file.name}`;
+      
+      const { data, error } = await supabase.storage
         .from("category-thumbnails")
-        .getPublicUrl(data.path);
+        .upload(filePath, file, { upsert: false });
+        
+      if (error) {
+        console.error('Image upload error:', error);
+        toast({
+          title: "Upload Failed",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (data) {
+        // Get the public URL for the uploaded file
+        const { data: publicUrlData } = supabase.storage
+          .from("category-thumbnails")
+          .getPublicUrl(data.path);
 
-      onChange(publicUrlData.publicUrl);
-    } else {
-      alert('Image upload failed.');
+        console.log('Image uploaded successfully:', publicUrlData.publicUrl);
+        onChange(publicUrlData.publicUrl);
+        
+        toast({
+          title: "Image Uploaded",
+          description: "Category image has been updated"
+        });
+      }
+    } catch (err) {
+      console.error('Unexpected error during upload:', err);
+      toast({
+        title: "Upload Error",
+        description: "An unexpected error occurred during upload",
+        variant: "destructive"
+      });
     }
   };
 
@@ -59,7 +86,9 @@ export const CategoryImageUpload: React.FC<CategoryImageUploadProps> = ({
         size="sm"
         onClick={() => inputRef.current?.click()}
         disabled={disabled}
-      >Upload Image</Button>
+      >
+        Upload Image
+      </Button>
     </div>
   );
 };
