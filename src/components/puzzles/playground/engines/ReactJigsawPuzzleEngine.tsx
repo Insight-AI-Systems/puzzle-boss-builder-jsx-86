@@ -109,7 +109,7 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       opacity: 0.18,
-      pointerEvents: 'none',
+      pointerEvents: 'none' as const, // Fix: Use 'none' as const instead of string
       transition: 'opacity 0.2s'
     },
     puzzle: {
@@ -183,4 +183,3 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
 };
 
 export default ReactJigsawPuzzleEngine;
-
