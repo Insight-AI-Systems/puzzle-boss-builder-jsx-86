@@ -16,6 +16,7 @@ import { PuzzleCongratulationSplash } from './components/PuzzleCongratulationSpl
 import { PuzzleSidebarLeaderboard } from './components/PuzzleSidebarLeaderboard';
 import { useLeaderboard } from './hooks/usePuzzleLeaderboard';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface ReactJigsawPuzzleEngine2Props {
   imageUrl: string;
@@ -34,6 +35,7 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
   const [showBorder, setShowBorder] = useState(true);
   const [key, setKey] = useState(Date.now());
   const puzzleContainerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   const { user } = useAuth?.() ?? { user: null }; // fallback if auth context isn't present
   const currentPlayerId = user?.id ?? null;
@@ -109,6 +111,21 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
 
   const handleToggleBorder = () => {
     setShowBorder(prev => !prev);
+  };
+  
+  // Menu action handlers for the completion splash
+  const handlePlayAgain = () => {
+    handleReset();
+  };
+  
+  const handleExit = () => {
+    // Navigate back or to home
+    navigate('/');
+  };
+  
+  const handleMorePuzzles = () => {
+    // Navigate to puzzles selection
+    navigate('/puzzles');
   };
 
   useEffect(() => {
@@ -187,7 +204,13 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
         columns={columns}
       />
 
-      <PuzzleCongratulationSplash show={completed} solveTime={solveTime} />
+      <PuzzleCongratulationSplash 
+        show={completed} 
+        solveTime={solveTime}
+        onPlayAgain={handlePlayAgain}
+        onExit={handleExit}
+        onMorePuzzles={handleMorePuzzles} 
+      />
     </div>
   );
 };
