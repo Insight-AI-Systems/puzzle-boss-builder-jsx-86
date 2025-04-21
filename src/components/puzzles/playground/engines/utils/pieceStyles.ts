@@ -10,8 +10,10 @@ export function getPieceStyle(
   columns: number,
   size: number = 64
 ): React.CSSProperties {
+  // Calculate row and column based on the original piece id
   const row = Math.floor(pieceId / columns);
   const col = pieceId % columns;
+  
   return {
     width: `${size}px`,
     height: `${size}px`,

@@ -89,7 +89,7 @@ const AssemblyArea: React.FC<AssemblyAreaProps> = ({
                   height: `${pieceSize}px`,
                   backgroundImage: `url(${imageUrl})`,
                   backgroundSize: `${columns * 100}% ${rows * 100}%`,
-                  backgroundPosition: getBackgroundPosition(pieceId),
+                  backgroundPosition: getBackgroundPosition(pieceId), // Use pieceId, not idx
                   opacity: 1,
                   cursor: isCorrectPosition ? 'default' : 'grab'
                 }}

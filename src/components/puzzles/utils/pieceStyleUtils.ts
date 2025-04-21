@@ -2,6 +2,7 @@
 import { BasePuzzlePiece } from '../types/puzzle-types';
 
 export const getImagePieceStyle = (piece: BasePuzzlePiece, imageUrl: string, gridSize: number): React.CSSProperties => {
+  // Extract the original piece number from the id
   const pieceNumber = parseInt(piece.id.split('-')[1]);
   
   // Calculate row and column for the original position
