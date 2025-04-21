@@ -59,7 +59,7 @@ export const PuzzleContainer: React.FC<PuzzleContainerProps> = ({
       ) : (
         <div
           onClick={handleStartIfFirstMove}
-          className={!showBorder ? 'no-border-puzzle' : ''}
+          className={!showBorder ? 'no-border-puzzle' : (showBorder ? 'with-border-container' : '')}
         >
           <JigsawPuzzle
             key={keyProp}
@@ -67,8 +67,6 @@ export const PuzzleContainer: React.FC<PuzzleContainerProps> = ({
             rows={rows}
             columns={columns}
             onSolved={onSolved}
-            // Add a class to enable bright border
-            className={showBorder ? 'with-border' : ''}
           />
         </div>
       )}

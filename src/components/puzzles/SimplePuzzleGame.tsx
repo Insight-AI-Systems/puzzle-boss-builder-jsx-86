@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useDeviceInfo } from '@/hooks/use-mobile';
 import { useSimplePuzzlePieces } from './hooks/useSimplePuzzlePieces';
@@ -55,10 +56,7 @@ const SimplePuzzleGame: React.FC = () => {
     setPieces,
     draggedPiece,
     setDraggedPiece,
-    (count) => {
-      setMoveCount(count);
-      puzzleState.incrementMoves();
-    },
+    (count) => setMoveCount((prev) => (count !== undefined ? count : prev + 1)),
     isSolved,
     playSound
   );
@@ -78,7 +76,7 @@ const SimplePuzzleGame: React.FC = () => {
   const handleGridDrop = (e: React.MouseEvent | React.TouchEvent, index: number) => {
     if (draggedPiece) {
       e.preventDefault();
-      handleDrop(draggedPiece);
+      handleDrop();
     }
   };
 
@@ -164,7 +162,7 @@ const SimplePuzzleGame: React.FC = () => {
         draggedPiece={draggedPiece}
         isSolved={isSolved}
         isMobile={isMobile}
-        onDirectionalMove={(direction) => handleDirectionalMove(direction)}
+        onDirectionalMove={handleDirectionalMove}
         isTouchDevice={isTouchDevice}
       />
       <PuzzleStatusMessage 
