@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDeviceInfo } from '@/hooks/use-mobile';
 import { DifficultyLevel, GameMode, PieceShape, VisualTheme } from './types/puzzle-types';
 import { useImageLoading } from './hooks/useImageLoading';
@@ -19,6 +19,7 @@ import SaveLoadControls from './components/SaveLoadControls';
 import GameSettings from './components/GameSettings';
 import GameControlsLayout from './components/GameControlsLayout';
 import { getRecommendedDifficulty, calculateContainerSize } from './utils/puzzleSizeUtils';
+import { useToast } from '@/hooks/use-toast';
 
 interface ImagePuzzleGameProps {
   sampleImages?: string[];
@@ -35,6 +36,7 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
 }) => {
   const deviceInfo = useDeviceInfo();
   const { isMobile, width, isTouchDevice } = deviceInfo;
+  const { toast } = useToast();
   
   const initialDifficulty = getRecommendedDifficulty(width);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(initialDifficulty);
@@ -95,6 +97,51 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
     setRotationEnabled,
     setTimeLimit
   );
+
+  // Define the missing handler functions
+  const handleDragStart = (piece) => {
+    setDraggedPiece(piece);
+  };
+
+  const handleMove = (piece, index) => {
+    if (draggedPiece && draggedPiece.id === piece.id) {
+      const newPieces = [...pieces];
+      const draggedIndex = newPieces.findIndex(p => p.id === piece.id);
+      
+      // Swap positions
+      [newPieces[draggedIndex].position, newPieces[index].position] = 
+      [newPieces[index].position, newPieces[draggedIndex].position];
+      
+      setPieces(newPieces);
+      puzzleState.incrementMoves();
+    }
+  };
+
+  const handleDrop = () => {
+    if (draggedPiece) {
+      setPieces(prev => prev.map(p => 
+        p.id === draggedPiece.id ? { ...p, isDragging: false } : p
+      ));
+      setDraggedPiece(null);
+    }
+  };
+
+  const handlePieceClick = (piece) => {
+    // Handle piece click logic
+    playSound('pickup');
+  };
+
+  const wrappedHandlePieceClick = (piece) => {
+    handlePieceClick(piece);
+  };
+
+  const handleDirectionalMove = (direction) => {
+    // Handle directional move logic
+    if (!draggedPiece) return;
+    
+    // Implementation depends on your grid layout
+    console.log(`Move ${draggedPiece.id} to ${direction}`);
+  };
 
   const gridEvents = usePuzzleGridEvents({
     draggedPiece,

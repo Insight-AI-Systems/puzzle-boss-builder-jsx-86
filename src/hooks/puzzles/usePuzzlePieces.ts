@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { PuzzlePiece, difficultyConfig, DifficultyLevel } from '../components/puzzles/types/puzzle-types';
+import { PuzzlePiece, difficultyConfig, DifficultyLevel } from '@/components/puzzles/types/puzzle-types';
 import { useToast } from '@/hooks/use-toast';
 
 export const usePuzzlePieces = (
