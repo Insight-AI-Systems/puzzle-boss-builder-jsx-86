@@ -1,12 +1,13 @@
 
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { RoleBasedDashboard } from '@/components/admin/RoleBasedDashboard';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
 
 const AdminDashboard = () => {
   const { profile, isLoading, isAdmin, currentUserId } = useUserProfile();
@@ -76,6 +77,16 @@ const AdminDashboard = () => {
           <h1 className="text-3xl font-game text-puzzle-aqua">
             {isSuperAdmin ? 'Super Admin Dashboard' : 'Admin Dashboard'}
           </h1>
+
+          {/* Puzzle Test Playground Button */}
+          <div className="mb-6">
+            <Button asChild variant="outline" size="lg">
+              <Link to="/puzzle-playground">
+                Open Puzzle Engine Test Playground
+              </Link>
+            </Button>
+          </div>
+
           <RoleBasedDashboard />
         </div>
       </div>
