@@ -48,9 +48,12 @@ const AssemblyArea: React.FC<AssemblyAreaProps> = ({
             e.dataTransfer.dropEffect = "move";
           }}
           onDrop={e => {
-            const dropId = Number(e.dataTransfer.getData("piece-id"));
-            if (!placedPieces[idx]) {
-              onPieceDrop(dropId, idx);
+            e.preventDefault();
+            const pieceId = Number(e.dataTransfer.getData("piece-id"));
+            const fromAssembly = e.dataTransfer.getData("from-assembly") === "true";
+            
+            if (!isNaN(pieceId)) {
+              onPieceDrop(pieceId, idx);
             }
           }}
         >
@@ -69,7 +72,7 @@ const AssemblyArea: React.FC<AssemblyAreaProps> = ({
                 cursor: entry.isLocked ? "default" : "grab",
                 pointerEvents: entry.isLocked ? "none" : "auto"
               }}
-              onDoubleClick={() => onPieceRemove(idx)}
+              onDoubleClick={() => !entry.isLocked && onPieceRemove(idx)}
               title={
                 entry.isLocked
                   ? "Piece locked in correct position"

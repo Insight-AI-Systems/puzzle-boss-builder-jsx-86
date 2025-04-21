@@ -48,13 +48,13 @@ export function createPuzzleHandlers(
     setPlacedPieces(prev => {
       let np = [...prev];
 
-      // Remove this piece from any previous cell
+      // Remove this piece from any previous cell in the assembly area
       const fromAssemblyIdx = prev.findIndex(entry => entry && entry.id === pieceId && !entry.isLocked);
       if (fromAssemblyIdx !== -1) {
         np[fromAssemblyIdx] = null;
       }
 
-      // Lock piece if placed in correct spot, otherwise allow free movement
+      // Lock piece if placed in correct spot, otherwise just place it
       const shouldLock = pieceId === targetIdx;
       np[targetIdx] = { id: pieceId, isLocked: shouldLock };
       return np;
