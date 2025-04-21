@@ -82,10 +82,11 @@ const AssemblyArea: React.FC<AssemblyAreaProps> = ({
                   backgroundImage: `url(${imageUrl})`,
                   backgroundSize: `${columns * 100}% ${rows * 100}%`,
                   backgroundPosition: (() => {
-                    // This is the key fix - we need to use the actual pieceId to determine the position
-                    // not the original position of the same piece from its array index
-                    const row = Math.floor(pieceId / columns);
-                    const col = pieceId % columns;
+                    // The key fix is here - we use pieceId (not idx) to calculate
+                    // the correct background position
+                    const originalPieceId = pieceId; // This is the actual piece ID
+                    const row = Math.floor(originalPieceId / columns);
+                    const col = originalPieceId % columns;
                     return `${col * 100 / (columns - 1)}% ${row * 100 / (rows - 1)}%`;
                   })(),
                   opacity: 1,

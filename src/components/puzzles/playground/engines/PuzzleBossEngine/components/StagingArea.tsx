@@ -27,7 +27,7 @@ const StagingArea: React.FC<StagingAreaProps> = ({
         Staging Area ({stagedPieceIds.length} pieces)
       </div>
       {stagedPieceIds.map(id => {
-        // Calculate SVG bg position based on the piece's id
+        // Calculate background position based on the piece's id
         const row = Math.floor(id / columns);
         const col = id % columns;
         const bgStyle: React.CSSProperties = {
