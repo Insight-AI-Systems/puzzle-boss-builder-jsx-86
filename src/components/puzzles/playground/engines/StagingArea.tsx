@@ -10,6 +10,7 @@ type StagingAreaProps = {
   onPieceDoubleClick: (pieceId: number) => void;
 };
 
+// Util: create correct cropped puzzle piece style for a staged piece
 function getPieceStyle(
   id: number,
   imageUrl: string,
@@ -31,6 +32,7 @@ function getPieceStyle(
     transition: "box-shadow 0.16s",
     cursor: "grab",
     userSelect: "none",
+    backgroundColor: "#fff"
   };
 }
 
