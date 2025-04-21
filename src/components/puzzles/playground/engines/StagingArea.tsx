@@ -2,10 +2,12 @@
 import React from "react";
 
 type StagingAreaProps = {
-  stagedPieces: { id: number }[];
+  stagedPieces: number[];
   imageUrl: string;
   rows: number;
   columns: number;
+  onPieceDragStart: (pieceId: number) => (e: React.DragEvent<HTMLDivElement>) => void;
+  onPieceDoubleClick: (pieceId: number) => void;
 };
 
 function getPieceStyle(
@@ -14,24 +16,21 @@ function getPieceStyle(
   rows: number,
   columns: number
 ): React.CSSProperties {
-  // Calculate the grid position
   const row = Math.floor(id / columns);
   const col = id % columns;
-  // Size percentage for each piece
-  const widthPercent = 100 / columns;
-  const heightPercent = 100 / rows;
   return {
-    width: 64, // px, can be customized
+    width: 64,
     height: 64,
     backgroundImage: `url(${imageUrl})`,
     backgroundSize: `${columns * 100}% ${rows * 100}%`,
-    backgroundPosition: `${(col * widthPercent)}% ${(row * heightPercent)}%`,
+    backgroundPosition: `${(col * 100) / (columns - 1)}% ${(row * 100) / (rows - 1)}%`,
     backgroundRepeat: "no-repeat",
     borderRadius: "0.4rem",
-    border: "1px solid rgba(0,0,0,0.09)", 
+    border: "1px solid rgba(0,0,0,0.09)",
     boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
     transition: "box-shadow 0.16s",
     cursor: "grab",
+    userSelect: "none",
   };
 }
 
@@ -39,7 +38,9 @@ const StagingArea: React.FC<StagingAreaProps> = ({
   stagedPieces,
   imageUrl,
   rows,
-  columns
+  columns,
+  onPieceDragStart,
+  onPieceDoubleClick,
 }) => {
   if (stagedPieces.length === 0) return null;
   return (
@@ -47,12 +48,16 @@ const StagingArea: React.FC<StagingAreaProps> = ({
       <div className="w-full text-xs mb-2 font-medium text-muted-foreground text-center uppercase tracking-widest">
         Staging Area ({stagedPieces.length} pieces)
       </div>
-      {stagedPieces.map((piece) => (
+      {stagedPieces.map(pieceId => (
         <div
-          key={piece.id}
+          key={pieceId}
           className="puzzle-staged-piece"
-          style={getPieceStyle(piece.id, imageUrl, rows, columns)}
+          style={getPieceStyle(pieceId, imageUrl, rows, columns)}
           draggable
+          onDragStart={onPieceDragStart(pieceId)}
+          onDoubleClick={() => onPieceDoubleClick(pieceId)}
+          title="Drag into puzzle grid, or double click to auto-place"
+          tabIndex={0}
         />
       ))}
     </div>
@@ -60,4 +65,3 @@ const StagingArea: React.FC<StagingAreaProps> = ({
 };
 
 export default StagingArea;
-
