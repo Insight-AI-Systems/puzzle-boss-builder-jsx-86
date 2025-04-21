@@ -22,7 +22,7 @@ export function useCategoryManagement() {
     id: category.id,
     name: category.name,
     slug: category.slug,
-    description: category.description,
+    description: category.description || '',
     imageUrl: typeof category.image_url === "string" ? category.image_url : "/placeholder.svg",
     status:
       category.status === "active" || category.status === "inactive"
