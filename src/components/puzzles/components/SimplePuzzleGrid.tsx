@@ -115,8 +115,16 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
         const pieceNumber = parseInt(piece.id.split('-')[1]);
         const isCorrectlyPlaced = pieceNumber === piece.position;
         
-        // Force z-index calculation
-        const zIndex = piece.isDragging ? 100 : (isCorrectlyPlaced ? 10 : 20);
+        // Determine CSS classes based on piece state
+        const pieceClasses = [
+          'puzzle-piece',
+          'flex items-center justify-center rounded-lg cursor-pointer shadow-md transition-all',
+          piece.isDragging ? 'puzzle-piece-dragging' : '',
+          isCorrectlyPlaced ? 'puzzle-piece-correct' : '',
+          (piece as any).showHint ? 'puzzle-piece-hint' : '',
+          isSolved ? 'ring-1 ring-puzzle-gold/50' : '',
+          isTouchDevice ? 'active:scale-105' : 'hover:brightness-110'
+        ].filter(Boolean).join(' ');
         
         return (
           <div 
@@ -128,20 +136,17 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
             onMouseUp={(e) => onDrop(e, index)}
             onTouchEnd={(e) => onDrop(e, index)}
             onClick={() => onPieceClick(piece)}
-            className={`puzzle-piece flex items-center justify-center rounded-lg cursor-pointer shadow-md transition-all
-              ${piece.isDragging ? 'puzzle-piece-dragging' : ''}
-              ${isCorrectlyPlaced ? 'puzzle-piece-correct' : ''}
-              ${(piece as any).showHint ? 'puzzle-piece-hint' : ''}
-              ${isSolved ? 'ring-1 ring-puzzle-gold/50' : ''}
-              ${isTouchDevice ? 'active:scale-105' : 'hover:brightness-110'}`}
+            className={pieceClasses}
             style={{ 
               backgroundColor: piece.color,
               opacity: piece.isDragging ? '0.8' : '1',
               width: pieceSize,
               height: pieceSize,
-              zIndex: zIndex, // Apply calculated z-index directly
               position: 'relative'
+              // Note: No inline z-index here, we'll rely on CSS classes for more reliable z-index handling
             }}
+            data-correct={isCorrectlyPlaced ? 'true' : 'false'}
+            data-piece-number={pieceNumber}
           >
             <span className={`text-base sm:text-lg font-bold text-white drop-shadow-md 
               ${piece.isDragging ? 'scale-110' : ''}`}

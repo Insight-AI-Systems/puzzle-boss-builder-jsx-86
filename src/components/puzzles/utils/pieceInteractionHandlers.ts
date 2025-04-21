@@ -15,7 +15,7 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     playSound('pickup');
     
     setPieces(pieces.map(p => 
-      p.id === piece.id ? { ...p, isDragging: true, zIndex: 100 } : p
+      p.id === piece.id ? { ...p, isDragging: true } : p
     ));
   };
 
@@ -28,9 +28,6 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
       [newPieces[draggedIndex].position, newPieces[index].position] = 
       [newPieces[index].position, newPieces[draggedIndex].position];
       
-      // Update z-indices to ensure visibility
-      updatePieceZIndices(newPieces);
-      
       setPieces(newPieces);
       incrementMoves();
       playSound('place');
@@ -40,11 +37,9 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
   const handleDrop = () => {
     if (draggedPiece) {
       setPieces(prev => {
-        const updated = prev.map(p => 
+        return prev.map(p => 
           p.id === draggedPiece.id ? { ...p, isDragging: false } : p
         );
-        updatePieceZIndices(updated);
-        return updated;
       });
       setDraggedPiece(null);
     }
@@ -61,38 +56,11 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     console.log(`Move ${draggedPiece.id} to ${direction}`);
   };
 
-  // Enhanced helper function to update z-indices for all pieces
+  // Simplified solution - we don't need to manually set z-indices anymore
+  // since we're using CSS classes with !important
   const updatePieceZIndices = (piecesToUpdate: T[]) => {
-    // First pass: Mark each piece's correct position status
-    piecesToUpdate.forEach(piece => {
-      const pieceNumber = parseInt(piece.id.split('-')[1]);
-      const isInCorrectPosition = piece.position === pieceNumber;
-      
-      // Set initial z-index values based on position correctness
-      if ('zIndex' in piece) {
-        if (piece.isDragging) {
-          (piece as any).zIndex = 100; // Highest for dragged pieces
-        } else if (isInCorrectPosition) {
-          (piece as any).zIndex = 10;  // Lowest for correctly placed pieces
-        } else {
-          (piece as any).zIndex = 20;  // Higher for unplaced pieces
-        }
-      }
-    });
-    
-    // Second pass: Ensure no placed piece can obscure an unplaced piece
-    // This adds extra assurance beyond the CSS classes
-    piecesToUpdate.forEach(piece => {
-      if ('zIndex' in piece && !(piece as any).isDragging) {
-        const pieceNumber = parseInt(piece.id.split('-')[1]);
-        const isInCorrectPosition = piece.position === pieceNumber;
-        
-        if (!isInCorrectPosition) {
-          // Make sure unplaced pieces have higher z-index than any placed piece
-          (piece as any).zIndex = Math.max((piece as any).zIndex, 20);
-        }
-      }
-    });
+    // No need to do anything here anymore
+    // We'll rely on the CSS classes to handle z-indices
   };
 
   const checkForHints = () => {
