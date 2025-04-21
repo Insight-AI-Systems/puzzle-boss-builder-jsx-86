@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,7 +23,6 @@ import {
   Trash2 
 } from "lucide-react";
 
-// Sample puzzles data
 const samplePuzzles = [
   {
     id: "p1",
@@ -86,28 +84,51 @@ const samplePuzzles = [
 export const PuzzleManagement: React.FC = () => {
   const [puzzles, setPuzzles] = useState(samplePuzzles);
   const [searchTerm, setSearchTerm] = useState("");
-  
-  // Filter puzzles based on search term
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editPuzzle, setEditPuzzle] = useState<any>(null);
+
   const filteredPuzzles = puzzles.filter(puzzle => 
     puzzle.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     puzzle.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
     puzzle.prize.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
-  // Get puzzles by status
+
   const activePuzzles = filteredPuzzles.filter(p => p.status === "active");
   const scheduledPuzzles = filteredPuzzles.filter(p => p.status === "scheduled");
   const completedPuzzles = filteredPuzzles.filter(p => p.status === "completed");
   const draftPuzzles = filteredPuzzles.filter(p => p.status === "draft");
-  
-  // Format time in MM:SS
+
   const formatTime = (seconds: number) => {
     if (seconds === 0) return "N/A";
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-  
+
+  const startEdit = (puzzle: any) => {
+    setEditingId(puzzle.id);
+    setEditPuzzle({ ...puzzle });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditPuzzle(null);
+  };
+
+  const handleEditChange = (field: string, value: any) => {
+    setEditPuzzle((prev: any) => ({ ...prev, [field]: value }));
+  };
+
+  const saveEdit = () => {
+    setPuzzles(prev =>
+      prev.map(p =>
+        p.id === editingId ? { ...p, ...editPuzzle } : p
+      )
+    );
+    setEditingId(null);
+    setEditPuzzle(null);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -205,42 +226,132 @@ export const PuzzleManagement: React.FC = () => {
                       })
                       .map(puzzle => (
                         <TableRow key={puzzle.id}>
-                          <TableCell className="font-medium">{puzzle.name}</TableCell>
-                          <TableCell>{puzzle.category}</TableCell>
+                          <TableCell className="font-medium">
+                            {editingId === puzzle.id ? (
+                              <Input
+                                value={editPuzzle?.name ?? ""}
+                                onChange={e => handleEditChange("name", e.target.value)}
+                                data-testid={`edit-name-${puzzle.id}`}
+                              />
+                            ) : (
+                              puzzle.name
+                            )}
+                          </TableCell>
                           <TableCell>
-                            <Badge variant={
-                              puzzle.difficulty === "easy" ? "outline" :
-                              puzzle.difficulty === "medium" ? "secondary" : "destructive"
-                            }>
-                              {puzzle.difficulty.charAt(0).toUpperCase() + puzzle.difficulty.slice(1)}
-                            </Badge>
+                            {editingId === puzzle.id ? (
+                              <Input
+                                value={editPuzzle?.category ?? ""}
+                                onChange={e => handleEditChange("category", e.target.value)}
+                                data-testid={`edit-category-${puzzle.id}`}
+                              />
+                            ) : (
+                              puzzle.category
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingId === puzzle.id ? (
+                              <Input
+                                value={editPuzzle?.difficulty ?? ""}
+                                onChange={e => handleEditChange("difficulty", e.target.value)}
+                                data-testid={`edit-difficulty-${puzzle.id}`}
+                              />
+                            ) : (
+                              <Badge variant={
+                                puzzle.difficulty === "easy" ? "outline" :
+                                puzzle.difficulty === "medium" ? "secondary" : "destructive"
+                              }>
+                                {puzzle.difficulty.charAt(0).toUpperCase() + puzzle.difficulty.slice(1)}
+                              </Badge>
+                            )}
                           </TableCell>
                           <TableCell className="flex items-center">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {formatTime(puzzle.timeLimit)}
+                            {editingId === puzzle.id ? (
+                              <Input
+                                type="number"
+                                value={editPuzzle?.timeLimit ?? 0}
+                                min={0}
+                                onChange={e => handleEditChange("timeLimit", Number(e.target.value))}
+                                data-testid={`edit-timelimit-${puzzle.id}`}
+                                className="w-20"
+                              />
+                            ) : (
+                              <>
+                                <Clock className="h-3 w-3 mr-1" />
+                                {formatTime(puzzle.timeLimit)}
+                              </>
+                            )}
                           </TableCell>
                           <TableCell className="flex items-center">
-                            <Award className="h-3 w-3 mr-1 text-puzzle-aqua" />
-                            {puzzle.prize}
+                            {editingId === puzzle.id ? (
+                              <Input
+                                value={editPuzzle?.prize ?? ""}
+                                onChange={e => handleEditChange("prize", e.target.value)}
+                                data-testid={`edit-prize-${puzzle.id}`}
+                              />
+                            ) : (
+                              <>
+                                <Award className="h-3 w-3 mr-1 text-puzzle-aqua" />
+                                {puzzle.prize}
+                              </>
+                            )}
                           </TableCell>
                           {tabValue !== "drafts" && tabValue !== "scheduled" && (
                             <>
-                              <TableCell>{puzzle.completions}</TableCell>
-                              <TableCell>{formatTime(puzzle.avgTime)}</TableCell>
+                              <TableCell>
+                                {editingId === puzzle.id ? (
+                                  <Input
+                                    type="number"
+                                    value={editPuzzle?.completions ?? 0}
+                                    onChange={e => handleEditChange("completions", Number(e.target.value))}
+                                    data-testid={`edit-completions-${puzzle.id}`}
+                                    className="w-16"
+                                  />
+                                ) : (
+                                  puzzle.completions
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {editingId === puzzle.id ? (
+                                  <Input
+                                    type="number"
+                                    value={editPuzzle?.avgTime ?? 0}
+                                    onChange={e => handleEditChange("avgTime", Number(e.target.value))}
+                                    data-testid={`edit-avgtime-${puzzle.id}`}
+                                    className="w-16"
+                                  />
+                                ) : (
+                                  formatTime(puzzle.avgTime)
+                                )}
+                              </TableCell>
                             </>
                           )}
                           <TableCell className="text-right">
-                            <div className="flex justify-end">
-                              <Button variant="ghost" size="icon">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon">
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
-                              {puzzle.status === "draft" && (
-                                <Button variant="ghost" size="icon">
-                                  <Shuffle className="h-4 w-4 text-green-500" />
-                                </Button>
+                            <div className="flex justify-end gap-1">
+                              {editingId === puzzle.id ? (
+                                <>
+                                  <Button variant="ghost" size="icon" onClick={saveEdit} aria-label="Save" title="Save">
+                                    <span className="sr-only">Save</span>
+                                    <svg width={20} height={20} stroke="currentColor" fill="none"><path d="M5 11l4 4L19 5" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                  </Button>
+                                  <Button variant="ghost" size="icon" onClick={cancelEdit} aria-label="Cancel" title="Cancel">
+                                    <span className="sr-only">Cancel</span>
+                                    <svg width={20} height={20} stroke="currentColor" fill="none"><path d="M6 6l12 12M6 18L18 6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <Button variant="ghost" size="icon" onClick={() => startEdit(puzzle)}>
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon">
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                  {puzzle.status === "draft" && (
+                                    <Button variant="ghost" size="icon">
+                                      <Shuffle className="h-4 w-4 text-green-500" />
+                                    </Button>
+                                  )}
+                                </>
                               )}
                             </div>
                           </TableCell>
