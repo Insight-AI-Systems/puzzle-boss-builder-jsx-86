@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { JigsawPuzzle } from 'react-jigsaw-puzzle/lib';
 import 'react-jigsaw-puzzle/lib/jigsaw-puzzle.css';
 import { Loader2 } from 'lucide-react';
@@ -30,10 +30,31 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
     }
   };
 
-  const handleImageLoad = () => {
-    setLoading(false);
-    setStartTime(Date.now());
-  };
+  // Use an effect to handle image preloading instead of an onLoadingComplete prop
+  useEffect(() => {
+    // Reset states when image URL changes
+    setLoading(true);
+    setCompleted(false);
+    setSolveTime(null);
+    
+    // Preload the image
+    const img = new Image();
+    img.src = imageUrl;
+    img.onload = () => {
+      setLoading(false);
+      setStartTime(Date.now());
+    };
+    img.onerror = (error) => {
+      console.error('Error loading puzzle image:', error);
+      setLoading(false);
+    };
+    
+    return () => {
+      // Clean up by removing event listeners
+      img.onload = null;
+      img.onerror = null;
+    };
+  }, [imageUrl]);
 
   // Custom styles for this specific puzzle implementation
   const customStyles = {
@@ -65,7 +86,6 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
           rows={rows}
           columns={columns}
           onSolved={() => handleOnChange(true)}
-          onLoadingComplete={handleImageLoad}
         />
       </div>
       
