@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -164,8 +165,9 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
         className="flex flex-col gap-3"
         tabIndex={-1}
       >
+        {/* Changed label from "Name" to "Puzzle Name" */}
         <div>
-          <Label htmlFor="edit-name" className="block mb-1">Name</Label>
+          <Label htmlFor="edit-name" className="block mb-1">Puzzle Name</Label>
           <Input
             id="edit-name"
             value={puzzle?.name ?? ""}
@@ -176,16 +178,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           />
         </div>
 
-        <div>
-          <Label htmlFor="edit-prize" className="block mb-1">Prize Name</Label>
-          <Input
-            id="edit-prize"
-            value={puzzle?.prize ?? ""}
-            onChange={e => onChange("prize", e.target.value)}
-            data-testid="edit-prize"
-            className="mb-1"
-          />
-        </div>
+        {/* Removed Prize Name Field */}
 
         <div>
           <Label htmlFor="edit-prizevalue" className="block mb-1">Prize Value ($)</Label>
@@ -355,3 +348,4 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
 };
 
 export default PuzzleEditPanel;
+
