@@ -3,170 +3,137 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { PuzzlePiece, PieceGroup } from '../types/puzzleTypes';
 import { generatePuzzlePieces } from '../utils/pieceGenerator';
 
+// Extends state with staging/assembly areas
 export const useGameState = (rows: number, columns: number, imageUrl: string) => {
-  const [pieces, setPieces] = useState<PuzzlePiece[]>([]);
+  const [allPieces, setAllPieces] = useState<PuzzlePiece[]>([]);
+  // Indices of pieces that are still in the staging area
+  const [stagedPieces, setStagedPieces] = useState<number[]>([]);
+  // Assembly: either null or piece id in the slot
+  const [assembly, setAssembly] = useState<(number | null)[]>([]);
   const [groups, setGroups] = useState<PieceGroup[]>([]);
   const [isComplete, setIsComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
   const [showGuideImage, setShowGuideImage] = useState(false);
   const [solveTime, setSolveTime] = useState<number | null>(null);
-  
+
   // Track previous configuration to avoid unnecessary regeneration
   const prevConfigRef = useRef({ rows, columns, imageUrl });
-  
-  // Initialize puzzle pieces and groups
+
+  // Initialize puzzle pieces and groups, all pieces start in staging
   const initializePuzzle = useCallback(() => {
     console.log('Initializing puzzle:', rows, 'x', columns);
-    
-    // Generate new pieces based on rows and columns
+
     const newPieces = generatePuzzlePieces(rows, columns);
-    
+    setAllPieces(newPieces);
+
+    setStagedPieces(Array.from({ length: newPieces.length }, (_, i) => i));
+    setAssembly(Array.from({ length: newPieces.length }, () => null));
+
     // Each piece starts in its own group
-    const newGroups = newPieces.map(piece => ({
+    setGroups(newPieces.map(piece => ({
       id: `group-${piece.id}`,
-      pieceIds: [piece.id], // This is now correctly typed as number[]
+      pieceIds: [piece.id], // Always number[]
       isComplete: false
-    }));
-    
-    setPieces(newPieces);
-    setGroups(newGroups);
+    })));
+
     setIsComplete(false);
-    
-    // Update our ref to track the current configuration
+
     prevConfigRef.current = { rows, columns, imageUrl };
   }, [rows, columns, imageUrl]);
-  
+
   // Reset puzzle to initial state
   const resetPuzzle = useCallback(() => {
     initializePuzzle();
-    shufflePieces();
   }, [initializePuzzle]);
-  
-  // Shuffle pieces randomly
+
+  // Move piece from staging to assembly area slot
+  const placePiece = useCallback((pieceId: number, slotIdx: number) => {
+    setAssembly(current => {
+      if (current[slotIdx] !== null) return current; // Prevent overwrite
+      const next = [...current];
+      next[slotIdx] = pieceId;
+      return next;
+    });
+    setStagedPieces(current => current.filter(id => id !== pieceId));
+    setTimeout(checkPuzzleCompletion, 0);
+  }, [checkPuzzleCompletion]);
+
+  // Remove from assembly and return to staging
+  const removePieceFromAssembly = useCallback((slotIdx: number) => {
+    setAssembly(current => {
+      const next = [...current];
+      const pieceId = next[slotIdx];
+      if (pieceId == null) return current;
+      next[slotIdx] = null;
+      setStagedPieces(prev =>
+        prev.includes(pieceId) ? prev : [...prev, pieceId]
+      );
+      return next;
+    });
+  }, []);
+
+  // Shuffle staging area (optional: implement if requested)
   const shufflePieces = useCallback(() => {
-    setPieces(currentPieces => {
-      const shuffled = [...currentPieces];
-      
-      // Create an array of available positions
-      const positions = Array.from({ length: rows * columns }, (_, i) => i);
-      
-      // Shuffle the positions array using Fisher-Yates algorithm
-      for (let i = positions.length - 1; i > 0; i--) {
+    setStagedPieces(prev => {
+      const array = [...prev];
+      for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [positions[i], positions[j]] = [positions[j], positions[i]];
+        [array[i], array[j]] = [array[j], array[i]];
       }
-      
-      // Assign shuffled positions to pieces
-      shuffled.forEach((piece, index) => {
-        piece.position = positions[index];
-      });
-      
-      return shuffled;
+      return array;
     });
-    
-    // Reset groups - each piece is in its own group again
-    setGroups(currentGroups => {
-      return pieces.map(piece => ({
-        id: `group-${piece.id}`,
-        pieceIds: [piece.id], // Explicitly use the numeric id
-        isComplete: false
-      }));
-    });
-    
-    setIsComplete(false);
-  }, [rows, columns, pieces]);
-  
-  // Pick up a piece/group
-  const pickUpPiece = useCallback((pieceId: number) => {
-    console.log('Picking up piece:', pieceId);
-    // In a full implementation, we'd handle group selection logic here
   }, []);
-  
-  // Drop a piece/group at position
-  const dropPiece = useCallback((pieceId: number, position: number) => {
-    console.log('Dropping piece:', pieceId, 'at position:', position);
-    
-    setPieces(currentPieces => {
-      const updatedPieces = [...currentPieces];
-      
-      // Find the piece being moved and the piece at the target position (if any)
-      const movingPieceIndex = updatedPieces.findIndex(p => p.id === pieceId);
-      const targetPieceIndex = updatedPieces.findIndex(p => p.position === position);
-      
-      if (movingPieceIndex === -1) return updatedPieces;
-      
-      // If there's already a piece at the target position, swap positions
-      if (targetPieceIndex !== -1) {
-        const oldPosition = updatedPieces[movingPieceIndex].position;
-        updatedPieces[movingPieceIndex].position = position;
-        updatedPieces[targetPieceIndex].position = oldPosition;
-      } else {
-        // Otherwise, just move the piece to the empty position
-        updatedPieces[movingPieceIndex].position = position;
-      }
-      
-      return updatedPieces;
-    });
-    
-    // Check if the puzzle is complete after the move
-    checkPuzzleCompletion();
-  }, []);
-  
-  // Move a piece to a new position
-  const movePiece = useCallback((pieceId: number, position: number) => {
-    dropPiece(pieceId, position);
-  }, [dropPiece]);
-  
-  // Snap connecting pieces together into a group
-  const snapPieces = useCallback((pieceId1: number, pieceId2: number) => {
-    console.log('Snapping pieces:', pieceId1, pieceId2);
-    
-    // This would handle the logic of merging two groups together
-    // Not fully implemented in this skeleton version
-  }, []);
-  
-  // Check if a piece is in the correct position
-  const isPieceCorrect = useCallback((pieceId: number) => {
-    const piece = pieces.find(p => p.id === pieceId);
-    return piece ? piece.position === piece.originalPosition : false;
-  }, [pieces]);
-  
+
+  // Is piece correctly placed in grid?
+  const isPieceCorrect = useCallback((slotIdx: number) => {
+    const pieceId = assembly[slotIdx];
+    if (pieceId == null) return false;
+    return pieceId === slotIdx;
+  }, [assembly]);
+
   // Toggle guide image visibility
   const toggleGuideImage = useCallback(() => {
     setShowGuideImage(prev => !prev);
   }, []);
-  
-  // Check if the entire puzzle is complete
+
+  // Check if the entire puzzle is complete (all cells have correct piece)
   const checkPuzzleCompletion = useCallback(() => {
-    const allPiecesCorrect = pieces.every(piece => piece.position === piece.originalPosition);
-    
-    if (allPiecesCorrect && !isComplete && hasStarted) {
+    const complete = assembly.every((pieceId, i) => pieceId === i);
+    if (complete && !isComplete && hasStarted) {
       console.log('Puzzle completed!');
       setIsComplete(true);
     }
-  }, [pieces, isComplete, hasStarted]);
-  
-  // Initialize or update puzzle when configuration changes
+  }, [assembly, isComplete, hasStarted]);
+
+  // Effect to (re)init puzzle when config changes
   useEffect(() => {
     const { rows: prevRows, columns: prevColumns, imageUrl: prevImageUrl } = prevConfigRef.current;
-    
     if (prevRows !== rows || prevColumns !== columns || prevImageUrl !== imageUrl) {
-      console.log('Puzzle configuration changed, reinitializing');
       setIsLoading(true);
-      // Actual initialization is handled when the image is loaded
+      // do not call initialize here directly for clean load-image handling
     }
   }, [rows, columns, imageUrl]);
-  
-  // Effect to check puzzle completion when pieces change
+
+  // (example automatic initial mount)
   useEffect(() => {
-    if (pieces.length > 0 && hasStarted) {
+    initializePuzzle();
+    setIsLoading(false);
+  }, [initializePuzzle]);
+
+  // Effect to check puzzle completion when assembly changes
+  useEffect(() => {
+    if (hasStarted && !isLoading) {
       checkPuzzleCompletion();
     }
-  }, [pieces, hasStarted, checkPuzzleCompletion]);
-  
+  }, [assembly, hasStarted, isLoading, checkPuzzleCompletion]);
+
   return {
-    pieces,
+    allPieces,
+    stagedPieces,
+    setStagedPieces,
+    assembly,
+    setAssembly,
     groups,
     isComplete,
     isLoading,
@@ -178,10 +145,9 @@ export const useGameState = (rows: number, columns: number, imageUrl: string) =>
     solveTime,
     setSolveTime,
     resetPuzzle,
-    movePiece,
-    snapPieces,
-    isPieceCorrect,
-    pickUpPiece,
-    dropPiece
+    placePiece,
+    removePieceFromAssembly,
+    shufflePieces,
+    isPieceCorrect
   };
 };
