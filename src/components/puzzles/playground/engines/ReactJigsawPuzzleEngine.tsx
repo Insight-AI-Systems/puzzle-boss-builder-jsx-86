@@ -134,10 +134,12 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
         rows={rows}
         columns={columns}
         onPieceDragStart={pieceId => (e: React.DragEvent<HTMLDivElement>) => {
+          handleStartIfFirstMove(); // Start timer when dragging begins
           e.dataTransfer.setData("piece-id", pieceId.toString());
           e.dataTransfer.setData("from-assembly", "false");
         }}
         onPieceDoubleClick={pieceId => {
+          handleStartIfFirstMove(); // Start timer on double click
           const emptyIdx = placedPieces.findIndex(x => x === null);
           if (emptyIdx !== -1) handlePieceDrop(pieceId, emptyIdx);
         }}

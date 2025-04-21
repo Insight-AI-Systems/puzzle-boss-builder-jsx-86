@@ -44,6 +44,7 @@ export function createPuzzleHandlers(
     // Return early if attempting to place on an already locked piece
     if (placedPieces[targetIdx]?.isLocked) return;
 
+    // Always ensure timer starts on first move
     handleStartIfFirstMove();
 
     setPlacedPieces(prev => {
