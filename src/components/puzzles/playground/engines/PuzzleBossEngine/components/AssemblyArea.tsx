@@ -81,14 +81,7 @@ const AssemblyArea: React.FC<AssemblyAreaProps> = ({
                   height: `${pieceSize}px`,
                   backgroundImage: `url(${imageUrl})`,
                   backgroundSize: `${columns * 100}% ${rows * 100}%`,
-                  backgroundPosition: (() => {
-                    // The critical fix: use the pieceId to calculate the correct position
-                    // pieceId is the index of the original piece in the puzzle
-                    const originalPieceId = pieceId; // For clarity
-                    const row = Math.floor(originalPieceId / columns);
-                    const col = originalPieceId % columns;
-                    return `${col * 100 / (columns - 1)}% ${row * 100 / (rows - 1)}%`;
-                  })(),
+                  backgroundPosition: `${(pieceId % columns) * 100 / (columns - 1)}% ${Math.floor(pieceId / columns) * 100 / (rows - 1)}%`,
                   opacity: 1,
                   cursor: isCorrectPosition ? 'default' : 'grab'
                 }}
