@@ -42,42 +42,49 @@ export const PuzzleLayout: React.FC<PuzzleLayoutProps> = ({
   handleStartIfFirstMove
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center h-full w-full relative pl-0 md:pl-8">
-      <PuzzleSidebarLeaderboard solveTime={solveTime} />
+    <div className="flex w-full">
+      {/* Main content area - shifted to the left */}
+      <div className="flex-1 max-w-[calc(100%-330px)] pr-[330px]">
+        <div className="flex flex-col items-center justify-center w-full">
+          <PuzzleHeaderAndControls
+            elapsed={elapsed}
+            onReset={onReset}
+            onToggleBorder={onToggleBorder}
+            showBorder={showBorder}
+          />
 
-      <div className="flex flex-col items-center justify-center w-full max-w-[calc(100%-340px)] ml-auto mr-4">
-        <PuzzleHeaderAndControls
-          elapsed={elapsed}
-          onReset={onReset}
-          onToggleBorder={onToggleBorder}
-          showBorder={showBorder}
-        />
+          <PuzzleContainer
+            loading={loading}
+            imageUrl={imageUrl}
+            rows={rows}
+            columns={columns}
+            keyProp={keyProp}
+            onSolved={onSolved}
+            showBorder={showBorder}
+            hasStarted={hasStarted}
+            handleStartIfFirstMove={handleStartIfFirstMove}
+          />
 
-        <PuzzleContainer
-          loading={loading}
-          imageUrl={imageUrl}
-          rows={rows}
-          columns={columns}
-          keyProp={keyProp}
-          onSolved={onSolved}
-          showBorder={showBorder}
-          hasStarted={hasStarted}
-          handleStartIfFirstMove={handleStartIfFirstMove}
-        />
+          <PuzzleFooter
+            solveTime={solveTime}
+            showBorder={showBorder}
+            rows={rows}
+            columns={columns}
+          />
 
-        <PuzzleFooter
-          solveTime={solveTime}
-          showBorder={showBorder}
-          rows={rows}
-          columns={columns}
-        />
+          <PuzzleCongratulationSplash 
+            show={completed} 
+            solveTime={solveTime} 
+            onPlayAgain={onPlayAgain}
+          />
+        </div>
+      </div>
 
-        <PuzzleCongratulationSplash 
-          show={completed} 
-          solveTime={solveTime} 
-          onPlayAgain={onPlayAgain}
-        />
+      {/* Fixed leaderboard on the right */}
+      <div className="fixed right-0 top-0 w-[330px] h-full">
+        <PuzzleSidebarLeaderboard solveTime={solveTime} />
       </div>
     </div>
   );
 };
+
