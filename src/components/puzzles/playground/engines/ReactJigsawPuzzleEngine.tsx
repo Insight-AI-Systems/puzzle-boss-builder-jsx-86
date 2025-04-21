@@ -102,29 +102,25 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
   const handlePieceDrop = (pieceId: number, targetIdx: number) => {
     if (placedPieces[targetIdx] !== null) return;
 
-    const fromAssemblyIdx = placedPieces.findIndex(
-      (entry, idx) => entry && entry.id === pieceId && !entry.isLocked
-    );
-    const isFromAssembly = fromAssemblyIdx !== -1;
-
     handleStartIfFirstMove();
 
     setPlacedPieces(prev => {
       let np = [...prev];
-      if (isFromAssembly) {
+
+      // Remove this piece from any previous cell
+      const fromAssemblyIdx = prev.findIndex(entry => entry && entry.id === pieceId && !entry.isLocked);
+      if (fromAssemblyIdx !== -1) {
         np[fromAssemblyIdx] = null;
       }
+
+      // Lock piece if placed in correct spot, otherwise allow free movement
       const shouldLock = pieceId === targetIdx;
       np[targetIdx] = { id: pieceId, isLocked: shouldLock };
       return np;
     });
 
+    // Remove from staging if present
     setStagedPieces(prev => prev.filter(id => id !== pieceId));
-
-    if (isFromAssembly) {
-    } else if (pieceId !== targetIdx) {
-      setStagedPieces(prev => prev.filter(id => id !== pieceId));
-    }
 
     setTimeout(handleOnChange, 0);
   };
@@ -210,16 +206,7 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
                   const dropId = Number(e.dataTransfer.getData("piece-id"));
                   const fromAssembly = e.dataTransfer.getData("from-assembly") === "true";
                   if (!placedPieces[idx]) {
-                    if (fromAssembly) {
-                      const fromIdx = placedPieces.findIndex(
-                        (x, i) => x && x.id === dropId && !x.isLocked
-                      );
-                      if (fromIdx !== -1) {
-                        handlePieceDrop(dropId, idx);
-                      }
-                    } else {
-                      handlePieceDrop(dropId, idx);
-                    }
+                    handlePieceDrop(dropId, idx);
                   }
                 }}
               >
