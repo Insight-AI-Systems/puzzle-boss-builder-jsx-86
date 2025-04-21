@@ -1,6 +1,7 @@
 
 import React, { useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CategoryImageUploadProps {
   imageUrl?: string;
@@ -20,12 +21,16 @@ export const CategoryImageUpload: React.FC<CategoryImageUploadProps> = ({
     const file = e.target.files[0];
     // Upload to Supabase Storage (simple: category-thumbnails bucket)
     const filePath = `category-thumbnails/${Date.now()}-${file.name}`;
-    const { data, error } = await window.supabase.storage
+    const { data, error } = await supabase.storage
       .from("category-thumbnails")
       .upload(filePath, file, { upsert: false });
     if (!error && data) {
-      const url = `${window.supabase.storageUrl}/category-thumbnails/${data.path}`;
-      onChange(url);
+      // Get the public URL for the uploaded file
+      const { data: publicUrlData } = supabase.storage
+        .from("category-thumbnails")
+        .getPublicUrl(data.path);
+      
+      onChange(publicUrlData.publicUrl);
     } else {
       alert('Image upload failed.');
     }
