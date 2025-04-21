@@ -20,6 +20,15 @@ export const useGameState = (rows: number, columns: number, imageUrl: string) =>
   // Track previous configuration to avoid unnecessary regeneration
   const prevConfigRef = useRef({ rows, columns, imageUrl });
 
+  // Check if the entire puzzle is complete (all cells have correct piece)
+  const checkPuzzleCompletion = useCallback(() => {
+    const complete = assembly.every((pieceId, i) => pieceId === i);
+    if (complete && !isComplete && hasStarted) {
+      console.log('Puzzle completed!');
+      setIsComplete(true);
+    }
+  }, [assembly, isComplete, hasStarted]);
+
   // Initialize puzzle pieces and groups, all pieces start in staging
   const initializePuzzle = useCallback(() => {
     console.log('Initializing puzzle:', rows, 'x', columns);
@@ -56,7 +65,7 @@ export const useGameState = (rows: number, columns: number, imageUrl: string) =>
       return next;
     });
     setStagedPieces(current => current.filter(id => id !== pieceId));
-    setTimeout(checkPuzzleCompletion, 0);
+    setTimeout(() => checkPuzzleCompletion(), 0);
   }, [checkPuzzleCompletion]);
 
   // Remove from assembly and return to staging
@@ -96,15 +105,6 @@ export const useGameState = (rows: number, columns: number, imageUrl: string) =>
   const toggleGuideImage = useCallback(() => {
     setShowGuideImage(prev => !prev);
   }, []);
-
-  // Check if the entire puzzle is complete (all cells have correct piece)
-  const checkPuzzleCompletion = useCallback(() => {
-    const complete = assembly.every((pieceId, i) => pieceId === i);
-    if (complete && !isComplete && hasStarted) {
-      console.log('Puzzle completed!');
-      setIsComplete(true);
-    }
-  }, [assembly, isComplete, hasStarted]);
 
   // Effect to (re)init puzzle when config changes
   useEffect(() => {
