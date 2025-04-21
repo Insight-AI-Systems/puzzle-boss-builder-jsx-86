@@ -5,11 +5,23 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Category } from '@/hooks/useCategories';
 import { toast } from '@/components/ui/use-toast';
 
+// Extend the Category type with admin-specific fields
 export interface AdminCategory extends Category {
   puzzleCount?: number;
   activeCount?: number;
   status?: 'active' | 'inactive';
   imageUrl?: string;
+}
+
+// Define the database category type to match what Supabase actually returns
+interface DatabaseCategory {
+  id: string;
+  name: string;
+  slug: string;
+  created_at: string;
+  updated_at: string;
+  image_url?: string; // Optional since it might not exist in the database yet
+  status?: string;    // Optional since it might not exist in the database yet
 }
 
 export function useCategoryManagement() {
@@ -36,11 +48,11 @@ export function useCategoryManagement() {
       
       // Transform database fields to match AdminCategory interface
       // We need to handle the case where image_url and status might not exist in the database yet
-      return data.map(category => ({
+      return (data as DatabaseCategory[]).map(category => ({
         ...category,
         // Default values for fields that might not exist in the database
         imageUrl: category.image_url || '/placeholder.svg',
-        status: category.status || 'inactive',
+        status: category.status as 'active' | 'inactive' || 'inactive',
         puzzleCount: 0,
         activeCount: 0
       }));
