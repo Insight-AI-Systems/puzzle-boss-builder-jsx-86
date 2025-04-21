@@ -11,6 +11,11 @@ export function useRoleManagement() {
       console.log(`Updating role for user ${userId} to ${newRole}`);
       
       try {
+        // Special handling for protected admin
+        if (userId === 'alan@insight-ai-systems.com') {
+          console.log("Processing special case for protected admin");
+        }
+        
         const { data, error } = await supabase.functions.invoke('admin-update-roles', {
           body: { userIds: [userId], newRole }
         });
@@ -37,6 +42,12 @@ export function useRoleManagement() {
       console.log(`Bulk updating role to ${newRole} for ${userIds.length} users`);
       
       try {
+        // Check for protected admin in the list
+        const hasProtectedAdmin = userIds.includes('alan@insight-ai-systems.com');
+        if (hasProtectedAdmin) {
+          console.log("Bulk update includes protected admin - special handling may be required");
+        }
+        
         const { data, error } = await supabase.functions.invoke('admin-update-roles', {
           body: { userIds, newRole }
         });

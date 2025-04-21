@@ -28,14 +28,31 @@ export function RoleSelector({
 }: RoleSelectorProps) {
   // Check if current user is super admin
   const isSuperAdmin = currentUserRole === 'super_admin';
-  const isProtectedAdmin = userId === 'alan@insight-ai-systems.com' || currentUserRole === 'super_admin';
+  
+  // Helper function to check if a user ID is the protected admin email
+  const isProtectedAdminId = (id: string | undefined): boolean => {
+    return id === 'alan@insight-ai-systems.com';
+  };
+  
+  // Combined check for protected status (either super admin or THE protected admin)
+  const isProtectedAdmin = isProtectedAdminId(userId) || isSuperAdmin;
+  
+  // Debug logging to help diagnose the issue
+  console.log('RoleSelector Debug:', {
+    currentRole,
+    currentUserRole,
+    userId,
+    isSuperAdmin,
+    isProtectedAdmin,
+    availableRoles: Object.keys(ROLE_DEFINITIONS),
+  });
   
   // Helper function to determine if current user can assign a role
   const canAssignRole = (role: UserRole): boolean => {
     console.log(`RoleSelector - Checking if can assign ${role}. Current user role: ${currentUserRole}, isSuperAdmin: ${isSuperAdmin}, isProtectedAdmin: ${isProtectedAdmin}`);
     
     // Super admins or protected admin can assign any role
-    if (isSuperAdmin || isProtectedAdmin) {
+    if (isSuperAdmin || isProtectedAdminId(userId)) {
       console.log(`RoleSelector - Super admin can assign ${role}`);
       return true;
     }
@@ -75,6 +92,8 @@ export function RoleSelector({
           {Object.values(ROLE_DEFINITIONS).map((roleDef) => {
             const canAssign = canAssignRole(roleDef.role);
             const isSameRole = currentRole === roleDef.role;
+            
+            console.log(`RoleSelector - Role option: ${roleDef.role}, canAssign: ${canAssign}, isSameRole: ${isSameRole}`);
             
             return (
               <DropdownMenuItem

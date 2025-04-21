@@ -110,9 +110,9 @@ serve(async (req) => {
     // Update roles with upsert in case profiles don't exist yet
     const results = [];
     for (const userId of userIds) {
-      // Special protection for protected admin - only the protected admin itself can change its role
-      if (userId === "alan@insight-ai-systems.com" && !isSpecificAdminEmail) {
-        console.error(`Cannot modify protected admin account. Requester: ${user.email}, isSpecificAdminEmail: ${isSpecificAdminEmail}`);
+      // Special protection for protected admin - only the protected admin itself or super admins can change its role
+      if (userId === "alan@insight-ai-systems.com" && !isSpecificAdminEmail && !isSuperAdmin) {
+        console.error(`Cannot modify protected admin account. Requester: ${user.email}, isSpecificAdminEmail: ${isSpecificAdminEmail}, isSuperAdmin: ${isSuperAdmin}`);
         results.push({
           id: userId,
           success: false,
