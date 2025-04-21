@@ -20,6 +20,14 @@ const StagingArea: React.FC<StagingAreaProps> = ({
   onPieceDragStart
 }) => {
   const pieceSize = 64;
+  
+  // Function to calculate background position for a piece
+  const getBackgroundPosition = (pieceId: number) => {
+    const row = Math.floor(pieceId / columns);
+    const col = pieceId % columns;
+    return `${(col * 100) / (columns - 1)}% ${(row * 100) / (rows - 1)}%`;
+  };
+  
   if (stagedPieceIds.length === 0) return null;
   return (
     <div className="w-full mt-4 p-4 rounded-lg bg-muted/40 flex flex-wrap gap-2 justify-center">
@@ -28,14 +36,12 @@ const StagingArea: React.FC<StagingAreaProps> = ({
       </div>
       {stagedPieceIds.map(id => {
         // Calculate background position based on the piece's id
-        const row = Math.floor(id / columns);
-        const col = id % columns;
         const bgStyle: React.CSSProperties = {
           width: pieceSize,
           height: pieceSize,
           backgroundImage: `url(${imageUrl})`,
           backgroundSize: `${columns * 100}% ${rows * 100}%`,
-          backgroundPosition: `${col * 100 / (columns - 1)}% ${row * 100 / (rows - 1)}%`,
+          backgroundPosition: getBackgroundPosition(id),
           border: '1px solid #CBD5E1',
           borderRadius: 8,
           cursor: 'grab'

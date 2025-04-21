@@ -9,13 +9,13 @@ export const getImagePieceStyle = (piece: BasePuzzlePiece, imageUrl: string, gri
   const col = pieceNumber % gridSize;
   
   // Calculate the background position to show the correct part of the image
-  const xOffset = -(col * 100 / (gridSize - 1));
-  const yOffset = -(row * 100 / (gridSize - 1));
+  const xPosition = (col * 100 / (gridSize - 1));
+  const yPosition = (row * 100 / (gridSize - 1));
   
   return {
-    backgroundImage: `url(${imageUrl})`,
+    backgroundImage: imageUrl ? `url(${imageUrl})` : 'none',
     backgroundSize: `${gridSize * 100}%`,
-    backgroundPosition: `${xOffset}% ${yOffset}%`,
+    backgroundPosition: `${xPosition}% ${yPosition}%`,
     opacity: piece.isDragging ? 0.8 : 1,
   };
 };
