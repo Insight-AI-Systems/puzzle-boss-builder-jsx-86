@@ -164,7 +164,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
         className="flex flex-col gap-3"
         tabIndex={-1}
       >
-        {/* Changed label from "Name" to "Puzzle Name" */}
+        {/* Puzzle Name */}
         <div>
           <Label htmlFor="edit-name" className="block mb-1">Puzzle Name</Label>
           <Input
@@ -177,7 +177,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           />
         </div>
 
-        {/* New Puzzle Owner field */}
+        {/* Puzzle Owner */}
         <div>
           <Label htmlFor="edit-puzzleowner" className="block mb-1">Puzzle Owner</Label>
           <Input
@@ -190,20 +190,58 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           />
         </div>
 
-        <div>
-          <Label htmlFor="edit-prizevalue" className="block mb-1">Prize Value ($)</Label>
-          <Input
-            id="edit-prizevalue"
-            type="number"
-            min={0}
-            step={0.01}
-            value={puzzle?.prizeValue ?? ""}
-            onChange={onPrizeValueInput}
-            data-testid="edit-prizevalue"
-            className="w-28 inline-block"
-          />
+        {/* Cost-related fields in one row */}
+        <div className="flex flex-col md:flex-row gap-3">
+          {/* Prize Value */}
+          <div className="flex-1">
+            <Label htmlFor="edit-prizevalue" className="block mb-1">Prize Value ($)</Label>
+            <Input
+              id="edit-prizevalue"
+              type="number"
+              min={0}
+              step={0.01}
+              value={puzzle?.prizeValue ?? ""}
+              onChange={onPrizeValueInput}
+              data-testid="edit-prizevalue"
+              className="w-full"
+            />
+          </div>
+          {/* Cost Per Play */}
+          <div className="flex-1">
+            <Label htmlFor="edit-costperplay" className="block mb-1">Cost per Play ($)</Label>
+            <Input
+              id="edit-costperplay"
+              type="number"
+              step={0.01}
+              min={0}
+              value={puzzle?.costPerPlay ?? ""}
+              onChange={e => onChange("costPerPlay", Number(e.target.value))}
+              data-testid="edit-costperplay"
+              className="w-full"
+            />
+          </div>
+          {/* Target Revenue */}
+          <div className="flex-1">
+            <Label htmlFor="edit-targetrev" className="block mb-1">
+              Target Revenue ($)
+              <span className="ml-1 text-xs font-normal text-muted-foreground">
+                (defaults to 2x Prize Value)
+              </span>
+            </Label>
+            <Input
+              id="edit-targetrev"
+              type="number"
+              step={1}
+              min={0}
+              value={puzzle?.targetRevenue ?? ""}
+              onChange={onTargetRevenueInput}
+              data-testid="edit-targetrev"
+              className="w-full"
+            />
+          </div>
         </div>
 
+        {/* Category select */}
         <div>
           <Label htmlFor="edit-category" className="block mb-1">Category</Label>
           <Select
@@ -221,7 +259,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           </Select>
         </div>
 
-        {/* New Supplier field */}
+        {/* Supplier */}
         <div>
           <Label htmlFor="edit-supplier" className="block mb-1">Supplier</Label>
           <Input
@@ -234,6 +272,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           />
         </div>
 
+        {/* Difficulty select */}
         <div>
           <Label htmlFor="edit-difficulty" className="block mb-1">Difficulty</Label>
           <Select
@@ -285,39 +324,6 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
             />
           </div>
         )}
-
-        <div>
-          <Label htmlFor="edit-costperplay" className="block mb-1">Cost per Play ($)</Label>
-          <Input
-            id="edit-costperplay"
-            type="number"
-            step={0.01}
-            min={0}
-            value={puzzle?.costPerPlay ?? ""}
-            onChange={e => onChange("costPerPlay", Number(e.target.value))}
-            data-testid="edit-costperplay"
-            className="w-28 inline-block"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="edit-targetrev" className="block mb-1">
-            Target Revenue ($)
-            <span className="ml-1 text-xs font-normal text-muted-foreground">
-              (defaults to 2x Prize Value)
-            </span>
-          </Label>
-          <Input
-            id="edit-targetrev"
-            type="number"
-            step={1}
-            min={0}
-            value={puzzle?.targetRevenue ?? ""}
-            onChange={onTargetRevenueInput}
-            data-testid="edit-targetrev"
-            className="w-32 inline-block"
-          />
-        </div>
 
         <div>
           <Label htmlFor="edit-description" className="block mb-1">Description</Label>
