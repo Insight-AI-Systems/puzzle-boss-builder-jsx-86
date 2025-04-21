@@ -320,62 +320,6 @@ export type Database = {
         }
         Relationships: []
       }
-      puzzles: {
-        Row: {
-          category_id: string | null
-          created_at: string
-          description: string | null
-          id: string
-          image_url: string
-          income_target: number
-          override_target: boolean
-          pieces: number
-          prize_value: number
-          release_date: string
-          status: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          category_id?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url: string
-          income_target: number
-          override_target?: boolean
-          pieces?: number
-          prize_value: number
-          release_date: string
-          status?: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          category_id?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string
-          income_target?: number
-          override_target?: boolean
-          pieces?: number
-          prize_value?: number
-          release_date?: string
-          status?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "puzzles_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       role_permissions: {
         Row: {
           created_at: string | null
