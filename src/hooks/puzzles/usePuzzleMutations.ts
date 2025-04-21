@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getCategoryByName } from './puzzleCategoryHelpers';
@@ -6,7 +5,6 @@ import { checkPuzzleTableExists } from './puzzleTableHelpers';
 import type { Puzzle } from './puzzleTypes';
 import { useToast } from '../use-toast';
 
-// Puzzle mutations (create, update, delete)
 export function usePuzzleMutations() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -19,7 +17,6 @@ export function usePuzzleMutations() {
       const categoryId = await getCategoryByName(puzzle.category as string);
       const releaseDate = new Date().toISOString();
 
-      // Only include fields that exist in the database schema
       const puzzleData = {
         title: puzzle.name,
         category_id: categoryId,
@@ -29,7 +26,10 @@ export function usePuzzleMutations() {
         description: puzzle.description || '',
         prize_value: puzzle.prizeValue ?? 0,
         release_date: releaseDate,
-        // Calculate pieces based on difficulty
+        puzzle_owner: puzzle.puzzleOwner || '',
+        supplier: puzzle.supplier || '',
+        cost_per_play: puzzle.costPerPlay ?? 1.99,
+        time_limit: puzzle.timeLimit ?? 300,
         pieces:
           puzzle.difficulty === 'easy'
             ? 9
@@ -57,7 +57,6 @@ export function usePuzzleMutations() {
       if (!tableExists) throw new Error('Puzzles table does not exist');
       const categoryId = await getCategoryByName(puzzle.category as string);
 
-      // Only include fields that exist in the database schema
       const puzzleData = {
         title: puzzle.name,
         category_id: categoryId,
@@ -66,7 +65,10 @@ export function usePuzzleMutations() {
         status: puzzle.status,
         description: puzzle.description,
         prize_value: puzzle.prizeValue,
-        // Calculate pieces based on difficulty
+        puzzle_owner: puzzle.puzzleOwner,
+        supplier: puzzle.supplier,
+        cost_per_play: puzzle.costPerPlay,
+        time_limit: puzzle.timeLimit,
         pieces:
           puzzle.difficulty === 'easy'
             ? 9

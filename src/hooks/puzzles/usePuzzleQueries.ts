@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { checkPuzzleTableExists } from './puzzleTableHelpers';
@@ -24,18 +23,16 @@ function mapDatabasePuzzle(item: any): Puzzle {
     category_id: item.category_id,
     difficulty: difficulty,
     imageUrl: item.image_url,
-    // Since these columns don't exist in the DB yet, we use defaults
-    timeLimit: 300, // Default 5 minutes (300 seconds)
-    costPerPlay: 1.99, // Default cost per play
+    timeLimit: item.time_limit ?? 300, // new: from DB, fallback default
+    costPerPlay: item.cost_per_play ?? 1.99, // new: from DB, fallback default
     targetRevenue: item.income_target || 0,
     status: mapStatusFromDatabase(item.status || 'draft'),
-    prize: item.title, // Using title as prize name for now
+    prize: item.title,
     description: item.description || '',
-    // Default values for columns that don't exist yet
-    puzzleOwner: '',
-    supplier: '',
-    completions: 0,
-    avgTime: 0,
+    puzzleOwner: item.puzzle_owner || '', // new
+    supplier: item.supplier || '', // new
+    completions: item.completions || 0, // new
+    avgTime: item.avg_time || 0,         // new
     prizeValue: item.prize_value || 0,
   };
 }

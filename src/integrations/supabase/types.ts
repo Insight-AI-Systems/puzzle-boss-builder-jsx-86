@@ -331,7 +331,10 @@ export type Database = {
       }
       puzzles: {
         Row: {
+          avg_time: number | null
           category_id: string | null
+          completions: number | null
+          cost_per_play: number | null
           created_at: string
           description: string | null
           id: string
@@ -340,13 +343,19 @@ export type Database = {
           override_target: boolean
           pieces: number
           prize_value: number
+          puzzle_owner: string | null
           release_date: string
           status: string
+          supplier: string | null
+          time_limit: number | null
           title: string
           updated_at: string
         }
         Insert: {
+          avg_time?: number | null
           category_id?: string | null
+          completions?: number | null
+          cost_per_play?: number | null
           created_at?: string
           description?: string | null
           id?: string
@@ -355,13 +364,19 @@ export type Database = {
           override_target?: boolean
           pieces?: number
           prize_value: number
+          puzzle_owner?: string | null
           release_date: string
           status?: string
+          supplier?: string | null
+          time_limit?: number | null
           title: string
           updated_at?: string
         }
         Update: {
+          avg_time?: number | null
           category_id?: string | null
+          completions?: number | null
+          cost_per_play?: number | null
           created_at?: string
           description?: string | null
           id?: string
@@ -370,8 +385,11 @@ export type Database = {
           override_target?: boolean
           pieces?: number
           prize_value?: number
+          puzzle_owner?: string | null
           release_date?: string
           status?: string
+          supplier?: string | null
+          time_limit?: number | null
           title?: string
           updated_at?: string
         }
