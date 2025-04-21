@@ -13,27 +13,27 @@ export interface AdminCategory extends Category {
   imageUrl?: string;
 }
 
-// Define the database category type to match what Supabase actually returns
-interface DatabaseCategory {
-  id: string;
-  name: string;
-  slug: string;
-  created_at: string;
-  updated_at: string;
-  image_url?: string; // Optional since it might not exist in the database yet
-  status?: string;    // Optional since it might not exist in the database yet
-}
-
 export function useCategoryManagement() {
   const queryClient = useQueryClient();
   const [editingCategory, setEditingCategory] = useState<AdminCategory | null>(null);
+
+  // Helper to handle missing fields from the DB results
+  const mapDbCategory = (category: Record<string, any>): AdminCategory => ({
+    ...category,
+    imageUrl: typeof category.image_url === "string" ? category.image_url : "/placeholder.svg",
+    status:
+      category.status === "active" || category.status === "inactive"
+        ? category.status
+        : "inactive",
+    puzzleCount: 0,
+    activeCount: 0,
+  });
 
   // Fetch categories with additional admin fields
   const categoriesQuery = useQuery({
     queryKey: ['admin-categories'],
     queryFn: async (): Promise<AdminCategory[]> => {
       console.log('Admin: Fetching categories from Supabase...');
-      
       const { data, error } = await supabase
         .from('categories')
         .select('*')
@@ -45,17 +45,11 @@ export function useCategoryManagement() {
       }
 
       console.log('Admin categories fetched successfully:', data);
-      
-      // Transform database fields to match AdminCategory interface
-      // We need to handle the case where image_url and status might not exist in the database yet
-      return (data as DatabaseCategory[]).map(category => ({
-        ...category,
-        // Default values for fields that might not exist in the database
-        imageUrl: category.image_url || '/placeholder.svg',
-        status: category.status as 'active' | 'inactive' || 'inactive',
-        puzzleCount: 0,
-        activeCount: 0
-      }));
+
+      // Use typeguard/normalization for missing fields
+      return Array.isArray(data)
+        ? data.map(mapDbCategory)
+        : [];
     },
     refetchOnWindowFocus: true,
     refetchOnMount: true,
@@ -76,12 +70,12 @@ export function useCategoryManagement() {
           status: newCategory.status || 'inactive'
         })
         .select();
-      
+
       if (error) {
         console.error('Error creating category:', error);
         throw error;
       }
-      
+
       return data[0];
     },
     onSuccess: () => {
@@ -105,7 +99,7 @@ export function useCategoryManagement() {
   const updateCategory = useMutation({
     mutationFn: async (category: AdminCategory) => {
       console.log('Updating category with data:', category);
-      
+
       const { data, error } = await supabase
         .from('categories')
         .update({
@@ -117,12 +111,12 @@ export function useCategoryManagement() {
         })
         .eq('id', category.id)
         .select();
-      
+
       if (error) {
         console.error('Error updating category:', error);
         throw error;
       }
-      
+
       return data[0];
     },
     onSuccess: () => {
@@ -149,12 +143,12 @@ export function useCategoryManagement() {
         .from('categories')
         .delete()
         .eq('id', categoryId);
-      
+
       if (error) {
         console.error('Error deleting category:', error);
         throw error;
       }
-      
+
       return categoryId;
     },
     onSuccess: () => {
@@ -187,3 +181,5 @@ export function useCategoryManagement() {
     deleteCategory
   };
 }
+
+// end of file
