@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 import StagingArea from './StagingArea';
@@ -8,6 +9,9 @@ import { PuzzleTimerDisplay } from './components/PuzzleTimerDisplay';
 import { PuzzleControlsBar } from './components/PuzzleControlsBar';
 import { PuzzleCompleteBanner } from './components/PuzzleCompleteBanner';
 import { getPuzzleGhostStyles } from './components/usePuzzleGhostStyles';
+import AssemblyArea from './components/AssemblyArea';
+import { usePuzzleState } from './utils/puzzleStateUtils';
+import { createPuzzleHandlers } from './utils/puzzleHandlers';
 
 // Types
 interface ReactJigsawPuzzleEngineProps {
@@ -18,11 +22,6 @@ interface ReactJigsawPuzzleEngineProps {
 
 const PIECE_SIZE = 64;
 
-type AssemblyPiece = {
-  id: number;
-  isLocked: boolean;
-};
-
 const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
   imageUrl, rows, columns
 }) => {
@@ -32,11 +31,16 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
   const [resetKey, setResetKey] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
 
-  // Staging area pieces: only those NOT placed
-  const [stagedPieces, setStagedPieces] = useState<number[]>([]);
-  // Assembly area: each slot is {id: pieceId, isLocked} or null for empty
-  const [placedPieces, setPlacedPieces] = useState<(AssemblyPiece | null)[]>([]);
+  // Puzzle state
+  const {
+    stagedPieces, 
+    setStagedPieces,
+    placedPieces, 
+    setPlacedPieces,
+    resetPuzzleState
+  } = usePuzzleState(rows, columns);
 
+  // Timer state
   const {
     elapsed, start, stop, reset, isRunning,
     startTime, setElapsed, setStartTime
@@ -51,10 +55,7 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
       setHasStarted(false);
       setCompleted(false);
       setSolveTime(null);
-
-      const total = rows * columns;
-      setStagedPieces(Array.from({ length: total }, (_, i) => i));
-      setPlacedPieces(Array.from({ length: total }, () => null));
+      resetPuzzleState();
     },
     onError: (error) => {
       console.error('Error loading puzzle image:', error);
@@ -62,100 +63,35 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
     }
   });
 
-  // Puzzle solve event
-  const handleOnChange = () => {
-    const allLocked = placedPieces.every((entry, idx) => entry && entry.isLocked && entry.id === idx);
-    if (allLocked && !completed) {
-      setCompleted(true);
-      const endTime = Date.now();
-      if (startTime) {
-        setSolveTime((endTime - startTime) / 1000);
-        setElapsed(Math.floor((endTime - startTime) / 1000));
-      }
-      stop();
-    }
-  };
-
-  // Timer start
-  const handleStartIfFirstMove = () => {
-    if (!hasStarted) {
-      setHasStarted(true);
-      start();
-      setStartTime(Date.now());
-    }
-  };
-
-  // Reset puzzle: moves all pieces back to staging area, empties placed area
-  const handleReset = () => {
-    setResetKey(rk => rk + 1);
-    const total = rows * columns;
-    setStagedPieces(Array.from({ length: total }, (_, i) => i));
-    setPlacedPieces(Array.from({ length: total }, () => null));
-    setCompleted(false);
-    setHasStarted(false);
-    setElapsed(0);
-    setStartTime(null);
-    setSolveTime(null);
-  };
-
-  // Drag handlers
-  const handlePieceDrop = (pieceId: number, targetIdx: number) => {
-    if (placedPieces[targetIdx] !== null) return;
-
-    handleStartIfFirstMove();
-
-    setPlacedPieces(prev => {
-      let np = [...prev];
-
-      // Remove this piece from any previous cell
-      const fromAssemblyIdx = prev.findIndex(entry => entry && entry.id === pieceId && !entry.isLocked);
-      if (fromAssemblyIdx !== -1) {
-        np[fromAssemblyIdx] = null;
-      }
-
-      // Lock piece if placed in correct spot, otherwise allow free movement
-      const shouldLock = pieceId === targetIdx;
-      np[targetIdx] = { id: pieceId, isLocked: shouldLock };
-      return np;
-    });
-
-    // Remove from staging if present
-    setStagedPieces(prev => prev.filter(id => id !== pieceId));
-
-    setTimeout(handleOnChange, 0);
-  };
-
-  const handleRemoveFromAssembly = (pieceIdx: number) => {
-    const slot = placedPieces[pieceIdx];
-    if (!slot || slot.isLocked) return;
-    setPlacedPieces(prev => {
-      const np = [...prev];
-      np[pieceIdx] = null;
-      return np;
-    });
-    setStagedPieces(prev => [...prev, slot.id]);
-  };
+  // Create handlers
+  const {
+    handlePieceDrop,
+    handleRemoveFromAssembly,
+    handleStartIfFirstMove,
+    handleReset,
+    handleOnChange
+  } = createPuzzleHandlers(
+    placedPieces,
+    setPlacedPieces,
+    stagedPieces,
+    setStagedPieces,
+    hasStarted,
+    setHasStarted,
+    completed,
+    setCompleted,
+    start,
+    stop,
+    reset,
+    startTime,
+    setStartTime,
+    setElapsed,
+    setSolveTime,
+    rows,
+    columns
+  );
 
   const styles = getPuzzleGhostStyles(imageUrl);
   const showFirstMoveOverlay = !hasStarted && !loading && !completed;
-
-  // Utility to get piece image style for assembly slots
-  function getPieceStyle(pieceId: number) {
-    const row = Math.floor(pieceId / columns);
-    const col = pieceId % columns;
-    return {
-      width: PIECE_SIZE,
-      height: PIECE_SIZE,
-      backgroundImage: `url(${imageUrl})`,
-      backgroundSize: `${columns * 100}% ${rows * 100}%`,
-      backgroundPosition: `${(col * 100) / (columns - 1)}% ${(row * 100) / (rows - 1)}%`,
-      backgroundRepeat: "no-repeat",
-      borderRadius: "0.4rem",
-      border: "1px solid rgba(0,0,0,0.15)",
-      boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
-      cursor: "grab"
-    } as React.CSSProperties;
-  }
 
   return (
     <div className="flex flex-col items-center justify-center h-full">
@@ -177,65 +113,17 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
               <span className="ml-2">Loading puzzle...</span>
             </div>
           )}
+          
           {/* Assembly Area */}
-          <div
-            className="grid gap-1"
-            style={{
-              gridTemplateColumns: `repeat(${columns}, ${PIECE_SIZE}px)`,
-              gridTemplateRows: `repeat(${rows}, ${PIECE_SIZE}px)`,
-              minHeight: rows * PIECE_SIZE,
-              minWidth: columns * PIECE_SIZE
-            }}
-          >
-            {placedPieces.map((entry, idx) => (
-              <div
-                key={idx}
-                className={`relative w-16 h-16 rounded transition-all duration-150 flex items-center justify-center
-                  ${
-                    !entry
-                      ? "border border-dashed border-black/20 bg-transparent opacity-80"
-                      : entry.isLocked
-                        ? "border border-solid border-green-400 ring-2 ring-green-200"
-                        : "border border-solid border-black/30 bg-white"
-                  }`}
-                onDragOver={e => {
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = "move";
-                }}
-                onDrop={e => {
-                  const dropId = Number(e.dataTransfer.getData("piece-id"));
-                  const fromAssembly = e.dataTransfer.getData("from-assembly") === "true";
-                  if (!placedPieces[idx]) {
-                    handlePieceDrop(dropId, idx);
-                  }
-                }}
-              >
-                {entry && (
-                  <div
-                    draggable={!entry.isLocked}
-                    onDragStart={e => {
-                      if (entry.isLocked) return;
-                      e.dataTransfer.setData("from-assembly", "true");
-                      e.dataTransfer.setData("piece-id", entry.id.toString());
-                    }}
-                    className="absolute inset-0"
-                    style={{
-                      ...getPieceStyle(entry.id),
-                      opacity: entry.isLocked ? 1 : 0.93,
-                      cursor: entry.isLocked ? "default" : "grab",
-                      pointerEvents: entry.isLocked ? "none" : "auto"
-                    }}
-                    onDoubleClick={() => handleRemoveFromAssembly(idx)}
-                    title={
-                      entry.isLocked
-                        ? "Piece locked in correct position"
-                        : "Double click to return to staging area"
-                    }
-                  />
-                )}
-              </div>
-            ))}
-          </div>
+          <AssemblyArea
+            placedPieces={placedPieces}
+            rows={rows}
+            columns={columns}
+            imageUrl={imageUrl}
+            onPieceDrop={handlePieceDrop}
+            onPieceRemove={handleRemoveFromAssembly}
+            pieceSize={PIECE_SIZE}
+          />
         </div>
       </div>
 
