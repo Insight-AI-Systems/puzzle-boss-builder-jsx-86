@@ -22,6 +22,13 @@
   z-index: 20 !important; /* Unplaced pieces stay above placed ones */
 }
 
+/* CRITICAL: Always ensure misplaced pieces appear on top after interaction */
+.puzzle-piece:focus, 
+.puzzle-piece:hover, 
+.puzzle-piece:active {
+  z-index: 30 !important; /* Interaction raises even correctly placed pieces temporarily */
+}
+
 .puzzle-piece-hint {
   animation: hint-piece 2s infinite;
 }
@@ -72,6 +79,7 @@
 @media (pointer: coarse) {
   .puzzle-piece:active {
     transform: scale(1.05);
+    z-index: 50 !important; /* Higher z-index for touch interactions */
   }
   
   /* Larger touch targets */

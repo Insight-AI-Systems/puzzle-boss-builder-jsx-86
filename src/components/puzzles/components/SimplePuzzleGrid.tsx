@@ -98,6 +98,25 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
   const width = containerSize?.width || defaultWidth;
   const height = containerSize?.height || defaultWidth;
   
+  // Sort pieces to get correct layering
+  // Correctly placed pieces should be rendered first (bottom layer)
+  const sortedPieces = [...pieces].sort((a, b) => {
+    const aNumber = parseInt(a.id.split('-')[1]);
+    const bNumber = parseInt(b.id.split('-')[1]);
+    
+    const aCorrect = aNumber === a.position;
+    const bCorrect = bNumber === b.position;
+    
+    if (aCorrect && !bCorrect) return -1;
+    if (!aCorrect && bCorrect) return 1;
+    
+    // If dragging, prioritize those
+    if (a.isDragging) return 1;
+    if (b.isDragging) return -1;
+    
+    return 0;
+  });
+  
   return (
     <div 
       ref={gridRef}
@@ -109,7 +128,7 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
         height: height
       }}
     >
-      {pieces.map((piece, index) => {
+      {sortedPieces.map((piece, index) => {
         const pieceSize = containerSize?.pieceSize || (width / 3) - (isMobile ? 4 : 8);
         // Get the piece number from the id for correct position checking
         const pieceNumber = parseInt(piece.id.split('-')[1]);
@@ -143,10 +162,12 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
               width: pieceSize,
               height: pieceSize,
               position: 'relative'
-              // Note: No inline z-index here, we'll rely on CSS classes for more reliable z-index handling
+              // No inline z-index, we're using CSS classes
             }}
             data-correct={isCorrectlyPlaced ? 'true' : 'false'}
             data-piece-number={pieceNumber}
+            data-piece-id={piece.id}
+            data-position={piece.position}
           >
             <span className={`text-base sm:text-lg font-bold text-white drop-shadow-md 
               ${piece.isDragging ? 'scale-110' : ''}`}
