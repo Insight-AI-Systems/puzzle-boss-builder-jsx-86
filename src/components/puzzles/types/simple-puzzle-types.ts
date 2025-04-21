@@ -6,5 +6,6 @@ export interface SimplePuzzlePiece extends BasePuzzlePiece {
   originalPosition: number; // Make required instead of optional
   position: number;
   id: string;
+  zIndex?: number;
 }
 

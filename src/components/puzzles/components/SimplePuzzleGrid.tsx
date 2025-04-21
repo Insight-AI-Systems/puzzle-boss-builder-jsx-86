@@ -111,6 +111,9 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
     >
       {pieces.map((piece, index) => {
         const pieceSize = containerSize?.pieceSize || (width / 3) - (isMobile ? 4 : 8);
+        // Get the piece number from the id for correct position checking
+        const pieceNumber = parseInt(piece.id.split('-')[1]);
+        const isCorrectlyPlaced = pieceNumber === piece.position;
         
         return (
           <div 
@@ -123,8 +126,8 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
             onTouchEnd={(e) => onDrop(e, index)}
             onClick={() => onPieceClick(piece)}
             className={`puzzle-piece flex items-center justify-center rounded-lg cursor-pointer shadow-md transition-all
-              ${piece.isDragging ? 'puzzle-piece-dragging ring-2 ring-white z-10' : ''}
-              ${(piece as any).correctlyPlaced ? 'puzzle-piece-correct' : ''}
+              ${piece.isDragging ? 'puzzle-piece-dragging ring-2 ring-white' : ''}
+              ${isCorrectlyPlaced ? 'puzzle-piece-correct' : ''}
               ${(piece as any).showHint ? 'puzzle-piece-hint' : ''}
               ${isSolved ? 'ring-1 ring-puzzle-gold/50' : ''}
               ${isTouchDevice ? 'active:scale-105' : 'hover:brightness-110'}`}
@@ -133,12 +136,14 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
               opacity: piece.isDragging ? '0.8' : '1',
               width: pieceSize,
               height: pieceSize,
+              zIndex: (piece as any).zIndex || (isCorrectlyPlaced ? 10 : 20), // Use zIndex property or default
+              position: 'relative'
             }}
           >
             <span className={`text-base sm:text-lg font-bold text-white drop-shadow-md 
               ${piece.isDragging ? 'scale-110' : ''}`}
             >
-              {parseInt(piece.id.split('-')[1]) + 1}
+              {pieceNumber + 1}
             </span>
           </div>
         );

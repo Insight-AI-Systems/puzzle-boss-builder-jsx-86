@@ -2,10 +2,11 @@
 /* Puzzle piece animations */
 .puzzle-piece {
   transition: all 0.2s ease-out;
+  position: relative; /* Ensure position context for z-index */
 }
 
 .puzzle-piece-dragging {
-  z-index: 10;
+  z-index: 100 !important; /* Ensure dragged pieces are always on top */
   transition: transform 0.1s ease-out;
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
@@ -13,6 +14,12 @@
 .puzzle-piece-correct {
   box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
   animation: correct-piece 0.5s ease;
+  z-index: 10 !important; /* Correctly placed pieces stay on bottom */
+}
+
+/* Pieces not in correct position should float above */
+.puzzle-piece:not(.puzzle-piece-correct) {
+  z-index: 20 !important; /* Unplaced pieces stay above placed ones */
 }
 
 .puzzle-piece-hint {

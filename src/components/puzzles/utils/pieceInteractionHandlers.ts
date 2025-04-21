@@ -15,7 +15,7 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     playSound('pickup');
     
     setPieces(pieces.map(p => 
-      p.id === piece.id ? { ...p, isDragging: true } : p
+      p.id === piece.id ? { ...p, isDragging: true, zIndex: 100 } : p
     ));
   };
 
@@ -28,6 +28,9 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
       [newPieces[draggedIndex].position, newPieces[index].position] = 
       [newPieces[index].position, newPieces[draggedIndex].position];
       
+      // Update z-indices to ensure visibility
+      updatePieceZIndices(newPieces);
+      
       setPieces(newPieces);
       incrementMoves();
       playSound('place');
@@ -36,9 +39,13 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
 
   const handleDrop = () => {
     if (draggedPiece) {
-      setPieces(pieces.map(p => 
-        p.id === draggedPiece.id ? { ...p, isDragging: false } : p
-      ));
+      setPieces(prev => {
+        const updated = prev.map(p => 
+          p.id === draggedPiece.id ? { ...p, isDragging: false } : p
+        );
+        updatePieceZIndices(updated);
+        return updated;
+      });
       setDraggedPiece(null);
     }
   };
@@ -52,6 +59,28 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     
     // Implementation depends on grid layout
     console.log(`Move ${draggedPiece.id} to ${direction}`);
+  };
+
+  // New helper function to update z-indices for all pieces
+  const updatePieceZIndices = (piecesToUpdate: T[]) => {
+    // For each piece, determine if it's in its correct position
+    piecesToUpdate.forEach(piece => {
+      const pieceNumber = parseInt(piece.id.split('-')[1]);
+      const isInCorrectPosition = piece.position === pieceNumber;
+      
+      // Placed pieces get lower z-index (10)
+      // Unplaced pieces get higher z-index (20)
+      // Currently dragged pieces get highest z-index (100)
+      if ('zIndex' in piece) {
+        if (piece.isDragging) {
+          (piece as any).zIndex = 100;
+        } else if (isInCorrectPosition) {
+          (piece as any).zIndex = 10; // Lower z-index for correctly placed pieces
+        } else {
+          (piece as any).zIndex = 20; // Higher z-index for unplaced pieces
+        }
+      }
+    });
   };
 
   const checkForHints = () => {
