@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { PuzzlePiece, PieceGroup } from '../types/puzzleTypes';
 import { generatePuzzlePieces } from '../utils/pieceGenerator';
@@ -65,16 +66,16 @@ export const useGameState = (rows: number, columns: number, imageUrl: string) =>
     });
     
     // Reset groups - each piece is in its own group again
-    setGroups(currentPieces => {
-      return currentPieces.map(piece => ({
+    setGroups(currentGroups => {
+      return pieces.map(piece => ({
         id: `group-${piece.id}`,
-        pieceIds: [piece.id], // This is now correctly typed as number[]
+        pieceIds: [piece.id], // Explicitly use the numeric id
         isComplete: false
       }));
     });
     
     setIsComplete(false);
-  }, [rows, columns]);
+  }, [rows, columns, pieces]);
   
   // Pick up a piece/group
   const pickUpPiece = useCallback((pieceId: number) => {
