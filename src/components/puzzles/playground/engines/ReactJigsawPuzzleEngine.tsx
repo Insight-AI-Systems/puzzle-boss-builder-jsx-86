@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import JigsawPuzzle from 'react-jigsaw-puzzle/lib';
+import { JigsawPuzzle } from 'react-jigsaw-puzzle/lib';
 import 'react-jigsaw-puzzle/lib/jigsaw-puzzle.css';
 import { Loader2 } from 'lucide-react';
 

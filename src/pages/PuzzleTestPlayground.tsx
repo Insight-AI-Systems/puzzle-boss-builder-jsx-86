@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PuzzleEnginePlayground from '@/components/puzzles/playground/PuzzleEnginePlayground';
-import { Breadcrumb } from '@/components/common/Breadcrumb';
+import Breadcrumb from '@/components/common/Breadcrumb';
 
 const PuzzleTestPlayground: React.FC = () => {
   const breadcrumbItems = [
