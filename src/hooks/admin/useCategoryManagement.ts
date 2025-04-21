@@ -19,7 +19,10 @@ export function useCategoryManagement() {
 
   // Helper to handle missing fields from the DB results
   const mapDbCategory = (category: Record<string, any>): AdminCategory => ({
-    ...category,
+    id: category.id,
+    name: category.name,
+    slug: category.slug,
+    description: category.description,
     imageUrl: typeof category.image_url === "string" ? category.image_url : "/placeholder.svg",
     status:
       category.status === "active" || category.status === "inactive"
