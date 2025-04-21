@@ -37,6 +37,11 @@
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
 }
 
+/* Override default puzzle piece styling */
+.jigsaw-puzzle_piece {
+  border: 1px solid #444;
+}
+
 /* Dark mode adjustments */
 .dark .jigsaw-puzzle-container .jigsaw-puzzle_piece {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.6);

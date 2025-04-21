@@ -17,17 +17,17 @@ import './engines/styles/jigsaw-puzzle.css';
 const SAMPLE_IMAGES = [
   {
     id: 'iphone',
-    url: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab',
+    url: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500&h=500&fit=crop',
     alt: 'iPhone'
   },
   {
     id: 'laptop',
-    url: 'https://images.unsplash.com/photo-1593642702821-c8da6771f0c6',
+    url: 'https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?w=500&h=500&fit=crop',
     alt: 'Laptop'
   },
   {
     id: 'headphones',
-    url: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b',
+    url: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=500&h=500&fit=crop',
     alt: 'Headphones'
   }
 ];
@@ -60,6 +60,11 @@ const PuzzleEnginePlayground: React.FC = () => {
   
   // Get current difficulty settings
   const currentDifficultyPreset = DIFFICULTY_PRESETS.find(d => d.value === difficulty) || DIFFICULTY_PRESETS[1];
+  
+  // Debug log to check if image URL is correct
+  useEffect(() => {
+    console.log('Selected image URL:', currentImage);
+  }, [currentImage]);
   
   // Handle reset button click
   const handleResetPuzzle = () => {
@@ -164,7 +169,7 @@ const PuzzleEnginePlayground: React.FC = () => {
         
         {/* Placeholder for additional engines */}
         {selectedEngine === 'custom-engine' && (
-          <div className="flex items-center justify-center h-96 bg-muted/20 rounded-lg border border-dashed">
+          <div className="flex flex-col items-center justify-center h-96 bg-muted/20 rounded-lg border border-dashed">
             <p className="text-muted-foreground">Custom Engine Placeholder</p>
             <p className="text-xs text-muted-foreground mt-2">
               Add your custom engine implementation in the engines folder

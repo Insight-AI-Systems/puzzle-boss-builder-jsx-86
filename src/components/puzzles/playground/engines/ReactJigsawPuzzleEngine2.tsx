@@ -38,6 +38,7 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
   usePuzzleImagePreload({
     imageUrl,
     onLoad: () => {
+      console.log('Image preloaded successfully:', imageUrl);
       setLoading(false);
       setElapsed(0);
       setHasStarted(false);
@@ -122,6 +123,11 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
     minHeight: '300px',
   };
 
+  // Debug log to ensure we have a valid image
+  useEffect(() => {
+    console.log('Current image URL:', imageUrl);
+  }, [imageUrl]);
+
   return (
     <div className="flex flex-col items-center justify-center h-full">
       {/* Timer & controls bar */}
@@ -160,6 +166,11 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
             onClick={handleStartIfFirstMove}
             className={!showBorder ? 'no-border' : ''}
           >
+            {/* Display the image URL for debugging */}
+            <div className="mb-2 text-xs text-muted-foreground">
+              Loading image: {imageUrl.substring(0, 50)}...
+            </div>
+            
             <JigsawPuzzle
               key={key}
               imageSrc={imageUrl}
