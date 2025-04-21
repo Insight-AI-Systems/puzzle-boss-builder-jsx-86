@@ -44,20 +44,23 @@ export const usePuzzles = () => {
   const profile = getUserProfile();
 
   const fetchPuzzles = async () => {
+    console.log('Fetching puzzles from Supabase...');
     const { data, error } = await supabase
       .from('puzzles')
-      .select('*');
+      .select('*, categories(name)');
     
     if (error) {
       console.error('Error fetching puzzles:', error);
       throw error;
     }
     
+    console.log('Puzzles data from Supabase:', data);
+    
     // Transform the data to match our Puzzle interface
     return data.map((puzzle: any): Puzzle => ({
       id: puzzle.id,
       name: puzzle.title || '',
-      category: puzzle.category || '',
+      category: puzzle.categories?.name || '',
       category_id: puzzle.category_id || '',
       difficulty: puzzle.difficulty || 'medium',
       imageUrl: puzzle.image_url || '',
@@ -87,24 +90,29 @@ export const usePuzzles = () => {
         puzzle.puzzleOwner = profile.display_name || profile.email || 'Unknown Admin';
       }
       
+      // Convert from our frontend model to the database model
+      const dbPuzzle = {
+        title: puzzle.name,
+        category_id: puzzle.category_id,
+        difficulty: puzzle.difficulty,
+        image_url: puzzle.imageUrl,
+        time_limit: puzzle.timeLimit,
+        cost_per_play: puzzle.costPerPlay,
+        income_target: puzzle.targetRevenue,
+        status: puzzle.status,
+        prize: puzzle.prize,
+        prize_value: puzzle.prizeValue,
+        description: puzzle.description,
+        puzzle_owner: puzzle.puzzleOwner,
+        supplier: puzzle.supplier,
+        release_date: new Date().toISOString(), // Add required release_date field
+      };
+
+      console.log('Creating new puzzle:', dbPuzzle);
+      
       const { data, error } = await supabase
         .from('puzzles')
-        .insert({
-          title: puzzle.name,
-          category_id: puzzle.category_id,
-          difficulty: puzzle.difficulty,
-          image_url: puzzle.imageUrl,
-          time_limit: puzzle.timeLimit,
-          cost_per_play: puzzle.costPerPlay,
-          income_target: puzzle.targetRevenue,
-          status: puzzle.status,
-          prize: puzzle.prize,
-          prize_value: puzzle.prizeValue,
-          description: puzzle.description,
-          puzzle_owner: puzzle.puzzleOwner,
-          supplier: puzzle.supplier,
-          release_date: new Date().toISOString(), // Add required release_date field
-        })
+        .insert(dbPuzzle)
         .select();
 
       if (error) {
@@ -132,23 +140,28 @@ export const usePuzzles = () => {
 
   const updatePuzzle = useMutation({
     mutationFn: async (puzzle: Puzzle) => {
+      // Convert from our frontend model to the database model
+      const dbPuzzle = {
+        title: puzzle.name,
+        category_id: puzzle.category_id,
+        difficulty: puzzle.difficulty,
+        image_url: puzzle.imageUrl,
+        time_limit: puzzle.timeLimit,
+        cost_per_play: puzzle.costPerPlay,
+        income_target: puzzle.targetRevenue,
+        status: puzzle.status,
+        prize: puzzle.prize,
+        prize_value: puzzle.prizeValue,
+        description: puzzle.description,
+        puzzle_owner: puzzle.puzzleOwner,
+        supplier: puzzle.supplier,
+      };
+
+      console.log('Updating puzzle:', puzzle.id, dbPuzzle);
+      
       const { data, error } = await supabase
         .from('puzzles')
-        .update({
-          title: puzzle.name,
-          category_id: puzzle.category_id,
-          difficulty: puzzle.difficulty,
-          image_url: puzzle.imageUrl,
-          time_limit: puzzle.timeLimit,
-          cost_per_play: puzzle.costPerPlay,
-          income_target: puzzle.targetRevenue,
-          status: puzzle.status,
-          prize: puzzle.prize,
-          prize_value: puzzle.prizeValue,
-          description: puzzle.description,
-          puzzle_owner: puzzle.puzzleOwner,
-          supplier: puzzle.supplier,
-        })
+        .update(dbPuzzle)
         .eq('id', puzzle.id)
         .select();
 
@@ -157,6 +170,7 @@ export const usePuzzles = () => {
         throw error;
       }
       
+      console.log('Update response:', data);
       return data[0];
     },
     onSuccess: () => {
@@ -177,6 +191,8 @@ export const usePuzzles = () => {
 
   const deletePuzzle = useMutation({
     mutationFn: async (id: string) => {
+      console.log('Deleting puzzle:', id);
+      
       const { error } = await supabase
         .from('puzzles')
         .delete()
@@ -207,6 +223,8 @@ export const usePuzzles = () => {
 
   const togglePuzzleStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      console.log('Toggling puzzle status:', id, status);
+      
       const { data, error } = await supabase
         .from('puzzles')
         .update({ status })

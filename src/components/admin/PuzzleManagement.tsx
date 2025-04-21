@@ -1,10 +1,9 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   Table, 
   TableBody, 
@@ -25,10 +24,12 @@ import {
   Image, 
   ToggleLeft, 
   ToggleRight,
-  Loader2
+  Loader2,
+  AlertCircle
 } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
 import { usePuzzles, Puzzle as PuzzleType } from "@/hooks/usePuzzles";
+import { checkAndSetupPuzzleTable } from "@/utils/admin/setupPuzzleTable";
 import PuzzleEditPanel from "./PuzzleEditPanel";
 import { useToast } from "@/hooks/use-toast";
 
@@ -76,13 +77,37 @@ export const PuzzleManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPuzzle, setEditPuzzle] = useState<any>(null);
-  const { data: categories = [] } = useCategories();
+  const [tableStatus, setTableStatus] = useState<{exists: boolean, error?: string}>({exists: true});
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const checkTable = async () => {
+      const status = await checkAndSetupPuzzleTable();
+      setTableStatus(status);
+      if (!status.exists) {
+        toast({
+          title: "Database table missing",
+          description: status.error,
+          variant: "destructive",
+        });
+      }
+    };
+    
+    checkTable();
+  }, [toast]);
+
+  useEffect(() => {
+    console.log('Puzzles data:', puzzles);
+    console.log('Categories data:', categories);
+    console.log('Loading state:', isLoading);
+    console.log('Error state:', error);
+  }, [puzzles, categories, isLoading, error]);
 
   const filteredPuzzles = puzzles.filter(puzzle => 
     puzzle.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    puzzle.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    puzzle.prize.toLowerCase().includes(searchTerm.toLowerCase())
+    puzzle.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    puzzle.prize?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const activePuzzles = filteredPuzzles.filter(p => p.status === "active");
@@ -129,11 +154,10 @@ export const PuzzleManagement: React.FC = () => {
   };
 
   const handleNewPuzzle = () => {
-    // Create a new puzzle with default values
     const newPuzzle = {
       name: "New Puzzle",
       category: "",
-      category_id: "", // Initialize with empty string
+      category_id: "", 
       difficulty: "medium" as const,
       imageUrl: "/placeholder.svg",
       timeLimit: 0,
@@ -163,7 +187,32 @@ export const PuzzleManagement: React.FC = () => {
     setEditPuzzle((prev: any) => ({ ...prev, imageUrl: url }));
   };
 
-  if (isLoading) {
+  if (!tableStatus.exists) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Puzzle className="h-5 w-5 mr-2" />
+            Puzzle Management
+          </CardTitle>
+          <CardDescription>Create and manage puzzles for your platform</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {tableStatus.error}
+              <div className="mt-2">
+                <p className="text-xs">Please run the SQL migration to create the puzzles table in your Supabase database.</p>
+              </div>
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isLoading || categoriesLoading) {
     return (
       <div className="w-full h-64 flex items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-puzzle-aqua" />
@@ -178,6 +227,29 @@ export const PuzzleManagement: React.FC = () => {
         <p className="text-red-500 mb-2">Failed to load puzzles</p>
         <p className="text-sm text-muted-foreground">{(error as Error).message}</p>
       </div>
+    );
+  }
+
+  if (puzzles.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Puzzle className="h-5 w-5 mr-2" />
+            Puzzle Management
+          </CardTitle>
+          <CardDescription>Create and manage puzzles for your platform</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">No puzzles found. Create your first puzzle to get started!</p>
+            <Button onClick={handleNewPuzzle}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create First Puzzle
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -219,7 +291,6 @@ export const PuzzleManagement: React.FC = () => {
           </Button>
         </div>
         
-        {/* New Puzzle Form */}
         {editingId === "new" && (
           <div className="mb-8">
             <h3 className="text-lg font-medium mb-4">Create New Puzzle</h3>
@@ -228,7 +299,6 @@ export const PuzzleManagement: React.FC = () => {
               categories={categories}
               onChange={handleEditChange}
               onSave={() => {
-                // Create new puzzle
                 if (editPuzzle) {
                   createPuzzle.mutate(editPuzzle);
                   setEditingId(null);
