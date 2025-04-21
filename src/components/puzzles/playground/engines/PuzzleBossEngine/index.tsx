@@ -39,12 +39,10 @@ const PuzzleBossEngine: React.FC<PuzzleBossEngineProps> = ({
 
   // Drag from staging
   const handleStagingDragStart = useCallback((pieceId: number) => {
-    return (e: React.DragEvent<HTMLDivElement>) => {
-      e.dataTransfer.setData("staging-piece-id", pieceId.toString());
-    };
-  }, []);
-
-  // Drop to assembly handled in AssemblyArea
+    if (!hasStarted) {
+      setHasStarted(true);
+    }
+  }, [hasStarted, setHasStarted]);
 
   return (
     <div className="flex flex-col items-center justify-center h-full">
@@ -55,7 +53,7 @@ const PuzzleBossEngine: React.FC<PuzzleBossEngineProps> = ({
         imageUrl={imageUrl}
         rows={rows}
         columns={columns}
-        onPieceDragStart={(pieceId) => {}}
+        onPieceDragStart={handleStagingDragStart}
       />
       <div className="mt-2 mb-2 text-muted-foreground font-medium">Drag pieces from the staging area onto the board grid below.</div>
       <AssemblyArea

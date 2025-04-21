@@ -27,10 +27,9 @@ const StagingArea: React.FC<StagingAreaProps> = ({
         Staging Area ({stagedPieceIds.length} pieces)
       </div>
       {stagedPieceIds.map(id => {
-        const piece = pieces[id];
-        // Calculate SVG bg position, mimic main board (could extract as util)
-        const row = Math.floor(piece.originalPosition / columns);
-        const col = piece.originalPosition % columns;
+        // Calculate SVG bg position based on the piece's id
+        const row = Math.floor(id / columns);
+        const col = id % columns;
         const bgStyle: React.CSSProperties = {
           width: pieceSize,
           height: pieceSize,
@@ -47,7 +46,10 @@ const StagingArea: React.FC<StagingAreaProps> = ({
             className="staging-piece"
             style={bgStyle}
             draggable
-            onDragStart={() => onPieceDragStart(id)}
+            onDragStart={(e) => {
+              e.dataTransfer.setData("staging-piece-id", id.toString());
+              onPieceDragStart(id);
+            }}
             title={`Piece #${id + 1}`}
           />
         );
