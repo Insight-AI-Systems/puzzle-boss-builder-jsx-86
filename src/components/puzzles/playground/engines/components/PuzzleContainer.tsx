@@ -1,5 +1,5 @@
 
-import React, { RefObject } from 'react';
+import React, { RefObject, memo, useEffect, useRef } from 'react';
 import FirstMoveOverlay from '../FirstMoveOverlay';
 import { JigsawPuzzle } from 'react-jigsaw-puzzle/lib';
 
@@ -17,7 +17,7 @@ interface PuzzleContainerProps {
   showBorder: boolean;
 }
 
-export const PuzzleContainer: React.FC<PuzzleContainerProps> = ({
+export const PuzzleContainer: React.FC<PuzzleContainerProps> = memo(({
   puzzleContainerRef,
   puzzleContainerStyle,
   showFirstMoveOverlay,
@@ -30,6 +30,17 @@ export const PuzzleContainer: React.FC<PuzzleContainerProps> = ({
   onSolved,
   showBorder
 }) => {
+  // Track previous image URL to avoid unnecessary re-renders
+  const prevImageRef = useRef(imageUrl);
+  
+  // Only log when image URL actually changes
+  useEffect(() => {
+    if (prevImageRef.current !== imageUrl) {
+      console.log('Image URL changed to:', imageUrl);
+      prevImageRef.current = imageUrl;
+    }
+  }, [imageUrl]);
+
   return (
     <div
       ref={puzzleContainerRef}
@@ -49,10 +60,12 @@ export const PuzzleContainer: React.FC<PuzzleContainerProps> = ({
           onClick={handleStartIfFirstMove}
           className={!showBorder ? 'no-border' : ''}
         >
-          {/* Display the image URL for debugging */}
-          <div className="mb-2 text-xs text-muted-foreground">
-            Loading image: {imageUrl.substring(0, 50)}...
-          </div>
+          {/* Display the image URL for debugging - shortened to reduce re-renders */}
+          {imageUrl && (
+            <div className="mb-2 text-xs text-muted-foreground">
+              Image loaded: {imageUrl.substring(0, 20)}...
+            </div>
+          )}
 
           <JigsawPuzzle
             key={keyProp}
@@ -65,4 +78,6 @@ export const PuzzleContainer: React.FC<PuzzleContainerProps> = ({
       )}
     </div>
   );
-};
+});
+
+PuzzleContainer.displayName = 'PuzzleContainer';

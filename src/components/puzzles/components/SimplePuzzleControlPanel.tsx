@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import SoundControls from './SoundControls';
 import SimplePuzzleControls from './SimplePuzzleControls';
 
@@ -13,7 +13,8 @@ interface SimplePuzzleControlPanelProps {
   onShuffle: () => void;
 }
 
-const SimplePuzzleControlPanel: React.FC<SimplePuzzleControlPanelProps> = ({
+// Using memo to prevent unnecessary re-renders
+const SimplePuzzleControlPanel: React.FC<SimplePuzzleControlPanelProps> = memo(({
   muted, volume, onToggleMute, onVolumeChange, isMobile, moveCount, onShuffle
 }) => (
   <div className={`w-full flex ${isMobile ? 'flex-col' : 'flex-row'} items-center justify-center gap-2 mb-3`}>
@@ -32,6 +33,8 @@ const SimplePuzzleControlPanel: React.FC<SimplePuzzleControlPanelProps> = ({
       isMobile={isMobile}
     />
   </div>
-);
+));
+
+SimplePuzzleControlPanel.displayName = 'SimplePuzzleControlPanel';
 
 export default SimplePuzzleControlPanel;

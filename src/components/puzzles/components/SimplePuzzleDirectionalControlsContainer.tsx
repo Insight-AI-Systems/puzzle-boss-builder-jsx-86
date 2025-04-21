@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import SimpleDirectionalControls from './SimpleDirectionalControls';
 import { SimplePuzzlePiece } from '../types/simple-puzzle-types';
 
@@ -11,10 +11,12 @@ interface SimplePuzzleDirectionalControlsContainerProps {
   isTouchDevice: boolean;
 }
 
-const SimplePuzzleDirectionalControlsContainer: React.FC<SimplePuzzleDirectionalControlsContainerProps> = ({
+// Using memo to prevent unnecessary re-renders
+const SimplePuzzleDirectionalControlsContainer: React.FC<SimplePuzzleDirectionalControlsContainerProps> = memo(({
   draggedPiece, isSolved, isMobile, onDirectionalMove, isTouchDevice
 }) => {
   if (!(isTouchDevice || draggedPiece) || isSolved) return null;
+  
   return (
     <SimpleDirectionalControls 
       draggedPiece={draggedPiece}
@@ -23,6 +25,8 @@ const SimplePuzzleDirectionalControlsContainer: React.FC<SimplePuzzleDirectional
       onDirectionalMove={onDirectionalMove}
     />
   );
-};
+});
+
+SimplePuzzleDirectionalControlsContainer.displayName = 'SimplePuzzleDirectionalControlsContainer';
 
 export default SimplePuzzleDirectionalControlsContainer;

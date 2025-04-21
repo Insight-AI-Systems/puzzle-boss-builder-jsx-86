@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import PuzzleStateDisplay from './PuzzleStateDisplay';
 import { DifficultyLevel } from '../types/puzzle-types';
 
@@ -12,7 +12,8 @@ interface SimplePuzzleStateDisplayProps {
   isMobile: boolean;
 }
 
-const SimplePuzzleStateDisplay: React.FC<SimplePuzzleStateDisplayProps> = ({
+// Using memo to prevent unnecessary re-renders
+const SimplePuzzleStateDisplay: React.FC<SimplePuzzleStateDisplayProps> = memo(({
   state,
   totalPieces,
   onNewGame,
@@ -28,6 +29,8 @@ const SimplePuzzleStateDisplay: React.FC<SimplePuzzleStateDisplayProps> = ({
     onTogglePause={onTogglePause}
     isMobile={isMobile}
   />
-);
+));
+
+SimplePuzzleStateDisplay.displayName = 'SimplePuzzleStateDisplay';
 
 export default SimplePuzzleStateDisplay;
