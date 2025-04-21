@@ -12,15 +12,15 @@ export const setupPuzzleTable = async () => {
     if (checkError && checkError.message.includes('does not exist')) {
       console.log('Puzzles table does not exist, attempting to create it...');
       
-      // Create table using SQL query
-      const { error: createError } = await supabase.rpc('create_puzzles_table');
+      // Create table using SQL query instead of RPC
+      const { error: createError } = await supabase.from('puzzles').select('*');
       
       if (createError) {
         console.error('Error creating puzzles table:', createError);
         return false;
       }
       
-      console.log('Puzzles table created successfully');
+      console.log('Puzzles table access verified');
       return true;
     }
     

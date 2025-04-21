@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { 
   Table, 
   TableBody, 
@@ -74,7 +72,6 @@ const PuzzlePreview = ({ imageUrl, difficulty }: { imageUrl: string, difficulty:
   );
 };
 
-// Default new puzzle template
 const DEFAULT_NEW_PUZZLE: Partial<PuzzleType> = {
   name: "New Puzzle",
   category: "",
@@ -106,7 +103,6 @@ export const PuzzleManagement: React.FC = () => {
   const { profile } = useUserProfile();
   const { toast } = useToast();
 
-  // Check if puzzles table exists
   useEffect(() => {
     const checkTable = async () => {
       const exists = await checkPuzzleTableExists();
@@ -119,7 +115,6 @@ export const PuzzleManagement: React.FC = () => {
     console.log("Current puzzles:", puzzles);
   }, [puzzles]);
 
-  // Reset new puzzle when opening dialog
   useEffect(() => {
     if (newPuzzleDialogOpen) {
       setNewPuzzle({
@@ -190,6 +185,22 @@ export const PuzzleManagement: React.FC = () => {
     } else {
       setNewPuzzle((prev) => ({ ...prev, imageUrl: url }));
     }
+  };
+
+  const handleToggleStatus = (puzzle: PuzzleType) => {
+    const newStatus: 'active' | 'inactive' = puzzle.status === 'active' ? 'inactive' : 'active';
+    
+    const updatedPuzzle: Partial<PuzzleType> = { 
+      ...puzzle, 
+      status: newStatus 
+    };
+    
+    updatePuzzle(updatedPuzzle);
+    
+    toast({
+      title: `Puzzle ${newStatus}`,
+      description: `${puzzle.name} is now ${newStatus}.`
+    });
   };
 
   if (isLoading) {
@@ -444,14 +455,7 @@ export const PuzzleManagement: React.FC = () => {
                                     <Button 
                                       variant="ghost" 
                                       size="icon" 
-                                      onClick={() => {
-                                        const updated = { ...puzzle, status: 'active' };
-                                        updatePuzzle(updated);
-                                        toast({
-                                          title: "Puzzle activated",
-                                          description: `${puzzle.name} is now active and available.`
-                                        });
-                                      }}
+                                      onClick={() => handleToggleStatus(puzzle)}
                                     >
                                       <Shuffle className="h-4 w-4 text-green-500" />
                                     </Button>

@@ -87,24 +87,27 @@ export function usePuzzles() {
       throw error;
     }
     
+    // Log the raw data from database to understand its structure
+    console.log('Raw puzzle data from database:', data);
+    
     // Transform database records to match frontend format
     return data.map(item => ({
       id: item.id,
       name: item.title,
       category: item.categories?.name || '',
       category_id: item.category_id,
-      difficulty: item.difficulty || 'medium',
+      difficulty: (item.pieces <= 9 ? 'easy' : item.pieces <= 16 ? 'medium' : 'hard') as 'easy' | 'medium' | 'hard',
       imageUrl: item.image_url,
-      timeLimit: item.time_limit || 0,
-      costPerPlay: item.cost_per_play || 0,
+      timeLimit: 0, // Default since column doesn't exist yet
+      costPerPlay: 1.99, // Default since column doesn't exist yet
       targetRevenue: item.income_target || 0,
-      status: item.status || 'draft',
+      status: (item.status || 'draft') as 'active' | 'inactive' | 'scheduled' | 'completed' | 'draft',
       prize: item.title, // Using title as prize name
       description: item.description || '',
-      puzzleOwner: item.puzzle_owner || '',
-      supplier: item.supplier || '',
-      completions: item.completions || 0,
-      avgTime: item.avg_time || 0,
+      puzzleOwner: '', // Default since column doesn't exist yet
+      supplier: '', // Default since column doesn't exist yet
+      completions: 0, // Default since column doesn't exist yet
+      avgTime: 0, // Default since column doesn't exist yet
       prizeValue: item.prize_value || 0
     }));
   };
@@ -139,13 +142,9 @@ export function usePuzzles() {
         category_id: categoryId,
         difficulty: puzzle.difficulty || 'medium',
         image_url: puzzle.imageUrl || 'https://via.placeholder.com/400',
-        time_limit: puzzle.timeLimit || 0,
-        cost_per_play: puzzle.costPerPlay || 1.99,
         income_target: puzzle.targetRevenue || 0,
         status: puzzle.status || 'draft',
-        puzzle_owner: puzzle.puzzleOwner || '',
         description: puzzle.description || '',
-        supplier: puzzle.supplier || '',
         prize_value: puzzle.prizeValue || 0,
         release_date: releaseDate,
         pieces: puzzle.difficulty === 'easy' ? 9 : puzzle.difficulty === 'medium' ? 16 : 25
@@ -197,17 +196,15 @@ export function usePuzzles() {
       const puzzleData = {
         title: puzzle.name,
         category_id: categoryId,
-        difficulty: puzzle.difficulty,
         image_url: puzzle.imageUrl,
-        time_limit: puzzle.timeLimit || 0,
-        cost_per_play: puzzle.costPerPlay,
         income_target: puzzle.targetRevenue,
         status: puzzle.status,
-        puzzle_owner: puzzle.puzzleOwner,
         description: puzzle.description,
-        supplier: puzzle.supplier,
-        prize_value: puzzle.prizeValue
+        prize_value: puzzle.prizeValue,
+        pieces: puzzle.difficulty === 'easy' ? 9 : puzzle.difficulty === 'medium' ? 16 : 25
       };
+      
+      console.log('Sending update to database:', puzzleData);
       
       const { data, error } = await supabase
         .from('puzzles')
