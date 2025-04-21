@@ -13,7 +13,7 @@ const PuzzleCreatePage: React.FC = () => {
   };
   
   const handleSave = () => {
-    // After saving, return to dashboard
+    // After saving, return to puzzles tab
     navigate('/admin-dashboard?tab=puzzles');
   };
   

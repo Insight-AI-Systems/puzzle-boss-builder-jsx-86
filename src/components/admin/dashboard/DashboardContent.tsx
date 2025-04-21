@@ -72,14 +72,12 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
           key={tab.id} 
           value={tab.id} 
           className="pt-4"
-          // Only apply forceMount={true} if this is the active tab
-          {...(tab.id === activeTab ? { forceMount: true } : {})}
         >
           {getComponentForTab(tab.id)}
         </TabsContent>
       ))}
       
-      {/* Special case for puzzle creation which might not be in the tabs list */}
+      {/* Special case for puzzle-create tab */}
       {activeTab === 'puzzle-create' && !accessibleTabs.some(tab => tab.id === 'puzzle-create') && (
         <TabsContent 
           value="puzzle-create" 

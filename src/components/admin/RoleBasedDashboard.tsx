@@ -35,12 +35,9 @@ export function RoleBasedDashboard() {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
     
-    // Check if tab param exists and is valid or is special case 'puzzle-create'
-    if (tabParam) {
-      if (accessibleTabs.some(tab => tab.id === tabParam) || tabParam === 'puzzle-create') {
-        setActiveTab(tabParam);
-      }
-    } else if (accessibleTabs.length > 0) {
+    if (tabParam && accessibleTabs.some(tab => tab.id === tabParam)) {
+      setActiveTab(tabParam);
+    } else if (accessibleTabs.length > 0 && !tabParam) {
       // Default to first accessible tab if no tab parameter
       setActiveTab(accessibleTabs[0].id);
     }
