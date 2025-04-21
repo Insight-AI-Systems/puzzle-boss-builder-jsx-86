@@ -1,0 +1,56 @@
+
+/* Custom styles for the React Jigsaw Puzzle component */
+.jigsaw-puzzle-container {
+  --background-color: transparent !important;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 500px;
+  cursor: grab;
+}
+
+.jigsaw-puzzle-container .jigsaw-puzzle {
+  width: 100%;
+  height: auto;
+  max-width: 500px;
+  max-height: 500px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.jigsaw-puzzle-container.no-border .jigsaw-puzzle_piece {
+  border: none !important;
+}
+
+.jigsaw-puzzle-container .jigsaw-puzzle_piece {
+  transition: transform 0.2s ease-in-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.jigsaw-puzzle-container .jigsaw-puzzle_piece:hover {
+  z-index: 10;
+  transform: scale(1.05);
+}
+
+.jigsaw-puzzle-container .jigsaw-puzzle_piece--active {
+  z-index: 20;
+  transform: scale(1.1);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+}
+
+/* Dark mode adjustments */
+.dark .jigsaw-puzzle-container .jigsaw-puzzle_piece {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Accessibility focus states */
+.jigsaw-puzzle-container:focus-within {
+  outline: 2px solid var(--color-primary, #228be6);
+  outline-offset: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .jigsaw-puzzle-container {
+    max-width: 95vw;
+  }
+}
