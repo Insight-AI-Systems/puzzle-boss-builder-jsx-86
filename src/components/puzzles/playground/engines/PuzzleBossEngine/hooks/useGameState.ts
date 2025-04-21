@@ -19,7 +19,7 @@ export const useGameState = (rows: number, columns: number, imageUrl: string) =>
 
   // Track previous configuration to avoid unnecessary regeneration
   const prevConfigRef = useRef({ rows, columns, imageUrl });
-
+  
   // Check if the entire puzzle is complete (all cells have correct piece)
   const checkPuzzleCompletion = useCallback(() => {
     const complete = assembly.every((pieceId, i) => pieceId === i);
@@ -58,15 +58,20 @@ export const useGameState = (rows: number, columns: number, imageUrl: string) =>
 
   // Move piece from staging to assembly area slot
   const placePiece = useCallback((pieceId: number, slotIdx: number) => {
+    // Don't place if the current slot has a correctly placed piece
+    if (assembly[slotIdx] === slotIdx) return;
+
     setAssembly(current => {
-      if (current[slotIdx] !== null) return current; // Prevent overwrite
       const next = [...current];
       next[slotIdx] = pieceId;
       return next;
     });
+    
+    // Only remove from staging if it's in the staging area
     setStagedPieces(current => current.filter(id => id !== pieceId));
+    
     setTimeout(() => checkPuzzleCompletion(), 0);
-  }, [checkPuzzleCompletion]);
+  }, [assembly, checkPuzzleCompletion]);
 
   // Remove from assembly and return to staging
   const removePieceFromAssembly = useCallback((slotIdx: number) => {
@@ -74,6 +79,10 @@ export const useGameState = (rows: number, columns: number, imageUrl: string) =>
       const next = [...current];
       const pieceId = next[slotIdx];
       if (pieceId == null) return current;
+      
+      // Only allow removal if piece is not in its correct position
+      if (pieceId === slotIdx) return current;
+      
       next[slotIdx] = null;
       setStagedPieces(prev =>
         prev.includes(pieceId) ? prev : [...prev, pieceId]
