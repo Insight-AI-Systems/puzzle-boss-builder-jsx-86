@@ -11,6 +11,8 @@ import FirstMoveOverlay from './FirstMoveOverlay';
 import { PuzzleHeaderAndControls } from './components/PuzzleHeaderAndControls';
 import { PuzzleContainer } from './components/PuzzleContainer';
 import { PuzzleFooter } from './components/PuzzleFooter';
+import { PuzzleCongratulationSplash } from './components/PuzzleCongratulationSplash';
+import { PuzzleSidebarLeaderboard } from './components/PuzzleSidebarLeaderboard';
 
 interface ReactJigsawPuzzleEngine2Props {
   imageUrl: string;
@@ -128,7 +130,9 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
   }, [imageUrl]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full w-full">
+    <div className="flex flex-col items-center justify-center h-full w-full relative">
+      <PuzzleSidebarLeaderboard solveTime={solveTime} />
+
       <PuzzleHeaderAndControls
         elapsed={elapsed}
         onReset={handleReset}
@@ -156,6 +160,8 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
         rows={rows}
         columns={columns}
       />
+
+      <PuzzleCongratulationSplash show={completed} solveTime={solveTime} />
     </div>
   );
 };
