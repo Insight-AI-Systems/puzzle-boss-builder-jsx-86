@@ -47,16 +47,20 @@ const GameControlsLayout: React.FC<GameControlsLayoutProps> = ({
           <SoundControls
             muted={muted}
             volume={volume}
-            toggleMute={toggleMute}
-            changeVolume={changeVolume}
+            onToggleMute={toggleMute}
+            onVolumeChange={changeVolume}
             isMobile={isMobile}
           />
         </div>
         
         <PuzzleControls
-          onShuffle={onShuffle}
+          moveCount={moveCount}
           difficulty={difficulty}
           setDifficulty={handleDifficultyChange}
+          selectedImage={selectedImage}
+          setSelectedImage={setSelectedImage}
+          onShuffle={onShuffle}
+          sampleImages={sampleImages}
           isLoading={isLoading}
           isMobile={isMobile}
         />

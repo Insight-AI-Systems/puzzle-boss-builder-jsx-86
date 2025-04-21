@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useDeviceInfo } from '@/hooks/use-mobile';
 import { useSimplePuzzlePieces } from './hooks/useSimplePuzzlePieces';
@@ -165,7 +164,7 @@ const SimplePuzzleGame: React.FC = () => {
         draggedPiece={draggedPiece}
         isSolved={isSolved}
         isMobile={isMobile}
-        onDirectionalMove={(direction) => handleDirectionalMove(direction, 3)}
+        onDirectionalMove={(direction) => handleDirectionalMove(direction)}
         isTouchDevice={isTouchDevice}
       />
       <PuzzleStatusMessage 

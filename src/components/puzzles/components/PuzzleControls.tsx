@@ -38,7 +38,7 @@ const PuzzleControls: React.FC<PuzzleControlsProps> = ({
     setIsDialogOpen(false);
   };
 
-  // Convert string URLs to PuzzleImage objects
+  // Convert string URLs to PuzzleImage objects if needed for ImageSelector
   const convertedImages: PuzzleImage[] = sampleImages.map((url, index) => ({
     id: `image-${index}`,
     name: `Image ${index + 1}`,
@@ -64,9 +64,9 @@ const PuzzleControls: React.FC<PuzzleControlsProps> = ({
           <DialogContent className="max-w-[90vw] p-4">
             <DialogTitle>Select Puzzle Image</DialogTitle>
             <ImageSelector
-              images={convertedImages}
               selectedImage={selectedImage}
-              onSelect={handleImageSelected}
+              onSelectImage={handleImageSelected}
+              sampleImages={sampleImages}
               compact={true}
             />
           </DialogContent>
@@ -120,9 +120,9 @@ const PuzzleControls: React.FC<PuzzleControlsProps> = ({
           <DialogContent className="max-w-[80vw]">
             <DialogTitle>Select Puzzle Image</DialogTitle>
             <ImageSelector
-              images={convertedImages}
               selectedImage={selectedImage}
-              onSelect={handleImageSelected}
+              onSelectImage={handleImageSelected}
+              sampleImages={sampleImages}
             />
           </DialogContent>
         </Dialog>

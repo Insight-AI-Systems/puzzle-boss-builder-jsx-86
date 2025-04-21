@@ -146,9 +146,10 @@ const PuzzleDemo: React.FC = () => {
           {!isMobile && (
             <div className="w-full max-w-md mb-4">
               <ImageSelector 
-                images={PUZZLE_IMAGES} 
                 selectedImage={selectedImage}
-                onSelect={handleImageSelect}
+                onSelectImage={handleImageSelect}
+                sampleImages={PUZZLE_IMAGES.map(img => img.url)}
+                isLoading={isLoading}
               />
             </div>
           )}
