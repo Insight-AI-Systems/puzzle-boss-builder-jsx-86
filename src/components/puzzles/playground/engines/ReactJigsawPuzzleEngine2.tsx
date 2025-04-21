@@ -155,14 +155,17 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
             <span className="ml-2">Loading puzzle...</span>
           </div>
         ) : (
-          <div style={{ position: 'relative', width: '100%', maxWidth: '500px' }} onClick={handleStartIfFirstMove}>
+          <div 
+            style={{ position: 'relative', width: '100%', maxWidth: '500px' }} 
+            onClick={handleStartIfFirstMove}
+            className={!showBorder ? 'no-border' : ''}
+          >
             <JigsawPuzzle
               key={key}
               imageSrc={imageUrl}
               rows={rows}
               columns={columns}
               onSolved={handlePuzzleComplete}
-              className={`jigsaw-puzzle-container ${!showBorder ? 'no-border' : ''}`}
             />
           </div>
         )}
