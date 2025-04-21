@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -32,10 +32,47 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
   // timer toggle logic
   const [timerEnabled, setTimerEnabled] = useState(Boolean(puzzle?.timeLimit && puzzle.timeLimit > 0));
 
+  // Track if targetRevenue was manually changed by the admin
+  const [hasManualTargetRevenueEdit, setHasManualTargetRevenueEdit] = useState(false);
+
+  // To prevent onChange("prizeValue") from re-running logic on mount
+  const isFirstRender = useRef(true);
+
   useEffect(() => {
     // when puzzle changes, update toggled state accordingly
     setTimerEnabled(Boolean(puzzle?.timeLimit && puzzle.timeLimit > 0));
   }, [puzzle?.timeLimit]);
+
+  // Auto sync Prize Value → Target Revenue unless targetRevenue has been manually edited.
+  useEffect(() => {
+    // Do not run on very first render after mounting.
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    // Blank or 0 disables the auto target revenue, resets manual flag.
+    if (
+      (puzzle?.prizeValue === "" || puzzle?.prizeValue === undefined || Number(puzzle?.prizeValue) === 0)
+    ) {
+      setHasManualTargetRevenueEdit(false);
+      onChange("targetRevenue", "");
+      return;
+    }
+    // Only auto update if not manually overridden
+    if (!hasManualTargetRevenueEdit) {
+      const valueNum = Number(puzzle.prizeValue);
+      if (!isNaN(valueNum)) {
+        onChange("targetRevenue", Math.round(valueNum * 2 * 100) / 100); // 2x, rounded to cents
+      }
+    }
+  // React to changes in prizeValue ONLY
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [puzzle?.prizeValue]);
+
+  // To reset the manual override on puzzle change (e.g., switching puzzles, editing new one)
+  useEffect(() => {
+    setHasManualTargetRevenueEdit(false);
+  }, [puzzle?.id]);
 
   const handleToggleTimer = (checked: boolean) => {
     setTimerEnabled(checked);
@@ -46,6 +83,27 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
       if (!puzzle.timeLimit || puzzle.timeLimit === 0) {
         onChange("timeLimit", 300);
       }
+    }
+  };
+
+  const onPrizeValueInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const num = value === "" ? "" : Number(value);
+    onChange("prizeValue", num);
+    // Do not set hasManualTargetRevenueEdit here; handled by effect
+  };
+
+  const onTargetRevenueInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    onChange("targetRevenue", newValue === "" ? "" : Number(newValue));
+    // If the admin edits this field, break the sync until puzzle/prizeValue changes
+    if (
+      puzzle.prizeValue !== "" &&
+      puzzle.prizeValue !== undefined &&
+      // Don't break sync if the user just types the auto-suggested number
+      Number(newValue) !== Math.round(Number(puzzle.prizeValue) * 2 * 100) / 100
+    ) {
+      setHasManualTargetRevenueEdit(true);
     }
   };
 
@@ -136,7 +194,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
             min={0}
             step={0.01}
             value={puzzle?.prizeValue ?? ""}
-            onChange={e => onChange("prizeValue", Number(e.target.value))}
+            onChange={onPrizeValueInput}
             data-testid="edit-prizevalue"
             className="w-28 inline-block"
           />
@@ -226,14 +284,19 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
         </div>
 
         <div>
-          <Label htmlFor="edit-targetrev" className="block mb-1">Target Revenue ($)</Label>
+          <Label htmlFor="edit-targetrev" className="block mb-1">
+            Target Revenue ($)
+            <span className="ml-1 text-xs font-normal text-muted-foreground">
+              (defaults to 2x Prize Value)
+            </span>
+          </Label>
           <Input
             id="edit-targetrev"
             type="number"
             step={1}
             min={0}
             value={puzzle?.targetRevenue ?? ""}
-            onChange={e => onChange("targetRevenue", Number(e.target.value))}
+            onChange={onTargetRevenueInput}
             data-testid="edit-targetrev"
             className="w-32 inline-block"
           />
