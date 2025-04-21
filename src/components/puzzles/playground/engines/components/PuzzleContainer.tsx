@@ -67,6 +67,8 @@ export const PuzzleContainer: React.FC<PuzzleContainerProps> = ({
             rows={rows}
             columns={columns}
             onSolved={onSolved}
+            // Add a class to enable bright border
+            className={showBorder ? 'with-border' : ''}
           />
         </div>
       )}

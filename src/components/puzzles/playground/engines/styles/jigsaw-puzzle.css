@@ -17,15 +17,21 @@
   overflow: hidden;
 }
 
-/* Border toggle styles */
+/* Enhanced border toggle styles */
 .no-border-puzzle .jigsaw-puzzle_piece {
   border: none !important;
   box-shadow: none !important;
 }
 
 .jigsaw-puzzle-container .jigsaw-puzzle_piece {
-  transition: transform 0.2s ease-in-out;
+  transition: transform 0.2s ease-in-out, border 0.3s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+/* Bright, contrasting border when enabled */
+.jigsaw-puzzle-container .jigsaw-puzzle_piece.with-border {
+  border: 2px solid #F97316; /* Bright Orange from our color palette */
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.5); /* Matching glow effect */
 }
 
 .jigsaw-puzzle-container .jigsaw-puzzle_piece:hover {
@@ -39,25 +45,10 @@
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
 }
 
-/* Override default puzzle piece styling */
-.jigsaw-puzzle_piece {
-  border: 1px solid #444;
-}
-
 /* Dark mode adjustments */
-.dark .jigsaw-puzzle-container .jigsaw-puzzle_piece {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.6);
+.dark .jigsaw-puzzle-container .jigsaw-puzzle_piece.with-border {
+  border: 2px solid #F97316; /* Maintain brightness in dark mode */
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.7);
 }
 
-/* Accessibility focus states */
-.jigsaw-puzzle-container:focus-within {
-  outline: 2px solid var(--color-primary, #228be6);
-  outline-offset: 4px;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .jigsaw-puzzle-container {
-    max-width: 95vw;
-  }
-}
+/* Existing styles... */
