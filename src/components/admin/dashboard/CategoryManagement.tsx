@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,9 @@ import { Badge } from "@/components/ui/badge";
 import { useCategoryManagement, AdminCategory } from '@/hooks/admin/useCategoryManagement';
 import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
+import { Textarea } from "@/components/ui/textarea";
+import { CategoryImageUpload } from "./CategoryImageUpload";
+import { usePuzzleCount } from "./usePuzzleCount";
 
 export const CategoryManagement: React.FC = () => {
   const { 
@@ -169,9 +171,8 @@ export const CategoryManagement: React.FC = () => {
                   <TableRow>
                     <TableHead>Image</TableHead>
                     <TableHead>Name</TableHead>
-                    <TableHead>Puzzles</TableHead>
-                    <TableHead>Active</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Playable Puzzles</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -179,91 +180,59 @@ export const CategoryManagement: React.FC = () => {
                   {categories.map((category) => (
                     <TableRow key={category.id}>
                       <TableCell>
-                        <div className="w-10 h-10 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
-                          <img 
-                            src={category.imageUrl || "/placeholder.svg"} 
-                            alt={category.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
+                        <CategoryImageUpload
+                          imageUrl={category.imageUrl}
+                          onChange={(url) =>
+                            setEditingCategory({ ...category, imageUrl: url })
+                          }
+                          disabled={editingCategory?.id !== category.id}
+                        />
                       </TableCell>
-                      <TableCell className="font-medium">{category.name}</TableCell>
-                      <TableCell>{category.puzzleCount || 0} puzzles</TableCell>
-                      <TableCell>{category.activeCount || 0} active</TableCell>
                       <TableCell>
-                        <Badge variant={category.status === "active" ? "default" : "secondary"}>
-                          {category.status === "active" ? "Active" : "Inactive"}
-                        </Badge>
+                        {editingCategory?.id === category.id ? (
+                          <Input
+                            value={editingCategory.name}
+                            onChange={(e) => setEditingCategory({
+                              ...editingCategory,
+                              name: e.target.value
+                            })}
+                          />
+                        ) : (
+                          <span>{category.name}</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingCategory?.id === category.id ? (
+                          <Textarea
+                            value={editingCategory.description || ""}
+                            onChange={(e) =>
+                              setEditingCategory({
+                                ...editingCategory,
+                                description: e.target.value,
+                              })
+                            }
+                          />
+                        ) : (
+                          <span className="max-w-xs block truncate text-muted-foreground">
+                            {category.description || <span className="italic text-xs text-gray-400">No description</span>}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <PlayablePuzzleCountCell categoryId={category.id} />
                       </TableCell>
                       <TableCell className="text-right">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => handleEditCategory(category)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Edit Category</DialogTitle>
-                              <DialogDescription>
-                                Make changes to the category details below.
-                              </DialogDescription>
-                            </DialogHeader>
-                            
-                            {editingCategory && (
-                              <div className="grid gap-4 py-4">
-                                <div className="grid gap-2">
-                                  <Label htmlFor="name">Name</Label>
-                                  <Input
-                                    id="name"
-                                    value={editingCategory.name}
-                                    onChange={(e) => setEditingCategory({
-                                      ...editingCategory,
-                                      name: e.target.value
-                                    })}
-                                  />
-                                </div>
-                                
-                                <div className="grid gap-2">
-                                  <Label htmlFor="status">Status</Label>
-                                  <select
-                                    id="status"
-                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                    value={editingCategory.status}
-                                    onChange={(e) => setEditingCategory({
-                                      ...editingCategory,
-                                      status: e.target.value as 'active' | 'inactive'
-                                    })}
-                                  >
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                  </select>
-                                </div>
-                              </div>
-                            )}
-                            
-                            <DialogFooter>
-                              <DialogClose asChild>
-                                <Button variant="outline">Cancel</Button>
-                              </DialogClose>
-                              <DialogClose asChild>
-                                <Button onClick={handleSaveCategory}>Save Changes</Button>
-                              </DialogClose>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                        
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteCategory(category.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
+                        {editingCategory?.id === category.id ? (
+                          <Button onClick={handleSaveCategory} size="sm">Save</Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditingCategory({ ...category })}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -281,3 +250,11 @@ export const CategoryManagement: React.FC = () => {
     </div>
   );
 };
+
+// Helper component for displaying puzzle count
+function PlayablePuzzleCountCell({ categoryId }: { categoryId: string }) {
+  const { data, isLoading, isError } = usePuzzleCount(categoryId);
+  if (isLoading) return <span>Loading…</span>;
+  if (isError) return <span>—</span>;
+  return <span>{data}</span>;
+}
