@@ -13,7 +13,7 @@ interface PuzzleTileProps {
   onDragEnd: () => void;
 }
 
-export const PuzzleTile: React.FC<PuzzleTileProps> = ({
+export const PuzzleTile: React.FC<PuzzleTileProps> = React.memo(({
   piece,
   imageUrl,
   rows,
@@ -60,4 +60,6 @@ export const PuzzleTile: React.FC<PuzzleTileProps> = ({
       data-piece-id={piece.id}
     />
   );
-};
+});
+
+PuzzleTile.displayName = 'PuzzleTile';

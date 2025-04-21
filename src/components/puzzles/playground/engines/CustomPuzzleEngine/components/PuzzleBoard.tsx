@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PuzzlePiece } from '../hooks/usePuzzleState';
 import { PuzzleTile } from './PuzzleTile';
 
@@ -16,7 +16,7 @@ interface PuzzleBoardProps {
   setDraggedPiece: (id: number | null) => void;
 }
 
-export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
+export const PuzzleBoard: React.FC<PuzzleBoardProps> = React.memo(({
   imageUrl,
   pieces,
   rows,
@@ -29,6 +29,15 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   setDraggedPiece
 }) => {
   const [highlightedPosition, setHighlightedPosition] = useState<number | null>(null);
+  const prevImageUrl = useRef(imageUrl);
+  
+  // Reset highlighted position when image changes
+  useEffect(() => {
+    if (prevImageUrl.current !== imageUrl) {
+      setHighlightedPosition(null);
+      prevImageUrl.current = imageUrl;
+    }
+  }, [imageUrl]);
   
   // Set up grid dimensions
   const containerStyle: React.CSSProperties = {
@@ -136,4 +145,6 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
       </div>
     </div>
   );
-};
+});
+
+PuzzleBoard.displayName = 'PuzzleBoard';

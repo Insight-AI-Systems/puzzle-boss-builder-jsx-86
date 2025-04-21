@@ -12,23 +12,30 @@ export function usePuzzleImagePreload({ imageUrl, onLoad, onError }: UsePuzzleIm
   
   // Cache previous image URL to avoid unnecessary reloads
   const previousImageUrl = useRef('');
+  const imageLoadedRef = useRef(false);
   
   useEffect(() => {
     // Set up cleanup flag
     isMounted.current = true;
     
     // Only reload if the image URL has changed
-    if (previousImageUrl.current === imageUrl) {
+    if (previousImageUrl.current === imageUrl && imageLoadedRef.current) {
       return;
     }
     
+    // Update the previous URL reference
     previousImageUrl.current = imageUrl;
+    imageLoadedRef.current = false;
     
-    const img = new window.Image();
+    console.log('Starting to load image:', imageUrl);
+    
+    const img = new Image();
     
     img.onload = () => {
       // Only call onLoad if the component is still mounted and the URL is still relevant
       if (isMounted.current && previousImageUrl.current === imageUrl) {
+        console.log('Image loaded successfully:', imageUrl);
+        imageLoadedRef.current = true;
         onLoad();
       }
     };
@@ -36,6 +43,7 @@ export function usePuzzleImagePreload({ imageUrl, onLoad, onError }: UsePuzzleIm
     img.onerror = (error) => {
       // Only call onError if the component is still mounted and the URL is still relevant
       if (isMounted.current && previousImageUrl.current === imageUrl) {
+        console.error('Error loading image:', imageUrl, error);
         onError(error);
       }
     };

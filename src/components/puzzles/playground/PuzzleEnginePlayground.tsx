@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -13,7 +13,6 @@ import ReactJigsawPuzzleEngine2 from './engines/ReactJigsawPuzzleEngine2';
 import CustomPuzzleEngine from './engines/CustomPuzzleEngine';
 import './engines/styles/jigsaw-puzzle.css';
 
-// Sample images for testing - in a real implementation, you might want to use your own images
 const SAMPLE_IMAGES = [
   {
     id: 'iphone',
@@ -32,7 +31,6 @@ const SAMPLE_IMAGES = [
   }
 ];
 
-// Puzzle engine options
 const PUZZLE_ENGINES = [
   { id: 'react-jigsaw-puzzle', name: 'React Jigsaw Puzzle (Custom)' },
   { id: 'react-jigsaw-puzzle-2', name: 'React Jigsaw Puzzle (External)' },
@@ -40,7 +38,6 @@ const PUZZLE_ENGINES = [
   { id: 'custom-engine', name: 'Custom Engine (Placeholder)' }
 ];
 
-// Difficulty presets
 const DIFFICULTY_PRESETS = [
   { value: 'easy', label: 'Easy', rows: 3, columns: 3 },
   { value: 'medium', label: 'Medium', rows: 4, columns: 4 },
@@ -56,35 +53,32 @@ const PuzzleEnginePlayground: React.FC = () => {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const { theme } = useTheme();
 
-  // Get the current image URL
   const currentImage = SAMPLE_IMAGES.find(img => img.id === selectedImage)?.url || SAMPLE_IMAGES[0].url;
   
-  // Get current difficulty settings
   const currentDifficultyPreset = DIFFICULTY_PRESETS.find(d => d.value === difficulty) || DIFFICULTY_PRESETS[1];
   
-  // Debug log to check if image URL is correct
   useEffect(() => {
     console.log('Selected image URL:', currentImage);
   }, [currentImage]);
   
-  // Handle reset button click
-  const handleResetPuzzle = () => {
+  const handleResetPuzzle = useCallback(() => {
     setResetKey(prev => prev + 1);
-  };
+  }, []);
   
-  // Handle notes change
-  const handleNotesChange = (engineId: string, value: string) => {
+  const handleNotesChange = useCallback((engineId: string, value: string) => {
     setNotes(prev => ({
       ...prev,
       [engineId]: value
     }));
-  };
+  }, []);
+  
+  const getEngineKey = useCallback((engineId: string) => {
+    return `${engineId}-${resetKey}-${selectedImage}-${difficulty}`;
+  }, [resetKey, selectedImage, difficulty]);
   
   return (
     <div className="space-y-6">
-      {/* Configuration Panel */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/20 rounded-lg border">
-        {/* Engine Selector */}
         <div>
           <Label htmlFor="engine-selector" className="mb-2 block">Choose Puzzle Engine</Label>
           <Select value={selectedEngine} onValueChange={setSelectedEngine}>
@@ -101,7 +95,6 @@ const PuzzleEnginePlayground: React.FC = () => {
           </Select>
         </div>
         
-        {/* Image Selector */}
         <div>
           <Label htmlFor="image-selector" className="mb-2 block">Test Image</Label>
           <Select value={selectedImage} onValueChange={setSelectedImage}>
@@ -118,7 +111,6 @@ const PuzzleEnginePlayground: React.FC = () => {
           </Select>
         </div>
         
-        {/* Difficulty Selector */}
         <div>
           <Label htmlFor="difficulty-selector" className="mb-2 block">Difficulty</Label>
           <Select value={difficulty} onValueChange={setDifficulty}>
@@ -136,7 +128,6 @@ const PuzzleEnginePlayground: React.FC = () => {
         </div>
       </div>
       
-      {/* Reset Button */}
       <div className="flex justify-end">
         <Button variant="outline" onClick={handleResetPuzzle} className="flex items-center gap-2">
           <RefreshCcw className="h-4 w-4" />
@@ -144,7 +135,6 @@ const PuzzleEnginePlayground: React.FC = () => {
         </Button>
       </div>
       
-      {/* Puzzle Display Area */}
       <div className="min-h-[500px] relative border rounded-lg p-4 bg-background">
         <div className="absolute top-4 right-4 z-10 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs border">
           {PUZZLE_ENGINES.find(e => e.id === selectedEngine)?.name || 'Unknown Engine'}
@@ -152,7 +142,7 @@ const PuzzleEnginePlayground: React.FC = () => {
         
         {selectedEngine === 'react-jigsaw-puzzle' && (
           <ReactJigsawPuzzleEngine 
-            key={`jigsaw-${resetKey}`}
+            key={getEngineKey('jigsaw')}
             imageUrl={currentImage}
             rows={currentDifficultyPreset.rows}
             columns={currentDifficultyPreset.columns}
@@ -161,7 +151,7 @@ const PuzzleEnginePlayground: React.FC = () => {
         
         {selectedEngine === 'react-jigsaw-puzzle-2' && (
           <ReactJigsawPuzzleEngine2 
-            key={`jigsaw2-${resetKey}`}
+            key={getEngineKey('jigsaw2')}
             imageUrl={currentImage}
             rows={currentDifficultyPreset.rows}
             columns={currentDifficultyPreset.columns}
@@ -170,14 +160,13 @@ const PuzzleEnginePlayground: React.FC = () => {
         
         {selectedEngine === 'custom-puzzle-engine' && (
           <CustomPuzzleEngine 
-            key={`custom-${resetKey}`}
+            key={getEngineKey('custom')}
             imageUrl={currentImage}
             rows={currentDifficultyPreset.rows}
             columns={currentDifficultyPreset.columns}
           />
         )}
         
-        {/* Placeholder for additional engines */}
         {selectedEngine === 'custom-engine' && (
           <div className="flex flex-col items-center justify-center h-96 bg-muted/20 rounded-lg border border-dashed">
             <p className="text-muted-foreground">Custom Engine Placeholder</p>
@@ -188,7 +177,6 @@ const PuzzleEnginePlayground: React.FC = () => {
         )}
       </div>
       
-      {/* Notes Section */}
       <div>
         <Label htmlFor="evaluation-notes" className="mb-2 block">Evaluation Notes</Label>
         <Textarea
@@ -203,4 +191,4 @@ const PuzzleEnginePlayground: React.FC = () => {
   );
 };
 
-export default PuzzleEnginePlayground;
+export default React.memo(PuzzleEnginePlayground);

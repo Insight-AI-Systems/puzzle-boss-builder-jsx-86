@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 export interface PuzzlePiece {
   id: number;
@@ -16,9 +16,15 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string) 
   const [showGuideImage, setShowGuideImage] = useState(false);
   const [solveTime, setSolveTime] = useState<number | null>(null);
   const [draggedPiece, setDraggedPiece] = useState<number | null>(null);
+  
+  // Tracking previous values to prevent unnecessary re-initializations
+  const prevImageUrlRef = useRef(imageUrl);
+  const prevDimensionsRef = useRef({ rows, columns });
+  const didInitializeRef = useRef(false);
 
   // Initialize puzzle pieces
   const initializePuzzle = useCallback(() => {
+    console.log('Initializing puzzle:', rows, 'x', columns);
     const totalPieces = rows * columns;
     const newPieces: PuzzlePiece[] = [];
     
@@ -33,10 +39,17 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string) 
     
     setPuzzlePieces(newPieces);
     setIsComplete(false);
+    didInitializeRef.current = true;
   }, [rows, columns]);
 
   // Shuffle puzzle pieces
   const shufflePieces = useCallback(() => {
+    if (puzzlePieces.length === 0) {
+      console.log('No pieces to shuffle');
+      return;
+    }
+    
+    console.log('Shuffling puzzle pieces');
     setPuzzlePieces(current => {
       // Create a copy of the current pieces
       const shuffled = [...current];
@@ -58,7 +71,7 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string) 
     });
     
     setIsComplete(false);
-  }, []);
+  }, [puzzlePieces]);
 
   // Place a piece in a specific position
   const placePiece = useCallback((id: number, newPosition: number) => {
@@ -104,7 +117,9 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string) 
   // Reset the puzzle
   const resetPuzzle = useCallback(() => {
     initializePuzzle();
-    shufflePieces();
+    setTimeout(() => {
+      shufflePieces();
+    }, 100);
   }, [initializePuzzle, shufflePieces]);
 
   // Toggle guide image
@@ -121,15 +136,24 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string) 
     );
     
     if (allCorrect && hasStarted && !isComplete) {
+      console.log('Puzzle completed!');
       setIsComplete(true);
     }
   }, [puzzlePieces, hasStarted, isComplete]);
 
   // Initialize the puzzle when rows, columns, or imageUrl changes
   useEffect(() => {
-    setIsLoading(true);
-    initializePuzzle();
-  }, [rows, columns, imageUrl, initializePuzzle]);
+    const dimensionsChanged = prevDimensionsRef.current.rows !== rows || 
+                             prevDimensionsRef.current.columns !== columns;
+    const imageChanged = prevImageUrlRef.current !== imageUrl;
+    
+    if (dimensionsChanged || imageChanged || !didInitializeRef.current) {
+      console.log('Dimensions or image changed, reinitializing puzzle');
+      setIsLoading(true);
+      prevImageUrlRef.current = imageUrl;
+      prevDimensionsRef.current = { rows, columns };
+    }
+  }, [rows, columns, imageUrl]);
 
   return {
     puzzlePieces,
