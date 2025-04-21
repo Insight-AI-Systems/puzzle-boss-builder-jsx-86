@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { PuzzleSidebarLeaderboard } from './PuzzleSidebarLeaderboard';
 import { PuzzleHeaderAndControls } from './PuzzleHeaderAndControls';
@@ -44,7 +43,7 @@ export const PuzzleLayout: React.FC<PuzzleLayoutProps> = ({
   return (
     <div className="flex w-full">
       {/* Main content area - shifted to the left */}
-      <div className="flex-1 max-w-[calc(100%-630px)] pr-[630px]">
+      <div className="flex-1 max-w-[calc(100%-330px)] pr-[330px]">
         <div className="flex flex-col items-center justify-center w-full">
           <PuzzleHeaderAndControls
             elapsed={elapsed}
@@ -80,24 +79,9 @@ export const PuzzleLayout: React.FC<PuzzleLayoutProps> = ({
         </div>
       </div>
 
-      {/* Fixed sidebar on the right containing preview and leaderboard */}
-      <div className="fixed right-0 top-0 w-[630px] h-full p-4 flex flex-col">
-        {/* Preview Image */}
-        <div className="mb-4">
-          <h3 className="text-sm font-medium mb-2">Puzzle Preview</h3>
-          <div className="rounded-lg overflow-hidden border border-border">
-            <img 
-              src={imageUrl} 
-              alt="Puzzle Preview" 
-              className="w-full h-[300px] object-cover"
-            />
-          </div>
-        </div>
-
-        {/* Leaderboard */}
-        <div className="flex-1 overflow-hidden">
-          <PuzzleSidebarLeaderboard solveTime={solveTime} />
-        </div>
+      {/* Fixed leaderboard on the right */}
+      <div className="fixed right-0 top-0 w-[330px] h-full">
+        <PuzzleSidebarLeaderboard solveTime={solveTime} />
       </div>
     </div>
   );
