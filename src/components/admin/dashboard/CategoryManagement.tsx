@@ -29,6 +29,7 @@ import { useEffect } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import { CategoryImageUpload } from "./CategoryImageUpload";
 import { usePuzzleCount } from "./usePuzzleCount";
+import { Switch } from "@/components/ui/switch";
 
 export const CategoryManagement: React.FC = () => {
   const { 
@@ -44,7 +45,6 @@ export const CategoryManagement: React.FC = () => {
     deleteCategory
   } = useCategoryManagement();
   
-  // Log component lifecycle and data changes
   useEffect(() => {
     console.log('CategoryManagement component mounted');
     return () => console.log('CategoryManagement component unmounted');
@@ -54,7 +54,6 @@ export const CategoryManagement: React.FC = () => {
     console.log('Admin categories data changed:', categories);
   }, [categories]);
   
-  // Force refetch on mount
   useEffect(() => {
     console.log('Forcing initial admin categories fetch');
     refetch();
@@ -67,10 +66,8 @@ export const CategoryManagement: React.FC = () => {
   const handleSaveCategory = () => {
     if (editingCategory) {
       if (editingCategory.id) {
-        // Update existing category
         updateCategory.mutate(editingCategory);
       } else {
-        // Create new category
         createCategory.mutate(editingCategory);
       }
       setEditingCategory(null);
@@ -173,6 +170,7 @@ export const CategoryManagement: React.FC = () => {
                     <TableHead>Name</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Playable Puzzles</TableHead>
+                    <TableHead>Active</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -221,6 +219,26 @@ export const CategoryManagement: React.FC = () => {
                       <TableCell>
                         <PlayablePuzzleCountCell categoryId={category.id} />
                       </TableCell>
+                      <TableCell>
+                        {editingCategory?.id === category.id ? (
+                          <Switch
+                            checked={editingCategory.status === "active"}
+                            onCheckedChange={(checked) =>
+                              setEditingCategory({
+                                ...editingCategory,
+                                status: checked ? "active" : "inactive",
+                              })
+                            }
+                            id={`active-switch-${category.id}`}
+                          />
+                        ) : (
+                          <Switch
+                            checked={category.status === "active"}
+                            disabled
+                            id={`active-switch-view-${category.id}`}
+                          />
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         {editingCategory?.id === category.id ? (
                           <Button onClick={handleSaveCategory} size="sm">Save</Button>
@@ -251,7 +269,6 @@ export const CategoryManagement: React.FC = () => {
   );
 };
 
-// Helper component for displaying puzzle count
 function PlayablePuzzleCountCell({ categoryId }: { categoryId: string }) {
   const { data, isLoading, isError } = usePuzzleCount(categoryId);
   if (isLoading) return <span>Loading…</span>;
