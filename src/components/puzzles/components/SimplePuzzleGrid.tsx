@@ -115,6 +115,9 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
         const pieceNumber = parseInt(piece.id.split('-')[1]);
         const isCorrectlyPlaced = pieceNumber === piece.position;
         
+        // Force z-index calculation
+        const zIndex = piece.isDragging ? 100 : (isCorrectlyPlaced ? 10 : 20);
+        
         return (
           <div 
             key={piece.id}
@@ -136,7 +139,7 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
               opacity: piece.isDragging ? '0.8' : '1',
               width: pieceSize,
               height: pieceSize,
-              zIndex: (piece as any).zIndex || (isCorrectlyPlaced ? 10 : 20), // Use zIndex property or default based on placement
+              zIndex: zIndex, // Apply calculated z-index directly
               position: 'relative'
             }}
           >
