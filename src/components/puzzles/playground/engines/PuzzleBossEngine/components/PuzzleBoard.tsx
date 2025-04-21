@@ -106,6 +106,10 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = React.memo(({
       const bgRow = Math.floor(piece.originalPosition / columns);
       const bgCol = piece.originalPosition % columns;
       
+      // Calculate using percentages for better scaling
+      const xPercent = (bgCol * 100) / (columns - 1);
+      const yPercent = (bgRow * 100) / (rows - 1);
+      
       const pieceStyle: React.CSSProperties = {
         width: `calc(100% / ${columns})`,
         height: `calc(100% / ${rows})`,
@@ -114,7 +118,7 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = React.memo(({
         left: `calc(${col} * 100% / ${columns})`,
         backgroundImage: `url(${imageUrl})`,
         backgroundSize: `${columns * 100}% ${rows * 100}%`,
-        backgroundPosition: `${bgCol * 100 / (columns - 1)}% ${bgRow * 100 / (rows - 1)}%`,
+        backgroundPosition: `${xPercent}% ${yPercent}%`,
         transform: isDragging ? 'scale(1.05)' : 'scale(1)',
         boxShadow: isDragging ? '0 5px 15px rgba(0,0,0,0.3)' : 'none',
         zIndex: isDragging ? 10 : 1,

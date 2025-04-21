@@ -23,9 +23,12 @@ const StagingArea: React.FC<StagingAreaProps> = ({
   
   // Function to calculate background position for a piece
   const getBackgroundPosition = (pieceId: number) => {
+    // Critical: Use the original pieceId to determine its position in the image
     const row = Math.floor(pieceId / columns);
     const col = pieceId % columns;
-    return `${(col * 100) / (columns - 1)}% ${(row * 100) / (rows - 1)}%`;
+    const xPercent = (col * 100) / (columns - 1);
+    const yPercent = (row * 100) / (rows - 1);
+    return `${xPercent}% ${yPercent}%`;
   };
   
   if (stagedPieceIds.length === 0) return null;
@@ -35,7 +38,7 @@ const StagingArea: React.FC<StagingAreaProps> = ({
         Staging Area ({stagedPieceIds.length} pieces)
       </div>
       {stagedPieceIds.map(id => {
-        // Calculate background position based on the piece's id
+        // Calculate background position based on the piece's original id
         const bgStyle: React.CSSProperties = {
           width: pieceSize,
           height: pieceSize,

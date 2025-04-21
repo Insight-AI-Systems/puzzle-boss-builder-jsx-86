@@ -25,9 +25,12 @@ const AssemblyArea: React.FC<AssemblyAreaProps> = ({
   
   // Function to calculate correct background position for a piece
   const getBackgroundPosition = (pieceId: number) => {
+    // This is critical - use the original pieceId for row/col calculation
     const row = Math.floor(pieceId / columns);
     const col = pieceId % columns;
-    return `${(col * 100) / (columns - 1)}% ${(row * 100) / (rows - 1)}%`;
+    const xPercent = (col * 100) / (columns - 1);
+    const yPercent = (row * 100) / (rows - 1);
+    return `${xPercent}% ${yPercent}%`;
   };
   
   return (

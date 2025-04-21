@@ -10,6 +10,7 @@ export const getImagePieceStyle = (piece: BasePuzzlePiece, imageUrl: string, gri
   const col = pieceNumber % gridSize;
   
   // Calculate the background position to show the correct part of the image
+  // Use percentage-based positioning for better scaling
   const xPosition = (col * 100 / (gridSize - 1));
   const yPosition = (row * 100 / (gridSize - 1));
   

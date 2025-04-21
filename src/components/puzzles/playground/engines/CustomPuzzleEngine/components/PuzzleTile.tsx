@@ -25,9 +25,11 @@ export const PuzzleTile: React.FC<PuzzleTileProps> = React.memo(({
 }) => {
   // Calculate background position based on original position
   const calculateBackgroundPosition = () => {
+    // Always use originalPosition for background positioning
     const row = Math.floor(piece.originalPosition / columns);
     const col = piece.originalPosition % columns;
     
+    // Use percentages for better scaling
     const xPercent = (col / (columns - 1)) * 100;
     const yPercent = (row / (rows - 1)) * 100;
     
