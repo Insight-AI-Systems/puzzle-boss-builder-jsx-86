@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,8 @@ import { CalendarIcon, Upload, Edit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { useToast } from "@/hooks/use-toast";
+import { useSavePuzzle } from "@/hooks/admin/useSavePuzzle";
 
 type PuzzleEditFormProps = {
   initialData?: Partial<{
@@ -142,27 +143,63 @@ export const PuzzleEditForm: React.FC<PuzzleEditFormProps> = ({
     return null;
   };
 
+  const { toast } = useToast();
+  const savePuzzleMutation = useSavePuzzle();
+
   // --- SUBMIT HANDLER ---
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const err = validate();
     setFormError(err);
     if (err) return;
 
-    const puzzle = {
-      imageFile, // as File, can be uploaded in backend integration
-      title,
-      description,
-      category: categories[0],
-      releaseDate,
-      pieces,
-      prizeValue,
-      incomeTarget,
-      overrideTarget
-    };
+    // Find category ID by name (categoryList is [{id, name, ...}])
+    const categoryObj = categoryList?.find(cat => cat.name === categories[0]);
+    if (!categoryObj) {
+      setFormError("Invalid category.");
+      return;
+    }
 
-    if (onSave) onSave(puzzle);
-    // Optionally, clear or feedback
+    // If needed, implement image upload here in the future.
+
+    try {
+      await savePuzzleMutation.mutateAsync({
+        imageUrl: imagePreview ?? "",
+        title,
+        description,
+        categoryId: categoryObj.id,
+        releaseDate: releaseDate!,
+        pieces,
+        prizeValue: prizeValue as number,
+        incomeTarget: incomeTarget as number,
+        overrideTarget,
+      });
+      toast({
+        title: "Puzzle saved!",
+        description: "Your puzzle has been saved as a draft.",
+      });
+      if (onSave) {
+        onSave({
+          imageUrl: imagePreview ?? "",
+          title,
+          description,
+          category: categories[0],
+          releaseDate,
+          pieces,
+          prizeValue,
+          incomeTarget,
+          overrideTarget,
+        });
+      }
+      // Optionally clear form or further UI
+    } catch (saveErr: any) {
+      setFormError(saveErr.message || "Failed to save puzzle.");
+      toast({
+        title: "Error",
+        description: saveErr.message || "Failed to save puzzle.",
+        variant: "destructive",
+      });
+    }
   };
 
   // --- UI RENDER ---
