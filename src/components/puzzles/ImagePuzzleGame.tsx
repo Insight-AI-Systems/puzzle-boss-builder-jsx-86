@@ -1,28 +1,24 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+
+import React, { useEffect } from 'react';
 import { useDeviceInfo } from '@/hooks/use-mobile';
-import { difficultyConfig, DifficultyLevel, GameMode, PieceShape, VisualTheme } from './types/puzzle-types';
+import { DifficultyLevel, GameMode, PieceShape, VisualTheme } from './types/puzzle-types';
 import { useImageLoading } from './hooks/useImageLoading';
-import { usePuzzlePieces } from './hooks/usePuzzlePieces';
-import { usePuzzleState } from './hooks/usePuzzleState';
+import { usePuzzlePieces } from '@/hooks/puzzles/usePuzzlePieces';
+import { usePuzzleState } from '@/hooks/puzzles/usePuzzleState';
 import { usePuzzleGridEvents } from './hooks/usePuzzleGridEvents';
 import { getImagePieceStyle } from './utils/pieceStyleUtils';
-import { getRotationStyle, rotatePiece, initializeWithRotations } from './utils/pieceRotationUtils';
-import { createPieceHandlers } from './utils/pieceInteractionHandlers';
-import { getRecommendedDifficulty, calculateContainerSize } from './utils/puzzleSizeUtils';
+import { getRotationStyle } from './utils/pieceRotationUtils';
 import { DEFAULT_IMAGES } from './types/puzzle-types';
-import { useToast } from '@/hooks/use-toast';
-import './styles/puzzle-animations.css';
 import { usePuzzleSound } from './usePuzzleSound';
 import { useImagePuzzleSave } from './useImagePuzzleSave';
 import { usePuzzleCompletion } from './usePuzzleCompletion';
 import ImagePuzzleContainer from './ImagePuzzleContainer';
-
-// Import the components we've created
 import PuzzleStateDisplay from './components/PuzzleStateDisplay';
 import TimedModeBanner from './components/TimedModeBanner';
 import SaveLoadControls from './components/SaveLoadControls';
 import GameSettings from './components/GameSettings';
 import GameControlsLayout from './components/GameControlsLayout';
+import { getRecommendedDifficulty, calculateContainerSize } from './utils/puzzleSizeUtils';
 
 interface ImagePuzzleGameProps {
   sampleImages?: string[];
@@ -39,9 +35,6 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
 }) => {
   const deviceInfo = useDeviceInfo();
   const { isMobile, width, isTouchDevice } = deviceInfo;
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
-  const { toast } = useToast();
   
   const initialDifficulty = getRecommendedDifficulty(width);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(initialDifficulty);
@@ -51,7 +44,7 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
   const [pieceShape, setPieceShape] = useState<PieceShape>('standard');
   const [visualTheme, setVisualTheme] = useState<VisualTheme>('light');
   const [rotationEnabled, setRotationEnabled] = useState<boolean>(false);
-  const [timeLimit, setTimeLimit] = useState<number>(300); // 5 minutes default
+  const [timeLimit, setTimeLimit] = useState<number>(300);
   
   const { playSound, muted, toggleMute, volume, changeVolume } = usePuzzleSound();
   
@@ -75,152 +68,6 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
     handleShuffleClick
   } = usePuzzlePieces(difficulty, selectedImage, isLoading, setIsLoading);
   
-  useEffect(() => {
-    // Apply piece rotations if in challenge mode or rotation enabled
-    if (!isLoading && (gameMode === 'challenge' || rotationEnabled) && pieces.length > 0) {
-      if (gameMode === 'challenge') {
-        // For challenge mode, use random rotations
-        setPieces(initializeWithRotations(pieces));
-      } else if (rotationEnabled) {
-        // For manual rotation, initialize with 0 degrees but allow rotation
-        setPieces(pieces.map(piece => ({
-          ...piece,
-          rotation: 0
-        })));
-      }
-    }
-  }, [gameMode, rotationEnabled, isLoading, pieces.length]);
-  
-  // Handle piece rotation (click to rotate)
-  const handlePieceRotation = useCallback((piece: { id: string }) => {
-    if ((gameMode === 'challenge' || rotationEnabled) && !isSolved) {
-      setPieces(prevPieces => {
-        return prevPieces.map(p => {
-          if (p.id === piece.id) {
-            playSound('pickup');
-            return rotatePiece(p);
-          }
-          return p;
-        });
-      });
-      
-      // Increment move count when rotating pieces
-      setMoveCount(prev => prev + 1);
-      puzzleState.incrementMoves();
-    }
-  }, [gameMode, rotationEnabled, isSolved, playSound, puzzleState]);
-  
-  const {
-    handleDragStart,
-    handleMove,
-    handleDrop,
-    handlePieceClick,
-    handleDirectionalMove,
-    checkForHints
-  } = createPieceHandlers(
-    pieces,
-    setPieces,
-    draggedPiece,
-    setDraggedPiece,
-    (count) => {
-      setMoveCount(count);
-      puzzleState.incrementMoves();
-    },
-    isSolved,
-    playSound
-  );
-  
-  // Override piece click to handle rotations
-  const wrappedHandlePieceClick = (piece: any) => {
-    if (gameMode === 'challenge' || rotationEnabled) {
-      handlePieceRotation(piece);
-    } else {
-      handlePieceClick(piece);
-    }
-  };
-
-  const gridEvents = usePuzzleGridEvents({
-    draggedPiece,
-    handleDragStart,
-    handleMove,
-    handleDrop,
-    handlePieceClick: wrappedHandlePieceClick,
-    handleDirectionalMove
-  });
-
-  useEffect(() => {
-    if (initialImage && initialImage !== selectedImage) {
-      setSelectedImage(initialImage);
-      setIsLoading(true);
-    }
-  }, [initialImage, selectedImage, setIsLoading]);
-
-  // Handle puzzle completion in the extracted hook
-  usePuzzleCompletion({
-    pieces,
-    puzzleState,
-    gridSize,
-    playSound,
-    gameMode,
-    rotationEnabled,
-    isSolved
-  });
-
-  useEffect(() => {
-    if (!isSolved && pieces.length > 0) {
-      const correctCount = pieces.filter((piece) => {
-        const pieceNumber = parseInt(piece.id.split('-')[1]);
-        const positionCorrect = piece.position === pieceNumber;
-        
-        if (gameMode === 'challenge' || rotationEnabled) {
-          const rotationCorrect = (piece.rotation || 0) === 0;
-          return positionCorrect && rotationCorrect;
-        }
-        
-        return positionCorrect;
-      }).length;
-      
-      puzzleState.updateCorrectPieces(correctCount);
-    }
-  }, [pieces, isSolved, puzzleState, gameMode, rotationEnabled]);
-
-  useEffect(() => {
-    if (!isSolved && pieces.length > 0 && puzzleState.isActive) {
-      const hintInterval = setInterval(() => {
-        checkForHints();
-      }, 5000);
-      
-      return () => clearInterval(hintInterval);
-    }
-  }, [pieces, isSolved, puzzleState.isActive, checkForHints]);
-
-  const handleNewGame = () => {
-    handleShuffleClick();
-    puzzleState.startNewPuzzle(difficulty, gameMode, timeLimit);
-  };
-
-  const handleDifficultyChange = (newDifficulty: DifficultyLevel) => {
-    setDifficulty(newDifficulty);
-    puzzleState.changeDifficulty(newDifficulty);
-    setIsLoading(true);
-  };
-
-  const handleTimeUp = () => {
-    if (gameMode === 'timed' && puzzleState.isActive) {
-      puzzleState.togglePause(); // Pause the game
-      toast({
-        title: "Time's Up!",
-        description: "You ran out of time. Try again with a new game or adjust the time limit.",
-        variant: "destructive",
-      });
-      playSound('complete'); // Use complete sound for time up alert
-    }
-  };
-
-  const containerSize = calculateContainerSize(isMobile, difficulty);
-  const totalPieces = gridSize * gridSize;
-
-  // Save/load hook extracted
   const {
     savedGames,
     saveGame,
@@ -249,25 +96,61 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
     setTimeLimit
   );
 
-  const getThemeStyles = () => {
-    switch (visualTheme) {
-      case 'light':
-        return 'bg-white';
-      case 'dark':
-        return 'bg-gray-900 text-white';
-      case 'colorful':
-        return 'bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white';
-      default:
-        return 'bg-white';
+  const gridEvents = usePuzzleGridEvents({
+    draggedPiece,
+    handleDragStart,
+    handleMove,
+    handleDrop,
+    handlePieceClick: wrappedHandlePieceClick,
+    handleDirectionalMove
+  });
+
+  useEffect(() => {
+    if (initialImage && initialImage !== selectedImage) {
+      setSelectedImage(initialImage);
+      setIsLoading(true);
+    }
+  }, [initialImage, selectedImage, setIsLoading]);
+
+  // Use puzzle completion hook
+  usePuzzleCompletion({
+    pieces,
+    puzzleState,
+    gridSize,
+    playSound,
+    gameMode,
+    rotationEnabled,
+    isSolved
+  });
+
+  const handleNewGame = () => {
+    handleShuffleClick();
+    puzzleState.startNewPuzzle(difficulty, gameMode, timeLimit);
+  };
+
+  const handleDifficultyChange = (newDifficulty: DifficultyLevel) => {
+    setDifficulty(newDifficulty);
+    puzzleState.changeDifficulty(newDifficulty);
+    setIsLoading(true);
+  };
+
+  const handleTimeUp = () => {
+    if (gameMode === 'timed' && puzzleState.isActive) {
+      puzzleState.togglePause();
+      toast({
+        title: "Time's Up!",
+        description: "You ran out of time. Try again with a new game or adjust the time limit.",
+        variant: "destructive",
+      });
+      playSound('complete');
     }
   };
 
-  // Move the container/content below controls to ImagePuzzleContainer
+  const containerSize = calculateContainerSize(isMobile, difficulty);
+  const totalPieces = gridSize * gridSize;
+
   return (
-    <div className={`flex flex-col items-center w-full max-w-full px-2 ${getThemeStyles()}`}>
-      <canvas ref={canvasRef} width="600" height="600" className="hidden" />
-      <img ref={imgRef} className="hidden" alt="Source" />
-      
+    <div className={`flex flex-col items-center w-full max-w-full px-2 ${getThemeStyles(visualTheme)}`}>
       <div className={`w-full ${isMobile ? 'mb-2' : 'mb-4'}`}>
         <PuzzleStateDisplay 
           state={{
@@ -357,6 +240,19 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
       />
     </div>
   );
+};
+
+const getThemeStyles = (theme: VisualTheme) => {
+  switch (theme) {
+    case 'light':
+      return 'bg-white';
+    case 'dark':
+      return 'bg-gray-900 text-white';
+    case 'colorful':
+      return 'bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white';
+    default:
+      return 'bg-white';
+  }
 };
 
 export default ImagePuzzleGame;
