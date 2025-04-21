@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { JigsawPuzzle } from 'react-jigsaw-puzzle/lib';
 import 'react-jigsaw-puzzle/lib/jigsaw-puzzle.css';
@@ -22,10 +21,47 @@ type StagedPiece = {
   inPuzzle: boolean;
 };
 
-const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({ 
-  imageUrl, 
-  rows, 
-  columns 
+const StagingArea: React.FC<{
+  stagedPieces: { id: number }[];
+}> = ({ stagedPieces }) => {
+  if (stagedPieces.length === 0) return null;
+  return (
+    <div className="w-full max-w-xl mt-6 p-4 border rounded bg-muted/30 flex flex-wrap gap-2 justify-center">
+      <div className="w-full text-xs mb-2 font-medium text-muted-foreground text-center uppercase tracking-widest">
+        Staging Area ({stagedPieces.length} pieces)
+      </div>
+      {stagedPieces.map(piece => (
+        <div key={piece.id} className="w-8 h-8 bg-background/60 rounded shadow border flex items-center justify-center font-bold text-lg">
+          {piece.id + 1}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const FirstMoveOverlay: React.FC<{
+  show: boolean;
+  onFirstMove: () => void;
+}> = ({ show, onFirstMove }) =>
+  show ? (
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        zIndex: 9,
+        background: 'rgba(0,0,0,0)',
+        cursor: 'pointer',
+      }}
+      tabIndex={0}
+      role="button"
+      aria-label="Start Puzzle Timer"
+      onPointerDown={onFirstMove}
+      data-testid="first-move-overlay"
+    />
+  ) : null;
+
+const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
+  imageUrl, rows, columns
 }) => {
   const [loading, setLoading] = useState(true);
   const [completed, setCompleted] = useState(false);
@@ -136,7 +172,7 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       opacity: 0.18,
-      pointerEvents: 'none',
+      pointerEvents: 'none' as React.CSSProperties['pointerEvents'],
       transition: 'opacity 0.2s'
     },
     puzzle: {
@@ -145,16 +181,10 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
     }
   };
 
-  // "Fake" the staged area: all not-in-puzzle pieces
+  // Derived values for child components
   const stagedPieces = pieces.filter(p => !p.inPuzzle);
+  const showFirstMoveOverlay = !hasStarted && !loading && !completed;
 
-  // "Fake" move handler to simulate moving a piece from staging to board.
-  // With current engine, we listen to the puzzle library's event and simulate by marking first interaction.
-  // So add pointer event handler to JigsawPuzzle to start timer if not started.
-  
-  // To start timer on any click or drag on the puzzle area, add a div overlay to capture the first interaction.
-  // Only show transparent overlay if !hasStarted && !loading && !completed
-  
   return (
     <div className="flex flex-col items-center justify-center h-full">
       <div className="flex items-center gap-3 mb-3 w-full justify-between max-w-xl">
@@ -178,26 +208,10 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
       {/* Puzzle + ghost overlay */}
       <div style={customStyles.wrapper} className="relative">
         {!loading && (
-          <div style={customStyles.ghost} aria-hidden="true">
-            {/* Background image ghost preview */}
-          </div>
+          <div style={customStyles.ghost} aria-hidden="true" />
         )}
-        {/* If timer hasn't started yet, block puzzle with transparent div that will grab first pointer interaction */}
-        {!hasStarted && !loading && !completed && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 9,
-              background: 'rgba(0,0,0,0)', // transparent, invisible
-              cursor: 'pointer'
-            }}
-            tabIndex={0}
-            role="button"
-            aria-label="Start Puzzle Timer"
-            onPointerDown={handleStartIfFirstMove}
-          />
-        )}
+        {/* Timer start overlay */}
+        <FirstMoveOverlay show={showFirstMoveOverlay} onFirstMove={handleStartIfFirstMove} />
         <div style={customStyles.puzzle}>
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-20">
@@ -215,19 +229,8 @@ const ReactJigsawPuzzleEngine: React.FC<ReactJigsawPuzzleEngineProps> = ({
         </div>
       </div>
       {/* Staging area for unused pieces */}
-      {stagedPieces.length > 0 && (
-        <div className="w-full max-w-xl mt-6 p-4 border rounded bg-muted/30 flex flex-wrap gap-2 justify-center">
-          <div className="w-full text-xs mb-2 font-medium text-muted-foreground text-center uppercase tracking-widest">
-            Staging Area ({stagedPieces.length} pieces)
-          </div>
-          {/* Show simple numbered tokens for now. Replace below with interactive logic as engine allows */}
-          {stagedPieces.map(piece => (
-            <div key={piece.id} className="w-8 h-8 bg-background/60 rounded shadow border flex items-center justify-center font-bold text-lg">
-              {piece.id + 1}
-            </div>
-          ))}
-        </div>
-      )}
+      <StagingArea stagedPieces={stagedPieces} />
+
       {completed && (
         <div className="mt-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-md text-center">
           🎉 Puzzle completed in {solveTime?.toFixed(2)} seconds!
