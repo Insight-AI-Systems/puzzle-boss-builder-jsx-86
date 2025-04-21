@@ -255,9 +255,6 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           <div className="flex-1">
             <Label htmlFor="edit-targetrev" className="block mb-1">
               Target Revenue ($)
-              <span className="ml-1 text-xs font-normal text-muted-foreground">
-                (defaults to 2x Prize Value)
-              </span>
             </Label>
             <Input
               id="edit-targetrev"
@@ -408,3 +405,4 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
 };
 
 export default PuzzleEditPanel;
+
