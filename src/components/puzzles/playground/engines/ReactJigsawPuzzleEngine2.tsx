@@ -13,6 +13,7 @@ import { PuzzleContainer } from './components/PuzzleContainer';
 import { PuzzleFooter } from './components/PuzzleFooter';
 import { PuzzleCongratulationSplash } from './components/PuzzleCongratulationSplash';
 import { PuzzleSidebarLeaderboard } from './components/PuzzleSidebarLeaderboard';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ReactJigsawPuzzleEngine2Props {
   imageUrl: string;
@@ -60,6 +61,38 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
     }
   };
 
+  const savePuzzleCompletion = async (completionTime: number) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.log('User not authenticated, completion data not saved');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('puzzle_completions')
+        .insert([
+          {
+            user_id: user.id,
+            puzzle_id: imageUrl, // Using imageUrl as puzzle_id for now
+            completion_time: completionTime,
+            moves_count: 0,
+            difficulty_level: `${rows}x${columns}`,
+            game_mode: 'classic'
+          }
+        ]);
+
+      if (error) {
+        console.error('Error saving puzzle completion:', error);
+      } else {
+        console.log('Puzzle completion saved successfully:', data);
+      }
+    } catch (error) {
+      console.error('Error in savePuzzleCompletion:', error);
+    }
+  };
+
   const handlePuzzleComplete = () => {
     if (!completed) {
       setCompleted(true);
@@ -68,6 +101,7 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
         const totalTime = (endTime - startTime) / 1000;
         setSolveTime(totalTime);
         setElapsed(Math.floor(totalTime));
+        savePuzzleCompletion(totalTime);
       }
       stop();
     }

@@ -329,6 +329,50 @@ export type Database = {
         }
         Relationships: []
       }
+      puzzle_completions: {
+        Row: {
+          completed_at: string | null
+          completion_time: number
+          difficulty_level: string | null
+          game_mode: string | null
+          id: string
+          is_winner: boolean | null
+          moves_count: number | null
+          puzzle_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completion_time: number
+          difficulty_level?: string | null
+          game_mode?: string | null
+          id?: string
+          is_winner?: boolean | null
+          moves_count?: number | null
+          puzzle_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completion_time?: number
+          difficulty_level?: string | null
+          game_mode?: string | null
+          id?: string
+          is_winner?: boolean | null
+          moves_count?: number | null
+          puzzle_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "puzzle_completions_puzzle_id_fkey"
+            columns: ["puzzle_id"]
+            isOneToOne: false
+            referencedRelation: "puzzles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       puzzle_leaderboard: {
         Row: {
           created_at: string
