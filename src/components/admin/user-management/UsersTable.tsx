@@ -59,8 +59,11 @@ export function UsersTable({
 
   // Check if current user is super admin
   const isSuperAdmin = currentUserRole === 'super_admin';
-  // Fix: We need to separate the check for the protected admin email
-  const isProtectedAdminId = (userId: string) => userId === 'alan@insight-ai-systems.com';
+  
+  // Helper function to check if a user ID is the protected admin email
+  const isProtectedAdminEmail = (userId: string): boolean => {
+    return userId === 'alan@insight-ai-systems.com';
+  };
   
   // Helper function to determine if current user can assign a role
   const canAssignRole = (role: UserRole, userId: string): boolean => {
@@ -68,13 +71,13 @@ export function UsersTable({
     console.log(`UsersTable - Checking if can assign ${role} to ${userId} (currentUserRole: ${currentUserRole}, isSuperAdmin: ${isSuperAdmin})`);
     
     // Special case for protected admin
-    if (isProtectedAdminId(userId) && !isSuperAdmin && !isProtectedAdminId(currentUserRole as string)) {
+    if (isProtectedAdminEmail(userId) && !isSuperAdmin && !isProtectedAdminEmail(currentUserId())) {
       console.log(`UsersTable - Cannot modify protected admin (${userId}) unless you are a super admin`);
       return false;
     }
     
     // Super admins can assign any role
-    if (isSuperAdmin || isProtectedAdminId(currentUserRole as string)) {
+    if (isSuperAdmin || isProtectedAdminEmail(currentUserId())) {
       console.log(`UsersTable - Super admin can assign ${role}`);
       return true;
     }
@@ -88,6 +91,13 @@ export function UsersTable({
     // Other roles cannot assign roles
     console.log(`UsersTable - ${currentUserRole} cannot assign ${role}`);
     return false;
+  };
+  
+  // Helper function to get the current user's ID (using a placeholder for demonstration)
+  const currentUserId = (): string => {
+    // In a real implementation, this would come from auth context
+    // For now, we'll use a placeholder that will be compared with
+    return 'current-user-id';
   };
 
   return (
