@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { JigsawPuzzle } from 'react-jigsaw-puzzle/lib';
 import 'react-jigsaw-puzzle/lib/jigsaw-puzzle.css';
@@ -13,15 +14,18 @@ import { PuzzleContainer } from './components/PuzzleContainer';
 import { PuzzleFooter } from './components/PuzzleFooter';
 import { PuzzleCongratulationSplash } from './components/PuzzleCongratulationSplash';
 import { PuzzleSidebarLeaderboard } from './components/PuzzleSidebarLeaderboard';
+import { useLeaderboard } from './hooks/usePuzzleLeaderboard';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ReactJigsawPuzzleEngine2Props {
   imageUrl: string;
   rows: number;
   columns: number;
+  puzzleId?: string | null;
 }
 
 const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
-  imageUrl, rows, columns
+  imageUrl, rows, columns, puzzleId = "test-external-jigsaw" // fallback to static if not available
 }) => {
   const [loading, setLoading] = useState(true);
   const [completed, setCompleted] = useState(false);
@@ -31,15 +35,25 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
   const [key, setKey] = useState(Date.now());
   const puzzleContainerRef = useRef<HTMLDivElement>(null);
 
+  const { user } = useAuth?.() ?? { user: null }; // fallback if auth context isn't present
+  const currentPlayerId = user?.id ?? null;
+  const currentPlayerName = user?.user_metadata?.username || user?.email || "Anonymous";
+
   const {
     elapsed, start, stop, reset, isRunning,
     startTime, setElapsed, setStartTime
   } = usePuzzleTimer();
 
+  const {
+    leaderboard,
+    leaderboardLoading,
+    submitTime,
+    refetch: refetchLeaderboard
+  } = useLeaderboard(puzzleId);
+
   usePuzzleImagePreload({
     imageUrl,
     onLoad: () => {
-      console.log('Image preloaded successfully:', imageUrl);
       setLoading(false);
       setElapsed(0);
       setHasStarted(false);
@@ -47,7 +61,6 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
       setSolveTime(null);
     },
     onError: (error) => {
-      console.error('Error loading puzzle image:', error);
       setLoading(false);
     }
   });
@@ -60,7 +73,7 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
     }
   };
 
-  const handlePuzzleComplete = () => {
+  const handlePuzzleComplete = async () => {
     if (!completed) {
       setCompleted(true);
       const endTime = Date.now();
@@ -68,8 +81,19 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
         const totalTime = (endTime - startTime) / 1000;
         setSolveTime(totalTime);
         setElapsed(Math.floor(totalTime));
+        stop();
+
+        // Submit time to leaderboard in Supabase
+        if (currentPlayerId && puzzleId) {
+          await submitTime({
+            puzzle_id: puzzleId,
+            player_id: currentPlayerId,
+            player_name: currentPlayerName,
+            time_seconds: totalTime
+          });
+          refetchLeaderboard();
+        }
       }
-      stop();
     }
   };
 
@@ -89,14 +113,12 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
 
   useEffect(() => {
     const container = puzzleContainerRef.current;
-    
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!hasStarted && (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight' || 
           e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
         handleStartIfFirstMove();
       }
     };
-    
     if (container) {
       container.addEventListener('keydown', handleKeyDown);
       return () => {
@@ -109,11 +131,11 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
 
   const puzzleContainerStyle: React.CSSProperties = {
     width: '100vw',
-    maxWidth: 'calc(100vw - 48px)',
+    maxWidth: 'calc(100vw - 32px - 220px)', // Account for narrower sidebar!
     minWidth: '320px',
-    height: '80vh',
-    minHeight: '500px',
-    maxHeight: '90vh',
+    height: '85vh',
+    minHeight: '600px',
+    maxHeight: '94vh',
     position: 'relative',
     display: 'flex',
     justifyContent: 'center',
@@ -126,12 +148,16 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
   };
 
   useEffect(() => {
-    console.log('Current image URL:', imageUrl);
+    // ... same as before, if needed ...
   }, [imageUrl]);
 
   return (
     <div className="flex flex-col items-center justify-center h-full w-full relative">
-      <PuzzleSidebarLeaderboard solveTime={solveTime} />
+      <PuzzleSidebarLeaderboard
+        solveTime={solveTime}
+        puzzleId={puzzleId}
+        currentPlayerId={currentPlayerId}
+      />
 
       <PuzzleHeaderAndControls
         elapsed={elapsed}

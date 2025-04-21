@@ -1,5 +1,6 @@
 
 import React from "react";
+import { Award } from "lucide-react";
 
 export const PuzzleCongratulationSplash: React.FC<{ show: boolean; solveTime?: number | null }> = ({
   show,
@@ -10,13 +11,8 @@ export const PuzzleCongratulationSplash: React.FC<{ show: boolean; solveTime?: n
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fade-in">
       <div className="relative flex flex-col items-center justify-center">
-        {/* Starburst background effect */}
-        <div className="absolute">
-          {/* CSS Only Starburst animation */}
-          <div className="starburst animate-[spin_2s_linear_infinite]"></div>
-          <div className="starburst starburst2 animate-[spin_6s_linear_infinite_reverse]"></div>
-        </div>
         <div className="relative px-10 py-8 bg-white rounded-2xl shadow-2xl flex flex-col items-center border-4 border-puzzle-gold border-solid z-10 animate-scale-in">
+          <Award className="text-puzzle-gold mb-4" size={50} strokeWidth={2.2} />
           <span className="text-5xl md:text-6xl font-bold text-puzzle-gold drop-shadow-glow animate-fade-in">
             🎉 Congratulations!
           </span>
@@ -58,36 +54,6 @@ export const PuzzleCongratulationSplash: React.FC<{ show: boolean; solveTime?: n
         {/* Styling */}
         <style>
           {`
-            .starburst {
-              width: 340px;
-              height: 340px;
-              border-radius: 50%;
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-              box-shadow:
-                0 0 90px 48px #ffd70033,
-                0 0 140px 60px #fffda555,
-                0 0 38px 10px #0EA5E966;
-              background: radial-gradient(circle, #fffbe3 60%, #ffd70022 100%);
-              opacity: 1;
-              z-index: 1;
-              pointer-events: none;
-            }
-            .starburst2 {
-              width: 360px;
-              height: 360px;
-              border-radius: 50%;
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-              background: radial-gradient(circle, #fff7, #00b3b322 70%, transparent 100%);
-              filter: blur(8px);
-              opacity:0.5;
-              z-index: 0;
-            }
             @keyframes confetti-drop {
               0% { transform: translateY(-60px) rotateZ(0deg);}
               70% { opacity:1;}
