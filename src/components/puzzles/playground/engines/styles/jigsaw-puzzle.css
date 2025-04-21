@@ -26,29 +26,34 @@
 .jigsaw-puzzle-container .jigsaw-puzzle_piece {
   transition: transform 0.2s ease-in-out, border 0.3s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  z-index: 1; /* Base z-index for placed pieces */
+}
+
+/* Unplaced or moving pieces should float above */
+.jigsaw-puzzle-container .jigsaw-puzzle_piece:not([style*="transform: translate(0px, 0px)"]) {
+  z-index: 10; /* Higher z-index for unplaced pieces */
 }
 
 /* Apply bright border to pieces */
 .with-border-container .jigsaw-puzzle_piece {
-  border: 2px solid #F97316 !important; /* Bright Orange from our color palette */
-  box-shadow: 0 0 8px rgba(249, 115, 22, 0.5) !important; /* Matching glow effect */
+  border: 2px solid #F97316 !important;
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.5) !important;
 }
 
 .jigsaw-puzzle-container .jigsaw-puzzle_piece:hover {
-  z-index: 10;
+  z-index: 20; /* Highest z-index when hovering */
   transform: scale(1.05);
 }
 
 .jigsaw-puzzle-container .jigsaw-puzzle_piece--active {
-  z-index: 20;
+  z-index: 30; /* Maximum z-index when being dragged */
   transform: scale(1.1);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
 }
 
 /* Dark mode adjustments */
 .dark .with-border-container .jigsaw-puzzle_piece {
-  border: 2px solid #F97316 !important; /* Maintain brightness in dark mode */
+  border: 2px solid #F97316 !important;
   box-shadow: 0 0 10px rgba(249, 115, 22, 0.7) !important;
 }
 
-/* Existing styles... */
