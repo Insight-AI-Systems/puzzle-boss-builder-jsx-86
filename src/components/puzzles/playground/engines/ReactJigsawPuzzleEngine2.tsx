@@ -106,14 +106,21 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
   const showFirstMoveOverlay = !hasStarted && !loading && !completed;
 
   const puzzleContainerStyle: React.CSSProperties = {
-    maxWidth: '100%',
-    height: 'auto',
+    width: '100vw',
+    maxWidth: 'calc(100vw - 48px)',
+    minWidth: '320px',
+    height: '80vh',
+    minHeight: '500px',
+    maxHeight: '90vh',
     position: 'relative',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     margin: '0 auto',
-    minHeight: '300px',
+    background: 'var(--background, #18181B)',
+    borderRadius: '1.5rem',
+    boxShadow: '0 4px 32px rgba(0,0,0,0.14)',
+    overflow: 'visible'
   };
 
   useEffect(() => {
@@ -121,7 +128,7 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
   }, [imageUrl]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full">
+    <div className="flex flex-col items-center justify-center h-full w-full">
       <PuzzleHeaderAndControls
         elapsed={elapsed}
         onReset={handleReset}
