@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ import {
 interface UsersTableProps {
   users: UserProfile[];
   currentUserRole: UserRole;
+  currentUserEmail?: string; // Add this prop
   onRoleChange: (userId: string, newRole: UserRole) => void;
   onSortByRole: () => void;
   selectedUsers?: Set<string>;
@@ -31,16 +33,17 @@ function isProtectedAdminId(id?: string) {
 export function UsersTable({ 
   users, 
   currentUserRole, 
+  currentUserEmail, // Use this prop
   onRoleChange,
   onSortByRole,
   selectedUsers = new Set(),
   onUserSelection,
   onSelectAll
 }: UsersTableProps) {
-  // Debug the current user role
+  // Debug the current user role and email
   useEffect(() => {
-    console.log(`UsersTable - Initialized with currentUserRole: ${currentUserRole}`);
-  }, [currentUserRole]);
+    console.log(`UsersTable - Initialized with currentUserRole: ${currentUserRole}, currentUserEmail: ${currentUserEmail}`);
+  }, [currentUserRole, currentUserEmail]);
 
   // Check if selection is enabled (both handlers are provided)
   const selectionEnabled = !!onUserSelection && !!onSelectAll;
@@ -62,33 +65,38 @@ export function UsersTable({
     }
   };
 
-  // Just an example to show how you'd get email/id of current user: 
-  // In real code, inject this as a prop, or via context
-  const currentUserEmail = undefined; // TODO — supply as a prop/context as needed
-
   const isSuperAdmin = currentUserRole === 'super_admin';
   const isCurrentUserProtectedAdmin = isProtectedAdminId(currentUserEmail);
+  const canAssignAnyRole = isSuperAdmin || isCurrentUserProtectedAdmin;
 
-  // Updated role-permission checker, now correct and without type confusion
+  // Updated role-permission checker
   const canAssignRole = (role: UserRole, userId: string): boolean => {
-    // No direct type confusion now
-    if (isSuperAdmin || isCurrentUserProtectedAdmin) {
+    // Skip additional checks if user can assign any role
+    if (canAssignAnyRole) {
       return true;
     }
+    
+    // Protected admin specifically
+    if (isProtectedAdminId(userId)) {
+      return isCurrentUserProtectedAdmin; // Only the protected admin can modify itself
+    }
+    
     // Admin, but cannot assign super_admin
     if (currentUserRole === 'admin' && role !== 'super_admin') {
       return true;
     }
+    
     // No rights
     return false;
   };
 
-  // Helper function to get the current user's ID (using a placeholder for demonstration)
-  const currentUserId = (): string => {
-    // In a real implementation, this would come from auth context
-    // For now, we'll use a placeholder that will be compared with
-    return 'current-user-id';
-  };
+  console.log('UsersTable permission debug:', {
+    isSuperAdmin,
+    isCurrentUserProtectedAdmin,
+    canAssignAnyRole,
+    currentUserRole,
+    currentUserEmail
+  });
 
   return (
     <div className="rounded-md border overflow-x-auto">

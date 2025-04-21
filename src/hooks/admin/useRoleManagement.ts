@@ -3,6 +3,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/userTypes';
 
+// Constants
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+
 export function useRoleManagement() {
   const queryClient = useQueryClient();
 
@@ -12,8 +15,9 @@ export function useRoleManagement() {
       
       try {
         // Special handling for protected admin
-        if (userId === 'alan@insight-ai-systems.com') {
+        if (userId === PROTECTED_ADMIN_EMAIL) {
           console.log("Processing special case for protected admin");
+          // You might want to add additional checks here
         }
         
         const { data, error } = await supabase.functions.invoke('admin-update-roles', {
@@ -43,7 +47,7 @@ export function useRoleManagement() {
       
       try {
         // Check for protected admin in the list
-        const hasProtectedAdmin = userIds.includes('alan@insight-ai-systems.com');
+        const hasProtectedAdmin = userIds.includes(PROTECTED_ADMIN_EMAIL);
         if (hasProtectedAdmin) {
           console.log("Bulk update includes protected admin - special handling may be required");
         }

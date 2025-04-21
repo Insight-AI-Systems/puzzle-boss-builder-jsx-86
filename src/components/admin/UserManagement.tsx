@@ -9,8 +9,11 @@ import { UserActions } from './user-management/UserActions';
 import { UserFilters } from './user-management/UserFilters';
 import { UserPagination } from './user-management/UserPagination';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 export function UserManagement() {
+  const { profile } = useUserProfile();
+  
   const {
     allProfilesData,
     isLoadingProfiles,
@@ -37,10 +40,19 @@ export function UserManagement() {
     roleSortDirection,
     setRoleSortDirection,
     userStats
-  } = useUserManagement(true, 'alan@insight-ai-systems.com');
+  } = useUserManagement(true, profile?.id || null);
 
   const [localSearchTerm, setLocalSearchTerm] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const currentUserRole = profile?.role || 'player';
+  const currentUserEmail = profile?.id; // In your system, id appears to be the email
+
+  console.log('UserManagement - Current user:', {
+    role: currentUserRole,
+    email: currentUserEmail,
+    profile
+  });
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,7 +111,8 @@ export function UserManagement() {
 
         <UsersTable
           users={allProfilesData?.data || []}
-          currentUserRole="admin"
+          currentUserRole={currentUserRole}
+          currentUserEmail={currentUserEmail}
           onRoleChange={handleRoleChange}
           onSortByRole={handleSortByRole}
           selectedUsers={selectedUsers}

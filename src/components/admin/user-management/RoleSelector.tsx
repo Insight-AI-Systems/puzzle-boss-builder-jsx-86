@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +24,7 @@ interface RoleSelectorProps {
   userId?: string; // this is the target user's "id"
   onRoleChange: (userId: string | undefined, newRole: string) => void;
   label?: string;
-  currentUserEmail?: string; // NEW: pass current user's email for permission logic
+  currentUserEmail?: string; // user's email for permission logic
 }
 
 export function RoleSelector({ 
@@ -32,7 +33,7 @@ export function RoleSelector({
   userId, 
   onRoleChange,
   label,
-  currentUserEmail // <- added for accurate logic
+  currentUserEmail
 }: RoleSelectorProps) {
   // "Super admin" status
   const isSuperAdmin = currentUserRole === 'super_admin';

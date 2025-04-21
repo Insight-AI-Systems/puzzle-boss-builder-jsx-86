@@ -19,14 +19,27 @@ import { UserProfile, UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+// Define a consistent protected admin identifier
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+
 export function RoleManagement() {
   const { allProfiles, isLoadingProfiles, updateUserRole, profile: currentUserProfile } = useUserProfile();
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
   
   const currentUserRole = currentUserProfile?.role || 'player';
-  const isSuperAdmin = currentUserRole === 'super_admin' || 
-                        currentUserProfile?.id === 'alan@insight-ai-systems.com';
+  const currentUserEmail = currentUserProfile?.id;
+  const isSuperAdmin = currentUserRole === 'super_admin';
+  const isCurrentUserProtectedAdmin = currentUserEmail === PROTECTED_ADMIN_EMAIL;
+  const canAssignAnyRole = isSuperAdmin || isCurrentUserProtectedAdmin;
+  
+  console.log('RoleManagement - Current user:', {
+    role: currentUserRole, 
+    email: currentUserEmail,
+    isSuperAdmin,
+    isCurrentUserProtectedAdmin,
+    canAssignAnyRole
+  });
   
   // Filter profiles based on search term
   const profilesData = allProfiles?.data || [];
@@ -57,13 +70,13 @@ export function RoleManagement() {
 
   // Helper function to determine if current user can assign a role
   const canAssignRole = (role: UserRole, userId: string): boolean => {
-    // Special case for protected admin
-    if (userId === 'alan@insight-ai-systems.com') {
-      return isSuperAdmin;
+    // Special case: Only the protected admin or super admins can change protected admin
+    if (userId === PROTECTED_ADMIN_EMAIL) {
+      return canAssignAnyRole;
     }
     
     // Super admin can assign any role
-    if (isSuperAdmin) return true;
+    if (canAssignAnyRole) return true;
     
     // Regular admin can assign non-super_admin roles
     if (currentUserRole === 'admin' && role !== 'super_admin') return true;
@@ -169,17 +182,24 @@ export function RoleManagement() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Assign Role</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        {Object.values(ROLE_DEFINITIONS).map((roleInfo) => (
-                          <DropdownMenuItem
-                            key={roleInfo.role}
-                            onClick={() => handleRoleChange(user.id, roleInfo.role)}
-                            disabled={!canAssignRole(roleInfo.role, user.id) || user.role === roleInfo.role}
-                            className={user.role === roleInfo.role ? 'bg-muted font-medium' : ''}
-                          >
-                            {roleInfo.label}
-                            {user.role === roleInfo.role && " (current)"}
-                          </DropdownMenuItem>
-                        ))}
+                        {Object.values(ROLE_DEFINITIONS).map((roleInfo) => {
+                          const canAssign = canAssignRole(roleInfo.role, user.id);
+                          const isCurrentRole = user.role === roleInfo.role;
+                          
+                          console.log(`Role option for ${user.id}, role=${roleInfo.role}: canAssign=${canAssign}, isCurrentRole=${isCurrentRole}`);
+                          
+                          return (
+                            <DropdownMenuItem
+                              key={roleInfo.role}
+                              onClick={() => handleRoleChange(user.id, roleInfo.role)}
+                              disabled={!canAssign || user.role === roleInfo.role}
+                              className={user.role === roleInfo.role ? 'bg-muted font-medium' : ''}
+                            >
+                              {roleInfo.label}
+                              {user.role === roleInfo.role && " (current)"}
+                            </DropdownMenuItem>
+                          );
+                        })}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
