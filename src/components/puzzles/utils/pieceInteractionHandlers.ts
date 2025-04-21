@@ -1,136 +1,184 @@
-
 import { BasePuzzlePiece } from '../types/puzzle-types';
-import { checkForHints } from './pieceHintUtils';
 
-// Function to create handlers for piece interactions
-export const createPieceHandlers = <T extends BasePuzzlePiece>(
-  pieces: T[],
-  setPieces: React.Dispatch<React.SetStateAction<T[]>>,
-  draggedPiece: T | null,
-  setDraggedPiece: React.Dispatch<React.SetStateAction<T | null>>,
-  incrementMoveCount: (count: number) => void,
+export const createPieceHandlers = (
+  pieces: BasePuzzlePiece[],
+  setPieces: React.Dispatch<React.SetStateAction<BasePuzzlePiece[]>>,
+  draggedPiece: BasePuzzlePiece | null,
+  setDraggedPiece: React.Dispatch<React.SetStateAction<BasePuzzlePiece | null>>,
+  onMoveCountUpdate: (count: number) => void,
   isSolved: boolean,
-  playSound?: (soundType: 'pickup' | 'place' | 'correct' | 'complete') => void
+  playSound: (sound: 'pickup' | 'place' | 'correct' | 'complete') => void
 ) => {
-  // Track move count for the current session
   let moveCount = 0;
 
-  // Handle the start of a drag operation
-  const handleDragStart = (piece: T) => {
+  const handleDragStart = (piece: BasePuzzlePiece) => {
     if (isSolved) return;
     
-    if (playSound) playSound('pickup');
+    playSound('pickup');
     setDraggedPiece(piece);
     
-    setPieces(pieces.map(p => 
-      p.id === piece.id 
-        ? { ...p, isDragging: true } 
-        : p
-    ));
+    // Update piece state
+    setPieces(prevPieces => {
+      return prevPieces.map(p => {
+        if (p.id === piece.id) {
+          return { ...p, isDragging: true };
+        }
+        return p;
+      });
+    });
   };
 
-  // Handle piece movement during drag
-  const handleMove = (piece: T, newPosition: number) => {
-    if (isSolved || !piece.isDragging) return;
+  const handleMove = (piece: BasePuzzlePiece, targetIndex: number) => {
+    if (isSolved || !draggedPiece) return;
     
-    setPieces(pieces.map(p => 
-      p.id === piece.id 
-        ? { ...p, position: newPosition } 
-        : p
-    ));
+    // Optional: Add hover effect or preview
   };
 
-  // Handle the end of a drag operation
-  const handleDrop = (piece: T) => {
-    if (isSolved) return;
+  const handleDrop = (piece: BasePuzzlePiece) => {
+    if (isSolved || !draggedPiece) return;
     
-    if (playSound) playSound('place');
+    // Find the current positions of both pieces
+    const draggedIndex = pieces.findIndex(p => p.id === draggedPiece.id);
+    const targetIndex = pieces.findIndex(p => p.id === piece.id);
     
-    moveCount++;
-    incrementMoveCount(moveCount);
-    
-    const pieceId = piece.id;
-    const pieceNumber = parseInt(pieceId.split('-')[1]);
-    const isCorrectlyPlaced = pieceNumber === piece.position;
-    
-    setPieces(pieces.map(p => 
-      p.id === piece.id 
-        ? { 
-            ...p, 
-            isDragging: false,
-            correctlyPlaced: isCorrectlyPlaced
-          } 
-        : p
-    ));
-    
-    if (isCorrectlyPlaced && playSound) {
-      playSound('correct');
+    // Don't swap if dropping on itself
+    if (draggedIndex === targetIndex) {
+      // Just reset dragging state
+      setPieces(prevPieces => {
+        return prevPieces.map(p => {
+          if (p.id === draggedPiece.id) {
+            return { ...p, isDragging: false };
+          }
+          return p;
+        });
+      });
+      setDraggedPiece(null);
+      return;
     }
     
+    // Swap positions
+    setPieces(prevPieces => {
+      const updatedPieces = [...prevPieces];
+      
+      // Get the positions
+      const draggedPosition = updatedPieces[draggedIndex].position;
+      const targetPosition = updatedPieces[targetIndex].position;
+      
+      // Swap them
+      updatedPieces[draggedIndex] = {
+        ...updatedPieces[draggedIndex],
+        position: targetPosition,
+        isDragging: false
+      };
+      
+      updatedPieces[targetIndex] = {
+        ...updatedPieces[targetIndex],
+        position: draggedPosition
+      };
+      
+      return updatedPieces;
+    });
+    
+    // Update move count
+    moveCount++;
+    onMoveCountUpdate(moveCount);
+    
+    // Play sound
+    playSound('place');
+    
+    // Reset dragged piece
     setDraggedPiece(null);
   };
 
-  // Handle piece click for non-drag interactions
-  const handlePieceClick = (piece: T) => {
+  const handlePieceClick = (piece: BasePuzzlePiece) => {
     if (isSolved) return;
     
+    // If a piece is already being dragged, treat this as a drop
     if (draggedPiece && draggedPiece.id !== piece.id) {
-      if (playSound) playSound('place');
-      
-      const draggedPosition = draggedPiece.position;
-      const targetPosition = piece.position;
-      
-      setPieces(pieces.map(p => {
-        if (p.id === draggedPiece.id) {
-          return { ...p, position: targetPosition, isDragging: false };
-        }
-        if (p.id === piece.id) {
-          return { ...p, position: draggedPosition };
-        }
-        return p;
-      }));
-      
-      moveCount++;
-      incrementMoveCount(moveCount);
-      
-      setDraggedPiece(null);
-    } else {
+      handleDrop(piece);
+    } else if (!draggedPiece) {
+      // Otherwise, start dragging this piece
       handleDragStart(piece);
+    } else {
+      // Clicking the same piece again cancels the drag
+      setPieces(prevPieces => {
+        return prevPieces.map(p => {
+          if (p.id === draggedPiece.id) {
+            return { ...p, isDragging: false };
+          }
+          return p;
+        });
+      });
+      setDraggedPiece(null);
     }
   };
 
-  // Handle directional movement for keyboard/gamepad controls
-  const handleDirectionalMove = (direction: 'up' | 'down' | 'left' | 'right', gridSize: number) => {
+  const handleDirectionalMove = (direction: 'up' | 'down' | 'left' | 'right') => {
     if (isSolved || !draggedPiece) return;
     
-    const currentPosition = draggedPiece.position;
-    let newPosition = currentPosition;
+    const gridSize = Math.sqrt(pieces.length);
+    const draggedIndex = pieces.findIndex(p => p.id === draggedPiece.id);
+    let targetIndex = draggedIndex;
     
+    // Calculate target index based on direction
     switch (direction) {
       case 'up':
-        if (currentPosition >= gridSize) {
-          newPosition = currentPosition - gridSize;
-        }
+        targetIndex = draggedIndex - gridSize;
         break;
       case 'down':
-        if (currentPosition < (gridSize * gridSize) - gridSize) {
-          newPosition = currentPosition + gridSize;
-        }
+        targetIndex = draggedIndex + gridSize;
         break;
       case 'left':
-        if (currentPosition % gridSize !== 0) {
-          newPosition = currentPosition - 1;
+        if (draggedIndex % gridSize > 0) {
+          targetIndex = draggedIndex - 1;
         }
         break;
       case 'right':
-        if (currentPosition % gridSize !== gridSize - 1) {
-          newPosition = currentPosition + 1;
+        if (draggedIndex % gridSize < gridSize - 1) {
+          targetIndex = draggedIndex + 1;
         }
         break;
     }
     
-    if (newPosition !== currentPosition) {
-      handleMove(draggedPiece, newPosition);
+    // Check if target index is valid
+    if (targetIndex >= 0 && targetIndex < pieces.length && targetIndex !== draggedIndex) {
+      const targetPiece = pieces[targetIndex];
+      handleDrop(targetPiece);
+    }
+  };
+
+  const checkForHints = () => {
+    if (isSolved) return;
+    
+    // Clear all hints first
+    setPieces(prevPieces => {
+      return prevPieces.map(p => ({
+        ...p,
+        showHint: false
+      }));
+    });
+    
+    // Randomly select 1-2 pieces that are in the wrong position to hint
+    const incorrectPieces = pieces.filter(piece => {
+      const pieceNumber = parseInt(piece.id.split('-')[1]);
+      return pieces.indexOf(piece) !== pieceNumber;
+    });
+    
+    if (incorrectPieces.length > 0) {
+      const numHints = Math.min(incorrectPieces.length, Math.random() > 0.5 ? 2 : 1);
+      const hintPieces = Array.from({ length: numHints }, () => {
+        const randomIndex = Math.floor(Math.random() * incorrectPieces.length);
+        const piece = incorrectPieces.splice(randomIndex, 1)[0];
+        return piece.id;
+      });
+      
+      // Apply hints
+      setPieces(prevPieces => {
+        return prevPieces.map(p => ({
+          ...p,
+          showHint: hintPieces.includes(p.id)
+        }));
+      });
     }
   };
 
@@ -140,9 +188,6 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     handleDrop,
     handlePieceClick,
     handleDirectionalMove,
-    checkForHints: () => checkForHints(pieces, setPieces, isSolved)
+    checkForHints
   };
 };
-
-export { checkForHints } from './pieceHintUtils';
-export { getImagePieceStyle } from './pieceStyleUtils';

@@ -81,6 +81,7 @@ const AssemblyArea: React.FC<AssemblyAreaProps> = ({
                   height: `${pieceSize}px`,
                   backgroundImage: `url(${imageUrl})`,
                   backgroundSize: `${columns * 100}% ${rows * 100}%`,
+                  // Fix: Use the pieceId (not idx) to determine background position
                   backgroundPosition: `${(pieceId % columns) * 100 / (columns - 1)}% ${Math.floor(pieceId / columns) * 100 / (rows - 1)}%`,
                   opacity: 1,
                   cursor: isCorrectPosition ? 'default' : 'grab'

@@ -73,8 +73,7 @@ const TimedModeBanner: React.FC<TimedModeBannerProps> = ({
       
       <Progress 
         value={progressPercent} 
-        className={`h-2 ${isMobile ? 'h-1.5' : 'h-2'}`}
-        indicatorClassName={getProgressColor()}
+        className={`h-2 ${isMobile ? 'h-1.5' : 'h-2'} ${getProgressColor()}`}
       />
     </div>
   );
