@@ -1,3 +1,7 @@
+
+// Minor foundational code quality refactor for readability and dead code comments.
+// No changes to logic, API, UI, or behavior per Maslow protocol.
+
 import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,37 +44,31 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
   const isFirstRender = useRef(true);
 
   useEffect(() => {
-    // when puzzle changes, update toggled state accordingly
     setTimerEnabled(Boolean(puzzle?.timeLimit && puzzle.timeLimit > 0));
   }, [puzzle?.timeLimit]);
 
-  // Auto sync Prize Value → Target Revenue unless targetRevenue has been manually edited.
+  // Prize Value → Target Revenue sync unless manually overridden
   useEffect(() => {
-    // Do not run on very first render after mounting.
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
-    // Blank or 0 disables the auto target revenue, resets manual flag.
     if (
-      (puzzle?.prizeValue === "" || puzzle?.prizeValue === undefined || Number(puzzle?.prizeValue) === 0)
+      puzzle?.prizeValue === "" || puzzle?.prizeValue === undefined || Number(puzzle?.prizeValue) === 0
     ) {
       setHasManualTargetRevenueEdit(false);
       onChange("targetRevenue", "");
       return;
     }
-    // Only auto update if not manually overridden
     if (!hasManualTargetRevenueEdit) {
       const valueNum = Number(puzzle.prizeValue);
       if (!isNaN(valueNum)) {
-        onChange("targetRevenue", Math.round(valueNum * 2 * 100) / 100); // 2x, rounded to cents
+        onChange("targetRevenue", Math.round(valueNum * 2 * 100) / 100);
       }
     }
-  // React to changes in prizeValue ONLY
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [puzzle?.prizeValue]);
 
-  // To reset the manual override on puzzle change (e.g., switching puzzles, editing new one)
   useEffect(() => {
     setHasManualTargetRevenueEdit(false);
   }, [puzzle?.id]);
@@ -80,7 +78,6 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
     if (!checked) {
       onChange("timeLimit", 0);
     } else {
-      // Set to default (if necessary) or leave value as is.
       if (!puzzle.timeLimit || puzzle.timeLimit === 0) {
         onChange("timeLimit", 300);
       }
@@ -91,17 +88,14 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
     const value = e.target.value;
     const num = value === "" ? "" : Number(value);
     onChange("prizeValue", num);
-    // Do not set hasManualTargetRevenueEdit here; handled by effect
   };
 
   const onTargetRevenueInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     onChange("targetRevenue", newValue === "" ? "" : Number(newValue));
-    // If the admin edits this field, break the sync until puzzle/prizeValue changes
     if (
       puzzle.prizeValue !== "" &&
       puzzle.prizeValue !== undefined &&
-      // Don't break sync if the user just types the auto-suggested number
       Number(newValue) !== Math.round(Number(puzzle.prizeValue) * 2 * 100) / 100
     ) {
       setHasManualTargetRevenueEdit(true);
