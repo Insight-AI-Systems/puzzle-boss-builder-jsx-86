@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -112,7 +111,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
             id="edit-name"
             value={puzzle?.name ?? ""}
             onChange={e => onChange("name", e.target.value)}
-            data-testid={`edit-name`}
+            data-testid="edit-name"
             className="mb-1"
             autoFocus
           />
@@ -124,8 +123,22 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
             id="edit-prize"
             value={puzzle?.prize ?? ""}
             onChange={e => onChange("prize", e.target.value)}
-            data-testid={`edit-prize`}
+            data-testid="edit-prize"
             className="mb-1"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="edit-prizevalue" className="block mb-1">Prize Value ($)</Label>
+          <Input
+            id="edit-prizevalue"
+            type="number"
+            min={0}
+            step={0.01}
+            value={puzzle?.prizeValue ?? ""}
+            onChange={e => onChange("prizeValue", Number(e.target.value))}
+            data-testid="edit-prizevalue"
+            className="w-28 inline-block"
           />
         </div>
 
@@ -192,7 +205,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
               min={0}
               value={puzzle?.timeLimit ?? ""}
               onChange={e => onChange("timeLimit", Number(e.target.value))}
-              data-testid={`edit-timelimit`}
+              data-testid="edit-timelimit"
               className="w-28 inline-block"
             />
           </div>
@@ -207,7 +220,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
             min={0}
             value={puzzle?.costPerPlay ?? ""}
             onChange={e => onChange("costPerPlay", Number(e.target.value))}
-            data-testid={`edit-costperplay`}
+            data-testid="edit-costperplay"
             className="w-28 inline-block"
           />
         </div>
@@ -221,7 +234,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
             min={0}
             value={puzzle?.targetRevenue ?? ""}
             onChange={e => onChange("targetRevenue", Number(e.target.value))}
-            data-testid={`edit-targetrev`}
+            data-testid="edit-targetrev"
             className="w-32 inline-block"
           />
         </div>
@@ -266,4 +279,3 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
 };
 
 export default PuzzleEditPanel;
-
