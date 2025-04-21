@@ -15,6 +15,7 @@ import { GameManagement } from '../GameManagement';
 import { ContentManagement } from '../ContentManagement';
 import { SecurityDashboard } from '../SecurityDashboard';
 import { EmailManagement } from '../EmailManagement';
+import { PuzzleCreateContent } from './PuzzleCreateContent';
 import { TabDefinition } from './TabDefinitions';
 
 interface DashboardContentProps {
@@ -39,6 +40,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
         return <UserManagement />;
       case 'puzzles':
         return <GameManagement />;
+      case 'puzzle-create':
+        return <PuzzleCreateContent />;
       case 'categories':
         return <CategoryManagement />;
       case 'content':
@@ -75,6 +78,17 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
           {getComponentForTab(tab.id)}
         </TabsContent>
       ))}
+      
+      {/* Special case for puzzle creation which isn't in the tabs list */}
+      {activeTab === 'puzzle-create' && (
+        <TabsContent 
+          value="puzzle-create" 
+          className="pt-4"
+          forceMount={true}
+        >
+          <PuzzleCreateContent />
+        </TabsContent>
+      )}
     </>
   );
 };

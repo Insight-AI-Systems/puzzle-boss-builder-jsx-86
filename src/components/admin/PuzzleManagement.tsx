@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +13,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 import { 
   Plus, 
   Puzzle, 
@@ -24,7 +24,6 @@ import {
   Trash2 
 } from "lucide-react";
 
-// Sample puzzles data
 const samplePuzzles = [
   {
     id: "p1",
@@ -86,26 +85,28 @@ const samplePuzzles = [
 export const PuzzleManagement: React.FC = () => {
   const [puzzles, setPuzzles] = useState(samplePuzzles);
   const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
   
-  // Filter puzzles based on search term
   const filteredPuzzles = puzzles.filter(puzzle => 
     puzzle.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     puzzle.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
     puzzle.prize.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  // Get puzzles by status
   const activePuzzles = filteredPuzzles.filter(p => p.status === "active");
   const scheduledPuzzles = filteredPuzzles.filter(p => p.status === "scheduled");
   const completedPuzzles = filteredPuzzles.filter(p => p.status === "completed");
   const draftPuzzles = filteredPuzzles.filter(p => p.status === "draft");
   
-  // Format time in MM:SS
   const formatTime = (seconds: number) => {
     if (seconds === 0) return "N/A";
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  const handleNewPuzzle = () => {
+    navigate('/admin-dashboard/puzzle-create');
   };
   
   return (
@@ -140,7 +141,7 @@ export const PuzzleManagement: React.FC = () => {
               <path d="m21 21-4.35-4.35" />
             </svg>
           </div>
-          <Button>
+          <Button onClick={handleNewPuzzle}>
             <Plus className="h-4 w-4 mr-2" />
             New Puzzle
           </Button>
