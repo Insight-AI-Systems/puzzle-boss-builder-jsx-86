@@ -22,6 +22,14 @@ const AssemblyArea: React.FC<AssemblyAreaProps> = ({
   onPieceRemove
 }) => {
   const pieceSize = 64;
+  
+  // Function to calculate correct background position for a piece
+  const getBackgroundPosition = (pieceId: number) => {
+    const row = Math.floor(pieceId / columns);
+    const col = pieceId % columns;
+    return `${(col * 100) / (columns - 1)}% ${(row * 100) / (rows - 1)}%`;
+  };
+  
   return (
     <div
       className="grid gap-1"
@@ -81,8 +89,7 @@ const AssemblyArea: React.FC<AssemblyAreaProps> = ({
                   height: `${pieceSize}px`,
                   backgroundImage: `url(${imageUrl})`,
                   backgroundSize: `${columns * 100}% ${rows * 100}%`,
-                  // Fix: Use the pieceId (not idx) to determine background position
-                  backgroundPosition: `${(pieceId % columns) * 100 / (columns - 1)}% ${Math.floor(pieceId / columns) * 100 / (rows - 1)}%`,
+                  backgroundPosition: getBackgroundPosition(pieceId),
                   opacity: 1,
                   cursor: isCorrectPosition ? 'default' : 'grab'
                 }}
