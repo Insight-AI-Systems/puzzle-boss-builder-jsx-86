@@ -36,6 +36,7 @@ import {
   Auth,
   BetaNotes
 } from '@/pages';
+import PuzzleTestPlayground from '@/pages/PuzzleTestPlayground';
 import Unauthorized from '@/pages/Unauthorized';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layouts/MainLayout';
@@ -104,6 +105,11 @@ function App() {
                       <Route path="/puzzle-tests" element={
                         <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
                           <PuzzleTests />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/puzzle-playground" element={
+                        <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
+                          <PuzzleTestPlayground />
                         </ProtectedRoute>
                       } />
                       
