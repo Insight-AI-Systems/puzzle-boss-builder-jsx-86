@@ -7,6 +7,7 @@ interface UsePuzzleGridEventsProps<T extends BasePuzzlePiece> {
   handleMove: (piece: T, index: number) => void;
   handleDrop: (piece: T) => void;
   handlePieceClick: (piece: T) => void;
+  handleDirectionalMove?: (direction: 'up' | 'down' | 'left' | 'right') => void;
 }
 
 export const usePuzzleGridEvents = <T extends BasePuzzlePiece>({
@@ -14,7 +15,8 @@ export const usePuzzleGridEvents = <T extends BasePuzzlePiece>({
   handleDragStart,
   handleMove,
   handleDrop,
-  handlePieceClick
+  handlePieceClick,
+  handleDirectionalMove
 }: UsePuzzleGridEventsProps<T>) => {
   const handleGridDragStart = (e: React.MouseEvent | React.TouchEvent, piece: T) => {
     e.preventDefault();
@@ -43,6 +45,7 @@ export const usePuzzleGridEvents = <T extends BasePuzzlePiece>({
     handleGridDragStart,
     handleGridMove,
     handleGridDrop,
-    handleGridPieceClick
+    handleGridPieceClick,
+    handleDirectionalMove
   };
 };

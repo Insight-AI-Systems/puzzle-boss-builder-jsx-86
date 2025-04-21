@@ -1,31 +1,22 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { DifficultyLevel, GameMode, PieceShape, VisualTheme } from '../types/puzzle-types';
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger,
-  DialogFooter
-} from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Settings,
-  Clock,
-  RotateCcw,
-  Puzzle,
-  Palette,
-  HelpCircle,
-  Sliders,
-  X
-} from 'lucide-react';
-import { GameMode, PieceShape, VisualTheme, MODE_DESCRIPTIONS, THEME_DESCRIPTIONS, DifficultyLevel, difficultyConfig } from '../types/puzzle-types';
+  Popover, 
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from '@/components/ui/tabs';
+import { Settings } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Slider } from '@/components/ui/slider';
 
 interface GameSettingsProps {
   gameMode: GameMode;
@@ -40,7 +31,7 @@ interface GameSettingsProps {
   setRotationEnabled: (enabled: boolean) => void;
   timeLimit: number;
   setTimeLimit: (limit: number) => void;
-  isMobile: boolean;
+  isMobile?: boolean;
 }
 
 const GameSettings: React.FC<GameSettingsProps> = ({
@@ -56,213 +47,155 @@ const GameSettings: React.FC<GameSettingsProps> = ({
   setRotationEnabled,
   timeLimit,
   setTimeLimit,
-  isMobile
+  isMobile = false
 }) => {
-  const [open, setOpen] = React.useState(false);
-  
-  const handleSaveSettings = () => {
-    // If game mode is challenge, force rotation enabled
-    if (gameMode === 'challenge' && !rotationEnabled) {
-      setRotationEnabled(true);
-    }
-    setOpen(false);
+  const formatTimeLimit = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    return `${mins} min${mins !== 1 ? 's' : ''}`;
   };
-
+  
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="flex items-center gap-2">
-          <Settings className="h-4 w-4" />
-          <span>Game Settings</span>
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button 
+          variant="outline" 
+          className={`flex items-center gap-2 ${isMobile ? 'px-3' : ''}`}
+        >
+          <Settings className="w-4 h-4" />
+          <span>{isMobile ? '' : 'Game Settings'}</span>
         </Button>
-      </DialogTrigger>
-      <DialogContent className={`${isMobile ? 'w-[95vw] max-w-md' : 'max-w-2xl'} max-h-[90vh] overflow-y-auto`}>
-        <DialogHeader>
-          <DialogTitle>Game Settings</DialogTitle>
-          <DialogDescription>
-            Customize your puzzle experience
-          </DialogDescription>
-        </DialogHeader>
+      </PopoverTrigger>
+      <PopoverContent 
+        className={`${isMobile ? 'w-[280px]' : 'w-[350px]'} p-4`}
+        align="end"
+      >
+        <h3 className="font-medium text-lg mb-4">Game Settings</h3>
         
-        <Tabs defaultValue="modes">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="modes" className="flex items-center gap-1">
-              <Puzzle className="h-4 w-4" />
-              <span className={isMobile ? 'hidden' : ''}>Modes</span>
-            </TabsTrigger>
-            <TabsTrigger value="difficulty" className="flex items-center gap-1">
-              <Sliders className="h-4 w-4" />
-              <span className={isMobile ? 'hidden' : ''}>Difficulty</span>
-            </TabsTrigger>
-            <TabsTrigger value="appearance" className="flex items-center gap-1">
-              <Palette className="h-4 w-4" />
-              <span className={isMobile ? 'hidden' : ''}>Appearance</span>
-            </TabsTrigger>
-            <TabsTrigger value="help" className="flex items-center gap-1">
-              <HelpCircle className="h-4 w-4" />
-              <span className={isMobile ? 'hidden' : ''}>Help</span>
-            </TabsTrigger>
+        <Tabs defaultValue="mode">
+          <TabsList className="w-full mb-4">
+            <TabsTrigger value="mode" className="flex-1">Game Mode</TabsTrigger>
+            <TabsTrigger value="visuals" className="flex-1">Visuals</TabsTrigger>
+            <TabsTrigger value="advanced" className="flex-1">Advanced</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="modes" className="space-y-4 py-4">
-            <h3 className="text-lg font-semibold">Game Modes</h3>
-            <RadioGroup value={gameMode} onValueChange={(value) => setGameMode(value as GameMode)} className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="classic" id="classic" />
-                <Label htmlFor="classic" className="flex items-center gap-2">
-                  <Puzzle className="h-4 w-4" />
-                  <div>
-                    <div className="font-medium">Classic Mode</div>
-                    <div className="text-sm text-muted-foreground">{MODE_DESCRIPTIONS.classic}</div>
-                  </div>
-                </Label>
+          <TabsContent value="mode" className="space-y-4">
+            <div className="space-y-2">
+              <h4 className="font-medium">Game Mode</h4>
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  size="sm"
+                  variant={gameMode === 'classic' ? 'default' : 'outline'}
+                  onClick={() => setGameMode('classic')}
+                >
+                  Classic
+                </Button>
+                <Button 
+                  size="sm"
+                  variant={gameMode === 'timed' ? 'default' : 'outline'}
+                  onClick={() => setGameMode('timed')}
+                >
+                  Timed
+                </Button>
+                <Button 
+                  size="sm"
+                  variant={gameMode === 'challenge' ? 'default' : 'outline'}
+                  onClick={() => setGameMode('challenge')}
+                >
+                  Challenge
+                </Button>
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="timed" id="timed" />
-                <Label htmlFor="timed" className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  <div>
-                    <div className="font-medium">Timed Mode</div>
-                    <div className="text-sm text-muted-foreground">{MODE_DESCRIPTIONS.timed}</div>
+              
+              {gameMode === 'timed' && (
+                <div className="pt-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium">Time Limit: {formatTimeLimit(timeLimit)}</span>
                   </div>
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="challenge" id="challenge" />
-                <Label htmlFor="challenge" className="flex items-center gap-2">
-                  <RotateCcw className="h-4 w-4" />
-                  <div>
-                    <div className="font-medium">Challenge Mode</div>
-                    <div className="text-sm text-muted-foreground">{MODE_DESCRIPTIONS.challenge}</div>
-                  </div>
-                </Label>
-              </div>
-            </RadioGroup>
+                  <Slider
+                    defaultValue={[timeLimit]}
+                    max={900}
+                    min={60}
+                    step={30}
+                    onValueChange={(vals) => setTimeLimit(vals[0])}
+                    className="mt-2"
+                  />
+                </div>
+              )}
+            </div>
             
-            {gameMode === 'timed' && (
-              <div className="space-y-2 pt-2">
-                <Label htmlFor="time-limit">Time Limit (seconds): {timeLimit}</Label>
-                <Slider
-                  id="time-limit"
-                  min={30}
-                  max={600}
-                  step={30}
-                  value={[timeLimit]}
-                  onValueChange={(values) => setTimeLimit(values[0])}
+            <div className="space-y-2">
+              <h4 className="font-medium">Difficulty</h4>
+              <div className="flex flex-wrap gap-2">
+                {(['3x3', '4x4', '5x5'] as DifficultyLevel[]).map((diff) => (
+                  <Button
+                    key={diff}
+                    size="sm"
+                    variant={difficulty === diff ? 'default' : 'outline'}
+                    onClick={() => setDifficulty(diff)}
+                  >
+                    {diff}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="visuals" className="space-y-4">
+            <div className="space-y-2">
+              <h4 className="font-medium">Piece Shape</h4>
+              <div className="flex flex-wrap gap-2">
+                {(['standard', 'rounded', 'puzzle'] as PieceShape[]).map((shape) => (
+                  <Button
+                    key={shape}
+                    size="sm"
+                    variant={pieceShape === shape ? 'default' : 'outline'}
+                    onClick={() => setPieceShape(shape)}
+                  >
+                    {shape.charAt(0).toUpperCase() + shape.slice(1)}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-medium">Visual Theme</h4>
+              <div className="flex flex-wrap gap-2">
+                {(['light', 'dark', 'colorful'] as VisualTheme[]).map((theme) => (
+                  <Button
+                    key={theme}
+                    size="sm"
+                    variant={visualTheme === theme ? 'default' : 'outline'}
+                    onClick={() => setVisualTheme(theme)}
+                  >
+                    {theme.charAt(0).toUpperCase() + theme.slice(1)}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="advanced" className="space-y-4">
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="rotation"
+                  checked={rotationEnabled}
+                  onCheckedChange={setRotationEnabled}
                 />
+                <Label htmlFor="rotation" className="cursor-pointer">
+                  Enable Piece Rotation
+                </Label>
               </div>
-            )}
-            
-            <div className="flex items-center space-x-2 pt-2">
-              <Switch 
-                id="rotate-pieces" 
-                checked={rotationEnabled || gameMode === 'challenge'} 
-                onCheckedChange={setRotationEnabled}
-                disabled={gameMode === 'challenge'}
-              />
-              <Label htmlFor="rotate-pieces" className="flex items-center gap-2">
-                <div>
-                  <div className="font-medium">Piece Rotation</div>
-                  <div className="text-sm text-muted-foreground">
-                    {gameMode === 'challenge' ? 'Always enabled in Challenge Mode' : 'Allow pieces to be rotated'}
-                  </div>
-                </div>
-              </Label>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="difficulty" className="space-y-4 py-4">
-            <h3 className="text-lg font-semibold">Puzzle Difficulty</h3>
-            <RadioGroup 
-              value={difficulty} 
-              onValueChange={(value) => setDifficulty(value as DifficultyLevel)} 
-              className="space-y-2"
-            >
-              {(Object.keys(difficultyConfig) as DifficultyLevel[]).map((diff) => (
-                <div key={diff} className="flex items-center space-x-2">
-                  <RadioGroupItem value={diff} id={diff} />
-                  <Label htmlFor={diff}>
-                    <div className="font-medium">{difficultyConfig[diff].label}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {difficultyConfig[diff].gridSize}×{difficultyConfig[diff].gridSize} grid 
-                      ({difficultyConfig[diff].gridSize * difficultyConfig[diff].gridSize} pieces)
-                    </div>
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-            
-            <div className="flex items-center space-x-2 pt-2">
-              <Switch 
-                id="piece-shape" 
-                checked={pieceShape === 'irregular'} 
-                onCheckedChange={(checked) => setPieceShape(checked ? 'irregular' : 'standard')}
-              />
-              <Label htmlFor="piece-shape">
-                <div className="font-medium">Irregular Piece Shapes</div>
-                <div className="text-sm text-muted-foreground">
-                  Use more complex and interesting piece shapes
-                </div>
-              </Label>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="appearance" className="space-y-4 py-4">
-            <h3 className="text-lg font-semibold">Visual Theme</h3>
-            <RadioGroup 
-              value={visualTheme} 
-              onValueChange={(value) => setVisualTheme(value as VisualTheme)} 
-              className="space-y-2"
-            >
-              {(['light', 'dark', 'colorful'] as VisualTheme[]).map((theme) => (
-                <div key={theme} className="flex items-center space-x-2">
-                  <RadioGroupItem value={theme} id={theme} />
-                  <Label htmlFor={theme}>
-                    <div className="font-medium capitalize">{theme} Theme</div>
-                    <div className="text-sm text-muted-foreground">
-                      {THEME_DESCRIPTIONS[theme]}
-                    </div>
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-          </TabsContent>
-          
-          <TabsContent value="help" className="space-y-4 py-4">
-            <h3 className="text-lg font-semibold">How to Play</h3>
-            <div className="space-y-2 text-sm">
-              <h4 className="font-medium">Classic Mode</h4>
-              <p>Drag and drop puzzle pieces to complete the image. Pieces will snap into place when correctly positioned.</p>
               
-              <h4 className="font-medium mt-3">Timed Mode</h4>
-              <p>Complete the puzzle before time runs out. The clock is ticking!</p>
-              
-              <h4 className="font-medium mt-3">Challenge Mode</h4>
-              <p>Pieces may be rotated. Click or tap a piece to rotate it clockwise. Make sure each piece has the correct orientation.</p>
-              
-              <h4 className="font-medium mt-3">Controls</h4>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Drag pieces with mouse or touch</li>
-                <li>Click/tap to rotate (when rotation is enabled)</li>
-                <li>Use directional controls on mobile</li>
-                <li>Save your progress to continue later</li>
-              </ul>
+              {rotationEnabled && (
+                <p className="text-sm text-muted-foreground">
+                  Click on pieces to rotate them.
+                </p>
+              )}
             </div>
           </TabsContent>
         </Tabs>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            <X className="h-4 w-4 mr-2" />
-            Cancel
-          </Button>
-          <Button onClick={handleSaveSettings}>
-            <Settings className="h-4 w-4 mr-2" />
-            Save Settings
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </PopoverContent>
+    </Popover>
   );
 };
 

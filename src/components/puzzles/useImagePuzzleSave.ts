@@ -26,7 +26,7 @@ export function useImagePuzzleSave(
   setTimeLimit: (n: number) => void,
 ) {
   const { savedGames, saveGame, deleteSave } = useSavedPuzzles();
-  const [currentGameId] = [ `puzzle-${Date.now()}` ];
+  const currentGameId = `puzzle-${Date.now()}`;
 
   const handleSave = useCallback(() => {
     const saveState: SavedPuzzleState = {

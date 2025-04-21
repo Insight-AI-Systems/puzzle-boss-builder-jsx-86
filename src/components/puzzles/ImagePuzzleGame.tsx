@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDeviceInfo } from '@/hooks/use-mobile';
 import { difficultyConfig, DifficultyLevel, GameMode, PieceShape, VisualTheme } from './types/puzzle-types';
@@ -6,7 +7,7 @@ import { usePuzzlePieces } from './hooks/usePuzzlePieces';
 import { usePuzzleState } from './hooks/usePuzzleState';
 import { usePuzzleGridEvents } from './hooks/usePuzzleGridEvents';
 import { getImagePieceStyle } from './utils/pieceStyleUtils';
-import { getRotationStyle, rotatePiece, initializeWithRotations, allPiecesCorrectlyRotated } from './utils/pieceRotationUtils';
+import { getRotationStyle, rotatePiece, initializeWithRotations } from './utils/pieceRotationUtils';
 import { createPieceHandlers } from './utils/pieceInteractionHandlers';
 import { getRecommendedDifficulty, calculateContainerSize } from './utils/puzzleSizeUtils';
 import { DEFAULT_IMAGES } from './types/puzzle-types';
@@ -16,6 +17,13 @@ import { usePuzzleSound } from './usePuzzleSound';
 import { useImagePuzzleSave } from './useImagePuzzleSave';
 import { usePuzzleCompletion } from './usePuzzleCompletion';
 import ImagePuzzleContainer from './ImagePuzzleContainer';
+
+// Import the components we've created
+import PuzzleStateDisplay from './components/PuzzleStateDisplay';
+import TimedModeBanner from './components/TimedModeBanner';
+import SaveLoadControls from './components/SaveLoadControls';
+import GameSettings from './components/GameSettings';
+import GameControlsLayout from './components/GameControlsLayout';
 
 interface ImagePuzzleGameProps {
   sampleImages?: string[];
@@ -216,6 +224,7 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
   // Save/load hook extracted
   const {
     savedGames,
+    saveGame,
     handleSave,
     handleLoad,
     deleteSave,
@@ -266,7 +275,7 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
       return () => clearInterval(autoSaveInterval);
     }
   }, [pieces, isSolved, currentGameId, difficulty, moveCount, puzzleState.timeSpent, 
-      selectedImage, gameMode, pieceShape, visualTheme, rotationEnabled, timeLimit, puzzleState.isActive, handleSave, saveGame]);
+      selectedImage, gameMode, pieceShape, visualTheme, rotationEnabled, timeLimit, puzzleState.isActive, saveGame]);
 
   const getThemeStyles = () => {
     switch (visualTheme) {

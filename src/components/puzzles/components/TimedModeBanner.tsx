@@ -1,15 +1,13 @@
 
-import React, { useEffect, useState, useCallback, memo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Progress } from '@/components/ui/progress';
-import { Clock, AlertTriangle } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface TimedModeBannerProps {
   timeLimit: number;
   timeSpent: number;
   isActive: boolean;
   onTimeUp: () => void;
-  isMobile: boolean;
+  isMobile?: boolean;
 }
 
 const TimedModeBanner: React.FC<TimedModeBannerProps> = ({
@@ -17,79 +15,69 @@ const TimedModeBanner: React.FC<TimedModeBannerProps> = ({
   timeSpent,
   isActive,
   onTimeUp,
-  isMobile
+  isMobile = false
 }) => {
   const [timeLeft, setTimeLeft] = useState(timeLimit - timeSpent);
-  const [warning, setWarning] = useState(false);
+  const [warningLevel, setWarningLevel] = useState<'normal' | 'warning' | 'critical'>('normal');
   
-  // Calculate percentage of time remaining - memoized to reduce calculations
-  const percentRemaining = Math.max(0, Math.min(100, (timeLeft / timeLimit) * 100));
-  
-  // Format time for display - memoized
-  const formatTime = useCallback((seconds: number): string => {
-    if (seconds <= 0) return '0:00';
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  }, []);
-  
-  // Update time left based on timeSpent
+  // Update time left and check for time up
   useEffect(() => {
-    setTimeLeft(timeLimit - timeSpent);
+    const remaining = timeLimit - timeSpent;
+    setTimeLeft(remaining);
     
-    // Show warning when less than 20% time remains
-    setWarning(percentRemaining < 20 && percentRemaining > 0);
+    // Set warning levels
+    if (remaining <= timeLimit * 0.25) {
+      setWarningLevel('critical');
+    } else if (remaining <= timeLimit * 0.5) {
+      setWarningLevel('warning');
+    } else {
+      setWarningLevel('normal');
+    }
     
     // Check if time is up
-    if (timeSpent >= timeLimit && isActive) {
+    if (remaining <= 0 && isActive) {
       onTimeUp();
     }
-  }, [timeLimit, timeSpent, percentRemaining, isActive, onTimeUp]);
+  }, [timeLimit, timeSpent, isActive, onTimeUp]);
   
-  // Timer effect with optimized tick calculation
-  useEffect(() => {
-    let interval: number | null = null;
-    
-    if (isActive && timeLeft > 0) {
-      interval = window.setInterval(() => {
-        setTimeLeft(prev => {
-          const newTime = prev - 1;
-          if (newTime <= 0) {
-            if (interval !== null) clearInterval(interval);
-            onTimeUp();
-            return 0;
-          }
-          return newTime;
-        });
-      }, 1000);
+  // Format time for display (mm:ss)
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(Math.max(0, seconds) / 60);
+    const secs = Math.max(0, seconds) % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  // Calculate progress percentage
+  const progressPercent = Math.max(0, Math.min(100, (timeLeft / timeLimit) * 100));
+  
+  // Get color based on warning level
+  const getProgressColor = () => {
+    switch (warningLevel) {
+      case 'critical':
+        return 'bg-red-500';
+      case 'warning':
+        return 'bg-yellow-500';
+      default:
+        return 'bg-green-500';
     }
-    
-    return () => {
-      if (interval !== null) clearInterval(interval);
-    };
-  }, [isActive, timeLeft, onTimeUp]);
+  };
   
   return (
-    <div className={`w-full ${warning ? 'animate-pulse' : ''}`}>
-      <Alert variant={warning ? "destructive" : "default"} className="mb-2">
-        <div className="flex items-center">
-          {warning ? <AlertTriangle className="h-4 w-4 mr-2" /> : <Clock className="h-4 w-4 mr-2" />}
-          <span className="font-medium">
-            {warning ? 'Time running out!' : 'Timed Challenge'}
-          </span>
-        </div>
-        <AlertDescription className="mt-1">
-          {isActive ? `Time remaining: ${formatTime(timeLeft)}` : 'Paused'}
-        </AlertDescription>
-      </Alert>
+    <div className={`w-full p-2 rounded-lg bg-black/20 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+      <div className="flex justify-between items-center mb-1">
+        <span>Timed Mode: {formatTime(timeLeft)} remaining</span>
+        <span className={`font-bold ${warningLevel === 'critical' ? 'text-red-500 animate-pulse' : ''}`}>
+          {!isActive && '(Paused)'}
+        </span>
+      </div>
       
       <Progress 
-        value={percentRemaining} 
-        className={warning ? 'bg-red-200' : 'bg-gray-200'} 
+        value={progressPercent} 
+        className={`h-2 ${isMobile ? 'h-1.5' : 'h-2'}`}
+        indicatorClassName={getProgressColor()}
       />
     </div>
   );
 };
 
-// Memoize component to prevent unnecessary re-renders
-export default memo(TimedModeBanner);
+export default TimedModeBanner;
