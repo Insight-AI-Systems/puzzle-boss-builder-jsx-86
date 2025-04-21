@@ -5,9 +5,6 @@ import { JigsawPuzzle } from 'react-jigsaw-puzzle/lib';
 import '../styles/jigsaw-puzzle.css';
 
 interface PuzzleContainerProps {
-  puzzleContainerRef: RefObject<HTMLDivElement>;
-  puzzleContainerStyle: React.CSSProperties;
-  showFirstMoveOverlay: boolean;
   loading: boolean;
   handleStartIfFirstMove: () => void;
   imageUrl: string;
@@ -16,12 +13,10 @@ interface PuzzleContainerProps {
   keyProp: number;
   onSolved: () => void;
   showBorder: boolean;
+  hasStarted: boolean;
 }
 
-export const PuzzleContainer: React.FC<PuzzleContainerProps> = memo(({
-  puzzleContainerRef,
-  puzzleContainerStyle,
-  showFirstMoveOverlay,
+export const PuzzleContainer: React.FC<PuzzleContainerProps> = ({
   loading,
   handleStartIfFirstMove,
   imageUrl,
@@ -29,12 +24,12 @@ export const PuzzleContainer: React.FC<PuzzleContainerProps> = memo(({
   columns,
   keyProp,
   onSolved,
-  showBorder
+  showBorder,
+  hasStarted
 }) => {
-  // Track previous image URL to avoid unnecessary re-renders
+  const containerRef = useRef<HTMLDivElement>(null);
   const prevImageRef = useRef(imageUrl);
   
-  // Only log when image URL actually changes
   useEffect(() => {
     if (prevImageRef.current !== imageUrl) {
       console.log('Image URL changed to:', imageUrl);
@@ -42,14 +37,20 @@ export const PuzzleContainer: React.FC<PuzzleContainerProps> = memo(({
     }
   }, [imageUrl]);
 
+  const containerStyle = {
+    position: 'relative',
+    width: '100%',
+    maxWidth: '500px',
+  } as const;
+
   return (
     <div
-      ref={puzzleContainerRef}
-      style={puzzleContainerStyle}
+      ref={containerRef}
+      style={containerStyle}
       tabIndex={0}
       className="focus:outline-1 focus:outline-primary relative"
     >
-      <FirstMoveOverlay show={showFirstMoveOverlay} onFirstMove={handleStartIfFirstMove} />
+      <FirstMoveOverlay show={!hasStarted && !loading} onFirstMove={handleStartIfFirstMove} />
 
       {loading ? (
         <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-20">
@@ -57,29 +58,20 @@ export const PuzzleContainer: React.FC<PuzzleContainerProps> = memo(({
         </div>
       ) : (
         <div
-          style={{ position: 'relative', width: '100%', maxWidth: '500px' }}
           onClick={handleStartIfFirstMove}
           className={!showBorder ? 'no-border-puzzle' : ''}
         >
-          {/* Display the image URL for debugging - shortened to reduce re-renders */}
-          {imageUrl && (
-            <div className="mb-2 text-xs text-muted-foreground">
-              Image loaded: {imageUrl.substring(0, 20)}...
-            </div>
-          )}
-
           <JigsawPuzzle
             key={keyProp}
             imageSrc={imageUrl}
             rows={rows}
             columns={columns}
             onSolved={onSolved}
-            className={!showBorder ? 'no-border-puzzle' : ''}
           />
         </div>
       )}
     </div>
   );
-});
+};
 
-PuzzleContainer.displayName = 'PuzzleContainer';
+export default memo(PuzzleContainer);
