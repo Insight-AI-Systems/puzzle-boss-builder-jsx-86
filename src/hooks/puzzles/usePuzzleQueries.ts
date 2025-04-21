@@ -24,16 +24,18 @@ function mapDatabasePuzzle(item: any): Puzzle {
     category_id: item.category_id,
     difficulty: difficulty,
     imageUrl: item.image_url,
-    timeLimit: item.time_limit || 0,
-    costPerPlay: item.cost_per_play || 1.99,
+    // Since these columns don't exist in the DB yet, we use defaults
+    timeLimit: 300, // Default 5 minutes (300 seconds)
+    costPerPlay: 1.99, // Default cost per play
     targetRevenue: item.income_target || 0,
     status: mapStatusFromDatabase(item.status || 'draft'),
-    prize: item.title,
+    prize: item.title, // Using title as prize name for now
     description: item.description || '',
-    puzzleOwner: item.puzzle_owner || '',
-    supplier: item.supplier || '',
-    completions: item.completions || 0,
-    avgTime: item.avg_time || 0,
+    // Default values for columns that don't exist yet
+    puzzleOwner: '',
+    supplier: '',
+    completions: 0,
+    avgTime: 0,
     prizeValue: item.prize_value || 0,
   };
 }

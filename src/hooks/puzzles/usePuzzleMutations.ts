@@ -19,7 +19,7 @@ export function usePuzzleMutations() {
       const categoryId = await getCategoryByName(puzzle.category as string);
       const releaseDate = new Date().toISOString();
 
-      // Convert from our Puzzle interface to database structure
+      // Only include fields that exist in the database schema
       const puzzleData = {
         title: puzzle.name,
         category_id: categoryId,
@@ -29,10 +29,6 @@ export function usePuzzleMutations() {
         description: puzzle.description || '',
         prize_value: puzzle.prizeValue ?? 0,
         release_date: releaseDate,
-        puzzle_owner: puzzle.puzzleOwner || '',
-        supplier: puzzle.supplier || '',
-        cost_per_play: puzzle.costPerPlay || 1.99,
-        time_limit: puzzle.timeLimit || 0,
         // Calculate pieces based on difficulty
         pieces:
           puzzle.difficulty === 'easy'
@@ -61,7 +57,7 @@ export function usePuzzleMutations() {
       if (!tableExists) throw new Error('Puzzles table does not exist');
       const categoryId = await getCategoryByName(puzzle.category as string);
 
-      // Convert from our Puzzle interface to database structure
+      // Only include fields that exist in the database schema
       const puzzleData = {
         title: puzzle.name,
         category_id: categoryId,
@@ -70,10 +66,6 @@ export function usePuzzleMutations() {
         status: puzzle.status,
         description: puzzle.description,
         prize_value: puzzle.prizeValue,
-        puzzle_owner: puzzle.puzzleOwner,
-        supplier: puzzle.supplier,
-        cost_per_play: puzzle.costPerPlay,
-        time_limit: puzzle.timeLimit,
         // Calculate pieces based on difficulty
         pieces:
           puzzle.difficulty === 'easy'
