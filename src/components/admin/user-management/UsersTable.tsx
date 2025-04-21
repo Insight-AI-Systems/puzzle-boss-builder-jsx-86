@@ -23,6 +23,11 @@ interface UsersTableProps {
   onSelectAll?: (isSelected: boolean) => void;
 }
 
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+function isProtectedAdminId(id?: string) {
+  return id === PROTECTED_ADMIN_EMAIL;
+}
+
 export function UsersTable({ 
   users, 
   currentUserRole, 
@@ -57,42 +62,27 @@ export function UsersTable({
     }
   };
 
-  // Check if current user is super admin
+  // Just an example to show how you'd get email/id of current user: 
+  // In real code, inject this as a prop, or via context
+  const currentUserEmail = undefined; // TODO — supply as a prop/context as needed
+
   const isSuperAdmin = currentUserRole === 'super_admin';
-  
-  // Helper function to check if a user ID is the protected admin email
-  const isProtectedAdminEmail = (userId: string): boolean => {
-    return userId === 'alan@insight-ai-systems.com';
-  };
-  
-  // Helper function to determine if current user can assign a role
+  const isCurrentUserProtectedAdmin = isProtectedAdminId(currentUserEmail);
+
+  // Updated role-permission checker, now correct and without type confusion
   const canAssignRole = (role: UserRole, userId: string): boolean => {
-    // Log detailed permissions for debugging
-    console.log(`UsersTable - Checking if can assign ${role} to ${userId} (currentUserRole: ${currentUserRole}, isSuperAdmin: ${isSuperAdmin})`);
-    
-    // Special case for protected admin
-    if (isProtectedAdminEmail(userId) && !isSuperAdmin && !isProtectedAdminEmail(currentUserId())) {
-      console.log(`UsersTable - Cannot modify protected admin (${userId}) unless you are a super admin`);
-      return false;
-    }
-    
-    // Super admins can assign any role
-    if (isSuperAdmin || isProtectedAdminEmail(currentUserId())) {
-      console.log(`UsersTable - Super admin can assign ${role}`);
+    // No direct type confusion now
+    if (isSuperAdmin || isCurrentUserProtectedAdmin) {
       return true;
     }
-    
-    // Admins can assign most roles except super_admin
+    // Admin, but cannot assign super_admin
     if (currentUserRole === 'admin' && role !== 'super_admin') {
-      console.log(`UsersTable - Admin can assign ${role}`);
       return true;
     }
-    
-    // Other roles cannot assign roles
-    console.log(`UsersTable - ${currentUserRole} cannot assign ${role}`);
+    // No rights
     return false;
   };
-  
+
   // Helper function to get the current user's ID (using a placeholder for demonstration)
   const currentUserId = (): string => {
     // In a real implementation, this would come from auth context

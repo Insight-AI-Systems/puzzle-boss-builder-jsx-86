@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -11,12 +10,20 @@ import { Check, ChevronDown, Shield } from "lucide-react";
 import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 import { Label } from '@/components/ui/label';
 
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+
+// Helper: returns true if given userId (here, email) matches protected admin
+function isProtectedAdminId(id: string | undefined): boolean {
+  return id === PROTECTED_ADMIN_EMAIL;
+}
+
 interface RoleSelectorProps {
   currentRole: UserRole;
   currentUserRole?: UserRole;
-  userId?: string;
+  userId?: string; // this is the target user's "id"
   onRoleChange: (userId: string | undefined, newRole: string) => void;
   label?: string;
+  currentUserEmail?: string; // NEW: pass current user's email for permission logic
 }
 
 export function RoleSelector({ 
@@ -24,52 +31,36 @@ export function RoleSelector({
   currentUserRole = 'admin', 
   userId, 
   onRoleChange,
-  label
+  label,
+  currentUserEmail // <- added for accurate logic
 }: RoleSelectorProps) {
-  // Check if current user is super admin
+  // "Super admin" status
   const isSuperAdmin = currentUserRole === 'super_admin';
-  
-  // Helper function to check if a user ID is the protected admin email
-  const isProtectedAdminId = (id: string | undefined): boolean => {
-    return id === 'alan@insight-ai-systems.com';
+  const isCurrentUserProtectedAdmin = isProtectedAdminId(currentUserEmail);
+  // The person viewing may be a super admin or protected admin
+  const canAssignAnyRole = isSuperAdmin || isCurrentUserProtectedAdmin;
+
+  // Helper: Only super admin or specific protected admin can assign 'super_admin'
+  const canAssignRole = (targetRole: UserRole): boolean => {
+    if (canAssignAnyRole) return true;
+    if (currentUserRole === 'admin' && targetRole !== 'super_admin') return true;
+    return false;
   };
-  
-  // Combined check for protected status (either super admin or THE protected admin)
-  const isProtectedAdmin = isProtectedAdminId(userId) || isSuperAdmin;
-  
-  // Debug logging to help diagnose the issue
+
+  // For diagnostic log
   console.log('RoleSelector Debug:', {
     currentRole,
     currentUserRole,
     userId,
+    currentUserEmail,
     isSuperAdmin,
-    isProtectedAdmin,
+    isCurrentUserProtectedAdmin,
+    canAssignAnyRole,
     availableRoles: Object.keys(ROLE_DEFINITIONS),
   });
-  
-  // Helper function to determine if current user can assign a role
-  const canAssignRole = (role: UserRole): boolean => {
-    console.log(`RoleSelector - Checking if can assign ${role}. Current user role: ${currentUserRole}, isSuperAdmin: ${isSuperAdmin}, isProtectedAdmin: ${isProtectedAdmin}`);
-    
-    // Super admins or protected admin can assign any role
-    if (isSuperAdmin || isProtectedAdminId(userId)) {
-      console.log(`RoleSelector - Super admin can assign ${role}`);
-      return true;
-    }
-    
-    // Admins can assign most roles except super_admin
-    if (currentUserRole === 'admin' && role !== 'super_admin') {
-      console.log(`RoleSelector - Admin can assign ${role}`);
-      return true;
-    }
-    
-    // Other roles cannot assign roles
-    console.log(`RoleSelector - ${currentUserRole} cannot assign ${role}`);
-    return false;
-  };
 
-  // Cannot change own role
-  const isOwnUser = userId === 'own-user-id';
+  // Disallow changing own role
+  const isOwnUser = userId === currentUserEmail;
 
   return (
     <div className="space-y-2">
@@ -99,7 +90,6 @@ export function RoleSelector({
               <DropdownMenuItem
                 key={roleDef.role}
                 onClick={() => {
-                  console.log(`RoleSelector - Selected role: ${roleDef.role}. Can assign: ${canAssign}, isSameRole: ${isSameRole}, isOwnUser: ${isOwnUser}`);
                   if (canAssign && !isSameRole && !isOwnUser) {
                     onRoleChange(userId, roleDef.role);
                   }
