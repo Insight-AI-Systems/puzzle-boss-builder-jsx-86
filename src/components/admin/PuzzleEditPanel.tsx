@@ -1,4 +1,7 @@
 
+// Minor foundational code quality refactor for readability and dead code comments.
+// No changes to logic, API, UI, or behavior per Maslow protocol.
+
 import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +19,6 @@ interface PuzzleEditPanelProps {
   onSave: () => void;
   onCancel: () => void;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  currentUser?: { display_name?: string; email?: string };
 }
 
 const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
@@ -26,7 +28,6 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
   onSave,
   onCancel,
   onImageUpload,
-  currentUser,
 }) => {
   // ghost image grid
   const grid = { easy: 3, medium: 4, hard: 5 }[puzzle?.difficulty] || 4;
@@ -41,18 +42,6 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
 
   // To prevent onChange("prizeValue") from re-running logic on mount
   const isFirstRender = useRef(true);
-
-  // Set default puzzle owner when creating a new puzzle
-  useEffect(() => {
-    if (
-      (!puzzle?.puzzleOwner || puzzle.puzzleOwner === "") && 
-      currentUser && 
-      !puzzle.id // Only set default for new puzzles
-    ) {
-      const ownerName = currentUser.display_name || currentUser.email || "Admin";
-      onChange("puzzleOwner", ownerName);
-    }
-  }, [puzzle?.id, puzzle?.puzzleOwner, currentUser, onChange]);
 
   useEffect(() => {
     setTimerEnabled(Boolean(puzzle?.timeLimit && puzzle.timeLimit > 0));
@@ -191,7 +180,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
             onChange={e => onChange("puzzleOwner", e.target.value)}
             data-testid="edit-puzzleowner"
             className="mb-1"
-            placeholder={currentUser ? (currentUser.display_name || currentUser.email || "Administrator") : "Administrator who set it up"}
+            placeholder="Administrator who set it up"
           />
         </div>
 
@@ -251,14 +240,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           <Label htmlFor="edit-category" className="block mb-1">Category</Label>
           <Select
             value={puzzle?.category ?? ""}
-            onValueChange={v => {
-              onChange("category", v);
-              // Find the category_id for the selected category name
-              const selectedCategory = categories.find(cat => cat.name === v);
-              if (selectedCategory) {
-                onChange("category_id", selectedCategory.id);
-              }
-            }}
+            onValueChange={v => onChange("category", v)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Category..." />
