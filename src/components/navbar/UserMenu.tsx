@@ -22,22 +22,31 @@ interface UserMenuProps {
 }
 
 const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
-  const { signOut } = useAuth();
+  const { signOut, userRole, hasRole } = useAuth();
   const { isAdmin } = useAdminStatus(profile);
 
-  // Debug logging for admin status
+  // Enhanced debug logging for admin status
   console.log('UserMenu - Profile:', profile);
-  console.log('UserMenu - Is Admin:', isAdmin);
-  console.log('UserMenu - Is Super Admin:', profile?.role === 'super_admin');
-  console.log('UserMenu - Profile ID:', profile?.id);
+  console.log('UserMenu - UserRole from AuthContext:', userRole);
+  console.log('UserMenu - Is Admin from useAdminStatus:', isAdmin);
+  console.log('UserMenu - Has Admin Role (hasRole):', hasRole('admin'));
+  console.log('UserMenu - Has Super Admin Role (hasRole):', hasRole('super_admin'));
+  console.log('UserMenu - Email:', profile?.id);
 
   // Check for super admin by email
   const isSuperAdminEmail = profile?.id === 'alan@insight-ai-systems.com';
+  const isTestAdmin = profile?.id === 'rob.small.1234@gmail.com';
   
   // Either they have the admin role or they're the special super admin account
-  const showAdminMenu = isAdmin || profile?.role === 'super_admin' || isSuperAdminEmail;
+  const showAdminMenu = isAdmin || 
+                       profile?.role === 'super_admin' || 
+                       profile?.role === 'admin' ||
+                       isSuperAdminEmail ||
+                       hasRole('admin') || 
+                       hasRole('super_admin');
   
   console.log('UserMenu - Show Admin Menu:', showAdminMenu);
+  console.log('UserMenu - Is Test Admin:', isTestAdmin);
 
   if (!profile) return null;
 
@@ -69,7 +78,13 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
           <Link to="/settings">Settings</Link>
         </DropdownMenuItem>
         
-        {/* Admin Menu Section */}
+        {/* Admin Menu Section - Now showing debug info for users who should have access */}
+        {isTestAdmin && !showAdminMenu && (
+          <DropdownMenuItem className="text-red-500">
+            You should have admin access but don't. Role: {profile.role}
+          </DropdownMenuItem>
+        )}
+        
         {showAdminMenu && (
           <>
             <DropdownMenuSeparator />

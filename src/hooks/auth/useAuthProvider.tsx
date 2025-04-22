@@ -26,8 +26,9 @@ export function useAuthProvider() {
 
   const fetchUserRoles = async (userId: string) => {
     try {
-      // Add debug logging
+      // Add more debug logging
       console.log('fetchUserRoles - Fetching roles for user ID:', userId);
+      console.log('fetchUserRoles - Current user email:', session?.user?.email);
       
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -41,11 +42,17 @@ export function useAuthProvider() {
       }
 
       // Special case for super admin email
-      if (userId === 'alan@insight-ai-systems.com') {
+      if (session?.user?.email === 'alan@insight-ai-systems.com') {
         console.log('fetchUserRoles - Special super admin email detected');
         setUserRoles(['super_admin']);
         setUserRole('super_admin');
         return;
+      }
+
+      // Log the test email for debugging
+      if (session?.user?.email === 'rob.small.1234@gmail.com') {
+        console.log('fetchUserRoles - Test email detected:', session.user.email);
+        console.log('fetchUserRoles - Current profile data:', profile);
       }
 
       if (profile && profile.role) {

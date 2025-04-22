@@ -42,6 +42,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layouts/MainLayout';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+// Import admin tools for global access
+import '@/utils/admin/adminTools';
 
 function App() {
   const queryClient = new QueryClient();
