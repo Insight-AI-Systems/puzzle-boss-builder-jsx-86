@@ -160,6 +160,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAdmin,
     hasRole,
     userRole,
+    userRoles, // Add the userRoles property here
     clearAuthError
   };
 
