@@ -1,7 +1,8 @@
 
 import { BasePuzzlePiece } from '../types/puzzle-types';
-import { validateMove, handleCellSwap } from './pieceMovementUtils';
+import { validateMove } from './pieceMovementUtils';
 import { updatePieceState } from './pieceStateUtils';
+import { ensureGridIntegrity, movePieceFromStagingToGrid } from './pieceStateManagement';
 
 export const handlePieceDrop = <T extends BasePuzzlePiece>(
   pieces: T[],
@@ -19,11 +20,16 @@ export const handlePieceDrop = <T extends BasePuzzlePiece>(
     return;
   }
   
-  // Use the cell swap logic to ensure one piece per cell
-  const updatedPieces = handleCellSwap(pieces, draggedPiece, targetPosition, grid);
+  // Use the one-piece-per-cell enforcement logic
+  const { updatedPieces, updatedGrid } = movePieceFromStagingToGrid(
+    pieces,
+    grid,
+    draggedPieceId,
+    targetPosition
+  );
   
   // Update the dragging state for the moved piece
-  const finalPieces = updatePieceState(updatedPieces, draggedPiece.id, {
+  const finalPieces = updatePieceState(updatedPieces, draggedPieceId, {
     isDragging: false
   } as Partial<T>);
   
@@ -40,8 +46,13 @@ export const handlePieceMove = <T extends BasePuzzlePiece>(
     return pieces;
   }
 
-  // Use the cell swapping logic to ensure one piece per cell
-  const updatedPieces = handleCellSwap(pieces, draggedPiece, targetIndex, grid);
+  // Use the one-piece-per-cell enforcement logic
+  const { updatedPieces } = movePieceFromStagingToGrid(
+    pieces,
+    grid,
+    draggedPiece.id,
+    targetIndex
+  );
   
   // Clear dragging state after move
   return updatePieceState(updatedPieces, draggedPiece.id, {
