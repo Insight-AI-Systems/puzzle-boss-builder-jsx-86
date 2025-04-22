@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -78,8 +77,8 @@ export function RoleManagement() {
     // Super admin can assign any role
     if (canAssignAnyRole) return true;
     
-    // Regular admin can assign non-super_admin roles
-    if (currentUserRole === 'admin' && role !== 'super_admin') return true;
+    // Previously checked for admin role, now we check if current user is super_admin
+    if (currentUserRole === 'super_admin' && role !== 'super_admin') return true;
     
     return false;
   };
@@ -145,7 +144,6 @@ export function RoleManagement() {
                     <Badge 
                       className={
                         user.role === 'super_admin' ? 'bg-red-600' :
-                        user.role === 'admin' ? 'bg-purple-600' :
                         user.role === 'category_manager' ? 'bg-blue-600' :
                         user.role === 'social_media_manager' ? 'bg-green-600' :
                         user.role === 'partner_manager' ? 'bg-amber-600' :

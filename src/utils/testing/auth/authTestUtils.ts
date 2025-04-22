@@ -128,7 +128,7 @@ export const withAuthStates = (testFn: (helpers: {
     },
     asAdmin: () => {
       if (currentCleanup) currentCleanup();
-      currentCleanup = setupAuthTest(true, 'admin');
+      currentCleanup = setupAuthTest(true, 'super_admin');
     }
   };
   

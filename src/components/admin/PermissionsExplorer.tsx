@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -84,7 +83,6 @@ export function PermissionsExplorer() {
                         <Badge 
                           className={
                             role.role === 'super_admin' ? 'bg-red-600' :
-                            role.role === 'admin' ? 'bg-purple-600' :
                             role.role === 'category_manager' ? 'bg-blue-600' :
                             role.role === 'social_media_manager' ? 'bg-green-600' :
                             role.role === 'partner_manager' ? 'bg-amber-600' :

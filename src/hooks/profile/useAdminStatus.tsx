@@ -27,8 +27,8 @@ export function useAdminStatus(profile: UserProfile | null) {
       return;
     }
     
-    // Check if the user role is either super_admin or admin
-    const hasAdminRole = profile.role === 'super_admin' || profile.role === 'admin';
+    // Check if the user role is super_admin (no more admin role)
+    const hasAdminRole = profile.role === 'super_admin';
     setIsAdmin(hasAdminRole);
     
   }, [profile]);

@@ -20,7 +20,7 @@ export function useAuthProvider() {
   const MIN_TIME_BETWEEN_AUTH_ATTEMPTS = 2000;
   
   const isAuthenticated = useMemo(() => !!currentUserId && !!session, [currentUserId, session]);
-  const isAdmin = useMemo(() => userRole === 'admin' || userRole === 'super_admin', [userRole]);
+  const isAdmin = useMemo(() => userRole === 'super_admin', [userRole]);
 
   const clearAuthError = () => setError(null);
 

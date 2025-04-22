@@ -28,7 +28,7 @@ export function UsersTable({
   const canAssignRole = (role: UserRole, userId: string): boolean => {
     if (canAssignAnyRole) return true;
     if (userId === PROTECTED_ADMIN_EMAIL) return isCurrentUserProtectedAdmin;
-    if (currentUserRole === 'admin' && role !== 'super_admin') return true;
+    if (currentUserRole === 'super_admin' && role !== 'super_admin') return true;
     return false;
   };
 

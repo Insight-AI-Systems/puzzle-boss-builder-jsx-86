@@ -95,22 +95,22 @@ function App() {
                         </ProtectedRoute>
                       } />
                       <Route path="/admin-dashboard" element={
-                        <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
+                        <ProtectedRoute requiredRoles={['super_admin']}>
                           <AdminDashboard />
                         </ProtectedRoute>
                       } />
                       <Route path="/test-dashboard" element={
-                        <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
+                        <ProtectedRoute requiredRoles={['super_admin']}>
                           <DevDashboard />
                         </ProtectedRoute>
                       } />
                       <Route path="/puzzle-tests" element={
-                        <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
+                        <ProtectedRoute requiredRoles={['super_admin']}>
                           <PuzzleTests />
                         </ProtectedRoute>
                       } />
                       <Route path="/puzzle-playground" element={
-                        <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
+                        <ProtectedRoute requiredRoles={['super_admin']}>
                           <PuzzleTestPlayground />
                         </ProtectedRoute>
                       } />

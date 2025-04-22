@@ -29,7 +29,7 @@ interface RoleSelectorProps {
 
 export function RoleSelector({ 
   currentRole = 'player', 
-  currentUserRole = 'admin', 
+  currentUserRole = 'super_admin', 
   userId, 
   onRoleChange,
   label,
@@ -44,7 +44,7 @@ export function RoleSelector({
   // Helper: Only super admin or specific protected admin can assign 'super_admin'
   const canAssignRole = (targetRole: UserRole): boolean => {
     if (canAssignAnyRole) return true;
-    if (currentUserRole === 'admin' && targetRole !== 'super_admin') return true;
+    if (currentUserRole === 'super_admin' && targetRole !== 'super_admin') return true;
     return false;
   };
 

@@ -40,13 +40,13 @@ describe('RoleBasedAccess Component', () => {
   
   it('renders children when user has required role', () => {
     const mockAuth = {
-      ...createMockAuthContext(true, 'admin'),
-      hasRole: (role: string) => role === 'admin'
+      ...createMockAuthContext(true, 'super_admin'),
+      hasRole: (role: string) => role === 'super_admin'
     };
     
     render(
       <AuthContext.Provider value={mockAuth}>
-        <RoleBasedAccess allowedRoles={['admin']}>
+        <RoleBasedAccess allowedRoles={['super_admin']}>
           <div>{CONTENT}</div>
         </RoleBasedAccess>
       </AuthContext.Provider>
@@ -64,7 +64,7 @@ describe('RoleBasedAccess Component', () => {
     render(
       <AuthContext.Provider value={mockAuth}>
         <RoleBasedAccess 
-          allowedRoles={['admin']} 
+          allowedRoles={['super_admin']} 
           fallback={<div>{FALLBACK}</div>}
         >
           <div>{CONTENT}</div>

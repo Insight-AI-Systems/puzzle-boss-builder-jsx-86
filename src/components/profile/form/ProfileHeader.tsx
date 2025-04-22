@@ -21,7 +21,6 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
       <Badge 
         className={
           profile.role === 'super_admin' ? 'bg-red-600' :
-          profile.role === 'admin' ? 'bg-purple-600' :
           profile.role === 'category_manager' ? 'bg-blue-600' :
           profile.role === 'social_media_manager' ? 'bg-green-600' :
           profile.role === 'partner_manager' ? 'bg-amber-600' :
