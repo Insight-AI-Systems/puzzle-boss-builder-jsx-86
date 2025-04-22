@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, Home, Bug } from 'lucide-react';
@@ -20,7 +19,6 @@ const Unauthorized: React.FC = () => {
     hasSuperAdminRole: hasRole('super_admin')
   });
 
-  // Function to show detailed debug info
   const showDebugInfo = () => {
     const info = {
       user: user ? {
@@ -41,6 +39,14 @@ const Unauthorized: React.FC = () => {
     
     setDebugInfo(JSON.stringify(info, null, 2));
     console.log('Debug Info:', info);
+  };
+
+  const handleMakeRobAdmin = async () => {
+    if (typeof (window as any).makeRobAdmin === 'function') {
+      const result = await (window as any).makeRobAdmin();
+      console.log('Make Rob admin result:', result);
+      setDebugInfo(JSON.stringify(result, null, 2));
+    }
   };
 
   return (
@@ -101,6 +107,14 @@ const Unauthorized: React.FC = () => {
             className="border-puzzle-aqua/30"
           >
             Debug Auth State
+          </Button>
+          
+          <Button 
+            onClick={handleMakeRobAdmin} 
+            variant="outline" 
+            className="border-puzzle-aqua/30"
+          >
+            Make Rob Admin
           </Button>
         </div>
         

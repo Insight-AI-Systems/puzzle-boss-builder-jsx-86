@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -103,9 +102,21 @@ export async function listAdminUsers() {
   }
 }
 
+/**
+ * Sets Rob Small as an admin user
+ */
+export async function makeRobAdmin() {
+  const email = 'rob.small.1234@gmail.com';
+  console.log('Setting Rob as admin...');
+  const result = await setUserAsAdmin(email, 'admin');
+  console.log('Result:', result);
+  return result;
+}
+
 // Make the functions available in the global window object for console access
 if (typeof window !== 'undefined') {
   (window as any).setUserAsAdmin = setUserAsAdmin;
   (window as any).getCurrentUserRole = getCurrentUserRole;
   (window as any).listAdminUsers = listAdminUsers;
+  (window as any).makeRobAdmin = makeRobAdmin;
 }
