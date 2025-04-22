@@ -19,20 +19,25 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     playSound('pickup');
     
     setPieces(prev => {
-      return updatePieceState(prev, piece.id, { isDragging: true } as Partial<T>);
+      const updated = updatePieceState(prev, piece.id, { isDragging: true } as Partial<T>);
+      return updated;
     });
   };
 
   const handleMove = (piece: T, index: number) => {
     if (draggedPiece && draggedPiece.id === piece.id) {
-      setPieces(prev => handlePieceMove(prev, draggedPiece, index));
-      incrementMoves();
-      playSound('place');
+      setPieces(prev => {
+        const moved = handlePieceMove(prev, draggedPiece, index);
+        incrementMoves();
+        playSound('place');
+        return moved;
+      });
       
+      // Immediately check for and fix trapped pieces on every move
       setTimeout(() => {
         setPieces(prev => {
-          const updated = checkTrappedPieces(prev);
-          return updatePieceState(updated, draggedPiece.id, { selected: true } as Partial<T>);
+          const updatedWithTrapped = checkTrappedPieces(prev);
+          return updatePieceState(updatedWithTrapped, draggedPiece.id, { selected: true } as Partial<T>);
         });
       }, 0);
     }
@@ -40,14 +45,22 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
 
   const handleDrop = () => {
     if (draggedPiece) {
-      setPieces(prev => handlePieceDrop(prev, draggedPiece));
+      setPieces(prev => {
+        const dropped = handlePieceDrop(prev, draggedPiece);
+        // Ensure trapped pieces are detected on drop as well
+        return checkTrappedPieces(dropped);
+      });
       setDraggedPiece(null);
     }
   };
 
   const handlePieceClick = (piece: T) => {
     playSound('pickup');
-    setPieces(prev => updatePieceState(prev, piece.id, { selected: true } as Partial<T>));
+    setPieces(prev => {
+      const withSelected = updatePieceState(prev, piece.id, { selected: true } as Partial<T>);
+      // Also check for trapped pieces when clicking
+      return checkTrappedPieces(withSelected);
+    });
   };
 
   const checkForHints = () => {
