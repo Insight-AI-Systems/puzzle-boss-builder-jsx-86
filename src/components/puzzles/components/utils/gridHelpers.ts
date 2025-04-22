@@ -1,7 +1,9 @@
 
 import { SimplePuzzlePiece } from '../../types/simple-puzzle-types';
+import { BasePuzzlePiece } from '../../types/puzzle-types';
 
-export const sortPiecesForGrid = (pieces: SimplePuzzlePiece[]): SimplePuzzlePiece[] => {
+// Sort pieces for the grid display with proper stacking order
+export const sortPiecesForGrid = <T extends BasePuzzlePiece>(pieces: T[]): T[] => {
   return [...pieces].sort((a, b) => {
     const aNumber = parseInt(a.id.split('-')[1]);
     const bNumber = parseInt(b.id.split('-')[1]);
@@ -9,50 +11,56 @@ export const sortPiecesForGrid = (pieces: SimplePuzzlePiece[]): SimplePuzzlePiec
     const aCorrect = aNumber === a.position;
     const bCorrect = bNumber === b.position;
     
-    // Check for trapped status - ensure trapped pieces are always on top
-    const aTrapped = a.trapped === true;
-    const bTrapped = b.trapped === true;
-    
-    // 1. Dragging pieces are highest priority
+    // Dragging pieces are always on top
     if (a.isDragging) return 1;
     if (b.isDragging) return -1;
     
-    // 2. Trapped pieces need to be at the top
-    if (aTrapped && !bTrapped) return 1;
-    if (!aTrapped && bTrapped) return -1;
+    // Selected pieces are next highest priority
+    if ((a as any).selected) return 1;
+    if ((b as any).selected) return -1;
     
-    // 3. Then selected pieces
-    if (a.selected) return 1;
-    if (b.selected) return -1;
+    // Trapped pieces should be above correctly placed pieces
+    if ((a as any).trapped && !bCorrect) return 1;
+    if ((b as any).trapped && !aCorrect) return -1;
     
-    // 4. Correctly placed pieces should be at the bottom with LOWEST priority
+    // Correctly placed pieces go to the bottom
     if (aCorrect && !bCorrect) return -1;
     if (!aCorrect && bCorrect) return 1;
-    
-    // 5. Consider z-index if provided
-    if (a.zIndex !== undefined && b.zIndex !== undefined) {
-      return a.zIndex - b.zIndex;
-    }
     
     return 0;
   });
 };
 
-export const isTrappedPiece = (
-  piece: SimplePuzzlePiece,
-  pieces: SimplePuzzlePiece[]
-): boolean => {
+// Check if a piece is trapped by another piece
+export const isTrappedPiece = <T extends BasePuzzlePiece>(piece: T, allPieces: T[]): boolean => {
+  if (piece.position < 0) return false; // Pieces in staging area can't be trapped
+  
   const pieceNumber = parseInt(piece.id.split('-')[1]);
-  const isCorrectlyPlaced = pieceNumber === piece.position;
+  const isCorrect = pieceNumber === piece.position;
+  
+  // A piece is trapped if:
+  // 1. It's not in its correct position
+  // 2. There's another piece in the same position that IS in its correct position
+  if (!isCorrect) {
+    return allPieces.some(otherPiece => {
+      if (otherPiece.id === piece.id) return false;
+      
+      const otherNumber = parseInt(otherPiece.id.split('-')[1]);
+      const otherPosition = otherPiece.position;
+      
+      return piece.position === otherPosition && otherNumber === otherPosition;
+    });
+  }
+  
+  return false;
+};
 
-  // A correctly placed piece can't be trapped
-  if (isCorrectlyPlaced) return false;
+// Get all staging area pieces
+export const getStagingPieces = <T extends BasePuzzlePiece>(pieces: T[]): T[] => {
+  return pieces.filter(piece => piece.position < 0);
+};
 
-  // A piece is trapped if there's another piece in its position
-  // that IS in its correct position
-  return pieces.some(other => {
-    if (other.id === piece.id) return false;
-    const otherNumber = parseInt(other.id.split('-')[1]);
-    return other.position === piece.position && otherNumber === other.position;
-  });
+// Get all grid pieces (not in staging)
+export const getGridPieces = <T extends BasePuzzlePiece>(pieces: T[]): T[] => {
+  return pieces.filter(piece => piece.position >= 0);
 };

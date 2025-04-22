@@ -1,5 +1,7 @@
+
 import { BasePuzzlePiece } from '../types/puzzle-types';
-import { handlePieceMove, handlePieceDrop, handleDirectionalMove } from './pieceMovementHandlers';
+import { handlePieceMove, handleDirectionalMove } from './pieceMovementHandlers';
+import { handlePieceDrop } from './handlers/dragDropHandlers';
 import { updatePieceState } from './pieceStateUtils';
 import { findHintablePieces } from './pieceStateUtils';
 import { checkTrappedPieces } from './pieceSortingUtils';
@@ -25,6 +27,20 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
 
   const handleMove = (piece: T, index: number) => {
     if (draggedPiece && draggedPiece.id === piece.id) {
+      // Handle moving to staging area
+      if (index === -1) {
+        setPieces(prev => {
+          const updated = prev.map(p => 
+            p.id === piece.id ? { ...p, position: -1, isDragging: false } : p
+          );
+          incrementMoves();
+          playSound('place');
+          return updated;
+        });
+        return;
+      }
+      
+      // Normal grid move
       setPieces(prev => {
         const moved = handlePieceMove(prev, piece, index, grid);
         incrementMoves();
@@ -55,7 +71,11 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
   const handlePieceClick = (piece: T) => {
     playSound('pickup');
     setPieces(prev => {
-      const withSelected = updatePieceState(prev, piece.id, { selected: true } as Partial<T>);
+      const withSelected = updatePieceState(prev, piece.id, { 
+        selected: true,
+        // If the piece is trapped, move it to staging area on click
+        position: (piece as any).trapped ? -1 : piece.position 
+      } as Partial<T>);
       return checkTrappedPieces(withSelected) as T[];
     });
   };

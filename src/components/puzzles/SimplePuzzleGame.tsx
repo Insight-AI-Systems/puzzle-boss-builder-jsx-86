@@ -77,9 +77,25 @@ const SimplePuzzleGame: React.FC = () => {
   const handleGridDrop = useCallback((e: React.MouseEvent | React.TouchEvent, index: number) => {
     if (draggedPiece) {
       e.preventDefault();
-      handleDrop();
+      // Special case for staging area
+      if (index === -1) {
+        setPieces(prev => {
+          return prev.map(p => 
+            p.id === draggedPiece.id ? { ...p, position: -1, isDragging: false } : p
+          );
+        });
+        setDraggedPiece(null);
+        playSound('place');
+        incrementMoves();
+      } else {
+        handleDrop();
+      }
     }
-  }, [draggedPiece, handleDrop]);
+  }, [draggedPiece, handleDrop, setPieces, setDraggedPiece, playSound]);
+
+  const incrementMoves = useCallback(() => {
+    setMoveCount(prev => prev + 1);
+  }, [setMoveCount]);
 
   const handleGridPieceClick = useCallback((piece: SimplePuzzlePiece) => {
     handlePieceClick(piece);
@@ -104,9 +120,9 @@ const SimplePuzzleGame: React.FC = () => {
 
   useEffect(() => {
     if (!isSolved) {
-      const correctCount = pieces.filter((piece, index) => {
+      const correctCount = pieces.filter((piece) => {
         const pieceNumber = parseInt(piece.id.split('-')[1]);
-        return pieceNumber === index;
+        return pieceNumber === piece.position && piece.position >= 0;
       }).length;
       puzzleState.updateCorrectPieces(correctCount);
     }

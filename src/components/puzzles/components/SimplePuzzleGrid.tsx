@@ -1,7 +1,10 @@
+
 import React, { useRef, useEffect } from 'react';
 import { SimplePuzzlePiece } from '../types/simple-puzzle-types';
 import PuzzlePiece from './PuzzlePiece';
+import PuzzleStagingArea from './PuzzleStagingArea';
 import { sortPiecesForGrid, isTrappedPiece } from './utils/gridHelpers';
+import { checkTrappedPieces } from '../utils/pieceSortingUtils';
 import '../styles/puzzle-animations.css';
 
 interface SimplePuzzleGridProps {
@@ -91,43 +94,85 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
   const height = containerSize?.height || defaultWidth;
   const pieceSize = containerSize?.pieceSize || (width / 3) - (isMobile ? 4 : 8);
   
-  const markedPieces = pieces.map(piece => ({
+  // Separate grid pieces from staging pieces
+  const gridPieces = pieces.filter(piece => piece.position >= 0);
+  const stagingPieces = pieces.filter(piece => piece.position < 0);
+  
+  // Mark trapped pieces
+  const markedPieces = gridPieces.map(piece => ({
     ...piece,
-    trapped: isTrappedPiece(piece, pieces)
+    trapped: isTrappedPiece(piece, gridPieces)
   }));
   
   const sortedPieces = sortPiecesForGrid(markedPieces);
   
-  return (
-    <div 
-      ref={gridRef}
-      className={`grid grid-cols-3 gap-1 sm:gap-2 bg-puzzle-black/60 p-2 sm:p-4 rounded-lg border-2 
-        ${isSolved ? 'border-puzzle-gold puzzle-complete' : 'border-puzzle-aqua'}
-        transition-transform duration-200 transform-gpu touch-manipulation`}
-      style={{ width, height }}
-    >
-      {sortedPieces.map((piece, index) => {
-        const pieceNumber = parseInt(piece.id.split('-')[1]);
-        const isCorrectlyPlaced = pieceNumber === piece.position;
-        const isTrapped = !!piece.trapped;
+  // Handle staging area interactions
+  const handleStagingDragStart = (e: React.DragEvent | React.MouseEvent | React.TouchEvent, pieceId: string) => {
+    const piece = pieces.find(p => p.id === pieceId);
+    if (piece) {
+      onDragStart(e, piece);
+    }
+  };
+  
+  const handleStagingDragOver = (e: React.DragEvent) => {
+    e.preventDefault(); // Allow drop
+  };
+  
+  const handleStagingDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    // Move piece back to staging area (position < 0)
+    const pieceId = e.dataTransfer.getData('piece-id');
+    if (pieceId) {
+      const piece = pieces.find(p => p.id === pieceId);
+      if (piece) {
+        onDrop(e, -1); // Use -1 as a special index for staging area
+      }
+    }
+  };
 
-        return (
-          <PuzzlePiece
-            key={piece.id}
-            piece={piece}
-            index={index}
-            isCorrectlyPlaced={isCorrectlyPlaced}
-            isTrapped={isTrapped}
-            isSolved={isSolved}
-            isTouchDevice={isTouchDevice}
-            pieceSize={pieceSize}
-            onDragStart={(e) => onDragStart(e, piece)}
-            onMove={(e) => onMove(e, index)}
-            onDrop={(e) => onDrop(e, index)}
-            onClick={() => onPieceClick(piece)}
-          />
-        );
-      })}
+  return (
+    <div className="puzzle-area flex flex-col items-center w-full">
+      <div 
+        ref={gridRef}
+        className={`grid grid-cols-3 gap-1 sm:gap-2 bg-puzzle-black/60 p-2 sm:p-4 rounded-lg border-2 
+          ${isSolved ? 'border-puzzle-gold puzzle-complete' : 'border-puzzle-aqua'}
+          transition-transform duration-200 transform-gpu touch-manipulation`}
+        style={{ width, height }}
+      >
+        {sortedPieces.map((piece, index) => {
+          const pieceNumber = parseInt(piece.id.split('-')[1]);
+          const isCorrectlyPlaced = pieceNumber === piece.position;
+          const isTrapped = !!piece.trapped;
+
+          return (
+            <PuzzlePiece
+              key={piece.id}
+              piece={piece}
+              index={index}
+              isCorrectlyPlaced={isCorrectlyPlaced}
+              isTrapped={isTrapped}
+              isSolved={isSolved}
+              isTouchDevice={isTouchDevice}
+              pieceSize={pieceSize}
+              onDragStart={(e) => onDragStart(e, piece)}
+              onMove={(e) => onMove(e, index)}
+              onDrop={(e) => onDrop(e, index)}
+              onClick={() => onPieceClick(piece)}
+            />
+          );
+        })}
+      </div>
+      
+      {/* Staging Area */}
+      <PuzzleStagingArea 
+        stagingPieces={stagingPieces}
+        onDragStart={handleStagingDragStart}
+        onDragEnd={() => {}}
+        onDragOver={handleStagingDragOver}
+        onDrop={handleStagingDrop}
+        isTouchDevice={isTouchDevice}
+        pieceSize={Math.floor(pieceSize * 0.8)}
+      />
     </div>
   );
 };
