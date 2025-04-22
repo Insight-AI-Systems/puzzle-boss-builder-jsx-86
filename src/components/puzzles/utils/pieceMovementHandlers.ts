@@ -5,12 +5,14 @@ import { updatePieceState } from './pieceStateUtils';
 
 export const handlePieceDrop = <T extends BasePuzzlePiece>(
   pieces: T[],
-  draggedPieceId: number,
+  draggedPieceId: number | string,
   targetPosition: number,
   grid: (number | null)[],
   setPieces: (pieces: T[] | ((prev: T[]) => T[])) => void
 ): void => {
-  const draggedPiece = pieces.find(piece => piece.id === draggedPieceId);
+  // Convert string ID to number if needed
+  const numericId = typeof draggedPieceId === 'string' ? parseInt(draggedPieceId) : draggedPieceId;
+  const draggedPiece = pieces.find(piece => piece.id === numericId);
   
   if (!draggedPiece || !validateMove(pieces, targetPosition, draggedPiece)) {
     // Invalid move - do nothing
@@ -23,9 +25,9 @@ export const handlePieceDrop = <T extends BasePuzzlePiece>(
   // Update the dragging state for the moved piece
   const finalPieces = updatePieceState(updatedPieces, draggedPiece.id, {
     isDragging: false
-  }) as T[];
+  } as Partial<T>);
   
-  setPieces(finalPieces);
+  setPieces(finalPieces as T[]);
 };
 
 export const handlePieceMove = <T extends BasePuzzlePiece>(
@@ -42,12 +44,9 @@ export const handlePieceMove = <T extends BasePuzzlePiece>(
   const updatedPieces = handleCellSwap(pieces, draggedPiece, targetIndex, grid);
   
   // Clear dragging state after move
-  return updatedPieces.map(piece => {
-    if (piece.id === draggedPiece.id) {
-      return { ...piece, isDragging: false } as T;
-    }
-    return piece;
-  });
+  return updatePieceState(updatedPieces, draggedPiece.id, {
+    isDragging: false
+  } as Partial<T>);
 };
 
 export const handleDirectionalMove = (direction: 'up' | 'down' | 'left' | 'right') => {
