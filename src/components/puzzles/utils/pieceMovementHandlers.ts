@@ -1,7 +1,32 @@
 
-import { BasePuzzlePiece, PuzzlePiece } from '../types/puzzle-types';
+import { BasePuzzlePiece } from '../types/puzzle-types';
 import { validateMove, handleCellSwap } from './pieceMovementUtils';
 import { updatePieceState } from './pieceStateUtils';
+
+export const handlePieceDrop = <T extends BasePuzzlePiece>(
+  pieces: T[],
+  draggedPieceId: number,
+  targetPosition: number,
+  grid: (number | null)[],
+  setPieces: (pieces: T[] | ((prev: T[]) => T[])) => void
+): void => {
+  const draggedPiece = pieces.find(piece => piece.id === draggedPieceId);
+  
+  if (!draggedPiece || !validateMove(pieces, targetPosition, draggedPiece)) {
+    // Invalid move - do nothing
+    return;
+  }
+  
+  // Use the cell swap logic to ensure one piece per cell
+  const updatedPieces = handleCellSwap(pieces, draggedPiece, targetPosition, grid);
+  
+  // Update the dragging state for the moved piece
+  const finalPieces = updatePieceState(updatedPieces, draggedPiece.id, {
+    isDragging: false
+  }) as T[];
+  
+  setPieces(finalPieces);
+};
 
 export const handlePieceMove = <T extends BasePuzzlePiece>(
   pieces: T[],
@@ -23,13 +48,6 @@ export const handlePieceMove = <T extends BasePuzzlePiece>(
     }
     return piece;
   });
-};
-
-export const handlePieceDrop = <T extends BasePuzzlePiece>(
-  pieces: T[],
-  draggedPiece: T
-): T[] => {
-  return updatePieceState(pieces, draggedPiece.id, { isDragging: false } as Partial<T>);
 };
 
 export const handleDirectionalMove = (direction: 'up' | 'down' | 'left' | 'right') => {
