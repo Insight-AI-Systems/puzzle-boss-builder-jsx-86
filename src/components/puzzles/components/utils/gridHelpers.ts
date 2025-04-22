@@ -13,13 +13,13 @@ export const sortPiecesForGrid = (pieces: SimplePuzzlePiece[]): SimplePuzzlePiec
     const aTrapped = a.trapped === true;
     const bTrapped = b.trapped === true;
     
-    // 1. Trapped pieces need to be at the top
-    if (aTrapped && !bTrapped) return 1;
-    if (!aTrapped && bTrapped) return -1;
-    
-    // 2. Dragging pieces are next highest priority
+    // 1. Dragging pieces are highest priority
     if (a.isDragging) return 1;
     if (b.isDragging) return -1;
+    
+    // 2. Trapped pieces need to be at the top
+    if (aTrapped && !bTrapped) return 1;
+    if (!aTrapped && bTrapped) return -1;
     
     // 3. Then selected pieces
     if (a.selected) return 1;
