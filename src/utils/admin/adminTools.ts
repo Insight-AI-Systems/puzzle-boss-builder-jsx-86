@@ -18,7 +18,7 @@ export async function setUserAsAdmin(email: string, role: 'admin' | 'super_admin
       return { success: false, error };
     }
     
-    console.log(`Successfully set ${email} as ${role}`);
+    console.log(`Successfully set ${email} as ${role}`, data);
     return { success: true, data };
   } catch (err) {
     console.error('Exception in setUserAsAdmin:', err);
