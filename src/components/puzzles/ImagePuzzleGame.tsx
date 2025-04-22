@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDeviceInfo } from '@/hooks/use-mobile';
 import { useImageLoading } from './hooks/useImageLoading';
 import { usePuzzlePieces } from '@/hooks/puzzles/usePuzzlePieces';
@@ -12,8 +12,7 @@ import { useImagePuzzleSave } from './useImagePuzzleSave';
 import { usePuzzleCompletion } from './usePuzzleCompletion';
 import { usePuzzlePieceHandlers } from './hooks/usePuzzlePieceHandlers';
 import { usePuzzleSettings } from './hooks/usePuzzleSettings';
-import { getRecommendedDifficulty, calculateContainerSize } from './utils/puzzleSizeUtils';
-import { useToast } from '@/hooks/use-toast';
+import { calculateContainerSize } from './utils/puzzleSizeUtils';
 import AudioProvider from './components/AudioProvider';
 import PuzzleGameLayout from './components/PuzzleGameLayout';
 
@@ -25,7 +24,6 @@ const ImagePuzzleGame = ({
 }) => {
   const deviceInfo = useDeviceInfo();
   const { isMobile, width, isTouchDevice } = deviceInfo;
-  const { toast } = useToast();
   
   const initialDifficulty = getRecommendedDifficulty(width);
   const puzzleSettings = usePuzzleSettings(initialDifficulty);

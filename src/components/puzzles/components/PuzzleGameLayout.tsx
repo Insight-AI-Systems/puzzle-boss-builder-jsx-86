@@ -37,6 +37,7 @@ const PuzzleGameLayout: React.FC<PuzzleGameLayoutProps> = ({
   sampleImages,
   getPieceStyle
 }) => {
+  const { toast } = useToast();
   const { isMobile, isTouchDevice } = deviceInfo;
   const containerSize = calculateContainerSize(isMobile, puzzleSettings.difficulty);
   const totalPieces = puzzlePieces.gridSize * puzzlePieces.gridSize;
@@ -59,19 +60,10 @@ const PuzzleGameLayout: React.FC<PuzzleGameLayoutProps> = ({
               description: "You ran out of time. Try again with a new game or adjust the time limit.",
               variant: "destructive",
             });
-            playSound('complete');
           }
         }}
       />
       
-      <PuzzleGameControls
-        puzzleSettings={puzzleSettings}
-        puzzlePieces={puzzlePieces}
-        selectedImage={selectedImage}
-        muted={muted}
-        volume={volume}
-      />
-
       <GameControlsLayout
         isMobile={isMobile}
         muted={muted}
