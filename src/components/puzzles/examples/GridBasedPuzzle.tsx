@@ -36,6 +36,7 @@ const GridBasedPuzzle: React.FC<GridBasedPuzzleProps> = ({
       initialPieces.push({
         id: `piece-${i}`,
         position: -1, // Start in staging area
+        originalPosition: i, // Set the original position as required by SimplePuzzlePiece
         color: `hsl(${Math.floor(Math.random() * 360)}, 80%, 60%)`,
         isDragging: false
       });

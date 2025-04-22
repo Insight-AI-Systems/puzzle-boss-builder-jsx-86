@@ -29,7 +29,7 @@ export const handlePieceDrop = <T extends BasePuzzlePiece>(
   );
   
   // Update the dragging state for the moved piece
-  const finalPieces = updatePieceState(updatedPieces, draggedPieceId, {
+  const finalPieces = updatePieceState(updatedPieces, draggedPieceId.toString(), {
     isDragging: false
   } as Partial<T>);
   
