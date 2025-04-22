@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useDeviceInfo } from '@/hooks/use-mobile';
 import { useImageLoading } from './hooks/useImageLoading';
 import { usePuzzlePieces } from '@/hooks/puzzles/usePuzzlePieces';
@@ -6,29 +6,21 @@ import { usePuzzleState } from '@/hooks/puzzles/usePuzzleState';
 import { usePuzzleGridEvents } from './hooks/usePuzzleGridEvents';
 import { getImagePieceStyle } from './utils/pieceStyleUtils';
 import { getRotationStyle } from './utils/pieceRotationUtils';
-import { DEFAULT_IMAGES, DifficultyLevel, VisualTheme } from './types/puzzle-types';
+import { DEFAULT_IMAGES } from './types/puzzle-types';
 import { useImagePuzzleSave } from './useImagePuzzleSave';
 import { usePuzzleCompletion } from './usePuzzleCompletion';
 import { usePuzzlePieceHandlers } from './hooks/usePuzzlePieceHandlers';
 import { usePuzzleSettings } from './hooks/usePuzzleSettings';
-import { PuzzleAudioManager } from './components/audio/PuzzleAudioManager';
 import { useToast } from '@/hooks/use-toast';
-import ImagePuzzleContainer from './ImagePuzzleContainer';
-import PuzzleStateDisplay from './components/PuzzleStateDisplay';
-import TimedModeBanner from './components/TimedModeBanner';
-import PuzzleGameControls from './components/PuzzleGameControls';
 import GameControlsLayout from './components/GameControlsLayout';
 import PuzzleCompletionHandler from './components/PuzzleCompletionHandler';
 import { getRecommendedDifficulty, calculateContainerSize } from './utils/puzzleSizeUtils';
+import PuzzleStateWrapper from './components/PuzzleStateWrapper';
+import AudioProvider from './components/AudioProvider';
+import PuzzleContainer from './components/PuzzleContainer';
+import PuzzleGameControls from './components/PuzzleGameControls';
 
-interface ImagePuzzleGameProps {
-  sampleImages?: string[];
-  initialImage?: string;
-  isImageLoading?: boolean;
-  onImageLoaded?: () => void;
-}
-
-const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
+const ImagePuzzleGame = ({
   sampleImages = DEFAULT_IMAGES,
   initialImage,
   isImageLoading: externalLoading,
@@ -73,7 +65,7 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
     gridSize,
     handleShuffleClick
   } = usePuzzlePieces(difficulty, selectedImage, isLoading, setIsLoading);
-  
+
   const {
     savedGames,
     saveGame,
@@ -135,7 +127,7 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
     puzzleState.startNewPuzzle(difficulty, gameMode, timeLimit);
   };
 
-  const handleDifficultyChange = (newDifficulty: DifficultyLevel) => {
+  const handleDifficultyChange = (newDifficulty) => {
     setDifficulty(newDifficulty);
     puzzleState.changeDifficulty(newDifficulty);
     setIsLoading(true);
@@ -163,123 +155,94 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
   }, [playSound]);
 
   return (
-    <PuzzleAudioManager
-      onPlaySound={setPlaySound}
-      onMuteChange={setMuted}
-      onVolumeChange={setVolume}
+    <AudioProvider
+      setPlaySound={setPlaySound}
+      setMuted={setMuted}
+      setVolume={setVolume}
     >
-      <div className={`flex flex-col items-center w-full max-w-full px-2 ${getThemeStyles(visualTheme)}`}>
-        <div className={`w-full ${isMobile ? 'mb-2' : 'mb-4'}`}>
-          <PuzzleStateDisplay 
-            state={{
-              ...puzzleState,
-              isComplete: isSolved
-            }}
-            totalPieces={totalPieces}
-            onNewGame={handleNewGame}
-            onDifficultyChange={handleDifficultyChange}
-            onTogglePause={puzzleState.togglePause}
-            isMobile={isMobile}
-          />
-        </div>
+      <PuzzleStateWrapper
+        puzzleState={puzzleState}
+        gameMode={gameMode}
+        timeLimit={timeLimit}
+        isMobile={isMobile}
+        totalPieces={totalPieces}
+        onNewGame={handleNewGame}
+        onDifficultyChange={handleDifficultyChange}
+        handleTimeUp={handleTimeUp}
+      />
+      
+      <PuzzleGameControls
+        onSave={handleSave}
+        onLoad={handleLoad}
+        onDelete={deleteSave}
+        savedGames={savedGames}
+        currentGameId={currentGameId}
+        isLoading={isLoading}
+        isMobile={isMobile}
+        gameMode={gameMode}
+        setGameMode={setGameMode}
+        difficulty={difficulty}
+        setDifficulty={handleDifficultyChange}
+        pieceShape={pieceShape}
+        setPieceShape={setPieceShape}
+        visualTheme={visualTheme}
+        setVisualTheme={setVisualTheme}
+        rotationEnabled={rotationEnabled}
+        setRotationEnabled={setRotationEnabled}
+        timeLimit={timeLimit}
+        setTimeLimit={setTimeLimit}
+        muted={muted}
+        volume={volume}
+        onToggleMute={() => setMuted(prev => !prev)}
+        onVolumeChange={setVolume}
+      />
         
-        {gameMode === 'timed' && (
-          <div className="w-full mb-4">
-            <TimedModeBanner
-              timeLimit={timeLimit}
-              timeSpent={puzzleState.timeSpent}
-              isActive={puzzleState.isActive}
-              onTimeUp={handleTimeUp}
-              isMobile={isMobile}
-            />
-          </div>
-        )}
+      <GameControlsLayout 
+        isMobile={isMobile}
+        muted={muted}
+        volume={volume}
+        toggleMute={() => setMuted(prev => !prev)}
+        changeVolume={setVolume}
+        moveCount={moveCount}
+        difficulty={difficulty}
+        selectedImage={selectedImage}
+        setSelectedImage={setSelectedImage}
+        onShuffle={handleNewGame}
+        sampleImages={sampleImages}
+        isLoading={isLoading}
+        handleDifficultyChange={handleDifficultyChange}
+      />
 
-        <PuzzleGameControls
-          onSave={handleSave}
-          onLoad={handleLoad}
-          onDelete={deleteSave}
-          savedGames={savedGames}
-          currentGameId={currentGameId}
-          isLoading={isLoading}
-          isMobile={isMobile}
-          gameMode={gameMode}
-          setGameMode={setGameMode}
-          difficulty={difficulty}
-          setDifficulty={handleDifficultyChange}
-          pieceShape={pieceShape}
-          setPieceShape={setPieceShape}
-          visualTheme={visualTheme}
-          setVisualTheme={setVisualTheme}
-          rotationEnabled={rotationEnabled}
-          setRotationEnabled={setRotationEnabled}
-          timeLimit={timeLimit}
-          setTimeLimit={setTimeLimit}
-          muted={muted}
-          volume={volume}
-          onToggleMute={() => setMuted(prev => !prev)}
-          onVolumeChange={setVolume}
-        />
-        
-        <GameControlsLayout 
-          isMobile={isMobile}
-          muted={muted}
-          volume={volume}
-          toggleMute={() => setMuted(prev => !prev)}
-          changeVolume={setVolume}
-          moveCount={moveCount}
-          difficulty={difficulty}
-          selectedImage={selectedImage}
-          setSelectedImage={setSelectedImage}
-          onShuffle={handleNewGame}
-          sampleImages={sampleImages}
-          isLoading={isLoading}
-          handleDifficultyChange={handleDifficultyChange}
-        />
+      <PuzzleContainer
+        pieces={pieces}
+        difficulty={difficulty}
+        isSolved={isSolved}
+        isLoading={isLoading}
+        containerSize={containerSize}
+        gridEvents={gridEvents}
+        getPieceStyle={(piece) => {
+          const baseStyle = getImagePieceStyle(piece, selectedImage, gridSize);
+          const rotationStyle = getRotationStyle(piece.rotation);
+          return { ...baseStyle, ...rotationStyle };
+        }}
+        isTouchDevice={isTouchDevice}
+        isMobile={isMobile}
+        draggedPiece={draggedPiece}
+        moveCount={moveCount}
+        visualTheme={visualTheme}
+      />
 
-        <ImagePuzzleContainer
-          pieces={pieces}
-          difficulty={difficulty}
-          isSolved={isSolved}
-          isLoading={isLoading}
-          containerSize={containerSize}
-          gridEvents={gridEvents}
-          getPieceStyle={(piece) => {
-            const baseStyle = getImagePieceStyle(piece, selectedImage, gridSize);
-            const rotationStyle = getRotationStyle(piece.rotation);
-            return { ...baseStyle, ...rotationStyle };
-          }}
-          isTouchDevice={isTouchDevice}
-          isMobile={isMobile}
-          draggedPiece={draggedPiece}
-          moveCount={moveCount}
-        />
-
-        <PuzzleCompletionHandler
-          pieces={pieces}
-          puzzleState={puzzleState}
-          gridSize={gridSize}
-          playSound={handlePlaySound}
-          gameMode={gameMode}
-          rotationEnabled={rotationEnabled}
-          isSolved={isSolved}
-        />
-      </div>
-    </PuzzleAudioManager>
+      <PuzzleCompletionHandler
+        pieces={pieces}
+        puzzleState={puzzleState}
+        gridSize={gridSize}
+        playSound={handlePlaySound}
+        gameMode={gameMode}
+        rotationEnabled={rotationEnabled}
+        isSolved={isSolved}
+      />
+    </AudioProvider>
   );
-};
-
-const getThemeStyles = (theme: VisualTheme) => {
-  switch (theme) {
-    case 'light':
-      return 'bg-white';
-    case 'dark':
-      return 'bg-gray-900 text-white';
-    case 'colorful':
-      return 'bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white';
-    default:
-      return 'bg-white';
-  }
 };
 
 export default ImagePuzzleGame;
