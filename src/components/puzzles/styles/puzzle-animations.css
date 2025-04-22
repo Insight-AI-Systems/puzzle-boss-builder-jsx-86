@@ -22,11 +22,16 @@
   z-index: 20 !important; /* Unplaced pieces stay above placed ones */
 }
 
-/* CRITICAL: Always ensure misplaced pieces appear on top after interaction */
+/* Force pieces to top on any interaction */
 .puzzle-piece:focus, 
 .puzzle-piece:hover, 
 .puzzle-piece:active {
   z-index: 30 !important; /* Interaction raises even correctly placed pieces temporarily */
+}
+
+/* Force any selected piece to stay on top */
+.puzzle-piece.selected {
+  z-index: 40 !important;
 }
 
 .puzzle-piece-hint {

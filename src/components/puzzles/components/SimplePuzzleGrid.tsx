@@ -98,8 +98,8 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
   const width = containerSize?.width || defaultWidth;
   const height = containerSize?.height || defaultWidth;
   
-  // Sort pieces to get correct layering
-  // Correctly placed pieces should be rendered first (bottom layer)
+  // Sort pieces to get correct initial layering 
+  // This ensures the components render in the right order from the beginning
   const sortedPieces = [...pieces].sort((a, b) => {
     const aNumber = parseInt(a.id.split('-')[1]);
     const bNumber = parseInt(b.id.split('-')[1]);
@@ -107,12 +107,11 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
     const aCorrect = aNumber === a.position;
     const bCorrect = bNumber === b.position;
     
-    if (aCorrect && !bCorrect) return -1;
-    if (!aCorrect && bCorrect) return 1;
-    
-    // If dragging, prioritize those
-    if (a.isDragging) return 1;
+    if (a.isDragging) return 1; // Dragging pieces always on top
     if (b.isDragging) return -1;
+    
+    if (aCorrect && !bCorrect) return -1; // Correct pieces on bottom
+    if (!aCorrect && bCorrect) return 1;  // Incorrect pieces on top
     
     return 0;
   });
@@ -141,6 +140,7 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
           piece.isDragging ? 'puzzle-piece-dragging' : '',
           isCorrectlyPlaced ? 'puzzle-piece-correct' : '',
           (piece as any).showHint ? 'puzzle-piece-hint' : '',
+          (piece as any).selected ? 'selected' : '',
           isSolved ? 'ring-1 ring-puzzle-gold/50' : '',
           isTouchDevice ? 'active:scale-105' : 'hover:brightness-110'
         ].filter(Boolean).join(' ');
@@ -162,7 +162,7 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
               width: pieceSize,
               height: pieceSize,
               position: 'relative'
-              // No inline z-index, we're using CSS classes
+              // No inline z-index, using CSS classes for z-index
             }}
             data-correct={isCorrectlyPlaced ? 'true' : 'false'}
             data-piece-number={pieceNumber}

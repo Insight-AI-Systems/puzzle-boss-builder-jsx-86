@@ -1,3 +1,4 @@
+
 import { BasePuzzlePiece } from '../types/puzzle-types';
 
 export const createPieceHandlers = <T extends BasePuzzlePiece>(
@@ -32,30 +33,16 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
       [newPieces[draggedIndex].position, newPieces[index].position] = 
       [newPieces[index].position, newPieces[draggedIndex].position];
       
-      // If we're dropping onto another piece, ensure it comes to the top
-      // by forcing a new pieces array that emphasizes the layer ordering
-      if (targetPiece) {
-        // This ensures pieces array order reflects desired visual stacking
-        // (wrongly placed pieces should appear above correctly placed ones)
-        const sortedPieces = [...newPieces].sort((a, b) => {
-          const aNumber = parseInt(a.id.split('-')[1]);
-          const bNumber = parseInt(b.id.split('-')[1]);
-          
-          const aCorrect = aNumber === a.position;
-          const bCorrect = bNumber === b.position;
-          
-          // Correct pieces go to the bottom
-          if (aCorrect && !bCorrect) return -1;
-          if (!aCorrect && bCorrect) return 1;
-          
-          // Otherwise maintain original order
-          return 0;
+      // Apply the pieces update
+      setPieces(newPieces);
+      
+      // Immediately after updating positions, perform a sort to ensure correct z-index layering
+      setTimeout(() => {
+        setPieces(prev => {
+          const updated = [...prev];
+          return sortPiecesByCorrectness(updated);
         });
-        
-        setPieces(sortedPieces);
-      } else {
-        setPieces(newPieces);
-      }
+      }, 0);
       
       incrementMoves();
       playSound('place');
@@ -70,29 +57,52 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
           p.id === draggedPiece.id ? { ...p, isDragging: false } : p
         );
         
-        // Then re-sort the pieces to ensure correct z-index layering
-        return updated.sort((a, b) => {
-          const aNumber = parseInt(a.id.split('-')[1]);
-          const bNumber = parseInt(b.id.split('-')[1]);
-          
-          const aCorrect = aNumber === a.position;
-          const bCorrect = bNumber === b.position;
-          
-          // Correctly placed pieces should be rendered first (bottom layer)
-          if (aCorrect && !bCorrect) return -1;
-          if (!aCorrect && bCorrect) return 1;
-          
-          // If both are correct or both are incorrect, maintain original order
-          return 0;
-        });
+        // Then sort for proper z-index layering
+        return sortPiecesByCorrectness(updated);
       });
       
       setDraggedPiece(null);
     }
   };
 
+  // Helper function to sort pieces based on correctness for proper layering
+  const sortPiecesByCorrectness = (piecesToSort: T[]): T[] => {
+    return [...piecesToSort].sort((a, b) => {
+      const aNumber = parseInt(a.id.split('-')[1]);
+      const bNumber = parseInt(b.id.split('-')[1]);
+      
+      const aCorrect = aNumber === a.position;
+      const bCorrect = bNumber === b.position;
+      
+      // Critical: Prioritize special states above correctness
+      if (a.isDragging) return 1; // Dragging pieces on top
+      if (b.isDragging) return -1;
+      
+      // Correct pieces go to bottom, incorrect to top
+      if (aCorrect && !bCorrect) return -1;
+      if (!aCorrect && bCorrect) return 1;
+      
+      // Both correct or both incorrect maintain current order
+      return 0;
+    });
+  };
+
   const handlePieceClick = (piece: T) => {
     playSound('pickup');
+    
+    // When a piece is clicked, make sure it appears on top
+    setPieces(prev => {
+      const updated = prev.map(p => {
+        // Add a 'selected' property to handle in CSS
+        if (p.id === piece.id) {
+          return { ...p, selected: true } as any;
+        }
+        return { ...p, selected: false } as any;
+      });
+      
+      // Then sort the pieces to ensure proper layering
+      return sortPiecesByCorrectness(updated);
+    });
   };
 
   const handleDirectionalMove = (direction: 'up' | 'down' | 'left' | 'right') => {
@@ -102,8 +112,6 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     console.log(`Move ${draggedPiece.id} to ${direction}`);
   };
 
-  // No explicit z-index setting needed anymore
-  // We'll rely on the array order and CSS classes to handle z-indices
   const checkForHints = () => {
     if (isSolved) return;
     
@@ -140,12 +148,14 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     
     // Update pieces with hints
     setPieces((prev) => {
-      return prev.map(piece => {
+      const updated = prev.map(piece => {
         if (hintablePieceIds.includes(piece.id)) {
           return { ...piece, showHint: true };
         }
         return { ...piece, showHint: false };
       });
+      
+      return sortPiecesByCorrectness(updated);
     });
   };
 
