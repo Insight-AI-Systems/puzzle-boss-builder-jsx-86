@@ -1,5 +1,5 @@
 
-import { BasePuzzlePiece, PuzzlePiece } from '../types/puzzle-types';
+import { BasePuzzlePiece, PuzzlePiece, GameMode } from '../types/puzzle-types';
 import { handlePieceMove, handlePieceDrop, handleDirectionalMove } from './pieceMovementHandlers';
 import { updatePieceState } from './pieceStateUtils';
 import { findHintablePieces } from './pieceStateUtils';
@@ -12,23 +12,23 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
   setDraggedPiece: (piece: T | null) => void,
   incrementMoves: (count?: number) => void,
   isSolved: boolean,
-  playSound: (sound: string) => void
+  playSound: (sound: string) => void,
+  grid: (number | null)[] = []
 ) => {
   const handleDragStart = (piece: T) => {
     setDraggedPiece(piece);
     playSound('pickup');
     
     setPieces(prev => {
-      const updated = updatePieceState(prev, piece.id, { isDragging: true } as Partial<T>);
-      return updated;
+      return updatePieceState(prev, piece.id, { isDragging: true } as Partial<T>);
     });
   };
 
   const handleMove = (piece: T, index: number) => {
     if (draggedPiece && draggedPiece.id === piece.id) {
       setPieces(prev => {
-        // Use the generic type to ensure type safety
-        const moved = handlePieceMove(prev, draggedPiece, index, []) as T[];
+        // Use the grid parameter to ensure one piece per cell
+        const moved = handlePieceMove(prev, draggedPiece, index, grid);
         incrementMoves();
         playSound('place');
         return moved;

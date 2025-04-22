@@ -1,6 +1,7 @@
 
 import { BasePuzzlePiece, GameMode, PuzzlePiece } from '../types/puzzle-types';
 import { createPieceHandlers } from '../utils/pieceInteractionHandlers';
+import { useAssemblyState } from './useAssemblyState';
 
 interface UsePuzzlePieceHandlersProps {
   pieces: PuzzlePiece[];
@@ -12,6 +13,7 @@ interface UsePuzzlePieceHandlersProps {
   playSound: (sound: string) => void;
   gameMode: GameMode;
   rotationEnabled: boolean;
+  grid?: (number | null)[];
 }
 
 export function usePuzzlePieceHandlers({
@@ -23,7 +25,8 @@ export function usePuzzlePieceHandlers({
   isSolved,
   playSound,
   gameMode,
-  rotationEnabled
+  rotationEnabled,
+  grid = []
 }: UsePuzzlePieceHandlersProps) {
   return createPieceHandlers(
     pieces,
@@ -32,6 +35,7 @@ export function usePuzzlePieceHandlers({
     setDraggedPiece,
     incrementMoves,
     isSolved,
-    playSound
+    playSound,
+    grid
   );
 }

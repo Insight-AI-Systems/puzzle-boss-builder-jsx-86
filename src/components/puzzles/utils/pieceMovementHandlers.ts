@@ -1,6 +1,6 @@
 
 import { BasePuzzlePiece, PuzzlePiece } from '../types/puzzle-types';
-import { validateMove } from './pieceMovementUtils';
+import { validateMove, handleCellSwap } from './pieceMovementUtils';
 import { updatePieceState } from './pieceStateUtils';
 
 export const handlePieceMove = <T extends BasePuzzlePiece>(
@@ -13,15 +13,16 @@ export const handlePieceMove = <T extends BasePuzzlePiece>(
     return pieces;
   }
 
-  // First, update the piece position
-  const updatedPieces = pieces.map(piece => {
+  // Use the cell swapping logic to ensure one piece per cell
+  const updatedPieces = handleCellSwap(pieces, draggedPiece, targetIndex, grid);
+  
+  // Clear dragging state after move
+  return updatedPieces.map(piece => {
     if (piece.id === draggedPiece.id) {
-      return { ...piece, position: targetIndex, isDragging: false } as T;
+      return { ...piece, isDragging: false } as T;
     }
     return piece;
   });
-
-  return updatedPieces;
 };
 
 export const handlePieceDrop = <T extends BasePuzzlePiece>(
