@@ -17,6 +17,10 @@ export const sortPiecesByCorrectness = <T extends BasePuzzlePiece>(pieces: T[]):
     if ((a as any).selected) return 1;
     if ((b as any).selected) return -1;
     
+    // Trapped pieces should be above correctly placed pieces
+    if ((a as any).trapped && !bCorrect) return 1;
+    if ((b as any).trapped && !aCorrect) return -1;
+    
     // Correctly placed pieces go to the bottom
     if (aCorrect && !bCorrect) return -1;
     if (!aCorrect && bCorrect) return 1;

@@ -58,7 +58,10 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
         opacity: piece.isDragging ? '0.8' : '1',
         width: pieceSize,
         height: pieceSize,
-        position: 'relative'
+        position: 'relative',
+        zIndex: isTrapped ? 10 : 'auto', // Ensure trapped pieces are visually on top
+        transform: isTrapped ? 'scale(0.9) translateY(-10px)' : 'scale(1)', // Slightly offset trapped pieces
+        boxShadow: isTrapped ? '0 0 0 2px red, 0 4px 6px rgba(0,0,0,0.2)' : '' // Highlight trapped pieces
       }}
       data-correct={isCorrectlyPlaced ? 'true' : 'false'}
       data-piece-number={pieceNumber}

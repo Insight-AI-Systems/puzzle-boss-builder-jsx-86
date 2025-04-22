@@ -91,8 +91,12 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
   const height = containerSize?.height || defaultWidth;
   const pieceSize = containerSize?.pieceSize || (width / 3) - (isMobile ? 4 : 8);
   
-  // Use the sorting utility to ensure correct stacking
-  const sortedPieces = sortPiecesForGrid(pieces);
+  const markedPieces = pieces.map(piece => ({
+    ...piece,
+    trapped: isTrappedPiece(piece, pieces)
+  }));
+  
+  const sortedPieces = sortPiecesForGrid(markedPieces);
   
   return (
     <div 
@@ -105,7 +109,7 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
       {sortedPieces.map((piece, index) => {
         const pieceNumber = parseInt(piece.id.split('-')[1]);
         const isCorrectlyPlaced = pieceNumber === piece.position;
-        const isTrapped = isTrappedPiece(piece, pieces);
+        const isTrapped = !!piece.trapped;
 
         return (
           <PuzzlePiece
