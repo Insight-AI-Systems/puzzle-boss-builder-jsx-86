@@ -7,20 +7,17 @@ export function useAdminStatus(profile: UserProfile | null) {
 
   useEffect(() => {
     if (profile) {
-      // Debug logging to help trace role issues
-      console.log('useAdminStatus - Checking admin status for role:', profile.role);
-      console.log('useAdminStatus - Profile ID:', profile.id);
+      // Enhanced logging for Alan's account
+      console.log('useAdminStatus - Checking admin status');
+      console.log('useAdminStatus - Profile:', profile);
+      console.log('useAdminStatus - Profile Email:', profile.id);
+      console.log('useAdminStatus - Profile Role:', profile.role);
       
-      // Special handling for super_admin
-      if (profile.role === 'super_admin') {
-        console.log('useAdminStatus - Super admin detected, granting admin privileges');
-        setIsAdmin(true);
-        return;
-      }
+      // Explicit check for Alan's email with super admin privileges
+      const isProtectedAdminEmail = profile.id === 'alan@insight-ai-systems.com';
       
-      // Special handling for specific email addresses
-      if (profile.id === 'alan@insight-ai-systems.com') {
-        console.log('useAdminStatus - Protected super admin detected via email, granting admin privileges');
+      if (isProtectedAdminEmail) {
+        console.log('useAdminStatus - Protected super admin email detected, granting full admin privileges');
         setIsAdmin(true);
         return;
       }

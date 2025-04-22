@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Loader2, ShieldAlert } from 'lucide-react';
@@ -15,52 +14,44 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Add enhanced logging for debugging
-  const isSuperAdmin = hasRole('super_admin') || 
-                      (profile?.role === 'super_admin') || 
-                      (profile?.id === 'alan@insight-ai-systems.com');
+  // Enhanced logging for admin access
+  const isSuperAdmin = 
+    hasRole('super_admin') || 
+    (profile?.role === 'super_admin') || 
+    (profile?.id === 'alan@insight-ai-systems.com');
 
-  // Add debug logging
   useEffect(() => {
     if (isLoading) return;
     
-    console.log('Admin Dashboard - Auth State:', { 
+    console.log('AdminDashboard - Full Admin Access Check:', { 
       isLoggedIn: !!currentUserId,
       profileId: profile?.id, 
+      email: profile?.id,
       isAdmin,
       isSuperAdmin,
       role: profile?.role,
       hasRoleSuperAdmin: hasRole('super_admin'),
       profileRoleIsSuperAdmin: profile?.role === 'super_admin',
-      isProtectedAdmin: profile?.id === 'alan@insight-ai-systems.com'
     });
-  }, [isLoading, isAdmin, isSuperAdmin, profile, currentUserId, hasRole]);
 
-  // Consolidated useEffect for access checks and logging
-  useEffect(() => {
-    if (isLoading) return;
-    
-    // Force grant access to special account or super admin
-    if (isSuperAdmin) {
-      console.log('Protected super admin detected, access granted');
+    // Force grant access to Alan
+    if (profile?.id === 'alan@insight-ai-systems.com') {
+      console.log('AdminDashboard - Alan detected, granting full admin access');
       return;
     }
     
     // Check access for regular users
     if (!isAdmin && !isSuperAdmin && currentUserId) {
-      console.log('Access denied, redirecting to home');
+      console.log('AdminDashboard - Access denied, redirecting');
       toast({
         title: "Access Denied",
         description: `You don't have admin privileges. Current role: ${profile?.role || 'unknown'}`,
         variant: "destructive",
       });
       navigate('/', { replace: true });
-    } else if (isAdmin || isSuperAdmin) {
-      console.log('Admin access granted');
     }
   }, [isLoading, isAdmin, isSuperAdmin, navigate, profile, currentUserId, toast]);
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
@@ -69,7 +60,6 @@ const AdminDashboard = () => {
     );
   }
 
-  // Super admin or admin dashboard
   if (isSuperAdmin || isAdmin) {
     return (
       <div className="min-h-screen bg-puzzle-black p-6">
@@ -93,7 +83,6 @@ const AdminDashboard = () => {
     );
   }
 
-  // Access denied case (fallback)
   return (
     <div className="min-h-screen bg-puzzle-black p-6">
       <Alert variant="destructive">

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect } from 'react';
 import { AuthError, User, Session } from '@supabase/supabase-js';
 import { UserRole } from '@/types/userTypes';
@@ -94,33 +93,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const hasRole = (role: string): boolean => {
-    // Special case check for super_admin
-    if (userRole === 'super_admin') {
-      console.log('hasRole - User is super_admin, granting access to all roles');
-      return true;
-    }
+    console.log('AuthContext - Checking role:', role);
+    console.log('AuthContext - Current User Email:', user?.email);
+    console.log('AuthContext - Current User Role:', userRole);
     
-    // Special case for protected admin email
     if (user?.email === 'alan@insight-ai-systems.com') {
-      console.log('hasRole - Protected admin email detected, granting access to all roles');
+      console.log('AuthContext - Protected super admin email detected, granting all roles');
       return true;
     }
     
-    // Role-specific check
+    if (userRole === 'super_admin') {
+      console.log('AuthContext - Super admin detected, granting access to all roles');
+      return true;
+    }
+    
     if (userRole === role) {
-      console.log(`hasRole - User has exact role: ${role}`);
+      console.log(`AuthContext - User has exact role: ${role}`);
       return true;
     }
     
-    // Admin has access to all non-super_admin roles
     if (userRole === 'admin' && role !== 'super_admin') {
-      console.log(`hasRole - Admin granted access to role: ${role}`);
+      console.log(`AuthContext - Admin granted access to role: ${role}`);
       return true;
     }
     
-    // Check user roles array as a fallback
     const hasRoleInArray = userRoles.includes(role);
-    console.log(`hasRole - Role ${role} check from array: ${hasRoleInArray}`);
+    console.log(`AuthContext - Role ${role} check from array: ${hasRoleInArray}`);
     return hasRoleInArray;
   };
 
