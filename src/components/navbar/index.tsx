@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMobileMenu } from '@/hooks/use-mobile-menu';
-import { useAdminStatus } from '@/hooks/profile/useAdminStatus';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import Logo from './Logo';
 import NavLinks from './NavLinks';
 import UserMenu from './UserMenu';
@@ -14,11 +14,18 @@ import AuthButtons from './AuthButtons';
 import MobileMenu from './MobileMenu';
 import { mainNavItems } from './NavbarData';
 
+// Special admin email that should always have access
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+
 const Navbar: React.FC = () => {
   const { profile, isLoading } = useUserProfile();
-  const { isAdmin } = useAdminStatus(profile);
+  const { user, hasRole } = useAuth();
   const isMobile = useIsMobile();
   const { isMenuOpen, toggleMenu, closeMenu } = useMobileMenu();
+  
+  // Simplified admin check
+  const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
+  const isAdminUser = isProtectedAdmin || hasRole('admin') || hasRole('super_admin');
   
   return (
     <nav className="bg-puzzle-black border-b border-puzzle-aqua/20">
@@ -37,7 +44,7 @@ const Navbar: React.FC = () => {
           
           {/* User Menu / Auth Buttons */}
           <div className="hidden md:flex items-center space-x-2">
-            {!isLoading && profile && isAdmin && (
+            {!isLoading && profile && isAdminUser && (
               <Link 
                 to="/admin-dashboard"
                 className="flex items-center px-3 py-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
@@ -57,7 +64,7 @@ const Navbar: React.FC = () => {
           <div className="md:hidden flex items-center">
             {!isLoading && profile ? (
               <>
-                {isAdmin && (
+                {isAdminUser && (
                   <Link 
                     to="/admin-dashboard"
                     className="flex items-center px-3 py-2 mr-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"

@@ -1,9 +1,13 @@
+
 import React, { createContext, useContext, useEffect } from 'react';
 import { AuthError, User, Session } from '@supabase/supabase-js';
 import { UserRole } from '@/types/userTypes';
 import { useAuthProvider } from '@/hooks/auth/useAuthProvider';
 import { useAuthOperations } from '@/hooks/auth/useAuthOperations';
 import { supabase } from '@/integrations/supabase/client';
+
+// Special admin email that should always have access
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 export interface AuthContextType {
   user: User | null;
@@ -93,38 +97,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const hasRole = (role: string): boolean => {
-    console.log('AuthContext - Checking role:', role);
-    console.log('AuthContext - Current User Email:', user?.email);
-    console.log('AuthContext - Current User Role:', userRole);
-    
-    // CRITICAL: Special case for Alan - always grant all roles
-    if (user?.email === 'alan@insight-ai-systems.com') {
-      console.log('AuthContext - Protected super admin email detected, granting all roles');
+    // Always give access to the protected admin email
+    if (user?.email === PROTECTED_ADMIN_EMAIL) {
       return true;
     }
     
     // Super admin can access all roles
     if (userRole === 'super_admin') {
-      console.log('AuthContext - Super admin detected, granting access to all roles');
       return true;
     }
     
     // Exact role match
     if (userRole === role) {
-      console.log(`AuthContext - User has exact role: ${role}`);
       return true;
     }
     
     // Admin can access all non-super-admin roles
     if (userRole === 'admin' && role !== 'super_admin') {
-      console.log(`AuthContext - Admin granted access to role: ${role}`);
       return true;
     }
     
     // Check role array as fallback
-    const hasRoleInArray = userRoles.includes(role);
-    console.log(`AuthContext - Role ${role} check from array: ${hasRoleInArray}`);
-    return hasRoleInArray;
+    return userRoles.includes(role);
   };
 
   const value: AuthContextType = {

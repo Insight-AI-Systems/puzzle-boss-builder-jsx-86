@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { UserProfile } from '@/types/userTypes';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAdminStatus } from '@/hooks/profile/useAdminStatus';
 
 interface UserMenuProps {
   profile: UserProfile | null;
@@ -25,33 +24,18 @@ interface UserMenuProps {
 const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
-  const { signOut, userRole, hasRole } = useAuth();
-  const { isAdmin } = useAdminStatus(profile);
+  const { user, hasRole } = useAuth();
 
-  // Enhanced debug logging for admin status
-  console.log('UserMenu - Profile:', profile);
-  console.log('UserMenu - UserRole from AuthContext:', userRole);
-  console.log('UserMenu - Is Admin from useAdminStatus:', isAdmin);
-  console.log('UserMenu - Has Admin Role (hasRole):', hasRole('admin'));
-  console.log('UserMenu - Has Super Admin Role (hasRole):', hasRole('super_admin'));
-  console.log('UserMenu - Email:', profile?.id);
-
-  // Check for special super admin by email
-  const isProtectedAdmin = profile?.id === PROTECTED_ADMIN_EMAIL;
-  const isTestAdmin = profile?.id === 'rob.small.1234@gmail.com';
+  // Simplified admin check
+  const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
+  const isAdminUser = isProtectedAdmin || hasRole('admin') || hasRole('super_admin');
   
-  // Either they have the admin role, or they're the special super admin account,
-  // or they otherwise have admin privileges through the role system
-  const showAdminMenu = isProtectedAdmin || 
-                       isAdmin || 
-                       profile?.role === 'super_admin' || 
-                       profile?.role === 'admin' ||
-                       hasRole('admin') || 
-                       hasRole('super_admin');
-  
-  console.log('UserMenu - Show Admin Menu:', showAdminMenu);
-  console.log('UserMenu - Is Protected Admin:', isProtectedAdmin);
-  console.log('UserMenu - Is Test Admin:', isTestAdmin);
+  console.log('UserMenu - Admin Check:', {
+    userEmail: user?.email,
+    isProtectedAdmin,
+    isAdminUser,
+    profileRole: profile?.role
+  });
 
   if (!profile) return null;
 
@@ -83,14 +67,8 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
           <Link to="/settings">Settings</Link>
         </DropdownMenuItem>
         
-        {/* Admin Menu Section - Now showing debug info for users who should have access */}
-        {isTestAdmin && !showAdminMenu && (
-          <DropdownMenuItem className="text-red-500">
-            You should have admin access but don't. Role: {profile.role}
-          </DropdownMenuItem>
-        )}
-        
-        {showAdminMenu && (
+        {/* Admin Menu Section */}
+        {isAdminUser && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="flex items-center text-puzzle-aqua">

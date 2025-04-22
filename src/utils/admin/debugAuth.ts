@@ -9,21 +9,25 @@ import { toast } from 'sonner';
 export async function debugAuthState() {
   try {
     console.log('Debugging auth state...');
+    toast.info('Debugging auth state, please check console for details');
     
     // First, get the current user 
     const { data: userData, error: userError } = await supabase.auth.getUser();
     
     if (userError) {
       console.error('Error getting user:', userError);
+      toast.error(`Error getting user: ${userError.message}`);
       return { success: false, error: userError };
     }
     
     if (!userData.user) {
       console.log('No user is currently logged in');
+      toast.warning('No user is currently logged in');
       return { success: false, message: 'No user logged in' };
     }
     
     console.log('Current user:', userData.user);
+    console.log('User email:', userData.user.email);
     console.log('User metadata:', userData.user.user_metadata);
     
     // Get the session details
@@ -31,6 +35,7 @@ export async function debugAuthState() {
     
     if (sessionError) {
       console.error('Error getting session:', sessionError);
+      toast.error(`Error getting session: ${sessionError.message}`);
       return { success: false, error: sessionError };
     }
     
@@ -45,6 +50,7 @@ export async function debugAuthState() {
     
     if (profileError) {
       console.error('Error getting profile:', profileError);
+      toast.error(`Error getting profile: ${profileError.message}`);
     } else {
       console.log('Current profile:', profileData);
     }
@@ -55,6 +61,7 @@ export async function debugAuthState() {
     
     if (refreshError) {
       console.error('Error refreshing session:', refreshError);
+      toast.error(`Error refreshing session: ${refreshError.message}`);
       return { success: false, error: refreshError };
     }
     
@@ -106,7 +113,12 @@ export async function forceProtectedAdminAccess() {
     if (authData?.user?.email === protectedEmail) {
       console.log('Current user is the protected admin. Refreshing session...');
       await supabase.auth.refreshSession();
-      window.location.reload(); // Reload to apply new permissions
+      
+      // Force reload page after a short delay
+      toast.success('Admin access granted, reloading page...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     }
     
     return { success: true, data };

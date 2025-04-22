@@ -8,48 +8,42 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { debugAuthState, forceProtectedAdminAccess } from '@/utils/admin/debugAuth';
 
 // Special admin email that should always have access
 const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 const AdminDashboard = () => {
-  const { profile, isLoading, isAdmin, currentUserId } = useUserProfile();
-  const { hasRole, user } = useAuth();
+  const { profile, isLoading } = useUserProfile();
+  const { user, hasRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Enhanced admin access check with special case for Alan
+  // Simple admin access check
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
-  const isSuperAdmin = 
-    isProtectedAdmin || 
-    hasRole('super_admin') || 
-    (profile?.role === 'super_admin');
+  const isSuperAdmin = isProtectedAdmin || hasRole('super_admin');
+  const isAdminUser = isProtectedAdmin || isSuperAdmin || hasRole('admin');
 
   useEffect(() => {
     if (isLoading) return;
     
-    // Detailed access logging for debugging
-    console.log('AdminDashboard - Full Admin Access Check:', { 
-      isLoggedIn: !!currentUserId,
-      userId: currentUserId,
-      profileId: profile?.id, 
-      email: user?.email,
-      isAdmin,
-      isSuperAdmin,
+    console.log('AdminDashboard - Access Check:', { 
+      isLoggedIn: !!user,
+      userEmail: user?.email,
       isProtectedAdmin,
-      role: profile?.role,
-      hasRoleSuperAdmin: hasRole('super_admin'),
-      profileRoleIsSuperAdmin: profile?.role === 'super_admin',
+      isSuperAdmin,
+      isAdminUser,
+      profileRole: profile?.role
     });
 
     // Special case for Alan - always grant access
     if (isProtectedAdmin) {
-      console.log('AdminDashboard - Protected admin detected, granting full admin access');
+      console.log('AdminDashboard - Protected admin detected, granting full access');
       return;
     }
     
     // Check access for regular users
-    if (!isAdmin && !isSuperAdmin && currentUserId) {
+    if (!isAdminUser && user) {
       console.log('AdminDashboard - Access denied, redirecting to homepage');
       toast({
         title: "Access Denied",
@@ -58,7 +52,7 @@ const AdminDashboard = () => {
       });
       navigate('/', { replace: true });
     }
-  }, [isLoading, isAdmin, isSuperAdmin, navigate, profile, currentUserId, toast, user?.email, isProtectedAdmin]);
+  }, [isLoading, isAdminUser, navigate, profile, user, toast, isProtectedAdmin]);
 
   if (isLoading) {
     return (
@@ -68,8 +62,8 @@ const AdminDashboard = () => {
     );
   }
 
-  // Grant access if user is protected admin, regular admin or has super admin role
-  if (isProtectedAdmin || isSuperAdmin || isAdmin) {
+  // Grant access if user is protected admin, super admin or has admin role
+  if (isProtectedAdmin || isSuperAdmin || isAdminUser) {
     return (
       <div className="min-h-screen bg-puzzle-black p-6">
         <div className="max-w-6xl mx-auto space-y-8">
@@ -77,13 +71,22 @@ const AdminDashboard = () => {
             {isProtectedAdmin || isSuperAdmin ? 'Super Admin Dashboard' : 'Admin Dashboard'}
           </h1>
 
-          {/* Puzzle Test Playground Button */}
-          <div className="mb-6">
-            <Button asChild variant="outline" size="lg">
-              <Link to="/puzzle-playground">
-                Open Puzzle Engine Test Playground
-              </Link>
-            </Button>
+          {/* Admin Tools Section */}
+          <div className="mb-6 space-y-2">
+            <h2 className="text-xl font-game text-puzzle-gold">Admin Tools</h2>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => debugAuthState()} variant="outline" size="sm">
+                Debug Auth State
+              </Button>
+              <Button onClick={() => forceProtectedAdminAccess()} variant="outline" size="sm">
+                Force Admin Access
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link to="/puzzle-playground">
+                  Open Puzzle Engine Test Playground
+                </Link>
+              </Button>
+            </div>
           </div>
 
           <RoleBasedDashboard />
