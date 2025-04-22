@@ -1,7 +1,10 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { BasePuzzlePiece } from '../types/puzzle-types';
-import { ensureGridIntegrity, validatePuzzleState, debugGridState } from '../utils/pieceStateManagement';
+import { 
+  ensureGridIntegrity, 
+  validatePuzzleState, 
+  debugGridState 
+} from '../utils/pieceStateManagement';
 
 export function useGridState<T extends BasePuzzlePiece>(
   pieces: T[],
