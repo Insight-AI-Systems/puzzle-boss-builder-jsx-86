@@ -1,8 +1,10 @@
+
 import React, { createContext, useContext, useEffect } from 'react';
 import { AuthError, User, Session } from '@supabase/supabase-js';
 import { UserRole } from '@/types/userTypes';
 import { useAuthProvider } from '@/hooks/auth/useAuthProvider';
 import { useAuthOperations } from '@/hooks/auth/useAuthOperations';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface AuthContextType {
   user: User | null;
@@ -76,21 +78,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [session?.user]);
 
-  const handleSignIn = async (email: string, password: string) => {
-    const response = await signIn(email, password);
+  const handleSignIn = async (email: string, password: string, options?: { rememberMe?: boolean }) => {
+    await signIn(email, password, options);
     
-    // If the login was successful, update the last_sign_in
-    if (response?.data?.user) {
+    // If sign-in was successful and we have a user session, update the last_sign_in
+    if (session?.user) {
       try {
         await supabase.functions.invoke('handle_user_signin', {
-          body: { userId: response.data.user.id }
+          body: { userId: session.user.id }
         });
       } catch (error) {
         console.error('Error updating last sign in time:', error);
       }
     }
-    
-    return response;
   };
 
   const hasRole = (role: string): boolean => {
