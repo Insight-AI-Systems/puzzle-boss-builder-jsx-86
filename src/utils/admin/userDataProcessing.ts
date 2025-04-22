@@ -58,6 +58,12 @@ export function filterUserData(data: RpcUserData[], options: AdminProfilesOption
 }
 
 export function transformToUserProfile(userData: RpcUserData): UserProfile {
+  // Add debug logging
+  console.log('Processing user data for profile transformation:', 
+    userData.id, 
+    'Last sign in:', 
+    userData.last_sign_in);
+  
   return {
     id: userData.id,
     email: userData.email,
@@ -74,7 +80,8 @@ export function transformToUserProfile(userData: RpcUserData): UserProfile {
     updated_at: userData.updated_at || userData.created_at,
     gender: userData.gender as any || null,
     custom_gender: userData.custom_gender || null,
-    age_group: userData.age_group as any || null
+    age_group: userData.age_group as any || null,
+    last_sign_in: userData.last_sign_in
   };
 }
 

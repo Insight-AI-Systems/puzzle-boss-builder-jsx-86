@@ -12,22 +12,52 @@ import { UserLastLoginProps } from '@/types/userTableTypes';
 export const UserLastLogin: React.FC<UserLastLoginProps> = ({ lastSignIn }) => {
   const formatLastLogin = (date: string | null) => {
     if (!date) return 'Never';
-    const loginDate = new Date(date);
-    const now = new Date();
-    const diffInDays = Math.floor((now.getTime() - loginDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    if (diffInDays < 30) {
-      return formatDistanceToNow(loginDate, { addSuffix: true });
+    try {
+      const loginDate = new Date(date);
+      
+      // Check if date is valid
+      if (isNaN(loginDate.getTime())) {
+        console.error('Invalid date format:', date);
+        return 'Invalid date';
+      }
+      
+      const now = new Date();
+      const diffInDays = Math.floor((now.getTime() - loginDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (diffInDays < 30) {
+        return formatDistanceToNow(loginDate, { addSuffix: true });
+      }
+      return format(loginDate, 'MMM d, yyyy');
+    } catch (error) {
+      console.error('Error formatting date:', error, date);
+      return 'Error';
     }
-    return format(loginDate, 'MMM d, yyyy');
   };
 
   const getInactiveStatus = (date: string | null) => {
     if (!date) return true;
-    const loginDate = new Date(date);
-    const now = new Date();
-    return (now.getTime() - loginDate.getTime()) > (30 * 24 * 60 * 60 * 1000);
+    
+    try {
+      const loginDate = new Date(date);
+      
+      // Check if date is valid
+      if (isNaN(loginDate.getTime())) {
+        return true;
+      }
+      
+      const now = new Date();
+      return (now.getTime() - loginDate.getTime()) > (30 * 24 * 60 * 60 * 1000);
+    } catch (error) {
+      console.error('Error determining inactive status:', error);
+      return true;
+    }
   };
+  
+  // Debug logging
+  if (lastSignIn) {
+    console.log('Last sign in value:', lastSignIn, 'Formatted as:', formatLastLogin(lastSignIn));
+  }
 
   return (
     <TooltipProvider>

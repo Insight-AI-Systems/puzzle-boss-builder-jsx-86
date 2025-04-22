@@ -87,11 +87,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // If sign-in was successful and we have a user session, update the last_sign_in
     if (session?.user) {
       try {
-        await supabase.functions.invoke('handle_user_signin', {
+        console.log('Calling handle_user_signin edge function for user:', session.user.id);
+        const response = await supabase.functions.invoke('handle_user_signin', {
           body: { userId: session.user.id }
         });
+        
+        if (response.error) {
+          console.error('Error updating last sign in time:', response.error);
+        } else {
+          console.log('Successfully updated last sign in time:', response.data);
+        }
       } catch (error) {
-        console.error('Error updating last sign in time:', error);
+        console.error('Exception calling handle_user_signin function:', error);
       }
     }
   };

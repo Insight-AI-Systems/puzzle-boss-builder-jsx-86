@@ -16,7 +16,7 @@ serve(async (req) => {
   try {
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
     // Extract user ID from request
@@ -29,8 +29,10 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Updating last_sign_in for user ${userId}`);
+
     // Update the last_sign_in field in the profiles table
-    const { error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from("profiles")
       .update({ last_sign_in: new Date().toISOString() })
       .eq("id", userId);
@@ -38,13 +40,15 @@ serve(async (req) => {
     if (error) {
       console.error("Error updating last_sign_in:", error);
       return new Response(
-        JSON.stringify({ error: "Failed to update last sign in time" }),
+        JSON.stringify({ error: "Failed to update last sign in time", details: error }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log(`Successfully updated last_sign_in for user ${userId}`);
+    
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ success: true, data }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
