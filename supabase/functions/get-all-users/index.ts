@@ -70,7 +70,7 @@ serve(async (req) => {
     // Fetch all profiles
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from("profiles")
-      .select("id, role, username, country, categories_played");
+      .select("id, role, username, country, last_sign_in");
     
     if (profilesError) {
       console.error("Error fetching profiles:", profilesError);
@@ -96,7 +96,7 @@ serve(async (req) => {
         display_name: profile.username || user.email?.split('@')[0] || 'N/A',
         role: profile.role || 'player',
         country: profile.country || null,
-        categories_played: profile.categories_played || []
+        last_sign_in: profile.last_sign_in || user.last_sign_in_at || null
       };
     });
 

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { UserStatsDisplay } from './user-management/UserStatsDisplay';
@@ -10,6 +9,7 @@ import { UserFilters } from './user-management/UserFilters';
 import { UserPagination } from './user-management/UserPagination';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function UserManagement() {
   const { profile } = useUserProfile();
@@ -44,6 +44,7 @@ export function UserManagement() {
 
   const [localSearchTerm, setLocalSearchTerm] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [lastLoginSortDirection, setLastLoginSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const currentUserRole = profile?.role || 'player';
   const currentUserEmail = profile?.id; // In your system, id appears to be the email
@@ -61,6 +62,22 @@ export function UserManagement() {
 
   const handleSortByRole = () => {
     setRoleSortDirection(roleSortDirection === 'asc' ? 'desc' : 'asc');
+  };
+
+  const handleSortByLastLogin = (direction: 'asc' | 'desc') => {
+    setLastLoginSortDirection(direction);
+    if (allProfilesData?.data) {
+      const sortedUsers = [...allProfilesData.data].sort((a, b) => {
+        const dateA = a.last_sign_in ? new Date(a.last_sign_in).getTime() : 0;
+        const dateB = b.last_sign_in ? new Date(b.last_sign_in).getTime() : 0;
+        return direction === 'asc' ? dateA - dateB : dateB - dateA;
+      });
+      
+      queryClient.setQueryData(['all-profiles'], {
+        ...allProfilesData,
+        data: sortedUsers
+      });
+    }
   };
 
   const handleSelectAll = (isSelected: boolean) => {
@@ -115,9 +132,11 @@ export function UserManagement() {
           currentUserEmail={currentUserEmail}
           onRoleChange={handleRoleChange}
           onSortByRole={handleSortByRole}
+          onSortByLastLogin={handleSortByLastLogin}
           selectedUsers={selectedUsers}
           onUserSelection={handleUserSelection}
           onSelectAll={handleSelectAll}
+          lastLoginSortDirection={lastLoginSortDirection}
         />
 
         <UserPagination

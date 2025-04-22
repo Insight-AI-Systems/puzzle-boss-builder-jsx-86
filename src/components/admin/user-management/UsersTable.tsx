@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -13,16 +12,20 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatDistanceToNow, format } from 'date-fns';
 
 interface UsersTableProps {
   users: UserProfile[];
   currentUserRole: UserRole;
-  currentUserEmail?: string; // Add this prop
+  currentUserEmail?: string;
   onRoleChange: (userId: string, newRole: UserRole) => void;
   onSortByRole: () => void;
+  onSortByLastLogin?: (direction: 'asc' | 'desc') => void;
   selectedUsers?: Set<string>;
   onUserSelection?: (userId: string, isSelected: boolean) => void;
   onSelectAll?: (isSelected: boolean) => void;
+  lastLoginSortDirection?: 'asc' | 'desc';
 }
 
 const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
@@ -33,32 +36,29 @@ function isProtectedAdminId(id?: string) {
 export function UsersTable({ 
   users, 
   currentUserRole, 
-  currentUserEmail, // Use this prop
+  currentUserEmail,
   onRoleChange,
   onSortByRole,
+  onSortByLastLogin,
   selectedUsers = new Set(),
   onUserSelection,
-  onSelectAll
+  onSelectAll,
+  lastLoginSortDirection
 }: UsersTableProps) {
-  // Debug the current user role and email
   useEffect(() => {
     console.log(`UsersTable - Initialized with currentUserRole: ${currentUserRole}, currentUserEmail: ${currentUserEmail}`);
   }, [currentUserRole, currentUserEmail]);
 
-  // Check if selection is enabled (both handlers are provided)
   const selectionEnabled = !!onUserSelection && !!onSelectAll;
   
-  // Calculate if all users are selected
   const allSelected = users.length > 0 && users.every(user => selectedUsers.has(user.id));
   
-  // Handle toggling selection for all users
   const handleSelectAllChange = (checked: boolean) => {
     if (onSelectAll) {
       onSelectAll(checked);
     }
   };
   
-  // Handle toggling selection for a single user
   const handleUserSelectionChange = (userId: string, checked: boolean) => {
     if (onUserSelection) {
       onUserSelection(userId, checked);
@@ -69,24 +69,19 @@ export function UsersTable({
   const isCurrentUserProtectedAdmin = isProtectedAdminId(currentUserEmail);
   const canAssignAnyRole = isSuperAdmin || isCurrentUserProtectedAdmin;
 
-  // Updated role-permission checker
   const canAssignRole = (role: UserRole, userId: string): boolean => {
-    // Skip additional checks if user can assign any role
     if (canAssignAnyRole) {
       return true;
     }
     
-    // Protected admin specifically
     if (isProtectedAdminId(userId)) {
-      return isCurrentUserProtectedAdmin; // Only the protected admin can modify itself
+      return isCurrentUserProtectedAdmin;
     }
     
-    // Admin, but cannot assign super_admin
     if (currentUserRole === 'admin' && role !== 'super_admin') {
       return true;
     }
     
-    // No rights
     return false;
   };
 
@@ -97,6 +92,31 @@ export function UsersTable({
     currentUserRole,
     currentUserEmail
   });
+
+  const handleSortByLastLogin = () => {
+    if (onSortByLastLogin) {
+      onSortByLastLogin(lastLoginSortDirection === 'asc' ? 'desc' : 'asc');
+    }
+  };
+
+  const formatLastLogin = (date: string | null) => {
+    if (!date) return 'Never';
+    const loginDate = new Date(date);
+    const now = new Date();
+    const diffInDays = Math.floor((now.getTime() - loginDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffInDays < 30) {
+      return formatDistanceToNow(loginDate, { addSuffix: true });
+    }
+    return format(loginDate, 'MMM d, yyyy');
+  };
+
+  const getInactiveStatus = (lastLogin: string | null) => {
+    if (!lastLogin) return true;
+    const loginDate = new Date(lastLogin);
+    const now = new Date();
+    return (now.getTime() - loginDate.getTime()) > (30 * 24 * 60 * 60 * 1000);
+  };
 
   return (
     <div className="rounded-md border overflow-x-auto">
@@ -121,7 +141,14 @@ export function UsersTable({
               </Button>
             </TableHead>
             <TableHead>Country</TableHead>
-            <TableHead>Categories</TableHead>
+            <TableHead>
+              <Button variant="ghost" onClick={handleSortByLastLogin} className="flex items-center gap-1">
+                Last Login
+                {lastLoginSortDirection && (
+                  <ArrowUpDown className="h-4 w-4" />
+                )}
+              </Button>
+            </TableHead>
             <TableHead>Joined</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -172,17 +199,23 @@ export function UsersTable({
                 </TableCell>
                 <TableCell>{user.country || 'Not specified'}</TableCell>
                 <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {user.categories_played && user.categories_played.length > 0 ? (
-                      user.categories_played.map((category) => (
-                        <Badge key={category} variant="outline" className="text-xs">
-                          {category}
-                        </Badge>
-                      ))
-                    ) : (
-                      <span className="text-muted-foreground text-sm">No categories</span>
-                    )}
-                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <div className="flex items-center gap-2">
+                          {getInactiveStatus(user.last_sign_in) && (
+                            <span className="w-2 h-2 rounded-full bg-red-500" />
+                          )}
+                          {formatLastLogin(user.last_sign_in)}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {user.last_sign_in 
+                          ? format(new Date(user.last_sign_in), 'PPpp')
+                          : 'User has never logged in'}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </TableCell>
                 <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
