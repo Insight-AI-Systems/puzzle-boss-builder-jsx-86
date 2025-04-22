@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 import { SimplePuzzlePiece } from '../types/simple-puzzle-types';
 import PuzzlePiece from './PuzzlePiece';
@@ -92,6 +91,7 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
   const height = containerSize?.height || defaultWidth;
   const pieceSize = containerSize?.pieceSize || (width / 3) - (isMobile ? 4 : 8);
   
+  // Use the sorting utility to ensure correct stacking
   const sortedPieces = sortPiecesForGrid(pieces);
   
   return (

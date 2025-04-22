@@ -59,6 +59,7 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
         width: pieceSize,
         height: pieceSize,
         position: 'relative',
+        zIndex: piece.zIndex || 'auto',
       }}
       data-correct={isCorrectlyPlaced ? 'true' : 'false'}
       data-piece-number={pieceNumber}
