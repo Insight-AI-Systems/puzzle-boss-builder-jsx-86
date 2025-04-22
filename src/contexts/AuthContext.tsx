@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect } from 'react';
 import { AuthError, User, Session } from '@supabase/supabase-js';
 import { UserRole } from '@/types/userTypes';
@@ -77,6 +76,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [session?.user]);
 
+  const handleSignIn = async (email: string, password: string) => {
+    const response = await signIn(email, password);
+    
+    // If the login was successful, update the last_sign_in
+    if (response?.data?.user) {
+      try {
+        await supabase.functions.invoke('handle_user_signin', {
+          body: { userId: response.data.user.id }
+        });
+      } catch (error) {
+        console.error('Error updating last sign in time:', error);
+      }
+    }
+    
+    return response;
+  };
+
   const hasRole = (role: string): boolean => {
     // Special case check for super_admin
     if (userRole === 'super_admin') {
@@ -113,7 +129,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     session,
     isLoading,
     error,
-    signIn,
+    signIn: handleSignIn,
     signUp,
     signOut,
     resetPassword,
