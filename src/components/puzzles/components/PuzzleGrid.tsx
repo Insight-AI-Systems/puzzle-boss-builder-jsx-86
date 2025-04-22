@@ -150,7 +150,7 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({
               ${(piece as any).correctlyPlaced ? 'puzzle-piece-correct' : ''}
               ${(piece as any).showHint ? 'puzzle-piece-hint' : ''}
               ${isSolved ? 'ring-1 ring-puzzle-gold/50' : ''}
-              ${isOccupied ? 'occupied' : ''}
+              ${isOccupied ? 'occupied bg-red-500/10' : ''}
               ${isTouchDevice ? 'active:scale-105' : 'hover:brightness-110'}`}
             style={{ 
               ...getPieceStyle(piece),

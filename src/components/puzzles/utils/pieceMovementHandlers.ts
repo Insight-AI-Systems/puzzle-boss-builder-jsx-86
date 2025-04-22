@@ -1,8 +1,6 @@
-
 import { BasePuzzlePiece } from '../types/puzzle-types';
-import { updatePieceState } from './pieceStateUtils';
+import { handlePieceSwap, validateMove, isPositionOccupied } from './pieceMovementUtils';
 import { checkTrappedPieces } from './pieceSortingUtils';
-import { handlePieceSwap, validateMove } from './pieceMovementUtils';
 
 export const handlePieceMove = <T extends BasePuzzlePiece>(
   pieces: T[],
@@ -14,7 +12,7 @@ export const handlePieceMove = <T extends BasePuzzlePiece>(
     return pieces;
   }
 
-  // Use handlePieceSwap for the actual move
+  // Perform the swap - this will handle both placement and swapping
   const updatedPieces = handlePieceSwap(pieces, draggedPiece, targetIndex);
   
   // Check for trapped pieces after the move

@@ -18,10 +18,10 @@ export const handlePieceSwap = <T extends BasePuzzlePiece>(
         isDragging: false
       } as T;
     } else if (existingPiece && piece.id === existingPiece.id) {
-      // Move existing piece to draggedPiece's original position
+      // Return existing piece to staging by setting its position to -1
       return {
         ...piece,
-        position: draggedPiece.position,
+        position: -1, // -1 indicates piece is in staging
         isDragging: false
       } as T;
     }
@@ -36,10 +36,18 @@ export const validateMove = <T extends BasePuzzlePiece>(
 ): boolean => {
   if (!draggedPiece) return false;
   
-  // Check if target position is the same as current position
+  // Only prevent moves to the same position
   if (draggedPiece.position === targetIndex) {
     return false;
   }
 
   return true;
+};
+
+// Helper to check if a position is occupied
+export const isPositionOccupied = <T extends BasePuzzlePiece>(
+  pieces: T[],
+  position: number
+): boolean => {
+  return pieces.some(p => p.position === position && !p.isDragging);
 };
