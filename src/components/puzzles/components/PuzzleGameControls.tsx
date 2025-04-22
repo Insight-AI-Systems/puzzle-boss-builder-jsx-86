@@ -1,9 +1,10 @@
 
 import React from 'react';
-import SaveLoadControls from './SaveLoadControls';
-import GameSettings from './GameSettings';
 import { DifficultyLevel, GameMode, PieceShape, VisualTheme } from '../types/puzzle-types';
 import { SavedPuzzleState } from '../types/save-types';
+import { SaveLoadGroup } from './controls/SaveLoadGroup';
+import { GameSettingsGroup } from './controls/GameSettingsGroup';
+import { SoundGroup } from './controls/SoundGroup';
 
 interface PuzzleGameControlsProps {
   onSave: () => void;
@@ -25,6 +26,10 @@ interface PuzzleGameControlsProps {
   setRotationEnabled: (enabled: boolean) => void;
   timeLimit: number;
   setTimeLimit: (limit: number) => void;
+  muted: boolean;
+  volume: number;
+  onToggleMute: () => void;
+  onVolumeChange: (value: number) => void;
 }
 
 const PuzzleGameControls: React.FC<PuzzleGameControlsProps> = ({
@@ -46,11 +51,15 @@ const PuzzleGameControls: React.FC<PuzzleGameControlsProps> = ({
   rotationEnabled,
   setRotationEnabled,
   timeLimit,
-  setTimeLimit
+  setTimeLimit,
+  muted,
+  volume,
+  onToggleMute,
+  onVolumeChange
 }) => {
   return (
     <div className="w-full mb-4 flex flex-col md:flex-row gap-2 justify-between">
-      <SaveLoadControls
+      <SaveLoadGroup
         onSave={onSave}
         onLoad={onLoad}
         onDelete={onDelete}
@@ -60,23 +69,34 @@ const PuzzleGameControls: React.FC<PuzzleGameControlsProps> = ({
         isMobile={isMobile}
       />
       
-      <GameSettings
-        gameMode={gameMode}
-        setGameMode={setGameMode}
-        difficulty={difficulty}
-        setDifficulty={setDifficulty}
-        pieceShape={pieceShape}
-        setPieceShape={setPieceShape}
-        visualTheme={visualTheme}
-        setVisualTheme={setVisualTheme}
-        rotationEnabled={rotationEnabled}
-        setRotationEnabled={setRotationEnabled}
-        timeLimit={timeLimit}
-        setTimeLimit={setTimeLimit}
-        isMobile={isMobile}
-      />
+      <div className="flex items-center gap-4">
+        <SoundGroup
+          muted={muted}
+          volume={volume}
+          onToggleMute={onToggleMute}
+          onVolumeChange={onVolumeChange}
+          isMobile={isMobile}
+        />
+        
+        <GameSettingsGroup
+          gameMode={gameMode}
+          setGameMode={setGameMode}
+          difficulty={difficulty}
+          setDifficulty={setDifficulty}
+          pieceShape={pieceShape}
+          setPieceShape={setPieceShape}
+          visualTheme={visualTheme}
+          setVisualTheme={setVisualTheme}
+          rotationEnabled={rotationEnabled}
+          setRotationEnabled={setRotationEnabled}
+          timeLimit={timeLimit}
+          setTimeLimit={setTimeLimit}
+          isMobile={isMobile}
+        />
+      </div>
     </div>
   );
 };
 
 export default PuzzleGameControls;
+
