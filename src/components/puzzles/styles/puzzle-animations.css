@@ -37,9 +37,12 @@
 
 /* Apply a distinctive visual treatment to make trapped pieces more visible */
 .puzzle-piece.trapped {
-  z-index: 30 !important;
-  box-shadow: 0 0 12px rgba(255, 0, 0, 0.7) !important;
-  animation: trapped-piece-pulse 1.5s infinite alternate;
+  z-index: 60 !important; /* Higher than regular pieces but below selected/dragging */
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.9) !important;
+  animation: trapped-piece-pulse 1s infinite alternate;
+  transform: scale(1.15) !important; /* Force trapped pieces to be larger */
+  border: 2px solid red !important;
+  pointer-events: auto !important; /* Ensure pieces can be clicked */
 }
 
 .puzzle-piece-hint {
@@ -79,12 +82,12 @@
 
 @keyframes trapped-piece-pulse {
   0% {
-    box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
-    transform: scale(1);
+    box-shadow: 0 0 8px rgba(255, 0, 0, 0.7);
+    opacity: 0.9;
   }
   100% {
-    box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
-    transform: scale(1.08);
+    box-shadow: 0 0 20px rgba(255, 0, 0, 1);
+    opacity: 1;
   }
 }
 

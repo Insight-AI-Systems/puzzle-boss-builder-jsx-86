@@ -14,20 +14,22 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     setDraggedPiece(piece);
     playSound('pickup');
     
-    setPieces(pieces.map(p => 
-      p.id === piece.id ? { ...p, isDragging: true } : p
-    ));
+    // When starting to drag, check for trapped pieces and force them to top
+    setPieces(prev => {
+      // Update the dragging state for the current piece
+      const updated = prev.map(p => 
+        p.id === piece.id ? { ...p, isDragging: true } : p
+      );
+      
+      // Force re-evaluation of all trapped pieces
+      return checkTrappedPieces(updated);
+    });
   };
 
   const handleMove = (piece: T, index: number) => {
     if (draggedPiece && draggedPiece.id === piece.id) {
       const newPieces = [...pieces];
       const draggedIndex = newPieces.findIndex(p => p.id === piece.id);
-      
-      // Before swapping, check if we're about to drop onto another piece
-      const targetPiece = newPieces.find(p => p.position === index);
-      const draggedPieceNumber = parseInt(draggedPiece.id.split('-')[1]);
-      const isDraggedPieceCorrect = draggedPieceNumber === draggedPiece.position;
       
       // Swap positions
       [newPieces[draggedIndex].position, newPieces[index].position] = 
@@ -39,27 +41,13 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
       // Immediately recalculate trapped state and enforce proper z-index layering
       setTimeout(() => {
         setPieces(prev => {
-          // First, update all pieces to calculate their new state
-          const updated = prev.map(p => {
-            const pieceNumber = parseInt(p.id.split('-')[1]);
-            const isCorrect = pieceNumber === p.position;
-            
-            // Check if this piece is potentially trapped
-            // (an unplaced piece is in the same position as a correctly placed piece)
-            const isTrapped = !isCorrect && prev.some(other => {
-              const otherNumber = parseInt(other.id.split('-')[1]);
-              return other.position === p.position && otherNumber === other.position;
-            });
-            
-            return { 
-              ...p, 
-              trapped: isTrapped,
-              selected: p.id === draggedPiece.id
-            } as any;
-          });
+          // Evaluate trapped state and update all pieces
+          const updated = checkTrappedPieces(prev);
           
-          // Then sort for proper z-index layering
-          return sortPiecesByCorrectness(updated);
+          // Mark current piece as selected
+          return updated.map(p => 
+            p.id === draggedPiece.id ? { ...p, selected: true } as any : p
+          );
         });
       }, 0);
       
@@ -71,37 +59,41 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
   const handleDrop = () => {
     if (draggedPiece) {
       setPieces(prev => {
-        // First, remove the dragging state and check for trapped pieces
-        const updated = prev.map(p => {
-          const pieceNumber = parseInt(p.id.split('-')[1]);
-          const isCorrect = pieceNumber === p.position;
-          
-          // Check if this piece is potentially trapped
-          const isTrapped = !isCorrect && prev.some(other => {
-            const otherNumber = parseInt(other.id.split('-')[1]);
-            return other.position === p.position && otherNumber === other.position;
-          });
-          
-          if (p.id === draggedPiece.id) {
-            return { 
-              ...p, 
-              isDragging: false,
-              trapped: isTrapped 
-            } as any;
-          }
-          
-          return { 
-            ...p, 
-            trapped: isTrapped 
-          } as any;
-        });
+        // First, remove the dragging state from the dragged piece
+        const updated = prev.map(p => 
+          p.id === draggedPiece.id ? { ...p, isDragging: false } as any : p
+        );
         
-        // Then sort for proper z-index layering
-        return sortPiecesByCorrectness(updated);
+        // Then check for trapped pieces and update their states
+        return checkTrappedPieces(updated);
       });
       
       setDraggedPiece(null);
     }
+  };
+
+  // Helper function to identify and mark trapped pieces
+  const checkTrappedPieces = (piecesToCheck: T[]): T[] => {
+    // First identify trapped pieces
+    const updated = piecesToCheck.map(p => {
+      const pieceNumber = parseInt(p.id.split('-')[1]);
+      const isCorrect = pieceNumber === p.position;
+      
+      // Check if this piece is potentially trapped
+      // (an unplaced piece is in the same position as a correctly placed piece)
+      const isTrapped = !isCorrect && piecesToCheck.some(other => {
+        const otherNumber = parseInt(other.id.split('-')[1]);
+        return other.position === p.position && otherNumber === other.position;
+      });
+      
+      return { 
+        ...p, 
+        trapped: isTrapped 
+      } as any;
+    });
+    
+    // Then sort for proper z-index layering
+    return sortPiecesByCorrectness(updated);
   };
 
   // Helper function to sort pieces based on correctness for proper layering
@@ -148,25 +140,14 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     // When a piece is clicked, make sure it appears on top
     // Also check for trapped pieces and update their state
     setPieces(prev => {
-      const updated = prev.map(p => {
-        const pieceNumber = parseInt(p.id.split('-')[1]);
-        const isCorrect = pieceNumber === p.position;
-        
-        // Check if this piece is potentially trapped
-        const isTrapped = !isCorrect && prev.some(other => {
-          const otherNumber = parseInt(other.id.split('-')[1]);
-          return other.position === p.position && otherNumber === other.position;
-        });
-        
-        // Add a 'selected' property to handle in CSS
-        if (p.id === piece.id) {
-          return { ...p, selected: true, trapped: isTrapped } as any;
-        }
-        return { ...p, selected: false, trapped: isTrapped } as any;
-      });
+      // First, mark the clicked piece as selected and all others as not selected
+      const updated = prev.map(p => ({
+        ...p,
+        selected: p.id === piece.id
+      } as any));
       
-      // Then sort the pieces to ensure proper layering
-      return sortPiecesByCorrectness(updated);
+      // Then check for trapped pieces and update their state
+      return checkTrappedPieces(updated);
     });
   };
 
@@ -212,25 +193,15 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     }
     
     // Update pieces with hints and check for trapped pieces
-    setPieces((prev) => {
-      const updated = prev.map(piece => {
-        const pieceNumber = parseInt(piece.id.split('-')[1]);
-        const isCorrect = pieceNumber === piece.position;
-        
-        // Check if this piece is potentially trapped
-        const isTrapped = !isCorrect && prev.some(other => {
-          const otherNumber = parseInt(other.id.split('-')[1]);
-          return other.position === piece.position && otherNumber === other.position;
-        });
-        
-        return { 
-          ...piece, 
-          showHint: hintablePieceIds.includes(piece.id),
-          trapped: isTrapped 
-        } as any;
-      });
+    setPieces(prev => {
+      // First update hint status
+      const updated = prev.map(piece => ({
+        ...piece,
+        showHint: hintablePieceIds.includes(piece.id)
+      } as any));
       
-      return sortPiecesByCorrectness(updated);
+      // Then check for trapped pieces and update their state
+      return checkTrappedPieces(updated);
     });
   };
 

@@ -179,19 +179,28 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
               opacity: piece.isDragging ? '0.8' : '1',
               width: pieceSize,
               height: pieceSize,
-              position: 'relative'
+              position: 'relative',
+              // Avoid inline z-index, use CSS classes instead for better control
             }}
             data-correct={isCorrectlyPlaced ? 'true' : 'false'}
             data-piece-number={pieceNumber}
             data-piece-id={piece.id}
             data-position={piece.position}
             data-trapped={isTrapped ? 'true' : 'false'}
+            aria-label={`Puzzle piece ${pieceNumber + 1}${isTrapped ? ', trapped under another piece' : ''}${isCorrectlyPlaced ? ', correctly placed' : ''}`}
           >
             <span className={`text-base sm:text-lg font-bold text-white drop-shadow-md 
               ${piece.isDragging ? 'scale-110' : ''}`}
             >
               {pieceNumber + 1}
             </span>
+            {isTrapped && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <span className="text-xs text-white bg-red-600 px-1 rounded animate-pulse">
+                  Trapped
+                </span>
+              </div>
+            )}
           </div>
         );
       })}
