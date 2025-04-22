@@ -1,11 +1,11 @@
 
-import { PuzzlePiece } from '../types/puzzle-types';
+import { BasePuzzlePiece } from '../types/puzzle-types';
 
-export const handlePieceSwap = (
-  pieces: PuzzlePiece[],
-  draggedPiece: PuzzlePiece,
+export const handlePieceSwap = <T extends BasePuzzlePiece>(
+  pieces: T[],
+  draggedPiece: T,
   targetIndex: number
-): PuzzlePiece[] => {
+): T[] => {
   // Find if there's a piece already at target position
   const existingPiece = pieces.find(p => p.position === targetIndex);
   
@@ -16,23 +16,23 @@ export const handlePieceSwap = (
         ...piece,
         position: targetIndex,
         isDragging: false
-      };
+      } as T;
     } else if (existingPiece && piece.id === existingPiece.id) {
       // Move existing piece to draggedPiece's original position
       return {
         ...piece,
         position: draggedPiece.position,
         isDragging: false
-      };
+      } as T;
     }
     return piece;
   });
 };
 
-export const validateMove = (
-  pieces: PuzzlePiece[],
+export const validateMove = <T extends BasePuzzlePiece>(
+  pieces: T[],
   targetIndex: number,
-  draggedPiece: PuzzlePiece | null
+  draggedPiece: T | null
 ): boolean => {
   if (!draggedPiece) return false;
   

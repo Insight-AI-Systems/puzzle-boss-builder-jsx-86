@@ -1,3 +1,4 @@
+
 import { BasePuzzlePiece } from '../types/puzzle-types';
 import { updatePieceState } from './pieceStateUtils';
 import { checkTrappedPieces } from './pieceSortingUtils';
