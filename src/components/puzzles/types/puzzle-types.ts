@@ -1,4 +1,3 @@
-
 export interface BasePuzzlePiece {
   id: string;
   position: number;
@@ -47,6 +46,7 @@ export interface PuzzlePiece extends BasePuzzlePiece {
   originalPosition: number;
   isDragging: boolean;
   rotation?: number; // Add rotation property to this interface too for consistency
+  color?: string;    // Add color property to allow flexibility between PuzzlePiece and SimplePuzzlePiece
 }
 
 // Default sample images for puzzle games
