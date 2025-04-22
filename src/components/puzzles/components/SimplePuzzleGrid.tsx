@@ -107,8 +107,19 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
     const aCorrect = aNumber === a.position;
     const bCorrect = bNumber === b.position;
     
+    // Consider trapped state (pieces that are under correctly placed pieces)
+    const aTrapped = (a as any).trapped;
+    const bTrapped = (b as any).trapped;
+    
+    // Prioritize trapped pieces to be more visible
+    if (aTrapped && !bTrapped) return 1;
+    if (!aTrapped && bTrapped) return -1;
+    
     if (a.isDragging) return 1; // Dragging pieces always on top
     if (b.isDragging) return -1;
+    
+    if ((a as any).selected) return 1; // Selected pieces next
+    if ((b as any).selected) return -1;
     
     if (aCorrect && !bCorrect) return -1; // Correct pieces on bottom
     if (!aCorrect && bCorrect) return 1;  // Incorrect pieces on top
@@ -133,6 +144,12 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
         const pieceNumber = parseInt(piece.id.split('-')[1]);
         const isCorrectlyPlaced = pieceNumber === piece.position;
         
+        // Check if this piece is potentially trapped under a correctly placed piece
+        const isTrapped = !isCorrectlyPlaced && sortedPieces.some(other => {
+          const otherNumber = parseInt(other.id.split('-')[1]);
+          return other.position === piece.position && otherNumber === other.position;
+        });
+        
         // Determine CSS classes based on piece state
         const pieceClasses = [
           'puzzle-piece',
@@ -141,6 +158,7 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
           isCorrectlyPlaced ? 'puzzle-piece-correct' : '',
           (piece as any).showHint ? 'puzzle-piece-hint' : '',
           (piece as any).selected ? 'selected' : '',
+          isTrapped ? 'trapped' : '',
           isSolved ? 'ring-1 ring-puzzle-gold/50' : '',
           isTouchDevice ? 'active:scale-105' : 'hover:brightness-110'
         ].filter(Boolean).join(' ');
@@ -162,12 +180,12 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
               width: pieceSize,
               height: pieceSize,
               position: 'relative'
-              // No inline z-index, using CSS classes for z-index
             }}
             data-correct={isCorrectlyPlaced ? 'true' : 'false'}
             data-piece-number={pieceNumber}
             data-piece-id={piece.id}
             data-position={piece.position}
+            data-trapped={isTrapped ? 'true' : 'false'}
           >
             <span className={`text-base sm:text-lg font-bold text-white drop-shadow-md 
               ${piece.isDragging ? 'scale-110' : ''}`}

@@ -36,10 +36,29 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
       // Apply the pieces update
       setPieces(newPieces);
       
-      // Immediately after updating positions, perform a sort to ensure correct z-index layering
+      // Immediately recalculate trapped state and enforce proper z-index layering
       setTimeout(() => {
         setPieces(prev => {
-          const updated = [...prev];
+          // First, update all pieces to calculate their new state
+          const updated = prev.map(p => {
+            const pieceNumber = parseInt(p.id.split('-')[1]);
+            const isCorrect = pieceNumber === p.position;
+            
+            // Check if this piece is potentially trapped
+            // (an unplaced piece is in the same position as a correctly placed piece)
+            const isTrapped = !isCorrect && prev.some(other => {
+              const otherNumber = parseInt(other.id.split('-')[1]);
+              return other.position === p.position && otherNumber === other.position;
+            });
+            
+            return { 
+              ...p, 
+              trapped: isTrapped,
+              selected: p.id === draggedPiece.id
+            } as any;
+          });
+          
+          // Then sort for proper z-index layering
           return sortPiecesByCorrectness(updated);
         });
       }, 0);
@@ -52,10 +71,30 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
   const handleDrop = () => {
     if (draggedPiece) {
       setPieces(prev => {
-        // First, remove the dragging state
-        const updated = prev.map(p => 
-          p.id === draggedPiece.id ? { ...p, isDragging: false } : p
-        );
+        // First, remove the dragging state and check for trapped pieces
+        const updated = prev.map(p => {
+          const pieceNumber = parseInt(p.id.split('-')[1]);
+          const isCorrect = pieceNumber === p.position;
+          
+          // Check if this piece is potentially trapped
+          const isTrapped = !isCorrect && prev.some(other => {
+            const otherNumber = parseInt(other.id.split('-')[1]);
+            return other.position === p.position && otherNumber === other.position;
+          });
+          
+          if (p.id === draggedPiece.id) {
+            return { 
+              ...p, 
+              isDragging: false,
+              trapped: isTrapped 
+            } as any;
+          }
+          
+          return { 
+            ...p, 
+            trapped: isTrapped 
+          } as any;
+        });
         
         // Then sort for proper z-index layering
         return sortPiecesByCorrectness(updated);
@@ -74,9 +113,25 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
       const aCorrect = aNumber === a.position;
       const bCorrect = bNumber === b.position;
       
-      // Critical: Prioritize special states above correctness
-      if (a.isDragging) return 1; // Dragging pieces on top
+      // Critical prioritization order (highest to lowest):
+      // 1. Currently being dragged
+      // 2. Currently selected
+      // 3. Trapped pieces (need to be highly visible)
+      // 4. Pieces showing hints
+      // 5. Unplaced pieces
+      // 6. Correctly placed pieces (bottom)
+      
+      if (a.isDragging) return 1; // Dragging pieces always on top
       if (b.isDragging) return -1;
+      
+      if ((a as any).selected) return 1; // Selected pieces next
+      if ((b as any).selected) return -1;
+      
+      if ((a as any).trapped) return 1; // Trapped pieces high priority
+      if ((b as any).trapped) return -1;
+      
+      if ((a as any).showHint) return 1; // Hinted pieces above regular
+      if ((b as any).showHint) return -1;
       
       // Correct pieces go to bottom, incorrect to top
       if (aCorrect && !bCorrect) return -1;
@@ -91,13 +146,23 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     playSound('pickup');
     
     // When a piece is clicked, make sure it appears on top
+    // Also check for trapped pieces and update their state
     setPieces(prev => {
       const updated = prev.map(p => {
+        const pieceNumber = parseInt(p.id.split('-')[1]);
+        const isCorrect = pieceNumber === p.position;
+        
+        // Check if this piece is potentially trapped
+        const isTrapped = !isCorrect && prev.some(other => {
+          const otherNumber = parseInt(other.id.split('-')[1]);
+          return other.position === p.position && otherNumber === other.position;
+        });
+        
         // Add a 'selected' property to handle in CSS
         if (p.id === piece.id) {
-          return { ...p, selected: true } as any;
+          return { ...p, selected: true, trapped: isTrapped } as any;
         }
-        return { ...p, selected: false } as any;
+        return { ...p, selected: false, trapped: isTrapped } as any;
       });
       
       // Then sort the pieces to ensure proper layering
@@ -146,13 +211,23 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
       hintablePieceIds.splice(2);
     }
     
-    // Update pieces with hints
+    // Update pieces with hints and check for trapped pieces
     setPieces((prev) => {
       const updated = prev.map(piece => {
-        if (hintablePieceIds.includes(piece.id)) {
-          return { ...piece, showHint: true };
-        }
-        return { ...piece, showHint: false };
+        const pieceNumber = parseInt(piece.id.split('-')[1]);
+        const isCorrect = pieceNumber === piece.position;
+        
+        // Check if this piece is potentially trapped
+        const isTrapped = !isCorrect && prev.some(other => {
+          const otherNumber = parseInt(other.id.split('-')[1]);
+          return other.position === piece.position && otherNumber === other.position;
+        });
+        
+        return { 
+          ...piece, 
+          showHint: hintablePieceIds.includes(piece.id),
+          trapped: isTrapped 
+        } as any;
       });
       
       return sortPiecesByCorrectness(updated);

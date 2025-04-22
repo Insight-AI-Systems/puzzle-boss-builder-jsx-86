@@ -11,31 +11,40 @@
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
+/* Correctly placed pieces should have lower z-index but never hide unplaced pieces */
 .puzzle-piece-correct {
   box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
   animation: correct-piece 0.5s ease;
-  z-index: 10 !important; /* Correctly placed pieces stay on bottom */
+  z-index: 5 !important; /* Correctly placed pieces stay at bottom */
 }
 
-/* Pieces not in correct position should float above */
+/* Unplaced pieces should ALWAYS be above correctly placed pieces */
 .puzzle-piece:not(.puzzle-piece-correct) {
-  z-index: 20 !important; /* Unplaced pieces stay above placed ones */
+  z-index: 20 !important; /* Unplaced pieces always above placed ones */
 }
 
 /* Force pieces to top on any interaction */
 .puzzle-piece:focus, 
 .puzzle-piece:hover, 
 .puzzle-piece:active {
-  z-index: 30 !important; /* Interaction raises even correctly placed pieces temporarily */
+  z-index: 50 !important; /* Interaction raises even correctly placed pieces temporarily */
 }
 
 /* Force any selected piece to stay on top */
 .puzzle-piece.selected {
-  z-index: 40 !important;
+  z-index: 80 !important;
+}
+
+/* Apply a distinctive visual treatment to make trapped pieces more visible */
+.puzzle-piece.trapped {
+  z-index: 30 !important;
+  box-shadow: 0 0 12px rgba(255, 0, 0, 0.7) !important;
+  animation: trapped-piece-pulse 1.5s infinite alternate;
 }
 
 .puzzle-piece-hint {
   animation: hint-piece 2s infinite;
+  z-index: 40 !important; /* Hints should be very visible */
 }
 
 /* Puzzle completion animation */
@@ -65,6 +74,17 @@
   }
   50% {
     box-shadow: 0 0 10px rgba(0, 179, 179, 0.8);
+  }
+}
+
+@keyframes trapped-piece-pulse {
+  0% {
+    box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+    transform: scale(1.08);
   }
 }
 
