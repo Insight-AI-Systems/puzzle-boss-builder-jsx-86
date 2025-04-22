@@ -1,12 +1,12 @@
 
-import { BasePuzzlePiece, GameMode } from '../types/puzzle-types';
+import { BasePuzzlePiece, GameMode, PuzzlePiece } from '../types/puzzle-types';
 import { createPieceHandlers } from '../utils/pieceInteractionHandlers';
 
-interface UsePuzzlePieceHandlersProps<T extends BasePuzzlePiece> {
-  pieces: T[];
-  setPieces: (pieces: T[] | ((prev: T[]) => T[])) => void;
-  draggedPiece: T | null;
-  setDraggedPiece: (piece: T | null) => void;
+interface UsePuzzlePieceHandlersProps {
+  pieces: PuzzlePiece[];
+  setPieces: (pieces: PuzzlePiece[]) => void;
+  draggedPiece: PuzzlePiece | null;
+  setDraggedPiece: (piece: PuzzlePiece | null) => void;
   incrementMoves: () => void;
   isSolved: boolean;
   playSound: (sound: string) => void;
@@ -14,7 +14,7 @@ interface UsePuzzlePieceHandlersProps<T extends BasePuzzlePiece> {
   rotationEnabled: boolean;
 }
 
-export function usePuzzlePieceHandlers<T extends BasePuzzlePiece>({
+export function usePuzzlePieceHandlers({
   pieces,
   setPieces,
   draggedPiece,
@@ -24,7 +24,7 @@ export function usePuzzlePieceHandlers<T extends BasePuzzlePiece>({
   playSound,
   gameMode,
   rotationEnabled
-}: UsePuzzlePieceHandlersProps<T>) {
+}: UsePuzzlePieceHandlersProps) {
   return createPieceHandlers(
     pieces,
     setPieces,

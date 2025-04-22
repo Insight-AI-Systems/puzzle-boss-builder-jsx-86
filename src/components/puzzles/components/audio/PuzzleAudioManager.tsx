@@ -15,10 +15,10 @@ export const PuzzleAudioManager: React.FC<PuzzleAudioManagerProps> = ({
   onMuteChange,
   onVolumeChange
 }) => {
-  const { playSound, muted, toggleMute, volume, changeVolume } = usePuzzleSound();
+  const { playSound, muted, volume } = usePuzzleSound();
 
   useEffect(() => {
-    onPlaySound(playSound);
+    onPlaySound(playSound as any);
   }, [playSound, onPlaySound]);
 
   useEffect(() => {

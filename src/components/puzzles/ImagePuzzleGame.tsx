@@ -6,10 +6,11 @@ import { usePuzzleState } from '@/hooks/puzzles/usePuzzleState';
 import { usePuzzleGridEvents } from './hooks/usePuzzleGridEvents';
 import { getImagePieceStyle } from './utils/pieceStyleUtils';
 import { getRotationStyle } from './utils/pieceRotationUtils';
-import { DEFAULT_IMAGES, DifficultyLevel, GameMode, PieceShape, VisualTheme } from './types/puzzle-types';
+import { DEFAULT_IMAGES } from './types/puzzle-types';
 import { useImagePuzzleSave } from './useImagePuzzleSave';
 import { usePuzzleCompletion } from './usePuzzleCompletion';
 import { usePuzzlePieceHandlers } from './hooks/usePuzzlePieceHandlers';
+import { usePuzzleSettings } from './hooks/usePuzzleSettings';
 import { PuzzleAudioManager } from './components/audio/PuzzleAudioManager';
 import { useToast } from '@/hooks/use-toast';
 import ImagePuzzleContainer from './ImagePuzzleContainer';
@@ -38,20 +39,20 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
   const { toast } = useToast();
   
   const initialDifficulty = getRecommendedDifficulty(width);
-  const [difficulty, setDifficulty] = useState<DifficultyLevel>(initialDifficulty);
+  const puzzleSettings = usePuzzleSettings(initialDifficulty);
+  const {
+    difficulty, setDifficulty,
+    gameMode, setGameMode,
+    pieceShape, setPieceShape,
+    visualTheme, setVisualTheme,
+    rotationEnabled, setRotationEnabled,
+    timeLimit, setTimeLimit
+  } = puzzleSettings;
   
   const [selectedImage, setSelectedImage] = useState<string>(initialImage || sampleImages[0]);
-  const [gameMode, setGameMode] = useState<GameMode>('classic');
-  const [pieceShape, setPieceShape] = useState<PieceShape>('standard');
-  const [visualTheme, setVisualTheme] = useState<VisualTheme>('light');
-  const [rotationEnabled, setRotationEnabled] = useState<boolean>(false);
-  const [timeLimit, setTimeLimit] = useState<number>(300);
-  
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(50);
-  const [playSound, setPlaySound] = useState<(name: string) => void>(() => () => {});
-  
-  const { playSound: defaultPlaySound, muted: defaultMuted, toggleMute: defaultToggleMute, volume: defaultVolume, changeVolume: defaultChangeVolume } = usePuzzleSound();
+  const [playSound, setPlaySound] = useState<(name: string) => void>(() => {});
   
   const { isLoading, setIsLoading } = useImageLoading({ 
     selectedImage, 
@@ -129,16 +130,6 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
     }
   }, [initialImage, selectedImage, setIsLoading]);
 
-  usePuzzleCompletion({
-    pieces,
-    puzzleState,
-    gridSize,
-    playSound,
-    gameMode,
-    rotationEnabled,
-    isSolved
-  });
-
   const handleNewGame = () => {
     handleShuffleClick();
     puzzleState.startNewPuzzle(difficulty, gameMode, timeLimit);
@@ -167,7 +158,11 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
 
   return (
     <PuzzleAudioManager
-      onPlaySound={setPlaySound}
+      onPlaySound={(soundName) => {
+        if (typeof playSound === 'function') {
+          playSound(soundName);
+        }
+      }}
       onMuteChange={setMuted}
       onVolumeChange={setVolume}
     >
