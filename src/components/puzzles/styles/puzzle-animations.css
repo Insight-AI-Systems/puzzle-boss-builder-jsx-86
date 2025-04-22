@@ -11,16 +11,16 @@
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
-/* Correctly placed pieces should have lower z-index but never hide unplaced pieces */
+/* Correctly placed pieces should have the lowest z-index */
 .puzzle-piece-correct {
   box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
   animation: correct-piece 0.5s ease;
-  z-index: 5 !important; /* Correctly placed pieces stay at bottom */
+  z-index: 5 !important; /* Very low z-index to stay at bottom */
 }
 
 /* Unplaced pieces should ALWAYS be above correctly placed pieces */
 .puzzle-piece:not(.puzzle-piece-correct) {
-  z-index: 20 !important; /* Unplaced pieces always above placed ones */
+  z-index: 30 !important; /* Higher than correctly placed pieces */
 }
 
 /* Force pieces to top on any interaction */
@@ -37,7 +37,7 @@
 
 /* Apply a distinctive visual treatment to make trapped pieces more visible */
 .puzzle-piece.trapped {
-  z-index: 60 !important; /* Higher than regular pieces but below selected/dragging */
+  z-index: 70 !important; /* Higher than regular pieces but below selected/dragging */
   box-shadow: 0 0 15px rgba(255, 0, 0, 0.9) !important;
   animation: trapped-piece-pulse 1s infinite alternate;
   transform: scale(1.15) !important; /* Force trapped pieces to be larger */

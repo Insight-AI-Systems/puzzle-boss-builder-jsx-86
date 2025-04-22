@@ -25,7 +25,7 @@ export const sortPiecesForGrid = (pieces: SimplePuzzlePiece[]): SimplePuzzlePiec
     if (a.selected) return 1;
     if (b.selected) return -1;
     
-    // 4. Correctly placed pieces should be at the bottom
+    // 4. Correctly placed pieces should be at the bottom with LOWEST priority
     if (aCorrect && !bCorrect) return -1;
     if (!aCorrect && bCorrect) return 1;
     

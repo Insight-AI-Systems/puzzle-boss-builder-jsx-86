@@ -51,10 +51,10 @@ export const checkTrappedPieces = <T extends BasePuzzlePiece>(pieces: T[]): T[] 
     return { 
       ...p, 
       trapped: isTrapped,
-      // Correctly placed pieces get a low z-index
-      // Trapped pieces get a very high z-index
-      // Regular pieces get a medium z-index
-      zIndex: isCorrect ? 10 : (isTrapped ? 60 : 30)
+      // Correctly placed pieces get a very low z-index (5)
+      // Trapped pieces get a very high z-index (70)
+      // Regular pieces get a medium z-index (30)
+      zIndex: isCorrect ? 5 : (isTrapped ? 70 : 30)
     } as any;
   });
   
