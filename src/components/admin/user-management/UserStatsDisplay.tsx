@@ -24,7 +24,7 @@ export function UserStatsDisplay({ stats }: UserStatsDisplayProps) {
                 {Object.entries(stats.genderBreakdown).map(([gender, count]) => (
                   <div key={gender} className="bg-background p-2 rounded flex gap-2 items-center">
                     <span className="text-sm">{gender === 'null' ? 'Not Specified' : gender}</span>
-                    <span className="text-xs bg-primary/10 px-2 py-0.5 rounded-full">{count}</span>
+                    <span className="text-xs bg-primary/10 px-2 py-0.5 rounded-full">{String(count)}</span>
                   </div>
                 ))}
               </div>
@@ -38,7 +38,7 @@ export function UserStatsDisplay({ stats }: UserStatsDisplayProps) {
                 {Object.entries(stats.ageBreakdown).map(([age, count]) => (
                   <div key={age} className="bg-background p-2 rounded flex gap-2 items-center">
                     <span className="text-sm">{age}</span>
-                    <span className="text-xs bg-primary/10 px-2 py-0.5 rounded-full">{count}</span>
+                    <span className="text-xs bg-primary/10 px-2 py-0.5 rounded-full">{String(count)}</span>
                   </div>
                 ))}
               </div>

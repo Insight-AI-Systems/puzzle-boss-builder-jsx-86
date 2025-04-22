@@ -25,7 +25,7 @@ export interface UserRowProps {
 
 export interface UserRoleMenuProps {
   user: UserProfile;
-  canAssignRole: (role: UserRole, userId: string) => void;
+  canAssignRole: (role: UserRole, userId: string) => boolean;
   onRoleChange: (userId: string, newRole: UserRole) => void;
 }
 

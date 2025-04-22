@@ -56,7 +56,7 @@ export function UserInsightsDashboard({ userStats, signupStats }: UserInsightsDa
               <div key={item.name} className="bg-puzzle-black/10 rounded-full px-3 py-1 text-sm flex items-center">
                 <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
                 <span>{item.name}: </span>
-                <span className="font-bold ml-1">{item.value}</span>
+                <span className="font-bold ml-1">{String(item.value)}</span>
               </div>
             ))}
           </div>
@@ -70,7 +70,7 @@ export function UserInsightsDashboard({ userStats, signupStats }: UserInsightsDa
                 <div key={item.name} className="bg-puzzle-black/10 rounded-full px-3 py-1 text-sm flex items-center">
                   <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
                   <span>{item.name}: </span>
-                  <span className="font-bold ml-1">{item.value}</span>
+                  <span className="font-bold ml-1">{String(item.value)}</span>
                 </div>
               ))}
             </div>

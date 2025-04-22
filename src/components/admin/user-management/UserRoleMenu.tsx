@@ -27,6 +27,7 @@ export const UserRoleMenu: React.FC<UserRoleMenuProps> = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {Object.values(ROLE_DEFINITIONS).map((roleDef) => {
+          // Store the result of canAssignRole in a variable to avoid calling it multiple times
           const canAssign = canAssignRole(roleDef.role, user.id);
           const isCurrentRole = user.role === roleDef.role;
           
