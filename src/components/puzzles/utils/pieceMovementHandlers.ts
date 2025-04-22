@@ -1,13 +1,13 @@
 
-import { PuzzlePiece } from '../types/puzzle-types';
+import { BasePuzzlePiece, PuzzlePiece } from '../types/puzzle-types';
 import { validateMove } from './pieceMovementUtils';
 import { updatePieceState } from './pieceStateUtils';
 
-export const handlePieceMove = <T extends PuzzlePiece>(
+export const handlePieceMove = <T extends BasePuzzlePiece>(
   pieces: T[],
   draggedPiece: T,
   targetIndex: number,
-  grid: (number | null)[]
+  grid: (number | null)[] = []
 ): T[] => {
   if (!validateMove(pieces, targetIndex, draggedPiece)) {
     return pieces;
@@ -24,7 +24,7 @@ export const handlePieceMove = <T extends PuzzlePiece>(
   return updatedPieces;
 };
 
-export const handlePieceDrop = <T extends PuzzlePiece>(
+export const handlePieceDrop = <T extends BasePuzzlePiece>(
   pieces: T[],
   draggedPiece: T
 ): T[] => {

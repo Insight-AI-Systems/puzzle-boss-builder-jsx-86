@@ -1,5 +1,5 @@
 
-import { BasePuzzlePiece } from '../types/puzzle-types';
+import { BasePuzzlePiece, PuzzlePiece } from '../types/puzzle-types';
 import { handlePieceMove, handlePieceDrop, handleDirectionalMove } from './pieceMovementHandlers';
 import { updatePieceState } from './pieceStateUtils';
 import { findHintablePieces } from './pieceStateUtils';
@@ -27,7 +27,8 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
   const handleMove = (piece: T, index: number) => {
     if (draggedPiece && draggedPiece.id === piece.id) {
       setPieces(prev => {
-        const moved = handlePieceMove(prev, draggedPiece, index);
+        // Use the generic type to ensure type safety
+        const moved = handlePieceMove(prev, draggedPiece, index, []) as T[];
         incrementMoves();
         playSound('place');
         return moved;
@@ -36,7 +37,8 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
       // Immediately check for and fix trapped pieces on every move
       setTimeout(() => {
         setPieces(prev => {
-          const updatedWithTrapped = checkTrappedPieces(prev);
+          // Ensure type safety with explicit casting
+          const updatedWithTrapped = checkTrappedPieces(prev) as T[];
           return updatePieceState(updatedWithTrapped, draggedPiece.id, { selected: true } as Partial<T>);
         });
       }, 0);
@@ -46,9 +48,10 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
   const handleDrop = () => {
     if (draggedPiece) {
       setPieces(prev => {
-        const dropped = handlePieceDrop(prev, draggedPiece);
+        // Handle type safety with explicit casting
+        const dropped = handlePieceDrop(prev, draggedPiece) as T[];
         // Ensure trapped pieces are detected on drop as well
-        return checkTrappedPieces(dropped);
+        return checkTrappedPieces(dropped) as T[];
       });
       setDraggedPiece(null);
     }
@@ -59,7 +62,7 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     setPieces(prev => {
       const withSelected = updatePieceState(prev, piece.id, { selected: true } as Partial<T>);
       // Also check for trapped pieces when clicking
-      return checkTrappedPieces(withSelected);
+      return checkTrappedPieces(withSelected) as T[];
     });
   };
 
@@ -71,9 +74,9 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
       const updated = prev.map(piece => ({
         ...piece,
         showHint: hintablePieceIds.includes(piece.id)
-      } as any));
+      } as T));
       
-      return checkTrappedPieces(updated);
+      return checkTrappedPieces(updated) as T[];
     });
   };
 
