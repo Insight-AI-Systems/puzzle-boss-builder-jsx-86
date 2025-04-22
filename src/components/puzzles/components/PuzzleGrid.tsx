@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 import { PuzzlePiece, difficultyConfig, DifficultyLevel } from '../types/puzzle-types';
 import '../styles/puzzle-animations.css';
@@ -35,7 +34,6 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({
   const gridSize = difficultyConfig[difficulty].gridSize;
   const gridRef = useRef<HTMLDivElement>(null);
   
-  // Support for zoom gestures on touch devices
   useEffect(() => {
     if (!isTouchDevice || !gridRef.current) return;
     
@@ -67,15 +65,11 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({
         );
         
         if (initialDistance > 0) {
-          // Calculate new scale based on pinch gesture
           const newScale = currentScale * (currentDistance / initialDistance);
-          // Apply constraints
           const constrainedScale = Math.min(Math.max(newScale, minScale), maxScale);
           
-          // Apply the transform
           gridRef.current.style.transform = `scale(${constrainedScale})`;
           
-          // Update for next move
           currentScale = constrainedScale;
           initialDistance = currentDistance;
         }
@@ -86,7 +80,6 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({
       initialDistance = 0;
     };
     
-    // Add passive: false to override default behavior and allow preventDefault
     gridRef.current.addEventListener('touchstart', handleTouchStart, { passive: false });
     gridRef.current.addEventListener('touchmove', handleTouchMove, { passive: false });
     gridRef.current.addEventListener('touchend', handleTouchEnd);
@@ -111,7 +104,6 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({
     );
   }
   
-  // Adjust gap size based on difficulty and device
   const getGapSize = () => {
     if (isMobile) {
       return difficulty === '5x5' ? 0.5 : 1;
@@ -121,6 +113,10 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({
   
   const gapSize = getGapSize();
   
+  const isCellOccupied = (index: number) => {
+    return pieces.some(p => p.position === index && !p.isDragging);
+  };
+
   return (
     <div 
       ref={gridRef}
@@ -136,10 +132,9 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({
     >
       {pieces.map((piece, index) => {
         const pieceSize = containerSize.pieceSize - (gapSize * 2);
-        
-        // For 5x5 puzzles on mobile, we don't show numbers for better visibility
         const showNumber = !(difficulty === '5x5' && isMobile);
-        
+        const isOccupied = isCellOccupied(index);
+
         return (
           <div 
             key={piece.id}
@@ -155,12 +150,14 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({
               ${(piece as any).correctlyPlaced ? 'puzzle-piece-correct' : ''}
               ${(piece as any).showHint ? 'puzzle-piece-hint' : ''}
               ${isSolved ? 'ring-1 ring-puzzle-gold/50' : ''}
+              ${isOccupied ? 'occupied' : ''}
               ${isTouchDevice ? 'active:scale-105' : 'hover:brightness-110'}`}
             style={{ 
               ...getPieceStyle(piece),
               width: pieceSize,
               height: pieceSize,
             }}
+            data-occupied={isOccupied}
           >
             {showNumber && (
               <span className={`text-xs sm:text-sm md:text-base font-bold text-white drop-shadow-md bg-black/30 

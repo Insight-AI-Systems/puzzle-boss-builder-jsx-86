@@ -1,20 +1,23 @@
-
 import { BasePuzzlePiece } from '../types/puzzle-types';
 import { updatePieceState } from './pieceStateUtils';
 import { checkTrappedPieces } from './pieceSortingUtils';
+import { handlePieceSwap, validateMove } from './pieceMovementUtils';
 
 export const handlePieceMove = <T extends BasePuzzlePiece>(
   pieces: T[],
   draggedPiece: T,
   targetIndex: number
 ): T[] => {
-  const newPieces = [...pieces];
-  const draggedIndex = newPieces.findIndex(p => p.id === draggedPiece.id);
+  // Validate move first
+  if (!validateMove(pieces, targetIndex, draggedPiece)) {
+    return pieces;
+  }
+
+  // Use handlePieceSwap for the actual move
+  const updatedPieces = handlePieceSwap(pieces, draggedPiece, targetIndex);
   
-  [newPieces[draggedIndex].position, newPieces[targetIndex].position] = 
-  [newPieces[targetIndex].position, newPieces[draggedIndex].position];
-  
-  return checkTrappedPieces(newPieces);
+  // Check for trapped pieces after the move
+  return checkTrappedPieces(updatedPieces);
 };
 
 export const handlePieceDrop = <T extends BasePuzzlePiece>(
