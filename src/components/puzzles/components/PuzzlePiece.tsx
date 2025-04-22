@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { SimplePuzzlePiece } from '../types/simple-puzzle-types';
 
@@ -58,8 +57,7 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
         opacity: piece.isDragging ? '0.8' : '1',
         width: pieceSize,
         height: pieceSize,
-        position: 'relative',
-        zIndex: piece.zIndex || (isTrapped ? 70 : isCorrectlyPlaced ? 5 : 30),
+        position: 'relative'
       }}
       data-correct={isCorrectlyPlaced ? 'true' : 'false'}
       data-piece-number={pieceNumber}

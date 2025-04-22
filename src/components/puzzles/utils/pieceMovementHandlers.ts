@@ -11,8 +11,8 @@ export const handlePieceDrop = <T extends BasePuzzlePiece>(
   setPieces: (pieces: T[] | ((prev: T[]) => T[])) => void
 ): void => {
   // Convert string ID to number if needed
-  const numericId = typeof draggedPieceId === 'string' ? parseInt(draggedPieceId) : draggedPieceId;
-  const draggedPiece = pieces.find(piece => piece.id === numericId);
+  const numericId = parseInt(draggedPieceId.toString());
+  const draggedPiece = pieces.find(piece => parseInt(piece.id.toString()) === numericId);
   
   if (!draggedPiece || !validateMove(pieces, targetPosition, draggedPiece)) {
     // Invalid move - do nothing

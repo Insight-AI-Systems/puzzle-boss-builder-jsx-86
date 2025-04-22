@@ -17,15 +17,7 @@ export const sortPiecesByCorrectness = <T extends BasePuzzlePiece>(pieces: T[]):
     if ((a as any).selected) return 1;
     if ((b as any).selected) return -1;
     
-    // Trapped pieces need to be very visible (higher priority than correctly placed)
-    if ((a as any).trapped) return 1;
-    if ((b as any).trapped) return -1;
-    
-    // Pieces showing hints should be visible
-    if ((a as any).showHint) return 1;
-    if ((b as any).showHint) return -1;
-    
-    // Correctly placed pieces go to the bottom with lowest z-index priority
+    // Correctly placed pieces go to the bottom
     if (aCorrect && !bCorrect) return -1;
     if (!aCorrect && bCorrect) return 1;
     
@@ -50,11 +42,7 @@ export const checkTrappedPieces = <T extends BasePuzzlePiece>(pieces: T[]): T[] 
     
     return { 
       ...p, 
-      trapped: isTrapped,
-      // Correctly placed pieces get a very low z-index (5)
-      // Trapped pieces get a very high z-index (70)
-      // Regular pieces get a medium z-index (30)
-      zIndex: isCorrect ? 5 : (isTrapped ? 70 : 30)
+      trapped: isTrapped
     } as any;
   });
   
