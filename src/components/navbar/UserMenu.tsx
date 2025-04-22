@@ -24,7 +24,7 @@ interface UserMenuProps {
 const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, signOut } = useAuth();
 
   // Simplified admin check
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
