@@ -28,7 +28,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
 
   // Simplified admin check
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
-  const isAdminUser = isProtectedAdmin || hasRole('admin') || hasRole('super_admin');
+  const isAdminUser = isProtectedAdmin || hasRole('super_admin');
   
   console.log('UserMenu - Admin Check:', {
     userEmail: user?.email,

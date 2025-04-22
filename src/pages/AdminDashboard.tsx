@@ -23,8 +23,7 @@ const AdminDashboard = () => {
   // Simple admin access check
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
   const isSuperAdmin = isProtectedAdmin || hasRole('super_admin');
-  const isAdminUser = isProtectedAdmin || isSuperAdmin || hasRole('admin');
-
+  
   // Add more detailed logging to diagnose the issue
   console.log('AdminDashboard - Debug Info:', {
     currentUrl: window.location.href,
@@ -36,8 +35,6 @@ const AdminDashboard = () => {
     profileRole: profile?.role,
     isProtectedAdmin,
     isSuperAdmin,
-    isAdminUser,
-    hasAdminRole: hasRole('admin'),
     hasSuperAdminRole: hasRole('super_admin'),
     userRoles,
     userRole
@@ -51,7 +48,6 @@ const AdminDashboard = () => {
       userEmail: user?.email,
       isProtectedAdmin,
       isSuperAdmin,
-      isAdminUser,
       profileRole: profile?.role
     });
 
@@ -62,7 +58,8 @@ const AdminDashboard = () => {
     }
     
     // Check access for regular users
-    if (!isAdminUser && user) {
+    if (!isSuperAdmin && !hasRole('category_manager') && !hasRole('social_media_manager') && 
+        !hasRole('partner_manager') && !hasRole('cfo') && user) {
       console.log('AdminDashboard - Access denied, redirecting to homepage');
       toast({
         title: "Access Denied",
@@ -71,7 +68,7 @@ const AdminDashboard = () => {
       });
       navigate('/', { replace: true });
     }
-  }, [isLoading, isAdminUser, navigate, profile, user, toast, isProtectedAdmin]);
+  }, [isLoading, isSuperAdmin, navigate, profile, user, toast, isProtectedAdmin, hasRole]);
 
   // Function to show detailed debug info
   const showDebugInfo = () => {
@@ -88,7 +85,6 @@ const AdminDashboard = () => {
       } : null,
       sessionExists: !!session,
       hasRoles: {
-        admin: hasRole('admin'),
         superAdmin: hasRole('super_admin'),
         player: hasRole('player')
       },
@@ -108,7 +104,12 @@ const AdminDashboard = () => {
   }
 
   // Show an intermediate debug screen when there's a discrepancy
-  if (user && !isAdminUser && !isLoading) {
+  if (user && !isSuperAdmin && 
+      !hasRole('category_manager') && 
+      !hasRole('social_media_manager') && 
+      !hasRole('partner_manager') && 
+      !hasRole('cfo') && 
+      !isLoading) {
     return (
       <div className="min-h-screen bg-puzzle-black p-6">
         <Alert variant="destructive" className="mb-4">
@@ -120,7 +121,6 @@ const AdminDashboard = () => {
             <ul className="list-disc pl-6 mt-1">
               <li>Email: {user.email}</li>
               <li>Role: {userRole || profile?.role || 'Unknown'}</li>
-              <li>Has Admin Role: {hasRole('admin') ? 'Yes' : 'No'}</li>
               <li>Has Super Admin Role: {hasRole('super_admin') ? 'Yes' : 'No'}</li>
             </ul>
           </AlertDescription>
@@ -151,13 +151,17 @@ const AdminDashboard = () => {
     );
   }
 
-  // Grant access if user is protected admin, super admin or has admin role
-  if (isProtectedAdmin || isSuperAdmin || isAdminUser) {
+  // Grant access if user is protected admin, super admin or has specialized role
+  if (isProtectedAdmin || isSuperAdmin || 
+      hasRole('category_manager') || 
+      hasRole('social_media_manager') || 
+      hasRole('partner_manager') || 
+      hasRole('cfo')) {
     return (
       <div className="min-h-screen bg-puzzle-black p-6">
         <div className="max-w-6xl mx-auto space-y-8">
           <h1 className="text-3xl font-game text-puzzle-aqua">
-            {isProtectedAdmin || isSuperAdmin ? 'Super Admin Dashboard' : 'Admin Dashboard'}
+            {isProtectedAdmin || isSuperAdmin ? 'Admin Dashboard' : `${profile?.role?.replace('_', ' ')} Dashboard`}
           </h1>
 
           {/* Admin Tools Section */}

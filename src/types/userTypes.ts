@@ -1,7 +1,6 @@
 
 export type UserRole = 
   | 'super_admin'
-  | 'admin'
   | 'category_manager'
   | 'social_media_manager'
   | 'partner_manager'
@@ -54,51 +53,44 @@ export interface RolePermission {
 export const ROLE_DEFINITIONS: Record<UserRole, RolePermission> = {
   'super_admin': {
     role: 'super_admin',
-    label: 'Super Admin',
+    label: 'Admin',
     description: 'Complete access to all features and functionality',
     permissions: ['all'],
-    canBeAssignedBy: ['super_admin']
-  },
-  'admin': {
-    role: 'admin',
-    label: 'Admin',
-    description: 'Extensive management capabilities with limited role assignment',
-    permissions: ['manage_users', 'manage_puzzles', 'manage_categories', 'view_analytics'],
     canBeAssignedBy: ['super_admin']
   },
   'category_manager': {
     role: 'category_manager',
     label: 'Category Manager',
-    description: 'Management of specific puzzle categories',
-    permissions: ['manage_assigned_categories', 'create_puzzles', 'view_category_analytics'],
-    canBeAssignedBy: ['super_admin', 'admin']
+    description: 'Management of specific puzzle categories and puzzle creation',
+    permissions: ['manage_assigned_categories', 'create_puzzles', 'view_category_analytics', 'manage_categories'],
+    canBeAssignedBy: ['super_admin']
   },
   'social_media_manager': {
     role: 'social_media_manager',
     label: 'Social Media Manager',
-    description: 'Access to winner info and marketing materials',
-    permissions: ['view_winners', 'schedule_promotions', 'view_marketing_analytics'],
-    canBeAssignedBy: ['super_admin', 'admin']
+    description: 'Access to winner info, marketing materials, and content management',
+    permissions: ['view_winners', 'schedule_promotions', 'view_marketing_analytics', 'manage_content'],
+    canBeAssignedBy: ['super_admin']
   },
   'partner_manager': {
     role: 'partner_manager',
     label: 'Partner Manager',
-    description: 'Supplier and prize management',
+    description: 'Supplier and prize management, and partner relationship coordination',
     permissions: ['manage_partners', 'manage_prizes', 'schedule_promotions'],
-    canBeAssignedBy: ['super_admin', 'admin']
+    canBeAssignedBy: ['super_admin']
   },
   'cfo': {
     role: 'cfo',
     label: 'CFO',
-    description: 'Financial reporting and payment system management',
-    permissions: ['view_financial_reports', 'manage_payments', 'view_revenue_tracking'],
-    canBeAssignedBy: ['super_admin', 'admin']
+    description: 'Financial reporting, payment system management, and revenue tracking',
+    permissions: ['view_financial_reports', 'manage_payments', 'view_revenue_tracking', 'view_analytics'],
+    canBeAssignedBy: ['super_admin']
   },
   'player': {
     role: 'player',
     label: 'Player',
-    description: 'Standard player account',
+    description: 'Standard player account with access to game features',
     permissions: ['play_puzzles', 'view_profile', 'claim_prizes'],
-    canBeAssignedBy: ['super_admin', 'admin']
+    canBeAssignedBy: ['super_admin']
   }
 };

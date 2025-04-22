@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect } from 'react';
 import { AuthError, User, Session } from '@supabase/supabase-js';
 import { UserRole } from '@/types/userTypes';
@@ -26,7 +25,7 @@ export interface AuthContextType {
   isAdmin: boolean;
   hasRole: (role: string) => boolean;
   userRole: UserRole | null;
-  userRoles: string[]; // Add this line to include userRoles in the interface
+  userRoles: string[];
   
   clearAuthError: () => void;
 }
@@ -133,12 +132,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return true;
     }
     
-    // Admin can access all non-super-admin roles
-    if (userRole === 'admin' && role !== 'super_admin') {
-      console.log('DEBUG - Admin accessing non-super-admin role, granting access');
-      return true;
-    }
-    
     // Check role array as fallback
     const hasRoleInArray = userRoles.includes(role);
     console.log(`DEBUG - Role array check: ${role} in [${userRoles.join(', ')}] = ${hasRoleInArray}`);
@@ -157,10 +150,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     updatePassword,
     refreshSession,
     isAuthenticated,
-    isAdmin,
+    isAdmin: userRole === 'super_admin' || user?.email === PROTECTED_ADMIN_EMAIL,
     hasRole,
     userRole,
-    userRoles, // Add the userRoles property here
+    userRoles,
     clearAuthError
   };
 

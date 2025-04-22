@@ -20,7 +20,7 @@ serve(async (req) => {
     );
 
     // Extract email to set as admin
-    const { email, role = "admin" } = await req.json();
+    const { email, role = "super_admin" } = await req.json();
     
     if (!email) {
       return new Response(
@@ -29,10 +29,10 @@ serve(async (req) => {
       );
     }
 
-    // Validate role
-    if (role !== "admin" && role !== "super_admin") {
+    // Validate role - now only super_admin is valid for this endpoint
+    if (role !== "super_admin") {
       return new Response(
-        JSON.stringify({ error: "Invalid role. Must be 'admin' or 'super_admin'" }),
+        JSON.stringify({ error: "Invalid role. Must be 'super_admin'" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

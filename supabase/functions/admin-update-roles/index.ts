@@ -45,7 +45,7 @@ serve(async (req) => {
     // Log user trying to perform action
     console.log(`User ${user.id} (${user.email}) attempting to update roles`);
 
-    // Check if user is admin or super_admin
+    // Check if user is super_admin
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .select("role")
@@ -63,14 +63,13 @@ serve(async (req) => {
     // Special case for specific super admin email
     const isSpecificAdminEmail = user.email === "alan@insight-ai-systems.com";
     const isSuperAdmin = profile.role === "super_admin" || isSpecificAdminEmail;
-    const isAdmin = profile.role === "admin" || isSuperAdmin;
 
-    console.log(`User permissions check: isAdmin=${isAdmin}, isSuperAdmin=${isSuperAdmin}, isSpecificAdminEmail=${isSpecificAdminEmail}, role=${profile.role}, email=${user.email}`);
+    console.log(`User permissions check: isSuperAdmin=${isSuperAdmin}, isSpecificAdminEmail=${isSpecificAdminEmail}, role=${profile.role}, email=${user.email}`);
 
-    if (!isAdmin && !isSuperAdmin) {
+    if (!isSuperAdmin) {
       console.error("Permissions error: Not an admin");
       return new Response(
-        JSON.stringify({ error: "Unauthorized - not an admin" }),
+        JSON.stringify({ error: "Unauthorized - not a super_admin" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -89,7 +88,7 @@ serve(async (req) => {
     }
 
     // Validate the role before proceeding
-    const validRoles = ["super_admin", "admin", "category_manager", "social_media_manager", "partner_manager", "cfo", "player"];
+    const validRoles = ["super_admin", "category_manager", "social_media_manager", "partner_manager", "cfo", "player"];
     if (!validRoles.includes(newRole)) {
       console.error("Invalid role specified:", newRole);
       return new Response(

@@ -17,9 +17,9 @@ export const createMockAuthContext = (
     isLoading: false,
     error: null,
     userRole: role,
-    userRoles: [role], // Add the userRoles array with the current role
-    hasRole: (testRole: string) => role === testRole || role === 'super_admin' || (role === 'admin' && testRole !== 'super_admin'),
-    isAdmin: role === 'admin' || role === 'super_admin',
+    userRoles: [role],
+    hasRole: (testRole: string) => role === testRole || role === 'super_admin',
+    isAdmin: role === 'super_admin',
     signIn: jest.fn(),
     signUp: jest.fn(),
     signOut: jest.fn(),
