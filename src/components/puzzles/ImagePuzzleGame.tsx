@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDeviceInfo } from '@/hooks/use-mobile';
 import { useImageLoading } from './hooks/useImageLoading';
 import { usePuzzlePieces } from '@/hooks/puzzles/usePuzzlePieces';
