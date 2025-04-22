@@ -18,8 +18,11 @@ interface PuzzleGameLayoutProps {
   isLoading: boolean;
   muted: boolean;
   volume: number;
+  setMuted: (muted: boolean) => void;
+  setVolume: (volume: number) => void;
   gridEvents: any;
   sampleImages: string[];
+  playSound: (sound: string) => void;
   getPieceStyle: (piece: any) => React.CSSProperties;
 }
 
@@ -33,8 +36,11 @@ const PuzzleGameLayout: React.FC<PuzzleGameLayoutProps> = ({
   isLoading,
   muted,
   volume,
+  setMuted,
+  setVolume,
   gridEvents,
   sampleImages,
+  playSound,
   getPieceStyle
 }) => {
   const { toast } = useToast();
@@ -68,7 +74,7 @@ const PuzzleGameLayout: React.FC<PuzzleGameLayoutProps> = ({
         isMobile={isMobile}
         muted={muted}
         volume={volume}
-        toggleMute={() => setMuted(prev => !prev)}
+        toggleMute={() => setMuted(!muted)}
         changeVolume={setVolume}
         moveCount={puzzlePieces.moveCount}
         difficulty={puzzleSettings.difficulty}

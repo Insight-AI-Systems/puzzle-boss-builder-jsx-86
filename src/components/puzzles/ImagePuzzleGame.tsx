@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDeviceInfo } from '@/hooks/use-mobile';
 import { useImageLoading } from './hooks/useImageLoading';
 import { usePuzzlePieces } from '@/hooks/puzzles/usePuzzlePieces';
@@ -7,7 +7,7 @@ import { usePuzzleState } from '@/hooks/puzzles/usePuzzleState';
 import { usePuzzleGridEvents } from './hooks/usePuzzleGridEvents';
 import { getImagePieceStyle } from './utils/pieceStyleUtils';
 import { getRotationStyle } from './utils/pieceRotationUtils';
-import { DEFAULT_IMAGES } from './types/puzzle-types';
+import { DEFAULT_IMAGES, DifficultyLevel } from './types/puzzle-types';
 import { useImagePuzzleSave } from './useImagePuzzleSave';
 import { usePuzzleCompletion } from './usePuzzleCompletion';
 import { usePuzzlePieceHandlers } from './hooks/usePuzzlePieceHandlers';
@@ -15,6 +15,13 @@ import { usePuzzleSettings } from './hooks/usePuzzleSettings';
 import { calculateContainerSize } from './utils/puzzleSizeUtils';
 import AudioProvider from './components/AudioProvider';
 import PuzzleGameLayout from './components/PuzzleGameLayout';
+
+// Helper function to recommend difficulty based on screen width
+const getRecommendedDifficulty = (width: number): DifficultyLevel => {
+  if (width < 640) return '3x3';
+  if (width < 1024) return '4x4';
+  return '5x5';
+};
 
 const ImagePuzzleGame = ({
   sampleImages = DEFAULT_IMAGES,
@@ -74,6 +81,8 @@ const ImagePuzzleGame = ({
   return (
     <AudioProvider
       setPlaySound={setPlaySound}
+      muted={muted}
+      volume={volume}
       setMuted={setMuted}
       setVolume={setVolume}
     >
@@ -87,8 +96,11 @@ const ImagePuzzleGame = ({
         isLoading={isLoading}
         muted={muted}
         volume={volume}
+        setMuted={setMuted}
+        setVolume={setVolume}
         gridEvents={gridEvents}
         sampleImages={sampleImages}
+        playSound={playSound}
         getPieceStyle={(piece) => {
           const baseStyle = getImagePieceStyle(piece, selectedImage, puzzlePieces.gridSize);
           const rotationStyle = getRotationStyle(piece.rotation);
