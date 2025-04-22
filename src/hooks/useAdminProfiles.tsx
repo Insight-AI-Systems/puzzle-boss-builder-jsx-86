@@ -11,7 +11,7 @@ export function useAdminProfiles(
   currentUserId: string | null,
   options: AdminProfilesOptions = {}
 ) {
-  const { page = 0, pageSize = 10, roleSortDirection = 'asc' } = options;
+  const { page = 0, pageSize = 10, roleSortDirection = 'asc', lastLoginSortDirection } = options;
   
   const fetchUsers = async (): Promise<ProfilesResult> => {
     if (!isAdmin || !currentUserId) {
@@ -66,6 +66,15 @@ export function useAdminProfiles(
         });
       }
       
+      // Sort by last login if requested
+      if (lastLoginSortDirection) {
+        filteredData.sort((a, b) => {
+          const dateA = a.last_sign_in ? new Date(a.last_sign_in).getTime() : 0;
+          const dateB = b.last_sign_in ? new Date(b.last_sign_in).getTime() : 0;
+          return lastLoginSortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+        });
+      }
+      
       const totalCount = filteredData.length;
       
       // Apply pagination
@@ -115,7 +124,7 @@ export function useAdminProfiles(
   };
 
   const usersQuery = useQuery({
-    queryKey: ['all-users', page, pageSize, options],
+    queryKey: ['all-users', page, pageSize, options, lastLoginSortDirection],
     queryFn: fetchUsers,
     enabled: !!currentUserId && isAdmin,
   });

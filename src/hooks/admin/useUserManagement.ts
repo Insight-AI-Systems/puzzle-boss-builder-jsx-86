@@ -13,6 +13,7 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
   const filters = useUserFilters();
   const selection = useUserSelection();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [lastLoginSortDirection, setLastLoginSortDirection] = useState<'asc' | 'desc'>('desc');
   
   const { 
     data: allProfilesData, 
@@ -22,7 +23,10 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     bulkUpdateRoles,
     sendBulkEmail,
     refetch 
-  } = useAdminProfiles(isAdmin, currentUserId, filters.filterOptions);
+  } = useAdminProfiles(isAdmin, currentUserId, {
+    ...filters.filterOptions,
+    lastLoginSortDirection
+  });
 
   const emails = useUserEmails({ 
     sendBulkEmail, 
@@ -82,6 +86,8 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     profileError,
     handleExportUsers: () => handleExportUsers(allProfilesData?.data),
     totalPages: Math.ceil((allProfilesData?.count || 0) / filters.pageSize),
-    userStats
+    userStats,
+    lastLoginSortDirection,
+    setLastLoginSortDirection
   };
 }

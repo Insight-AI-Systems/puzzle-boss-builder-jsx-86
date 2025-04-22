@@ -41,12 +41,13 @@ export function UserManagement() {
     handleBulkRoleChange,
     roleSortDirection,
     setRoleSortDirection,
-    userStats
+    userStats,
+    lastLoginSortDirection,
+    setLastLoginSortDirection
   } = useUserManagement(true, profile?.id || null);
 
   const [localSearchTerm, setLocalSearchTerm] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [lastLoginSortDirection, setLastLoginSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const currentUserRole = profile?.role || 'player';
   const currentUserEmail = profile?.id; // In your system, id appears to be the email
@@ -66,20 +67,8 @@ export function UserManagement() {
     setRoleSortDirection(roleSortDirection === 'asc' ? 'desc' : 'asc');
   };
 
-  const handleSortByLastLogin = (direction: 'asc' | 'desc') => {
-    setLastLoginSortDirection(direction);
-    if (allProfilesData?.data) {
-      const sortedUsers = [...allProfilesData.data].sort((a, b) => {
-        const dateA = a.last_sign_in ? new Date(a.last_sign_in).getTime() : 0;
-        const dateB = b.last_sign_in ? new Date(b.last_sign_in).getTime() : 0;
-        return direction === 'asc' ? dateA - dateB : dateB - dateA;
-      });
-      
-      queryClient.setQueryData(['all-profiles'], {
-        ...allProfilesData,
-        data: sortedUsers
-      });
-    }
+  const handleSortByLastLogin = () => {
+    setLastLoginSortDirection(lastLoginSortDirection === 'asc' ? 'desc' : 'asc');
   };
 
   const handleSelectAll = (isSelected: boolean) => {

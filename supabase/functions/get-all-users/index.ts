@@ -89,6 +89,10 @@ serve(async (req) => {
     // Combine auth users with their profiles
     const combinedUsers = authUsers.users.map(user => {
       const profile = profileMap.get(user.id) || {};
+      
+      // Prioritize profile's last_sign_in field but fall back to auth user's last_sign_in_at if needed
+      const lastSignIn = profile.last_sign_in || user.last_sign_in_at || null;
+      
       return {
         id: user.id,
         email: user.email,
@@ -96,7 +100,7 @@ serve(async (req) => {
         display_name: profile.username || user.email?.split('@')[0] || 'N/A',
         role: profile.role || 'player',
         country: profile.country || null,
-        last_sign_in: profile.last_sign_in || user.last_sign_in_at || null
+        last_sign_in: lastSignIn
       };
     });
 
