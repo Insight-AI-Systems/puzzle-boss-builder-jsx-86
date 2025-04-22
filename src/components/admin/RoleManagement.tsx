@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -77,7 +78,7 @@ export function RoleManagement() {
     // Super admin can assign any role
     if (canAssignAnyRole) return true;
     
-    // Previously checked for admin role, now we check if current user is super_admin
+    // Handle the different role checking logic
     if (currentUserRole === 'super_admin' && role !== 'super_admin') return true;
     
     return false;
