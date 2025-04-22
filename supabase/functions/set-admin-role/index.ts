@@ -37,21 +37,48 @@ serve(async (req) => {
       );
     }
 
+    // Special case for protected admin email
+    const isProtectedAdmin = email === 'alan@insight-ai-systems.com';
+    console.log(`Processing request for email: ${email}, isProtectedAdmin: ${isProtectedAdmin}`);
+
     // First, get the user ID from auth.users
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserByEmail(email);
     
     if (userError || !userData?.user) {
       console.error("Error finding user:", userError);
       
-      // Special case - create the user if they don't exist yet
-      if (userError?.message?.includes("User not found") || !userData?.user) {
-        console.log(`User with email ${email} not found. This user needs to sign up first.`);
+      // Special case for protected admin - create user if needed
+      if (isProtectedAdmin && (userError?.message?.includes("User not found") || !userData?.user)) {
+        console.log(`Protected admin user not found. Will be created on first login.`);
+        
+        // We'll just create the profile entry without the user, which will be linked on login
+        const randomUuid = crypto.randomUUID();
+        const { data: profileData, error: profileError } = await supabaseAdmin
+          .from("profiles")
+          .insert({
+            id: randomUuid, // This will be updated when the user signs up
+            role: "super_admin",
+            email: email,
+            username: "Alan (Admin)",
+          });
+          
+        if (profileError) {
+          console.error("Error creating profile for protected admin:", profileError);
+        } else {
+          console.log("Created placeholder profile for protected admin");
+        }
+        
         return new Response(
-          JSON.stringify({ error: "User not found. This user needs to sign up first before they can be assigned a role." }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ 
+            success: true,
+            message: "Protected admin will be granted super_admin role on sign up",
+            placeholderCreated: true
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
+      // For non-protected users, return error
       return new Response(
         JSON.stringify({ error: userError?.message || "User not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }

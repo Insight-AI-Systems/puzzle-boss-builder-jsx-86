@@ -2,21 +2,23 @@
 import { useState, useEffect } from 'react';
 import { UserProfile, UserRole } from '@/types/userTypes';
 
+// Special admin email that should always have access
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+
 export function useAdminStatus(profile: UserProfile | null) {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   useEffect(() => {
     if (profile) {
-      // Enhanced logging for Alan's account
+      // Enhanced logging for debugging admin status
       console.log('useAdminStatus - Checking admin status');
       console.log('useAdminStatus - Profile:', profile);
       console.log('useAdminStatus - Profile Email:', profile.id);
       console.log('useAdminStatus - Profile Role:', profile.role);
       
       // Explicit check for Alan's email with super admin privileges
-      const isProtectedAdminEmail = profile.id === 'alan@insight-ai-systems.com';
-      
-      if (isProtectedAdminEmail) {
+      // This takes precedence over any other checks
+      if (profile.id === PROTECTED_ADMIN_EMAIL) {
         console.log('useAdminStatus - Protected super admin email detected, granting full admin privileges');
         setIsAdmin(true);
         return;

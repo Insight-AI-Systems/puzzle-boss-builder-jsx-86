@@ -21,6 +21,9 @@ interface UserMenuProps {
   isMobile?: boolean;
 }
 
+// Special admin email that should always have access
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+
 const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
   const { signOut, userRole, hasRole } = useAuth();
   const { isAdmin } = useAdminStatus(profile);
@@ -33,19 +36,21 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
   console.log('UserMenu - Has Super Admin Role (hasRole):', hasRole('super_admin'));
   console.log('UserMenu - Email:', profile?.id);
 
-  // Check for super admin by email
-  const isSuperAdminEmail = profile?.id === 'alan@insight-ai-systems.com';
+  // Check for special super admin by email
+  const isProtectedAdmin = profile?.id === PROTECTED_ADMIN_EMAIL;
   const isTestAdmin = profile?.id === 'rob.small.1234@gmail.com';
   
-  // Either they have the admin role or they're the special super admin account
-  const showAdminMenu = isAdmin || 
+  // Either they have the admin role, or they're the special super admin account,
+  // or they otherwise have admin privileges through the role system
+  const showAdminMenu = isProtectedAdmin || 
+                       isAdmin || 
                        profile?.role === 'super_admin' || 
                        profile?.role === 'admin' ||
-                       isSuperAdminEmail ||
                        hasRole('admin') || 
                        hasRole('super_admin');
   
   console.log('UserMenu - Show Admin Menu:', showAdminMenu);
+  console.log('UserMenu - Is Protected Admin:', isProtectedAdmin);
   console.log('UserMenu - Is Test Admin:', isTestAdmin);
 
   if (!profile) return null;

@@ -97,26 +97,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
     console.log('AuthContext - Current User Email:', user?.email);
     console.log('AuthContext - Current User Role:', userRole);
     
+    // CRITICAL: Special case for Alan - always grant all roles
     if (user?.email === 'alan@insight-ai-systems.com') {
       console.log('AuthContext - Protected super admin email detected, granting all roles');
       return true;
     }
     
+    // Super admin can access all roles
     if (userRole === 'super_admin') {
       console.log('AuthContext - Super admin detected, granting access to all roles');
       return true;
     }
     
+    // Exact role match
     if (userRole === role) {
       console.log(`AuthContext - User has exact role: ${role}`);
       return true;
     }
     
+    // Admin can access all non-super-admin roles
     if (userRole === 'admin' && role !== 'super_admin') {
       console.log(`AuthContext - Admin granted access to role: ${role}`);
       return true;
     }
     
+    // Check role array as fallback
     const hasRoleInArray = userRoles.includes(role);
     console.log(`AuthContext - Role ${role} check from array: ${hasRoleInArray}`);
     return hasRoleInArray;
