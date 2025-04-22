@@ -1,6 +1,8 @@
+
 import { BasePuzzlePiece } from '../types/puzzle-types';
 import { handlePieceSwap, validateMove, isPositionOccupied } from './pieceMovementUtils';
 import { checkTrappedPieces } from './pieceSortingUtils';
+import { updatePieceState } from './pieceStateUtils';
 
 export const handlePieceMove = <T extends BasePuzzlePiece>(
   pieces: T[],
