@@ -1,7 +1,7 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Loader2, ShieldAlert } from 'lucide-react';
+import { Loader2, ShieldAlert, Bug } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { RoleBasedDashboard } from '@/components/admin/RoleBasedDashboard';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -15,9 +15,10 @@ const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 const AdminDashboard = () => {
   const { profile, isLoading } = useUserProfile();
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, session, userRole, userRoles } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   // Simple admin access check
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
@@ -37,7 +38,9 @@ const AdminDashboard = () => {
     isSuperAdmin,
     isAdminUser,
     hasAdminRole: hasRole('admin'),
-    hasSuperAdminRole: hasRole('super_admin')
+    hasSuperAdminRole: hasRole('super_admin'),
+    userRoles,
+    userRole
   });
 
   useEffect(() => {
@@ -70,10 +73,80 @@ const AdminDashboard = () => {
     }
   }, [isLoading, isAdminUser, navigate, profile, user, toast, isProtectedAdmin]);
 
+  // Function to show detailed debug info
+  const showDebugInfo = () => {
+    const info = {
+      user: user ? {
+        id: user.id,
+        email: user.email,
+        role: userRole
+      } : null,
+      profile: profile ? {
+        id: profile.id,
+        role: profile.role,
+        email: profile.email || profile.id
+      } : null,
+      sessionExists: !!session,
+      hasRoles: {
+        admin: hasRole('admin'),
+        superAdmin: hasRole('super_admin'),
+        player: hasRole('player')
+      },
+      availableRoles: userRoles
+    };
+    
+    setDebugInfo(JSON.stringify(info, null, 2));
+    console.log('Debug Info:', info);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
         <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+      </div>
+    );
+  }
+
+  // Show an intermediate debug screen when there's a discrepancy
+  if (user && !isAdminUser && !isLoading) {
+    return (
+      <div className="min-h-screen bg-puzzle-black p-6">
+        <Alert variant="destructive" className="mb-4">
+          <ShieldAlert className="h-4 w-4" />
+          <AlertTitle>Access Denied</AlertTitle>
+          <AlertDescription>
+            <p>You do not have permission to access the admin dashboard.</p>
+            <p className="mt-2">Current user info:</p>
+            <ul className="list-disc pl-6 mt-1">
+              <li>Email: {user.email}</li>
+              <li>Role: {userRole || profile?.role || 'Unknown'}</li>
+              <li>Has Admin Role: {hasRole('admin') ? 'Yes' : 'No'}</li>
+              <li>Has Super Admin Role: {hasRole('super_admin') ? 'Yes' : 'No'}</li>
+            </ul>
+          </AlertDescription>
+        </Alert>
+        
+        <div className="flex gap-2 mt-4">
+          <Button onClick={showDebugInfo} variant="outline" size="sm">
+            <Bug className="h-4 w-4 mr-1" />
+            Show Debug Info
+          </Button>
+          <Button onClick={() => debugAuthState()} variant="outline" size="sm">
+            Debug Auth State
+          </Button>
+          <Button onClick={() => forceProtectedAdminAccess()} variant="outline" size="sm">
+            Force Admin Access
+          </Button>
+          <Button asChild variant="default" size="sm">
+            <Link to="/">Return Home</Link>
+          </Button>
+        </div>
+        
+        {debugInfo && (
+          <pre className="mt-4 p-4 bg-black/30 text-white rounded-md overflow-x-auto text-xs">
+            {debugInfo}
+          </pre>
+        )}
       </div>
     );
   }
@@ -97,12 +170,22 @@ const AdminDashboard = () => {
               <Button onClick={() => forceProtectedAdminAccess()} variant="outline" size="sm">
                 Force Admin Access
               </Button>
+              <Button onClick={showDebugInfo} variant="outline" size="sm">
+                <Bug className="h-4 w-4 mr-1" />
+                Show Debug Info
+              </Button>
               <Button asChild variant="outline" size="lg">
                 <Link to="/puzzle-playground">
                   Open Puzzle Engine Test Playground
                 </Link>
               </Button>
             </div>
+            
+            {debugInfo && (
+              <pre className="mt-4 p-4 bg-black/30 text-white rounded-md overflow-x-auto text-xs">
+                {debugInfo}
+              </pre>
+            )}
           </div>
 
           <RoleBasedDashboard />

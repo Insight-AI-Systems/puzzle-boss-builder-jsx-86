@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
@@ -19,20 +19,25 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredPermissions = [],
   requireAllPermissions = false
 }) => {
-  const { isAuthenticated, isLoading, hasRole, user } = useAuth();
+  const { isAuthenticated, isLoading, hasRole, user, userRole, userRoles } = useAuth();
   const { hasAllPermissions, hasAnyPermission } = usePermissions();
   const location = useLocation();
 
   // Add detailed logging
-  console.log('ProtectedRoute - Access Check:', {
-    path: location.pathname,
-    isAuthenticated,
-    isLoading,
-    user: user ? { id: user.id, email: user.email } : null,
-    requiredRoles,
-    requiredPermissions,
-    requireAllPermissions
-  });
+  useEffect(() => {
+    console.log('ProtectedRoute - Access Check:', {
+      path: location.pathname,
+      isAuthenticated,
+      isLoading,
+      user: user ? { id: user.id, email: user.email } : null,
+      userRole,
+      userRoles,
+      requiredRoles,
+      requiredPermissions,
+      requireAllPermissions,
+      hasRoleChecks: requiredRoles.map(role => ({ role, hasRole: hasRole(role) }))
+    });
+  }, [location.pathname, isAuthenticated, isLoading, user, userRole, userRoles, requiredRoles, requiredPermissions, requireAllPermissions, hasRole]);
 
   // Show loading state while checking authentication
   if (isLoading) {
