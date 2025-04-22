@@ -4,7 +4,7 @@ import { usePuzzleSound } from '../../hooks/usePuzzleSound';
 
 interface PuzzleAudioManagerProps {
   children: React.ReactNode;
-  onPlaySound: (soundName: string) => void;
+  onPlaySound: (playSound: (soundName: string) => void) => void;
   onMuteChange: (isMuted: boolean) => void;
   onVolumeChange: (volume: number) => void;
 }
@@ -18,7 +18,9 @@ export const PuzzleAudioManager: React.FC<PuzzleAudioManagerProps> = ({
   const { playSound, muted, volume } = usePuzzleSound();
 
   useEffect(() => {
-    onPlaySound(playSound as any);
+    if (playSound) {
+      onPlaySound(playSound);
+    }
   }, [playSound, onPlaySound]);
 
   useEffect(() => {

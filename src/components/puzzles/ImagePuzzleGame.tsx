@@ -52,7 +52,7 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
   const [selectedImage, setSelectedImage] = useState<string>(initialImage || sampleImages[0]);
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(50);
-  const [playSound, setPlaySound] = useState<(name: string) => void>(() => {});
+  const [playSound, setPlaySound] = useState(() => (name: string) => {});
   
   const { isLoading, setIsLoading } = useImageLoading({ 
     selectedImage, 
@@ -156,6 +156,12 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
   const containerSize = calculateContainerSize(isMobile, difficulty);
   const totalPieces = gridSize * gridSize;
 
+  const handlePlaySound = useCallback((name: string) => {
+    if (typeof playSound === 'function') {
+      playSound(name);
+    }
+  }, [playSound]);
+
   return (
     <PuzzleAudioManager
       onPlaySound={setPlaySound}
@@ -253,7 +259,7 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
           pieces={pieces}
           puzzleState={puzzleState}
           gridSize={gridSize}
-          playSound={playSound}
+          playSound={handlePlaySound}
           gameMode={gameMode}
           rotationEnabled={rotationEnabled}
           isSolved={isSolved}
