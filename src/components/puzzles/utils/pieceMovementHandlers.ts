@@ -1,27 +1,30 @@
 
-import { BasePuzzlePiece } from '../types/puzzle-types';
-import { handlePieceSwap, validateMove, isPositionOccupied } from './pieceMovementUtils';
-import { checkTrappedPieces } from './pieceSortingUtils';
+import { PuzzlePiece } from '../types/puzzle-types';
+import { validateMove } from './pieceMovementUtils';
 import { updatePieceState } from './pieceStateUtils';
 
-export const handlePieceMove = <T extends BasePuzzlePiece>(
+export const handlePieceMove = <T extends PuzzlePiece>(
   pieces: T[],
   draggedPiece: T,
-  targetIndex: number
+  targetIndex: number,
+  grid: (number | null)[]
 ): T[] => {
-  // Validate move first
   if (!validateMove(pieces, targetIndex, draggedPiece)) {
     return pieces;
   }
 
-  // Perform the swap - this will handle both placement and swapping
-  const updatedPieces = handlePieceSwap(pieces, draggedPiece, targetIndex);
-  
-  // Check for trapped pieces after the move
-  return checkTrappedPieces(updatedPieces);
+  // First, update the piece position
+  const updatedPieces = pieces.map(piece => {
+    if (piece.id === draggedPiece.id) {
+      return { ...piece, position: targetIndex, isDragging: false } as T;
+    }
+    return piece;
+  });
+
+  return updatedPieces;
 };
 
-export const handlePieceDrop = <T extends BasePuzzlePiece>(
+export const handlePieceDrop = <T extends PuzzlePiece>(
   pieces: T[],
   draggedPiece: T
 ): T[] => {
@@ -29,6 +32,5 @@ export const handlePieceDrop = <T extends BasePuzzlePiece>(
 };
 
 export const handleDirectionalMove = (direction: 'up' | 'down' | 'left' | 'right') => {
-  // Implementation depends on grid layout
   console.log(`Move piece to ${direction}`);
 };
