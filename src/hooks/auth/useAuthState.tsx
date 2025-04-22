@@ -1,69 +1,86 @@
 
 import { useState, useEffect } from 'react';
+import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 
 export function useAuthState() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<AuthError | null>(null);
 
   useEffect(() => {
-    let isActive = true;
+    // Add enhanced logging
+    console.log('useAuthState - Initializing auth state tracking');
     
-    // Set up auth state listener first
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event: AuthChangeEvent, session: Session | null) => {
-        if (!isActive) return;
-        
-        console.log('Auth state changed:', event);
-        setCurrentUserId(session?.user?.id || null);
-        setSession(session);
-        setIsLoading(false);
-      }
-    );
-
-    // Immediately check for existing session
-    const checkSession = async () => {
+    // Function to update auth state
+    const updateAuthState = (newSession: Session | null) => {
+      console.log('useAuthState - Auth state update:', {
+        hasSession: !!newSession,
+        userId: newSession?.user?.id,
+        userEmail: newSession?.user?.email
+      });
+      
+      setSession(newSession);
+      setCurrentUserId(newSession?.user?.id || null);
+    };
+    
+    // When the component mounts, check for an existing session
+    const initializeAuth = async () => {
       try {
-        if (!isActive) return;
+        setIsLoading(true);
+        console.log('useAuthState - Checking for existing session');
         
-        const { data, error } = await supabase.auth.getSession();
+        const { data, error: sessionError } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error('Error getting session:', error);
-          if (isActive) {
-            setError(error);
-            setIsLoading(false);
-          }
-        } else {
-          console.log('Got session:', data.session?.user?.id || 'No session');
-          if (isActive) {
-            setCurrentUserId(data.session?.user?.id || null);
-            setSession(data.session);
-            setIsLoading(false);
-          }
+        if (sessionError) {
+          console.error('useAuthState - Error getting session:', sessionError);
+          setError(sessionError);
+          return;
         }
-      } catch (error) {
-        console.error('Unexpected error getting session:', error);
-        if (isActive) {
-          setError(error instanceof Error ? error : new Error('Unknown auth error'));
-          setIsLoading(false);
+        
+        console.log('useAuthState - Initial session check result:', {
+          hasSession: !!data.session,
+          userId: data.session?.user?.id,
+          userEmail: data.session?.user?.email
+        });
+        
+        updateAuthState(data.session);
+      } catch (err) {
+        console.error('useAuthState - Exception during initialization:', err);
+        if (err instanceof Error) {
+          setError(err as AuthError);
         }
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    // Start session check immediately
-    checkSession();
-
+    // Initialize auth state
+    initializeAuth();
+    
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      console.log('useAuthState - Auth state change event:', {
+        event,
+        userId: newSession?.user?.id,
+        userEmail: newSession?.user?.email
+      });
+      
+      updateAuthState(newSession);
+    });
+    
+    // Clean up subscription on unmount
     return () => {
-      isActive = false;
-      if (authListener && authListener.subscription) {
-        authListener.subscription.unsubscribe();
-      }
+      console.log('useAuthState - Cleaning up auth subscription');
+      subscription.unsubscribe();
     };
   }, []);
 
-  return { currentUserId, session, isLoading, error };
+  return {
+    currentUserId,
+    session,
+    isLoading,
+    error
+  };
 }

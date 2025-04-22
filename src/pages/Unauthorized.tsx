@@ -4,9 +4,16 @@ import { Link } from 'react-router-dom';
 import { Shield, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { debugAuthState } from '@/utils/admin/debugAuth';
 
 const Unauthorized: React.FC = () => {
   const { user } = useAuth();
+  
+  console.log('Unauthorized page - User info:', {
+    isLoggedIn: !!user,
+    userId: user?.id,
+    userEmail: user?.email
+  });
 
   return (
     <div className="min-h-screen bg-puzzle-black text-white flex flex-col items-center justify-center p-4">
@@ -36,6 +43,16 @@ const Unauthorized: React.FC = () => {
           {!user && (
             <Button asChild className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
               <Link to="/auth">Sign In</Link>
+            </Button>
+          )}
+          
+          {user && (
+            <Button 
+              onClick={() => debugAuthState()} 
+              variant="outline" 
+              className="border-puzzle-aqua/30"
+            >
+              Debug Auth State
             </Button>
           )}
         </div>

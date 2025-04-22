@@ -23,8 +23,20 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { hasAllPermissions, hasAnyPermission } = usePermissions();
   const location = useLocation();
 
+  // Add detailed logging
+  console.log('ProtectedRoute - Access Check:', {
+    path: location.pathname,
+    isAuthenticated,
+    isLoading,
+    user: user ? { id: user.id, email: user.email } : null,
+    requiredRoles,
+    requiredPermissions,
+    requireAllPermissions
+  });
+
   // Show loading state while checking authentication
   if (isLoading) {
+    console.log('ProtectedRoute - Still loading auth state');
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
@@ -34,6 +46,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
+    console.log('ProtectedRoute - User not authenticated, redirecting to login');
     // Save the location they were trying to access
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
@@ -46,7 +59,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check for required roles if specified
   if (requiredRoles.length > 0) {
-    const hasRequiredRole = requiredRoles.some(role => hasRole(role));
+    const roleChecks = requiredRoles.map(role => ({ 
+      role, 
+      hasRole: hasRole(role) 
+    }));
+    
+    console.log('ProtectedRoute - Role checks:', roleChecks);
+    
+    const hasRequiredRole = roleChecks.some(check => check.hasRole);
     
     if (!hasRequiredRole) {
       console.log('ProtectedRoute - Access denied due to missing required role');
@@ -61,6 +81,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       ? hasAllPermissions(requiredPermissions)
       : hasAnyPermission(requiredPermissions);
     
+    console.log('ProtectedRoute - Permission check result:', {
+      requiredPermissions,
+      requireAll: requireAllPermissions,
+      hasRequiredPermissions
+    });
+    
     if (!hasRequiredPermissions) {
       console.log('ProtectedRoute - Access denied due to missing required permissions');
       // Redirect to unauthorized page if user doesn't have required permissions
@@ -69,5 +95,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // If authenticated and authorized, render the children
+  console.log('ProtectedRoute - Access granted');
   return <>{children}</>;
 };

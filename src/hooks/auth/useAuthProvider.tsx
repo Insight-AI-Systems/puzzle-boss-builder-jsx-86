@@ -27,14 +27,23 @@ export function useAuthProvider() {
   const fetchUserRoles = async (userId: string) => {
     try {
       // Add more debug logging
-      console.log('fetchUserRoles - Fetching roles for user ID:', userId);
-      console.log('fetchUserRoles - Current user email:', session?.user?.email);
+      console.log('fetchUserRoles - Debug Info:', {
+        fetchingRolesForUserId: userId,
+        currentUserEmail: session?.user?.email,
+        sessionExists: !!session,
+        userExists: !!session?.user
+      });
       
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', userId)
         .single();
+
+      console.log('fetchUserRoles - Profile Query Result:', {
+        profile,
+        error: profileError ? { code: profileError.code, message: profileError.message } : null
+      });
 
       if (profileError && profileError.code !== 'PGRST116') {
         console.error('Error fetching user profile:', profileError);
@@ -67,6 +76,11 @@ export function useAuthProvider() {
         .from('user_roles')
         .select('role')
         .eq('user_id', userId);
+
+      console.log('fetchUserRoles - User Roles Query Result:', {
+        roles,
+        error: rolesError ? { code: rolesError.code, message: rolesError.message } : null
+      });
 
       if (rolesError) {
         console.error('Error fetching user roles:', rolesError);

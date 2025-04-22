@@ -104,28 +104,44 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const hasRole = (role: string): boolean => {
+    // Enhanced debug logging
+    console.log('DEBUG - hasRole check:', {
+      requestedRole: role,
+      currentUserEmail: user?.email,
+      protectedAdminEmail: PROTECTED_ADMIN_EMAIL,
+      isProtectedAdmin: user?.email === PROTECTED_ADMIN_EMAIL,
+      currentUserRole: userRole,
+      availableRoles: userRoles
+    });
+    
     // Always give access to the protected admin email
     if (user?.email === PROTECTED_ADMIN_EMAIL) {
+      console.log('DEBUG - Protected admin email detected, granting access');
       return true;
     }
     
     // Super admin can access all roles
     if (userRole === 'super_admin') {
+      console.log('DEBUG - Super admin detected, granting access');
       return true;
     }
     
     // Exact role match
     if (userRole === role) {
+      console.log(`DEBUG - Exact role match: ${userRole} = ${role}`);
       return true;
     }
     
     // Admin can access all non-super-admin roles
     if (userRole === 'admin' && role !== 'super_admin') {
+      console.log('DEBUG - Admin accessing non-super-admin role, granting access');
       return true;
     }
     
     // Check role array as fallback
-    return userRoles.includes(role);
+    const hasRoleInArray = userRoles.includes(role);
+    console.log(`DEBUG - Role array check: ${role} in [${userRoles.join(', ')}] = ${hasRoleInArray}`);
+    return hasRoleInArray;
   };
 
   const value: AuthContextType = {

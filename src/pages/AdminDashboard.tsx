@@ -24,6 +24,22 @@ const AdminDashboard = () => {
   const isSuperAdmin = isProtectedAdmin || hasRole('super_admin');
   const isAdminUser = isProtectedAdmin || isSuperAdmin || hasRole('admin');
 
+  // Add more detailed logging to diagnose the issue
+  console.log('AdminDashboard - Debug Info:', {
+    currentUrl: window.location.href,
+    isLoadingProfile: isLoading,
+    hasUser: !!user,
+    userEmail: user?.email,
+    userIdFromProfile: profile?.id,
+    userEmailFromProfile: profile?.email,
+    profileRole: profile?.role,
+    isProtectedAdmin,
+    isSuperAdmin,
+    isAdminUser,
+    hasAdminRole: hasRole('admin'),
+    hasSuperAdminRole: hasRole('super_admin')
+  });
+
   useEffect(() => {
     if (isLoading) return;
     
