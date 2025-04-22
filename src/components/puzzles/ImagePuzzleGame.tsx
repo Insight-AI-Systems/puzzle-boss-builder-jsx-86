@@ -6,7 +6,7 @@ import { usePuzzleState } from '@/hooks/puzzles/usePuzzleState';
 import { usePuzzleGridEvents } from './hooks/usePuzzleGridEvents';
 import { getImagePieceStyle } from './utils/pieceStyleUtils';
 import { getRotationStyle } from './utils/pieceRotationUtils';
-import { DEFAULT_IMAGES } from './types/puzzle-types';
+import { DEFAULT_IMAGES, DifficultyLevel, VisualTheme } from './types/puzzle-types';
 import { useImagePuzzleSave } from './useImagePuzzleSave';
 import { usePuzzleCompletion } from './usePuzzleCompletion';
 import { usePuzzlePieceHandlers } from './hooks/usePuzzlePieceHandlers';
@@ -158,11 +158,7 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
 
   return (
     <PuzzleAudioManager
-      onPlaySound={(soundName) => {
-        if (typeof playSound === 'function') {
-          playSound(soundName);
-        }
-      }}
+      onPlaySound={setPlaySound}
       onMuteChange={setMuted}
       onVolumeChange={setVolume}
     >
@@ -223,8 +219,8 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
           isMobile={isMobile}
           muted={muted}
           volume={volume}
-          toggleMute={defaultToggleMute}
-          changeVolume={defaultChangeVolume}
+          toggleMute={() => setMuted(prev => !prev)}
+          changeVolume={setVolume}
           moveCount={moveCount}
           difficulty={difficulty}
           selectedImage={selectedImage}
