@@ -19,7 +19,7 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
     playSound('pickup');
     
     setPieces(prev => {
-      return updatePieceState(prev, piece.id, { isDragging: true });
+      return updatePieceState(prev, piece.id, { isDragging: true } as Partial<T>);
     });
   };
 
@@ -32,7 +32,7 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
       setTimeout(() => {
         setPieces(prev => {
           const updated = checkTrappedPieces(prev);
-          return updatePieceState(updated, draggedPiece.id, { selected: true });
+          return updatePieceState(updated, draggedPiece.id, { selected: true } as Partial<T>);
         });
       }, 0);
     }
@@ -47,7 +47,7 @@ export const createPieceHandlers = <T extends BasePuzzlePiece>(
 
   const handlePieceClick = (piece: T) => {
     playSound('pickup');
-    setPieces(prev => updatePieceState(prev, piece.id, { selected: true }));
+    setPieces(prev => updatePieceState(prev, piece.id, { selected: true } as Partial<T>));
   };
 
   const checkForHints = () => {

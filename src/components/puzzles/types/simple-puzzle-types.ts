@@ -8,4 +8,3 @@ export interface SimplePuzzlePiece extends BasePuzzlePiece {
   id: string;
   zIndex?: number;
 }
-

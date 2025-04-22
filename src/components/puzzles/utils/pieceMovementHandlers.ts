@@ -21,7 +21,7 @@ export const handlePieceDrop = <T extends BasePuzzlePiece>(
   pieces: T[],
   draggedPiece: T
 ): T[] => {
-  return updatePieceState(pieces, draggedPiece.id, { isDragging: false });
+  return updatePieceState(pieces, draggedPiece.id, { isDragging: false } as Partial<T>);
 };
 
 export const handleDirectionalMove = (direction: 'up' | 'down' | 'left' | 'right') => {

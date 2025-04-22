@@ -12,6 +12,7 @@ export interface BasePuzzlePiece {
   correctlyPlaced?: boolean; // For animations
   showHint?: boolean; // For hint animations
   rotation?: number; // For challenge mode - degrees of rotation
+  selected?: boolean; // For selection highlighting
 }
 
 // Extended interface for image puzzle pieces
