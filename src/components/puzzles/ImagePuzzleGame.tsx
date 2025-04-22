@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useDeviceInfo } from '@/hooks/use-mobile';
-import { DifficultyLevel, GameMode, PieceShape, VisualTheme } from './types/puzzle-types';
 import { useImageLoading } from './hooks/useImageLoading';
 import { usePuzzlePieces } from '@/hooks/puzzles/usePuzzlePieces';
 import { usePuzzleState } from '@/hooks/puzzles/usePuzzleState';
@@ -11,15 +10,14 @@ import { DEFAULT_IMAGES } from './types/puzzle-types';
 import { usePuzzleSound } from './usePuzzleSound';
 import { useImagePuzzleSave } from './useImagePuzzleSave';
 import { usePuzzleCompletion } from './usePuzzleCompletion';
+import { usePuzzlePieceHandlers } from './hooks/usePuzzlePieceHandlers';
 import ImagePuzzleContainer from './ImagePuzzleContainer';
 import PuzzleStateDisplay from './components/PuzzleStateDisplay';
 import TimedModeBanner from './components/TimedModeBanner';
-import SaveLoadControls from './components/SaveLoadControls';
-import GameSettings from './components/GameSettings';
+import PuzzleGameControls from './components/PuzzleGameControls';
 import GameControlsLayout from './components/GameControlsLayout';
+import PuzzleCompletionHandler from './components/PuzzleCompletionHandler';
 import { getRecommendedDifficulty, calculateContainerSize } from './utils/puzzleSizeUtils';
-import { useToast } from '@/hooks/use-toast';
-import { handlePieceMove, handlePieceDrop } from './utils/pieceMovementHandlers';
 
 interface ImagePuzzleGameProps {
   sampleImages?: string[];
@@ -28,7 +26,7 @@ interface ImagePuzzleGameProps {
   onImageLoaded?: () => void;
 }
 
-const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({ 
+const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
   sampleImages = DEFAULT_IMAGES,
   initialImage,
   isImageLoading: externalLoading,
@@ -98,44 +96,25 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
     setTimeLimit
   );
 
-  const handlePieceClick = (piece) => {
-    // Handle piece click logic
-    playSound('pickup');
-  };
+  const puzzlePieceHandlers = usePuzzlePieceHandlers({
+    pieces,
+    setPieces,
+    draggedPiece,
+    setDraggedPiece,
+    incrementMoves: puzzleState.incrementMoves,
+    isSolved,
+    playSound,
+    gameMode,
+    rotationEnabled
+  });
 
   const gridEvents = usePuzzleGridEvents({
     draggedPiece,
-    handleDragStart: (piece) => {
-      setDraggedPiece(piece);
-      playSound('pickup');
-    },
-    handleMove: (piece, index) => {
-      if (draggedPiece && draggedPiece.id === piece.id) {
-        setPieces(prev => {
-          const moved = handlePieceMove(prev, draggedPiece, index);
-          puzzleState.incrementMoves();
-          playSound('place');
-          return moved;
-        });
-      }
-    },
-    handleDrop: () => {
-      if (draggedPiece) {
-        setPieces(prev => handlePieceDrop(prev, draggedPiece));
-        setDraggedPiece(null);
-      }
-    },
-    handlePieceClick: (piece) => {
-      handlePieceClick(piece);
-      playSound('pickup');
-    },
-    handleDirectionalMove: (direction) => {
-      // Handle directional move logic
-      if (!draggedPiece) return;
-      
-      // Implementation depends on your grid layout
-      console.log(`Move ${draggedPiece.id} to ${direction}`);
-    }
+    handleDragStart: puzzlePieceHandlers.handleDragStart,
+    handleMove: puzzlePieceHandlers.handleMove,
+    handleDrop: puzzlePieceHandlers.handleDrop,
+    handlePieceClick: puzzlePieceHandlers.handlePieceClick,
+    handleDirectionalMove: puzzlePieceHandlers.handleDirectionalMove
   });
 
   useEffect(() => {
@@ -145,7 +124,6 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
     }
   }, [initialImage, selectedImage, setIsLoading]);
 
-  // Use puzzle completion hook
   usePuzzleCompletion({
     pieces,
     puzzleState,
@@ -210,33 +188,27 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
         </div>
       )}
 
-      <div className="w-full mb-4 flex flex-col md:flex-row gap-2 justify-between">
-        <SaveLoadControls
-          onSave={handleSave}
-          onLoad={handleLoad}
-          onDelete={deleteSave}
-          savedGames={savedGames}
-          currentGameId={currentGameId}
-          isLoading={isLoading}
-          isMobile={isMobile}
-        />
-        
-        <GameSettings
-          gameMode={gameMode}
-          setGameMode={setGameMode}
-          difficulty={difficulty}
-          setDifficulty={handleDifficultyChange}
-          pieceShape={pieceShape}
-          setPieceShape={setPieceShape}
-          visualTheme={visualTheme}
-          setVisualTheme={setVisualTheme}
-          rotationEnabled={rotationEnabled}
-          setRotationEnabled={setRotationEnabled}
-          timeLimit={timeLimit}
-          setTimeLimit={setTimeLimit}
-          isMobile={isMobile}
-        />
-      </div>
+      <PuzzleGameControls
+        onSave={handleSave}
+        onLoad={handleLoad}
+        onDelete={deleteSave}
+        savedGames={savedGames}
+        currentGameId={currentGameId}
+        isLoading={isLoading}
+        isMobile={isMobile}
+        gameMode={gameMode}
+        setGameMode={setGameMode}
+        difficulty={difficulty}
+        setDifficulty={handleDifficultyChange}
+        pieceShape={pieceShape}
+        setPieceShape={setPieceShape}
+        visualTheme={visualTheme}
+        setVisualTheme={setVisualTheme}
+        rotationEnabled={rotationEnabled}
+        setRotationEnabled={setRotationEnabled}
+        timeLimit={timeLimit}
+        setTimeLimit={setTimeLimit}
+      />
       
       <GameControlsLayout 
         isMobile={isMobile}
@@ -270,6 +242,16 @@ const ImagePuzzleGame: React.FC<ImagePuzzleGameProps> = ({
         isMobile={isMobile}
         draggedPiece={draggedPiece}
         moveCount={moveCount}
+      />
+
+      <PuzzleCompletionHandler
+        pieces={pieces}
+        puzzleState={puzzleState}
+        gridSize={gridSize}
+        playSound={playSound}
+        gameMode={gameMode}
+        rotationEnabled={rotationEnabled}
+        isSolved={isSolved}
       />
     </div>
   );
