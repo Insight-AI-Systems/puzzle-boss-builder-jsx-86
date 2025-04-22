@@ -26,6 +26,7 @@ export interface AuthContextType {
   isAdmin: boolean;
   hasRole: (role: string) => boolean;
   userRole: UserRole | null;
+  userRoles: string[]; // Add this line to include userRoles in the interface
   
   clearAuthError: () => void;
 }
