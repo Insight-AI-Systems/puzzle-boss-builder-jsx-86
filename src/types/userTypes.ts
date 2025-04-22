@@ -1,3 +1,4 @@
+
 export type UserRole = 
   | 'super_admin'
   | 'admin'
@@ -39,6 +40,7 @@ export interface UserProfile {
   gender?: Gender | null;
   custom_gender?: string | null;
   age_group?: AgeGroup | null;
+  last_sign_in?: string | null;
 }
 
 export interface RolePermission {

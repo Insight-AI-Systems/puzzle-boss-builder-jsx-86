@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { UserStatsDisplay } from './user-management/UserStatsDisplay';
@@ -13,6 +14,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 export function UserManagement() {
   const { profile } = useUserProfile();
+  const queryClient = useQueryClient();
   
   const {
     allProfilesData,
