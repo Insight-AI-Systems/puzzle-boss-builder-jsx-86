@@ -1,12 +1,30 @@
 
 import React from 'react';
 import PuzzleGrid from './components/PuzzleGrid';
-import DirectionalControls from './components/DirectionalControls';
-import PuzzleStatusMessage from './components/PuzzleStatusMessage';
+import { SimplePuzzlePiece } from './types/simple-puzzle-types';
 
-const ImagePuzzleContainer = ({
+interface ImagePuzzleContainerProps {
+  pieces: SimplePuzzlePiece[];
+  columns: number;
+  isSolved: boolean;
+  isLoading: boolean;
+  containerSize: { width: number; height: number; pieceSize: number };
+  gridEvents: {
+    onDragStart: (e: React.DragEvent, pieceId: string) => void;
+    onDragEnd: () => void;
+    onDragOver: (e: React.DragEvent) => void;
+    onDrop: (e: React.DragEvent, cellIndex: number) => void;
+  };
+  getPieceStyle: (piece: SimplePuzzlePiece) => React.CSSProperties;
+  isTouchDevice: boolean;
+  isMobile: boolean;
+  draggedPiece: SimplePuzzlePiece | null;
+  moveCount: number;
+}
+
+const ImagePuzzleContainer: React.FC<ImagePuzzleContainerProps> = ({
   pieces,
-  difficulty,
+  columns,
   isSolved,
   isLoading,
   containerSize,
@@ -15,40 +33,27 @@ const ImagePuzzleContainer = ({
   isTouchDevice,
   isMobile,
   draggedPiece,
-  moveCount,
-}) => (
-  <>
-    <PuzzleGrid
-      pieces={pieces}
-      difficulty={difficulty}
-      isSolved={isSolved}
-      isLoading={isLoading}
-      containerSize={containerSize}
-      onDragStart={gridEvents.handleGridDragStart}
-      onMove={gridEvents.handleGridMove}
-      onDrop={gridEvents.handleGridDrop}
-      onPieceClick={gridEvents.handleGridPieceClick}
-      getPieceStyle={getPieceStyle}
-      isTouchDevice={isTouchDevice}
-      isMobile={isMobile}
-    />
+  moveCount
+}) => {
+  const grid = Array(pieces.length).fill(null).map((_, i) => {
+    const piece = pieces.find(p => p.position === i);
+    return piece ? parseInt(piece.id.split('-')[1]) : null;
+  });
 
-    {(isTouchDevice || draggedPiece) && !isSolved && !isLoading && (
-      <DirectionalControls 
-        draggedPiece={draggedPiece}
-        onDirectionalMove={gridEvents.handleDirectionalMove}
-        isMobile={isMobile}
+  return (
+    <div className="flex flex-col items-center justify-center w-full">
+      <PuzzleGrid
+        grid={grid}
+        pieces={pieces}
+        columns={columns}
+        isSolved={isSolved}
+        onDragStart={gridEvents.onDragStart}
+        onDragEnd={gridEvents.onDragEnd}
+        onDragOver={gridEvents.onDragOver}
+        onDrop={gridEvents.onDrop}
       />
-    )}
-
-    <PuzzleStatusMessage
-      isSolved={isSolved}
-      isLoading={isLoading}
-      isMobile={isMobile}
-      moveCount={moveCount}
-      isTouchDevice={isTouchDevice}
-    />
-  </>
-);
+    </div>
+  );
+};
 
 export default ImagePuzzleContainer;
