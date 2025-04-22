@@ -1,7 +1,7 @@
 
-import { PuzzlePiece } from '../types/puzzle-types';
+import { BasePuzzlePiece } from '../types/puzzle-types';
 
-export const handlePieceSwap = <T extends PuzzlePiece>(
+export const handlePieceSwap = <T extends BasePuzzlePiece>(
   pieces: T[],
   draggedPiece: T,
   targetPosition: number
@@ -15,7 +15,7 @@ export const handlePieceSwap = <T extends PuzzlePiece>(
   });
 };
 
-export const validateMove = <T extends PuzzlePiece>(
+export const validateMove = <T extends BasePuzzlePiece>(
   pieces: T[],
   targetPosition: number,
   draggedPiece: T | null
@@ -26,7 +26,7 @@ export const validateMove = <T extends PuzzlePiece>(
   return draggedPiece.position !== targetPosition;
 };
 
-export const isPositionOccupied = <T extends PuzzlePiece>(
+export const isPositionOccupied = <T extends BasePuzzlePiece>(
   grid: (number | null)[],
   position: number
 ): boolean => {
