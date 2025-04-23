@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
 import { ArrowRight } from 'lucide-react';
-import PuzzleBossEngine from './puzzles/playground/engines/PuzzleBossEngine';
+import PuzzleGame from './puzzles/PuzzleGame';
 
 const HERO_PUZZLE_IMAGE = "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7";
 
@@ -49,7 +50,7 @@ const Hero: React.FC = () => {
               <div className="card-highlight p-4 md:p-8 relative w-[340px] max-w-full">
                 <h3 className="text-xl font-bold text-center mb-4 text-puzzle-white">Try a Mini Puzzle</h3>
                 <div className="w-[300px] h-[300px] flex items-center justify-center mx-auto">
-                  <PuzzleBossEngine
+                  <PuzzleGame
                     imageUrl={HERO_PUZZLE_IMAGE}
                     rows={3}
                     columns={3}
