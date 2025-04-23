@@ -1,4 +1,5 @@
-import React, { useState, Suspense, lazy, useCallback, useEffect } from 'react';
+
+import React, { useState, useCallback, useEffect } from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
 import Breadcrumb from '@/components/common/Breadcrumb';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -6,7 +7,6 @@ import { PUZZLE_IMAGES } from '@/components/puzzles/constants/puzzle-images';
 import { useDeviceInfo } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { Puzzle, Clock, RotateCcw } from 'lucide-react';
-import LoadingSpinner from '@/components/common/LoadingSpinner';
 import ImageSelector from '@/components/puzzles/components/ImageSelector';
 import PuzzleDemoInfo from '@/components/puzzles/PuzzleDemoInfo';
 import PuzzleGame from '@/components/puzzles/PuzzleGame';

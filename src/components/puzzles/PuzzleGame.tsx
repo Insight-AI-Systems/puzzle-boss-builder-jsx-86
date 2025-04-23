@@ -22,13 +22,14 @@ const PuzzleGame: React.FC<PuzzleGameProps> = ({
       <h2 className="puzzle-title">
         {isSolved ? "Puzzle Solved!" : "Complete the Puzzle"}
       </h2>
-      <JigsawPuzzle
-        imageSrc={imageUrl}
-        rows={rows}
-        columns={columns}
-        onSolved={() => setSolved(true)}
-        className="jigsaw-puzzle"
-      />
+      <div className="jigsaw-puzzle">
+        <JigsawPuzzle
+          imageSrc={imageUrl}
+          rows={rows}
+          columns={columns}
+          onSolved={() => setSolved(true)}
+        />
+      </div>
       {isSolved && (
         <div className="success-message">
           Congratulations! You solved the puzzle!

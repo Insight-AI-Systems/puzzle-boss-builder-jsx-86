@@ -23,6 +23,7 @@
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.13), 0 1.5px 6px rgba(24,67,117,0.06);
   background: #fafbfc;
+  overflow: hidden;
 }
 
 .success-message {

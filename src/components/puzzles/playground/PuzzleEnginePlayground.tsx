@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -42,6 +41,7 @@ const DIFFICULTY_PRESETS = [
 ];
 
 const PuzzleEnginePlayground: React.FC = () => {
+  
   const [selectedImage, setSelectedImage] = useState(SAMPLE_IMAGES[0].id);
   const [difficulty, setDifficulty] = useState(DIFFICULTY_PRESETS[1].value);
   const [resetKey, setResetKey] = useState(0);
