@@ -15,12 +15,14 @@ interface CustomPuzzleEngineProps {
   imageUrl: string;
   rows: number;
   columns: number;
+  showGuideImage?: boolean;
 }
 
 const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
   imageUrl,
   rows,
-  columns
+  columns,
+  showGuideImage: initialShowGuideImage = true
 }) => {
   // Initialize puzzle state and timer
   const {
@@ -40,7 +42,7 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     setSolveTime,
     draggedPiece,
     setDraggedPiece
-  } = usePuzzleState(rows, columns, imageUrl);
+  } = usePuzzleState(rows, columns, imageUrl, initialShowGuideImage);
 
   // Set up timer
   const {
@@ -88,7 +90,7 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     }
   }, [hasStarted, isComplete, setHasStarted, startTimer, setStartTime]);
 
-  // Handle puzzle completion
+  // Handle puzzle completion - now stops the timer
   React.useEffect(() => {
     if (isComplete && hasStarted) {
       stopTimer();
@@ -157,13 +159,6 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
 
       {/* Completion Banner */}
       <PuzzleCompleteBanner solveTime={solveTime} />
-
-      {/* Engine Info */}
-      <div className="mt-4 text-sm text-muted-foreground">
-        <p className="font-medium">Engine: Custom Lovable Puzzle</p>
-        <p className="text-xs">Difficulty: {rows}x{columns}</p>
-        <p className="text-xs">{showGuideImage ? 'Guide image enabled' : 'Guide image disabled'}</p>
-      </div>
     </div>
   );
 };

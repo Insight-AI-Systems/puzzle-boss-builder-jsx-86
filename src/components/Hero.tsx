@@ -71,7 +71,7 @@ const Hero: React.FC = () => {
                 
                 {/* GUIDE IMAGE SHOWN ABOVE PUZZLE BOX - TOGGLEABLE */}
                 {showGuide && (
-                  <div className="w-full flex flex-col items-center mb-4">
+                  <div className="w-full flex flex-col items-center mb-6">
                     <div
                       className="rounded-lg overflow-hidden border border-puzzle-aqua shadow"
                       style={{
@@ -80,7 +80,8 @@ const Hero: React.FC = () => {
                         backgroundColor: '#222',
                         display: 'flex',
                         justifyContent: 'center',
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        position: 'relative'
                       }}
                     >
                       <img
@@ -107,6 +108,7 @@ const Hero: React.FC = () => {
                     imageUrl={HERO_IMAGES[imageIdx]}
                     rows={3}
                     columns={3}
+                    showGuideImage={false} // Never show the internal guide
                   />
                 </div>
                 

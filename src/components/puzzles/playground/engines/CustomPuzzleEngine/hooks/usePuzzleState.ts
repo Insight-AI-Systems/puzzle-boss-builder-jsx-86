@@ -8,12 +8,12 @@ export interface PuzzlePiece {
   placed: boolean; // Whether the piece is correctly placed
 }
 
-export const usePuzzleState = (rows: number, columns: number, imageUrl: string) => {
+export const usePuzzleState = (rows: number, columns: number, imageUrl: string, initialShowGuideImage: boolean = true) => {
   const [puzzlePieces, setPuzzlePieces] = useState<PuzzlePiece[]>([]);
   const [isComplete, setIsComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
-  const [showGuideImage, setShowGuideImage] = useState(false);
+  const [showGuideImage, setShowGuideImage] = useState(initialShowGuideImage);
   const [solveTime, setSolveTime] = useState<number | null>(null);
   const [draggedPiece, setDraggedPiece] = useState<number | null>(null);
   
