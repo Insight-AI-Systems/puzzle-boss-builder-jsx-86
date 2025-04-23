@@ -9,18 +9,15 @@ import { PuzzleTimerDisplay } from '@/components/puzzles/playground/engines/comp
 import { Loader2, PuzzleIcon, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DifficultyLevel, difficultyConfig } from './puzzles/types/puzzle-types';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb';
-
-const difficultyToRowsMap = {
-  'easy': 3,
-  'medium': 4,
-  'hard': 5
-};
 
 const HeroPuzzle: React.FC = () => {
   const { puzzleConfig, isLoading } = useHeroPuzzle();
   const [resetKey, setResetKey] = useState(0);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>('3x3');
   
   const {
     elapsed,
@@ -31,8 +28,7 @@ const HeroPuzzle: React.FC = () => {
   } = usePuzzleTimer();
   
   const imageUrl = puzzleConfig?.image_url || FALLBACK_IMAGE;
-  const difficulty = puzzleConfig?.difficulty || 'medium';
-  const rows = difficultyToRowsMap[difficulty as keyof typeof difficultyToRowsMap] || 3;
+  const rows = difficultyConfig[selectedDifficulty].gridSize;
   
   const { completed, solveTime, handlePuzzleComplete, resetCompletion } = usePuzzleCompletion({
     imageUrl,
@@ -46,7 +42,7 @@ const HeroPuzzle: React.FC = () => {
   
   const handlePuzzleSolved = useCallback((timeElapsedSeconds: number) => {
     stopTimer();
-    handlePuzzleComplete(timeElapsedSeconds * 1000); // Convert to milliseconds
+    handlePuzzleComplete(timeElapsedSeconds * 1000);
   }, [stopTimer, handlePuzzleComplete]);
   
   const handlePlayAgain = useCallback(() => {
@@ -56,6 +52,13 @@ const HeroPuzzle: React.FC = () => {
     setResetKey(prev => prev + 1);
   }, [resetTimer, resetCompletion]);
 
+  const handleDifficultyChange = useCallback((difficulty: DifficultyLevel) => {
+    setSelectedDifficulty(difficulty);
+    resetCompletion();
+    resetTimer();
+    setResetKey(prev => prev + 1);
+  }, [resetCompletion, resetTimer]);
+
   // For debugging
   console.log('HeroPuzzle rendering', { 
     puzzleConfig, 
@@ -64,7 +67,8 @@ const HeroPuzzle: React.FC = () => {
     rows, 
     completed, 
     solveTime,
-    resetKey
+    resetKey,
+    selectedDifficulty
   });
 
   if (isLoading) {
@@ -88,6 +92,21 @@ const HeroPuzzle: React.FC = () => {
       </header>
       
       <div className="relative p-4">
+        <div className="mb-4">
+          <Select value={selectedDifficulty} onValueChange={handleDifficultyChange}>
+            <SelectTrigger className="w-[180px] bg-black/40 border-puzzle-aqua/30 text-puzzle-aqua">
+              <SelectValue placeholder="Select difficulty" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(difficultyConfig).map(([key, config]) => (
+                <SelectItem key={key} value={key}>
+                  {config.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <CustomPuzzleEngine 
           key={`hero-puzzle-${resetKey}`}
           imageUrl={imageUrl}
@@ -109,7 +128,7 @@ const HeroPuzzle: React.FC = () => {
       
       <footer className="flex justify-between items-center p-3 bg-black/40 border-t border-puzzle-aqua/20">
         <div className="text-xs text-puzzle-gold">
-          Difficulty: <span className="capitalize">{difficulty}</span>
+          Difficulty: <span className="capitalize">{difficultyConfig[selectedDifficulty].label}</span>
         </div>
         <Button className="bg-puzzle-gold hover:bg-puzzle-gold/80 text-puzzle-black" size="sm" asChild>
           <Link to="/puzzles">

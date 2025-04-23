@@ -10,7 +10,7 @@ export interface BasePuzzlePiece {
   rotation?: number; // Add rotation property for piece orientation
 }
 
-export type DifficultyLevel = '3x3' | '4x4' | '5x5';
+export type DifficultyLevel = '3x3' | '4x4' | '5x5' | '6x6';
 
 export type GameMode = 'classic' | 'timed' | 'challenge';
 export type PieceShape = 'standard' | 'curved' | 'puzzle';
@@ -37,6 +37,11 @@ export const difficultyConfig: Record<DifficultyLevel, DifficultyConfig> = {
     label: 'Hard (5×5)',
     gridSize: 5,
     containerClass: 'grid-cols-5'
+  },
+  '6x6': {
+    label: 'Expert (6×6)',
+    gridSize: 6,
+    containerClass: 'grid-cols-6'
   }
 };
 
