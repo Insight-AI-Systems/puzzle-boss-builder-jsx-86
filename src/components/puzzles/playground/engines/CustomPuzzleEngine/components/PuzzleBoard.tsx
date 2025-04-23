@@ -30,6 +30,7 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = React.memo(({
 }) => {
   const [highlightedPosition, setHighlightedPosition] = useState<number | null>(null);
   const prevImageUrl = useRef(imageUrl);
+  const guideImageRef = useRef<HTMLImageElement>(null);
   
   // Reset highlighted position when image changes
   useEffect(() => {
@@ -55,18 +56,13 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = React.memo(({
     overflow: 'hidden'
   };
   
-  // Set up guide image style
-  const guideImageStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    opacity: 0.3,
-    pointerEvents: 'none',
-    zIndex: 0
-  };
+  // Load guide image when showGuideImage changes
+  useEffect(() => {
+    if (showGuideImage && guideImageRef.current) {
+      console.log('Setting guide image src to:', imageUrl);
+      guideImageRef.current.src = imageUrl;
+    }
+  }, [showGuideImage, imageUrl]);
   
   // Handle drag over
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>, position: number) => {
@@ -128,26 +124,20 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = React.memo(({
       </div>
     );
   }
-  
-  // Debug log to check if the guide image is being rendered
-  useEffect(() => {
-    console.log('Guide image visible:', showGuideImage, 'URL:', imageUrl);
-  }, [showGuideImage, imageUrl]);
 
   return (
     <div className="puzzle-board-wrapper relative">
       <div style={containerStyle} className="puzzle-board">
         {showGuideImage && (
-          <img 
-            src={imageUrl} 
-            alt="Puzzle guide" 
-            style={guideImageStyle} 
-            className="puzzle-guide-image"
-            draggable={false}
-            crossOrigin="anonymous"
-            onLoad={() => console.log('Guide image loaded successfully')}
-            onError={(e) => console.error('Guide image failed to load:', e)}
-          />
+          <div 
+            className="absolute inset-0 z-0 pointer-events-none"
+            style={{ 
+              backgroundImage: `url(${imageUrl})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: 0.3,
+            }}
+          ></div>
         )}
         {cells}
       </div>

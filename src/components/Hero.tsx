@@ -23,6 +23,7 @@ const HERO_IMAGES = [
 const Hero: React.FC = () => {
   const [imageIdx, setImageIdx] = useState(0);
   const [preloadedImages, setPreloadedImages] = useState<boolean[]>([]);
+  const [key, setKey] = useState(Date.now()); // Force re-render when changing images
 
   // Preload images to ensure they're in cache
   useEffect(() => {
@@ -40,7 +41,7 @@ const Hero: React.FC = () => {
       img.onerror = (e) => {
         console.error(`Failed to preload hero image ${index}:`, url, e);
       };
-      img.src = url;
+      img.src = `${url}?w=600&h=600&fit=crop&auto=format`;
     };
 
     HERO_IMAGES.forEach((url, index) => {
@@ -49,12 +50,23 @@ const Hero: React.FC = () => {
   }, []);
 
   const handlePrev = () => {
-    setImageIdx((idx) => (idx === 0 ? HERO_IMAGES.length - 1 : idx - 1));
+    setImageIdx((idx) => {
+      const newIdx = idx === 0 ? HERO_IMAGES.length - 1 : idx - 1;
+      setKey(Date.now()); // Force re-render
+      return newIdx;
+    });
   };
 
   const handleNext = () => {
-    setImageIdx((idx) => (idx === HERO_IMAGES.length - 1 ? 0 : idx + 1));
+    setImageIdx((idx) => {
+      const newIdx = idx === HERO_IMAGES.length - 1 ? 0 : idx + 1;
+      setKey(Date.now()); // Force re-render
+      return newIdx;
+    });
   };
+
+  // Add image query params for optimization
+  const optimizedImageUrl = `${HERO_IMAGES[imageIdx]}?w=600&h=600&fit=crop&auto=format`;
 
   return (
     <section className="py-12 md:py-20">
@@ -99,7 +111,8 @@ const Hero: React.FC = () => {
                 <h3 className="text-xl font-bold text-center mb-4 text-puzzle-white">Try a Mini Puzzle</h3>
                 <div className="w-[300px] h-[300px] flex items-center justify-center mx-auto relative">
                   <CustomPuzzleEngine
-                    imageUrl={HERO_IMAGES[imageIdx]}
+                    key={key} // Force complete re-render when changing image
+                    imageUrl={optimizedImageUrl}
                     rows={3}
                     columns={3}
                     showGuideImage={true}
