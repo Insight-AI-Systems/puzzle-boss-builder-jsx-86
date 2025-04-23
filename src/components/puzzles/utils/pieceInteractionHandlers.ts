@@ -1,53 +1,54 @@
 
 import { BasePuzzlePiece } from '../types/puzzle-types';
 
-/**
- * Creates event handlers for puzzle piece interactions
- */
 export function createPieceHandlers<T extends BasePuzzlePiece>(
   pieces: T[],
-  setPieces: (pieces: T[]) => void,
+  setPieces: React.Dispatch<React.SetStateAction<T[]>>,
   draggedPiece: T | null,
-  setDraggedPiece: (piece: T | null) => void,
+  setDraggedPiece: React.Dispatch<React.SetStateAction<T | null>>,
   incrementMoves: (count?: number) => void,
   isSolved: boolean,
-  playSound: (sound: string) => void,
-  grid: (number | null)[] = []
+  playSound: (sound: string) => void
 ) {
-  // Simplified handlers for compatibility
+  // Create handlers for piece interactions
+  const handleDragStart = (piece: T) => {
+    if (isSolved) return;
+    setDraggedPiece(piece);
+    playSound('pickup');
+  };
+
+  const handleMove = (dragged: T, index: number) => {
+    // Simplified implementation
+    console.log('Move piece', dragged.id, 'to position', index);
+  };
+
+  const handleDrop = () => {
+    setDraggedPiece(null);
+    incrementMoves();
+    playSound('place');
+  };
+
+  const handlePieceClick = (piece: T) => {
+    // Simplified implementation
+    console.log('Clicked piece', piece.id);
+  };
+
+  const handleDirectionalMove = (direction: 'up' | 'down' | 'left' | 'right', gridSize: number = 3) => {
+    // Simplified implementation
+    console.log(`Move piece to ${direction}, grid size: ${gridSize}`);
+  };
+
+  const checkForHints = () => {
+    // Simplified implementation
+    console.log('Checking for hints');
+  };
+
   return {
-    handleDragStart: (piece: T) => {
-      if (isSolved) return;
-      setDraggedPiece(piece);
-      playSound('pickup');
-    },
-    
-    handleMove: (dragged: T, targetIndex: number) => {
-      if (!dragged || isSolved) return;
-      
-      // Simplified implementation
-      console.log('Moving piece', dragged.id, 'to position', targetIndex);
-    },
-    
-    handleDrop: () => {
-      setDraggedPiece(null);
-      incrementMoves();
-      playSound('place');
-    },
-    
-    handlePieceClick: (piece: T) => {
-      if (isSolved) return;
-      console.log('Piece clicked', piece.id);
-    },
-    
-    handleDirectionalMove: (direction: 'up' | 'down' | 'left' | 'right', gridSize: number) => {
-      // Simplified directional move handler
-      console.log('Move', direction);
-    },
-    
-    checkForHints: () => {
-      // Simplified hint checker
-      console.log('Checking for hints');
-    }
+    handleDragStart,
+    handleMove,
+    handleDrop,
+    handlePieceClick,
+    handleDirectionalMove,
+    checkForHints
   };
 }

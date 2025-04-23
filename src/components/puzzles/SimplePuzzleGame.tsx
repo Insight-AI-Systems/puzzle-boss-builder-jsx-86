@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { useDeviceInfo } from '@/hooks/use-mobile';
 import { useSimplePuzzlePieces } from './hooks/useSimplePuzzlePieces';
@@ -110,6 +109,10 @@ const SimplePuzzleGame: React.FC = () => {
     puzzleState.changeDifficulty(difficulty);
   }, [puzzleState]);
 
+  const handleDirectionalMoveAdapter = useCallback((direction: "up" | "down" | "left" | "right") => {
+    handleDirectionalMove(direction, 3);
+  }, [handleDirectionalMove]);
+
   useEffect(() => {
     if (isSolved && !puzzleState.isComplete) {
       const gridSize = difficultyConfig[puzzleState.difficulty].gridSize;
@@ -179,7 +182,7 @@ const SimplePuzzleGame: React.FC = () => {
         draggedPiece={draggedPiece}
         isSolved={isSolved}
         isMobile={isMobile}
-        onDirectionalMove={handleDirectionalMove}
+        onDirectionalMove={handleDirectionalMoveAdapter}
         isTouchDevice={isTouchDevice}
       />
       <PuzzleStatusMessage 

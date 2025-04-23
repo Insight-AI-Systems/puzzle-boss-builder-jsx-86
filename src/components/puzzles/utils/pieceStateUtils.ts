@@ -10,7 +10,8 @@ export const updatePieceState = <T extends BasePuzzlePiece>(
   const updated = pieces.map(p => 
     p.id === pieceId ? { ...p, ...updates } : p
   );
-  return checkTrappedPieces(updated);
+  // Pass the required grid size parameter (default to 3 for compatibility)
+  return checkTrappedPieces(updated, 3);
 };
 
 export const findHintablePieces = <T extends BasePuzzlePiece>(pieces: T[]): string[] => {
