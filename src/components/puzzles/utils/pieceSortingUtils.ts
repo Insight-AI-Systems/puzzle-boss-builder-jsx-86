@@ -9,20 +9,21 @@ export const sortPiecesByCorrectness = <T extends BasePuzzlePiece>(pieces: T[]):
     const aCorrect = aNumber === a.position;
     const bCorrect = bNumber === b.position;
     
-    // Dragging pieces are always on top
-    if (a.isDragging) return 1;
-    if (b.isDragging) return -1;
+    // Set priority order for visual stacking:
     
-    // Selected pieces are next highest priority
-    if ((a as any).selected) return 1;
-    if ((b as any).selected) return -1;
+    // 1. Trapped pieces MUST be on top of everything else
+    if ((a as any).trapped && !(b as any).trapped) return 1;
+    if (!(a as any).trapped && (b as any).trapped) return -1;
     
-    // Trapped pieces should be above correctly placed pieces
-    // This is a critical fix to ensure trapped pieces are always visible
-    if ((a as any).trapped) return 1;
-    if ((b as any).trapped) return -1;
+    // 2. Dragging pieces come next
+    if (a.isDragging && !b.isDragging) return 1;
+    if (!a.isDragging && b.isDragging) return -1;
     
-    // Correctly placed pieces go to the bottom
+    // 3. Selected pieces are next
+    if ((a as any).selected && !(b as any).selected) return 1;
+    if (!(a as any).selected && (b as any).selected) return -1;
+    
+    // 4. Correctly placed pieces always go to the bottom
     if (aCorrect && !bCorrect) return -1;
     if (!aCorrect && bCorrect) return 1;
     
@@ -47,7 +48,7 @@ export const checkTrappedPieces = <T extends BasePuzzlePiece>(pieces: T[]): T[] 
     
     return { 
       ...p, 
-      trapped: isTrapped
+      trapped: isTrapped 
     } as any;
   });
   

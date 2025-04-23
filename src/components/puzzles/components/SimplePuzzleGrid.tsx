@@ -98,13 +98,26 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
   const gridPieces = pieces.filter(piece => piece.position >= 0);
   const stagingPieces = pieces.filter(piece => piece.position < 0);
   
-  // Mark trapped pieces and ensure they are properly sorted
-  const markedPieces = gridPieces.map(piece => ({
-    ...piece,
-    trapped: isTrappedPiece(piece, gridPieces)
-  }));
+  // First explicitly mark which pieces are trapped
+  const markedPieces = gridPieces.map(piece => {
+    const pieceNumber = parseInt(piece.id.split('-')[1]);
+    const isCorrect = pieceNumber === piece.position;
+    
+    // If this piece is already in its correct position, it can't be trapped
+    if (isCorrect) return { ...piece, trapped: false };
+    
+    // Check if there's a correctly placed piece in this position
+    const isTrapped = gridPieces.some(otherPiece => {
+      if (otherPiece.id === piece.id) return false;
+      
+      const otherNumber = parseInt(otherPiece.id.split('-')[1]);
+      return otherPiece.position === piece.position && otherNumber === otherPiece.position;
+    });
+    
+    return { ...piece, trapped: isTrapped };
+  });
   
-  // Use the enhanced sorting to ensure trapped pieces are visible
+  // Then sort pieces with trapped pieces having highest priority
   const sortedPieces = sortPiecesForGrid(markedPieces);
   
   // Handle staging area interactions
