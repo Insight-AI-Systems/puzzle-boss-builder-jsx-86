@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-// Define the PuzzlePiece type directly here instead of importing from a non-existent file
+// Define the PuzzlePiece type directly here
 export interface PuzzlePiece {
   id: number;
   position: number;
@@ -147,5 +147,5 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
   };
 };
 
-// Export types
-export type { PuzzlePiece };
+// Remove the duplicate export type declaration here
+// This is what was causing the error
