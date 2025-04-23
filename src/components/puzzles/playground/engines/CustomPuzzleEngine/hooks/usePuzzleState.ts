@@ -1,7 +1,5 @@
-
 import { useState, useEffect, useCallback } from 'react';
 
-// Define the PuzzlePiece type directly here
 export interface PuzzlePiece {
   id: number;
   position: number;
@@ -18,7 +16,6 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
   const [solveTime, setSolveTime] = useState<number | null>(null);
   const [draggedPiece, setDraggedPiece] = useState<number | null>(null);
 
-  // Initialize puzzle pieces
   const initPuzzle = useCallback(() => {
     const pieces: PuzzlePiece[] = [];
     const pieceCount = rows * columns;
@@ -26,13 +23,12 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
     for (let i = 0; i < pieceCount; i++) {
       pieces.push({
         id: i,
-        position: -1, // Initially off the board
+        position: -1,
         originalPosition: i,
         isDragging: false
       });
     }
 
-    // Shuffle pieces onto the board
     const shuffledPositions = shuffleArray([...Array(pieceCount).keys()]);
     const shuffledPieces = pieces.map((piece, index) => ({
       ...piece,
@@ -43,12 +39,10 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
     setIsComplete(false);
   }, [rows, columns]);
 
-  // Effect to initialize puzzle when component loads or image changes
   useEffect(() => {
     initPuzzle();
   }, [initPuzzle, imageUrl, rows, columns]);
 
-  // Reset puzzle with a new shuffle
   const resetPuzzle = useCallback(() => {
     initPuzzle();
     setIsComplete(false);
@@ -56,7 +50,6 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
     setSolveTime(null);
   }, [initPuzzle]);
 
-  // Add the missing shufflePieces function that was referenced in the index.tsx file
   const shufflePieces = useCallback(() => {
     const pieceCount = rows * columns;
     const shuffledPositions = shuffleArray([...Array(pieceCount).keys()]);
@@ -72,7 +65,6 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
     setIsComplete(false);
   }, [rows, columns]);
 
-  // Handle toggling guide image visibility
   const toggleGuideImage = useCallback(() => {
     console.log('Toggling guide image, current value:', showGuideImage);
     setShowGuideImage(prev => {
@@ -82,7 +74,6 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
     });
   }, [showGuideImage]);
 
-  // Helper function to shuffle an array
   const shuffleArray = <T,>(array: T[]): T[] => {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -92,30 +83,24 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
     return shuffled;
   };
 
-  // Check if a piece is in the correct position
   const isPieceCorrect = useCallback((id: number) => {
     const piece = puzzlePieces.find(p => p.id === id);
     return piece ? piece.position === piece.originalPosition : false;
   }, [puzzlePieces]);
 
-  // Place a piece on the board
   const placePiece = useCallback((id: number, position: number) => {
     setPuzzlePieces(prev => {
-      // Find the piece that's currently at this position (if any)
       const pieceAtPosition = prev.find(p => p.position === position);
       
-      // Update pieces
       const updatedPieces = prev.map(piece => {
         if (piece.id === id) {
           return { ...piece, position, isDragging: false };
         } else if (pieceAtPosition && piece.id === pieceAtPosition.id) {
-          // Swap with the piece that was at this position
           return { ...piece, position: prev.find(p => p.id === id)?.position || -1 };
         }
         return piece;
       });
       
-      // Check if puzzle is complete
       const isNowComplete = updatedPieces.every(piece => piece.position === piece.originalPosition);
       if (isNowComplete) {
         setIsComplete(true);
@@ -125,7 +110,6 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
     });
   }, []);
 
-  // Return all the state and functions needed by the puzzle
   return {
     puzzlePieces,
     setPuzzlePieces,
@@ -143,9 +127,6 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
     isPieceCorrect,
     draggedPiece,
     setDraggedPiece,
-    shufflePieces // Add the shufflePieces function to the return object
+    shufflePieces
   };
 };
-
-// Remove the duplicate export type declaration here
-// This is what was causing the error

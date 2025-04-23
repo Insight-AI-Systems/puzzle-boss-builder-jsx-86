@@ -2,22 +2,22 @@
 import React, { useState, useCallback } from "react";
 import PuzzleEnginePlayground from "./PuzzleEnginePlayground";
 
-// Borrow config and images directly from PuzzleEnginePlayground for consistency
+// Update SAMPLE_IMAGES to use three distinct images from Puzzle Test Playground
 const SAMPLE_IMAGES = [
   {
-    id: 'iphone',
-    url: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500&h=500&fit=crop',
-    alt: 'iPhone'
+    id: "mountain",
+    url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+    alt: "Mountain Lake"
   },
   {
-    id: 'laptop',
-    url: 'https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?w=500&h=500&fit=crop',
-    alt: 'Laptop'
+    id: "code",
+    url: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7",
+    alt: "Code"
   },
   {
-    id: 'headphones',
-    url: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=500&h=500&fit=crop',
-    alt: 'Headphones'
+    id: "matrix",
+    url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5",
+    alt: "Matrix"
   }
 ];
 
@@ -93,3 +93,4 @@ const HeroPuzzleMini: React.FC = () => {
 };
 
 export default HeroPuzzleMini;
+
