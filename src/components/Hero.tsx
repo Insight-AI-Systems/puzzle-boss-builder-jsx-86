@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import CustomPuzzleEngine from './puzzles/playground/engines/CustomPuzzleEngine';
+import HeroPuzzleMini from './puzzles/playground/HeroPuzzleMini';
 
 // Leaderboard mock data
 const MOCK_LEADERBOARD = [
@@ -109,43 +109,11 @@ const Hero: React.FC = () => {
               <div className="absolute inset-0 bg-puzzle-aqua/30 blur-[100px] rounded-full pointer-events-none"></div>
               <div className="card-highlight p-4 md:p-8 relative w-[340px] max-w-full">
                 <h3 className="text-xl font-bold text-center mb-4 text-puzzle-white">Try a Mini Puzzle</h3>
-                <div className="w-[300px] h-[300px] flex items-center justify-center mx-auto relative">
-                  <CustomPuzzleEngine
-                    key={key} // Force complete re-render when changing image
-                    imageUrl={optimizedImageUrl}
-                    rows={3}
-                    columns={3}
-                    showGuideImage={true}
-                  />
-                </div>
-                <div className="flex items-center justify-between mt-4">
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Previous puzzle image"
-                      onClick={handlePrev}
-                      className="rounded-full"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
-                    </Button>
-                    <span className="text-muted-foreground text-xs">
-                      Image {imageIdx + 1} of {HERO_IMAGES.length}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Next puzzle image"
-                      onClick={handleNext}
-                      className="rounded-full"
-                    >
-                      <ChevronRight className="w-5 h-5" />
-                    </Button>
-                  </div>
+                <div className="w-[300px] h-[320px] flex items-center justify-center mx-auto relative">
+                  <HeroPuzzleMini />
                 </div>
               </div>
             </div>
-            {/* Leaderboard */}
             <div className="bg-gradient-to-tr from-puzzle-gold via-puzzle-aqua to-puzzle-gold rounded-2xl shadow-2xl p-6 w-[240px] max-w-[95vw] flex flex-col justify-between">
               <h4 className="text-lg text-center font-bold text-puzzle-black drop-shadow mb-3 tracking-wide">🏅 Top 5 Players</h4>
               <ol className="space-y-3">

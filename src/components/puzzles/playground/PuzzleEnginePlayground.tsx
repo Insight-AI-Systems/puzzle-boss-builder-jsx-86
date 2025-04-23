@@ -40,18 +40,37 @@ const DIFFICULTY_PRESETS = [
   { value: 'expert', label: 'Expert', rows: 6, columns: 6 }
 ];
 
-const PuzzleEnginePlayground: React.FC = () => {
+interface PuzzleEnginePlaygroundProps {
+  heroMode?: boolean;
+  isCondensed?: boolean;
+  selectedImage?: string;
+  difficulty?: string;
+  miniRows?: number;
+  miniColumns?: number;
+}
+
+const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
+  heroMode = false,
+  isCondensed = false,
+  selectedImage: propSelectedImage,
+  difficulty: propDifficulty,
+  miniRows,
+  miniColumns
+}) => {
   
-  const [selectedImage, setSelectedImage] = useState(SAMPLE_IMAGES[0].id);
-  const [difficulty, setDifficulty] = useState(DIFFICULTY_PRESETS[1].value);
+  const [selectedImage, setSelectedImage] = useState(propSelectedImage || SAMPLE_IMAGES[0].id);
+  const [difficulty, setDifficulty] = useState(propDifficulty || DIFFICULTY_PRESETS[1].value);
   const [resetKey, setResetKey] = useState(0);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const { theme } = useTheme();
 
   const currentImage = SAMPLE_IMAGES.find(img => img.id === selectedImage)?.url || SAMPLE_IMAGES[0].url;
-  
-  const currentDifficultyPreset = DIFFICULTY_PRESETS.find(d => d.value === difficulty) || DIFFICULTY_PRESETS[1];
-  
+  const currentDifficultyPreset = (
+    DIFFICULTY_PRESETS.find(d => d.value === difficulty) || DIFFICULTY_PRESETS[1]
+  );
+  const rows = heroMode && miniRows ? miniRows : currentDifficultyPreset.rows;
+  const columns = heroMode && miniColumns ? miniColumns : currentDifficultyPreset.columns;
+
   const handleResetPuzzle = useCallback(() => {
     setResetKey(prev => prev + 1);
   }, []);
@@ -67,6 +86,21 @@ const PuzzleEnginePlayground: React.FC = () => {
     return `${engineId}-${resetKey}-${selectedImage}-${difficulty}`;
   }, [resetKey, selectedImage, difficulty]);
   
+  if (heroMode) {
+    return (
+      <div className="w-full" style={{ minHeight: 220 }}>
+        <div className="relative border rounded-lg p-2 bg-background">
+          <PuzzleGame
+            key={getEngineKey('library')}
+            imageUrl={currentImage}
+            rows={rows}
+            columns={columns}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/20 rounded-lg border">
@@ -118,8 +152,8 @@ const PuzzleEnginePlayground: React.FC = () => {
         <PuzzleGame
           key={getEngineKey('library')}
           imageUrl={currentImage}
-          rows={currentDifficultyPreset.rows}
-          columns={currentDifficultyPreset.columns}
+          rows={rows}
+          columns={columns}
         />
       </div>
       
