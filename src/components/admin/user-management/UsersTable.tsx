@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Table, TableBody } from "@/components/ui/table";
 import { UserTableHeader } from './UserTableHeader';
 import { UserTableRow } from './UserTableRow';
