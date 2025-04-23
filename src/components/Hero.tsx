@@ -6,20 +6,23 @@ import CustomPuzzleEngine from './puzzles/playground/engines/CustomPuzzleEngine'
 import HeroPuzzleMini from './puzzles/playground/HeroPuzzleMini';
 
 // Leaderboard mock data
-const MOCK_LEADERBOARD = [
-  { name: "Alice", time: 52.7 },
-  { name: "Morgan", time: 54.2 },
-  { name: "Jordan", time: 61.8 },
-  { name: "Taylor", time: 70.2 },
-  { name: "Casey", time: 99.1 },
-];
-
-const HERO_IMAGES = [
-  "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7",
-  "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
-  "https://images.unsplash.com/photo-1518770660439-4636190af475",
-];
-
+const MOCK_LEADERBOARD = [{
+  name: "Alice",
+  time: 52.7
+}, {
+  name: "Morgan",
+  time: 54.2
+}, {
+  name: "Jordan",
+  time: 61.8
+}, {
+  name: "Taylor",
+  time: 70.2
+}, {
+  name: "Casey",
+  time: 99.1
+}];
+const HERO_IMAGES = ["https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7", "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b", "https://images.unsplash.com/photo-1518770660439-4636190af475"];
 const Hero: React.FC = () => {
   const [imageIdx, setImageIdx] = useState(0);
   const [preloadedImages, setPreloadedImages] = useState<boolean[]>([]);
@@ -38,27 +41,24 @@ const Hero: React.FC = () => {
         });
         console.log(`Hero image ${index} preloaded successfully:`, url);
       };
-      img.onerror = (e) => {
+      img.onerror = e => {
         console.error(`Failed to preload hero image ${index}:`, url, e);
       };
       img.src = `${url}?w=600&h=600&fit=crop&auto=format`;
     };
-
     HERO_IMAGES.forEach((url, index) => {
       preloadImage(url, index);
     });
   }, []);
-
   const handlePrev = () => {
-    setImageIdx((idx) => {
+    setImageIdx(idx => {
       const newIdx = idx === 0 ? HERO_IMAGES.length - 1 : idx - 1;
       setKey(Date.now()); // Force re-render
       return newIdx;
     });
   };
-
   const handleNext = () => {
-    setImageIdx((idx) => {
+    setImageIdx(idx => {
       const newIdx = idx === HERO_IMAGES.length - 1 ? 0 : idx + 1;
       setKey(Date.now()); // Force re-render
       return newIdx;
@@ -67,9 +67,7 @@ const Hero: React.FC = () => {
 
   // Add image query params for optimization
   const optimizedImageUrl = `${HERO_IMAGES[imageIdx]}?w=600&h=600&fit=crop&auto=format`;
-
-  return (
-    <section className="py-12 md:py-20">
+  return <section className="py-12 md:py-20">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center gap-10">
           <div className="w-full md:w-1/2 text-center md:text-left">
@@ -86,17 +84,10 @@ const Hero: React.FC = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-              <Button 
-                className="bg-puzzle-aqua text-puzzle-black hover:bg-puzzle-aqua/90 text-lg px-6 py-3 h-auto" 
-                asChild
-              >
+              <Button className="bg-puzzle-aqua text-puzzle-black hover:bg-puzzle-aqua/90 text-lg px-6 py-3 h-auto" asChild>
                 <Link to="/auth?signup=true">Join Now</Link>
               </Button>
-              <Button 
-                variant="outline" 
-                className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold/10 text-lg px-6 py-3 h-auto"
-                asChild
-              >
+              <Button variant="outline" className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold/10 text-lg px-6 py-3 h-auto" asChild>
                 <Link to="/about">
                   Learn More <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
@@ -114,35 +105,10 @@ const Hero: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="bg-gradient-to-tr from-puzzle-gold via-puzzle-aqua to-puzzle-gold rounded-2xl shadow-2xl p-6 w-[240px] max-w-[95vw] flex flex-col justify-between">
-              <h4 className="text-lg text-center font-bold text-puzzle-black drop-shadow mb-3 tracking-wide">🏅 Top 5 Players</h4>
-              <ol className="space-y-3">
-                {MOCK_LEADERBOARD.map((entry, idx) => (
-                  <li
-                    key={entry.name}
-                    className={`
-                      flex items-center justify-between px-3 py-2 rounded-lg font-semibold shadow
-                      ${idx === 0 ? 'bg-puzzle-gold text-black scale-105 animate-pulse-gentle border-2 border-puzzle-gold' :
-                        'bg-white/90 text-puzzle-black'}
-                    `}
-                    style={{ fontSize: idx === 0 ? "1.15rem" : undefined }}
-                  >
-                    <span>
-                      <span className="inline-block w-5 text-center mr-1">{idx + 1}.</span> {entry.name}
-                    </span>
-                    <span className="text-right">
-                      {entry.time.toFixed(2)}
-                      <span className="ml-1 text-xs">sec</span>
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            </div>
+            
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default Hero;
