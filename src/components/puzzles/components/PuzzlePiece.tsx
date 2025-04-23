@@ -59,9 +59,9 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
         width: pieceSize,
         height: pieceSize,
         position: 'relative',
-        zIndex: isTrapped ? 10 : 'auto', // Ensure trapped pieces are visually on top
-        transform: isTrapped ? 'scale(0.9) translateY(-10px)' : 'scale(1)', // Slightly offset trapped pieces
-        boxShadow: isTrapped ? '0 0 0 2px red, 0 4px 6px rgba(0,0,0,0.2)' : '' // Highlight trapped pieces
+        zIndex: isTrapped ? 20 : (isCorrectlyPlaced ? 1 : 10), // Higher z-index for trapped pieces, lower for correct pieces
+        transform: isTrapped ? 'scale(0.95) translateY(-8px)' : 'scale(1)', // Offset trapped pieces
+        boxShadow: isTrapped ? '0 0 0 2px #ff5555, 0 4px 8px rgba(0,0,0,0.3)' : '' // Highlight trapped pieces
       }}
       data-correct={isCorrectlyPlaced ? 'true' : 'false'}
       data-piece-number={pieceNumber}

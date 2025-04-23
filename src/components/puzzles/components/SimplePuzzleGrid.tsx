@@ -98,12 +98,13 @@ const SimplePuzzleGrid: React.FC<SimplePuzzleGridProps> = ({
   const gridPieces = pieces.filter(piece => piece.position >= 0);
   const stagingPieces = pieces.filter(piece => piece.position < 0);
   
-  // Mark trapped pieces
+  // Mark trapped pieces and ensure they are properly sorted
   const markedPieces = gridPieces.map(piece => ({
     ...piece,
     trapped: isTrappedPiece(piece, gridPieces)
   }));
   
+  // Use the enhanced sorting to ensure trapped pieces are visible
   const sortedPieces = sortPiecesForGrid(markedPieces);
   
   // Handle staging area interactions
