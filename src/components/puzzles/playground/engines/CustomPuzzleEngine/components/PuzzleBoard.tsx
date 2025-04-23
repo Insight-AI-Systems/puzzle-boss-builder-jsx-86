@@ -143,6 +143,6 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
       </div>
     </div>
   );
-});
+};
 
 PuzzleBoard.displayName = 'PuzzleBoard';
