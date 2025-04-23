@@ -38,10 +38,10 @@ const HeroPuzzle: React.FC = () => {
     if (!isRunning) startTimer();
   }, [isRunning, startTimer]);
   
-  const handlePuzzleSolved = useCallback(() => {
+  const handlePuzzleSolved = useCallback((timeElapsedSeconds: number) => {
     stopTimer();
-    handlePuzzleComplete(Date.now() - (elapsed * 1000));
-  }, [stopTimer, handlePuzzleComplete, elapsed]);
+    handlePuzzleComplete(timeElapsedSeconds * 1000); // Convert to milliseconds
+  }, [stopTimer, handlePuzzleComplete]);
   
   const handlePlayAgain = useCallback(() => {
     resetTimer();
@@ -82,6 +82,7 @@ const HeroPuzzle: React.FC = () => {
           rows={rows} 
           columns={columns} 
           showGuideImage={true}
+          onComplete={handlePuzzleSolved}
         />
         
         <PuzzleCongratulationSplash 

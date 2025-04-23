@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { RefreshCcw, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface PuzzleControlsProps {
   onReset: () => void;
@@ -14,31 +15,37 @@ export const PuzzleControls: React.FC<PuzzleControlsProps> = ({
   showGuideImage
 }) => {
   return (
-    <div className="flex gap-2">
-      <button onClick={onReset} className="inline-flex items-center px-3 py-1 rounded-md bg-muted hover:bg-accent text-xs font-medium border border-input shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors" type="button" aria-label="Reset Puzzle" tabIndex={0}>
-        <RefreshCcw className="h-4 w-4 mr-1" />
-        Reset
-      </button>
-      
-      <button 
+    <div className="flex items-center gap-2">
+      <Button 
+        variant="outline" 
+        size="sm"
         onClick={onToggleGuide} 
-        className="inline-flex items-center px-3 py-1 rounded-md bg-muted hover:bg-accent text-xs font-medium border border-input shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors" 
-        type="button" 
-        aria-label={showGuideImage ? "Hide Guide" : "Show Guide"}
-        tabIndex={0}
+        title={showGuideImage ? "Hide guide image" : "Show guide image"}
+        className="flex items-center gap-1"
       >
         {showGuideImage ? (
           <>
-            <EyeOff className="h-4 w-4 mr-1" />
-            Hide Guide
+            <EyeOff className="w-4 h-4" />
+            <span className="sr-only sm:not-sr-only sm:inline-block">Hide Guide</span>
           </>
         ) : (
           <>
-            <Eye className="h-4 w-4 mr-1" />
-            Show Guide
+            <Eye className="w-4 h-4" />
+            <span className="sr-only sm:not-sr-only sm:inline-block">Show Guide</span>
           </>
         )}
-      </button>
+      </Button>
+      
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onReset}
+        title="Reset puzzle"
+        className="flex items-center gap-1"
+      >
+        <RefreshCw className="w-4 h-4" />
+        <span className="sr-only sm:not-sr-only sm:inline-block">Reset</span>
+      </Button>
     </div>
   );
 };
