@@ -1,11 +1,9 @@
-
 import React, { useState, useCallback } from 'react';
 import { useHeroPuzzle } from '@/hooks/useHeroPuzzle';
 import { usePuzzleTimer } from '@/components/puzzles/playground/engines/hooks/usePuzzleTimer';
 import { usePuzzleCompletion } from '@/components/puzzles/playground/engines/hooks/usePuzzleCompletion';
 import CustomPuzzleEngine from '@/components/puzzles/playground/engines/CustomPuzzleEngine';
 import { PuzzleCongratulationSplash } from '@/components/puzzles/playground/engines/components/PuzzleCongratulationSplash';
-import { PuzzleTimerDisplay } from '@/components/puzzles/playground/engines/components/PuzzleTimerDisplay';
 import { Loader2, PuzzleIcon, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -59,7 +57,6 @@ const HeroPuzzle: React.FC = () => {
     setResetKey(prev => prev + 1);
   }, [resetCompletion, resetTimer]);
 
-  // For debugging
   console.log('HeroPuzzle rendering', { 
     puzzleConfig, 
     isLoading, 
@@ -88,7 +85,6 @@ const HeroPuzzle: React.FC = () => {
           <PuzzleIcon className="w-5 h-5 text-puzzle-aqua" />
           <span className="font-bold text-puzzle-aqua">{puzzleConfig?.title || "Welcome Puzzle"}</span>
         </div>
-        <PuzzleTimerDisplay seconds={elapsed} />
       </header>
       
       <div className="relative p-4">
