@@ -62,7 +62,40 @@ const Hero: React.FC = () => {
             <div className="relative flex flex-col items-center">
               <div className="absolute inset-0 bg-puzzle-aqua/30 blur-[100px] rounded-full pointer-events-none"></div>
               <div className="card-highlight p-4 md:p-8 relative w-[340px] max-w-full">
+
                 <h3 className="text-xl font-bold text-center mb-4 text-puzzle-white">Try a Mini Puzzle</h3>
+                
+                {/* GUIDE IMAGE SHOWN ABOVE PUZZLE BOX */}
+                <div className="w-full flex flex-col items-center mb-2">
+                  <div
+                    className="mb-2 rounded-lg overflow-hidden border border-puzzle-aqua shadow"
+                    style={{
+                      width: 120,
+                      height: 120,
+                      backgroundColor: '#222',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <img
+                      src={HERO_IMAGES[imageIdx]}
+                      alt="Completed puzzle preview"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        opacity: 0.9,
+                        display: 'block'
+                      }}
+                      draggable={false}
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Eye className="w-4 h-4" /> Guide: Completed Solution
+                  </span>
+                </div>
+
                 <div className="w-[300px] h-[300px] flex items-center justify-center mx-auto relative">
                   <CustomPuzzleEngine
                     imageUrl={HERO_IMAGES[imageIdx]}
@@ -81,7 +114,7 @@ const Hero: React.FC = () => {
                     <ChevronLeft className="w-5 h-5" />
                   </Button>
                   <span className="flex items-center gap-1 text-muted-foreground text-xs">
-                    <Eye className="w-4 h-4" /> Guide Enabled
+                    <Eye className="w-4 h-4" /> Image {imageIdx + 1} of {HERO_IMAGES.length}
                   </span>
                   <Button
                     variant="ghost"
@@ -103,3 +136,4 @@ const Hero: React.FC = () => {
 };
 
 export default Hero;
+
