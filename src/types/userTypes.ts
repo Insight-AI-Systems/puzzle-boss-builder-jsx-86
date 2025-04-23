@@ -1,6 +1,6 @@
-
 export type UserRole = 
   | 'super_admin'
+  | 'admin'
   | 'category_manager'
   | 'social_media_manager'
   | 'partner_manager'
@@ -56,6 +56,13 @@ export const ROLE_DEFINITIONS: Record<UserRole, RolePermission> = {
     label: 'Admin',
     description: 'Complete access to all features and functionality',
     permissions: ['all'],
+    canBeAssignedBy: ['super_admin']
+  },
+  'admin': {
+    role: 'admin',
+    label: 'Admin',
+    description: 'Administrative access with some limitations',
+    permissions: ['manage_users', 'manage_content', 'view_analytics', 'manage_settings'],
     canBeAssignedBy: ['super_admin']
   },
   'category_manager': {
