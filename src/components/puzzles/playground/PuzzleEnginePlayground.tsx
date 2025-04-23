@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,6 +13,7 @@ import ReactJigsawPuzzleEngine2 from './engines/ReactJigsawPuzzleEngine2';
 import CustomPuzzleEngine from './engines/CustomPuzzleEngine';
 import PuzzleBossEngine from './engines/PuzzleBossEngine';
 import './engines/styles/jigsaw-puzzle.css';
+import PuzzleGame from "@/components/puzzles/PuzzleGame";
 
 const SAMPLE_IMAGES = [
   {
@@ -35,7 +35,7 @@ const SAMPLE_IMAGES = [
 
 const PUZZLE_ENGINES = [
   { id: 'react-jigsaw-puzzle', name: 'React Jigsaw Puzzle (Custom)' },
-  { id: 'react-jigsaw-puzzle-2', name: 'React Jigsaw Puzzle (External)' },
+  { id: 'react-jigsaw-puzzle2', name: 'react-jigsaw-puzzle (Library Demo)' },
   { id: 'custom-puzzle-engine', name: 'Custom Lovable Puzzle' },
   { id: 'puzzle-boss-engine', name: 'Puzzle Boss Master' },
   { id: 'custom-engine', name: 'Custom Engine (Placeholder)' }
@@ -152,9 +152,9 @@ const PuzzleEnginePlayground: React.FC = () => {
           />
         )}
         
-        {selectedEngine === 'react-jigsaw-puzzle-2' && (
-          <ReactJigsawPuzzleEngine2 
-            key={getEngineKey('jigsaw2')}
+        {selectedEngine === 'react-jigsaw-puzzle2' && (
+          <PuzzleGame
+            key={getEngineKey('library')}
             imageUrl={currentImage}
             rows={currentDifficultyPreset.rows}
             columns={currentDifficultyPreset.columns}
