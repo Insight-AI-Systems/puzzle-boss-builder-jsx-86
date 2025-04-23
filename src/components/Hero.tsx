@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
-import { ArrowRight, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import CustomPuzzleEngine from './puzzles/playground/engines/CustomPuzzleEngine';
 
 const HERO_IMAGES = [
@@ -13,6 +13,7 @@ const HERO_IMAGES = [
 
 const Hero: React.FC = () => {
   const [imageIdx, setImageIdx] = useState(0);
+  const [showGuide, setShowGuide] = useState(true);
 
   const handlePrev = () => {
     setImageIdx((idx) => (idx === 0 ? HERO_IMAGES.length - 1 : idx - 1));
@@ -20,6 +21,10 @@ const Hero: React.FC = () => {
 
   const handleNext = () => {
     setImageIdx((idx) => (idx === HERO_IMAGES.length - 1 ? 0 : idx + 1));
+  };
+
+  const toggleGuide = () => {
+    setShowGuide(prev => !prev);
   };
 
   return (
@@ -62,39 +67,40 @@ const Hero: React.FC = () => {
             <div className="relative flex flex-col items-center">
               <div className="absolute inset-0 bg-puzzle-aqua/30 blur-[100px] rounded-full pointer-events-none"></div>
               <div className="card-highlight p-4 md:p-8 relative w-[340px] max-w-full">
-
                 <h3 className="text-xl font-bold text-center mb-4 text-puzzle-white">Try a Mini Puzzle</h3>
                 
-                {/* GUIDE IMAGE SHOWN ABOVE PUZZLE BOX */}
-                <div className="w-full flex flex-col items-center mb-2">
-                  <div
-                    className="mb-2 rounded-lg overflow-hidden border border-puzzle-aqua shadow"
-                    style={{
-                      width: 120,
-                      height: 120,
-                      backgroundColor: '#222',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <img
-                      src={HERO_IMAGES[imageIdx]}
-                      alt="Completed puzzle preview"
+                {/* GUIDE IMAGE SHOWN ABOVE PUZZLE BOX - TOGGLEABLE */}
+                {showGuide && (
+                  <div className="w-full flex flex-col items-center mb-4">
+                    <div
+                      className="rounded-lg overflow-hidden border border-puzzle-aqua shadow"
                       style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        opacity: 0.9,
-                        display: 'block'
+                        width: 300,
+                        height: 300,
+                        backgroundColor: '#222',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center'
                       }}
-                      draggable={false}
-                    />
+                    >
+                      <img
+                        src={HERO_IMAGES[imageIdx]}
+                        alt="Completed puzzle preview"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          opacity: 0.9,
+                          display: 'block'
+                        }}
+                        draggable={false}
+                      />
+                    </div>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
+                      <Eye className="w-4 h-4" /> Guide: Completed Solution
+                    </span>
                   </div>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Eye className="w-4 h-4" /> Guide: Completed Solution
-                  </span>
-                </div>
+                )}
 
                 <div className="w-[300px] h-[300px] flex items-center justify-center mx-auto relative">
                   <CustomPuzzleEngine
@@ -103,27 +109,47 @@ const Hero: React.FC = () => {
                     columns={3}
                   />
                 </div>
-                <div className="flex items-center justify-center gap-3 mt-2">
+                
+                <div className="flex items-center justify-between mt-4">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Previous puzzle image"
+                      onClick={handlePrev}
+                      className="rounded-full"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </Button>
+                    <span className="text-muted-foreground text-xs">
+                      Image {imageIdx + 1} of {HERO_IMAGES.length}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Next puzzle image"
+                      onClick={handleNext}
+                      className="rounded-full"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Previous puzzle image"
-                    onClick={handlePrev}
-                    className="rounded-full"
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleGuide}
+                    className="text-xs flex items-center gap-1"
                   >
-                    <ChevronLeft className="w-5 h-5" />
-                  </Button>
-                  <span className="flex items-center gap-1 text-muted-foreground text-xs">
-                    <Eye className="w-4 h-4" /> Image {imageIdx + 1} of {HERO_IMAGES.length}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Next puzzle image"
-                    onClick={handleNext}
-                    className="rounded-full"
-                  >
-                    <ChevronRight className="w-5 h-5" />
+                    {showGuide ? (
+                      <>
+                        <EyeOff className="w-4 h-4" /> Hide Guide
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="w-4 h-4" /> Show Guide
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
@@ -136,4 +162,3 @@ const Hero: React.FC = () => {
 };
 
 export default Hero;
-
