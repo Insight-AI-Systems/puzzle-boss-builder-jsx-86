@@ -3,13 +3,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
 import { ArrowRight } from 'lucide-react';
+import HeroPuzzle from './HeroPuzzle';
 
 const Hero: React.FC = () => {
   return (
     <section className="py-12 md:py-20">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center gap-10">
-          <div className="w-full text-center md:text-left">
+          <div className="w-full md:w-1/2 text-center md:text-left">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
               <span className="text-puzzle-white">Race to solve.</span>
               <br />
@@ -32,6 +33,10 @@ const Hero: React.FC = () => {
                 </Link>
               </Button>
             </div>
+          </div>
+          
+          <div className="w-full md:w-1/2">
+            <HeroPuzzle />
           </div>
         </div>
       </div>

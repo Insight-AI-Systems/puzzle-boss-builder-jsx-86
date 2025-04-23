@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UsePuzzleCompletionProps {
@@ -12,20 +12,12 @@ export const usePuzzleCompletion = ({ imageUrl, rows, columns }: UsePuzzleComple
   const [completed, setCompleted] = useState(false);
   const [solveTime, setSolveTime] = useState<number | null>(null);
 
-  const handlePuzzleComplete = async (startTime: number | null) => {
+  const handlePuzzleComplete = async (timeElapsedMs: number) => {
     if (!completed) {
       setCompleted(true);
-      let totalTime: number;
-      
-      if (startTime) {
-        // Calculate time based on actual elapsed milliseconds
-        totalTime = (Date.now() - startTime) / 1000;
-      } else {
-        // Fallback if no start time is available
-        totalTime = 0;
-      }
-      
-      setSolveTime(totalTime);
+      // Convert to seconds and round to 2 decimal places
+      const totalTimeInSeconds = parseFloat((timeElapsedMs / 1000).toFixed(2));
+      setSolveTime(totalTimeInSeconds);
 
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -37,7 +29,7 @@ export const usePuzzleCompletion = ({ imageUrl, rows, columns }: UsePuzzleComple
               {
                 user_id: user.id,
                 puzzle_id: imageUrl,
-                completion_time: totalTime,
+                completion_time: totalTimeInSeconds,
                 moves_count: 0,
                 difficulty_level: `${rows}x${columns}`,
                 game_mode: 'classic'
@@ -48,12 +40,12 @@ export const usePuzzleCompletion = ({ imageUrl, rows, columns }: UsePuzzleComple
             console.error('Error saving puzzle completion:', error);
           }
         } catch (error) {
-          console.error('Error in savePuzzleCompletion:', error);
+          console.error('Error in handlePuzzleComplete:', error);
         }
       }
-      return totalTime;
+      return totalTimeInSeconds;
     }
-    return null;
+    return solveTime;
   };
 
   const resetCompletion = () => {

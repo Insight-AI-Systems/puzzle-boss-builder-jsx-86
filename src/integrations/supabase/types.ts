@@ -105,6 +105,42 @@ export type Database = {
         }
         Relationships: []
       }
+      hero_puzzle_config: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          description: string | null
+          difficulty: Database["public"]["Enums"]["puzzle_difficulty"]
+          id: string
+          image_url: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          difficulty?: Database["public"]["Enums"]["puzzle_difficulty"]
+          id?: string
+          image_url: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          difficulty?: Database["public"]["Enums"]["puzzle_difficulty"]
+          id?: string
+          image_url?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       issues: {
         Row: {
           category: string | null
@@ -688,6 +724,7 @@ export type Database = {
       feedback_type: "bug" | "suggestion" | "question" | "other"
       issue_status: "wip" | "completed"
       note_status: "wip" | "completed"
+      puzzle_difficulty: "easy" | "medium" | "hard"
       user_role:
         | "admin"
         | "category_manager"
@@ -816,6 +853,7 @@ export const Constants = {
       feedback_type: ["bug", "suggestion", "question", "other"],
       issue_status: ["wip", "completed"],
       note_status: ["wip", "completed"],
+      puzzle_difficulty: ["easy", "medium", "hard"],
       user_role: [
         "admin",
         "category_manager",

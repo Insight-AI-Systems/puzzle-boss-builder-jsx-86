@@ -1,69 +1,78 @@
+import React from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import AdminPuzzleManager from './AdminPuzzleManager';
+import HeroPuzzleManager from './HeroPuzzleManager';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserManagement } from './UserManagement';
-import { RoleManagement } from './RoleManagement';
-import { useUserProfile } from '@/hooks/useUserProfile';
-import { getTabDefinitions } from './dashboard/TabDefinitions';
-import { DashboardTabSelector } from './dashboard/DashboardTabSelector';
-import { DashboardContent } from './dashboard/DashboardContent';
-import { useLocation, useNavigate } from 'react-router-dom';
+export const RoleBasedDashboard: React.FC = () => {
+  const { hasRole } = useAuth();
+  const isSuperAdmin = hasRole('super_admin');
+  const isAdmin = isSuperAdmin || hasRole('admin');
 
-export function RoleBasedDashboard() {
-  const { profile, isAdmin } = useUserProfile();
-  const [activeTab, setActiveTab] = useState("users");
-  const location = useLocation();
-  const navigate = useNavigate();
-  
-  const isSuperAdmin = profile?.role === 'super_admin';
-  
-  // For debugging
-  console.log('RoleBasedDashboard - Current profile:', profile);
-  console.log('RoleBasedDashboard - Is Super Admin:', isSuperAdmin);
-  console.log('RoleBasedDashboard - Is Admin:', isAdmin);
-  
-  // Get all available tabs based on user role
-  const allTabs = getTabDefinitions();
-  
-  // Filter tabs based on user role
-  const accessibleTabs = allTabs.filter(tab => 
-    tab.roles.includes(profile?.role || 'player')
-  );
-  
-  // Check URL for tab parameter on initial load
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const tabParam = params.get('tab');
-    if (tabParam && accessibleTabs.some(tab => tab.id === tabParam)) {
-      setActiveTab(tabParam);
-    }
-  }, [location.search, accessibleTabs]);
-  
-  // Update URL when tab changes
-  const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId);
-    navigate(`/admin-dashboard?tab=${tabId}`, { replace: true });
-  };
-  
-  if (!profile) {
-    return <div>Loading...</div>;
-  }
-  
   return (
-    <div className="w-full">
-      <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <DashboardTabSelector 
-          accessibleTabs={accessibleTabs}
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
-        
-        <DashboardContent 
-          accessibleTabs={accessibleTabs}
-          profile={profile}
-          activeTab={activeTab}
-        />
-      </Tabs>
+    <div className="space-y-6">
+      <h2 className="text-xl font-game text-puzzle-aqua">Content Management</h2>
+
+      {(isAdmin || isSuperAdmin) && (
+        <Tabs defaultValue="puzzles">
+          <TabsList className="border-b border-puzzle-aqua/20 w-full justify-start">
+            <TabsTrigger value="puzzles">Puzzles</TabsTrigger>
+            <TabsTrigger value="hero-puzzle">Hero Puzzle</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="puzzles" className="pt-4">
+            <AdminPuzzleManager />
+          </TabsContent>
+          
+          <TabsContent value="hero-puzzle" className="pt-4">
+            <HeroPuzzleManager />
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {/* Category Management Section */}
+      {(hasRole('category_manager') || isSuperAdmin) && (
+        <div className="mt-8">
+          <h3 className="text-lg font-game text-puzzle-gold mb-4">Category Management</h3>
+          <p className="text-muted-foreground">
+            As a Category Manager, you can create and manage puzzle categories.
+          </p>
+          {/* Category management tools would go here */}
+        </div>
+      )}
+
+      {/* Social Media Section */}
+      {(hasRole('social_media_manager') || isSuperAdmin) && (
+        <div className="mt-8">
+          <h3 className="text-lg font-game text-puzzle-gold mb-4">Social Media Management</h3>
+          <p className="text-muted-foreground">
+            As a Social Media Manager, you can schedule posts and manage social campaigns.
+          </p>
+          {/* Social media tools would go here */}
+        </div>
+      )}
+
+      {/* Partner Management Section */}
+      {(hasRole('partner_manager') || isSuperAdmin) && (
+        <div className="mt-8">
+          <h3 className="text-lg font-game text-puzzle-gold mb-4">Partner Management</h3>
+          <p className="text-muted-foreground">
+            As a Partner Manager, you can manage brand partnerships and sponsorships.
+          </p>
+          {/* Partner management tools would go here */}
+        </div>
+      )}
+
+      {/* Financial Section */}
+      {(hasRole('cfo') || isSuperAdmin) && (
+        <div className="mt-8">
+          <h3 className="text-lg font-game text-puzzle-gold mb-4">Financial Dashboard</h3>
+          <p className="text-muted-foreground">
+            As a CFO, you have access to financial reports and revenue analytics.
+          </p>
+          {/* Financial tools would go here */}
+        </div>
+      )}
     </div>
   );
-}
+};
