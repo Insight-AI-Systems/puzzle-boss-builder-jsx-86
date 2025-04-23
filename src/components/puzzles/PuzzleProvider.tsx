@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useState } from 'react';
 import { usePuzzleSettings } from '@/hooks/usePuzzleSettings';
 import { usePuzzleProgress } from '@/hooks/usePuzzleProgress';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +20,8 @@ export function PuzzleProvider({
   children: ReactNode;
   puzzleId?: string;
 }) {
+  const [progressData, setProgressData] = useState(null);
+  
   // Check authentication status
   const { data: authData, isLoading: authLoading } = useQuery({
     queryKey: ['auth-status'],
@@ -33,8 +35,11 @@ export function PuzzleProvider({
   
   const settings = usePuzzleSettings();
   
-  // Only fetch progress if user is authenticated and puzzleId is provided
-  const progress = (isAuthenticated && puzzleId) ? usePuzzleProgress(puzzleId) : null;
+  // Always call the hook, but only use its result if conditions are met
+  const progressResult = usePuzzleProgress(puzzleId || '');
+  
+  // Only use the progress result if user is authenticated and puzzleId is provided
+  const progress = (isAuthenticated && puzzleId) ? progressResult : null;
 
   return (
     <PuzzleContext.Provider value={{ settings, progress, isAuthenticated }}>

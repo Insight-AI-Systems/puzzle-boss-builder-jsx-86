@@ -8,6 +8,9 @@ export function usePuzzleProgress(puzzleId: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Skip the query if puzzleId is empty
+  const enabled = !!puzzleId;
+
   const { data: progress, isLoading } = useQuery({
     queryKey: ['puzzle-progress', puzzleId],
     queryFn: async () => {
@@ -30,7 +33,8 @@ export function usePuzzleProgress(puzzleId: string) {
       
       // Map DB data to frontend model
       return mapDbToFrontendProgress(data as PuzzleProgressDB);
-    }
+    },
+    enabled // Only run this query if puzzleId is provided
   });
 
   const updateProgress = useMutation({
