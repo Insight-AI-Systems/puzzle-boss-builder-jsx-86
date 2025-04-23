@@ -36,6 +36,10 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
   
+  useEffect(() => {
+    console.log("CustomPuzzleEngine received showNumbers:", showNumbers);
+  }, [showNumbers]);
+  
   const {
     puzzlePieces,
     placePiece,

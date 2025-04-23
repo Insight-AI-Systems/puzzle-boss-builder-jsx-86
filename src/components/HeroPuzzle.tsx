@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useHeroPuzzle } from '@/hooks/useHeroPuzzle';
 import { usePuzzleTimer } from '@/components/puzzles/playground/engines/hooks/usePuzzleTimer';
 import { usePuzzleCompletion } from '@/components/puzzles/playground/engines/hooks/usePuzzleCompletion';
@@ -64,8 +64,17 @@ const HeroPuzzle: React.FC = () => {
     console.log('Toggling numbers visibility:', checked);
     setShowNumbers(checked);
     // Force a re-render of the puzzle with new showNumbers state
-    setResetKey(prev => prev + 1);
+    setResetKey(current => current + 1);
   }, []);
+
+  // Debug logging for showNumbers state
+  useEffect(() => {
+    console.log('HeroPuzzle: showNumbers state updated:', showNumbers);
+  }, [showNumbers]);
+
+  useEffect(() => {
+    console.log('HeroPuzzle: resetKey updated:', resetKey);
+  }, [resetKey]);
 
   console.log('HeroPuzzle rendering', { 
     puzzleConfig, 
@@ -120,7 +129,7 @@ const HeroPuzzle: React.FC = () => {
             />
             <label
               htmlFor="numbers-toggle"
-              className="text-sm text-puzzle-aqua cursor-pointer"
+              className="text-sm text-puzzle-aqua cursor-pointer select-none"
               onClick={() => handleToggleNumbers(!showNumbers)}
             >
               Numbers
@@ -131,7 +140,7 @@ const HeroPuzzle: React.FC = () => {
       
       <div className="relative p-4">
         <CustomPuzzleEngine 
-          key={`hero-puzzle-${resetKey}-${showNumbers ? 'numbers' : 'no-numbers'}`}
+          key={`hero-puzzle-${resetKey}`}
           imageUrl={imageUrl}
           rows={rows} 
           columns={rows} 
