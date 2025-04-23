@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { PuzzleSettings } from '@/types/puzzle-types';
+import { PuzzleSettings, PuzzleSettingsDB } from '@/types/puzzle-types';
 import { useToast } from '@/hooks/use-toast';
 
 const DEFAULT_SETTINGS: PuzzleSettings = {
@@ -19,39 +19,65 @@ export function usePuzzleSettings() {
   const { data: settings = DEFAULT_SETTINGS, isLoading } = useQuery({
     queryKey: ['puzzle-settings'],
     queryFn: async () => {
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // If not logged in, return default settings
+      if (!user) return DEFAULT_SETTINGS;
+      
       const { data, error } = await supabase
         .from('puzzle_settings')
         .select('*')
         .eq('settings_type', 'user')
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle();
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          return DEFAULT_SETTINGS;
-        }
-        throw error;
+        console.error("Error fetching settings:", error);
+        return DEFAULT_SETTINGS;
       }
-
-      return data.settings as PuzzleSettings;
+      
+      // If no settings found, return defaults
+      if (!data) return DEFAULT_SETTINGS;
+      
+      // Cast the settings from the database to our expected type
+      // With fallbacks to defaults if properties are missing
+      const dbSettings = (data as PuzzleSettingsDB).settings as Partial<PuzzleSettings>;
+      
+      return {
+        showGuide: dbSettings.showGuide ?? DEFAULT_SETTINGS.showGuide,
+        soundEnabled: dbSettings.soundEnabled ?? DEFAULT_SETTINGS.soundEnabled,
+        volume: dbSettings.volume ?? DEFAULT_SETTINGS.volume,
+        difficulty: dbSettings.difficulty ?? DEFAULT_SETTINGS.difficulty,
+        theme: dbSettings.theme ?? DEFAULT_SETTINGS.theme
+      };
     }
   });
 
   const updateSettings = useMutation({
     mutationFn: async (newSettings: Partial<PuzzleSettings>) => {
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) throw new Error("User not authenticated");
+      
+      const mergedSettings = { ...settings, ...newSettings };
+      
       const { data, error } = await supabase
         .from('puzzle_settings')
         .upsert({
+          user_id: user.id,
           settings_type: 'user',
-          settings: { ...settings, ...newSettings }
+          settings: mergedSettings
         })
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return mergedSettings;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['puzzle-settings'] });
+    onSuccess: (data) => {
+      queryClient.setQueryData(['puzzle-settings'], data);
     },
     onError: (error) => {
       toast({
