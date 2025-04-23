@@ -139,6 +139,7 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = React.memo(({
             style={guideImageStyle} 
             className="puzzle-guide-image"
             draggable={false}
+            crossOrigin="anonymous"
           />
         )}
         {cells}
