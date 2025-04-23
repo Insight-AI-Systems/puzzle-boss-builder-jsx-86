@@ -47,7 +47,7 @@ const HeroPuzzleMini: React.FC = () => {
       <div style={{
       minHeight: 270,
       position: 'relative'
-    }}>
+    }} className="mx-0 my-[46px] px-0 py-0">
         <PuzzleEnginePlayground heroMode isCondensed key={resetKey + selectedImage + difficulty} selectedImage={currentImage} difficulty={difficulty} miniRows={currentDifficultyPreset.rows} miniColumns={currentDifficultyPreset.columns} />
       </div>
       <div className="flex justify-between mt-2">
