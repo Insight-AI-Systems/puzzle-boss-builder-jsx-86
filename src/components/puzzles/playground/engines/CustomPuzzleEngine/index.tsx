@@ -9,6 +9,7 @@ import { usePuzzleImagePreload } from '../hooks/usePuzzleImagePreload';
 import FirstMoveOverlay from '../FirstMoveOverlay';
 import { PuzzleCompleteBanner } from '../components/PuzzleCompleteBanner';
 import { PuzzleTimerDisplay } from '../components/PuzzleTimerDisplay';
+import { Loader2 } from 'lucide-react';
 import './styles/custom-puzzle.css';
 
 interface CustomPuzzleEngineProps {
