@@ -19,7 +19,7 @@ const SAMPLE_IMAGES = [
 ];
 
 export const HeroPuzzleManager: React.FC = () => {
-  const { puzzleConfig, isLoading: isLoadingConfig } = useHeroPuzzle();
+  const { puzzleConfig, isLoading, updateHeroPuzzle, createHeroPuzzle } = useHeroPuzzle();
   const [formData, setFormData] = useState<Partial<HeroPuzzleConfig>>({
     image_url: '',
     difficulty: 'medium',
@@ -50,57 +50,19 @@ export const HeroPuzzleManager: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // If we have an existing puzzle, update it
       if (formData.id) {
-        console.log("Updating existing hero puzzle with ID:", formData.id);
-        const { error } = await supabase
-          .from('hero_puzzle_config')
-          .update({
-            image_url: formData.image_url,
-            difficulty: formData.difficulty,
-            title: formData.title,
-            description: formData.description,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', formData.id);
-          
-        if (error) throw error;
-        
+        await updateHeroPuzzle(formData);
         toast({
-          title: "Hero puzzle updated",
-          description: "The hero puzzle has been successfully updated.",
+          title: "Success",
+          description: "The hero puzzle has been updated.",
         });
       } else {
-        // Otherwise create a new one (set all others to inactive first)
-        console.log("Creating new hero puzzle");
-        const { error: updateError } = await supabase
-          .from('hero_puzzle_config')
-          .update({ active: false })
-          .eq('active', true);
-          
-        if (updateError) throw updateError;
-        
-        const { error: insertError } = await supabase
-          .from('hero_puzzle_config')
-          .insert({
-            image_url: formData.image_url,
-            difficulty: formData.difficulty,
-            title: formData.title,
-            description: formData.description,
-            active: true
-          });
-          
-        if (insertError) throw insertError;
-        
+        await createHeroPuzzle(formData as HeroPuzzleConfig);
         toast({
-          title: "Hero puzzle created",
-          description: "A new hero puzzle has been created and activated.",
+          title: "Success",
+          description: "A new hero puzzle has been created.",
         });
       }
-      
-      // Fetch the updated config after save
-      window.location.reload(); // Force a reload to get the latest data
-      
     } catch (error: any) {
       console.error('Error saving hero puzzle:', error);
       toast({
@@ -113,7 +75,7 @@ export const HeroPuzzleManager: React.FC = () => {
     }
   };
 
-  if (isLoadingConfig) {
+  if (isLoading) {
     return (
       <div className="flex justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-puzzle-aqua" />
@@ -239,7 +201,6 @@ export const HeroPuzzleManager: React.FC = () => {
                   description: "The hero puzzle has been deleted.",
                 });
                 
-                // Force refresh to get the latest data
                 window.location.reload();
               } catch (error: any) {
                 toast({

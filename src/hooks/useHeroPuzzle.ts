@@ -48,34 +48,72 @@ export const useHeroPuzzle = () => {
       setIsLoading(false);
     }
   };
+
+  const updateHeroPuzzle = async (puzzleData: Partial<HeroPuzzleConfig>) => {
+    try {
+      const { error } = await supabase
+        .from('hero_puzzle_config')
+        .update(puzzleData)
+        .eq('id', puzzleData.id);
+        
+      if (error) throw error;
+      
+      await fetchHeroPuzzle(); // Refresh the data
+      return { success: true };
+    } catch (e) {
+      console.error('Error updating hero puzzle:', e);
+      throw e;
+    }
+  };
+
+  const createHeroPuzzle = async (puzzleData: Omit<HeroPuzzleConfig, 'id'>) => {
+    try {
+      // First, set all existing puzzles to inactive
+      const { error: updateError } = await supabase
+        .from('hero_puzzle_config')
+        .update({ active: false })
+        .eq('active', true);
+        
+      if (updateError) throw updateError;
+      
+      // Then create the new puzzle
+      const { error: insertError } = await supabase
+        .from('hero_puzzle_config')
+        .insert({ ...puzzleData, active: true });
+        
+      if (insertError) throw insertError;
+      
+      await fetchHeroPuzzle(); // Refresh the data
+      return { success: true };
+    } catch (e) {
+      console.error('Error creating hero puzzle:', e);
+      throw e;
+    }
+  };
   
+  // Set up real-time subscription
   useEffect(() => {
     fetchHeroPuzzle();
     
-    // Set up real-time subscription for changes
     const subscription = supabase
       .channel('hero_puzzle_changes')
       .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'hero_puzzle_config' 
-        }, 
-        () => {
-          console.log("Hero puzzle configuration changed, refreshing data");
-          fetchHeroPuzzle();
-        })
+        { event: '*', schema: 'public', table: 'hero_puzzle_config' }, 
+        fetchHeroPuzzle
+      )
       .subscribe();
       
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [toast]);
+  }, []);
   
   return { 
     puzzleConfig, 
     isLoading, 
     error,
+    updateHeroPuzzle,
+    createHeroPuzzle,
     refetch: fetchHeroPuzzle 
   };
 };
