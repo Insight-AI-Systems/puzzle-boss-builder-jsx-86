@@ -33,7 +33,8 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   
   useEffect(() => {
     console.log("PuzzleBoard received pieces:", pieces.length);
-  }, [pieces]);
+    console.log("PuzzleBoard showNumbers state:", showNumbers);
+  }, [pieces, showNumbers]);
 
   // Handle drag start
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, id: number) => {

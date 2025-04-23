@@ -63,6 +63,8 @@ const HeroPuzzle: React.FC = () => {
   const handleToggleNumbers = useCallback((checked: boolean) => {
     console.log('Toggling numbers visibility:', checked);
     setShowNumbers(checked);
+    // Force a re-render of the puzzle with new showNumbers state
+    setResetKey(prev => prev + 1);
   }, []);
 
   console.log('HeroPuzzle rendering', { 
@@ -124,7 +126,7 @@ const HeroPuzzle: React.FC = () => {
       
       <div className="relative p-4">
         <CustomPuzzleEngine 
-          key={`hero-puzzle-${resetKey}`}
+          key={`hero-puzzle-${resetKey}-${showNumbers ? 'numbers' : 'no-numbers'}`}
           imageUrl={imageUrl}
           rows={rows} 
           columns={rows} 

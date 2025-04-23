@@ -1,3 +1,4 @@
+
 import React, { useCallback, useEffect, useState } from 'react';
 import { PuzzleBoard } from './components/PuzzleBoard';
 import { PuzzleControls } from './components/PuzzleControls';
@@ -104,7 +105,7 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
 
   console.log("CustomPuzzleEngine rendering", { 
     isLoading, imageUrl, rows, columns, isComplete, 
-    hasStarted, showGuideImage, solveTime, puzzlePiecesCount: puzzlePieces.length 
+    hasStarted, showGuideImage, showNumbers, solveTime, puzzlePiecesCount: puzzlePieces.length 
   });
 
   return (
