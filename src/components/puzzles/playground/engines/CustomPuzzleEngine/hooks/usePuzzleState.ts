@@ -1,14 +1,13 @@
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 export interface PuzzlePiece {
   id: number;
-  position: number; // Current position in the grid
-  originalPosition: number; // Original position for checking correctness
-  placed: boolean; // Whether the piece is correctly placed
+  position: number;
+  originalPosition: number;
 }
 
-export const usePuzzleState = (rows: number, columns: number, imageUrl: string, initialShowGuideImage: boolean = true) => {
+export const usePuzzleState = (rows: number, columns: number, imageUrl: string, initialShowGuideImage = true) => {
   const [puzzlePieces, setPuzzlePieces] = useState<PuzzlePiece[]>([]);
   const [isComplete, setIsComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -16,43 +15,28 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
   const [showGuideImage, setShowGuideImage] = useState(initialShowGuideImage);
   const [solveTime, setSolveTime] = useState<number | null>(null);
   const [draggedPiece, setDraggedPiece] = useState<number | null>(null);
-  
-  // Tracking previous values to prevent unnecessary re-initializations
-  const prevImageUrlRef = useRef(imageUrl);
-  const prevDimensionsRef = useRef({ rows, columns });
-  const didInitializeRef = useRef(false);
 
-  // Initialize puzzle pieces
-  const initializePuzzle = useCallback(() => {
-    console.log('Initializing puzzle:', rows, 'x', columns);
+  // Initialize pieces
+  const initPuzzle = useCallback(() => {
     const totalPieces = rows * columns;
-    const newPieces: PuzzlePiece[] = [];
-    
+    const pieces: PuzzlePiece[] = [];
+
     for (let i = 0; i < totalPieces; i++) {
-      newPieces.push({
+      pieces.push({
         id: i,
-        position: i, // Initially in correct position
+        position: i,
         originalPosition: i,
-        placed: false
       });
     }
-    
-    setPuzzlePieces(newPieces);
+    setPuzzlePieces(pieces);
     setIsComplete(false);
-    didInitializeRef.current = true;
   }, [rows, columns]);
 
-  // Shuffle puzzle pieces
+  // Shuffle pieces
   const shufflePieces = useCallback(() => {
-    if (puzzlePieces.length === 0) {
-      console.log('No pieces to shuffle');
-      return;
-    }
-    
-    console.log('Shuffling puzzle pieces');
-    setPuzzlePieces(current => {
-      // Create a copy of the current pieces
-      const shuffled = [...current];
+    setPuzzlePieces(prev => {
+      // Create a new array to avoid mutating state
+      const shuffled = [...prev];
       
       // Fisher-Yates shuffle algorithm
       for (let i = shuffled.length - 1; i > 0; i--) {
@@ -61,114 +45,107 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
         const temp = shuffled[i].position;
         shuffled[i].position = shuffled[j].position;
         shuffled[j].position = temp;
-        
-        // Reset placed status
-        shuffled[i].placed = false;
-        shuffled[j].placed = false;
       }
       
       return shuffled;
     });
-    
     setIsComplete(false);
-  }, [puzzlePieces]);
-
-  // Place a piece in a specific position
-  const placePiece = useCallback((id: number, newPosition: number) => {
-    setPuzzlePieces(current => {
-      // Find the piece by ID
-      const pieceIndex = current.findIndex(p => p.id === id);
-      if (pieceIndex === -1) return current;
-      
-      // Find if there's a piece already at the target position
-      const targetPieceIndex = current.findIndex(p => p.position === newPosition);
-      
-      // Create a copy of the current pieces
-      const updatedPieces = [...current];
-      
-      // If there's a piece at the target position, swap them
-      if (targetPieceIndex !== -1) {
-        const targetPosition = updatedPieces[targetPieceIndex].position;
-        updatedPieces[targetPieceIndex].position = updatedPieces[pieceIndex].position;
-        updatedPieces[pieceIndex].position = targetPosition;
-        
-        // Update "placed" status for both pieces
-        updatedPieces[targetPieceIndex].placed = 
-          updatedPieces[targetPieceIndex].position === updatedPieces[targetPieceIndex].originalPosition;
-        updatedPieces[pieceIndex].placed = 
-          updatedPieces[pieceIndex].position === updatedPieces[pieceIndex].originalPosition;
-      } else {
-        // Simply move the piece to the new position
-        updatedPieces[pieceIndex].position = newPosition;
-        updatedPieces[pieceIndex].placed = 
-          updatedPieces[pieceIndex].position === updatedPieces[pieceIndex].originalPosition;
-      }
-      
-      return updatedPieces;
-    });
   }, []);
-
+  
+  // Check if all pieces are in their correct positions
+  const checkCompletion = useCallback(() => {
+    const allCorrect = puzzlePieces.every(piece => piece.position === piece.originalPosition);
+    if (allCorrect && !isComplete && hasStarted) {
+      setIsComplete(true);
+    }
+    return allCorrect;
+  }, [puzzlePieces, isComplete, hasStarted]);
+  
+  // Place a piece
+  const placePiece = useCallback((id: number, newPosition: number) => {
+    setPuzzlePieces(prev => {
+      const currentPositionPiece = prev.find(p => p.position === newPosition);
+      const draggedPiece = prev.find(p => p.id === id);
+      
+      if (!draggedPiece) return prev;
+      
+      const draggedPosition = draggedPiece.position;
+      
+      // Create a new array with updated positions
+      const updated = prev.map(piece => {
+        if (piece.id === id) {
+          return { ...piece, position: newPosition };
+        }
+        if (currentPositionPiece && piece.id === currentPositionPiece.id) {
+          return { ...piece, position: draggedPosition };
+        }
+        return piece;
+      });
+      
+      return updated;
+    });
+    
+    // Check for completion after the state update
+    setTimeout(checkCompletion, 100);
+  }, [checkCompletion]);
+  
+  // Reset puzzle
+  const resetPuzzle = useCallback(() => {
+    initPuzzle();
+    shufflePieces();
+    setIsComplete(false);
+    setSolveTime(null);
+  }, [initPuzzle, shufflePieces]);
+  
   // Check if a piece is in the correct position
   const isPieceCorrect = useCallback((id: number) => {
     const piece = puzzlePieces.find(p => p.id === id);
     return piece ? piece.position === piece.originalPosition : false;
   }, [puzzlePieces]);
-
-  // Reset the puzzle
-  const resetPuzzle = useCallback(() => {
-    initializePuzzle();
-    setTimeout(() => {
-      shufflePieces();
-    }, 100);
-  }, [initializePuzzle, shufflePieces]);
-
+  
   // Toggle guide image
   const toggleGuideImage = useCallback(() => {
-    setShowGuideImage(prev => !prev);
-  }, []);
-
-  // Check if the puzzle is complete
+    console.log('Toggling guide image, current value:', showGuideImage);
+    setShowGuideImage(prevShow => {
+      const newValue = !prevShow;
+      console.log('New guide image value:', newValue);
+      return newValue;
+    });
+  }, [showGuideImage]);
+  
+  // Initialize puzzle when it first loads
   useEffect(() => {
-    if (puzzlePieces.length === 0) return;
+    console.log('Initializing puzzle with imageUrl:', imageUrl);
+    initPuzzle();
+    shufflePieces();
+    // Reset guide image to initial value when image changes
+    setShowGuideImage(initialShowGuideImage);
     
-    const allCorrect = puzzlePieces.every(piece => 
-      piece.position === piece.originalPosition
-    );
-    
-    if (allCorrect && hasStarted && !isComplete) {
-      console.log('Puzzle completed!');
-      setIsComplete(true);
-    }
-  }, [puzzlePieces, hasStarted, isComplete]);
-
-  // Initialize the puzzle when rows, columns, or imageUrl changes
+    // Cleanup function
+    return () => {
+      setDraggedPiece(null);
+    };
+  }, [initPuzzle, shufflePieces, imageUrl, rows, columns, initialShowGuideImage]);
+  
+  // Log guide image state changes for debugging
   useEffect(() => {
-    const dimensionsChanged = prevDimensionsRef.current.rows !== rows || 
-                             prevDimensionsRef.current.columns !== columns;
-    const imageChanged = prevImageUrlRef.current !== imageUrl;
-    
-    if (dimensionsChanged || imageChanged || !didInitializeRef.current) {
-      console.log('Dimensions or image changed, reinitializing puzzle');
-      setIsLoading(true);
-      prevImageUrlRef.current = imageUrl;
-      prevDimensionsRef.current = { rows, columns };
-    }
-  }, [rows, columns, imageUrl]);
-
+    console.log('Guide image state changed:', showGuideImage);
+  }, [showGuideImage]);
+  
   return {
     puzzlePieces,
-    shufflePieces,
-    placePiece,
     isComplete,
     isPieceCorrect,
+    placePiece,
     resetPuzzle,
+    shufflePieces,
     isLoading,
     setIsLoading,
     hasStarted,
     setHasStarted,
-    toggleGuideImage,
     showGuideImage,
-    solveTime,
+    toggleGuideImage,
+    solveTime, 
     setSolveTime,
     draggedPiece,
     setDraggedPiece

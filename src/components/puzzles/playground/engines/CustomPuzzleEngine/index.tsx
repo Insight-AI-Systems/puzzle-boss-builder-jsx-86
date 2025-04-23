@@ -121,6 +121,11 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     placePiece(id, position);
   }, [handleFirstMove, placePiece]);
 
+  // Debug logging for guide image state
+  React.useEffect(() => {
+    console.log('CustomPuzzleEngine - showGuideImage:', showGuideImage);
+  }, [showGuideImage]);
+
   return (
     <div className="custom-puzzle-container flex flex-col items-center justify-center h-full">
       {/* Timer & Controls */}

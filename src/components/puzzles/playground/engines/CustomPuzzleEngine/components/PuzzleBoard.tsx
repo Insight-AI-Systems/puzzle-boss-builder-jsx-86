@@ -129,6 +129,11 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = React.memo(({
     );
   }
   
+  // Debug log to check if the guide image is being rendered
+  useEffect(() => {
+    console.log('Guide image visible:', showGuideImage, 'URL:', imageUrl);
+  }, [showGuideImage, imageUrl]);
+
   return (
     <div className="puzzle-board-wrapper relative">
       <div style={containerStyle} className="puzzle-board">
@@ -140,6 +145,8 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = React.memo(({
             className="puzzle-guide-image"
             draggable={false}
             crossOrigin="anonymous"
+            onLoad={() => console.log('Guide image loaded successfully')}
+            onError={(e) => console.error('Guide image failed to load:', e)}
           />
         )}
         {cells}

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -22,6 +22,31 @@ const HERO_IMAGES = [
 
 const Hero: React.FC = () => {
   const [imageIdx, setImageIdx] = useState(0);
+  const [preloadedImages, setPreloadedImages] = useState<boolean[]>([]);
+
+  // Preload images to ensure they're in cache
+  useEffect(() => {
+    const preloadImage = (url: string, index: number) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        setPreloadedImages(prev => {
+          const newState = [...prev];
+          newState[index] = true;
+          return newState;
+        });
+        console.log(`Hero image ${index} preloaded successfully:`, url);
+      };
+      img.onerror = (e) => {
+        console.error(`Failed to preload hero image ${index}:`, url, e);
+      };
+      img.src = url;
+    };
+
+    HERO_IMAGES.forEach((url, index) => {
+      preloadImage(url, index);
+    });
+  }, []);
 
   const handlePrev = () => {
     setImageIdx((idx) => (idx === 0 ? HERO_IMAGES.length - 1 : idx - 1));
