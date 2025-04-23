@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
-import { ArrowRight, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import CustomPuzzleEngine from './puzzles/playground/engines/CustomPuzzleEngine';
 
 // Leaderboard mock data
@@ -77,7 +76,7 @@ const Hero: React.FC = () => {
                     imageUrl={HERO_IMAGES[imageIdx]}
                     rows={3}
                     columns={3}
-                    showGuideImage={false}
+                    showGuideImage={true}
                   />
                 </div>
                 <div className="flex items-center justify-between mt-4">
