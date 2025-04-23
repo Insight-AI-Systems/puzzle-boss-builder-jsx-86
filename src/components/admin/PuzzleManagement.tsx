@@ -34,40 +34,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from "@/hooks/use-toast";
 
 const PuzzlePreview = ({ imageUrl, difficulty }: { imageUrl: string, difficulty: string }) => {
-  const grid = { easy: 3, medium: 4, hard: 5 }[difficulty] || 4;
-  const boxSize = 64;
   return (
-    <div
-      className="relative bg-gradient-to-br from-puzzle-aqua/20 to-puzzle-black/70 rounded-md border border-puzzle-aqua/40 flex items-center justify-center overflow-hidden"
-      style={{ width: boxSize * grid, height: boxSize * grid }}
-    >
-      <img
-        src={imageUrl}
-        alt="Puzzle"
-        className="absolute inset-0 w-full h-full object-cover opacity-40"
-        style={{ pointerEvents: 'none' }}
+    <div className="shadow-md rounded-lg overflow-hidden">
+      <PuzzlePreview
+        imageUrl={imageUrl}
+        difficulty={difficulty}
       />
-      <div
-        className="absolute inset-0 grid"
-        style={{
-          gridTemplateRows: `repeat(${grid}, 1fr)`,
-          gridTemplateColumns: `repeat(${grid}, 1fr)`,
-          zIndex: 1,
-        }}>
-        {[...Array(grid * grid)].map((_, i) => (
-          <div
-            key={i}
-            className="border border-puzzle-aqua/30"
-            style={{
-              width: boxSize,
-              height: boxSize,
-              boxSizing: 'border-box',
-              background: 'rgba(255,255,255,0.07)',
-            }}
-          ></div>
-        ))}
-      </div>
-      <span className="absolute left-1 top-1 text-xs rounded px-2 py-0.5 bg-black/60 text-puzzle-aqua z-10">Ghost Image</span>
     </div>
   );
 };

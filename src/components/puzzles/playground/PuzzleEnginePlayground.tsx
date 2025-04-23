@@ -91,16 +91,17 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
       <div className="w-full" style={{ minHeight: 220 }}>
         <div className="relative border rounded-lg p-2 bg-background">
           <PuzzleGame
-            key={getEngineKey('library')}
             imageUrl={currentImage}
             rows={rows}
             columns={columns}
+            puzzleId={`hero-${currentImage}`}
           />
         </div>
       </div>
     );
   }
 
+  
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/20 rounded-lg border">
@@ -146,7 +147,7 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
       
       <div className="min-h-[500px] relative border rounded-lg p-4 bg-background">
         <div className="absolute top-4 right-4 z-10 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs border">
-          Puzzle Boss Jigsaw Puzzle
+          Puzzle Boss Engine
         </div>
         
         <PuzzleGame
@@ -154,6 +155,7 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
           imageUrl={currentImage}
           rows={rows}
           columns={columns}
+          puzzleId={`playground-${currentImage}-${difficulty}`}
         />
       </div>
       

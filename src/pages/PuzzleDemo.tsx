@@ -132,6 +132,7 @@ const PuzzleDemo: React.FC = () => {
             imageUrl={selectedImage}
             rows={4}
             columns={4}
+            puzzleId={`demo-${selectedImage}`}
           />
         </TabsContent>
       </Tabs>
