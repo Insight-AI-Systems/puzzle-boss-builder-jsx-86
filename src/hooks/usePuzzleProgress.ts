@@ -45,15 +45,18 @@ export function usePuzzleProgress(puzzleId: string) {
       
       // Ensure puzzle_id is always set correctly
       // This is required by the database schema
-      if (newProgress.puzzleId) {
-        dbData.puzzle_id = newProgress.puzzleId;
-      } else {
-        dbData.puzzle_id = puzzleId;
-      }
+      dbData.puzzle_id = newProgress.puzzleId || puzzleId;
+      
+      // Ensure puzzle_id is set and create a properly typed object for the upsert
+      const dataForUpsert = {
+        ...dbData,
+        puzzle_id: dbData.puzzle_id, // Enforce non-optional
+        user_id: user.id // Ensure user_id is always set
+      };
       
       const { data, error } = await supabase
         .from('puzzle_progress')
-        .upsert(dbData)
+        .upsert(dataForUpsert)
         .select()
         .single();
 
