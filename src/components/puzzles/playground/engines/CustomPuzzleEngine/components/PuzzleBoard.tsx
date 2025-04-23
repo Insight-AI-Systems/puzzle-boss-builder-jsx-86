@@ -10,6 +10,7 @@ interface PuzzleBoardProps {
   onPieceDrop: (id: number, position: number) => void;
   isPieceCorrect: (id: number) => boolean;
   showGuideImage: boolean;
+  showNumbers: boolean;
   onDragStart: () => void;
   draggedPiece: number | null;
   setDraggedPiece: (id: number | null) => void;
@@ -23,6 +24,7 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   onPieceDrop,
   isPieceCorrect,
   showGuideImage,
+  showNumbers,
   onDragStart,
   draggedPiece,
   setDraggedPiece
@@ -98,7 +100,6 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
            }}>
         {/* Generate grid cells */}
         {Array.from({ length: rows * columns }).map((_, position) => {
-          // Find piece at this position
           const piece = pieces.find(p => p.position === position);
           const isCorrect = piece ? isPieceCorrect(piece.id) : false;
           
@@ -129,9 +130,11 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
                     backgroundPosition: `${((piece.originalPosition % columns) / (columns - 1)) * 100}% ${(Math.floor(piece.originalPosition / columns) / (rows - 1)) * 100}%`,
                   }}
                 >
-                  <span className="absolute top-1 left-1 text-xs bg-black/50 rounded-full w-5 h-5 flex items-center justify-center text-white">
-                    {piece.id + 1}
-                  </span>
+                  {showNumbers && (
+                    <span className="absolute top-1 left-1 text-xs bg-black/50 rounded-full w-5 h-5 flex items-center justify-center text-white">
+                      {piece.id + 1}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -140,4 +143,6 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
       </div>
     </div>
   );
-};
+});
+
+PuzzleBoard.displayName = 'PuzzleBoard';

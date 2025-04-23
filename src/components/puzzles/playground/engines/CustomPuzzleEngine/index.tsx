@@ -1,4 +1,3 @@
-
 import React, { useCallback, useEffect, useState } from 'react';
 import { PuzzleBoard } from './components/PuzzleBoard';
 import { PuzzleControls } from './components/PuzzleControls';
@@ -17,6 +16,7 @@ interface CustomPuzzleEngineProps {
   rows: number;
   columns: number;
   showGuideImage?: boolean;
+  showNumbers?: boolean;
   onComplete?: (solveTime: number) => void;
   onReset?: () => void;
 }
@@ -26,16 +26,15 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
   rows,
   columns,
   showGuideImage: initialShowGuideImage = true,
+  showNumbers = true,
   onComplete,
   onReset
 }) => {
-  // State hooks first
   const [draggedPiece, setDraggedPiece] = useState<number | null>(null);
   const [solveTime, setSolveTime] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
   
-  // Then initialize puzzle state
   const {
     puzzlePieces,
     placePiece,
@@ -47,7 +46,6 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     shufflePieces
   } = usePuzzleState(rows, columns, imageUrl, initialShowGuideImage);
 
-  // Then timer
   const {
     elapsed,
     isRunning,
@@ -56,7 +54,6 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     reset: resetTimer
   } = usePuzzleTimer();
 
-  // Image preloading
   const { isLoaded } = usePuzzleImagePreload({
     imageUrl,
     onLoad: () => {
@@ -69,10 +66,8 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     }
   });
 
-  // Trigger confetti effect on puzzle completion
   usePuzzleConfetti(isComplete);
 
-  // Handle first piece drag/move
   const handleFirstMove = useCallback(() => {
     if (!hasStarted) {
       console.log("First move detected, starting game");
@@ -81,7 +76,6 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     }
   }, [hasStarted, startTimer]);
 
-  // Handle puzzle completion
   useEffect(() => {
     if (isComplete && !solveTime) {
       console.log("Puzzle completed, stopping timer");
@@ -96,7 +90,6 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     }
   }, [isComplete, solveTime, elapsed, stopTimer, onComplete]);
 
-  // Handle puzzle reset
   const handleReset = useCallback(() => {
     console.log("Resetting puzzle");
     resetPuzzle();
@@ -138,6 +131,7 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
           onPieceDrop={placePiece}
           isPieceCorrect={isPieceCorrect}
           showGuideImage={showGuideImage}
+          showNumbers={showNumbers}
           onDragStart={handleFirstMove}
           draggedPiece={draggedPiece}
           setDraggedPiece={setDraggedPiece}

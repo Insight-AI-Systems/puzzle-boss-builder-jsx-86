@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useHeroPuzzle } from '@/hooks/useHeroPuzzle';
 import { usePuzzleTimer } from '@/components/puzzles/playground/engines/hooks/usePuzzleTimer';
@@ -9,6 +8,7 @@ import { Loader2, PuzzleIcon, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { DifficultyLevel, difficultyConfig } from './puzzles/types/puzzle-types';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb';
@@ -17,6 +17,7 @@ const HeroPuzzle: React.FC = () => {
   const { puzzleConfig, isLoading } = useHeroPuzzle();
   const [resetKey, setResetKey] = useState(0);
   const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>('3x3');
+  const [showNumbers, setShowNumbers] = useState(true);
   
   const {
     elapsed,
@@ -82,9 +83,12 @@ const HeroPuzzle: React.FC = () => {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-puzzle-aqua/10 via-transparent to-transparent opacity-50"></div>
       
       <header className="flex items-center justify-between p-3 border-b border-puzzle-aqua/20">
-        <div className="flex items-center gap-2">
-          <PuzzleIcon className="w-5 h-5 text-puzzle-aqua" />
-          <span className="font-bold text-puzzle-aqua mr-4">{puzzleConfig?.title || "Welcome Puzzle"}</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <PuzzleIcon className="w-5 h-5 text-puzzle-aqua" />
+            <span className="font-bold text-puzzle-aqua">{puzzleConfig?.title || "Welcome Puzzle"}</span>
+          </div>
+          
           <Select value={selectedDifficulty} onValueChange={handleDifficultyChange}>
             <SelectTrigger className="w-[120px] bg-black/40 border-puzzle-aqua/30 text-puzzle-aqua">
               <SelectValue placeholder="Difficulty" />
@@ -97,11 +101,19 @@ const HeroPuzzle: React.FC = () => {
               ))}
             </SelectContent>
           </Select>
+          
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={showNumbers}
+              onCheckedChange={setShowNumbers}
+              className="data-[state=checked]:bg-puzzle-aqua"
+            />
+            <span className="text-sm text-puzzle-aqua">Numbers</span>
+          </div>
         </div>
       </header>
       
       <div className="relative p-4">
-        {/* Remove the previous difficulty selector from this location */}
         <CustomPuzzleEngine 
           key={`hero-puzzle-${resetKey}`}
           imageUrl={imageUrl}
@@ -110,6 +122,7 @@ const HeroPuzzle: React.FC = () => {
           showGuideImage={true}
           onComplete={handlePuzzleSolved}
           onReset={resetCompletion}
+          showNumbers={showNumbers}
         />
         
         {completed && (
@@ -136,4 +149,3 @@ const HeroPuzzle: React.FC = () => {
 };
 
 export default HeroPuzzle;
-
