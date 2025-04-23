@@ -1,8 +1,6 @@
-
 import React, { useState, useCallback } from "react";
 import PuzzleEnginePlayground from "./PuzzleEnginePlayground";
 
-// Update SAMPLE_IMAGES to use three distinct images from Puzzle Test Playground
 const SAMPLE_IMAGES = [
   {
     id: "mountain",
@@ -39,7 +37,6 @@ const HeroPuzzleMini: React.FC = () => {
     setResetKey(prev => prev + 1);
   }, []);
 
-  // Only render the core puzzle itself, drop advanced controls/notes for hero
   return (
     <div style={{
       width: 300, 
@@ -93,4 +90,3 @@ const HeroPuzzleMini: React.FC = () => {
 };
 
 export default HeroPuzzleMini;
-
