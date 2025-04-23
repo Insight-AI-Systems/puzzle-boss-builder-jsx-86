@@ -9,25 +9,7 @@ import { Puzzle, Clock, RotateCcw } from 'lucide-react';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import ImageSelector from '@/components/puzzles/components/ImageSelector';
 import PuzzleDemoInfo from '@/components/puzzles/PuzzleDemoInfo';
-
-const SimplePuzzleGame = lazy(() => 
-  import('@/components/puzzles/SimplePuzzleGame')
-);
-
-const ImagePuzzleGame = lazy(() => 
-  import('@/components/puzzles/ImagePuzzleGame')
-);
-
-const AUDIO_FILES = [
-  { name: 'pickup', url: '/sounds/pickup.mp3' },
-  { name: 'place', url: '/sounds/place.mp3' },
-  { name: 'correct', url: '/sounds/correct.mp3' },
-  { name: 'complete', url: '/sounds/complete.mp3' }
-];
-
-const PerformanceMonitor = lazy(() => 
-  import('@/components/puzzles/components/PerformanceMonitor')
-);
+import PuzzleGame from '@/components/puzzles/PuzzleGame';
 
 const PuzzleDemo: React.FC = () => {
   const { isMobile } = useDeviceInfo();
@@ -130,17 +112,9 @@ const PuzzleDemo: React.FC = () => {
       )}
 
       <Tabs defaultValue="image" className="w-full">
-        <TabsList className={`grid w-full ${isMobile ? 'max-w-full' : 'max-w-sm mx-auto'} grid-cols-2 mb-4`}>
-          <TabsTrigger value="simple">Simple Puzzle</TabsTrigger>
+        <TabsList className={`grid w-full ${isMobile ? 'max-w-full' : 'max-w-sm mx-auto'} grid-cols-1 mb-4`}>
           <TabsTrigger value="image">Image Puzzle</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="simple" className="flex flex-col items-center mb-8">
-          <Suspense fallback={<LoadingSpinner message="Loading simple puzzle game..." />}>
-            <SimplePuzzleGame />
-            {showPerformanceMonitor && <PerformanceMonitor />}
-          </Suspense>
-        </TabsContent>
         
         <TabsContent value="image" className="flex flex-col items-center mb-8">
           {!isMobile && (
@@ -154,15 +128,11 @@ const PuzzleDemo: React.FC = () => {
             </div>
           )}
           
-          <Suspense fallback={<LoadingSpinner message="Loading image puzzle game..." />}>
-            <ImagePuzzleGame 
-              sampleImages={PUZZLE_IMAGES.map(img => img.url)} 
-              initialImage={selectedImage}
-              isImageLoading={isLoading}
-              onImageLoaded={() => setIsLoading(false)}
-            />
-            {showPerformanceMonitor && <PerformanceMonitor />}
-          </Suspense>
+          <PuzzleGame 
+            imageUrl={selectedImage}
+            rows={4}
+            columns={4}
+          />
         </TabsContent>
       </Tabs>
 

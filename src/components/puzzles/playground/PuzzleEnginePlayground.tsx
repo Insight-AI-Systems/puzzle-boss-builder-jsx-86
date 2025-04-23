@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,12 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { RefreshCcw } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import ReactJigsawPuzzleEngine from './engines/ReactJigsawPuzzleEngine';
-import ReactJigsawPuzzleEngine2 from './engines/ReactJigsawPuzzleEngine2';
-import CustomPuzzleEngine from './engines/CustomPuzzleEngine';
-import PuzzleBossEngine from './engines/PuzzleBossEngine';
-import './engines/styles/jigsaw-puzzle.css';
 import PuzzleGame from "@/components/puzzles/PuzzleGame";
+import './engines/styles/jigsaw-puzzle.css';
 
 const SAMPLE_IMAGES = [
   {
@@ -34,11 +31,7 @@ const SAMPLE_IMAGES = [
 ];
 
 const PUZZLE_ENGINES = [
-  { id: 'react-jigsaw-puzzle', name: 'React Jigsaw Puzzle (Custom)' },
-  { id: 'react-jigsaw-puzzle2', name: 'react-jigsaw-puzzle (Library Demo)' },
-  { id: 'custom-puzzle-engine', name: 'Custom Lovable Puzzle' },
-  { id: 'puzzle-boss-engine', name: 'Puzzle Boss Master' },
-  { id: 'custom-engine', name: 'Custom Engine (Placeholder)' }
+  { id: 'react-jigsaw-puzzle', name: 'Puzzle Boss Jigsaw Puzzle' }
 ];
 
 const DIFFICULTY_PRESETS = [
@@ -49,9 +42,8 @@ const DIFFICULTY_PRESETS = [
 ];
 
 const PuzzleEnginePlayground: React.FC = () => {
-  const [selectedEngine, setSelectedEngine] = useState(PUZZLE_ENGINES[0].id);
   const [selectedImage, setSelectedImage] = useState(SAMPLE_IMAGES[0].id);
-  const [difficulty, setDifficulty] = useState(DIFFICULTY_PRESETS[1].value); // Default to medium
+  const [difficulty, setDifficulty] = useState(DIFFICULTY_PRESETS[1].value);
   const [resetKey, setResetKey] = useState(0);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const { theme } = useTheme();
@@ -60,18 +52,14 @@ const PuzzleEnginePlayground: React.FC = () => {
   
   const currentDifficultyPreset = DIFFICULTY_PRESETS.find(d => d.value === difficulty) || DIFFICULTY_PRESETS[1];
   
-  useEffect(() => {
-    console.log('Selected image URL:', currentImage);
-  }, [currentImage]);
-  
   const handleResetPuzzle = useCallback(() => {
     setResetKey(prev => prev + 1);
   }, []);
   
-  const handleNotesChange = useCallback((engineId: string, value: string) => {
+  const handleNotesChange = useCallback((value: string) => {
     setNotes(prev => ({
       ...prev,
-      [engineId]: value
+      puzzle: value
     }));
   }, []);
   
@@ -81,23 +69,7 @@ const PuzzleEnginePlayground: React.FC = () => {
   
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/20 rounded-lg border">
-        <div>
-          <Label htmlFor="engine-selector" className="mb-2 block">Choose Puzzle Engine</Label>
-          <Select value={selectedEngine} onValueChange={setSelectedEngine}>
-            <SelectTrigger id="engine-selector" className="w-full">
-              <SelectValue placeholder="Select engine..." />
-            </SelectTrigger>
-            <SelectContent>
-              {PUZZLE_ENGINES.map(engine => (
-                <SelectItem key={engine.id} value={engine.id}>
-                  {engine.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/20 rounded-lg border">
         <div>
           <Label htmlFor="image-selector" className="mb-2 block">Test Image</Label>
           <Select value={selectedImage} onValueChange={setSelectedImage}>
@@ -140,53 +112,15 @@ const PuzzleEnginePlayground: React.FC = () => {
       
       <div className="min-h-[500px] relative border rounded-lg p-4 bg-background">
         <div className="absolute top-4 right-4 z-10 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs border">
-          {PUZZLE_ENGINES.find(e => e.id === selectedEngine)?.name || 'Unknown Engine'}
+          Puzzle Boss Jigsaw Puzzle
         </div>
         
-        {selectedEngine === 'react-jigsaw-puzzle' && (
-          <ReactJigsawPuzzleEngine 
-            key={getEngineKey('jigsaw')}
-            imageUrl={currentImage}
-            rows={currentDifficultyPreset.rows}
-            columns={currentDifficultyPreset.columns}
-          />
-        )}
-        
-        {selectedEngine === 'react-jigsaw-puzzle2' && (
-          <PuzzleGame
-            key={getEngineKey('library')}
-            imageUrl={currentImage}
-            rows={currentDifficultyPreset.rows}
-            columns={currentDifficultyPreset.columns}
-          />
-        )}
-        
-        {selectedEngine === 'custom-puzzle-engine' && (
-          <CustomPuzzleEngine 
-            key={getEngineKey('custom')}
-            imageUrl={currentImage}
-            rows={currentDifficultyPreset.rows}
-            columns={currentDifficultyPreset.columns}
-          />
-        )}
-        
-        {selectedEngine === 'puzzle-boss-engine' && (
-          <PuzzleBossEngine
-            key={getEngineKey('boss')}
-            imageUrl={currentImage}
-            rows={currentDifficultyPreset.rows}
-            columns={currentDifficultyPreset.columns}
-          />
-        )}
-        
-        {selectedEngine === 'custom-engine' && (
-          <div className="flex flex-col items-center justify-center h-96 bg-muted/20 rounded-lg border border-dashed">
-            <p className="text-muted-foreground">Custom Engine Placeholder</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              Add your custom engine implementation in the engines folder
-            </p>
-          </div>
-        )}
+        <PuzzleGame
+          key={getEngineKey('library')}
+          imageUrl={currentImage}
+          rows={currentDifficultyPreset.rows}
+          columns={currentDifficultyPreset.columns}
+        />
       </div>
       
       <div>
@@ -195,8 +129,8 @@ const PuzzleEnginePlayground: React.FC = () => {
           id="evaluation-notes"
           placeholder="Add your notes, observations, and feedback about this puzzle engine here..."
           className="min-h-[120px]"
-          value={notes[selectedEngine] || ''}
-          onChange={(e) => handleNotesChange(selectedEngine, e.target.value)}
+          value={notes['puzzle'] || ''}
+          onChange={(e) => handleNotesChange(e.target.value)}
         />
       </div>
     </div>
