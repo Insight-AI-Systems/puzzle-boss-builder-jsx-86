@@ -17,7 +17,9 @@ export function RoleManagement() {
 
   const currentUserRole: UserRole = currentUserProfile?.role || 'player';
   const currentUserEmail = currentUserProfile?.id;
-  const isSuperAdmin = currentUserRole === 'super_admin';
+  
+  // Fix the type comparison by using type assertion
+  const isSuperAdmin = currentUserRole === 'super_admin' as UserRole;
   const isCurrentUserProtectedAdmin = currentUserEmail === PROTECTED_ADMIN_EMAIL;
   const canAssignAnyRole = isSuperAdmin || isCurrentUserProtectedAdmin;
 
@@ -53,7 +55,7 @@ export function RoleManagement() {
       return canAssignAnyRole;
     }
     if (canAssignAnyRole) return true;
-    if (currentUserRole === 'super_admin' && role !== 'super_admin') return true;
+    if (currentUserRole === 'super_admin' as UserRole && role !== 'super_admin' as UserRole) return true;
     return false;
   };
 

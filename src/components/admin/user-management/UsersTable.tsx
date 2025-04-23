@@ -21,14 +21,16 @@ export function UsersTable({
   lastLoginSortDirection
 }: UserTableProps) {
   const selectionEnabled = !!onUserSelection && !!onSelectAll;
-  const isSuperAdmin = currentUserRole === 'super_admin';
+  
+  // Fix the type comparison by using type assertion or checking equality
+  const isSuperAdmin = currentUserRole === 'super_admin' as UserRole;
   const isCurrentUserProtectedAdmin = currentUserEmail === PROTECTED_ADMIN_EMAIL;
   const canAssignAnyRole = isSuperAdmin || isCurrentUserProtectedAdmin;
   
   const canAssignRole = (role: UserRole, userId: string): boolean => {
     if (canAssignAnyRole) return true;
     if (userId === PROTECTED_ADMIN_EMAIL) return isCurrentUserProtectedAdmin;
-    if (currentUserRole === 'super_admin' && role !== 'super_admin') return true;
+    if (currentUserRole === 'super_admin' as UserRole && role !== 'super_admin' as UserRole) return true;
     return false;
   };
 
