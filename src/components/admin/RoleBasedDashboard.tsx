@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import AdminPuzzleManager from './AdminPuzzleManager';
+import { PuzzleManagement } from './PuzzleManagement';
 import HeroPuzzleManager from './HeroPuzzleManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -21,7 +22,7 @@ export const RoleBasedDashboard: React.FC = () => {
           </TabsList>
           
           <TabsContent value="puzzles" className="pt-4">
-            <AdminPuzzleManager />
+            <PuzzleManagement />
           </TabsContent>
           
           <TabsContent value="hero-puzzle" className="pt-4">
