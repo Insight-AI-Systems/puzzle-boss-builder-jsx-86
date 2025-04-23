@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useHeroPuzzle } from '@/hooks/useHeroPuzzle';
 import { usePuzzleTimer } from '@/components/puzzles/playground/engines/hooks/usePuzzleTimer';
@@ -59,6 +60,10 @@ const HeroPuzzle: React.FC = () => {
     setResetKey(prev => prev + 1);
   }, [resetCompletion, resetTimer]);
 
+  const handleToggleNumbers = useCallback((checked: boolean) => {
+    setShowNumbers(checked);
+  }, []);
+
   console.log('HeroPuzzle rendering', { 
     puzzleConfig, 
     isLoading, 
@@ -67,7 +72,8 @@ const HeroPuzzle: React.FC = () => {
     completed, 
     solveTime,
     resetKey,
-    selectedDifficulty
+    selectedDifficulty,
+    showNumbers
   });
 
   if (isLoading) {
@@ -104,8 +110,9 @@ const HeroPuzzle: React.FC = () => {
           
           <div className="flex items-center gap-2">
             <Switch
+              id="numbers-toggle"
               checked={showNumbers}
-              onCheckedChange={setShowNumbers}
+              onCheckedChange={handleToggleNumbers}
               className="data-[state=checked]:bg-puzzle-aqua"
             />
             <span className="text-sm text-puzzle-aqua">Numbers</span>
