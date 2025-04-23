@@ -96,9 +96,7 @@ const Hero: React.FC = () => {
                         draggable={false}
                       />
                     </div>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
-                      <Eye className="w-4 h-4" /> Guide: Completed Solution
-                    </span>
+                    {/* Removed the text/span that appeared below the guide image */}
                   </div>
                 )}
 
