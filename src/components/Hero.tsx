@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
@@ -69,7 +68,6 @@ const Hero: React.FC = () => {
               <div className="card-highlight p-4 md:p-8 relative w-[340px] max-w-full">
                 <h3 className="text-xl font-bold text-center mb-4 text-puzzle-white">Try a Mini Puzzle</h3>
                 
-                {/* GUIDE IMAGE SHOWN ABOVE PUZZLE BOX - TOGGLEABLE */}
                 {showGuide && (
                   <div className="w-full flex flex-col items-center mb-6">
                     <div
