@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Hero from '@/components/Hero';
@@ -14,6 +15,8 @@ import { Link } from 'react-router-dom';
 function Index() {
   const { isAdmin, profile, isLoading } = useUserProfile();
   const navigate = useNavigate();
+  
+  console.log("Index page rendering", { isAdmin, hasProfile: !!profile, isLoading });
   
   useEffect(() => {
     if (!isLoading && profile?.role === 'super_admin') {

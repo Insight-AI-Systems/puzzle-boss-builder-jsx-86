@@ -17,6 +17,7 @@ export const usePuzzleImagePreload = ({
   useEffect(() => {
     if (!imageUrl) {
       console.error('No image URL provided to usePuzzleImagePreload');
+      onError(new Error('No image URL provided'));
       return;
     }
     
@@ -30,8 +31,8 @@ export const usePuzzleImagePreload = ({
       onLoad();
     };
     
-    img.onerror = () => {
-      console.error('Failed to load image:', imageUrl);
+    img.onerror = (e) => {
+      console.error('Failed to load image:', imageUrl, e);
       onError(new Error(`Failed to load image: ${imageUrl}`));
     };
     

@@ -1,10 +1,10 @@
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { PuzzleBoard } from './components/PuzzleBoard';
 import { PuzzleControls } from './components/PuzzleControls';
 import { usePuzzleState } from './hooks/usePuzzleState';
 import { usePuzzleConfetti } from './hooks/usePuzzleConfetti';
-import { usePuzzleTimer } from '../usePuzzleTimer';
+import { usePuzzleTimer } from '../hooks/usePuzzleTimer';
 import { usePuzzleImagePreload } from '../hooks/usePuzzleImagePreload';
 import FirstMoveOverlay from '../FirstMoveOverlay';
 import { PuzzleCompleteBanner } from '../components/PuzzleCompleteBanner';
@@ -26,27 +26,25 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
   showGuideImage: initialShowGuideImage = true,
   onComplete
 }) => {
-  // Initialize puzzle state and timer
+  // State hooks first
+  const [draggedPiece, setDraggedPiece] = useState<number | null>(null);
+  const [solveTime, setSolveTime] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasStarted, setHasStarted] = useState(false);
+  
+  // Then initialize puzzle state
   const {
     puzzlePieces,
     placePiece,
     isComplete,
     isPieceCorrect,
     resetPuzzle,
-    isLoading,
-    setIsLoading,
-    hasStarted,
-    setHasStarted,
     toggleGuideImage,
     showGuideImage,
-    solveTime,
-    setSolveTime,
-    draggedPiece,
-    setDraggedPiece,
     shufflePieces
   } = usePuzzleState(rows, columns, imageUrl, initialShowGuideImage);
 
-  // Initialize timer
+  // Then timer
   const {
     elapsed,
     isRunning,
@@ -55,13 +53,11 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     reset: resetTimer
   } = usePuzzleTimer();
 
-  // Trigger confetti effect on puzzle completion
-  usePuzzleConfetti(isComplete);
-
-  // Preload puzzle image
-  usePuzzleImagePreload({
+  // Image preloading
+  const { isLoaded } = usePuzzleImagePreload({
     imageUrl,
     onLoad: () => {
+      console.log("Image loaded successfully in CustomPuzzleEngine");
       setIsLoading(false);
     },
     onError: (error) => {
@@ -70,17 +66,22 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     }
   });
 
+  // Trigger confetti effect on puzzle completion
+  usePuzzleConfetti(isComplete);
+
   // Handle first piece drag/move
   const handleFirstMove = useCallback(() => {
     if (!hasStarted) {
+      console.log("First move detected, starting game");
       setHasStarted(true);
       startTimer();
     }
-  }, [hasStarted, setHasStarted, startTimer]);
+  }, [hasStarted, startTimer]);
 
   // Handle puzzle completion
-  React.useEffect(() => {
+  useEffect(() => {
     if (isComplete && !solveTime) {
+      console.log("Puzzle completed, stopping timer");
       stopTimer();
       const completionTime = elapsed;
       console.log(`Puzzle completed in ${completionTime} seconds!`);
@@ -90,18 +91,21 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
         onComplete(completionTime);
       }
     }
-  }, [isComplete, solveTime, elapsed, stopTimer, setSolveTime, onComplete]);
+  }, [isComplete, solveTime, elapsed, stopTimer, onComplete]);
 
   // Handle puzzle reset
   const handleReset = useCallback(() => {
+    console.log("Resetting puzzle");
     resetPuzzle();
     resetTimer();
+    setSolveTime(null);
+    setHasStarted(false);
   }, [resetPuzzle, resetTimer]);
 
-  // Log showGuideImage value for debugging
-  React.useEffect(() => {
-    console.log("CustomPuzzleEngine - showGuideImage:", showGuideImage);
-  }, [showGuideImage]);
+  console.log("CustomPuzzleEngine rendering", { 
+    isLoading, imageUrl, rows, columns, isComplete, 
+    hasStarted, showGuideImage, solveTime, puzzlePiecesCount: puzzlePieces.length 
+  });
 
   return (
     <div className="custom-puzzle-engine">
@@ -134,6 +138,15 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
         
         {isComplete && solveTime !== null && (
           <PuzzleCompleteBanner solveTime={solveTime} />
+        )}
+        
+        {isLoading && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 rounded-md">
+            <div className="text-center">
+              <Loader2 className="animate-spin h-8 w-8 mx-auto text-puzzle-aqua" />
+              <p className="mt-2 text-puzzle-white">Loading puzzle...</p>
+            </div>
+          </div>
         )}
       </div>
     </div>
