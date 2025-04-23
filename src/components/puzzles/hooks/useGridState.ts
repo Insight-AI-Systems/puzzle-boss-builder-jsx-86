@@ -1,10 +1,12 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { BasePuzzlePiece } from '../types/puzzle-types';
 import { 
-  ensureGridIntegrity, 
-  validatePuzzleState, 
-  debugGridState 
-} from '../utils/pieceStateManagement';
+  ensureGridIntegrity
+} from '../utils/gridStateHelpers';
+
+// Import these from another file or add them here
+import { validatePuzzleState, debugGridState } from '../utils/puzzleStateValidation';
 
 export function useGridState<T extends BasePuzzlePiece>(
   pieces: T[],
@@ -28,7 +30,7 @@ export function useGridState<T extends BasePuzzlePiece>(
     if (JSON.stringify(updatedPieces) !== JSON.stringify(pieces)) {
       setPieces(updatedPieces);
     }
-  }, [pieces]);
+  }, [pieces, grid, setPieces]);
   
   // Handle piece drop onto grid
   const handlePieceDrop = useCallback((pieceId: string | number, targetPosition: number) => {

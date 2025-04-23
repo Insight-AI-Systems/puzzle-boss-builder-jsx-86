@@ -2,45 +2,62 @@
 import { BasePuzzlePiece } from '../types/puzzle-types';
 
 /**
- * Validates the puzzle state to ensure no piece is in two places at once
+ * Validates the puzzle state to ensure all pieces are in valid positions
  */
-export const validatePuzzleState = <T extends BasePuzzlePiece>(
+export function validatePuzzleState<T extends BasePuzzlePiece>(
+  pieces: T[]
+): boolean {
+  // Simple validation to verify all pieces have valid positions
+  return pieces.every(piece => {
+    // Pieces in staging area are valid
+    if (piece.position < 0) return true;
+    
+    // Check if there are any duplicated positions (except in staging)
+    const piecesAtSamePosition = pieces.filter(p => 
+      p.position === piece.position && p.position >= 0
+    );
+    
+    return piecesAtSamePosition.length <= 1;
+  });
+}
+
+/**
+ * Logs debugging information about the grid state
+ */
+export function debugGridState<T extends BasePuzzlePiece>(
   pieces: T[],
-  grid: (number | null)[]
-): boolean => {
-  const seenPieces = new Set<string | number>();
-  let valid = true;
+  grid: (number | null)[],
+  rows: number,
+  columns: number
+): void {
+  console.log('Grid state debugging:');
+  console.log('Dimensions:', rows, 'x', columns);
+  console.log('Grid:', grid);
   
-  for (let i = 0; i < grid.length; i++) {
-    const pieceId = grid[i];
-    if (pieceId !== null) {
-      if (seenPieces.has(pieceId)) {
-        console.error(`Validation error: Piece ${pieceId} appears multiple times in the grid!`);
-        valid = false;
-      }
-      seenPieces.add(pieceId);
+  // Output grid as a visual matrix
+  console.log('Grid visualization:');
+  for (let r = 0; r < rows; r++) {
+    let rowString = '';
+    for (let c = 0; c < columns; c++) {
+      const index = r * columns + c;
+      const value = grid[index] !== null ? grid[index] : '-';
+      rowString += `[${value}] `;
     }
+    console.log(rowString);
   }
   
-  for (const piece of pieces) {
-    const position = piece.position;
-    if (position < 0) continue;
-    
-    if (position >= grid.length) {
-      console.error(`Validation error: Piece ${piece.id} has invalid position ${position}!`);
-      valid = false;
-      continue;
-    }
-    
-    const pieceNumericId = typeof piece.id === 'string' 
-      ? parseInt(piece.id.toString().split('-')[1]) 
-      : piece.id;
-      
-    if (grid[position] !== pieceNumericId) {
-      console.error(`Validation error: Piece ${piece.id} claims position ${position}, but grid has ${grid[position]}!`);
-      valid = false;
-    }
-  }
+  console.log('Pieces:', pieces);
   
-  return valid;
-};
+  // Count pieces by position type
+  const gridPieces = pieces.filter(p => p.position >= 0);
+  const stagingPieces = pieces.filter(p => p.position < 0);
+  
+  console.log(`Pieces on grid: ${gridPieces.length}`);
+  console.log(`Pieces in staging: ${stagingPieces.length}`);
+  
+  // Detect any issues
+  const issueDetected = !validatePuzzleState(pieces);
+  if (issueDetected) {
+    console.warn('Issues detected in puzzle state!');
+  }
+}

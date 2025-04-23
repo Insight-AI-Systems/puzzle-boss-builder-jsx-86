@@ -1,7 +1,6 @@
 
 import { BasePuzzlePiece, GameMode, PuzzlePiece } from '../types/puzzle-types';
 import { createPieceHandlers } from '../utils/pieceInteractionHandlers';
-import { useAssemblyState } from './useAssemblyState';
 
 interface UsePuzzlePieceHandlersProps {
   pieces: PuzzlePiece[];
@@ -28,6 +27,7 @@ export function usePuzzlePieceHandlers({
   rotationEnabled,
   grid = []
 }: UsePuzzlePieceHandlersProps) {
+  // We're now calling createPieceHandlers with the correct number of arguments
   return createPieceHandlers(
     pieces,
     setPieces,
@@ -35,7 +35,6 @@ export function usePuzzlePieceHandlers({
     setDraggedPiece,
     incrementMoves,
     isSolved,
-    playSound,
-    grid
+    playSound
   );
 }

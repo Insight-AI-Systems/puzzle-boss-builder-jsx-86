@@ -1,3 +1,4 @@
+
 import { BasePuzzlePiece } from '../types/puzzle-types';
 
 /**
@@ -24,10 +25,26 @@ export function checkGridCompletion<T extends BasePuzzlePiece>(pieces: T[]): boo
   });
 }
 
-// Add missing exports required by pieceStateManagement.ts
-export function ensureGridIntegrity<T extends BasePuzzlePiece>(pieces: T[]): T[] {
-  // Simple implementation that just returns the pieces unchanged
-  return pieces;
+// Updated ensureGridIntegrity to work with grid parameter
+export function ensureGridIntegrity<T extends BasePuzzlePiece>(
+  pieces: T[],
+  grid: (number | null)[] = []
+): { updatedGrid: (number | null)[], updatedPieces: T[] } {
+  // Create a new grid if none provided
+  const updatedGrid = [...(grid.length > 0 ? grid : Array(pieces.length).fill(null))];
+  const updatedPieces = [...pieces];
+  
+  // Place pieces in correct grid positions based on their current positions
+  updatedPieces.forEach(piece => {
+    if (piece.position >= 0 && piece.position < updatedGrid.length) {
+      const pieceNumber = typeof piece.id === 'string' 
+        ? parseInt(piece.id.split('-')[1]) 
+        : piece.id;
+      updatedGrid[piece.position] = pieceNumber;
+    }
+  });
+  
+  return { updatedGrid, updatedPieces };
 }
 
 export function getStagingPieces<T extends BasePuzzlePiece>(pieces: T[]): T[] {
