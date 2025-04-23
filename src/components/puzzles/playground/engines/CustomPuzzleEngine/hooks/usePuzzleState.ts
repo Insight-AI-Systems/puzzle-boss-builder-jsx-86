@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { PuzzlePiece } from './types';
 
+// Define the PuzzlePiece type directly here instead of importing from a non-existent file
 export interface PuzzlePiece {
   id: number;
   position: number;
@@ -55,6 +55,22 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
     setHasStarted(false);
     setSolveTime(null);
   }, [initPuzzle]);
+
+  // Add the missing shufflePieces function that was referenced in the index.tsx file
+  const shufflePieces = useCallback(() => {
+    const pieceCount = rows * columns;
+    const shuffledPositions = shuffleArray([...Array(pieceCount).keys()]);
+    
+    setPuzzlePieces(prev => {
+      return prev.map((piece, index) => ({
+        ...piece,
+        position: shuffledPositions[index],
+        isDragging: false
+      }));
+    });
+    
+    setIsComplete(false);
+  }, [rows, columns]);
 
   // Handle toggling guide image visibility
   const toggleGuideImage = useCallback(() => {
@@ -126,7 +142,8 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
     placePiece,
     isPieceCorrect,
     draggedPiece,
-    setDraggedPiece
+    setDraggedPiece,
+    shufflePieces // Add the shufflePieces function to the return object
   };
 };
 

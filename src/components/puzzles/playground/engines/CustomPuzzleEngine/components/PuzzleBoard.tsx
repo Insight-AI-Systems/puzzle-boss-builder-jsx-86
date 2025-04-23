@@ -30,7 +30,6 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = React.memo(({
 }) => {
   const [highlightedPosition, setHighlightedPosition] = useState<number | null>(null);
   const prevImageUrl = useRef(imageUrl);
-  const guideImageRef = useRef<HTMLImageElement>(null);
   
   // Reset highlighted position when image changes
   useEffect(() => {
@@ -56,13 +55,10 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = React.memo(({
     overflow: 'hidden'
   };
   
-  // Load guide image when showGuideImage changes
+  // Log showGuideImage changes for debugging
   useEffect(() => {
-    if (showGuideImage && guideImageRef.current) {
-      console.log('Setting guide image src to:', imageUrl);
-      guideImageRef.current.src = imageUrl;
-    }
-  }, [showGuideImage, imageUrl]);
+    console.log('PuzzleBoard - showGuideImage changed to:', showGuideImage);
+  }, [showGuideImage]);
   
   // Handle drag over
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>, position: number) => {
@@ -104,6 +100,9 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = React.memo(({
         onDragOver={(e) => handleDragOver(e, i)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, i)}
+        style={{
+          position: 'relative',
+        }}
       >
         {piece && (
           <PuzzleTile
@@ -137,6 +136,7 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = React.memo(({
               backgroundPosition: 'center',
               opacity: 0.3,
             }}
+            aria-hidden="true"
           ></div>
         )}
         {cells}

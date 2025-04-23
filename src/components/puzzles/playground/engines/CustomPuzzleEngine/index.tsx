@@ -27,7 +27,6 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
   // Initialize puzzle state and timer
   const {
     puzzlePieces,
-    shufflePieces,
     placePiece,
     isComplete,
     isPieceCorrect,
@@ -41,7 +40,8 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     solveTime,
     setSolveTime,
     draggedPiece,
-    setDraggedPiece
+    setDraggedPiece,
+    shufflePieces
   } = usePuzzleState(rows, columns, imageUrl, initialShowGuideImage);
 
   // Set up timer
