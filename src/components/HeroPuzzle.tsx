@@ -61,6 +61,7 @@ const HeroPuzzle: React.FC = () => {
   }, [resetCompletion, resetTimer]);
 
   const handleToggleNumbers = useCallback((checked: boolean) => {
+    console.log('Toggling numbers visibility:', checked);
     setShowNumbers(checked);
   }, []);
 
@@ -113,9 +114,10 @@ const HeroPuzzle: React.FC = () => {
               id="numbers-toggle"
               checked={showNumbers}
               onCheckedChange={handleToggleNumbers}
-              className="data-[state=checked]:bg-puzzle-aqua"
             />
-            <span className="text-sm text-puzzle-aqua">Numbers</span>
+            <label htmlFor="numbers-toggle" className="text-sm text-puzzle-aqua cursor-pointer">
+              Numbers
+            </label>
           </div>
         </div>
       </header>
