@@ -43,7 +43,8 @@ export function usePuzzleProgress(puzzleId: string) {
       // Convert frontend model to DB model
       const dbData = mapFrontendToDbProgress(newProgress, user.id);
       
-      // If puzzleId is provided in newProgress, ensure it's added as puzzle_id
+      // Ensure puzzle_id is always set correctly
+      // This is required by the database schema
       if (newProgress.puzzleId) {
         dbData.puzzle_id = newProgress.puzzleId;
       } else {
