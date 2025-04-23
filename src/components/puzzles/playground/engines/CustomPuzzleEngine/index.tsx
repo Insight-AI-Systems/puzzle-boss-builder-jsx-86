@@ -18,6 +18,7 @@ interface CustomPuzzleEngineProps {
   columns: number;
   showGuideImage?: boolean;
   onComplete?: (solveTime: number) => void;
+  onReset?: () => void;
 }
 
 const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
@@ -25,7 +26,8 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
   rows,
   columns,
   showGuideImage: initialShowGuideImage = true,
-  onComplete
+  onComplete,
+  onReset
 }) => {
   // State hooks first
   const [draggedPiece, setDraggedPiece] = useState<number | null>(null);
@@ -101,7 +103,11 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     resetTimer();
     setSolveTime(null);
     setHasStarted(false);
-  }, [resetPuzzle, resetTimer]);
+    
+    if (onReset) {
+      onReset();
+    }
+  }, [resetPuzzle, resetTimer, onReset]);
 
   console.log("CustomPuzzleEngine rendering", { 
     isLoading, imageUrl, rows, columns, isComplete, 

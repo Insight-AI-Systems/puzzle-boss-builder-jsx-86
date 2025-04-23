@@ -49,6 +49,7 @@ export const usePuzzleCompletion = ({ imageUrl, rows, columns }: UsePuzzleComple
   };
 
   const resetCompletion = () => {
+    console.log("Resetting puzzle completion state");
     setCompleted(false);
     setSolveTime(null);
   };

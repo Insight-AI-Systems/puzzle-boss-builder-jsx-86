@@ -34,7 +34,7 @@ const HeroPuzzle: React.FC = () => {
   const difficulty = puzzleConfig?.difficulty || 'medium';
   const rows = difficultyToRowsMap[difficulty as keyof typeof difficultyToRowsMap] || 3;
   
-  const { completed, solveTime, handlePuzzleComplete } = usePuzzleCompletion({
+  const { completed, solveTime, handlePuzzleComplete, resetCompletion } = usePuzzleCompletion({
     imageUrl,
     rows,
     columns: rows
@@ -50,9 +50,11 @@ const HeroPuzzle: React.FC = () => {
   }, [stopTimer, handlePuzzleComplete]);
   
   const handlePlayAgain = useCallback(() => {
+    console.log("Play Again clicked - resetting game state");
     resetTimer();
+    resetCompletion();
     setResetKey(prev => prev + 1);
-  }, [resetTimer]);
+  }, [resetTimer, resetCompletion]);
 
   // For debugging
   console.log('HeroPuzzle rendering', { 
@@ -61,7 +63,8 @@ const HeroPuzzle: React.FC = () => {
     imageUrl, 
     rows, 
     completed, 
-    solveTime 
+    solveTime,
+    resetKey
   });
 
   if (isLoading) {
@@ -92,13 +95,16 @@ const HeroPuzzle: React.FC = () => {
           columns={rows} 
           showGuideImage={true}
           onComplete={handlePuzzleSolved}
+          onReset={resetCompletion}
         />
         
-        <PuzzleCongratulationSplash 
-          show={completed} 
-          solveTime={solveTime} 
-          onPlayAgain={handlePlayAgain} 
-        />
+        {completed && (
+          <PuzzleCongratulationSplash 
+            show={completed} 
+            solveTime={solveTime} 
+            onPlayAgain={handlePlayAgain} 
+          />
+        )}
       </div>
       
       <footer className="flex justify-between items-center p-3 bg-black/40 border-t border-puzzle-aqua/20">
