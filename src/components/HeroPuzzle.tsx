@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useHeroPuzzle } from '@/hooks/useHeroPuzzle';
 import { usePuzzleTimer } from '@/components/puzzles/playground/engines/hooks/usePuzzleTimer';
@@ -83,15 +84,10 @@ const HeroPuzzle: React.FC = () => {
       <header className="flex items-center justify-between p-3 border-b border-puzzle-aqua/20">
         <div className="flex items-center gap-2">
           <PuzzleIcon className="w-5 h-5 text-puzzle-aqua" />
-          <span className="font-bold text-puzzle-aqua">{puzzleConfig?.title || "Welcome Puzzle"}</span>
-        </div>
-      </header>
-      
-      <div className="relative p-4">
-        <div className="mb-4">
+          <span className="font-bold text-puzzle-aqua mr-4">{puzzleConfig?.title || "Welcome Puzzle"}</span>
           <Select value={selectedDifficulty} onValueChange={handleDifficultyChange}>
-            <SelectTrigger className="w-[180px] bg-black/40 border-puzzle-aqua/30 text-puzzle-aqua">
-              <SelectValue placeholder="Select difficulty" />
+            <SelectTrigger className="w-[120px] bg-black/40 border-puzzle-aqua/30 text-puzzle-aqua">
+              <SelectValue placeholder="Difficulty" />
             </SelectTrigger>
             <SelectContent>
               {Object.entries(difficultyConfig).map(([key, config]) => (
@@ -102,7 +98,10 @@ const HeroPuzzle: React.FC = () => {
             </SelectContent>
           </Select>
         </div>
-
+      </header>
+      
+      <div className="relative p-4">
+        {/* Remove the previous difficulty selector from this location */}
         <CustomPuzzleEngine 
           key={`hero-puzzle-${resetKey}`}
           imageUrl={imageUrl}
@@ -137,3 +136,4 @@ const HeroPuzzle: React.FC = () => {
 };
 
 export default HeroPuzzle;
+
