@@ -52,6 +52,7 @@ export const HeroPuzzleManager: React.FC = () => {
     try {
       // If we have an existing puzzle, update it
       if (formData.id) {
+        console.log("Updating existing hero puzzle with ID:", formData.id);
         const { error } = await supabase
           .from('hero_puzzle_config')
           .update({
@@ -71,6 +72,7 @@ export const HeroPuzzleManager: React.FC = () => {
         });
       } else {
         // Otherwise create a new one (set all others to inactive first)
+        console.log("Creating new hero puzzle");
         const { error: updateError } = await supabase
           .from('hero_puzzle_config')
           .update({ active: false })
@@ -95,6 +97,10 @@ export const HeroPuzzleManager: React.FC = () => {
           description: "A new hero puzzle has been created and activated.",
         });
       }
+      
+      // Fetch the updated config after save
+      window.location.reload(); // Force a reload to get the latest data
+      
     } catch (error: any) {
       console.error('Error saving hero puzzle:', error);
       toast({
@@ -232,6 +238,9 @@ export const HeroPuzzleManager: React.FC = () => {
                   title: "Puzzle deleted",
                   description: "The hero puzzle has been deleted.",
                 });
+                
+                // Force refresh to get the latest data
+                window.location.reload();
               } catch (error: any) {
                 toast({
                   title: "Error deleting puzzle",
