@@ -52,7 +52,8 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     reset: resetTimer,
     startTime,
     setStartTime,
-    setElapsed
+    setElapsed,
+    isRunning
   } = usePuzzleTimer();
 
   // Handle image loading with stable callback
@@ -90,9 +91,9 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     }
   }, [hasStarted, isComplete, setHasStarted, startTimer, setStartTime]);
 
-  // Handle puzzle completion - now stops the timer
+  // Handle puzzle completion - stops the timer when puzzle is complete
   React.useEffect(() => {
-    if (isComplete && hasStarted) {
+    if (isComplete && hasStarted && isRunning) {
       stopTimer();
       const endTime = Date.now();
       if (startTime) {
@@ -102,7 +103,7 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
         triggerConfetti();
       }
     }
-  }, [isComplete, hasStarted, stopTimer, startTime, setSolveTime, setElapsed, triggerConfetti]);
+  }, [isComplete, hasStarted, stopTimer, startTime, setSolveTime, setElapsed, triggerConfetti, isRunning]);
 
   // Handle puzzle reset with memoized callback
   const handleReset = useCallback(() => {

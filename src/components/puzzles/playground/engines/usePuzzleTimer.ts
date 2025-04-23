@@ -21,7 +21,7 @@ export function usePuzzleTimer(): TimerHook {
   const start = () => {
     if (!isRunning) {
       setIsRunning(true);
-      setStartTime(Date.now());
+      setStartTime(prev => prev || Date.now() - (elapsed * 1000)); // Account for existing elapsed time
     }
   };
 
@@ -29,6 +29,7 @@ export function usePuzzleTimer(): TimerHook {
     setIsRunning(false);
     if (timerRef.current) {
       clearInterval(timerRef.current);
+      timerRef.current = null;
     }
   };
 
@@ -38,17 +39,26 @@ export function usePuzzleTimer(): TimerHook {
     setStartTime(null);
     if (timerRef.current) {
       clearInterval(timerRef.current);
+      timerRef.current = null;
     }
   };
 
   useEffect(() => {
     if (isRunning && startTime !== null) {
       timerRef.current = window.setInterval(() => {
-        setElapsed(Math.floor((Date.now() - startTime) / 1000));
-      }, 250);
+        const currentElapsed = Math.floor((Date.now() - startTime) / 1000);
+        setElapsed(currentElapsed);
+      }, 100); // Update more frequently for better accuracy
+    } else if (!isRunning && timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
     }
+    
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     };
   }, [isRunning, startTime]);
 
