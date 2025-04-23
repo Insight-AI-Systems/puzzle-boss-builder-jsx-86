@@ -1,26 +1,30 @@
-import React, { useState } from "react";
-import { JigsawPuzzle } from "react-jigsaw-puzzle/lib";
-import "react-jigsaw-puzzle/lib/jigsaw-puzzle.css";
-import "./PuzzleGame.css";
+
+import React from 'react';
+import { PuzzleProvider } from './PuzzleProvider';
+import CustomPuzzleEngine from './playground/engines/CustomPuzzleEngine';
+
 interface PuzzleGameProps {
   imageUrl: string;
+  puzzleId?: string;
   rows?: number;
   columns?: number;
 }
+
 const PuzzleGame: React.FC<PuzzleGameProps> = ({
   imageUrl,
+  puzzleId,
   rows = 3,
   columns = 4
 }) => {
-  const [isSolved, setSolved] = useState(false);
-  return <div className="puzzle-container">
-      
-      <div className="jigsaw-puzzle">
-        <JigsawPuzzle imageSrc={imageUrl} rows={rows} columns={columns} onSolved={() => setSolved(true)} />
-      </div>
-      {isSolved && <div className="success-message">
-          Congratulations! You solved the puzzle!
-        </div>}
-    </div>;
+  return (
+    <PuzzleProvider puzzleId={puzzleId}>
+      <CustomPuzzleEngine
+        imageUrl={imageUrl}
+        rows={rows}
+        columns={columns}
+      />
+    </PuzzleProvider>
+  );
 };
+
 export default PuzzleGame;

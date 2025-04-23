@@ -400,6 +400,74 @@ export type Database = {
         }
         Relationships: []
       }
+      puzzle_progress: {
+        Row: {
+          completion_time: number | null
+          id: string
+          is_completed: boolean | null
+          last_updated: string | null
+          progress: Json | null
+          puzzle_id: string
+          start_time: string | null
+          user_id: string
+        }
+        Insert: {
+          completion_time?: number | null
+          id?: string
+          is_completed?: boolean | null
+          last_updated?: string | null
+          progress?: Json | null
+          puzzle_id: string
+          start_time?: string | null
+          user_id: string
+        }
+        Update: {
+          completion_time?: number | null
+          id?: string
+          is_completed?: boolean | null
+          last_updated?: string | null
+          progress?: Json | null
+          puzzle_id?: string
+          start_time?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "puzzle_progress_puzzle_id_fkey"
+            columns: ["puzzle_id"]
+            isOneToOne: false
+            referencedRelation: "puzzles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      puzzle_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          settings: Json | null
+          settings_type: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          settings?: Json | null
+          settings_type: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          settings?: Json | null
+          settings_type?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       puzzles: {
         Row: {
           avg_time: number | null
@@ -408,13 +476,16 @@ export type Database = {
           cost_per_play: number | null
           created_at: string
           description: string | null
+          difficulty_level: string | null
           id: string
           image_url: string
           income_target: number
           override_target: boolean
           pieces: number
           prize_value: number
+          puzzle_config: Json | null
           puzzle_owner: string | null
+          puzzle_type: string | null
           release_date: string
           status: string
           supplier: string | null
@@ -429,13 +500,16 @@ export type Database = {
           cost_per_play?: number | null
           created_at?: string
           description?: string | null
+          difficulty_level?: string | null
           id?: string
           image_url: string
           income_target: number
           override_target?: boolean
           pieces?: number
           prize_value: number
+          puzzle_config?: Json | null
           puzzle_owner?: string | null
+          puzzle_type?: string | null
           release_date: string
           status?: string
           supplier?: string | null
@@ -450,13 +524,16 @@ export type Database = {
           cost_per_play?: number | null
           created_at?: string
           description?: string | null
+          difficulty_level?: string | null
           id?: string
           image_url?: string
           income_target?: number
           override_target?: boolean
           pieces?: number
           prize_value?: number
+          puzzle_config?: Json | null
           puzzle_owner?: string | null
+          puzzle_type?: string | null
           release_date?: string
           status?: string
           supplier?: string | null
@@ -571,6 +648,15 @@ export type Database = {
       ensure_super_admin: {
         Args: { user_email: string }
         Returns: undefined
+      }
+      get_puzzle_stats: {
+        Args: { puzzle_id: string }
+        Returns: {
+          total_plays: number
+          avg_completion_time: number
+          fastest_time: number
+          completion_rate: number
+        }[]
       }
       has_permission: {
         Args: { user_id: string; permission_name: string }
