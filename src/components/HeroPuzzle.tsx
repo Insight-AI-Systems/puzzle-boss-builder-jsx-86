@@ -116,8 +116,13 @@ const HeroPuzzle: React.FC = () => {
               id="numbers-toggle"
               checked={showNumbers}
               onCheckedChange={handleToggleNumbers}
+              aria-label="Toggle numbers visibility"
             />
-            <label htmlFor="numbers-toggle" className="text-sm text-puzzle-aqua cursor-pointer">
+            <label
+              htmlFor="numbers-toggle"
+              className="text-sm text-puzzle-aqua cursor-pointer"
+              onClick={() => handleToggleNumbers(!showNumbers)}
+            >
               Numbers
             </label>
           </div>

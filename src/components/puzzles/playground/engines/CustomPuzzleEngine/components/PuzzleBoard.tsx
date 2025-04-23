@@ -132,7 +132,7 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
                   }}
                 >
                   {showNumbers && (
-                    <span className="absolute top-1 left-1 text-xs bg-black/50 rounded-full w-5 h-5 flex items-center justify-center text-white">
+                    <span className="absolute top-1 left-1 text-xs bg-black/70 px-1 py-0.5 rounded-full w-5 h-5 flex items-center justify-center text-white font-medium">
                       {piece.id + 1}
                     </span>
                   )}
