@@ -1,10 +1,10 @@
-
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IssueType } from "@/types/issueTypes";
 import { IssueCard } from "./IssueCard";
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface IssuesListProps {
   issues: IssueType[];
@@ -12,8 +12,11 @@ interface IssuesListProps {
   isLoading?: boolean;
 }
 
+type SortOption = "newest" | "oldest" | "status" | "category";
+
 export function IssuesList({ issues, onUpdate, isLoading = false }: IssuesListProps) {
   const [filter, setFilter] = useState<"all" | "active" | "resolved">("active");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
   
   const filteredIssues = issues.filter(issue => {
     if (filter === "all") return true;
@@ -21,12 +24,25 @@ export function IssuesList({ issues, onUpdate, isLoading = false }: IssuesListPr
     if (filter === "resolved") return issue.status === "resolved";
     return true;
   });
+
+  const sortedIssues = [...filteredIssues].sort((a, b) => {
+    switch (sortBy) {
+      case "newest":
+        return new Date(b.created_at || "").getTime() - new Date(a.created_at || "").getTime();
+      case "oldest":
+        return new Date(a.created_at || "").getTime() - new Date(b.created_at || "").getTime();
+      case "status":
+        return (a.status || "").localeCompare(b.status || "");
+      case "category":
+        return (a.category || "").localeCompare(b.category || "");
+      default:
+        return 0;
+    }
+  });
   
-  // Calculate counts for each category
   const activeCount = issues.filter(issue => issue.status !== "resolved").length;
   const resolvedCount = issues.filter(issue => issue.status === "resolved").length;
   
-  // Calculate counts by category
   const categoryCounts = {
     bug: issues.filter(issue => issue.category === "bug").length,
     performance: issues.filter(issue => issue.category === "performance").length,
@@ -75,19 +91,33 @@ export function IssuesList({ issues, onUpdate, isLoading = false }: IssuesListPr
         ))}
       </div>
 
-      <Tabs defaultValue="active" onValueChange={(value) => setFilter(value as any)}>
-        <TabsList className="grid grid-cols-3 mb-4">
-          <TabsTrigger value="active">
-            Active ({activeCount})
-          </TabsTrigger>
-          <TabsTrigger value="resolved">
-            Resolved ({resolvedCount})
-          </TabsTrigger>
-          <TabsTrigger value="all">
-            All ({issues.length})
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="flex items-center justify-between">
+        <Tabs defaultValue="active" onValueChange={(value) => setFilter(value as any)}>
+          <TabsList className="grid grid-cols-3">
+            <TabsTrigger value="active">
+              Active ({activeCount})
+            </TabsTrigger>
+            <TabsTrigger value="resolved">
+              Resolved ({resolvedCount})
+            </TabsTrigger>
+            <TabsTrigger value="all">
+              All ({issues.length})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Sort by..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Newest First</SelectItem>
+            <SelectItem value="oldest">Oldest First</SelectItem>
+            <SelectItem value="status">By Status</SelectItem>
+            <SelectItem value="category">By Category</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
       
       {/* Fixed height and overflow handling to ensure scrolling works properly */}
       <div className="h-[600px] border rounded-md">
@@ -97,16 +127,16 @@ export function IssuesList({ issues, onUpdate, isLoading = false }: IssuesListPr
               <div className="text-center py-8 text-muted-foreground">
                 Loading issues...
               </div>
-            ) : filteredIssues.length === 0 ? (
+            ) : sortedIssues.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 No issues found in this category.
               </div>
             ) : (
               <>
                 <div className="text-muted-foreground text-sm mb-4">
-                  Found {filteredIssues.length} {filter === "all" ? "total" : filter} issues
+                  Found {sortedIssues.length} {filter === "all" ? "total" : filter} issues
                 </div>
-                {filteredIssues.map((issue) => (
+                {sortedIssues.map((issue) => (
                   <IssueCard 
                     key={issue.id} 
                     issue={issue} 
