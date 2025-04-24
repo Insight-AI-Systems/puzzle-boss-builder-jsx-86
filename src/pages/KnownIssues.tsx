@@ -1,3 +1,4 @@
+
 import PageLayout from "@/components/layouts/PageLayout";
 import { IssuesHeader } from "@/components/issues/IssuesHeader";
 import { IssuesList } from "@/components/issues/IssuesList";
@@ -28,11 +29,15 @@ export default function KnownIssues() {
       });
       
       // Add auth comparison issue if it doesn't exist
-      if (!combinedIssues.some(issue => issue.id === "AUTH-EVAL")) {
-        combinedIssues.push(getAuthComparisonIssue());
+      const authComparisonIssue = getAuthComparisonIssue();
+      if (!combinedIssues.some(issue => issue.id === authComparisonIssue.id)) {
+        combinedIssues.push(authComparisonIssue);
       }
       
       console.log("Combined issues count:", combinedIssues.length);
+      console.log("Issues from DB:", dbIssues.length);
+      console.log("Local issues:", localIssues.length);
+      
       setAllIssues(combinedIssues);
       setIsLoading(false);
       
@@ -41,7 +46,7 @@ export default function KnownIssues() {
         toast({
           title: "Limited issues displayed",
           description: `Only ${combinedIssues.length} issues found. This may indicate a data loading issue.`,
-          variant: "default",
+          variant: "destructive",
         });
       }
     }
@@ -60,7 +65,18 @@ export default function KnownIssues() {
     }
     
     // For all other issues, use the normal update mechanism
-    return updateIssue(updatedIssue);
+    const success = await updateIssue(updatedIssue);
+    
+    if (success) {
+      // Update in local state as well to ensure UI is updated
+      setAllIssues(prevIssues => 
+        prevIssues.map(issue => 
+          issue.id === updatedIssue.id ? updatedIssue : issue
+        )
+      );
+    }
+    
+    return success;
   };
 
   return (
