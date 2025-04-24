@@ -1,4 +1,3 @@
-
 import PageLayout from "@/components/layouts/PageLayout";
 import { IssuesHeader } from "@/components/issues/IssuesHeader";
 import { IssuesList } from "@/components/issues/IssuesList";
@@ -79,13 +78,25 @@ export default function KnownIssues() {
     return success;
   };
 
+  // Handle adding new issues
+  const handleAddIssue = async (newIssue: IssueType) => {
+    // For database issues
+    const success = await updateIssue(newIssue);
+    
+    if (success) {
+      setAllIssues(prevIssues => [...prevIssues, newIssue]);
+      return true;
+    }
+    return false;
+  };
+
   return (
     <PageLayout 
       title="Known Issues & Project Tasks" 
       subtitle="Current list of issues, tasks and their status - our main workflow guide"
       className="max-w-4xl mx-auto"
     >
-      <IssuesHeader />
+      <IssuesHeader onAddIssue={handleAddIssue} />
       <IssuesList 
         issues={allIssues} 
         onUpdate={handleUpdateIssue} 
