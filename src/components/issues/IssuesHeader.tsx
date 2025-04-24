@@ -3,6 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info, FileCheck } from "lucide-react";
 import { AddIssueDialog } from "./AddIssueDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { IssueType } from "@/types/issueTypes";
 
 interface IssuesHeaderProps {
   onAddIssue: (newIssue: IssueType) => Promise<boolean>;
