@@ -11,7 +11,6 @@ type DbIssue = {
   title: string;
   description: string;
   status: 'wip' | 'completed';
-  severity?: 'low' | 'medium' | 'high' | 'critical';
   category: string;
   workaround?: string;
   created_by?: string;
@@ -45,13 +44,16 @@ export const useKnownIssues = () => {
         return;
       }
       
+      console.log("Database results:", data);
+      
       // Map database status to our issue type status
       const mappedIssues: IssueType[] = (data as DbIssue[]).map(item => ({
         id: item.id,
         title: item.title,
         description: item.description,
         status: mapDbStatusToFrontend(item.status),
-        severity: item.severity || "medium",
+        // Since severity doesn't exist in the database, set a default value
+        severity: "medium",
         category: mapDatabaseCategory(item.category),
         workaround: item.workaround,
         created_by: item.created_by,
@@ -82,19 +84,23 @@ export const useKnownIssues = () => {
       // Map frontend status to database status
       const dbStatus = mapFrontendStatusToDb(updatedIssue.status);
       
+      // Only include fields that exist in the database
+      const updateData = {
+        title: updatedIssue.title,
+        description: updatedIssue.description,
+        status: dbStatus,
+        category: updatedIssue.category,
+        workaround: updatedIssue.workaround,
+        modified_by: updatedIssue.modified_by,
+        updated_at: new Date().toISOString()
+      };
+      
+      console.log("Sending update data to database:", updateData);
+      
       // Update in the database
       const { error } = await supabase
         .from('issues')
-        .update({
-          title: updatedIssue.title,
-          description: updatedIssue.description,
-          status: dbStatus,
-          severity: updatedIssue.severity,
-          category: updatedIssue.category,
-          workaround: updatedIssue.workaround,
-          modified_by: updatedIssue.modified_by,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', updatedIssue.id);
 
       if (error) {
