@@ -35,10 +35,11 @@ export const useKnownIssues = () => {
           
       if (error) {
         console.error("Error fetching issues:", error);
+        // If database fetch fails, use the fallback issues
         setIssues(fallbackIssues);
         toast({
-          title: "Failed to load issues",
-          description: "Using cached data instead. Please try refreshing.",
+          title: "Failed to load issues from database",
+          description: "Using local data instead. Please try refreshing.",
           variant: "destructive",
         });
         return;
@@ -60,7 +61,13 @@ export const useKnownIssues = () => {
         updated_at: item.updated_at
       }));
       
-      setIssues(mappedIssues.length > 0 ? mappedIssues : fallbackIssues);
+      // If no issues were returned from database, use the fallback issues
+      if (mappedIssues.length === 0) {
+        console.log("No issues found in database, using fallback issues");
+        setIssues(fallbackIssues);
+      } else {
+        setIssues(mappedIssues);
+      }
     } catch (err) {
       console.error("Exception fetching issues:", err);
       setIssues(fallbackIssues);

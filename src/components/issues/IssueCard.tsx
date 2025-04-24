@@ -1,4 +1,3 @@
-
 import { IssueType } from "@/types/issueTypes";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -102,7 +101,7 @@ export function IssueCard({ issue, onUpdate }: IssueCardProps) {
             <IssueCategoryIcon category={issue.category} />
           </div>
           <div className="flex items-center space-x-2">
-            <IssueBadges status={issue.status} />
+            <IssueBadges status={issue.status} category={issue.category} />
             {isAdmin && (
               <IssueEditDialog issue={issue} onUpdate={onUpdate} />
             )}

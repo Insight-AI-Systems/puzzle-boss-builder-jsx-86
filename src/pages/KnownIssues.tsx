@@ -4,15 +4,49 @@ import { IssuesHeader } from "@/components/issues/IssuesHeader";
 import { IssuesList } from "@/components/issues/IssuesList";
 import { useKnownIssues } from "@/hooks/useKnownIssues";
 import { getAuthComparisonIssue } from "@/components/issues/AuthComparisonIssue";
+import { knownIssues as localIssues } from "@/data/knownIssues";
+import { IssueType } from "@/types/issueTypes";
+import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function KnownIssues() {
-  const { issues, isLoading, updateIssue } = useKnownIssues();
+  const { issues: dbIssues, isLoading: isDbLoading, updateIssue } = useKnownIssues();
+  const [allIssues, setAllIssues] = useState<IssueType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   
-  const allIssues = [
-    ...issues,
-    // Only add if it doesn't already exist
-    ...(!issues.some(i => i.id === "AUTH-EVAL") ? [getAuthComparisonIssue()] : [])
-  ];
+  useEffect(() => {
+    if (!isDbLoading) {
+      // Combine database issues with local issues that don't exist in the database
+      // and the special auth comparison issue
+      const combinedIssues: IssueType[] = [...dbIssues];
+      
+      // Add local issues that don't exist in the database
+      localIssues.forEach(localIssue => {
+        if (!combinedIssues.some(issue => issue.id === localIssue.id)) {
+          combinedIssues.push(localIssue);
+        }
+      });
+      
+      // Add auth comparison issue if it doesn't exist
+      if (!combinedIssues.some(issue => issue.id === "AUTH-EVAL")) {
+        combinedIssues.push(getAuthComparisonIssue());
+      }
+      
+      console.log("Combined issues count:", combinedIssues.length);
+      setAllIssues(combinedIssues);
+      setIsLoading(false);
+      
+      // Show toast if too few issues are displayed
+      if (combinedIssues.length < 5) {
+        toast({
+          title: "Limited issues displayed",
+          description: `Only ${combinedIssues.length} issues found. This may indicate a data loading issue.`,
+          variant: "default",
+        });
+      }
+    }
+  }, [dbIssues, isDbLoading, toast]);
 
   return (
     <PageLayout 

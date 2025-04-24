@@ -51,13 +51,18 @@ export function IssuesList({ issues, onUpdate, isLoading = false }: IssuesListPr
               No issues found in this category.
             </div>
           ) : (
-            filteredIssues.map((issue) => (
-              <IssueCard 
-                key={issue.id} 
-                issue={issue} 
-                onUpdate={onUpdate}
-              />
-            ))
+            <>
+              <div className="text-muted-foreground text-sm mb-4">
+                Found {filteredIssues.length} {filter === "all" ? "total" : filter} issues
+              </div>
+              {filteredIssues.map((issue) => (
+                <IssueCard 
+                  key={issue.id} 
+                  issue={issue} 
+                  onUpdate={onUpdate}
+                />
+              ))}
+            </>
           )}
         </div>
       </ScrollArea>
