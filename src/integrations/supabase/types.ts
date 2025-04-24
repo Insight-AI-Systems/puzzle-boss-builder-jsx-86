@@ -148,10 +148,12 @@ export type Database = {
           created_by: string
           description: string
           id: string
+          modified_at: string | null
           modified_by: string
           status: Database["public"]["Enums"]["issue_status"]
           title: string
           updated_at: string
+          workaround: string | null
         }
         Insert: {
           category?: string | null
@@ -159,10 +161,12 @@ export type Database = {
           created_by: string
           description: string
           id?: string
+          modified_at?: string | null
           modified_by: string
           status?: Database["public"]["Enums"]["issue_status"]
           title: string
           updated_at?: string
+          workaround?: string | null
         }
         Update: {
           category?: string | null
@@ -170,10 +174,12 @@ export type Database = {
           created_by?: string
           description?: string
           id?: string
+          modified_at?: string | null
           modified_by?: string
           status?: Database["public"]["Enums"]["issue_status"]
           title?: string
           updated_at?: string
+          workaround?: string | null
         }
         Relationships: []
       }

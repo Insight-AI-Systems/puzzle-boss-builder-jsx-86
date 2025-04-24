@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { IssueType, mapDbStatusToFrontend, mapFrontendStatusToDb } from "@/types/issueTypes";
@@ -35,7 +34,6 @@ export const useKnownIssues = () => {
           
       if (error) {
         console.error("Error fetching issues:", error);
-        // If database fetch fails, use the fallback issues
         setIssues(fallbackIssues);
         toast({
           title: "Failed to load issues from database",
