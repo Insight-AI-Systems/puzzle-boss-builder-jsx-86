@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider"
@@ -34,7 +33,8 @@ import {
   Partnerships,
   NotFound,
   Auth,
-  BetaNotes
+  BetaNotes,
+  KnownIssues
 } from '@/pages';
 import PuzzleTestPlayground from '@/pages/PuzzleTestPlayground';
 import Unauthorized from '@/pages/Unauthorized';
@@ -42,7 +42,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layouts/MainLayout';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-// Import admin tools for global access
 import '@/utils/admin/adminTools';
 
 function App() {
@@ -139,6 +138,9 @@ function App() {
                           <BetaNotes />
                         </ProtectedRoute>
                       } />
+                      
+                      {/* Known Issues page */}
+                      <Route path="/known-issues" element={<KnownIssues />} />
                       
                       <Route path="*" element={<NotFound />} />
                     </Routes>
