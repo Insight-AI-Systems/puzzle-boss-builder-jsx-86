@@ -89,6 +89,8 @@ export const useKnownIssues = () => {
       // Map frontend status to database status
       const dbStatus = mapFrontendStatusToDb(updatedIssue.status);
       
+      console.log("Mapped status for database:", dbStatus);
+
       // Only include fields that exist in the database
       const updateData = {
         title: updatedIssue.title,

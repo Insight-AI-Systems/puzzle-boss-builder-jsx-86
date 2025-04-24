@@ -68,12 +68,23 @@ export function IssueEditDialog({ issue, onUpdate }: IssueEditDialogProps) {
     }
   };
 
-  // Reset the edited issue when the dialog opens
+  // Reset the edited issue when the dialog opens or closes
   const handleOpenChange = (open: boolean) => {
     if (open) {
-      setEditedIssue(issue);
+      // Reset to original issue when opening
+      setEditedIssue({...issue});
+    } else {
+      // Only close if not saving
+      if (!isSaving) {
+        setIsOpen(open);
+      }
     }
     setIsOpen(open);
+  };
+
+  // Handle error dialog close
+  const handleErrorDialogClose = () => {
+    setShowErrorDialog(false);
   };
 
   return (
@@ -170,7 +181,7 @@ export function IssueEditDialog({ issue, onUpdate }: IssueEditDialogProps) {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+      <AlertDialog open={showErrorDialog} onOpenChange={handleErrorDialogClose}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Error Updating Issue</AlertDialogTitle>
@@ -179,7 +190,7 @@ export function IssueEditDialog({ issue, onUpdate }: IssueEditDialogProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowErrorDialog(false)}>
+            <AlertDialogAction onClick={handleErrorDialogClose}>
               Okay
             </AlertDialogAction>
           </AlertDialogFooter>
