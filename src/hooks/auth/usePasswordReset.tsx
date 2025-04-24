@@ -33,10 +33,7 @@ export function usePasswordReset(): PasswordResetState & PasswordResetActions {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Rate limiting for security
-  let lastAttemptTime = 0;
-  const MIN_TIME_BETWEEN_ATTEMPTS = 30000; // 30 seconds
-
+  // Validate the form data
   const validateResetForm = (): boolean => {
     // For password reset request
     if (!password && !confirmPassword) {
@@ -68,17 +65,45 @@ export function usePasswordReset(): PasswordResetState & PasswordResetActions {
     return true;
   };
 
-  const handlePasswordResetRequest = async () => {
-    // Rate limiting check
-    const now = Date.now();
-    if (now - lastAttemptTime < MIN_TIME_BETWEEN_ATTEMPTS) {
-      setErrorMessage(`Please wait before requesting another reset`);
-      return;
+  // Check if rate limited using our security definer function
+  const checkIfRateLimited = async (email: string): Promise<boolean> => {
+    try {
+      // Call our security definer function
+      const { data, error } = await supabase.rpc('is_password_reset_rate_limited', { 
+        _email: email,
+        _max_attempts: 3,
+        _timeframe_minutes: 30
+      });
+      
+      if (error) throw error;
+      return !!data; // Convert to boolean
+    } catch (error) {
+      console.error('Error checking rate limit:', error);
+      return false; // Default to not rate limited on error
     }
-    lastAttemptTime = now;
+  };
 
-    if (!email) {
-      setErrorMessage('Email is required');
+  // Record a password reset attempt using our security definer function
+  const recordResetAttempt = async (email: string): Promise<void> => {
+    try {
+      // Get IP address (this will be 'client-side' when called from the browser)
+      const ipAddress = 'client-side';
+      
+      // Call our security definer function to record the attempt
+      const { error } = await supabase.rpc('handle_password_reset_attempt', { 
+        _email: email, 
+        _ip_address: ipAddress 
+      });
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error recording reset attempt:', error);
+      // Non-blocking - we continue even if recording fails
+    }
+  };
+
+  const handlePasswordResetRequest = async () => {
+    if (!validateResetForm()) {
       return;
     }
     
@@ -86,6 +111,17 @@ export function usePasswordReset(): PasswordResetState & PasswordResetActions {
       setIsLoading(true);
       setErrorMessage('');
       setSuccessMessage('');
+      
+      // Check if rate limited
+      const isRateLimited = await checkIfRateLimited(email);
+      
+      if (isRateLimited) {
+        setErrorMessage('Too many reset attempts. Please try again later.');
+        return;
+      }
+      
+      // Record this attempt
+      await recordResetAttempt(email);
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth?type=recovery`,
