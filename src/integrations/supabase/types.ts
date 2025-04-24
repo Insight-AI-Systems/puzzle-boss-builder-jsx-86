@@ -694,12 +694,24 @@ export type Database = {
           completion_rate: number
         }[]
       }
+      handle_password_reset_attempt: {
+        Args: { _email: string; _ip_address?: string }
+        Returns: string
+      }
       has_permission: {
         Args: { user_id: string; permission_name: string }
         Returns: boolean
       }
       is_admin: {
         Args: { user_id: string }
+        Returns: boolean
+      }
+      is_password_reset_rate_limited: {
+        Args: {
+          _email: string
+          _max_attempts?: number
+          _timeframe_minutes?: number
+        }
         Returns: boolean
       }
       search_and_sync_users: {
