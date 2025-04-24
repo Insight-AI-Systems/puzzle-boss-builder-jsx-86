@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { IssueType } from "@/types/issueTypes";
+import { IssueType, mapDbStatusToFrontend } from "@/types/issueTypes";
 import { knownIssues as fallbackIssues } from "@/data/knownIssues";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -30,7 +30,7 @@ export const useKnownIssues = () => {
         id: item.id,
         title: item.title,
         description: item.description,
-        status: mapDatabaseStatus(item.status),
+        status: mapDbStatusToFrontend(item.status),
         severity: item.severity || "medium",
         category: mapDatabaseCategory(item.category),
         workaround: item.workaround,
@@ -72,17 +72,6 @@ export const useKnownIssues = () => {
     isLoading,
     handleIssueUpdate
   };
-};
-
-const mapDatabaseStatus = (status: string): IssueType['status'] => {
-  switch (status) {
-    case 'wip':
-      return 'in-progress';
-    case 'completed':
-      return 'resolved';
-    default:
-      return 'open';
-  }
 };
 
 const mapDatabaseCategory = (category: string): IssueType['category'] => {

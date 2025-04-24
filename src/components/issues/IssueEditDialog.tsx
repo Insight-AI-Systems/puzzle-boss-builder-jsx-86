@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
-import { IssueType } from "@/types/issueTypes";
+import { IssueType, mapFrontendStatusToDb } from "@/types/issueTypes";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,10 +25,18 @@ export function IssueEditDialog({ issue, onUpdate }: IssueEditDialogProps) {
 
   const handleSave = async () => {
     try {
+      // Map frontend status to database status
+      const dbStatus = mapFrontendStatusToDb(editedIssue.status);
+      
       const { data, error } = await supabase
         .from('issues')
         .update({
-          ...editedIssue,
+          title: editedIssue.title,
+          description: editedIssue.description,
+          status: dbStatus,
+          category: editedIssue.category,
+          severity: editedIssue.severity,
+          workaround: editedIssue.workaround,
           modified_by: user?.id,
           updated_at: new Date().toISOString()
         })
@@ -38,7 +46,14 @@ export function IssueEditDialog({ issue, onUpdate }: IssueEditDialogProps) {
 
       if (error) throw error;
 
-      onUpdate(data);
+      // Map back to our frontend issue type
+      const updatedIssue: IssueType = {
+        ...editedIssue,
+        modified_by: user?.id || editedIssue.modified_by || '',
+        updated_at: new Date().toISOString()
+      };
+
+      onUpdate(updatedIssue);
       setIsOpen(false);
       toast({
         title: "Issue updated",
