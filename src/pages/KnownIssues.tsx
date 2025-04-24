@@ -6,7 +6,7 @@ import { useKnownIssues } from "@/hooks/useKnownIssues";
 import { getAuthComparisonIssue } from "@/components/issues/AuthComparisonIssue";
 
 export default function KnownIssues() {
-  const { issues, isLoading, handleIssueUpdate } = useKnownIssues();
+  const { issues, isLoading, updateIssue } = useKnownIssues();
   
   const allIssues = [
     ...issues,
@@ -23,7 +23,7 @@ export default function KnownIssues() {
       <IssuesHeader />
       <IssuesList 
         issues={allIssues} 
-        onUpdate={handleIssueUpdate} 
+        onUpdate={updateIssue} 
         isLoading={isLoading} 
       />
     </PageLayout>

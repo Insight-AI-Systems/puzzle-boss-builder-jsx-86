@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { IssueType, mapDbStatusToFrontend } from "@/types/issueTypes";
+import { IssueType, mapDbStatusToFrontend, mapFrontendStatusToDb } from "@/types/issueTypes";
 import { knownIssues as fallbackIssues } from "@/data/knownIssues";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -70,6 +70,50 @@ export const useKnownIssues = () => {
     }
   };
 
+  const updateIssue = async (updatedIssue: IssueType): Promise<boolean> => {
+    try {
+      // Map frontend status to database status
+      const dbStatus = mapFrontendStatusToDb(updatedIssue.status);
+      
+      // Update in the database
+      const { error } = await supabase
+        .from('issues')
+        .update({
+          title: updatedIssue.title,
+          description: updatedIssue.description,
+          status: dbStatus,
+          severity: updatedIssue.severity,
+          category: updatedIssue.category,
+          workaround: updatedIssue.workaround,
+          modified_by: updatedIssue.modified_by,
+          updated_at: updatedIssue.updated_at
+        })
+        .eq('id', updatedIssue.id);
+
+      if (error) {
+        console.error("Error updating issue in database:", error);
+        toast({
+          title: "Update Failed",
+          description: "Could not update the issue in the database.",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // Update in local state
+      handleIssueUpdate(updatedIssue);
+      return true;
+    } catch (err) {
+      console.error("Exception updating issue:", err);
+      toast({
+        title: "Update Failed",
+        description: "An unexpected error occurred while updating the issue.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   const handleIssueUpdate = (updatedIssue: IssueType) => {
     setIssues(prevIssues => 
       prevIssues.map(issue => 
@@ -85,7 +129,8 @@ export const useKnownIssues = () => {
   return {
     issues,
     isLoading,
-    handleIssueUpdate
+    handleIssueUpdate,
+    updateIssue
   };
 };
 

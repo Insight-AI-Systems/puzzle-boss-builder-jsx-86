@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useKnownIssues } from "@/hooks/useKnownIssues";
 
 interface IssueEditDialogProps {
   issue: IssueType;
@@ -20,51 +20,49 @@ interface IssueEditDialogProps {
 export function IssueEditDialog({ issue, onUpdate }: IssueEditDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [editedIssue, setEditedIssue] = useState<IssueType>(issue);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { updateIssue } = useKnownIssues();
 
   const handleSave = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to update issues.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      // Map frontend status to database status
-      const dbStatus = mapFrontendStatusToDb(editedIssue.status);
-      
-      const { data, error } = await supabase
-        .from('issues')
-        .update({
-          title: editedIssue.title,
-          description: editedIssue.description,
-          status: dbStatus,
-          category: editedIssue.category,
-          severity: editedIssue.severity,
-          workaround: editedIssue.workaround,
-          modified_by: user?.id,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', issue.id)
-        .select()
-        .single();
+      setIsSaving(true);
 
-      if (error) throw error;
-
-      // Map back to our frontend issue type
+      // Update the issue with the current timestamp and user
       const updatedIssue: IssueType = {
         ...editedIssue,
-        modified_by: user?.id || editedIssue.modified_by || '',
+        modified_by: user.id || editedIssue.modified_by || '',
         updated_at: new Date().toISOString()
       };
 
-      onUpdate(updatedIssue);
-      setIsOpen(false);
-      toast({
-        title: "Issue updated",
-        description: "The issue has been successfully updated.",
-      });
+      const success = await updateIssue(updatedIssue);
+      
+      if (success) {
+        setIsOpen(false);
+        toast({
+          title: "Issue updated",
+          description: "The issue has been successfully updated in the database.",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to update the issue. Please try again.",
         variant: "destructive",
       });
+      console.error("Error updating issue:", error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -170,11 +168,11 @@ export function IssueEditDialog({ issue, onUpdate }: IssueEditDialogProps) {
           </div>
         </div>
         <div className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
+          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>
-            Save Changes
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </DialogContent>
