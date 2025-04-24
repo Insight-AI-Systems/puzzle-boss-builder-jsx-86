@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
@@ -43,6 +42,7 @@ const Hero: React.FC = () => {
               difficulty="easy"
               miniRows={3}
               miniColumns={3}
+              showNumbersToggle={true}
             />
           </div>
         </div>
