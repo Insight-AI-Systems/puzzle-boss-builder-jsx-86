@@ -5,6 +5,21 @@ import { IssueType, mapDbStatusToFrontend } from "@/types/issueTypes";
 import { knownIssues as fallbackIssues } from "@/data/knownIssues";
 import { supabase } from "@/integrations/supabase/client";
 
+// Define a type for the database issue structure
+type DbIssue = {
+  id: string;
+  title: string;
+  description: string;
+  status: 'wip' | 'completed';
+  severity?: 'low' | 'medium' | 'high' | 'critical';
+  category: string;
+  workaround?: string;
+  created_by?: string;
+  modified_by?: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export const useKnownIssues = () => {
   const [issues, setIssues] = useState<IssueType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,7 +41,7 @@ export const useKnownIssues = () => {
       }
       
       // Map database status to our issue type status
-      const mappedIssues: IssueType[] = data.map(item => ({
+      const mappedIssues: IssueType[] = (data as DbIssue[]).map(item => ({
         id: item.id,
         title: item.title,
         description: item.description,
