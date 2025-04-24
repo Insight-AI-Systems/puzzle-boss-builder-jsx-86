@@ -93,7 +93,7 @@ export function IssuesList({ issues, onUpdate, isLoading = false }: IssuesListPr
       </div>
 
       <div className="flex items-center justify-between">
-        <Tabs defaultValue="active" onValueChange={(value) => setFilter(value as any)}>
+        <Tabs defaultValue="active" value={filter} onValueChange={(value) => setFilter(value as any)}>
           <TabsList className="grid grid-cols-3">
             <TabsTrigger value="active">
               Active ({activeCount})

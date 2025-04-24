@@ -17,21 +17,20 @@ export default function KnownIssues() {
   
   useEffect(() => {
     if (!isDbLoading) {
-      // Combine database issues with local issues that don't exist in the database
-      // and the special auth comparison issue
-      const combinedIssues: IssueType[] = [...dbIssues];
+      // Deep clone of database issues to avoid reference issues
+      const combinedIssues: IssueType[] = JSON.parse(JSON.stringify(dbIssues));
       
       // Add local issues that don't exist in the database
       localIssues.forEach(localIssue => {
         if (!combinedIssues.some(issue => issue.id === localIssue.id)) {
-          combinedIssues.push(localIssue);
+          combinedIssues.push({...localIssue});
         }
       });
       
       // Add auth comparison issue if it doesn't exist
       const authComparisonIssue = getAuthComparisonIssue();
       if (!combinedIssues.some(issue => issue.id === authComparisonIssue.id)) {
-        combinedIssues.push(authComparisonIssue);
+        combinedIssues.push({...authComparisonIssue});
       }
       
       console.log("Combined issues count:", combinedIssues.length);
