@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface IssuesListProps {
   issues: IssueType[];
-  onUpdate: (updatedIssue: IssueType) => void;
+  onUpdate: (updatedIssue: IssueType) => Promise<boolean>;
   isLoading?: boolean;
 }
 

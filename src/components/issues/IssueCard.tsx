@@ -1,3 +1,4 @@
+
 import { IssueType } from "@/types/issueTypes";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -9,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface IssueCardProps {
   issue: IssueType;
-  onUpdate: (updatedIssue: IssueType) => void;
+  onUpdate: (updatedIssue: IssueType) => Promise<boolean>;
 }
 
 export function IssueCard({ issue, onUpdate }: IssueCardProps) {
