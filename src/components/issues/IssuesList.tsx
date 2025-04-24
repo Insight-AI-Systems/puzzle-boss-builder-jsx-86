@@ -40,32 +40,35 @@ export function IssuesList({ issues, onUpdate, isLoading = false }: IssuesListPr
         </TabsList>
       </Tabs>
       
-      <ScrollArea className="h-[600px] rounded-md border p-4">
-        <div className="space-y-4">
-          {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Loading issues...
-            </div>
-          ) : filteredIssues.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No issues found in this category.
-            </div>
-          ) : (
-            <>
-              <div className="text-muted-foreground text-sm mb-4">
-                Found {filteredIssues.length} {filter === "all" ? "total" : filter} issues
+      {/* Fixed height and overflow handling to ensure scrolling works properly */}
+      <div className="h-[600px] border rounded-md">
+        <ScrollArea className="h-full w-full p-4">
+          <div className="space-y-4">
+            {isLoading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Loading issues...
               </div>
-              {filteredIssues.map((issue) => (
-                <IssueCard 
-                  key={issue.id} 
-                  issue={issue} 
-                  onUpdate={onUpdate}
-                />
-              ))}
-            </>
-          )}
-        </div>
-      </ScrollArea>
+            ) : filteredIssues.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No issues found in this category.
+              </div>
+            ) : (
+              <>
+                <div className="text-muted-foreground text-sm mb-4">
+                  Found {filteredIssues.length} {filter === "all" ? "total" : filter} issues
+                </div>
+                {filteredIssues.map((issue) => (
+                  <IssueCard 
+                    key={issue.id} 
+                    issue={issue} 
+                    onUpdate={onUpdate}
+                  />
+                ))}
+              </>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   );
 }
