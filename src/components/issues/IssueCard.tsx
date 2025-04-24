@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { IssueBadges } from "./IssueBadges";
 import { IssueCategoryIcon } from "./IssueCategoryIcon";
-import { IssueEditDialog } from "./IssueEditDialog";
+import { IssueEditDialog } from "./edit-dialog/IssueEditDialog";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 
