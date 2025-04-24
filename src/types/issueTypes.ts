@@ -1,9 +1,8 @@
-
 export type IssueType = {
   id: string;
   title: string;
   description: string;
-  status: 'open' | 'in-progress' | 'resolved';
+  status: 'open' | 'in-progress' | 'resolved' | 'deferred';
   category: 'bug' | 'performance' | 'security' | 'ui' | 'feature';
   workaround?: string;
   created_by?: string;
@@ -13,13 +12,14 @@ export type IssueType = {
 };
 
 // Database types
-export type DbIssueStatus = 'wip' | 'completed';
+export type DbIssueStatus = 'wip' | 'completed' | 'deferred';
 
 // Mapping functions between DB and frontend types
 export const mapDbStatusToFrontend = (status: DbIssueStatus): IssueType['status'] => {
   switch (status) {
     case 'wip': return 'in-progress';
     case 'completed': return 'resolved';
+    case 'deferred': return 'deferred';
     default: return 'open';
   }
 };
@@ -28,6 +28,7 @@ export const mapFrontendStatusToDb = (status: IssueType['status']): DbIssueStatu
   switch (status) {
     case 'in-progress': return 'wip';
     case 'resolved': return 'completed';
+    case 'deferred': return 'deferred';
     default: return 'wip';
   }
 };

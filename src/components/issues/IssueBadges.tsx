@@ -16,6 +16,8 @@ export function IssueBadges({ status, category }: IssueBadgesProps) {
         return <Badge variant="outline" className="border-yellow-500 text-yellow-500">In Progress</Badge>;
       case 'resolved':
         return <Badge variant="outline" className="border-green-500 text-green-500">Resolved</Badge>;
+      case 'deferred':
+        return <Badge variant="outline" className="border-purple-500 text-purple-500">Deferred</Badge>;
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }

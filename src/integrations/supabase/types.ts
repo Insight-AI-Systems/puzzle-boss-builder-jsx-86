@@ -714,6 +714,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      mapdbstatustofrontend: {
+        Args: { db_status: Database["public"]["Enums"]["issue_status"] }
+        Returns: string
+      }
+      mapfrontendstatustodb: {
+        Args: { frontend_status: string }
+        Returns: Database["public"]["Enums"]["issue_status"]
+      }
       search_and_sync_users: {
         Args: { search_term: string }
         Returns: {
@@ -734,7 +742,7 @@ export type Database = {
     Enums: {
       age_group: "13-17" | "18-24" | "25-34" | "35-44" | "45-60" | "60+"
       feedback_type: "bug" | "suggestion" | "question" | "other"
-      issue_status: "wip" | "completed"
+      issue_status: "wip" | "completed" | "deferred"
       note_status: "wip" | "completed"
       puzzle_difficulty: "easy" | "medium" | "hard"
       user_role:
@@ -863,7 +871,7 @@ export const Constants = {
     Enums: {
       age_group: ["13-17", "18-24", "25-34", "35-44", "45-60", "60+"],
       feedback_type: ["bug", "suggestion", "question", "other"],
-      issue_status: ["wip", "completed"],
+      issue_status: ["wip", "completed", "deferred"],
       note_status: ["wip", "completed"],
       puzzle_difficulty: ["easy", "medium", "hard"],
       user_role: [

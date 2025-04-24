@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -111,6 +110,7 @@ export function IssueEditDialog({ issue, onUpdate }: IssueEditDialogProps) {
                     <SelectItem value="open">Open</SelectItem>
                     <SelectItem value="in-progress">In Progress</SelectItem>
                     <SelectItem value="resolved">Resolved</SelectItem>
+                    <SelectItem value="deferred">Deferred</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
