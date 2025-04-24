@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
 import { ArrowRight } from 'lucide-react';
-import HeroPuzzle from './HeroPuzzle';
+import PuzzleEnginePlayground from './puzzles/playground/PuzzleEnginePlayground';
 
 const Hero: React.FC = () => {
   return (
@@ -36,7 +36,14 @@ const Hero: React.FC = () => {
           </div>
           
           <div className="w-full md:w-1/2">
-            <HeroPuzzle />
+            <PuzzleEnginePlayground 
+              heroMode={true} 
+              isCondensed={true}
+              selectedImage="mountain"
+              difficulty="easy"
+              miniRows={3}
+              miniColumns={3}
+            />
           </div>
         </div>
       </div>
