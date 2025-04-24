@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { PuzzleProvider, usePuzzleContext } from './PuzzleProvider';
 import CustomPuzzleEngine from './playground/engines/CustomPuzzleEngine';
@@ -9,13 +8,14 @@ interface PuzzleGameProps {
   puzzleId?: string;
   rows?: number;
   columns?: number;
+  showNumbers?: boolean;
 }
 
-// Inner component that uses the PuzzleContext
 const PuzzleGameInner: React.FC<PuzzleGameProps> = ({
   imageUrl,
   rows = 3,
-  columns = 4
+  columns = 4,
+  showNumbers = true
 }) => {
   const { isAuthenticated, progress } = usePuzzleContext();
   const { toast } = useToast();
@@ -35,11 +35,11 @@ const PuzzleGameInner: React.FC<PuzzleGameProps> = ({
       imageUrl={imageUrl}
       rows={rows}
       columns={columns}
+      showNumbers={showNumbers}
     />
   );
 };
 
-// Main component that provides the PuzzleContext
 const PuzzleGame: React.FC<PuzzleGameProps> = (props) => {
   return (
     <PuzzleProvider puzzleId={props.puzzleId}>

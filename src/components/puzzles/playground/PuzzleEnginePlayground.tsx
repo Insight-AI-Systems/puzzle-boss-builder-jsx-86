@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -62,6 +63,7 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
   const [difficulty, setDifficulty] = useState(propDifficulty || DIFFICULTY_PRESETS[1].value);
   const [resetKey, setResetKey] = useState(0);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [showNumbers, setShowNumbers] = useState(true);
   const { theme } = useTheme();
 
   const currentImage = SAMPLE_IMAGES.find(img => img.id === selectedImage)?.url || SAMPLE_IMAGES[0].url;
@@ -136,6 +138,15 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
             </SelectContent>
           </Select>
         </div>
+
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="show-numbers"
+            checked={showNumbers}
+            onCheckedChange={setShowNumbers}
+          />
+          <Label htmlFor="show-numbers">Show Numbers</Label>
+        </div>
       </div>
       
       <div className="flex justify-end">
@@ -156,6 +167,7 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
           rows={rows}
           columns={columns}
           puzzleId={`playground-${currentImage}-${difficulty}`}
+          showNumbers={showNumbers}
         />
       </div>
       
