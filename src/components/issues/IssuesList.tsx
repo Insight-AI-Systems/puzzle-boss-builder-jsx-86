@@ -1,4 +1,3 @@
-
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IssueType } from "@/types/issueTypes";
 import { IssueCard } from "./IssueCard";
@@ -7,12 +6,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface IssuesListProps {
   issues: IssueType[];
+  onUpdate: (updatedIssue: IssueType) => void;
 }
 
-export function IssuesList({ issues }: IssuesListProps) {
+export function IssuesList({ issues, onUpdate }: IssuesListProps) {
   const [filter, setFilter] = useState<"all" | "active" | "resolved">("active");
   
-  // Filter issues based on selected tab
   const filteredIssues = issues.filter(issue => {
     if (filter === "all") return true;
     if (filter === "active") return issue.status !== "resolved";
@@ -20,7 +19,6 @@ export function IssuesList({ issues }: IssuesListProps) {
     return true;
   });
   
-  // Count issues by status
   const activeCount = issues.filter(issue => issue.status !== "resolved").length;
   const resolvedCount = issues.filter(issue => issue.status === "resolved").length;
   
@@ -48,7 +46,11 @@ export function IssuesList({ issues }: IssuesListProps) {
             </div>
           ) : (
             filteredIssues.map((issue) => (
-              <IssueCard key={issue.id} issue={issue} />
+              <IssueCard 
+                key={issue.id} 
+                issue={issue} 
+                onUpdate={onUpdate}
+              />
             ))
           )}
         </div>

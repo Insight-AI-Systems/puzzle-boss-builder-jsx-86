@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import PageLayout from "@/components/layouts/PageLayout";
@@ -14,54 +13,73 @@ export default function KnownIssues() {
   const { toast } = useToast();
 
   useEffect(() => {
-    async function fetchIssues() {
-      try {
-        setIsLoading(true);
-        
-        // Attempt to fetch issues from Supabase
-        const { data, error } = await supabase
-          .from('issues')
-          .select('*')
-          .order('created_at', { ascending: false });
-          
-        if (error) {
-          console.error("Error fetching issues:", error);
-          // Fall back to static data if the fetch fails
-          setIssues(fallbackIssues);
-          return;
-        }
-        
-        // Map the database structure to match our IssueType
-        const mappedIssues: IssueType[] = data.map(item => ({
-          id: item.id,
-          title: item.title,
-          description: item.description,
-          status: item.status,
-          severity: item.severity || "medium",
-          category: item.category || "bug",
-          workaround: item.workaround
-        }));
-        
-        setIssues(mappedIssues.length > 0 ? mappedIssues : fallbackIssues);
-      } catch (err) {
-        console.error("Exception fetching issues:", err);
-        // Fall back to static data if an exception occurs
-        setIssues(fallbackIssues);
-        
-        toast({
-          title: "Failed to load issues",
-          description: "Using cached data instead. Please try refreshing.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    
     fetchIssues();
-  }, [toast]);
+  }, []);
 
-  // Add a special issue specifically about the auth comparison
+  const fetchIssues = async () => {
+    try {
+      setIsLoading(true);
+      
+      const { data, error } = await supabase
+        .from('issues')
+        .select('*')
+        .order('created_at', { ascending: false });
+          
+      if (error) {
+        console.error("Error fetching issues:", error);
+        setIssues(fallbackIssues);
+        return;
+      }
+      
+      // Map database status to our issue type status
+      const mappedIssues: IssueType[] = data.map(item => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        status: mapStatus(item.status),
+        severity: item.severity || "medium",
+        category: item.category || "bug",
+        workaround: item.workaround,
+        created_by: item.created_by,
+        modified_by: item.modified_by,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+      
+      setIssues(mappedIssues.length > 0 ? mappedIssues : fallbackIssues);
+    } catch (err) {
+      console.error("Exception fetching issues:", err);
+      setIssues(fallbackIssues);
+      
+      toast({
+        title: "Failed to load issues",
+        description: "Using cached data instead. Please try refreshing.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const mapStatus = (status: string): IssueType['status'] => {
+    switch (status) {
+      case 'wip':
+        return 'in-progress';
+      case 'completed':
+        return 'resolved';
+      default:
+        return 'open';
+    }
+  };
+
+  const handleIssueUpdate = (updatedIssue: IssueType) => {
+    setIssues(prevIssues => 
+      prevIssues.map(issue => 
+        issue.id === updatedIssue.id ? updatedIssue : issue
+      )
+    );
+  };
+
   const authComparisonIssue: IssueType = {
     id: "AUTH-EVAL",
     title: "Authentication Provider Evaluation",
@@ -72,7 +90,6 @@ export default function KnownIssues() {
     workaround: "Continue using Supabase Auth while evaluation is in progress"
   };
   
-  // Add the new issue to either the fetched list or the fallback list
   const allIssues = [
     ...issues,
     // Only add if it doesn't already exist
@@ -86,7 +103,7 @@ export default function KnownIssues() {
       className="max-w-4xl mx-auto"
     >
       <IssuesHeader />
-      <IssuesList issues={allIssues} />
+      <IssuesList issues={allIssues} onUpdate={handleIssueUpdate} />
     </PageLayout>
   );
 }

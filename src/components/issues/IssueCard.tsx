@@ -1,16 +1,21 @@
-
 import { IssueType } from "@/types/issueTypes";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { IssueBadges } from "./IssueBadges";
 import { IssueCategoryIcon } from "./IssueCategoryIcon";
+import { IssueEditDialog } from "./IssueEditDialog";
+import { format } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface IssueCardProps {
   issue: IssueType;
+  onUpdate: (updatedIssue: IssueType) => void;
 }
 
-export function IssueCard({ issue }: IssueCardProps) {
-  // Special content for the auth comparison issue
+export function IssueCard({ issue, onUpdate }: IssueCardProps) {
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole('admin') || hasRole('super_admin');
+
   const renderAuthComparisonContent = () => {
     if (issue.id !== "AUTH-EVAL") return null;
     
@@ -80,6 +85,11 @@ export function IssueCard({ issue }: IssueCardProps) {
     );
   };
 
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    return format(new Date(dateString), 'MMM d, yyyy HH:mm');
+  };
+
   return (
     <Card>
       <CardHeader className="space-y-0 pb-2">
@@ -90,7 +100,12 @@ export function IssueCard({ issue }: IssueCardProps) {
             </span>
             <IssueCategoryIcon category={issue.category} />
           </div>
-          <IssueBadges status={issue.status} severity={issue.severity} />
+          <div className="flex items-center space-x-2">
+            <IssueBadges status={issue.status} severity={issue.severity} />
+            {isAdmin && (
+              <IssueEditDialog issue={issue} onUpdate={onUpdate} />
+            )}
+          </div>
         </div>
         <CardTitle className="text-lg mt-2">{issue.title}</CardTitle>
         <CardDescription className="text-sm">
@@ -109,6 +124,14 @@ export function IssueCard({ issue }: IssueCardProps) {
             </div>
           </>
         )}
+
+        <Separator className="my-2" />
+        <div className="text-xs text-muted-foreground space-y-1">
+          <div>Created: {formatDate(issue.created_at)}</div>
+          {issue.updated_at !== issue.created_at && (
+            <div>Last Updated: {formatDate(issue.updated_at)}</div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
