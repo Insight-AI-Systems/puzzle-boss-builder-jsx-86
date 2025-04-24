@@ -11,36 +11,44 @@ import { RefreshCcw } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import PuzzleGame from "@/components/puzzles/PuzzleGame";
 import './engines/styles/jigsaw-puzzle.css';
-
-const SAMPLE_IMAGES = [
-  {
-    id: "mountain",
-    url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
-    alt: "Mountain Lake"
-  },
-  {
-    id: "code",
-    url: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7",
-    alt: "Code"
-  },
-  {
-    id: "matrix",
-    url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5",
-    alt: "Matrix"
-  }
-];
-
-const PUZZLE_ENGINES = [
-  { id: 'react-jigsaw-puzzle', name: 'Puzzle Boss Jigsaw Puzzle' }
-];
-
-const DIFFICULTY_PRESETS = [
-  { value: 'easy', label: 'Easy', rows: 3, columns: 3 },
-  { value: 'medium', label: 'Medium', rows: 4, columns: 4 },
-  { value: 'hard', label: 'Hard', rows: 5, columns: 5 },
-  { value: 'expert', label: 'Expert', rows: 6, columns: 6 }
-];
-
+const SAMPLE_IMAGES = [{
+  id: "mountain",
+  url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+  alt: "Mountain Lake"
+}, {
+  id: "code",
+  url: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7",
+  alt: "Code"
+}, {
+  id: "matrix",
+  url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5",
+  alt: "Matrix"
+}];
+const PUZZLE_ENGINES = [{
+  id: 'react-jigsaw-puzzle',
+  name: 'Puzzle Boss Jigsaw Puzzle'
+}];
+const DIFFICULTY_PRESETS = [{
+  value: 'easy',
+  label: 'Easy',
+  rows: 3,
+  columns: 3
+}, {
+  value: 'medium',
+  label: 'Medium',
+  rows: 4,
+  columns: 4
+}, {
+  value: 'hard',
+  label: 'Hard',
+  rows: 5,
+  columns: 5
+}, {
+  value: 'expert',
+  label: 'Expert',
+  rows: 6,
+  columns: 6
+}];
 interface PuzzleEnginePlaygroundProps {
   heroMode?: boolean;
   isCondensed?: boolean;
@@ -49,7 +57,6 @@ interface PuzzleEnginePlaygroundProps {
   miniRows?: number;
   miniColumns?: number;
 }
-
 const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
   heroMode = false,
   isCondensed = false,
@@ -58,54 +65,40 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
   miniRows,
   miniColumns
 }) => {
-  
   const [selectedImage, setSelectedImage] = useState(propSelectedImage || SAMPLE_IMAGES[0].id);
   const [difficulty, setDifficulty] = useState(propDifficulty || DIFFICULTY_PRESETS[1].value);
   const [resetKey, setResetKey] = useState(0);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [showNumbers, setShowNumbers] = useState(true);
-  const { theme } = useTheme();
-
+  const {
+    theme
+  } = useTheme();
   const currentImage = SAMPLE_IMAGES.find(img => img.id === selectedImage)?.url || SAMPLE_IMAGES[0].url;
-  const currentDifficultyPreset = (
-    DIFFICULTY_PRESETS.find(d => d.value === difficulty) || DIFFICULTY_PRESETS[1]
-  );
+  const currentDifficultyPreset = DIFFICULTY_PRESETS.find(d => d.value === difficulty) || DIFFICULTY_PRESETS[1];
   const rows = heroMode && miniRows ? miniRows : currentDifficultyPreset.rows;
   const columns = heroMode && miniColumns ? miniColumns : currentDifficultyPreset.columns;
-
   const handleResetPuzzle = useCallback(() => {
     setResetKey(prev => prev + 1);
   }, []);
-  
   const handleNotesChange = useCallback((value: string) => {
     setNotes(prev => ({
       ...prev,
       puzzle: value
     }));
   }, []);
-  
   const getEngineKey = useCallback((engineId: string) => {
     return `${engineId}-${resetKey}-${selectedImage}-${difficulty}`;
   }, [resetKey, selectedImage, difficulty]);
-  
   if (heroMode) {
-    return (
-      <div className="w-full" style={{ minHeight: 220 }}>
+    return <div className="w-full" style={{
+      minHeight: 220
+    }}>
         <div className="relative border rounded-lg p-2 bg-background">
-          <PuzzleGame
-            imageUrl={currentImage}
-            rows={rows}
-            columns={columns}
-            puzzleId={`hero-${currentImage}`}
-          />
+          <PuzzleGame imageUrl={currentImage} rows={rows} columns={columns} puzzleId={`hero-${currentImage}`} />
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/20 rounded-lg border">
         <div>
           <Label htmlFor="image-selector" className="mb-2 block">Test Image</Label>
@@ -114,11 +107,9 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
               <SelectValue placeholder="Select image..." />
             </SelectTrigger>
             <SelectContent>
-              {SAMPLE_IMAGES.map(image => (
-                <SelectItem key={image.id} value={image.id}>
+              {SAMPLE_IMAGES.map(image => <SelectItem key={image.id} value={image.id}>
                   {image.alt}
-                </SelectItem>
-              ))}
+                </SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -130,21 +121,15 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
               <SelectValue placeholder="Select difficulty..." />
             </SelectTrigger>
             <SelectContent>
-              {DIFFICULTY_PRESETS.map(preset => (
-                <SelectItem key={preset.value} value={preset.value}>
+              {DIFFICULTY_PRESETS.map(preset => <SelectItem key={preset.value} value={preset.value}>
                   {preset.label} ({preset.rows}x{preset.columns})
-                </SelectItem>
-              ))}
+                </SelectItem>)}
             </SelectContent>
           </Select>
         </div>
 
         <div className="flex items-center space-x-2">
-          <Switch
-            id="show-numbers"
-            checked={showNumbers}
-            onCheckedChange={setShowNumbers}
-          />
+          <Switch id="show-numbers" checked={showNumbers} onCheckedChange={setShowNumbers} />
           <Label htmlFor="show-numbers">Show Numbers</Label>
         </div>
       </div>
@@ -157,32 +142,15 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
       </div>
       
       <div className="min-h-[500px] relative border rounded-lg p-4 bg-background">
-        <div className="absolute top-4 right-4 z-10 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs border">
-          Puzzle Boss Engine
-        </div>
         
-        <PuzzleGame
-          key={getEngineKey('library')}
-          imageUrl={currentImage}
-          rows={rows}
-          columns={columns}
-          puzzleId={`playground-${currentImage}-${difficulty}`}
-          showNumbers={showNumbers}
-        />
+        
+        <PuzzleGame key={getEngineKey('library')} imageUrl={currentImage} rows={rows} columns={columns} puzzleId={`playground-${currentImage}-${difficulty}`} showNumbers={showNumbers} />
       </div>
       
       <div>
         <Label htmlFor="evaluation-notes" className="mb-2 block">Evaluation Notes</Label>
-        <Textarea
-          id="evaluation-notes"
-          placeholder="Add your notes, observations, and feedback about this puzzle engine here..."
-          className="min-h-[120px]"
-          value={notes['puzzle'] || ''}
-          onChange={(e) => handleNotesChange(e.target.value)}
-        />
+        <Textarea id="evaluation-notes" placeholder="Add your notes, observations, and feedback about this puzzle engine here..." className="min-h-[120px]" value={notes['puzzle'] || ''} onChange={e => handleNotesChange(e.target.value)} />
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default React.memo(PuzzleEnginePlayground);
