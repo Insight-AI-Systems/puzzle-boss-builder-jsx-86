@@ -52,8 +52,6 @@ export const useKnownIssues = () => {
         title: item.title,
         description: item.description,
         status: mapDbStatusToFrontend(item.status),
-        // Since severity doesn't exist in the database, set a default value
-        severity: "medium",
         category: mapDatabaseCategory(item.category),
         workaround: item.workaround,
         created_by: item.created_by,

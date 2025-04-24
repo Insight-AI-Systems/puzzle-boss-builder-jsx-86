@@ -36,7 +36,7 @@ const Auth = () => {
     if (isInVerificationFlow) {
       toast({
         title: 'Email Verified',
-        description: 'Your email has been successfully verified.',
+        description: 'Your email has been successfully verified. Please log in with your credentials.',
       });
     }
   }, [isInVerificationFlow, toast]);
@@ -55,6 +55,9 @@ const Auth = () => {
     return <Navigate to={from} replace />;
   }
 
+  // Force the login view after verification
+  const defaultView = isInVerificationFlow ? 'signin' : searchParams.get('signup') === 'true' ? 'signup' : 'signin';
+
   return (
     <div className="min-h-screen bg-puzzle-black flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
@@ -65,12 +68,14 @@ const Auth = () => {
             <span className="text-puzzle-gold">Boss</span>
           </h2>
           <p className="mt-2 text-muted-foreground">
-            {searchParams.get('signup') === 'true' 
-              ? 'Create an account to start playing' 
-              : 'Sign in to continue to your account'}
+            {isInVerificationFlow 
+              ? 'Please log in with your verified email'
+              : searchParams.get('signup') === 'true' 
+                ? 'Create an account to start playing' 
+                : 'Sign in to continue to your account'}
           </p>
         </div>
-        <AuthForm />
+        <AuthForm initialView={isInVerificationFlow ? 'signin' : undefined} />
       </div>
     </div>
   );

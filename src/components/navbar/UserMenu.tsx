@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, LogOut, ShieldCheck, LayoutDashboard } from 'lucide-react';
+import { User, LogOut, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -61,13 +61,10 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/membership">Membership</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
           <Link to="/settings">Settings</Link>
         </DropdownMenuItem>
         
-        {/* Admin Menu Section */}
+        {/* Admin Menu Section - No dropdown item but kept link in separate section */}
         {isAdminUser && (
           <>
             <DropdownMenuSeparator />
@@ -75,12 +72,6 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
               <ShieldCheck className="mr-2 h-4 w-4" />
               Admin Access
             </DropdownMenuLabel>
-            <DropdownMenuItem asChild>
-              <Link to="/admin-dashboard">
-                <LayoutDashboard className="mr-2 h-4 w-4" />
-                Admin Dashboard
-              </Link>
-            </DropdownMenuItem>
           </>
         )}
         

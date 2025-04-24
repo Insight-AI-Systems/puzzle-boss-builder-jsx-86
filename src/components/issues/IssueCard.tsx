@@ -102,7 +102,7 @@ export function IssueCard({ issue, onUpdate }: IssueCardProps) {
             <IssueCategoryIcon category={issue.category} />
           </div>
           <div className="flex items-center space-x-2">
-            <IssueBadges status={issue.status} severity={issue.severity} />
+            <IssueBadges status={issue.status} />
             {isAdmin && (
               <IssueEditDialog issue={issue} onUpdate={onUpdate} />
             )}

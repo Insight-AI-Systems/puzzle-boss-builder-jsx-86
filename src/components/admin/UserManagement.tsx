@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { UserStatsDisplay } from './user-management/UserStatsDisplay';
 import { UsersTable } from './user-management/UsersTable';
@@ -48,6 +48,8 @@ export function UserManagement() {
 
   const [localSearchTerm, setLocalSearchTerm] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // Track if we recently performed a search
+  const [recentlySearched, setRecentlySearched] = useState(false);
 
   const currentUserRole = profile?.role || 'player';
   const currentUserEmail = profile?.id; // In your system, id appears to be the email
@@ -58,9 +60,25 @@ export function UserManagement() {
     profile
   });
 
+  // Effect to clear search after search completion
+  useEffect(() => {
+    if (recentlySearched && allProfilesData?.data) {
+      // Reset the flag and clear search after data has been loaded
+      setRecentlySearched(false);
+      // Let the data load with search term first
+      const timer = setTimeout(() => {
+        setLocalSearchTerm('');
+        setSearchTerm('');
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [recentlySearched, allProfilesData, setSearchTerm]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSearchTerm(localSearchTerm);
+    setRecentlySearched(true); // Set this flag to true after search
   };
 
   const handleSortByRole = () => {
