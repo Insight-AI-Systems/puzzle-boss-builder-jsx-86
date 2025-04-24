@@ -6,7 +6,6 @@ export const getAuthComparisonIssue = (): IssueType => ({
   title: "Authentication Provider Evaluation",
   description: "Compare Supabase Auth vs Clerk for our authentication needs.",
   status: "in-progress",
-  severity: "high",
   category: "security",
   workaround: "Continue using Supabase Auth while evaluation is in progress"
 });
