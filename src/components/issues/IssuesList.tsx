@@ -2,19 +2,57 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IssueType } from "@/types/issueTypes";
 import { IssueCard } from "./IssueCard";
+import { useState } from "react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface IssuesListProps {
   issues: IssueType[];
 }
 
 export function IssuesList({ issues }: IssuesListProps) {
+  const [filter, setFilter] = useState<"all" | "active" | "resolved">("active");
+  
+  // Filter issues based on selected tab
+  const filteredIssues = issues.filter(issue => {
+    if (filter === "all") return true;
+    if (filter === "active") return issue.status !== "resolved";
+    if (filter === "resolved") return issue.status === "resolved";
+    return true;
+  });
+  
+  // Count issues by status
+  const activeCount = issues.filter(issue => issue.status !== "resolved").length;
+  const resolvedCount = issues.filter(issue => issue.status === "resolved").length;
+  
   return (
-    <ScrollArea className="h-[600px] rounded-md border p-4">
-      <div className="space-y-4">
-        {issues.map((issue) => (
-          <IssueCard key={issue.id} issue={issue} />
-        ))}
-      </div>
-    </ScrollArea>
+    <div className="space-y-4">
+      <Tabs defaultValue="active" onValueChange={(value) => setFilter(value as any)}>
+        <TabsList className="grid grid-cols-3 mb-4">
+          <TabsTrigger value="active">
+            Active ({activeCount})
+          </TabsTrigger>
+          <TabsTrigger value="resolved">
+            Resolved ({resolvedCount})
+          </TabsTrigger>
+          <TabsTrigger value="all">
+            All ({issues.length})
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+      
+      <ScrollArea className="h-[600px] rounded-md border p-4">
+        <div className="space-y-4">
+          {filteredIssues.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No issues found in this category.
+            </div>
+          ) : (
+            filteredIssues.map((issue) => (
+              <IssueCard key={issue.id} issue={issue} />
+            ))
+          )}
+        </div>
+      </ScrollArea>
+    </div>
   );
 }
