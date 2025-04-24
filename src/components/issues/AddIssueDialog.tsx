@@ -30,6 +30,15 @@ export function AddIssueDialog({ onAdd }: AddIssueDialogProps) {
   };
 
   const handleSave = async () => {
+    if (!editedIssue.title || !editedIssue.description) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in both title and description before saving.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       setIsSaving(true);
       const success = await onAdd(editedIssue);
@@ -64,8 +73,19 @@ export function AddIssueDialog({ onAdd }: AddIssueDialogProps) {
     }
   };
 
+  const onOpenChange = (open: boolean) => {
+    // Reset form when opening or generate new UUID when reopening
+    if (open) {
+      setEditedIssue({
+        ...editedIssue,
+        id: crypto.randomUUID(),
+      });
+    }
+    setIsOpen(open);
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button>
           <Plus className="h-4 w-4 mr-2" />

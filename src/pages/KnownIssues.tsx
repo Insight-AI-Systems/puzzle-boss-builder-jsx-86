@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function KnownIssues() {
-  const { issues: dbIssues, isLoading: isDbLoading, updateIssue } = useKnownIssues();
+  const { issues: dbIssues, isLoading: isDbLoading, updateIssue, addIssue } = useKnownIssues();
   const [allIssues, setAllIssues] = useState<IssueType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -82,12 +82,22 @@ export default function KnownIssues() {
   // Handle adding new issues
   const handleAddIssue = async (newIssue: IssueType) => {
     // For database issues
-    const success = await updateIssue(newIssue);
+    const success = await addIssue(newIssue);
     
     if (success) {
+      // Update the local state with the new issue
       setAllIssues(prevIssues => [...prevIssues, newIssue]);
+      toast({
+        title: "Issue Added",
+        description: `Successfully added issue: ${newIssue.title}`,
+      });
       return true;
     }
+    toast({
+      title: "Failed to Add Issue",
+      description: "There was a problem adding the new issue.",
+      variant: "destructive",
+    });
     return false;
   };
 

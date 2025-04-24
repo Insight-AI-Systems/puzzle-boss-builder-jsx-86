@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { IssueType, mapDbStatusToFrontend, mapFrontendStatusToDb } from "@/types/issueTypes";
@@ -138,6 +139,62 @@ export const useKnownIssues = () => {
     }
   };
 
+  const addIssue = async (newIssue: IssueType): Promise<boolean> => {
+    try {
+      console.log("Adding new issue to database:", newIssue);
+      
+      // Map frontend status to database status
+      const dbStatus = mapFrontendStatusToDb(newIssue.status);
+      
+      // Prepare the data for insertion
+      const insertData = {
+        id: newIssue.id, // Keep the UUID generated on the client
+        title: newIssue.title,
+        description: newIssue.description,
+        status: dbStatus,
+        category: newIssue.category,
+        workaround: newIssue.workaround || null,
+        created_by: newIssue.created_by || null,
+        modified_by: newIssue.modified_by || null,
+        created_at: newIssue.created_at || new Date().toISOString(),
+        updated_at: newIssue.updated_at || new Date().toISOString()
+      };
+      
+      console.log("Sending insert data to database:", insertData);
+      
+      // Insert into the database
+      const { error, data } = await supabase
+        .from('issues')
+        .insert(insertData)
+        .select();
+
+      if (error) {
+        console.error("Error adding issue to database:", error);
+        toast({
+          title: "Add Failed",
+          description: `Could not add the issue to the database: ${error.message}`,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      console.log("Issue added successfully:", data);
+      
+      // Refresh issues list to include the new issue
+      fetchIssues();
+      
+      return true;
+    } catch (err) {
+      console.error("Exception adding issue:", err);
+      toast({
+        title: "Add Failed",
+        description: "An unexpected error occurred while adding the issue.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   const handleIssueUpdate = (updatedIssue: IssueType) => {
     setIssues(prevIssues => 
       prevIssues.map(issue => 
@@ -155,6 +212,7 @@ export const useKnownIssues = () => {
     isLoading,
     handleIssueUpdate,
     updateIssue,
+    addIssue,
     fetchIssues
   };
 };
