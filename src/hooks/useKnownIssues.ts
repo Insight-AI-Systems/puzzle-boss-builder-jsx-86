@@ -10,7 +10,7 @@ type DbIssue = {
   id: string;
   title: string;
   description: string;
-  status: 'wip' | 'completed';
+  status: 'wip' | 'completed' | 'deferred';
   category: string;
   workaround?: string;
   created_by?: string;
@@ -95,8 +95,8 @@ export const useKnownIssues = () => {
         description: updatedIssue.description,
         status: dbStatus,
         category: updatedIssue.category,
-        workaround: updatedIssue.workaround,
-        modified_by: updatedIssue.modified_by,
+        workaround: updatedIssue.workaround || null,
+        modified_by: updatedIssue.modified_by || null,
         updated_at: new Date().toISOString()
       };
       
@@ -112,7 +112,7 @@ export const useKnownIssues = () => {
         console.error("Error updating issue in database:", error);
         toast({
           title: "Update Failed",
-          description: "Could not update the issue in the database: " + error.message,
+          description: `Could not update the issue in the database: ${error.message}`,
           variant: "destructive",
         });
         return false;
@@ -123,7 +123,7 @@ export const useKnownIssues = () => {
       
       toast({
         title: "Issue Updated",
-        description: "Successfully saved changes to the database.",
+        description: `Successfully changed status to ${updatedIssue.status}.`,
       });
       
       return true;

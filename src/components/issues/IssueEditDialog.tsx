@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,10 @@ export function IssueEditDialog({ issue, onUpdate }: IssueEditDialogProps) {
       
       if (success) {
         setIsOpen(false);
+        toast({
+          title: "Issue Updated",
+          description: `Issue successfully changed to ${updatedIssue.status} status.`,
+        });
       } else {
         setErrorMessage("Failed to update the issue. Please check console for details.");
         setShowErrorDialog(true);
@@ -63,9 +68,17 @@ export function IssueEditDialog({ issue, onUpdate }: IssueEditDialogProps) {
     }
   };
 
+  // Reset the edited issue when the dialog opens
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      setEditedIssue(issue);
+    }
+    setIsOpen(open);
+  };
+
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
           <Button variant="ghost" size="icon">
             <Edit className="h-4 w-4" />
