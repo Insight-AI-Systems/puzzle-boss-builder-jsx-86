@@ -33,6 +33,19 @@ export function IssueEditDialog({ issue, onUpdate }: IssueEditDialogProps) {
       return;
     }
 
+    // Check if this is a special non-database issue like AUTH-EVAL
+    const isSpecialLocalIssue = typeof issue.id === 'string' && !issue.id.match(/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/i);
+    
+    if (isSpecialLocalIssue) {
+      // For special local issues, just update the local state and don't try to save to DB
+      toast({
+        title: "Changes Saved Locally",
+        description: `Issue "${editedIssue.title}" updated in local state only.`,
+      });
+      setIsOpen(false);
+      return;
+    }
+
     try {
       setIsSaving(true);
       const updatedIssue: IssueType = {

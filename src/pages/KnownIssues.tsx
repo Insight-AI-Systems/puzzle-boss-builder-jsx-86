@@ -48,6 +48,26 @@ export default function KnownIssues() {
     }
   }, [dbIssues, isDbLoading, toast]);
 
+  // Handle updates including special non-database issues
+  const handleUpdateIssue = async (updatedIssue: IssueType) => {
+    // Check if this is a special non-database issue
+    const isSpecialLocalIssue = typeof updatedIssue.id === 'string' && 
+      !updatedIssue.id.match(/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/i);
+    
+    if (isSpecialLocalIssue) {
+      // For special issues like AUTH-EVAL, just update the local state
+      setAllIssues(prevIssues => 
+        prevIssues.map(issue => 
+          issue.id === updatedIssue.id ? updatedIssue : issue
+        )
+      );
+      return true;
+    }
+    
+    // For regular database issues, use the normal update mechanism
+    return updateIssue(updatedIssue);
+  };
+
   return (
     <PageLayout 
       title="Known Issues & Project Tasks" 
@@ -57,7 +77,7 @@ export default function KnownIssues() {
       <IssuesHeader />
       <IssuesList 
         issues={allIssues} 
-        onUpdate={updateIssue} 
+        onUpdate={handleUpdateIssue} 
         isLoading={isLoading} 
       />
     </PageLayout>
