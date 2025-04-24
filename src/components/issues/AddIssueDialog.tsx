@@ -14,9 +14,7 @@ interface AddIssueDialogProps {
 export function AddIssueDialog({ onAdd }: AddIssueDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
-
-  const emptyIssue: IssueType = {
+  const [editedIssue, setEditedIssue] = useState<IssueType>({
     id: crypto.randomUUID(),
     title: "",
     description: "",
@@ -24,9 +22,14 @@ export function AddIssueDialog({ onAdd }: AddIssueDialogProps) {
     category: "bug",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
+  });
+  const { toast } = useToast();
+
+  const handleChange = (issue: IssueType) => {
+    setEditedIssue(issue);
   };
 
-  const handleSave = async (editedIssue: IssueType) => {
+  const handleSave = async () => {
     try {
       setIsSaving(true);
       const success = await onAdd(editedIssue);
@@ -36,6 +39,17 @@ export function AddIssueDialog({ onAdd }: AddIssueDialogProps) {
         toast({
           title: "Issue Created",
           description: "New issue has been successfully added.",
+        });
+        
+        // Reset the form data after successful save
+        setEditedIssue({
+          id: crypto.randomUUID(),
+          title: "",
+          description: "",
+          status: "open",
+          category: "bug",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         });
       }
     } catch (err) {
@@ -63,9 +77,17 @@ export function AddIssueDialog({ onAdd }: AddIssueDialogProps) {
           <DialogTitle>Add New Issue</DialogTitle>
         </DialogHeader>
         <IssueEditForm 
-          editedIssue={emptyIssue}
-          setEditedIssue={handleSave}
+          editedIssue={editedIssue}
+          setEditedIssue={handleChange}
         />
+        <div className="flex justify-end space-x-2 mt-4">
+          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save Issue"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
