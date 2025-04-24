@@ -1,15 +1,17 @@
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IssueType } from "@/types/issueTypes";
 import { IssueCard } from "./IssueCard";
 import { useState } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface IssuesListProps {
   issues: IssueType[];
   onUpdate: (updatedIssue: IssueType) => void;
+  isLoading?: boolean;
 }
 
-export function IssuesList({ issues, onUpdate }: IssuesListProps) {
+export function IssuesList({ issues, onUpdate, isLoading = false }: IssuesListProps) {
   const [filter, setFilter] = useState<"all" | "active" | "resolved">("active");
   
   const filteredIssues = issues.filter(issue => {
@@ -40,7 +42,11 @@ export function IssuesList({ issues, onUpdate }: IssuesListProps) {
       
       <ScrollArea className="h-[600px] rounded-md border p-4">
         <div className="space-y-4">
-          {filteredIssues.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Loading issues...
+            </div>
+          ) : filteredIssues.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               No issues found in this category.
             </div>
