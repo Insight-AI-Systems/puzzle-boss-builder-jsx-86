@@ -22,7 +22,7 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
     for (let i = 0; i < pieceCount; i++) {
       pieces.push({
         id: i,
-        position: -1, // Start with -1 to indicate not placed yet
+        position: i, // Start with a piece in the correct position
         originalPosition: i,
         isDragging: false
       });
