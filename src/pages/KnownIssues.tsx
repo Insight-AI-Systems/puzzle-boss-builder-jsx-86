@@ -1,4 +1,3 @@
-
 import PageLayout from "@/components/layouts/PageLayout";
 import { IssuesHeader } from "@/components/issues/IssuesHeader";
 import { IssuesList } from "@/components/issues/IssuesList";
@@ -50,12 +49,8 @@ export default function KnownIssues() {
 
   // Handle updates including special non-database issues
   const handleUpdateIssue = async (updatedIssue: IssueType) => {
-    // Check if this is a special non-database issue
-    const isSpecialLocalIssue = typeof updatedIssue.id === 'string' && 
-      !updatedIssue.id.match(/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/i);
-    
-    if (isSpecialLocalIssue) {
-      // For special issues like AUTH-EVAL, just update the local state
+    // Specifically check for AUTH-EVAL, not any non-UUID string
+    if (updatedIssue.id === "AUTH-EVAL") {
       setAllIssues(prevIssues => 
         prevIssues.map(issue => 
           issue.id === updatedIssue.id ? updatedIssue : issue
@@ -64,7 +59,7 @@ export default function KnownIssues() {
       return true;
     }
     
-    // For regular database issues, use the normal update mechanism
+    // For all other issues, use the normal update mechanism
     return updateIssue(updatedIssue);
   };
 
