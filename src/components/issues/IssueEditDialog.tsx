@@ -3,18 +3,17 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
-import { IssueType, mapFrontendStatusToDb } from "@/types/issueTypes";
+import { IssueType } from "@/types/issueTypes";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useKnownIssues } from "@/hooks/useKnownIssues";
 
 interface IssueEditDialogProps {
   issue: IssueType;
-  onUpdate: (updatedIssue: IssueType) => void;
+  onUpdate: (updatedIssue: IssueType) => Promise<boolean>;
 }
 
 export function IssueEditDialog({ issue, onUpdate }: IssueEditDialogProps) {
@@ -23,7 +22,6 @@ export function IssueEditDialog({ issue, onUpdate }: IssueEditDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { updateIssue } = useKnownIssues();
 
   const handleSave = async () => {
     if (!user) {
@@ -45,22 +43,19 @@ export function IssueEditDialog({ issue, onUpdate }: IssueEditDialogProps) {
         updated_at: new Date().toISOString()
       };
 
-      const success = await updateIssue(updatedIssue);
+      console.log("Saving issue:", updatedIssue);
+      const success = await onUpdate(updatedIssue);
       
       if (success) {
         setIsOpen(false);
-        toast({
-          title: "Issue updated",
-          description: "The issue has been successfully updated in the database.",
-        });
       }
     } catch (error) {
+      console.error("Error updating issue:", error);
       toast({
         title: "Error",
         description: "Failed to update the issue. Please try again.",
         variant: "destructive",
       });
-      console.error("Error updating issue:", error);
     } finally {
       setIsSaving(false);
     }

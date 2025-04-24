@@ -37,6 +37,11 @@ export const useKnownIssues = () => {
       if (error) {
         console.error("Error fetching issues:", error);
         setIssues(fallbackIssues);
+        toast({
+          title: "Failed to load issues",
+          description: "Using cached data instead. Please try refreshing.",
+          variant: "destructive",
+        });
         return;
       }
       
@@ -72,6 +77,8 @@ export const useKnownIssues = () => {
 
   const updateIssue = async (updatedIssue: IssueType): Promise<boolean> => {
     try {
+      console.log("Updating issue in database:", updatedIssue);
+      
       // Map frontend status to database status
       const dbStatus = mapFrontendStatusToDb(updatedIssue.status);
       
@@ -86,7 +93,7 @@ export const useKnownIssues = () => {
           category: updatedIssue.category,
           workaround: updatedIssue.workaround,
           modified_by: updatedIssue.modified_by,
-          updated_at: updatedIssue.updated_at
+          updated_at: new Date().toISOString()
         })
         .eq('id', updatedIssue.id);
 
@@ -94,7 +101,7 @@ export const useKnownIssues = () => {
         console.error("Error updating issue in database:", error);
         toast({
           title: "Update Failed",
-          description: "Could not update the issue in the database.",
+          description: "Could not update the issue in the database: " + error.message,
           variant: "destructive",
         });
         return false;
@@ -102,6 +109,12 @@ export const useKnownIssues = () => {
 
       // Update in local state
       handleIssueUpdate(updatedIssue);
+      
+      toast({
+        title: "Issue Updated",
+        description: "Successfully saved changes to the database.",
+      });
+      
       return true;
     } catch (err) {
       console.error("Exception updating issue:", err);
@@ -130,7 +143,8 @@ export const useKnownIssues = () => {
     issues,
     isLoading,
     handleIssueUpdate,
-    updateIssue
+    updateIssue,
+    fetchIssues
   };
 };
 
