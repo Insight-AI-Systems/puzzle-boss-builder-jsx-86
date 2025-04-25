@@ -1,12 +1,8 @@
-
 import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { SupportTicket, TicketFilters, convertIssueToTicket } from "@/types/supportTicketTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useKnownIssues } from "@/hooks/issues";
-import { knownIssues } from "@/data/knownIssues";
-import { SUPPORT_SYSTEM_CONFIG } from "@/services/openSupportsConfig";
 import { mapFrontendStatusToDb } from "@/utils/issues/mappings";
 
 export const useSupportTickets = () => {
@@ -14,15 +10,12 @@ export const useSupportTickets = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user, hasRole } = useAuth();
-  const { issues } = useKnownIssues();
   const isAdmin = hasRole('super_admin') || hasRole('admin');
   
   // Function to fetch user's tickets from Supabase
   const fetchTickets = useCallback(async (filters?: Partial<TicketFilters>, isInternalView?: boolean) => {
     if (!user) {
-      // Use known issues as sample tickets for development or non-authenticated users
-      const sampleTickets = knownIssues.map(convertIssueToTicket);
-      setTickets(sampleTickets);
+      setTickets([]);
       setIsLoading(false);
       return;
     }
@@ -30,24 +23,25 @@ export const useSupportTickets = () => {
     try {
       setIsLoading(true);
       
-      let query = supabase.from('issues');
+      let query = supabase
+        .from('issues')
+        .select('*');
 
       // If admin is viewing internal issues
       if (isAdmin && isInternalView) {
-        query = query.select('*')
+        query = query
           .eq('category', 'internal')
           .order('created_at', { ascending: false });
       } 
       // Regular user view or admin viewing user tickets
       else {
-        query = query.select('*')
+        query = query
           .eq('created_by', user.id)
           .neq('category', 'internal')
           .order('created_at', { ascending: false });
       }
       
       if (filters?.status) {
-        // Convert frontend status to db status using the mapping function
         const dbStatus = mapFrontendStatusToDb(filters.status);
         query = query.eq('status', dbStatus);
       }
@@ -60,13 +54,10 @@ export const useSupportTickets = () => {
           
       if (error) {
         console.error("Error fetching support tickets:", error);
-        
-        // Fallback to known issues for demonstration
-        const fallbackTickets = knownIssues.map(convertIssueToTicket);
-        setTickets(fallbackTickets);
+        setTickets([]);
         toast({
           title: "Failed to load support tickets",
-          description: "Using sample data instead. Please try refreshing.",
+          description: "Please try refreshing the page.",
           variant: "destructive",
         });
         return;
@@ -89,10 +80,6 @@ export const useSupportTickets = () => {
       setTickets(userTickets);
     } catch (err) {
       console.error("Exception fetching tickets:", err);
-      
-      // Fallback to known issues for demonstration
-      const fallbackTickets = knownIssues.map(convertIssueToTicket);
-      setTickets(fallbackTickets);
       toast({
         title: "Failed to load support tickets",
         description: "An unexpected error occurred. Please try again later.",
@@ -258,11 +245,6 @@ export const useSupportTickets = () => {
     }
   }, [toast, fetchTickets, user, tickets, isAdmin]);
 
-  // Automatically fetch tickets when the component mounts
-  useEffect(() => {
-    fetchTickets();
-  }, [fetchTickets]);
-
   // Update ticket status
   const updateTicketStatus = useCallback(async (ticketId: string, newStatus: string): Promise<boolean> => {
     try {
@@ -339,6 +321,11 @@ export const useSupportTickets = () => {
       return false;
     }
   }, [toast, fetchTickets, user, tickets, isAdmin]);
+
+  // Automatically fetch tickets when the component mounts
+  useEffect(() => {
+    fetchTickets();
+  }, [fetchTickets]);
 
   return {
     tickets,
