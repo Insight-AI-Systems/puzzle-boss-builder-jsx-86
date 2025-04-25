@@ -1,36 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
+import { AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSupportTickets } from '@/hooks/support/useSupportTickets';
 import { TicketStatus, TicketFilters } from '@/types/supportTicketTypes';
-import { Search, AlertCircle, Clock, CheckCircle, Filter, ShieldAlert, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
-import { Badge } from '@/components/ui/badge';
+import { TicketFilters as TicketFilterComponent } from './ticket-list/TicketFilters';
+import { TicketTable } from './ticket-list/TicketTable';
 
 export const TicketList = () => {
   const { tickets, isLoading, fetchTickets, isAdmin } = useSupportTickets();
@@ -38,14 +18,14 @@ export const TicketList = () => {
   const { user, hasRole } = useAuth();
   const [searchParams] = useSearchParams();
   const isInternalView = searchParams.get('view') === 'internal';
+  const { toast } = useToast();
+  const isSuperAdmin = hasRole('super_admin');
   
   const [filters, setFilters] = useState<Partial<TicketFilters>>({
     page: 1,
     limit: 10
   });
   const [searchQuery, setSearchQuery] = useState('');
-  const { toast } = useToast();
-  const isSuperAdmin = hasRole('super_admin');
 
   useEffect(() => {
     if (user) {
@@ -55,7 +35,7 @@ export const TicketList = () => {
 
   const handleStatusChange = (status: string | undefined) => {
     if (status === "all") {
-      const { status, ...restFilters } = filters;
+      const { status: _, ...restFilters } = filters;
       setFilters({
         ...restFilters,
         page: 1
@@ -82,57 +62,6 @@ export const TicketList = () => {
     navigate(`/support/tickets/${ticketId}${isInternalView ? '?view=internal' : ''}`);
   };
 
-  const getStatusBadge = (status: TicketStatus) => {
-    switch (status) {
-      case 'open':
-        return (
-          <div className="flex items-center gap-1 rounded-full bg-yellow-100 text-yellow-800 px-2 py-1 text-xs">
-            <AlertCircle className="h-3 w-3" />
-            <span>Open</span>
-          </div>
-        );
-      case 'in-progress':
-        return (
-          <div className="flex items-center gap-1 rounded-full bg-blue-100 text-blue-800 px-2 py-1 text-xs">
-            <Clock className="h-3 w-3" />
-            <span>In Progress</span>
-          </div>
-        );
-      case 'resolved':
-      case 'closed':
-        return (
-          <div className="flex items-center gap-1 rounded-full bg-green-100 text-green-800 px-2 py-1 text-xs">
-            <CheckCircle className="h-3 w-3" />
-            <span>Resolved</span>
-          </div>
-        );
-      case 'pending':
-        return (
-          <div className="flex items-center gap-1 rounded-full bg-orange-100 text-orange-800 px-2 py-1 text-xs">
-            <Clock className="h-3 w-3" />
-            <span>Pending</span>
-          </div>
-        );
-      default:
-        return (
-          <div className="flex items-center gap-1 rounded-full bg-gray-100 text-gray-800 px-2 py-1 text-xs">
-            <span>Unknown</span>
-          </div>
-        );
-    }
-  };
-
-  const switchToTicketView = (internalView: boolean) => {
-    navigate(internalView ? '/support/tickets?view=internal' : '/support/tickets');
-  };
-
-  const getTicketSourceInfo = (ticket: any) => {
-    if (ticket.category === 'migrated') {
-      return <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">Migrated</Badge>;
-    }
-    return null;
-  };
-  
   const handleDeleteTicket = async (ticketId: string) => {
     if (!isSuperAdmin) return;
     
@@ -148,7 +77,6 @@ export const TicketList = () => {
           description: "The ticket has been permanently deleted.",
         });
         
-        // Refresh the tickets list
         fetchTickets(filters, isInternalView);
       } catch (error) {
         toast({
@@ -185,64 +113,22 @@ export const TicketList = () => {
         <CardTitle>
           {isAdmin && isInternalView ? (
             <div className="flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-red-500" />
+              <AlertCircle className="h-5 w-5 text-red-500" />
               <span>Internal Issues</span>
             </div>
           ) : (
             "Support Tickets"
           )}
         </CardTitle>
-        
-        {isAdmin && (
-          <div className="flex gap-2">
-            <Badge
-              variant={isInternalView ? "outline" : "secondary"}
-              className="cursor-pointer"
-              onClick={() => switchToTicketView(false)}
-            >
-              User Tickets
-            </Badge>
-            <Badge
-              variant={isInternalView ? "secondary" : "outline"}
-              className="cursor-pointer"
-              onClick={() => switchToTicketView(true)}
-            >
-              Internal Issues
-            </Badge>
-          </div>
-        )}
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col sm:flex-row gap-4 mb-6 justify-between">
-          <div className="flex items-center gap-2">
-            <Select onValueChange={handleStatusChange}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="open">Open</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="resolved">Resolved</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="icon">
-              <Filter className="h-4 w-4" />
-            </Button>
-          </div>
-          <form onSubmit={handleSearch} className="flex gap-2">
-            <Input 
-              placeholder="Search tickets..." 
-              value={searchQuery} 
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="max-w-xs"
-            />
-            <Button type="submit" variant="secondary">
-              <Search className="h-4 w-4" />
-            </Button>
-          </form>
-        </div>
+        <TicketFilterComponent
+          filters={filters}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSearch={handleSearch}
+          onStatusChange={handleStatusChange}
+        />
 
         {isLoading ? (
           <div className="text-center py-8">
@@ -256,65 +142,12 @@ export const TicketList = () => {
             </Button>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow className="border-puzzle-aqua/20">
-                <TableHead className="text-puzzle-aqua">Ticket</TableHead>
-                <TableHead className="text-puzzle-aqua">Status</TableHead>
-                <TableHead className="text-puzzle-aqua">Source</TableHead>
-                <TableHead className="text-puzzle-aqua">Created</TableHead>
-                <TableHead className="text-puzzle-aqua">Last Update</TableHead>
-                {isSuperAdmin && <TableHead className="text-puzzle-aqua">Actions</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tickets.map((ticket) => (
-                <TableRow 
-                  key={ticket.id} 
-                  className="border-puzzle-aqua/20 hover:bg-puzzle-aqua/5 cursor-pointer"
-                >
-                  <TableCell 
-                    onClick={() => goToTicketDetail(ticket.id)}
-                    className="font-medium"
-                  >
-                    <div>
-                      <div className="text-puzzle-white">{ticket.title}</div>
-                      <div className="text-sm text-puzzle-white/60 truncate max-w-[300px]">
-                        {ticket.description.split('\n')[0]}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell onClick={() => goToTicketDetail(ticket.id)}>
-                    {getStatusBadge(ticket.status)}
-                  </TableCell>
-                  <TableCell onClick={() => goToTicketDetail(ticket.id)}>
-                    {getTicketSourceInfo(ticket)}
-                  </TableCell>
-                  <TableCell onClick={() => goToTicketDetail(ticket.id)}>
-                    {ticket.created_at ? new Date(ticket.created_at).toLocaleDateString() : 'N/A'}
-                  </TableCell>
-                  <TableCell onClick={() => goToTicketDetail(ticket.id)}>
-                    {ticket.updated_at ? new Date(ticket.updated_at).toLocaleDateString() : 'N/A'}
-                  </TableCell>
-                  {isSuperAdmin && (
-                    <TableCell className="w-[100px]">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteTicket(ticket.id);
-                        }}
-                        className="hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <TicketTable
+            tickets={tickets}
+            isSuperAdmin={isSuperAdmin}
+            onTicketClick={goToTicketDetail}
+            onDeleteTicket={handleDeleteTicket}
+          />
         )}
       </CardContent>
     </Card>
