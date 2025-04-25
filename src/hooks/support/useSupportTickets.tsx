@@ -1,9 +1,10 @@
+
 import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { SupportTicket, TicketFilters, convertIssueToTicket } from "@/types/supportTicketTypes";
+import { SupportTicket, TicketFilters } from "@/types/supportTicketTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { mapFrontendStatusToDb } from "@/utils/issues/mappings";
+import { mapFrontendStatusToDb, mapDbStatusToFrontend } from "@/utils/support/mappings";
 
 export const useSupportTickets = () => {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -68,7 +69,7 @@ export const useSupportTickets = () => {
         id: item.id,
         title: item.title,
         description: item.description,
-        status: item.status === 'wip' ? 'in-progress' : item.status === 'completed' ? 'resolved' : 'open',
+        status: mapDbStatusToFrontend(item.status) as any,
         priority: item.category === 'security' ? 'high' : item.category === 'feature' ? 'low' : 'medium',
         category: item.category || 'tech',
         created_at: item.created_at,
@@ -278,7 +279,7 @@ export const useSupportTickets = () => {
       }
 
       // Convert frontend status to database status
-      const dbStatus = mapFrontendStatusToDb(newStatus as any);
+      const dbStatus = mapFrontendStatusToDb(newStatus);
       
       const { error } = await supabase
         .from('issues')

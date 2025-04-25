@@ -34,8 +34,7 @@ import {
   Partnerships,
   NotFound,
   Auth,
-  BetaNotes,
-  KnownIssues
+  BetaNotes
 } from '@/pages';
 import PuzzleTestPlayground from '@/pages/PuzzleTestPlayground';
 import Unauthorized from '@/pages/Unauthorized';
@@ -143,8 +142,7 @@ function App() {
                         </ProtectedRoute>
                       } />
                       
-                      {/* Known Issues page */}
-                      <Route path="/known-issues" element={<KnownIssues />} />
+                      {/* Known Issues page has been removed */}
                       
                       <Route path="*" element={<NotFound />} />
                     </Routes>

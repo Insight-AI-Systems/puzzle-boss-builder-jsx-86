@@ -1,6 +1,4 @@
 
-import { IssueType } from "./issueTypes";
-
 export type TicketStatus = 'open' | 'in-progress' | 'resolved' | 'closed' | 'pending';
 export type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
 export type TicketCategory = 'tech' | 'account' | 'billing' | 'prize' | 'feedback' | 'other' | 'internal';
@@ -38,8 +36,21 @@ export interface TicketFilters {
   limit: number;
 }
 
-// Convert from IssueType to SupportTicket
-export const convertIssueToTicket = (issue: IssueType): SupportTicket => {
+// Base interface for use with the convertIssueToTicket function
+export interface BaseIssue {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  category: string;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  workaround?: string;
+}
+
+// Convert from BaseIssue to SupportTicket
+export const convertIssueToTicket = (issue: BaseIssue): SupportTicket => {
   return {
     id: issue.id,
     title: issue.title,
@@ -54,10 +65,10 @@ export const convertIssueToTicket = (issue: IssueType): SupportTicket => {
   };
 };
 
-// Convert from SupportTicket to IssueType (for internal tracking)
-export const convertTicketToIssue = (ticket: SupportTicket): IssueType => {
+// Convert from SupportTicket to BaseIssue (for internal tracking)
+export const convertTicketToIssue = (ticket: SupportTicket): BaseIssue => {
   // Map frontend status to database status
-  let dbStatus: 'open' | 'in-progress' | 'resolved' | 'deferred';
+  let dbStatus: string;
   
   switch(ticket.status) {
     case 'in-progress': 
@@ -77,7 +88,7 @@ export const convertTicketToIssue = (ticket: SupportTicket): IssueType => {
   }
   
   // Map frontend category to database category
-  let dbCategory: 'bug' | 'performance' | 'security' | 'ui' | 'feature';
+  let dbCategory: string;
   
   if (ticket.category === 'tech') {
     dbCategory = 'bug';

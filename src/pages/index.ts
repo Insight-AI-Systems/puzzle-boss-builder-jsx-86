@@ -1,3 +1,4 @@
+
 export { default as Index } from './Index';
 export { default as Puzzles } from './Puzzles';
 export { default as Prizes } from './Prizes';
@@ -31,4 +32,4 @@ export { default as NotFound } from './NotFound';
 export { default as Auth } from './Auth';
 export { default as Unauthorized } from './Unauthorized';
 export { default as BetaNotes } from './BetaNotes';
-export { default as KnownIssues } from './KnownIssues';
+// KnownIssues export has been removed as it's no longer needed
