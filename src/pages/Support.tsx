@@ -1,7 +1,7 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
-import { ExternalLink, PlusCircle, ShieldAlert } from 'lucide-react';
+import { ExternalLink, PlusCircle, ShieldAlert, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PageLayout from '@/components/layouts/PageLayout';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +19,7 @@ const Support = () => {
   const { hasRole, user } = useAuth();
   const { toast } = useToast();
   const isAdmin = hasRole('super_admin') || hasRole('admin');
+  const [isMigrating, setIsMigrating] = useState(false);
   
   let subtitle = "Get help with your account, puzzles, and prizes";
   if (location.pathname.includes('/tickets')) {
@@ -34,6 +35,7 @@ const Support = () => {
       const migrationCompleted = localStorage.getItem('support-migration-completed');
       
       if (!migrationCompleted) {
+        setIsMigrating(true);
         // Run the migration
         migrateKnownIssuesToSupport(user.id)
           .then(success => {
@@ -47,6 +49,14 @@ const Support = () => {
           })
           .catch(error => {
             console.error("Migration failed:", error);
+            toast({
+              title: "Migration Error",
+              description: "There was an error migrating issues. Check the console for details.",
+              variant: "destructive",
+            });
+          })
+          .finally(() => {
+            setIsMigrating(false);
           });
       }
     }
@@ -70,6 +80,14 @@ const Support = () => {
       subtitle={subtitle}
       className={isAdmin ? "relative" : ""}
     >
+      {isMigrating && (
+        <div className="absolute inset-0 bg-puzzle-black/50 flex items-center justify-center z-10">
+          <div className="bg-puzzle-black border border-puzzle-aqua/40 p-6 rounded-lg flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+            <p className="text-puzzle-white">Migrating old issues...</p>
+          </div>
+        </div>
+      )}
       <div className="flex justify-between items-center mb-6">
         {isAdmin && (
           <div className="flex items-center gap-2">

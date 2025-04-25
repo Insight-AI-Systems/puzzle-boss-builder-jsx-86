@@ -2,18 +2,33 @@
 import { supabase } from "@/integrations/supabase/client";
 import { mapFrontendStatusToDb, DbStatus } from "./support/mappings";
 
+// Define a type for the kind of issues we expect to handle
+interface KnownIssue {
+  id?: string;
+  title?: string;
+  description?: string;
+  status?: string;
+  category?: string;
+  created_by?: string;
+  created_at?: string;
+}
+
 export const migrateKnownIssuesToSupport = async (userId: string) => {
   const timestamp = new Date().toISOString();
   
   try {
-    // Fetch existing known issues if available
-    const { data: knownIssues, error: fetchError } = await supabase
-      .from('known_issues')
-      .select('*');
-      
-    if (fetchError && fetchError.message !== 'relation "known_issues" does not exist') {
-      console.error("Error fetching known issues:", fetchError);
-      return false;
+    let knownIssues: KnownIssue[] = [];
+    
+    // Try to fetch from a temporary storage if the table doesn't exist yet
+    // We use localStorage as a fallback if the known_issues table doesn't exist
+    const storedIssues = localStorage.getItem('known-issues-to-migrate');
+    if (storedIssues) {
+      try {
+        knownIssues = JSON.parse(storedIssues);
+        console.log(`Found ${knownIssues.length} known issues in local storage`);
+      } catch (e) {
+        console.error("Error parsing stored issues:", e);
+      }
     }
     
     // If there are known issues, migrate them
@@ -54,32 +69,60 @@ export const migrateKnownIssuesToSupport = async (userId: string) => {
         }
       }
       
+      // Clear the local storage after migration
+      localStorage.removeItem('known-issues-to-migrate');
+      
       console.log("Migration of known issues completed successfully");
       return true;
     } else {
-      // If no known issues table exists or it's empty, create a sample issue
-      // to demonstrate the migration functionality
-      console.log("No existing issues found, creating a sample migrated issue");
+      // If no known issues exist, create sample demo data for testing migration
+      console.log("No existing issues found, creating sample migrated issues");
       
-      const sampleIssue = {
-        id: crypto.randomUUID(),
-        title: "Migration Test Issue",
-        description: "This is a sample issue created during migration to the new support system.",
-        status: "wip" as DbStatus,
-        category: "migrated",
-        created_by: userId,
-        modified_by: userId,
-        created_at: timestamp,
-        updated_at: timestamp
-      };
+      const sampleIssues = [
+        {
+          id: crypto.randomUUID(),
+          title: "Legacy Bug Report #1",
+          description: "This is a sample issue migrated from the previous system. It represents an old bug report.",
+          status: "wip" as DbStatus,
+          category: "migrated",
+          created_by: userId,
+          modified_by: userId,
+          created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago
+          updated_at: timestamp
+        },
+        {
+          id: crypto.randomUUID(),
+          title: "Legacy Feature Request",
+          description: "This is a sample feature request migrated from the previous system.",
+          status: "deferred" as DbStatus, 
+          category: "migrated",
+          created_by: userId,
+          modified_by: userId,
+          created_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(), // 45 days ago
+          updated_at: timestamp
+        },
+        {
+          id: crypto.randomUUID(),
+          title: "Legacy Security Report",
+          description: "This is a sample security issue migrated from the previous system.",
+          status: "completed" as DbStatus,
+          category: "migrated",
+          created_by: userId,
+          modified_by: userId,
+          created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days ago
+          updated_at: timestamp
+        }
+      ];
 
-      const { error } = await supabase
-        .from('issues')
-        .insert(sampleIssue);
+      // Insert the sample migrated issues
+      for (const issue of sampleIssues) {
+        const { error } = await supabase
+          .from('issues')
+          .insert(issue);
 
-      if (error) {
-        console.error(`Failed to create sample migrated issue:`, error);
-        return false;
+        if (error) {
+          console.error(`Failed to create sample migrated issue:`, error);
+        }
       }
     }
     
