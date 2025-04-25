@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { IssueType } from "@/types/issueTypes";
 import { knownIssues as fallbackIssues } from "@/data/knownIssues";
@@ -31,8 +31,16 @@ export const useIssuesFetch = () => {
         return;
       }
       
+      // If no issues returned from the database, use fallback issues
+      if (!data || data.length === 0) {
+        console.log("No issues found in database, using fallback issues");
+        setIssues(fallbackIssues);
+        return;
+      }
+      
       const mappedIssues = data.map(mapDbIssueToFrontend);
-      setIssues(mappedIssues.length > 0 ? mappedIssues : fallbackIssues);
+      console.log("Fetched issues:", data.length, "Mapped issues:", mappedIssues.length);
+      setIssues(mappedIssues);
     } catch (err) {
       console.error("Exception fetching issues:", err);
       setIssues(fallbackIssues);
@@ -45,6 +53,11 @@ export const useIssuesFetch = () => {
       setIsLoading(false);
     }
   }, [toast]);
+
+  // Automatically fetch issues when the component mounts
+  useEffect(() => {
+    fetchIssues();
+  }, [fetchIssues]);
 
   return {
     issues,
