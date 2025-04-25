@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
@@ -43,6 +44,8 @@ export const TicketList = () => {
     limit: 10
   });
   const [searchQuery, setSearchQuery] = useState('');
+  const { toast } = useToast();
+  const isSuperAdmin = hasRole('super_admin');
 
   useEffect(() => {
     if (user) {
@@ -129,10 +132,6 @@ export const TicketList = () => {
     }
     return null;
   };
-
-  const { hasRole } = useAuth();
-  const { toast } = useToast();
-  const isSuperAdmin = hasRole('super_admin');
   
   const handleDeleteTicket = async (ticketId: string) => {
     if (!isSuperAdmin) return;
