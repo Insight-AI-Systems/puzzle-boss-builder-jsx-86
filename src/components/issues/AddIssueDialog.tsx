@@ -41,6 +41,8 @@ export function AddIssueDialog({ onAdd }: AddIssueDialogProps) {
     
     try {
       setIsSaving(true);
+      console.log("Attempting to save issue:", editedIssue);
+      
       // Make sure we're using the most up-to-date data with current timestamps
       const issueToSave = {
         ...editedIssue,
@@ -49,6 +51,7 @@ export function AddIssueDialog({ onAdd }: AddIssueDialogProps) {
       };
       
       const success = await onAdd(issueToSave);
+      console.log("Add result:", success);
       
       if (success) {
         setIsOpen(false);

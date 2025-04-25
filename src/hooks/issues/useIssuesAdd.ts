@@ -25,6 +25,8 @@ export const useIssuesAdd = (onIssueAdded: () => Promise<void>) => {
         updated_at: newIssue.updated_at || new Date().toISOString()
       };
 
+      console.log("Insert data prepared:", insertData);
+
       const { error } = await supabase
         .from('issues')
         .insert(insertData);
@@ -39,8 +41,16 @@ export const useIssuesAdd = (onIssueAdded: () => Promise<void>) => {
         return false;
       }
 
+      console.log("Issue successfully added to database");
+      
       // Call the callback to refresh the issues list
       await onIssueAdded();
+      
+      // Show success toast here in the hook to ensure it's always shown
+      toast({
+        title: "Issue Added",
+        description: `Successfully added issue: ${newIssue.title}`,
+      });
       
       return true;
     } catch (err) {

@@ -72,26 +72,15 @@ export default function KnownIssues() {
 
   const handleAddIssue = async (newIssue: IssueType) => {
     try {
-      console.log("Adding new issue:", newIssue);
+      console.log("Adding new issue in KnownIssues component:", newIssue);
       
       const success = await addIssue(newIssue);
       
       if (success) {
-        toast({
-          title: "Issue Added",
-          description: `Successfully added issue: ${newIssue.title}`,
-        });
-        
-        // Refresh the issues list
-        await fetchIssues();
+        // Toast is now handled in the useIssuesAdd hook
         return true;
       }
       
-      toast({
-        title: "Failed to Add Issue",
-        description: "There was a problem adding the new issue.",
-        variant: "destructive",
-      });
       return false;
     } catch (error) {
       console.error("Error in handleAddIssue:", error);
