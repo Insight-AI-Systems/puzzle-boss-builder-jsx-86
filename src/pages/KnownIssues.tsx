@@ -15,10 +15,11 @@ export default function KnownIssues() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
+  // Combine and deduplicate issues from database, local, and special sources
   useEffect(() => {
     if (!isDbLoading) {
       // Deep clone of database issues to avoid reference issues
-      const combinedIssues: IssueType[] = JSON.parse(JSON.stringify(dbIssues));
+      const combinedIssues: IssueType[] = JSON.parse(JSON.stringify(dbIssues || []));
       
       // Add local issues that don't exist in the database
       localIssues.forEach(localIssue => {
@@ -84,8 +85,8 @@ export default function KnownIssues() {
     const success = await addIssue(newIssue);
     
     if (success) {
-      // Update the local state with the new issue
-      setAllIssues(prevIssues => [...prevIssues, newIssue]);
+      // Update the local state with the new issue immediately
+      setAllIssues(prevIssues => [...prevIssues, {...newIssue}]);
       toast({
         title: "Issue Added",
         description: `Successfully added issue: ${newIssue.title}`,
