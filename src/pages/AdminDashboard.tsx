@@ -1,21 +1,20 @@
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Loader2, ShieldAlert, Bug } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { RoleBasedDashboard } from '@/components/admin/RoleBasedDashboard';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { debugAuthState, forceProtectedAdminAccess } from '@/utils/admin/debugAuth';
+import { AdminAccessCheck } from '@/components/admin/dashboard/AdminAccessCheck';
+import { AdminToolbar } from '@/components/admin/dashboard/AdminToolbar';
 
 // Special admin email that should always have access
 const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 const AdminDashboard = () => {
   const { profile, isLoading } = useUserProfile();
-  const { user, hasRole, session, userRole, userRoles } = useAuth();
+  const { user, hasRole, userRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
@@ -24,22 +23,6 @@ const AdminDashboard = () => {
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
   const isSuperAdmin = isProtectedAdmin || hasRole('super_admin');
   
-  // Add more detailed logging to diagnose the issue
-  console.log('AdminDashboard - Debug Info:', {
-    currentUrl: window.location.href,
-    isLoadingProfile: isLoading,
-    hasUser: !!user,
-    userEmail: user?.email,
-    userIdFromProfile: profile?.id,
-    userEmailFromProfile: profile?.email,
-    profileRole: profile?.role,
-    isProtectedAdmin,
-    isSuperAdmin,
-    hasSuperAdminRole: hasRole('super_admin'),
-    userRoles,
-    userRole
-  });
-
   useEffect(() => {
     if (isLoading) return;
     
@@ -51,7 +34,7 @@ const AdminDashboard = () => {
       profileRole: profile?.role
     });
 
-    // Special case for Alan - always grant access
+    // Special case for protected admin - always grant access
     if (isProtectedAdmin) {
       console.log('AdminDashboard - Protected admin detected, granting full access');
       return;
@@ -70,7 +53,6 @@ const AdminDashboard = () => {
     }
   }, [isLoading, isSuperAdmin, navigate, profile, user, toast, isProtectedAdmin, hasRole]);
 
-  // Function to show detailed debug info
   const showDebugInfo = () => {
     const info = {
       user: user ? {
@@ -83,16 +65,8 @@ const AdminDashboard = () => {
         role: profile.role,
         email: profile.email || profile.id
       } : null,
-      sessionExists: !!session,
-      hasRoles: {
-        superAdmin: hasRole('super_admin'),
-        player: hasRole('player')
-      },
-      availableRoles: userRoles
     };
-    
     setDebugInfo(JSON.stringify(info, null, 2));
-    console.log('Debug Info:', info);
   };
 
   if (isLoading) {
@@ -103,7 +77,6 @@ const AdminDashboard = () => {
     );
   }
 
-  // Show an intermediate debug screen when there's a discrepancy
   if (user && !isSuperAdmin && 
       !hasRole('category_manager') && 
       !hasRole('social_media_manager') && 
@@ -111,47 +84,15 @@ const AdminDashboard = () => {
       !hasRole('cfo') && 
       !isLoading) {
     return (
-      <div className="min-h-screen bg-puzzle-black p-6">
-        <Alert variant="destructive" className="mb-4">
-          <ShieldAlert className="h-4 w-4" />
-          <AlertTitle>Access Denied</AlertTitle>
-          <AlertDescription>
-            <p>You do not have permission to access the admin dashboard.</p>
-            <p className="mt-2">Current user info:</p>
-            <ul className="list-disc pl-6 mt-1">
-              <li>Email: {user.email}</li>
-              <li>Role: {userRole || profile?.role || 'Unknown'}</li>
-              <li>Has Super Admin Role: {hasRole('super_admin') ? 'Yes' : 'No'}</li>
-            </ul>
-          </AlertDescription>
-        </Alert>
-        
-        <div className="flex gap-2 mt-4">
-          <Button onClick={showDebugInfo} variant="outline" size="sm">
-            <Bug className="h-4 w-4 mr-1" />
-            Show Debug Info
-          </Button>
-          <Button onClick={() => debugAuthState()} variant="outline" size="sm">
-            Debug Auth State
-          </Button>
-          <Button onClick={() => forceProtectedAdminAccess()} variant="outline" size="sm">
-            Force Admin Access
-          </Button>
-          <Button asChild variant="default" size="sm">
-            <Link to="/">Return Home</Link>
-          </Button>
-        </div>
-        
-        {debugInfo && (
-          <pre className="mt-4 p-4 bg-black/30 text-white rounded-md overflow-x-auto text-xs">
-            {debugInfo}
-          </pre>
-        )}
-      </div>
+      <AdminAccessCheck 
+        user={user}
+        userRole={userRole}
+        hasRole={hasRole}
+        profile={profile}
+      />
     );
   }
 
-  // Grant access if user is protected admin, super admin or has specialized role
   if (isProtectedAdmin || isSuperAdmin || 
       hasRole('category_manager') || 
       hasRole('social_media_manager') || 
@@ -164,33 +105,13 @@ const AdminDashboard = () => {
             {isProtectedAdmin || isSuperAdmin ? 'Admin Dashboard' : `${profile?.role?.replace('_', ' ')} Dashboard`}
           </h1>
 
-          {/* Admin Tools Section */}
-          <div className="mb-6 space-y-2">
-            <h2 className="text-xl font-game text-puzzle-gold">Admin Tools</h2>
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={() => debugAuthState()} variant="outline" size="sm">
-                Debug Auth State
-              </Button>
-              <Button onClick={() => forceProtectedAdminAccess()} variant="outline" size="sm">
-                Force Admin Access
-              </Button>
-              <Button onClick={showDebugInfo} variant="outline" size="sm">
-                <Bug className="h-4 w-4 mr-1" />
-                Show Debug Info
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link to="/puzzle-playground">
-                  Open Puzzle Engine Test Playground
-                </Link>
-              </Button>
-            </div>
-            
-            {debugInfo && (
-              <pre className="mt-4 p-4 bg-black/30 text-white rounded-md overflow-x-auto text-xs">
-                {debugInfo}
-              </pre>
-            )}
-          </div>
+          <AdminToolbar showDebugInfo={showDebugInfo} />
+          
+          {debugInfo && (
+            <pre className="mt-4 p-4 bg-black/30 text-white rounded-md overflow-x-auto text-xs">
+              {debugInfo}
+            </pre>
+          )}
 
           <RoleBasedDashboard />
         </div>
@@ -198,20 +119,7 @@ const AdminDashboard = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-puzzle-black p-6">
-      <Alert variant="destructive">
-        <ShieldAlert className="h-4 w-4" />
-        <AlertTitle>Access Denied</AlertTitle>
-        <AlertDescription>
-          You do not have permission to access the admin dashboard.
-          {profile && (
-            <p className="mt-2">Your current role: {profile.role}</p>
-          )}
-        </AlertDescription>
-      </Alert>
-    </div>
-  );
+  return null;
 };
 
 export default AdminDashboard;
