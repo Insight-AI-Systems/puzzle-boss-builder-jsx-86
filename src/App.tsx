@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider"
@@ -136,13 +135,6 @@ function App() {
                       <Route path="/press" element={<Press />} />
                       <Route path="/partnerships" element={<Partnerships />} />
                       <Route path="/unauthorized" element={<Unauthorized />} />
-                      <Route path="/beta-notes" element={
-                        <ProtectedRoute>
-                          <BetaNotes />
-                        </ProtectedRoute>
-                      } />
-                      
-                      {/* Known Issues page has been removed */}
                       
                       <Route path="*" element={<NotFound />} />
                     </Routes>
