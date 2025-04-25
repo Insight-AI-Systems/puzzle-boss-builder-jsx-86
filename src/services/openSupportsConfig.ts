@@ -10,6 +10,8 @@ export const OPEN_SUPPORTS_CONFIG = {
   POLLING_INTERVAL: 60000,
   // Default pagination limit for ticket listings
   DEFAULT_LIMIT: 10,
+  // Flag to use mock API implementation for testing
+  USE_MOCK_API: true,
 };
 
 // Endpoint paths
