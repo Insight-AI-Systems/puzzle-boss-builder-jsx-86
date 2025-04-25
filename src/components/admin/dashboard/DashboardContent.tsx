@@ -16,6 +16,7 @@ import { ContentManagement } from '../ContentManagement';
 import { SecurityDashboard } from '../SecurityDashboard';
 import { EmailManagement } from '../EmailManagement';
 import { TabDefinition } from './TabDefinitions';
+import TicketManagement from './TicketManagement';
 
 interface DashboardContentProps {
   accessibleTabs: TabDefinition[];
@@ -57,6 +58,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
         return <MonitoringDashboard />;
       case 'notifications':
         return <NotificationsDashboard />;
+      case 'tickets':
+        return <TicketManagement />;
       default:
         return <div>Tab content not found</div>;
     }

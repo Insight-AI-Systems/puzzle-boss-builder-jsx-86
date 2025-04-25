@@ -1,14 +1,14 @@
-
-import React from 'react';
+import React, { useState } from 'react';
+import { Routes, Route, useLocation, Link } from 'react-router-dom';
 import PageLayout from '@/components/layouts/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { HelpCircle, MessageSquare, FileText, PhoneCall, Mail } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { HelpCircle, MessageSquare, FileText, Ticket } from 'lucide-react';
+import TicketList from '@/components/support/TicketList';
+import TicketDetails from '@/components/support/TicketDetails';
+import NewTicketForm from '@/components/support/NewTicketForm';
 
 const commonQuestions = [
   {
@@ -41,12 +41,9 @@ const commonQuestions = [
   }
 ];
 
-const Support = () => {
+const SupportHome = () => {
   return (
-    <PageLayout 
-      title="Support Center" 
-      subtitle="Get help with your account, puzzles, and prizes"
-    >
+    <div className="space-y-6">
       <Tabs defaultValue="faq" className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-8">
           <TabsTrigger value="faq" className="flex items-center">
@@ -57,13 +54,12 @@ const Support = () => {
             <MessageSquare className="h-4 w-4 mr-2" />
             Contact Us
           </TabsTrigger>
-          <TabsTrigger value="guides" className="flex items-center">
-            <FileText className="h-4 w-4 mr-2" />
-            Help Guides
+          <TabsTrigger value="tickets" className="flex items-center">
+            <Ticket className="h-4 w-4 mr-2" />
+            My Tickets
           </TabsTrigger>
         </TabsList>
         
-        {/* FAQ Tab */}
         <TabsContent value="faq">
           <div className="space-y-6">
             <Card>
@@ -88,17 +84,18 @@ const Support = () => {
             
             <div className="text-center">
               <p className="text-muted-foreground mb-4">
-                Can't find what you're looking for? Contact our support team.
+                Can't find what you're looking for? Submit a support ticket.
               </p>
-              <Button className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Contact Support
+              <Button className="bg-puzzle-aqua hover:bg-puzzle-aqua/80" asChild>
+                <Link to="/support/new-ticket">
+                  <Ticket className="h-4 w-4 mr-2" />
+                  Create Support Ticket
+                </Link>
               </Button>
             </div>
           </div>
         </TabsContent>
         
-        {/* Contact Us Tab */}
         <TabsContent value="contact">
           <div className="space-y-6">
             <Card>
@@ -184,88 +181,55 @@ const Support = () => {
           </div>
         </TabsContent>
         
-        {/* Help Guides Tab */}
-        <TabsContent value="guides">
-          <div className="space-y-6">
+        <TabsContent value="tickets">
+          <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Help Guides & Tutorials</CardTitle>
+                <CardTitle>My Support Tickets</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="border border-puzzle-aqua/20 rounded-lg overflow-hidden">
-                    <div className="h-40 bg-gradient-to-r from-puzzle-aqua/20 to-puzzle-aqua/5 flex items-center justify-center">
-                      <FileText className="h-12 w-12 text-puzzle-aqua" />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="text-lg font-medium mb-2">Getting Started Guide</h3>
-                      <p className="text-muted-foreground text-sm mb-4">
-                        Learn the basics of The Puzzle Boss platform, from creating your account to winning your first prize.
-                      </p>
-                      <Link to="/guides/getting-started-guide">
-                        <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
-                          Read Guide
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                  
-                  <div className="border border-puzzle-aqua/20 rounded-lg overflow-hidden">
-                    <div className="h-40 bg-gradient-to-r from-puzzle-aqua/20 to-puzzle-aqua/5 flex items-center justify-center">
-                      <FileText className="h-12 w-12 text-puzzle-aqua" />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="text-lg font-medium mb-2">Puzzle Techniques</h3>
-                      <p className="text-muted-foreground text-sm mb-4">
-                        Advanced strategies and techniques to improve your puzzle-solving speed and efficiency.
-                      </p>
-                      <Link to="/guides/puzzle-techniques">
-                        <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
-                          Read Guide
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                  
-                  <div className="border border-puzzle-aqua/20 rounded-lg overflow-hidden">
-                    <div className="h-40 bg-gradient-to-r from-puzzle-aqua/20 to-puzzle-aqua/5 flex items-center justify-center">
-                      <FileText className="h-12 w-12 text-puzzle-aqua" />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="text-lg font-medium mb-2">Prize Claim Process</h3>
-                      <p className="text-muted-foreground text-sm mb-4">
-                        Step-by-step instructions for claiming and receiving your prizes after winning a contest.
-                      </p>
-                      <Link to="/guides/prize-claim-process">
-                        <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
-                          Read Guide
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                  
-                  <div className="border border-puzzle-aqua/20 rounded-lg overflow-hidden">
-                    <div className="h-40 bg-gradient-to-r from-puzzle-aqua/20 to-puzzle-aqua/5 flex items-center justify-center">
-                      <FileText className="h-12 w-12 text-puzzle-aqua" />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="text-lg font-medium mb-2">Account Management</h3>
-                      <p className="text-muted-foreground text-sm mb-4">
-                        Learn how to manage your profile, subscriptions, payment methods, and security settings.
-                      </p>
-                      <Link to="/guides/account-management">
-                        <Button variant="outline" className="w-full border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
-                          Read Guide
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
+                <div className="text-center py-8">
+                  <Ticket className="h-16 w-16 mx-auto mb-4 text-puzzle-aqua opacity-50" />
+                  <h3 className="text-xl font-medium mb-2">View and Manage Your Support Tickets</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Track the status of your support requests and communicate with our team.
+                  </p>
+                  <Button asChild>
+                    <Link to="/support/tickets">
+                      View My Tickets
+                    </Link>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+};
+
+const Support = () => {
+  const location = useLocation();
+  
+  let subtitle = "Get help with your account, puzzles, and prizes";
+  if (location.pathname.includes('/tickets')) {
+    subtitle = "View and manage your support tickets";
+  } else if (location.pathname.includes('/new-ticket')) {
+    subtitle = "Create a new support ticket";
+  }
+
+  return (
+    <PageLayout 
+      title="Support Center" 
+      subtitle={subtitle}
+    >
+      <Routes>
+        <Route path="/" element={<SupportHome />} />
+        <Route path="/tickets" element={<TicketList />} />
+        <Route path="/tickets/:ticketId" element={<TicketDetails />} />
+        <Route path="/new-ticket" element={<NewTicketForm />} />
+      </Routes>
     </PageLayout>
   );
 };

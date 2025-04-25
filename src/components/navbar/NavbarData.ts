@@ -1,3 +1,4 @@
+
 import { UserRole } from '@/types/userTypes';
 
 // Define the base NavItem interface
@@ -15,6 +16,7 @@ export const mainNavItems: MainNavItem[] = [
   { name: 'Home', path: '/' },
   { name: 'Puzzles', path: '/puzzles' },
   { name: 'Prizes Won', path: '/prizes' },
+  { name: 'Support', path: '/support' },
   { name: 'How It Works', path: '/how-it-works' },
   { name: 'Puzzle Demo', path: '/puzzle-demo' }
 ];

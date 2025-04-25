@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider"
@@ -72,7 +73,10 @@ function App() {
                       <Route path="/about" element={<About />} />
                       <Route path="/faq" element={<FAQ />} />
                       <Route path="/contact" element={<Contact />} />
-                      <Route path="/support" element={<Support />} />
+                      
+                      {/* Support routes */}
+                      <Route path="/support/*" element={<Support />} />
+                      
                       <Route path="/profile" element={
                         <ProtectedRoute>
                           <Profile />
