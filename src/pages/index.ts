@@ -32,4 +32,3 @@ export { default as NotFound } from './NotFound';
 export { default as Auth } from './Auth';
 export { default as Unauthorized } from './Unauthorized';
 export { default as BetaNotes } from './BetaNotes';
-// KnownIssues export has been removed as it's no longer needed

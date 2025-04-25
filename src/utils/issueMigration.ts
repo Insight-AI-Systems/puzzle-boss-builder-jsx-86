@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { mapFrontendStatusToDb } from "./support/mappings";
+import { mapFrontendStatusToDb, DbStatus } from "./support/mappings";
 
 export const migrateKnownIssuesToSupport = async (userId: string) => {
   const timestamp = new Date().toISOString();
@@ -17,7 +17,7 @@ export const migrateKnownIssuesToSupport = async (userId: string) => {
     };
     
     // Convert issue status to database status
-    const dbStatus = mapFrontendStatusToDb(sampleIssue.status);
+    const dbStatus: DbStatus = mapFrontendStatusToDb(sampleIssue.status);
     
     // Map categories to support ticket categories
     let category = 'tech';

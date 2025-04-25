@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { SupportTicket, TicketFilters } from "@/types/supportTicketTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { mapFrontendStatusToDb, mapDbStatusToFrontend } from "@/utils/support/mappings";
+import { mapFrontendStatusToDb, mapDbStatusToFrontend, DbStatus } from "@/utils/support/mappings";
 
 export const useSupportTickets = () => {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -43,7 +43,7 @@ export const useSupportTickets = () => {
       }
       
       if (filters?.status) {
-        const dbStatus = mapFrontendStatusToDb(filters.status);
+        const dbStatus: DbStatus = mapFrontendStatusToDb(filters.status);
         query = query.eq('status', dbStatus);
       }
       
@@ -117,7 +117,7 @@ export const useSupportTickets = () => {
       }
 
       // Convert frontend status to database status using mapping function
-      const dbStatus = mapFrontendStatusToDb(newTicket.status as any || 'open');
+      const dbStatus: DbStatus = mapFrontendStatusToDb(newTicket.status as string || 'open');
 
       // Prepare the ticket data for database insertion
       const ticketData = {
@@ -279,7 +279,7 @@ export const useSupportTickets = () => {
       }
 
       // Convert frontend status to database status
-      const dbStatus = mapFrontendStatusToDb(newStatus);
+      const dbStatus: DbStatus = mapFrontendStatusToDb(newStatus);
       
       const { error } = await supabase
         .from('issues')
