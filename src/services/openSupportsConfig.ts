@@ -3,7 +3,7 @@
 // Replace with actual production values in deployment
 
 export const OPEN_SUPPORTS_CONFIG = {
-  API_URL: process.env.OPEN_SUPPORTS_API_URL || 'http://localhost:8080/api',
+  API_URL: import.meta.env.VITE_OPEN_SUPPORTS_API_URL || 'http://localhost:8080/api',
   // Time in milliseconds before an API request times out
   REQUEST_TIMEOUT: 30000,
   // Interval in milliseconds to check for ticket updates

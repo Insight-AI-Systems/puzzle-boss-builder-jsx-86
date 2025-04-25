@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Routes, Route, useLocation, Link } from 'react-router-dom';
 import PageLayout from '@/components/layouts/PageLayout';
@@ -5,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { HelpCircle, MessageSquare, FileText, Ticket } from 'lucide-react';
+import { HelpCircle, MessageSquare, FileText, Ticket, Mail, PhoneCall } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import TicketList from '@/components/support/TicketList';
 import TicketDetails from '@/components/support/TicketDetails';
 import NewTicketForm from '@/components/support/NewTicketForm';
