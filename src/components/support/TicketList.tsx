@@ -14,6 +14,7 @@ import { useTickets } from '@/hooks/useTickets';
 import { MessageSquare, RefreshCw } from 'lucide-react';
 import { TicketFilters } from './filters/TicketFilters';
 import { TicketTableRow } from './table/TicketTableRow';
+import { TicketStatus, TicketPriority } from '@/types/ticketTypes';
 
 export default function TicketList() {
   const navigate = useNavigate();
@@ -36,11 +37,21 @@ export default function TicketList() {
   };
 
   const handleStatusChange = (status: string) => {
-    updateFilters({ status: status || undefined, page: 1 });
+    // Only pass defined TicketStatus values to updateFilters
+    // Using "all" as a special case to clear the filter
+    updateFilters({ 
+      status: status === 'all' ? undefined : status as TicketStatus, 
+      page: 1 
+    });
   };
 
   const handlePriorityChange = (priority: string) => {
-    updateFilters({ priority: priority || undefined, page: 1 });
+    // Only pass defined TicketPriority values to updateFilters
+    // Using "all" as a special case to clear the filter
+    updateFilters({ 
+      priority: priority === 'all' ? undefined : priority as TicketPriority, 
+      page: 1 
+    });
   };
 
   const handleRowClick = (ticketId: string) => {

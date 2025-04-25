@@ -2,7 +2,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Filter } from 'lucide-react';
+import { Search } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { TicketPriority } from '@/types/ticketTypes';
+import { TicketPriority, TicketStatus } from '@/types/ticketTypes';
 
 interface TicketFiltersProps {
   searchInput: string;
@@ -46,7 +46,7 @@ export const TicketFilters = ({
           <SelectValue placeholder="Filter by status" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Statuses</SelectItem>
+          <SelectItem value="all">All Statuses</SelectItem>
           <SelectItem value="open">Open</SelectItem>
           <SelectItem value="pending">Pending</SelectItem>
           <SelectItem value="resolved">Resolved</SelectItem>
@@ -59,7 +59,7 @@ export const TicketFilters = ({
           <SelectValue placeholder="Filter by priority" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Priorities</SelectItem>
+          <SelectItem value="all">All Priorities</SelectItem>
           <SelectItem value="low">Low</SelectItem>
           <SelectItem value="medium">Medium</SelectItem>
           <SelectItem value="high">High</SelectItem>
