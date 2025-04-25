@@ -1,137 +1,29 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger, 
-  DialogClose 
-} from "@/components/ui/dialog";
-import { Trash2, Edit, Plus, ImageIcon, RefreshCw, AlertCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useCategoryManagement, AdminCategory } from '@/hooks/admin/useCategoryManagement';
+import { ImageIcon, Plus, RefreshCw, AlertCircle } from "lucide-react";
 import { Loader2 } from 'lucide-react';
-import { useEffect } from 'react';
-import { Textarea } from "@/components/ui/textarea";
-import { CategoryImageUpload } from "./CategoryImageUpload";
-import { usePuzzleCount } from "./usePuzzleCount";
-import { Switch } from "@/components/ui/switch";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { CategoryTable } from './CategoryTable';
+import { AddCategoryDialog } from './AddCategoryDialog';
+import { useCategoryOperations } from '@/hooks/admin/useCategoryOperations';
 
 export const CategoryManagement: React.FC = () => {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const { toast } = useToast();
-  const { user } = useAuth();
-  const { 
-    categories, 
-    isLoading, 
-    isError, 
-    error, 
-    refetch, 
-    editingCategory, 
+  const {
+    isAddDialogOpen,
+    setIsAddDialogOpen,
+    editingCategory,
     setEditingCategory,
-    createCategory,
-    updateCategory,
-    deleteCategory
-  } = useCategoryManagement();
-  
-  useEffect(() => {
-    console.log('CategoryManagement component mounted');
-    return () => console.log('CategoryManagement component unmounted');
-  }, []);
-  
-  useEffect(() => {
-    console.log('Admin categories data changed:', categories);
-  }, [categories]);
-  
-  useEffect(() => {
-    console.log('Forcing initial admin categories fetch');
-    refetch();
-  }, [refetch]);
-  
-  const handleEditCategory = (category: AdminCategory) => {
-    setEditingCategory({...category});
-  };
-  
-  const handleSaveCategory = () => {
-    if (editingCategory) {
-      if (!user) {
-        toast({
-          title: "Authentication Required",
-          description: "You must be logged in to manage categories.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!editingCategory.name || editingCategory.name.trim() === "") {
-        toast({
-          title: "Validation Error",
-          description: "Category name is required.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (editingCategory.id) {
-        updateCategory.mutate(editingCategory);
-      } else {
-        createCategory.mutate(editingCategory);
-        setIsAddDialogOpen(false);
-      }
-      setEditingCategory(null);
-    }
-  };
-  
-  const handleDeleteCategory = (categoryId: string) => {
-    if (confirm('Are you sure you want to delete this category?')) {
-      deleteCategory.mutate(categoryId);
-    }
-  };
-  
-  const handleAddCategory = () => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "You must be logged in to create categories.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const newCategory: Partial<AdminCategory> = {
-      name: "",
-      imageUrl: "/placeholder.svg",
-      description: "",
-      puzzleCount: 0,
-      activeCount: 0,
-      status: "inactive"
-    };
-    
-    setEditingCategory(newCategory as AdminCategory);
-    setIsAddDialogOpen(true);
-  };
-  
-  const handleManualRefresh = () => {
-    console.log('Manual refresh of admin categories requested');
-    refetch();
-  };
+    categories,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    handleEditCategory,
+    handleSaveCategory,
+    handleDeleteCategory,
+    handleAddCategory
+  } = useCategoryOperations();
 
   if (isLoading) {
     return (
@@ -153,7 +45,7 @@ export const CategoryManagement: React.FC = () => {
             Error: {error instanceof Error ? error.message : 'Unknown error'}
           </div>
         </div>
-        <Button onClick={handleManualRefresh} variant="outline" className="flex items-center gap-2">
+        <Button onClick={refetch} variant="outline" className="flex items-center gap-2">
           <RefreshCw className="h-4 w-4" />
           Retry
         </Button>
@@ -173,7 +65,7 @@ export const CategoryManagement: React.FC = () => {
               </CardTitle>
               <CardDescription>Manage puzzle categories and items</CardDescription>
             </div>
-            <Button onClick={handleManualRefresh} variant="outline" size="sm" className="flex items-center gap-2">
+            <Button onClick={refetch} variant="outline" size="sm" className="flex items-center gap-2">
               <RefreshCw className="h-4 w-4" />
               Refresh
             </Button>
@@ -198,117 +90,14 @@ export const CategoryManagement: React.FC = () => {
               <p className="text-muted-foreground">No categories available. Add your first category to get started.</p>
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Image</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Playable Puzzles</TableHead>
-                    <TableHead>Active</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {categories.map((category) => (
-                    <TableRow key={category.id}>
-                      <TableCell>
-                        <CategoryImageUpload
-                          imageUrl={category.imageUrl}
-                          onChange={(url) => {
-                            console.log("New image URL:", url);
-                            if (editingCategory?.id === category.id) {
-                              setEditingCategory({ 
-                                ...editingCategory, 
-                                imageUrl: url 
-                              });
-                            }
-                          }}
-                          disabled={editingCategory?.id !== category.id}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {editingCategory?.id === category.id ? (
-                          <Input
-                            value={editingCategory.name}
-                            onChange={(e) => setEditingCategory({
-                              ...editingCategory,
-                              name: e.target.value
-                            })}
-                          />
-                        ) : (
-                          <span>{category.name}</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingCategory?.id === category.id ? (
-                          <Textarea
-                            value={editingCategory.description || ""}
-                            onChange={(e) =>
-                              setEditingCategory({
-                                ...editingCategory,
-                                description: e.target.value,
-                              })
-                            }
-                          />
-                        ) : (
-                          <span className="max-w-xs block truncate text-muted-foreground">
-                            {category.description || <span className="italic text-xs text-gray-400">No description</span>}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <PlayablePuzzleCountCell categoryId={category.id} />
-                      </TableCell>
-                      <TableCell>
-                        {editingCategory?.id === category.id ? (
-                          <Switch
-                            checked={editingCategory.status === "active"}
-                            onCheckedChange={(checked) =>
-                              setEditingCategory({
-                                ...editingCategory,
-                                status: checked ? "active" : "inactive",
-                              })
-                            }
-                            id={`active-switch-${category.id}`}
-                          />
-                        ) : (
-                          <Switch
-                            checked={category.status === "active"}
-                            disabled
-                            id={`active-switch-view-${category.id}`}
-                          />
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {editingCategory?.id === category.id ? (
-                          <Button onClick={handleSaveCategory} size="sm">Save</Button>
-                        ) : (
-                          <div className="flex justify-end space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEditCategory(category)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteCategory(category.id)}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <CategoryTable
+              categories={categories}
+              editingCategory={editingCategory}
+              setEditingCategory={setEditingCategory}
+              handleEditCategory={handleEditCategory}
+              handleDeleteCategory={handleDeleteCategory}
+              handleSaveCategory={handleSaveCategory}
+            />
           )}
         </CardContent>
         <CardFooter>
@@ -318,76 +107,13 @@ export const CategoryManagement: React.FC = () => {
         </CardFooter>
       </Card>
       
-      {/* Add Category Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Category</DialogTitle>
-            <DialogDescription>
-              Create a new puzzle category. Categories help organize puzzles for easier discovery.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {editingCategory && !editingCategory.id && (
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="categoryName">Category Name</Label>
-                <Input
-                  id="categoryName"
-                  value={editingCategory.name}
-                  onChange={(e) => setEditingCategory({
-                    ...editingCategory,
-                    name: e.target.value
-                  })}
-                  placeholder="Enter category name"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="categoryDescription">Description</Label>
-                <Textarea
-                  id="categoryDescription"
-                  value={editingCategory.description || ""}
-                  onChange={(e) => setEditingCategory({
-                    ...editingCategory,
-                    description: e.target.value
-                  })}
-                  placeholder="Describe this category"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="categoryStatus">Status</Label>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="categoryStatus"
-                    checked={editingCategory.status === "active"}
-                    onCheckedChange={(checked) => setEditingCategory({
-                      ...editingCategory,
-                      status: checked ? "active" : "inactive"
-                    })}
-                  />
-                  <Label htmlFor="categoryStatus" className="cursor-pointer">
-                    {editingCategory.status === "active" ? "Active" : "Inactive"}
-                  </Label>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveCategory}>Create Category</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AddCategoryDialog
+        isOpen={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        editingCategory={editingCategory}
+        setEditingCategory={setEditingCategory}
+        handleSaveCategory={handleSaveCategory}
+      />
     </div>
   );
 };
-
-function PlayablePuzzleCountCell({ categoryId }: { categoryId: string }) {
-  const { data, isLoading, isError } = usePuzzleCount(categoryId);
-  if (isLoading) return <span>Loading…</span>;
-  if (isError) return <span>—</span>;
-  return <span>{data}</span>;
-}
