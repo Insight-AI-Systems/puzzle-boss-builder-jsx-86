@@ -18,8 +18,13 @@ export function usePrizeWinners() {
   const fetchWinners = async (): Promise<PrizeWinner[]> => {
     const today = new Date().toISOString().split('T')[0];
     console.log('Fetching prize winners for date:', today);
+    
     try {
+      // Add more detailed logging for debugging
+      console.log('Attempting to call get_daily_winners RPC');
       const { data, error } = await supabase.rpc('get_daily_winners', { date_param: today });
+      
+      console.log('RPC Result:', { data, error });
       
       if (error) {
         console.error('Error fetching prize winners:', error);
