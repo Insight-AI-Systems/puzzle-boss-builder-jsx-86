@@ -25,6 +25,11 @@ export const CategoryManagement: React.FC = () => {
     handleAddCategory
   } = useCategoryOperations();
 
+  // Create wrapper functions for the refetch calls to fix TypeScript errors
+  const handleRefresh = () => {
+    refetch();
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -45,7 +50,7 @@ export const CategoryManagement: React.FC = () => {
             Error: {error instanceof Error ? error.message : 'Unknown error'}
           </div>
         </div>
-        <Button onClick={refetch} variant="outline" className="flex items-center gap-2">
+        <Button onClick={handleRefresh} variant="outline" className="flex items-center gap-2">
           <RefreshCw className="h-4 w-4" />
           Retry
         </Button>
@@ -65,7 +70,7 @@ export const CategoryManagement: React.FC = () => {
               </CardTitle>
               <CardDescription>Manage puzzle categories and items</CardDescription>
             </div>
-            <Button onClick={refetch} variant="outline" size="sm" className="flex items-center gap-2">
+            <Button onClick={handleRefresh} variant="outline" size="sm" className="flex items-center gap-2">
               <RefreshCw className="h-4 w-4" />
               Refresh
             </Button>
