@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { IssueType } from "@/types/issueTypes";
 import { IssueEditForm } from "./edit-dialog/IssueEditForm";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AddIssueDialogProps {
   onAdd: (newIssue: IssueType) => Promise<boolean>;
@@ -24,6 +25,7 @@ export function AddIssueDialog({ onAdd }: AddIssueDialogProps) {
     updated_at: new Date().toISOString()
   });
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleChange = (issue: IssueType) => {
     setEditedIssue(issue);
@@ -34,6 +36,16 @@ export function AddIssueDialog({ onAdd }: AddIssueDialogProps) {
       toast({
         title: "Missing Information",
         description: "Please fill in both title and description before saving.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if user is authenticated
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to add an issue.",
         variant: "destructive",
       });
       return;

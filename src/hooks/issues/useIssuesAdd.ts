@@ -3,13 +3,27 @@ import { useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { IssueType, mapFrontendStatusToDb } from "@/types/issueTypes";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useIssuesAdd = (onIssueAdded: () => Promise<void>) => {
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const addIssue = useCallback(async (newIssue: IssueType): Promise<boolean> => {
     try {
       console.log("Adding new issue:", newIssue);
+      
+      // Check if user is logged in, which is required for the created_by field
+      if (!user) {
+        console.error("Error adding issue: User not authenticated");
+        toast({
+          title: "Add Failed",
+          description: "You must be logged in to add an issue.",
+          variant: "destructive",
+        });
+        return false;
+      }
+
       const dbStatus = mapFrontendStatusToDb(newIssue.status);
       
       const insertData = {
@@ -19,8 +33,8 @@ export const useIssuesAdd = (onIssueAdded: () => Promise<void>) => {
         status: dbStatus,
         category: newIssue.category,
         workaround: newIssue.workaround || null,
-        created_by: newIssue.created_by || null,
-        modified_by: newIssue.modified_by || null,
+        created_by: user.id, // Always use the current user's ID
+        modified_by: user.id, // Also set the modified_by field
         created_at: newIssue.created_at || new Date().toISOString(),
         updated_at: newIssue.updated_at || new Date().toISOString()
       };
@@ -62,7 +76,7 @@ export const useIssuesAdd = (onIssueAdded: () => Promise<void>) => {
       });
       return false;
     }
-  }, [toast, onIssueAdded]);
+  }, [toast, onIssueAdded, user]);
 
   return { addIssue };
 };
