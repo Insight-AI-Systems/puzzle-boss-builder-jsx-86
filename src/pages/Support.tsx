@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { ExternalLink, PlusCircle, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PageLayout from '@/components/layouts/PageLayout';
@@ -13,6 +13,7 @@ import { NewTicketForm } from '@/components/support/NewTicketForm';
 
 const Support = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { hasRole, user } = useAuth();
   const isAdmin = hasRole('super_admin') || hasRole('admin');
   
@@ -22,6 +23,18 @@ const Support = () => {
   } else if (location.pathname.includes('/new-ticket')) {
     subtitle = "Create a new support ticket";
   }
+
+  const handleAdminPanelClick = () => {
+    window.open(SUPPORT_SYSTEM_CONFIG.ADMIN_PANEL_URL, '_blank');
+  };
+
+  const handleInternalIssuesClick = () => {
+    navigate('/support/tickets?view=internal');
+  };
+
+  const handleNewTicketClick = () => {
+    navigate('/support/new-ticket');
+  };
 
   return (
     <PageLayout 
@@ -35,7 +48,7 @@ const Support = () => {
             <Button 
               variant="outline" 
               className="flex items-center gap-2 border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10"
-              onClick={() => window.open(SUPPORT_SYSTEM_CONFIG.ADMIN_PANEL_URL, '_blank')}
+              onClick={handleAdminPanelClick}
             >
               <span>Admin Panel</span>
               <ExternalLink size={16} />
@@ -44,7 +57,7 @@ const Support = () => {
             <Button 
               variant="destructive"
               className="flex items-center gap-2"
-              onClick={() => window.location.href = '/support/tickets?view=internal'}
+              onClick={handleInternalIssuesClick}
             >
               <ShieldAlert size={16} />
               <span>Internal Issues</span>
@@ -55,7 +68,7 @@ const Support = () => {
         {user && (
           <Button 
             className="flex items-center gap-2 ml-auto"
-            onClick={() => window.location.href = '/support/new-ticket'}
+            onClick={handleNewTicketClick}
           >
             <PlusCircle size={16} />
             <span>New Support Ticket</span>

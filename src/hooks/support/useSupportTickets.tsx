@@ -11,6 +11,7 @@ export const useSupportTickets = () => {
   const { addComment } = useTicketComment(fetchTickets);
   const { updateTicketStatus } = useTicketStatus(fetchTickets);
 
+  // Initialize with default fetch (user's own tickets)
   useEffect(() => {
     fetchTickets();
   }, [fetchTickets]);

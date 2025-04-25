@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
@@ -54,13 +53,13 @@ export const TicketList = () => {
       const { status, ...restFilters } = filters;
       setFilters({
         ...restFilters,
-        page: 1 // Reset to first page on filter change
+        page: 1
       });
     } else {
       setFilters({
         ...filters,
         status: status as TicketStatus,
-        page: 1 // Reset to first page on filter change
+        page: 1
       });
     }
   };
@@ -70,7 +69,7 @@ export const TicketList = () => {
     setFilters({
       ...filters,
       search: searchQuery,
-      page: 1 // Reset to first page on search
+      page: 1
     });
   };
 
@@ -118,6 +117,10 @@ export const TicketList = () => {
     }
   };
 
+  const switchToTicketView = (internalView: boolean) => {
+    navigate(internalView ? '/support/tickets?view=internal' : '/support/tickets');
+  };
+
   if (!user) {
     return (
       <Card className="bg-puzzle-black/30 border-puzzle-aqua/20">
@@ -156,14 +159,14 @@ export const TicketList = () => {
             <Badge
               variant={isInternalView ? "outline" : "secondary"}
               className="cursor-pointer"
-              onClick={() => navigate('/support/tickets')}
+              onClick={() => switchToTicketView(false)}
             >
               User Tickets
             </Badge>
             <Badge
               variant={isInternalView ? "secondary" : "outline"}
               className="cursor-pointer"
-              onClick={() => navigate('/support/tickets?view=internal')}
+              onClick={() => switchToTicketView(true)}
             >
               Internal Issues
             </Badge>

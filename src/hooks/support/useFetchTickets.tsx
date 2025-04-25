@@ -27,17 +27,25 @@ export const useFetchTickets = () => {
         .from('issues')
         .select('*');
 
+      // If admin is viewing internal issues
       if (isAdmin && isInternalView) {
+        // Only fetch tickets with 'internal' category for admin internal view
         query = query
           .eq('category', 'internal')
           .order('created_at', { ascending: false });
+          
+        console.log('Fetching internal tickets for admin');
       } else {
+        // Standard view - user's own tickets, excluding internal ones
         query = query
           .eq('created_by', user.id)
           .neq('category', 'internal')
           .order('created_at', { ascending: false });
+          
+        console.log('Fetching user tickets');
       }
       
+      // Apply additional filters if provided
       if (filters?.status) {
         const dbStatus: DbStatus = mapFrontendStatusToDb(filters.status);
         query = query.eq('status', dbStatus);
