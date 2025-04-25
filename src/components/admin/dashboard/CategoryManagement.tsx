@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,8 +31,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { CategoryImageUpload } from "./CategoryImageUpload";
 import { usePuzzleCount } from "./usePuzzleCount";
 import { Switch } from "@/components/ui/switch";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 export const CategoryManagement: React.FC = () => {
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const { user } = useAuth();
   const { 
     categories, 
     isLoading, 
@@ -66,10 +71,29 @@ export const CategoryManagement: React.FC = () => {
   
   const handleSaveCategory = () => {
     if (editingCategory) {
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "You must be logged in to manage categories.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!editingCategory.name || editingCategory.name.trim() === "") {
+        toast({
+          title: "Validation Error",
+          description: "Category name is required.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (editingCategory.id) {
         updateCategory.mutate(editingCategory);
       } else {
         createCategory.mutate(editingCategory);
+        setIsAddDialogOpen(false);
       }
       setEditingCategory(null);
     }
@@ -82,8 +106,17 @@ export const CategoryManagement: React.FC = () => {
   };
   
   const handleAddCategory = () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to create categories.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const newCategory: Partial<AdminCategory> = {
-      name: "New Category",
+      name: "",
       imageUrl: "/placeholder.svg",
       description: "",
       puzzleCount: 0,
@@ -92,6 +125,7 @@ export const CategoryManagement: React.FC = () => {
     };
     
     setEditingCategory(newCategory as AdminCategory);
+    setIsAddDialogOpen(true);
   };
   
   const handleManualRefresh = () => {
@@ -251,13 +285,23 @@ export const CategoryManagement: React.FC = () => {
                         {editingCategory?.id === category.id ? (
                           <Button onClick={handleSaveCategory} size="sm">Save</Button>
                         ) : (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setEditingCategory({ ...category })}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          <div className="flex justify-end space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditCategory(category)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteCategory(category.id)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
@@ -273,6 +317,70 @@ export const CategoryManagement: React.FC = () => {
           </p>
         </CardFooter>
       </Card>
+      
+      {/* Add Category Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Category</DialogTitle>
+            <DialogDescription>
+              Create a new puzzle category. Categories help organize puzzles for easier discovery.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingCategory && !editingCategory.id && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="categoryName">Category Name</Label>
+                <Input
+                  id="categoryName"
+                  value={editingCategory.name}
+                  onChange={(e) => setEditingCategory({
+                    ...editingCategory,
+                    name: e.target.value
+                  })}
+                  placeholder="Enter category name"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="categoryDescription">Description</Label>
+                <Textarea
+                  id="categoryDescription"
+                  value={editingCategory.description || ""}
+                  onChange={(e) => setEditingCategory({
+                    ...editingCategory,
+                    description: e.target.value
+                  })}
+                  placeholder="Describe this category"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="categoryStatus">Status</Label>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="categoryStatus"
+                    checked={editingCategory.status === "active"}
+                    onCheckedChange={(checked) => setEditingCategory({
+                      ...editingCategory,
+                      status: checked ? "active" : "inactive"
+                    })}
+                  />
+                  <Label htmlFor="categoryStatus" className="cursor-pointer">
+                    {editingCategory.status === "active" ? "Active" : "Inactive"}
+                  </Label>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveCategory}>Create Category</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

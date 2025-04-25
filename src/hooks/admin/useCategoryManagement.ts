@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Category } from '@/hooks/useCategories';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Extend the Category type with admin-specific fields
 export interface AdminCategory extends Category {
@@ -16,6 +17,8 @@ export interface AdminCategory extends Category {
 export function useCategoryManagement() {
   const queryClient = useQueryClient();
   const [editingCategory, setEditingCategory] = useState<AdminCategory | null>(null);
+  const { user } = useAuth(); // Add auth context to get current user
+  const { toast } = useToast();
 
   // Helper to handle missing fields from the DB results
   const mapDbCategory = (category: Record<string, any>): AdminCategory => ({
@@ -63,11 +66,28 @@ export function useCategoryManagement() {
   // Create a new category
   const createCategory = useMutation({
     mutationFn: async (newCategory: Partial<AdminCategory>) => {
+      // Check if user is authenticated
+      if (!user) {
+        console.error("Error creating category: User not authenticated");
+        throw new Error("You must be logged in to create a category.");
+      }
+      
+      if (!newCategory.name) {
+        throw new Error("Category name is required");
+      }
+      
+      const slug = newCategory.slug || newCategory.name.toLowerCase().replace(/\s+/g, '-');
+      
+      console.log('Creating new category with data:', {
+        ...newCategory,
+        slug
+      });
+
       const { data, error } = await supabase
         .from('categories')
         .insert({
           name: newCategory.name,
-          slug: newCategory.name?.toLowerCase().replace(/\s+/g, '-') || '',
+          slug: slug,
           description: newCategory.description || '',
           image_url: newCategory.imageUrl || '/placeholder.svg',
           status: newCategory.status || 'inactive'
@@ -101,13 +121,23 @@ export function useCategoryManagement() {
   // Update an existing category
   const updateCategory = useMutation({
     mutationFn: async (category: AdminCategory) => {
+      // Check if user is authenticated
+      if (!user) {
+        console.error("Error updating category: User not authenticated");
+        throw new Error("You must be logged in to update a category.");
+      }
+      
+      if (!category.name) {
+        throw new Error("Category name is required");
+      }
+      
       console.log('Updating category with data:', category);
 
       const { data, error } = await supabase
         .from('categories')
         .update({
           name: category.name,
-          slug: category.name.toLowerCase().replace(/\s+/g, '-'),
+          slug: category.slug || category.name.toLowerCase().replace(/\s+/g, '-'),
           description: category.description || '',
           image_url: category.imageUrl || '/placeholder.svg',
           status: category.status || 'inactive'
@@ -142,6 +172,12 @@ export function useCategoryManagement() {
   // Delete a category
   const deleteCategory = useMutation({
     mutationFn: async (categoryId: string) => {
+      // Check if user is authenticated
+      if (!user) {
+        console.error("Error deleting category: User not authenticated");
+        throw new Error("You must be logged in to delete a category.");
+      }
+      
       const { error } = await supabase
         .from('categories')
         .delete()
@@ -184,5 +220,3 @@ export function useCategoryManagement() {
     deleteCategory
   };
 }
-
-// end of file
