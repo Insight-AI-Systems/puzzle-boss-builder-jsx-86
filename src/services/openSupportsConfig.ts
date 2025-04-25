@@ -1,21 +1,46 @@
-// Configuration for OpenSupports API
-// Replace with actual production values in deployment
+// Configuration for internal support ticket system
+// Based on existing Issues management system
 
-export const OPEN_SUPPORTS_CONFIG = {
-  API_URL: import.meta.env.VITE_OPEN_SUPPORTS_API_URL || 'http://localhost:8080/api',
-  // Time in milliseconds before an API request times out
-  REQUEST_TIMEOUT: 30000,
-  // Interval in milliseconds to check for ticket updates
-  POLLING_INTERVAL: 60000,
-  // Default pagination limit for ticket listings
+export const SUPPORT_SYSTEM_CONFIG = {
+  // Set to true to use Supabase for data storage instead of OpenSupports
+  USE_INTERNAL_SYSTEM: true,
+  
+  // Default settings
   DEFAULT_LIMIT: 10,
-  // Flag to use mock API implementation for testing
-  USE_MOCK_API: false,
-  // Admin panel URL - replace with your actual admin panel URL
-  ADMIN_PANEL_URL: import.meta.env.VITE_OPEN_SUPPORTS_ADMIN_URL || 'http://localhost:8080/admin'
+  POLLING_INTERVAL: 60000,
+  REQUEST_TIMEOUT: 30000,
+  
+  // Admin panel URL - for external admin interface if needed
+  ADMIN_PANEL_URL: import.meta.env.VITE_SUPPORT_ADMIN_URL || '/admin/support',
+  
+  // Categories for support tickets
+  TICKET_CATEGORIES: [
+    { id: 'tech', name: 'Technical Issue' },
+    { id: 'account', name: 'Account Problem' },
+    { id: 'billing', name: 'Billing Question' },
+    { id: 'prize', name: 'Prize Claim' },
+    { id: 'feedback', name: 'Feedback' },
+    { id: 'other', name: 'Other' }
+  ],
+  
+  // Statuses for tickets
+  TICKET_STATUSES: {
+    OPEN: 'open',
+    IN_PROGRESS: 'in-progress',
+    RESOLVED: 'resolved',
+    CLOSED: 'closed'
+  },
+  
+  // Priorities
+  TICKET_PRIORITIES: {
+    LOW: 'low',
+    MEDIUM: 'medium',
+    HIGH: 'high',
+    CRITICAL: 'critical'
+  }
 };
 
-// Endpoint paths
+// Keep existing API_PATHS object for backward compatibility
 export const API_PATHS = {
   USER: {
     LOGIN: '/user/login',

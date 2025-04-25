@@ -1,165 +1,184 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { useTickets } from '@/hooks/useTickets';
-import { openSupportsAPI } from '@/services/openSupportsAPI';
-import { Form } from '@/components/ui/form';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle,
+  CardFooter
+} from '@/components/ui/card';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
-import { Department } from '@/types/ticketTypes';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useSupportTickets } from '@/hooks/support/useSupportTickets';
+import { SupportTicket, TicketCategory, TicketPriority } from '@/types/supportTicketTypes';
+import { SUPPORT_SYSTEM_CONFIG } from '@/services/openSupportsConfig';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import TicketFormFields from './form/TicketFormFields';
-import FileAttachment from './form/FileAttachment';
-import { ticketFormSchema, type TicketFormValues } from './validation/ticketFormSchema';
 
-export default function NewTicketForm() {
-  const { toast } = useToast();
+export const NewTicketForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
-  const { createTicket } = useTickets();
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [isLoadingDepartments, setIsLoadingDepartments] = useState(false);
-  const [attachment, setAttachment] = useState<File | null>(null);
+  const { addTicket } = useSupportTickets();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const form = useForm<TicketFormValues>({
-    resolver: zodResolver(ticketFormSchema),
-    defaultValues: {
-      title: '',
-      departmentId: '',
-      priority: 'medium',
-      content: '',
-    },
+  // Get initial category from location state if provided
+  const initialCategory = location.state?.category || 'tech';
+  
+  const [ticket, setTicket] = useState<Partial<SupportTicket>>({
+    title: '',
+    description: '',
+    category: initialCategory as TicketCategory,
+    priority: 'medium' as TicketPriority,
+    id: crypto.randomUUID()
   });
 
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      setIsLoadingDepartments(true);
-      try {
-        // For testing purposes, if the API call fails, provide fallback departments
-        let fetchedDepartments;
-        try {
-          fetchedDepartments = await openSupportsAPI.getDepartments();
-        } catch (error) {
-          console.error('API call failed, using fallback departments');
-          fetchedDepartments = [
-            { id: 1, name: 'General Support', private: false },
-            { id: 2, name: 'Technical Issues', private: false },
-            { id: 3, name: 'Billing', private: false }
-          ];
-        }
-        setDepartments(fetchedDepartments);
-      } catch (error) {
-        console.error('Failed to fetch departments:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load departments. Please try again.',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoadingDepartments(false);
-      }
-    };
-
-    fetchDepartments();
-  }, [toast]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (file.size > 5 * 1024 * 1024) {
-        toast({
-          title: 'File too large',
-          description: 'Please select a file smaller than 5MB.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      setAttachment(file);
-    }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setTicket(prev => ({ ...prev, [name]: value }));
   };
 
-  const onSubmit = async (values: TicketFormValues) => {
-    if (!user) {
-      toast({
-        title: 'Authentication Required',
-        description: 'You must be logged in to create a ticket.',
-        variant: 'destructive',
-      });
-      return;
-    }
+  const handleSelectChange = (name: string, value: string) => {
+    setTicket(prev => ({ ...prev, [name]: value }));
+  };
 
-    try {
-      const fileReference = attachment ? 'file-reference-placeholder' : undefined;
-      
-      await createTicket.mutateAsync({
-        ...values,
-        departmentId: parseInt(values.departmentId),
-        userId: user.id,
-        userEmail: user.email || '',
-        file: fileReference,
-        status: 'open',
-      });
-      
-      toast({
-        title: 'Ticket Created',
-        description: 'Your support ticket has been submitted successfully.',
-      });
-      
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    
+    setIsSubmitting(true);
+    const success = await addTicket(ticket);
+    
+    if (success) {
       navigate('/support/tickets');
-    } catch (error) {
-      console.error('Error creating ticket:', error);
-      toast({
-        title: 'Error',
-        description: `Failed to create ticket: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: 'destructive',
-      });
     }
+    setIsSubmitting(false);
   };
+
+  if (!user) {
+    return (
+      <Card className="bg-puzzle-black/30 border-puzzle-aqua/20">
+        <CardContent className="pt-6">
+          <div className="text-center py-8">
+            <AlertCircle className="mx-auto h-12 w-12 text-puzzle-aqua mb-4" />
+            <h3 className="text-xl font-medium mb-2">Authentication Required</h3>
+            <p className="text-puzzle-white/70 mb-6">
+              Please log in to create a support ticket.
+            </p>
+            <Button onClick={() => navigate('/auth')}>
+              Sign In
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>Submit a New Support Ticket</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <TicketFormFields
-              form={form}
-              departments={departments}
-              isLoadingDepartments={isLoadingDepartments}
-            />
+    <div>
+      <Button 
+        variant="outline" 
+        onClick={() => navigate('/support')}
+        className="mb-4"
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Support
+      </Button>
+
+      <Card className="bg-puzzle-black/30 border-puzzle-aqua/20">
+        <CardHeader>
+          <CardTitle>Create New Support Ticket</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="title">Ticket Title</Label>
+                <Input
+                  id="title"
+                  name="title"
+                  placeholder="Briefly describe your issue"
+                  value={ticket.title}
+                  onChange={handleInputChange}
+                  required
+                  className="bg-puzzle-black/40 border-puzzle-aqua/20"
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select 
+                    value={ticket.category} 
+                    onValueChange={(value) => handleSelectChange('category', value)}
+                  >
+                    <SelectTrigger id="category" className="bg-puzzle-black/40 border-puzzle-aqua/20">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPORT_SYSTEM_CONFIG.TICKET_CATEGORIES.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="priority">Priority</Label>
+                  <Select 
+                    value={ticket.priority} 
+                    onValueChange={(value) => handleSelectChange('priority', value)}
+                  >
+                    <SelectTrigger id="priority" className="bg-puzzle-black/40 border-puzzle-aqua/20">
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  placeholder="Please provide detailed information about your issue"
+                  value={ticket.description}
+                  onChange={handleInputChange}
+                  required
+                  className="min-h-[200px] bg-puzzle-black/40 border-puzzle-aqua/20"
+                />
+              </div>
+            </div>
             
-            <FileAttachment
-              onFileChange={handleFileChange}
-              attachment={attachment}
-            />
-            
-            <div className="flex justify-end space-x-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => navigate('/support/tickets')}
-              >
-                Cancel
-              </Button>
+            <CardFooter className="px-0 pt-6">
               <Button 
                 type="submit" 
-                disabled={createTicket.isPending || form.formState.isSubmitting || !form.formState.isValid}
+                disabled={isSubmitting || !ticket.title || !ticket.description}
+                className="ml-auto"
               >
-                {createTicket.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Submit Ticket
+                {isSubmitting ? 'Submitting...' : 'Submit Ticket'}
               </Button>
-            </div>
+            </CardFooter>
           </form>
-        </Form>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
-}
+};
