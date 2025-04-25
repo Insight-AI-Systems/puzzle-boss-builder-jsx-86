@@ -1,9 +1,16 @@
+
 // Configuration for internal support ticket system
 // Based on existing Issues management system
 
 export const SUPPORT_SYSTEM_CONFIG = {
   // Set to true to use Supabase for data storage instead of OpenSupports
   USE_INTERNAL_SYSTEM: true,
+  
+  // Set to true to use mock data instead of actual API calls (for development/testing)
+  USE_MOCK_API: true,
+  
+  // API URL for external support system if used
+  EXTERNAL_API_URL: import.meta.env.VITE_SUPPORT_API_URL || 'https://support-api.example.com',
   
   // Default settings
   DEFAULT_LIMIT: 10,
@@ -28,7 +35,8 @@ export const SUPPORT_SYSTEM_CONFIG = {
     OPEN: 'open',
     IN_PROGRESS: 'in-progress',
     RESOLVED: 'resolved',
-    CLOSED: 'closed'
+    CLOSED: 'closed',
+    PENDING: 'pending'
   },
   
   // Priorities

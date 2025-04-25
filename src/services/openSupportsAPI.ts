@@ -1,10 +1,13 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { SUPPORT_SYSTEM_CONFIG, API_PATHS } from './openSupportsConfig';
 import { Ticket, TicketComment, Department, TicketFilters } from '@/types/ticketTypes';
 
 // Helper function to handle API requests
 const apiRequest = async (endpoint: string, method: string, data?: any, token?: string) => {
-  const url = `${SUPPORT_SYSTEM_CONFIG.API_URL}${endpoint}`;
+  // Create a base URL if not provided in the config
+  const baseUrl = SUPPORT_SYSTEM_CONFIG.EXTERNAL_API_URL || 'https://support-api.example.com';
+  const url = `${baseUrl}${endpoint}`;
   
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -158,7 +161,8 @@ const mockApiImplementation = {
 
 // Determine if we should use mock or real API
 const useMockApi = () => {
-  return SUPPORT_SYSTEM_CONFIG.USE_MOCK_API || import.meta.env.DEV;
+  // Check for dev environment or explicit mock setting
+  return SUPPORT_SYSTEM_CONFIG.USE_INTERNAL_SYSTEM || import.meta.env.DEV;
 };
 
 // API functions

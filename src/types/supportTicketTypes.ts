@@ -1,7 +1,7 @@
 
 import { IssueType } from "./issueTypes";
 
-export type TicketStatus = 'open' | 'in-progress' | 'resolved' | 'closed';
+export type TicketStatus = 'open' | 'in-progress' | 'resolved' | 'closed' | 'pending';
 export type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
 export type TicketCategory = 'tech' | 'account' | 'billing' | 'prize' | 'feedback' | 'other';
 
@@ -69,12 +69,15 @@ export const convertTicketToIssue = (ticket: SupportTicket): IssueType => {
     case 'closed':
       dbStatus = 'resolved';
       break;
+    case 'pending':
+      dbStatus = 'in-progress';
+      break;
     default: 
       dbStatus = 'open';
   }
   
   // Map frontend category to database category
-  let dbCategory: 'bug' | 'feature' | 'ui' | 'security' | 'performance';
+  let dbCategory: 'bug' | 'performance' | 'security' | 'ui' | 'feature';
   
   if (ticket.category === 'tech') {
     dbCategory = 'bug';

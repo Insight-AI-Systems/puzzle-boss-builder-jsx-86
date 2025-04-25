@@ -36,11 +36,8 @@ export const useSupportTickets = () => {
         .order('created_at', { ascending: false });
       
       if (filters?.status) {
-        // Convert frontend status to db status
-        const dbStatus = filters.status === 'in-progress' ? 'wip' : 
-                          filters.status === 'resolved' ? 'completed' : 
-                          filters.status === 'open' ? 'wip' : 'completed';
-        
+        // Convert frontend status to db status using the mapping function
+        const dbStatus = mapFrontendStatusToDb(filters.status);
         query = query.eq('status', dbStatus);
       }
       
@@ -107,10 +104,8 @@ export const useSupportTickets = () => {
         return false;
       }
 
-      // Convert frontend status to database status
-      const dbStatus = newTicket.status === 'in-progress' ? 'wip' : 
-                        newTicket.status === 'resolved' ? 'completed' : 
-                        'wip';
+      // Convert frontend status to database status using mapping function
+      const dbStatus = mapFrontendStatusToDb(newTicket.status as any || 'open');
 
       // Prepare the ticket data for database insertion
       const ticketData = {

@@ -3,6 +3,7 @@ import { TableCell, TableRow } from '@/components/ui/table';
 import { StatusBadge } from '../badges/StatusBadge';
 import { PriorityBadge } from '../badges/PriorityBadge';
 import { Ticket } from '@/types/ticketTypes';
+import { TicketStatus } from '@/types/supportTicketTypes';
 
 interface TicketTableRowProps {
   ticket: Ticket;
@@ -21,6 +22,18 @@ export const TicketTableRow = ({ ticket, onClick }: TicketTableRowProps) => {
     }).format(date);
   };
 
+  // Map external ticket status to our internal status
+  const mapStatus = (status: string): TicketStatus => {
+    switch (status) {
+      case 'pending': return 'pending';
+      case 'closed': return 'closed';
+      case 'resolved': return 'resolved';
+      case 'in-progress': return 'in-progress';
+      case 'open':
+      default: return 'open';
+    }
+  };
+
   return (
     <TableRow 
       key={ticket.id}
@@ -30,7 +43,7 @@ export const TicketTableRow = ({ ticket, onClick }: TicketTableRowProps) => {
       <TableCell className="font-medium">{ticket.id}</TableCell>
       <TableCell>{ticket.title}</TableCell>
       <TableCell>
-        <StatusBadge status={ticket.status} />
+        <StatusBadge status={mapStatus(ticket.status)} />
       </TableCell>
       <TableCell>
         <PriorityBadge priority={ticket.priority} />

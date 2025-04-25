@@ -36,6 +36,7 @@ export const mapFrontendStatusToDb = (status: TicketStatus): 'wip' | 'completed'
     case 'in-progress': return 'wip';
     case 'resolved': return 'completed';
     case 'closed': return 'completed';
+    case 'pending': return 'wip';
     case 'open': 
     default: return 'wip';
   }
