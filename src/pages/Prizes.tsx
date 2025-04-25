@@ -1,9 +1,10 @@
 
 import React from 'react';
-import { Trophy, Clock, MapPin, Gift } from 'lucide-react';
+import { Trophy, Clock, MapPin, Gift, RefreshCw, AlertTriangle } from 'lucide-react';
 import PageLayout from '@/components/layouts/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { usePrizeWinners } from '@/hooks/usePrizeWinners';
 
 const PrizeCard = ({ winner }: { winner: ReturnType<typeof usePrizeWinners>['winners'][0] }) => {
@@ -45,7 +46,11 @@ const PrizeCard = ({ winner }: { winner: ReturnType<typeof usePrizeWinners>['win
 };
 
 const Prizes = () => {
-  const { winners } = usePrizeWinners();
+  const { winners, isLoading, error, refetch } = usePrizeWinners();
+
+  const handleRefresh = () => {
+    refetch();
+  };
 
   return (
     <PageLayout 
@@ -62,18 +67,57 @@ const Prizes = () => {
           These skilled players completed their puzzles the fastest and won amazing prizes. 
           Can you beat their times?
         </p>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="mt-4" 
+          onClick={handleRefresh}
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh Winners
+        </Button>
       </div>
 
-      {winners.length === 0 ? (
-        <div className="text-center text-muted-foreground">
-          No prize winners today. Be the first!
+      {isLoading && (
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin mb-2">
+            <RefreshCw className="h-8 w-8 text-puzzle-aqua" />
+          </div>
+          <p className="text-muted-foreground">Loading prize winners...</p>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {winners.map((winner) => (
-            <PrizeCard key={winner.id} winner={winner} />
-          ))}
+      )}
+
+      {error && (
+        <div className="text-center py-8 border border-destructive/20 rounded-lg bg-destructive/10">
+          <AlertTriangle className="h-8 w-8 text-destructive mx-auto mb-2" />
+          <p className="text-destructive font-semibold mb-1">Error loading prize winners</p>
+          <p className="text-muted-foreground text-sm mb-4">
+            {error instanceof Error ? error.message : 'Please try again later'}
+          </p>
+          <Button variant="destructive" size="sm" onClick={handleRefresh}>
+            Retry
+          </Button>
         </div>
+      )}
+
+      {!isLoading && !error && (
+        <>
+          {winners.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="mb-2 text-lg">No prize winners found for today.</p>
+              <p className="text-sm opacity-70">Check back later or be the first winner!</p>
+              <div className="mt-4 text-xs text-muted-foreground/60">
+                Debug info: Attempted to fetch winners for {new Date().toISOString().split('T')[0]}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {winners.map((winner) => (
+                <PrizeCard key={winner.id} winner={winner} />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </PageLayout>
   );

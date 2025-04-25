@@ -17,14 +17,28 @@ export interface PrizeWinner {
 export function usePrizeWinners() {
   const fetchWinners = async (): Promise<PrizeWinner[]> => {
     const today = new Date().toISOString().split('T')[0];
-    const { data, error } = await supabase.rpc('get_daily_winners', { date_param: today });
-    if (error) throw error;
-    return data;
+    console.log('Fetching prize winners for date:', today);
+    try {
+      const { data, error } = await supabase.rpc('get_daily_winners', { date_param: today });
+      
+      if (error) {
+        console.error('Error fetching prize winners:', error);
+        throw error;
+      }
+      
+      console.log('Prize winners data received:', data);
+      return data || [];
+    } catch (err) {
+      console.error('Exception in fetchWinners:', err);
+      return [];
+    }
   };
 
-  const { data, refetch } = useQuery({
+  const { data, refetch, isLoading, error } = useQuery({
     queryKey: ['prizeWinners'],
     queryFn: fetchWinners,
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {
@@ -34,6 +48,7 @@ export function usePrizeWinners() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'prize_winners' },
         () => {
+          console.log('Prize winners data changed, refetching...');
           refetch();
         }
       )
@@ -44,5 +59,10 @@ export function usePrizeWinners() {
     };
   }, [refetch]);
 
-  return { winners: data || [] };
+  return { 
+    winners: data || [], 
+    isLoading,
+    error,
+    refetch
+  };
 }
