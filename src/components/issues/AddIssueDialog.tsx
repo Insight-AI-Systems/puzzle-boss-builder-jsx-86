@@ -52,7 +52,6 @@ export function AddIssueDialog({ onAdd }: AddIssueDialogProps) {
       
       if (success) {
         setIsOpen(false);
-        // Reset the form is now handled after dialog close
       }
     } catch (err) {
       console.error("Error creating issue:", err);

@@ -9,6 +9,7 @@ export const useIssuesAdd = (onIssueAdded: () => Promise<void>) => {
 
   const addIssue = useCallback(async (newIssue: IssueType): Promise<boolean> => {
     try {
+      console.log("Adding new issue:", newIssue);
       const dbStatus = mapFrontendStatusToDb(newIssue.status);
       
       const insertData = {
@@ -26,8 +27,7 @@ export const useIssuesAdd = (onIssueAdded: () => Promise<void>) => {
 
       const { error } = await supabase
         .from('issues')
-        .insert(insertData)
-        .select();
+        .insert(insertData);
 
       if (error) {
         console.error("Error adding issue:", error);
@@ -39,12 +39,8 @@ export const useIssuesAdd = (onIssueAdded: () => Promise<void>) => {
         return false;
       }
 
+      // Call the callback to refresh the issues list
       await onIssueAdded();
-      
-      toast({
-        title: "Issue Added",
-        description: `Successfully added issue: ${newIssue.title}`,
-      });
       
       return true;
     } catch (err) {

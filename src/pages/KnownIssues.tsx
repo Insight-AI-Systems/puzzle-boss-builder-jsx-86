@@ -1,3 +1,4 @@
+
 import PageLayout from "@/components/layouts/PageLayout";
 import { IssuesHeader } from "@/components/issues/IssuesHeader";
 import { IssuesList } from "@/components/issues/IssuesList";
@@ -81,6 +82,7 @@ export default function KnownIssues() {
           description: `Successfully added issue: ${newIssue.title}`,
         });
         
+        // Refresh the issues list
         await fetchIssues();
         return true;
       }
