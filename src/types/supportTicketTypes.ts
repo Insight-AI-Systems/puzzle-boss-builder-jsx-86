@@ -1,7 +1,6 @@
-
 export type TicketStatus = 'open' | 'in-progress' | 'resolved' | 'closed' | 'pending';
 export type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
-export type TicketCategory = 'tech' | 'account' | 'billing' | 'prize' | 'feedback' | 'other' | 'internal';
+export type TicketCategory = 'tech' | 'account' | 'billing' | 'prize' | 'feedback' | 'other' | 'internal' | 'migrated';
 
 export interface SupportTicket {
   id: string;

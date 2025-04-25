@@ -27,7 +27,9 @@ export const TicketTable = ({
   onDeleteTicket 
 }: TicketTableProps) => {
   const getTicketSourceInfo = (ticket: SupportTicket) => {
-    if (ticket.category === 'migrated') {
+    // Check if category is a string and equals 'migrated'
+    // This allows for handling cases where category might be dynamically added
+    if (typeof ticket.category === 'string' && ticket.category === 'migrated') {
       return <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">Migrated</Badge>;
     }
     return null;
