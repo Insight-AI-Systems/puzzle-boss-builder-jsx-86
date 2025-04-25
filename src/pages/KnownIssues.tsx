@@ -1,8 +1,7 @@
-
 import PageLayout from "@/components/layouts/PageLayout";
 import { IssuesHeader } from "@/components/issues/IssuesHeader";
 import { IssuesList } from "@/components/issues/IssuesList";
-import { useKnownIssues } from "@/hooks/useKnownIssues";
+import { useKnownIssues } from "@/hooks/issues";
 import { getAuthComparisonIssue } from "@/components/issues/AuthComparisonIssue";
 import { knownIssues as localIssues } from "@/data/knownIssues";
 import { IssueType } from "@/types/issueTypes";
@@ -15,20 +14,16 @@ export default function KnownIssues() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
-  // Combine and deduplicate issues from database, local, and special sources
   useEffect(() => {
     if (!isDbLoading) {
-      // Deep clone of database issues to avoid reference issues
       const combinedIssues: IssueType[] = JSON.parse(JSON.stringify(dbIssues || []));
       
-      // Add local issues that don't exist in the database
       localIssues.forEach(localIssue => {
         if (!combinedIssues.some(issue => issue.id === localIssue.id)) {
           combinedIssues.push({...localIssue});
         }
       });
       
-      // Add auth comparison issue if it doesn't exist
       const authComparisonIssue = getAuthComparisonIssue();
       if (!combinedIssues.some(issue => issue.id === authComparisonIssue.id)) {
         combinedIssues.push({...authComparisonIssue});
@@ -41,7 +36,6 @@ export default function KnownIssues() {
       setAllIssues(combinedIssues);
       setIsLoading(false);
       
-      // Show toast if too few issues are displayed
       if (combinedIssues.length < 5) {
         toast({
           title: "Limited issues displayed",
@@ -52,9 +46,7 @@ export default function KnownIssues() {
     }
   }, [dbIssues, isDbLoading, toast]);
 
-  // Handle updates including special non-database issues
   const handleUpdateIssue = async (updatedIssue: IssueType) => {
-    // Specifically check for AUTH-EVAL, not any non-UUID string
     if (updatedIssue.id === "AUTH-EVAL") {
       setAllIssues(prevIssues => 
         prevIssues.map(issue => 
@@ -64,11 +56,9 @@ export default function KnownIssues() {
       return true;
     }
     
-    // For all other issues, use the normal update mechanism
     const success = await updateIssue(updatedIssue);
     
     if (success) {
-      // Update in local state as well to ensure UI is updated
       setAllIssues(prevIssues => 
         prevIssues.map(issue => 
           issue.id === updatedIssue.id ? updatedIssue : issue
@@ -79,12 +69,10 @@ export default function KnownIssues() {
     return success;
   };
 
-  // Handle adding new issues
   const handleAddIssue = async (newIssue: IssueType) => {
     try {
       console.log("Adding new issue:", newIssue);
       
-      // For database issues
       const success = await addIssue(newIssue);
       
       if (success) {
@@ -93,8 +81,6 @@ export default function KnownIssues() {
           description: `Successfully added issue: ${newIssue.title}`,
         });
         
-        // Refresh issues instead of just adding to state
-        // This ensures we get the properly formatted issue from the database
         await fetchIssues();
         return true;
       }
