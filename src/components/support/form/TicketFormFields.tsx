@@ -57,7 +57,7 @@ const TicketFormFields = ({
               <Select
                 disabled={isLoadingDepartments || departments.length === 0}
                 onValueChange={field.onChange}
-                defaultValue={field.value}
+                value={field.value || undefined}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -70,6 +70,11 @@ const TicketFormFields = ({
                       {dept.name}
                     </SelectItem>
                   ))}
+                  {departments.length === 0 && (
+                    <SelectItem value="loading" disabled>
+                      No departments available
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -85,7 +90,7 @@ const TicketFormFields = ({
               <FormLabel>Priority</FormLabel>
               <Select
                 onValueChange={field.onChange}
-                defaultValue={field.value}
+                value={field.value || undefined}
               >
                 <FormControl>
                   <SelectTrigger>
