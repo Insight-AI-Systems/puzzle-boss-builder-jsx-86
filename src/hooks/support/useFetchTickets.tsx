@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { SupportTicket, TicketFilters } from "@/types/supportTicketTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { mapFrontendStatusToDb, DbStatus } from "@/utils/support/mappings";
+import { mapFrontendStatusToDb, DbStatus, mapDbStatusToFrontend } from "@/utils/support/mappings";
 
 export const useFetchTickets = () => {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -64,7 +64,7 @@ export const useFetchTickets = () => {
         id: item.id,
         title: item.title,
         description: item.description,
-        status: mapDbStatusToFrontend(item.status) as any,
+        status: mapDbStatusToFrontend(item.status),
         priority: item.category === 'security' ? 'high' : item.category === 'feature' ? 'low' : 'medium',
         category: item.category || 'tech',
         created_at: item.created_at,
