@@ -5,7 +5,7 @@ import { IssueType, mapDbStatusToFrontend, mapFrontendStatusToDb } from "@/types
 import { knownIssues as fallbackIssues } from "@/data/knownIssues";
 import { supabase } from "@/integrations/supabase/client";
 
-// Define a type for the database issue structure
+// Types
 type DbIssue = {
   id: string;
   title: string;
@@ -19,11 +19,34 @@ type DbIssue = {
   updated_at: string;
 };
 
+// Utility function to map database issues to frontend format
+const mapDbIssueToFrontend = (item: DbIssue): IssueType => ({
+  id: item.id,
+  title: item.title,
+  description: item.description,
+  status: mapDbStatusToFrontend(item.status),
+  category: mapDatabaseCategory(item.category),
+  workaround: item.workaround,
+  created_by: item.created_by,
+  modified_by: item.modified_by,
+  created_at: item.created_at,
+  updated_at: item.updated_at
+});
+
+// Utility function to map database categories
+const mapDatabaseCategory = (category: string): IssueType['category'] => {
+  if (['bug', 'performance', 'security', 'ui', 'feature'].includes(category)) {
+    return category as IssueType['category'];
+  }
+  return 'bug';
+};
+
 export const useKnownIssues = () => {
   const [issues, setIssues] = useState<IssueType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Fetch issues from database
   const fetchIssues = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -44,33 +67,12 @@ export const useKnownIssues = () => {
         return;
       }
       
-      console.log("Database results:", data);
+      const mappedIssues = (data as DbIssue[]).map(mapDbIssueToFrontend);
       
-      // Map database status to our issue type status
-      const mappedIssues: IssueType[] = (data as DbIssue[]).map(item => ({
-        id: item.id,
-        title: item.title,
-        description: item.description,
-        status: mapDbStatusToFrontend(item.status),
-        category: mapDatabaseCategory(item.category),
-        workaround: item.workaround,
-        created_by: item.created_by,
-        modified_by: item.modified_by,
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
-      
-      // If no issues were returned from database, use the fallback issues
-      if (mappedIssues.length === 0) {
-        console.log("No issues found in database, using fallback issues");
-        setIssues(fallbackIssues);
-      } else {
-        setIssues(mappedIssues);
-      }
+      setIssues(mappedIssues.length > 0 ? mappedIssues : fallbackIssues);
     } catch (err) {
       console.error("Exception fetching issues:", err);
       setIssues(fallbackIssues);
-      
       toast({
         title: "Failed to load issues",
         description: "Using cached data instead. Please try refreshing.",
@@ -81,16 +83,11 @@ export const useKnownIssues = () => {
     }
   }, [toast]);
 
+  // Update an existing issue
   const updateIssue = async (updatedIssue: IssueType): Promise<boolean> => {
     try {
-      console.log("Updating issue in database:", updatedIssue);
-      
-      // Map frontend status to database status
       const dbStatus = mapFrontendStatusToDb(updatedIssue.status);
       
-      console.log("Mapped status for database:", dbStatus);
-
-      // Only include fields that exist in the database
       const updateData = {
         title: updatedIssue.title,
         description: updatedIssue.description,
@@ -100,26 +97,22 @@ export const useKnownIssues = () => {
         modified_by: updatedIssue.modified_by || null,
         updated_at: new Date().toISOString()
       };
-      
-      console.log("Sending update data to database:", updateData);
-      
-      // Update in the database
+
       const { error } = await supabase
         .from('issues')
         .update(updateData)
         .eq('id', updatedIssue.id);
 
       if (error) {
-        console.error("Error updating issue in database:", error);
+        console.error("Error updating issue:", error);
         toast({
           title: "Update Failed",
-          description: `Could not update the issue in the database: ${error.message}`,
+          description: `Could not update the issue: ${error.message}`,
           variant: "destructive",
         });
         return false;
       }
 
-      // Update in local state
       handleIssueUpdate(updatedIssue);
       
       toast({
@@ -129,26 +122,23 @@ export const useKnownIssues = () => {
       
       return true;
     } catch (err) {
-      console.error("Exception updating issue:", err);
+      console.error("Error updating issue:", err);
       toast({
         title: "Update Failed",
-        description: "An unexpected error occurred while updating the issue.",
+        description: "An unexpected error occurred while updating.",
         variant: "destructive",
       });
       return false;
     }
   };
 
+  // Add a new issue
   const addIssue = async (newIssue: IssueType): Promise<boolean> => {
     try {
-      console.log("Adding new issue to database:", newIssue);
-      
-      // Map frontend status to database status
       const dbStatus = mapFrontendStatusToDb(newIssue.status);
       
-      // Prepare the data for insertion
       const insertData = {
-        id: newIssue.id, // Keep the UUID generated on the client
+        id: newIssue.id,
         title: newIssue.title,
         description: newIssue.description,
         status: dbStatus,
@@ -159,49 +149,26 @@ export const useKnownIssues = () => {
         created_at: newIssue.created_at || new Date().toISOString(),
         updated_at: newIssue.updated_at || new Date().toISOString()
       };
-      
-      console.log("Sending insert data to database:", insertData);
-      
-      // Insert into the database
-      const { error, data } = await supabase
+
+      const { error } = await supabase
         .from('issues')
         .insert(insertData)
         .select();
 
       if (error) {
-        console.error("Error adding issue to database:", error);
+        console.error("Error adding issue:", error);
         toast({
           title: "Add Failed",
-          description: `Could not add the issue to the database: ${error.message}`,
+          description: `Could not add the issue: ${error.message}`,
           variant: "destructive",
         });
         return false;
       }
 
-      console.log("Issue added successfully:", data);
-      
-      // Add to local state
-      if (data && data.length > 0) {
-        const addedDbIssue = data[0] as DbIssue;
-        const mappedIssue: IssueType = {
-          id: addedDbIssue.id,
-          title: addedDbIssue.title,
-          description: addedDbIssue.description,
-          status: mapDbStatusToFrontend(addedDbIssue.status),
-          category: mapDatabaseCategory(addedDbIssue.category),
-          workaround: addedDbIssue.workaround,
-          created_by: addedDbIssue.created_by,
-          modified_by: addedDbIssue.modified_by,
-          created_at: addedDbIssue.created_at,
-          updated_at: addedDbIssue.updated_at
-        };
-        
-        setIssues(prev => [mappedIssue, ...prev]);
-      }
-      
+      await fetchIssues();
       return true;
     } catch (err) {
-      console.error("Exception adding issue:", err);
+      console.error("Error adding issue:", err);
       toast({
         title: "Add Failed",
         description: "An unexpected error occurred while adding the issue.",
@@ -211,6 +178,7 @@ export const useKnownIssues = () => {
     }
   };
 
+  // Update local state when an issue changes
   const handleIssueUpdate = (updatedIssue: IssueType) => {
     setIssues(prevIssues => 
       prevIssues.map(issue => 
@@ -231,11 +199,4 @@ export const useKnownIssues = () => {
     addIssue,
     fetchIssues
   };
-};
-
-const mapDatabaseCategory = (category: string): IssueType['category'] => {
-  if (['bug', 'performance', 'security', 'ui', 'feature'].includes(category)) {
-    return category as IssueType['category'];
-  }
-  return 'bug';
 };
