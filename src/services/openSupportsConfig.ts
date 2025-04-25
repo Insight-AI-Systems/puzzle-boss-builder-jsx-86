@@ -1,4 +1,3 @@
-
 // Configuration for OpenSupports API
 // Replace with actual production values in deployment
 
@@ -11,7 +10,9 @@ export const OPEN_SUPPORTS_CONFIG = {
   // Default pagination limit for ticket listings
   DEFAULT_LIMIT: 10,
   // Flag to use mock API implementation for testing
-  USE_MOCK_API: true,
+  USE_MOCK_API: false,
+  // Admin panel URL - replace with your actual admin panel URL
+  ADMIN_PANEL_URL: import.meta.env.VITE_OPEN_SUPPORTS_ADMIN_URL || 'http://localhost:8080/admin'
 };
 
 // Endpoint paths
