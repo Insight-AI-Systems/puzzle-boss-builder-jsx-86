@@ -49,6 +49,7 @@ export const TicketFilters = ({
           <SelectItem value="all">All Statuses</SelectItem>
           <SelectItem value="open">Open</SelectItem>
           <SelectItem value="pending">Pending</SelectItem>
+          <SelectItem value="in-progress">In Progress</SelectItem>
           <SelectItem value="resolved">Resolved</SelectItem>
           <SelectItem value="closed">Closed</SelectItem>
         </SelectContent>

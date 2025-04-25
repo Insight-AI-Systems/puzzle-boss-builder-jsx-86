@@ -71,7 +71,7 @@ const TicketFormFields = ({
                     </SelectItem>
                   ))}
                   {departments.length === 0 && (
-                    <SelectItem value="loading" disabled>
+                    <SelectItem value="no-departments" disabled>
                       No departments available
                     </SelectItem>
                   )}

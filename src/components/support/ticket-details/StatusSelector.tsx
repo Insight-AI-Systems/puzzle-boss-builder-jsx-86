@@ -46,6 +46,7 @@ export const StatusSelector = ({ status, isStaff, onStatusChange, isPending }: S
           <SelectContent>
             <SelectItem value="open">Open</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="in-progress">In Progress</SelectItem>
             <SelectItem value="resolved">Resolved</SelectItem>
             <SelectItem value="closed">Closed</SelectItem>
           </SelectContent>
