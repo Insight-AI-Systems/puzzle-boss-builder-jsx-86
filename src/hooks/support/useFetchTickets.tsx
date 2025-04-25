@@ -35,6 +35,13 @@ export const useFetchTickets = () => {
           .order('created_at', { ascending: false });
           
         console.log('Fetching internal tickets for admin');
+      } else if (isAdmin && !isInternalView) {
+        // Admin viewing regular user tickets (exclude internal ones)
+        query = query
+          .neq('category', 'internal')
+          .order('created_at', { ascending: false });
+          
+        console.log('Fetching all user tickets for admin');
       } else {
         // Standard view - user's own tickets, excluding internal ones
         query = query

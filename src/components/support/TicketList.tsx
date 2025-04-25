@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
@@ -121,6 +122,13 @@ export const TicketList = () => {
     navigate(internalView ? '/support/tickets?view=internal' : '/support/tickets');
   };
 
+  const getTicketSourceInfo = (ticket: any) => {
+    if (ticket.category === 'migrated') {
+      return <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">Migrated</Badge>;
+    }
+    return null;
+  };
+
   if (!user) {
     return (
       <Card className="bg-puzzle-black/30 border-puzzle-aqua/20">
@@ -222,6 +230,7 @@ export const TicketList = () => {
               <TableRow className="border-puzzle-aqua/20">
                 <TableHead className="text-puzzle-aqua">Ticket</TableHead>
                 <TableHead className="text-puzzle-aqua">Status</TableHead>
+                <TableHead className="text-puzzle-aqua">Source</TableHead>
                 <TableHead className="text-puzzle-aqua">Created</TableHead>
                 <TableHead className="text-puzzle-aqua">Last Update</TableHead>
               </TableRow>
@@ -242,6 +251,7 @@ export const TicketList = () => {
                     </div>
                   </TableCell>
                   <TableCell>{getStatusBadge(ticket.status)}</TableCell>
+                  <TableCell>{getTicketSourceInfo(ticket)}</TableCell>
                   <TableCell>
                     {ticket.created_at ? new Date(ticket.created_at).toLocaleDateString() : 'N/A'}
                   </TableCell>

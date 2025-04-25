@@ -13,6 +13,7 @@ export const useSupportTickets = () => {
 
   // Initialize with default fetch (user's own tickets)
   useEffect(() => {
+    // Initial fetch without filters to get default view
     fetchTickets();
   }, [fetchTickets]);
 

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { ExternalLink, PlusCircle, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,13 +8,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SUPPORT_SYSTEM_CONFIG } from '@/services/openSupportsConfig';
 import { SupportHome } from '@/components/support/SupportHome';
 import { TicketList } from '@/components/support/TicketList';
-import { TicketDetails } from '@/components/support/TicketDetails';
+import { TicketDetails } from '@/components/support/ticket-details/TicketDetails';
 import { NewTicketForm } from '@/components/support/NewTicketForm';
+import { migrateKnownIssuesToSupport } from '@/utils/issueMigration';
+import { useToast } from '@/hooks/use-toast';
 
 const Support = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { hasRole, user } = useAuth();
+  const { toast } = useToast();
   const isAdmin = hasRole('super_admin') || hasRole('admin');
   
   let subtitle = "Get help with your account, puzzles, and prizes";
@@ -23,6 +26,31 @@ const Support = () => {
   } else if (location.pathname.includes('/new-ticket')) {
     subtitle = "Create a new support ticket";
   }
+
+  // Run migration when an admin visits the support center
+  useEffect(() => {
+    if (isAdmin && user) {
+      // Check if migration has been run before
+      const migrationCompleted = localStorage.getItem('support-migration-completed');
+      
+      if (!migrationCompleted) {
+        // Run the migration
+        migrateKnownIssuesToSupport(user.id)
+          .then(success => {
+            if (success) {
+              localStorage.setItem('support-migration-completed', 'true');
+              toast({
+                title: "Migration Complete",
+                description: "Previous issues have been migrated to the new support system.",
+              });
+            }
+          })
+          .catch(error => {
+            console.error("Migration failed:", error);
+          });
+      }
+    }
+  }, [isAdmin, user, toast]);
 
   const handleAdminPanelClick = () => {
     window.open(SUPPORT_SYSTEM_CONFIG.ADMIN_PANEL_URL, '_blank');
