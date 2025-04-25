@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { IssueType, mapDbStatusToFrontend, mapFrontendStatusToDb } from "@/types/issueTypes";
 import { knownIssues as fallbackIssues } from "@/data/knownIssues";
@@ -24,7 +24,7 @@ export const useKnownIssues = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchIssues = async () => {
+  const fetchIssues = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -79,7 +79,7 @@ export const useKnownIssues = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   const updateIssue = async (updatedIssue: IssueType): Promise<boolean> => {
     try {
@@ -180,8 +180,24 @@ export const useKnownIssues = () => {
 
       console.log("Issue added successfully:", data);
       
-      // Refresh issues list to include the new issue
-      fetchIssues();
+      // Add to local state
+      if (data && data.length > 0) {
+        const addedDbIssue = data[0] as DbIssue;
+        const mappedIssue: IssueType = {
+          id: addedDbIssue.id,
+          title: addedDbIssue.title,
+          description: addedDbIssue.description,
+          status: mapDbStatusToFrontend(addedDbIssue.status),
+          category: mapDatabaseCategory(addedDbIssue.category),
+          workaround: addedDbIssue.workaround,
+          created_by: addedDbIssue.created_by,
+          modified_by: addedDbIssue.modified_by,
+          created_at: addedDbIssue.created_at,
+          updated_at: addedDbIssue.updated_at
+        };
+        
+        setIssues(prev => [mappedIssue, ...prev]);
+      }
       
       return true;
     } catch (err) {
@@ -205,7 +221,7 @@ export const useKnownIssues = () => {
 
   useEffect(() => {
     fetchIssues();
-  }, []);
+  }, [fetchIssues]);
 
   return {
     issues,

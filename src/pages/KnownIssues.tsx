@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function KnownIssues() {
-  const { issues: dbIssues, isLoading: isDbLoading, updateIssue, addIssue } = useKnownIssues();
+  const { issues: dbIssues, isLoading: isDbLoading, updateIssue, addIssue, fetchIssues } = useKnownIssues();
   const [allIssues, setAllIssues] = useState<IssueType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -35,7 +35,7 @@ export default function KnownIssues() {
       }
       
       console.log("Combined issues count:", combinedIssues.length);
-      console.log("Issues from DB:", dbIssues.length);
+      console.log("Issues from DB:", dbIssues ? dbIssues.length : 0);
       console.log("Local issues:", localIssues.length);
       
       setAllIssues(combinedIssues);
@@ -81,24 +81,39 @@ export default function KnownIssues() {
 
   // Handle adding new issues
   const handleAddIssue = async (newIssue: IssueType) => {
-    // For database issues
-    const success = await addIssue(newIssue);
-    
-    if (success) {
-      // Update the local state with the new issue immediately
-      setAllIssues(prevIssues => [...prevIssues, {...newIssue}]);
+    try {
+      console.log("Adding new issue:", newIssue);
+      
+      // For database issues
+      const success = await addIssue(newIssue);
+      
+      if (success) {
+        toast({
+          title: "Issue Added",
+          description: `Successfully added issue: ${newIssue.title}`,
+        });
+        
+        // Refresh issues instead of just adding to state
+        // This ensures we get the properly formatted issue from the database
+        await fetchIssues();
+        return true;
+      }
+      
       toast({
-        title: "Issue Added",
-        description: `Successfully added issue: ${newIssue.title}`,
+        title: "Failed to Add Issue",
+        description: "There was a problem adding the new issue.",
+        variant: "destructive",
       });
-      return true;
+      return false;
+    } catch (error) {
+      console.error("Error in handleAddIssue:", error);
+      toast({
+        title: "Error Adding Issue",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+      return false;
     }
-    toast({
-      title: "Failed to Add Issue",
-      description: "There was a problem adding the new issue.",
-      variant: "destructive",
-    });
-    return false;
   };
 
   return (

@@ -41,25 +41,18 @@ export function AddIssueDialog({ onAdd }: AddIssueDialogProps) {
     
     try {
       setIsSaving(true);
-      const success = await onAdd(editedIssue);
+      // Make sure we're using the most up-to-date data with current timestamps
+      const issueToSave = {
+        ...editedIssue,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      const success = await onAdd(issueToSave);
       
       if (success) {
         setIsOpen(false);
-        toast({
-          title: "Issue Created",
-          description: "New issue has been successfully added.",
-        });
-        
-        // Reset the form data after successful save
-        setEditedIssue({
-          id: crypto.randomUUID(),
-          title: "",
-          description: "",
-          status: "open",
-          category: "bug",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
+        // Reset the form is now handled after dialog close
       }
     } catch (err) {
       console.error("Error creating issue:", err);
@@ -74,11 +67,16 @@ export function AddIssueDialog({ onAdd }: AddIssueDialogProps) {
   };
 
   const onOpenChange = (open: boolean) => {
-    // Reset form when opening or generate new UUID when reopening
     if (open) {
+      // When opening, initialize with a fresh UUID
       setEditedIssue({
-        ...editedIssue,
         id: crypto.randomUUID(),
+        title: "",
+        description: "",
+        status: "open",
+        category: "bug",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       });
     }
     setIsOpen(open);
