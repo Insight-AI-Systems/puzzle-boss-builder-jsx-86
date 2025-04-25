@@ -3,7 +3,7 @@ import { IssueType } from "./issueTypes";
 
 export type TicketStatus = 'open' | 'in-progress' | 'resolved' | 'closed' | 'pending';
 export type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
-export type TicketCategory = 'tech' | 'account' | 'billing' | 'prize' | 'feedback' | 'other';
+export type TicketCategory = 'tech' | 'account' | 'billing' | 'prize' | 'feedback' | 'other' | 'internal';
 
 export interface SupportTicket {
   id: string;
@@ -83,6 +83,8 @@ export const convertTicketToIssue = (ticket: SupportTicket): IssueType => {
     dbCategory = 'bug';
   } else if (ticket.category === 'billing') {
     dbCategory = 'feature';
+  } else if (ticket.category === 'internal') {
+    dbCategory = 'performance';
   } else {
     dbCategory = 'ui';
   }

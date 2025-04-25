@@ -1,19 +1,23 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSupportTickets } from '@/hooks/support/useSupportTickets';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { AlertCircle, ArrowLeft, MessageSquare, Send, Clock, CheckCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { AlertCircle, ArrowLeft, MessageSquare, Send, Clock, CheckCircle, ShieldAlert } from 'lucide-react';
+import { StatusSelector } from './ticket-details/StatusSelector';
 
 export const TicketDetails = () => {
   const { ticketId } = useParams<{ ticketId: string }>();
   const navigate = useNavigate();
-  const { tickets, isLoading, addComment } = useSupportTickets();
+  const [searchParams] = useSearchParams();
+  const isInternalView = searchParams.get('view') === 'internal';
+  const { tickets, isLoading, addComment, updateTicketStatus, isAdmin } = useSupportTickets();
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const ticket = tickets.find(t => t.id === ticketId);
 
@@ -28,9 +32,16 @@ export const TicketDetails = () => {
     }
     setIsSubmitting(false);
   };
+  
+  const handleStatusChange = async (newStatus: string) => {
+    if (!ticketId) return;
+    
+    setIsUpdatingStatus(true);
+    await updateTicketStatus(ticketId, newStatus);
+    setIsUpdatingStatus(false);
+  };
 
   // Parse comments from the description for now
-  // In a real implementation, this would come from a comments table
   const parseComments = (description: string) => {
     if (!description) return [];
     
@@ -58,6 +69,8 @@ export const TicketDetails = () => {
         return <AlertCircle className="h-5 w-5 text-yellow-500" />;
       case 'in-progress': 
         return <Clock className="h-5 w-5 text-blue-500" />;
+      case 'pending':
+        return <Clock className="h-5 w-5 text-orange-500" />;
       case 'resolved':
       case 'closed':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
@@ -78,9 +91,9 @@ export const TicketDetails = () => {
             <AlertCircle className="mx-auto h-12 w-12 text-puzzle-aqua mb-4" />
             <h3 className="text-xl font-medium mb-2">Ticket Not Found</h3>
             <p className="text-puzzle-white/70 mb-6">
-              The support ticket you're looking for doesn't exist or you don't have permission to view it.
+              The ticket you're looking for doesn't exist or you don't have permission to view it.
             </p>
-            <Button onClick={() => navigate('/support/tickets')}>
+            <Button onClick={() => navigate(`/support/tickets${isInternalView ? '?view=internal' : ''}`)}>
               Back to Tickets
             </Button>
           </div>
@@ -91,30 +104,40 @@ export const TicketDetails = () => {
 
   const mainContent = ticket.description.split('\n\nComment')[0];
   const comments = parseComments(ticket.description);
+  const isInternalTicket = ticket.category === 'internal';
 
   return (
     <div className="space-y-6">
       <Button 
         variant="outline" 
-        onClick={() => navigate('/support/tickets')}
+        onClick={() => navigate(`/support/tickets${isInternalView ? '?view=internal' : ''}`)}
         className="mb-4"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Tickets
+        Back to {isInternalTicket ? "Internal Issues" : "Tickets"}
       </Button>
 
       <Card className="bg-puzzle-black/30 border-puzzle-aqua/20">
         <CardHeader>
           <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="text-xl">{ticket.title}</CardTitle>
-              <CardDescription>
-                Ticket #{ticket.id.substring(0, 8)} • Created {ticket.created_at ? new Date(ticket.created_at).toLocaleDateString() : 'N/A'}
-              </CardDescription>
+            <div className="flex gap-2 items-center">
+              {isInternalTicket && isAdmin && (
+                <ShieldAlert className="h-5 w-5 text-red-500" />
+              )}
+              <div>
+                <CardTitle className="text-xl">{ticket.title}</CardTitle>
+                <CardDescription>
+                  Ticket #{ticket.id.substring(0, 8)} • Created {ticket.created_at ? new Date(ticket.created_at).toLocaleDateString() : 'N/A'}
+                </CardDescription>
+              </div>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-puzzle-black/40">
-              {getStatusIcon(ticket.status)}
-              <span className="capitalize">{ticket.status.replace('-', ' ')}</span>
+            <div className="flex items-center gap-4">
+              <StatusSelector 
+                status={ticket.status}
+                isStaff={isAdmin}
+                onStatusChange={handleStatusChange}
+                isPending={isUpdatingStatus}
+              />
             </div>
           </div>
         </CardHeader>

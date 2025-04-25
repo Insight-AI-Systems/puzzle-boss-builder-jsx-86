@@ -27,7 +27,8 @@ export const SUPPORT_SYSTEM_CONFIG = {
     { id: 'billing', name: 'Billing Question' },
     { id: 'prize', name: 'Prize Claim' },
     { id: 'feedback', name: 'Feedback' },
-    { id: 'other', name: 'Other' }
+    { id: 'other', name: 'Other' },
+    { id: 'internal', name: 'Internal Issue' }  // Only for admin use
   ],
   
   // Statuses for tickets

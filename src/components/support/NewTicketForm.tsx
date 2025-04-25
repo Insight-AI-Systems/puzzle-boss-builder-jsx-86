@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { 
   Card, 
   CardContent, 
@@ -19,21 +19,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch'; 
 import { useSupportTickets } from '@/hooks/support/useSupportTickets';
 import { SupportTicket, TicketCategory, TicketPriority } from '@/types/supportTicketTypes';
 import { SUPPORT_SYSTEM_CONFIG } from '@/services/openSupportsConfig';
-import { AlertCircle, ArrowLeft } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const NewTicketForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
-  const { addTicket } = useSupportTickets();
+  const [searchParams] = useSearchParams();
+  const isInternalView = searchParams.get('view') === 'internal';
+  const { user, hasRole } = useAuth();
+  const { addTicket, isAdmin } = useSupportTickets();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Get initial category from location state if provided
-  const initialCategory = location.state?.category || 'tech';
+  const initialCategory = location.state?.category || (isInternalView ? 'internal' : 'tech');
   
   const [ticket, setTicket] = useState<Partial<SupportTicket>>({
     title: '',
@@ -42,6 +45,18 @@ export const NewTicketForm = () => {
     priority: 'medium' as TicketPriority,
     id: crypto.randomUUID()
   });
+  
+  // Create internal issue flag
+  const [isInternalIssue, setIsInternalIssue] = useState(isInternalView);
+  
+  useEffect(() => {
+    // Update category when internal flag changes
+    if (isInternalIssue) {
+      setTicket(prev => ({ ...prev, category: 'internal' }));
+    } else if (ticket.category === 'internal') {
+      setTicket(prev => ({ ...prev, category: 'tech' }));
+    }
+  }, [isInternalIssue, ticket.category]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -60,7 +75,7 @@ export const NewTicketForm = () => {
     const success = await addTicket(ticket);
     
     if (success) {
-      navigate('/support/tickets');
+      navigate(`/support/tickets${isInternalIssue ? '?view=internal' : ''}`);
     }
     setIsSubmitting(false);
   };
@@ -97,17 +112,39 @@ export const NewTicketForm = () => {
 
       <Card className="bg-puzzle-black/30 border-puzzle-aqua/20">
         <CardHeader>
-          <CardTitle>Create New Support Ticket</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>
+              {isInternalIssue ? (
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="h-5 w-5 text-red-500" />
+                  <span>Create Internal Issue</span>
+                </div>
+              ) : (
+                "Create Support Ticket"
+              )}
+            </CardTitle>
+            
+            {isAdmin && (
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="internal-issue">Internal Issue</Label>
+                <Switch 
+                  id="internal-issue" 
+                  checked={isInternalIssue}
+                  onCheckedChange={setIsInternalIssue}
+                />
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="title">Ticket Title</Label>
+                <Label htmlFor="title">Title</Label>
                 <Input
                   id="title"
                   name="title"
-                  placeholder="Briefly describe your issue"
+                  placeholder={`Briefly describe your ${isInternalIssue ? 'issue' : 'problem'}`}
                   value={ticket.title}
                   onChange={handleInputChange}
                   required
@@ -116,24 +153,29 @@ export const NewTicketForm = () => {
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select 
-                    value={ticket.category} 
-                    onValueChange={(value) => handleSelectChange('category', value)}
-                  >
-                    <SelectTrigger id="category" className="bg-puzzle-black/40 border-puzzle-aqua/20">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SUPPORT_SYSTEM_CONFIG.TICKET_CATEGORIES.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {!isInternalIssue && (
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Select 
+                      value={ticket.category === 'internal' ? 'tech' : ticket.category} 
+                      onValueChange={(value) => handleSelectChange('category', value)}
+                      disabled={isInternalIssue}
+                    >
+                      <SelectTrigger id="category" className="bg-puzzle-black/40 border-puzzle-aqua/20">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUPPORT_SYSTEM_CONFIG.TICKET_CATEGORIES
+                          .filter(category => category.id !== 'internal') // Filter out internal category for regular users
+                          .map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="priority">Priority</Label>
                   <Select 
@@ -158,7 +200,7 @@ export const NewTicketForm = () => {
                 <Textarea
                   id="description"
                   name="description"
-                  placeholder="Please provide detailed information about your issue"
+                  placeholder={`Please provide detailed information about your ${isInternalIssue ? 'internal issue' : 'problem'}`}
                   value={ticket.description}
                   onChange={handleInputChange}
                   required
@@ -173,7 +215,7 @@ export const NewTicketForm = () => {
                 disabled={isSubmitting || !ticket.title || !ticket.description}
                 className="ml-auto"
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Ticket'}
+                {isSubmitting ? 'Submitting...' : `Submit ${isInternalIssue ? 'Issue' : 'Ticket'}`}
               </Button>
             </CardFooter>
           </form>

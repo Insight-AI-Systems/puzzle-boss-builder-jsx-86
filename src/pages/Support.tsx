@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
-import { ExternalLink, PlusCircle } from 'lucide-react';
+import { ExternalLink, PlusCircle, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PageLayout from '@/components/layouts/PageLayout';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,25 +25,36 @@ const Support = () => {
 
   return (
     <PageLayout 
-      title="Support Center" 
+      title={isAdmin ? "Admin Support Center" : "Support Center"} 
       subtitle={subtitle}
       className={isAdmin ? "relative" : ""}
     >
       <div className="flex justify-between items-center mb-6">
         {isAdmin && (
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2 border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10"
-            onClick={() => window.open(SUPPORT_SYSTEM_CONFIG.ADMIN_PANEL_URL, '_blank')}
-          >
-            <span>Admin Panel</span>
-            <ExternalLink size={16} />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2 border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10"
+              onClick={() => window.open(SUPPORT_SYSTEM_CONFIG.ADMIN_PANEL_URL, '_blank')}
+            >
+              <span>Admin Panel</span>
+              <ExternalLink size={16} />
+            </Button>
+            
+            <Button 
+              variant="destructive"
+              className="flex items-center gap-2"
+              onClick={() => window.location.href = '/support/tickets?view=internal'}
+            >
+              <ShieldAlert size={16} />
+              <span>Internal Issues</span>
+            </Button>
+          </div>
         )}
         
         {user && (
           <Button 
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 ml-auto"
             onClick={() => window.location.href = '/support/new-ticket'}
           >
             <PlusCircle size={16} />

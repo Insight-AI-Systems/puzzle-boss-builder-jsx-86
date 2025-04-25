@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Table, 
   TableBody, 
@@ -25,42 +26,56 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useSupportTickets } from '@/hooks/support/useSupportTickets';
 import { TicketStatus, TicketFilters } from '@/types/supportTicketTypes';
-import { Search, AlertCircle, Clock, CheckCircle, Filter } from 'lucide-react';
+import { Search, AlertCircle, Clock, CheckCircle, Filter, ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Badge } from '@/components/ui/badge';
 
 export const TicketList = () => {
-  const { tickets, isLoading, fetchTickets } = useSupportTickets();
+  const { tickets, isLoading, fetchTickets, isAdmin } = useSupportTickets();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const isInternalView = searchParams.get('view') === 'internal';
+  
   const [filters, setFilters] = useState<Partial<TicketFilters>>({
     page: 1,
     limit: 10
   });
   const [searchQuery, setSearchQuery] = useState('');
 
+  useEffect(() => {
+    if (user) {
+      fetchTickets(filters, isInternalView);
+    }
+  }, [fetchTickets, user, isInternalView, filters]);
+
   const handleStatusChange = (status: string | undefined) => {
-    const newFilters = {
-      ...filters,
-      status: status as TicketStatus | undefined,
-      page: 1 // Reset to first page on filter change
-    };
-    setFilters(newFilters);
-    fetchTickets(newFilters);
+    if (status === "all") {
+      const { status, ...restFilters } = filters;
+      setFilters({
+        ...restFilters,
+        page: 1 // Reset to first page on filter change
+      });
+    } else {
+      setFilters({
+        ...filters,
+        status: status as TicketStatus,
+        page: 1 // Reset to first page on filter change
+      });
+    }
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const newFilters = {
+    setFilters({
       ...filters,
       search: searchQuery,
       page: 1 // Reset to first page on search
-    };
-    setFilters(newFilters);
-    fetchTickets(newFilters);
+    });
   };
 
   const goToTicketDetail = (ticketId: string) => {
-    navigate(`/support/tickets/${ticketId}`);
+    navigate(`/support/tickets/${ticketId}${isInternalView ? '?view=internal' : ''}`);
   };
 
   const getStatusBadge = (status: TicketStatus) => {
@@ -87,6 +102,13 @@ export const TicketList = () => {
             <span>Resolved</span>
           </div>
         );
+      case 'pending':
+        return (
+          <div className="flex items-center gap-1 rounded-full bg-orange-100 text-orange-800 px-2 py-1 text-xs">
+            <Clock className="h-3 w-3" />
+            <span>Pending</span>
+          </div>
+        );
       default:
         return (
           <div className="flex items-center gap-1 rounded-full bg-gray-100 text-gray-800 px-2 py-1 text-xs">
@@ -104,7 +126,7 @@ export const TicketList = () => {
             <AlertCircle className="mx-auto h-12 w-12 text-puzzle-aqua mb-4" />
             <h3 className="text-xl font-medium mb-2">Authentication Required</h3>
             <p className="text-puzzle-white/70 mb-6">
-              Please log in to view your support tickets.
+              Please log in to view support tickets.
             </p>
             <Button onClick={() => navigate('/auth')}>
               Sign In
@@ -117,8 +139,36 @@ export const TicketList = () => {
 
   return (
     <Card className="bg-puzzle-black/30 border-puzzle-aqua/20">
-      <CardHeader>
-        <CardTitle>My Support Tickets</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>
+          {isAdmin && isInternalView ? (
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-red-500" />
+              <span>Internal Issues</span>
+            </div>
+          ) : (
+            "Support Tickets"
+          )}
+        </CardTitle>
+        
+        {isAdmin && (
+          <div className="flex gap-2">
+            <Badge
+              variant={isInternalView ? "outline" : "secondary"}
+              className="cursor-pointer"
+              onClick={() => navigate('/support/tickets')}
+            >
+              User Tickets
+            </Badge>
+            <Badge
+              variant={isInternalView ? "secondary" : "outline"}
+              className="cursor-pointer"
+              onClick={() => navigate('/support/tickets?view=internal')}
+            >
+              Internal Issues
+            </Badge>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <div className="flex flex-col sm:flex-row gap-4 mb-6 justify-between">
@@ -154,13 +204,13 @@ export const TicketList = () => {
 
         {isLoading ? (
           <div className="text-center py-8">
-            <p>Loading your tickets...</p>
+            <p>Loading tickets...</p>
           </div>
         ) : tickets.length === 0 ? (
           <div className="text-center py-8">
-            <p className="mb-4">You don't have any support tickets yet.</p>
+            <p className="mb-4">No tickets found.</p>
             <Button onClick={() => navigate('/support/new-ticket')}>
-              Create Your First Ticket
+              Create {isInternalView ? "Internal Issue" : "Support Ticket"}
             </Button>
           </div>
         ) : (
