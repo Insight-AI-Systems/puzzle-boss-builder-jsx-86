@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
@@ -26,14 +25,16 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useSupportTickets } from '@/hooks/support/useSupportTickets';
 import { TicketStatus, TicketFilters } from '@/types/supportTicketTypes';
-import { Search, AlertCircle, Clock, CheckCircle, Filter, ShieldAlert } from 'lucide-react';
+import { Search, AlertCircle, Clock, CheckCircle, Filter, ShieldAlert, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from "@/integrations/supabase/client";
 import { Badge } from '@/components/ui/badge';
 
 export const TicketList = () => {
   const { tickets, isLoading, fetchTickets, isAdmin } = useSupportTickets();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const [searchParams] = useSearchParams();
   const isInternalView = searchParams.get('view') === 'internal';
   
@@ -127,6 +128,37 @@ export const TicketList = () => {
       return <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">Migrated</Badge>;
     }
     return null;
+  };
+
+  const { hasRole } = useAuth();
+  const { toast } = useToast();
+  const isSuperAdmin = hasRole('super_admin');
+  
+  const handleDeleteTicket = async (ticketId: string) => {
+    if (!isSuperAdmin) return;
+    
+    if (window.confirm('Are you sure you want to delete this ticket? This action cannot be undone.')) {
+      try {
+        await supabase
+          .from('issues')
+          .delete()
+          .eq('id', ticketId);
+          
+        toast({
+          title: "Ticket deleted",
+          description: "The ticket has been permanently deleted.",
+        });
+        
+        // Refresh the tickets list
+        fetchTickets(filters, isInternalView);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete the ticket. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   if (!user) {
@@ -233,16 +265,19 @@ export const TicketList = () => {
                 <TableHead className="text-puzzle-aqua">Source</TableHead>
                 <TableHead className="text-puzzle-aqua">Created</TableHead>
                 <TableHead className="text-puzzle-aqua">Last Update</TableHead>
+                {isSuperAdmin && <TableHead className="text-puzzle-aqua">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {tickets.map((ticket) => (
                 <TableRow 
                   key={ticket.id} 
-                  onClick={() => goToTicketDetail(ticket.id)}
                   className="border-puzzle-aqua/20 hover:bg-puzzle-aqua/5 cursor-pointer"
                 >
-                  <TableCell className="font-medium">
+                  <TableCell 
+                    onClick={() => goToTicketDetail(ticket.id)}
+                    className="font-medium"
+                  >
                     <div>
                       <div className="text-puzzle-white">{ticket.title}</div>
                       <div className="text-sm text-puzzle-white/60 truncate max-w-[300px]">
@@ -250,14 +285,33 @@ export const TicketList = () => {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{getStatusBadge(ticket.status)}</TableCell>
-                  <TableCell>{getTicketSourceInfo(ticket)}</TableCell>
-                  <TableCell>
+                  <TableCell onClick={() => goToTicketDetail(ticket.id)}>
+                    {getStatusBadge(ticket.status)}
+                  </TableCell>
+                  <TableCell onClick={() => goToTicketDetail(ticket.id)}>
+                    {getTicketSourceInfo(ticket)}
+                  </TableCell>
+                  <TableCell onClick={() => goToTicketDetail(ticket.id)}>
                     {ticket.created_at ? new Date(ticket.created_at).toLocaleDateString() : 'N/A'}
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={() => goToTicketDetail(ticket.id)}>
                     {ticket.updated_at ? new Date(ticket.updated_at).toLocaleDateString() : 'N/A'}
                   </TableCell>
+                  {isSuperAdmin && (
+                    <TableCell className="w-[100px]">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteTicket(ticket.id);
+                        }}
+                        className="hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
