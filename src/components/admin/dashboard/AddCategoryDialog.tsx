@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { AdminCategory } from '@/hooks/admin/useCategoryManagement';
+import { AdminCategory } from '@/types/categoryTypes';
 
 interface AddCategoryDialogProps {
   isOpen: boolean;

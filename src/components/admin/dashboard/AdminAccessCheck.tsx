@@ -11,7 +11,11 @@ interface AdminAccessCheckProps {
   user: any;
   userRole: string | undefined;
   hasRole: (role: string) => boolean;
-  profile?: { role?: string };
+  profile?: { 
+    role?: string;
+    id?: string;
+    email?: string;
+  };
 }
 
 export const AdminAccessCheck: React.FC<AdminAccessCheckProps> = ({ 
@@ -30,9 +34,9 @@ export const AdminAccessCheck: React.FC<AdminAccessCheckProps> = ({
         role: userRole
       } : null,
       profile: profile ? {
-        id: profile.id,
-        role: profile.role,
-        email: profile.email || profile.id
+        id: profile.id || '',
+        role: profile.role || '',
+        email: profile.email || profile.id || ''
       } : null,
       hasRoles: {
         superAdmin: hasRole('super_admin'),

@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { AdminCategory } from '@/hooks/admin/useCategoryManagement';
+import { AdminCategory } from '@/types/categoryTypes';
 import { useCategoryManagement } from '@/hooks/admin/useCategoryManagement';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
