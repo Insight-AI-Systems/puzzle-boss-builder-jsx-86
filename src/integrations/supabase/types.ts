@@ -228,6 +228,50 @@ export type Database = {
         }
         Relationships: []
       }
+      prize_winners: {
+        Row: {
+          completion_time: number
+          created_at: string
+          id: string
+          prize_value: number
+          puzzle_id: string
+          puzzle_image_url: string
+          puzzle_name: string
+          user_id: string
+          winner_country: string | null
+        }
+        Insert: {
+          completion_time: number
+          created_at?: string
+          id?: string
+          prize_value: number
+          puzzle_id: string
+          puzzle_image_url: string
+          puzzle_name: string
+          user_id: string
+          winner_country?: string | null
+        }
+        Update: {
+          completion_time?: number
+          created_at?: string
+          id?: string
+          prize_value?: number
+          puzzle_id?: string
+          puzzle_image_url?: string
+          puzzle_name?: string
+          user_id?: string
+          winner_country?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prize_winners_puzzle_id_fkey"
+            columns: ["puzzle_id"]
+            isOneToOne: false
+            referencedRelation: "puzzles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_locked: boolean | null
@@ -690,6 +734,19 @@ export type Database = {
       ensure_super_admin: {
         Args: { user_email: string }
         Returns: undefined
+      }
+      get_daily_winners: {
+        Args: { date_param: string }
+        Returns: {
+          id: string
+          winner_name: string
+          puzzle_name: string
+          puzzle_image_url: string
+          completion_time: number
+          prize_value: number
+          winner_country: string
+          created_at: string
+        }[]
       }
       get_puzzle_stats: {
         Args: { puzzle_id: string }

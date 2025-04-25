@@ -1,4 +1,3 @@
-
 import { UserRole } from '@/types/userTypes';
 
 // Define the base NavItem interface
@@ -15,8 +14,7 @@ export interface MainNavItem extends NavItem {
 export const mainNavItems: MainNavItem[] = [
   { name: 'Home', path: '/' },
   { name: 'Puzzles', path: '/puzzles' },
-  { name: 'Prizes', path: '/prizes' },
+  { name: 'Prizes Won', path: '/prizes' },
   { name: 'How It Works', path: '/how-it-works' },
   { name: 'Puzzle Demo', path: '/puzzle-demo' }
-  // Removed the redundant Admin entry
 ];
