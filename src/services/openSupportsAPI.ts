@@ -1,11 +1,10 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { OPEN_SUPPORTS_CONFIG, API_PATHS } from './openSupportsConfig';
+import { SUPPORT_SYSTEM_CONFIG, API_PATHS } from './openSupportsConfig';
 import { Ticket, TicketComment, Department, TicketFilters } from '@/types/ticketTypes';
 
 // Helper function to handle API requests
 const apiRequest = async (endpoint: string, method: string, data?: any, token?: string) => {
-  const url = `${OPEN_SUPPORTS_CONFIG.API_URL}${endpoint}`;
+  const url = `${SUPPORT_SYSTEM_CONFIG.API_URL}${endpoint}`;
   
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -17,7 +16,7 @@ const apiRequest = async (endpoint: string, method: string, data?: any, token?: 
   
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), OPEN_SUPPORTS_CONFIG.REQUEST_TIMEOUT);
+    const timeoutId = setTimeout(() => controller.abort(), SUPPORT_SYSTEM_CONFIG.REQUEST_TIMEOUT);
     
     const response = await fetch(url, {
       method,
@@ -159,7 +158,7 @@ const mockApiImplementation = {
 
 // Determine if we should use mock or real API
 const useMockApi = () => {
-  return OPEN_SUPPORTS_CONFIG.USE_MOCK_API || import.meta.env.DEV;
+  return SUPPORT_SYSTEM_CONFIG.USE_MOCK_API || import.meta.env.DEV;
 };
 
 // API functions

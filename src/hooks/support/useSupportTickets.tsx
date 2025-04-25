@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useKnownIssues } from "@/hooks/issues";
 import { knownIssues } from "@/data/knownIssues";
 import { SUPPORT_SYSTEM_CONFIG } from "@/services/openSupportsConfig";
+import { mapFrontendStatusToDb } from "@/utils/issues/mappings";
 
 export const useSupportTickets = () => {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -35,7 +36,12 @@ export const useSupportTickets = () => {
         .order('created_at', { ascending: false });
       
       if (filters?.status) {
-        query = query.eq('status', filters.status);
+        // Convert frontend status to db status
+        const dbStatus = filters.status === 'in-progress' ? 'wip' : 
+                          filters.status === 'resolved' ? 'completed' : 
+                          filters.status === 'open' ? 'wip' : 'completed';
+        
+        query = query.eq('status', dbStatus);
       }
       
       if (filters?.search) {
@@ -101,13 +107,20 @@ export const useSupportTickets = () => {
         return false;
       }
 
+      // Convert frontend status to database status
+      const dbStatus = newTicket.status === 'in-progress' ? 'wip' : 
+                        newTicket.status === 'resolved' ? 'completed' : 
+                        'wip';
+
       // Prepare the ticket data for database insertion
       const ticketData = {
         id: newTicket.id || crypto.randomUUID(),
         title: newTicket.title,
         description: newTicket.description,
-        status: 'open', // New tickets always start as open
-        category: newTicket.category || 'tech',
+        status: dbStatus,
+        category: newTicket.category === 'tech' ? 'bug' : 
+                 newTicket.category === 'billing' ? 'feature' : 
+                 'ui',
         created_by: user.id,
         modified_by: user.id,
         created_at: new Date().toISOString(),
@@ -162,13 +175,22 @@ export const useSupportTickets = () => {
 
       // For now, we'll just update the ticket's description to include the comment
       // In a real implementation, you'd add to a comments table
+      const ticket = tickets.find(t => t.id === ticketId);
+      if (!ticket) {
+        toast({
+          title: "Comment Failed",
+          description: "Could not find the ticket to comment on.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      const updatedDescription = `${ticket.description}\n\nComment (${new Date().toLocaleString()}):\n${content}`;
+      
       const { error } = await supabase
         .from('issues')
         .update({
-          description: supabase.rpc('append_comment', { 
-            original_text: tickets.find(t => t.id === ticketId)?.description || '',
-            comment_text: `\n\nComment (${new Date().toLocaleString()}):\n${content}`
-          }),
+          description: updatedDescription,
           updated_at: new Date().toISOString()
         })
         .eq('id', ticketId);

@@ -1,5 +1,6 @@
 
 import { IssueType } from "@/types/issueTypes";
+import { TicketStatus } from "@/types/supportTicketTypes";
 
 type DbIssue = {
   id: string;
@@ -27,6 +28,16 @@ export const mapDbStatusToFrontend = (status: DbIssue['status']): IssueType['sta
     case 'completed': return 'resolved';
     case 'deferred': return 'deferred';
     default: return 'open';
+  }
+};
+
+export const mapFrontendStatusToDb = (status: TicketStatus): 'wip' | 'completed' | 'deferred' => {
+  switch (status) {
+    case 'in-progress': return 'wip';
+    case 'resolved': return 'completed';
+    case 'closed': return 'completed';
+    case 'open': 
+    default: return 'wip';
   }
 };
 

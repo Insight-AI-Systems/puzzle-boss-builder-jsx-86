@@ -1,6 +1,6 @@
 
 import { Badge } from '@/components/ui/badge';
-import { TicketStatus } from '@/types/ticketTypes';
+import { TicketStatus } from '@/types/supportTicketTypes';
 
 interface StatusBadgeProps {
   status: TicketStatus;
@@ -9,7 +9,7 @@ interface StatusBadgeProps {
 export const StatusBadge = ({ status }: StatusBadgeProps) => {
   const badgeVariant = 
     status === 'open' ? 'default' :
-    status === 'pending' ? 'outline' :
+    status === 'in-progress' ? 'outline' :
     status === 'resolved' ? 'secondary' : 'destructive';
 
   return (
