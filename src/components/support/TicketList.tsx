@@ -9,55 +9,11 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useTickets } from '@/hooks/useTickets';
-import { TicketStatus, TicketPriority } from '@/types/ticketTypes';
-import { Search, MessageSquare, RefreshCw } from 'lucide-react';
-
-// Helper to format the date
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
-};
-
-// Status badge component
-const StatusBadge = ({ status }: { status: TicketStatus }) => {
-  const badgeVariant = 
-    status === 'open' ? 'default' :
-    status === 'pending' ? 'outline' :
-    status === 'resolved' ? 'secondary' : 'destructive';
-
-  return (
-    <Badge variant={badgeVariant}>{status}</Badge>
-  );
-};
-
-// Priority badge component
-const PriorityBadge = ({ priority }: { priority: TicketPriority }) => {
-  const badgeVariant = 
-    priority === 'low' ? 'outline' :
-    priority === 'medium' ? 'default' :
-    priority === 'high' ? 'secondary' : 'destructive';
-
-  return (
-    <Badge variant={badgeVariant}>{priority}</Badge>
-  );
-};
+import { MessageSquare, RefreshCw } from 'lucide-react';
+import { TicketFilters } from './filters/TicketFilters';
+import { TicketTableRow } from './table/TicketTableRow';
 
 export default function TicketList() {
   const navigate = useNavigate();
@@ -79,12 +35,12 @@ export default function TicketList() {
     updateFilters({ search: searchInput, page: 1 });
   };
 
-  const handleStatusChange = (status: TicketStatus | undefined) => {
-    updateFilters({ status, page: 1 });
+  const handleStatusChange = (status: string) => {
+    updateFilters({ status: status || undefined, page: 1 });
   };
 
-  const handlePriorityChange = (priority: TicketPriority | undefined) => {
-    updateFilters({ priority, page: 1 });
+  const handlePriorityChange = (priority: string) => {
+    updateFilters({ priority: priority || undefined, page: 1 });
   };
 
   const handleRowClick = (ticketId: string) => {
@@ -107,48 +63,13 @@ export default function TicketList() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Search form */}
-        <form onSubmit={handleSearchSubmit} className="flex items-center space-x-2">
-          <Input
-            placeholder="Search tickets..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="max-w-xs"
-          />
-          <Button type="submit" variant="secondary" size="icon">
-            <Search className="h-4 w-4" />
-          </Button>
-        </form>
-        
-        {/* Status filter */}
-        <Select onValueChange={(value) => handleStatusChange(value as TicketStatus || undefined)}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">All Statuses</SelectItem>
-            <SelectItem value="open">Open</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="resolved">Resolved</SelectItem>
-            <SelectItem value="closed">Closed</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        {/* Priority filter */}
-        <Select onValueChange={(value) => handlePriorityChange(value as TicketPriority || undefined)}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Filter by priority" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">All Priorities</SelectItem>
-            <SelectItem value="low">Low</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="critical">Critical</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <TicketFilters
+        searchInput={searchInput}
+        onSearchChange={setSearchInput}
+        onSearchSubmit={handleSearchSubmit}
+        onStatusChange={handleStatusChange}
+        onPriorityChange={handlePriorityChange}
+      />
       
       {isLoading ? (
         <div className="flex justify-center items-center h-40">
@@ -177,21 +98,11 @@ export default function TicketList() {
               <TableBody>
                 {tickets?.length > 0 ? (
                   tickets.map((ticket) => (
-                    <TableRow 
+                    <TicketTableRow
                       key={ticket.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleRowClick(ticket.id)}
-                    >
-                      <TableCell className="font-medium">{ticket.id}</TableCell>
-                      <TableCell>{ticket.title}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={ticket.status} />
-                      </TableCell>
-                      <TableCell>
-                        <PriorityBadge priority={ticket.priority} />
-                      </TableCell>
-                      <TableCell>{formatDate(ticket.date)}</TableCell>
-                    </TableRow>
+                      ticket={ticket}
+                      onClick={handleRowClick}
+                    />
                   ))
                 ) : (
                   <TableRow>
@@ -204,7 +115,6 @@ export default function TicketList() {
             </Table>
           </div>
           
-          {/* Pagination controls */}
           <div className="flex justify-between items-center mt-4">
             <p className="text-sm text-muted-foreground">
               Page {filters.page} • Showing {tickets?.length || 0} tickets
