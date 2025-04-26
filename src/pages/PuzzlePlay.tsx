@@ -56,12 +56,11 @@ const PuzzlePlay = () => {
           description: "This puzzle could not be loaded. It may not exist or is not currently active.",
           variant: "destructive"
         });
+      },
+      onSuccess: (data) => {
+        const currentActivePlayers = data.active_players?.map((player: any) => player.user_id) || [];
+        setActivePlayers(currentActivePlayers);
       }
-    },
-    // Track active players
-    onSuccess: (data) => {
-      const currentActivePlayers = data.active_players?.map((player: any) => player.user_id) || [];
-      setActivePlayers(currentActivePlayers);
     }
   });
 
