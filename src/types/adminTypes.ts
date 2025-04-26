@@ -1,4 +1,3 @@
-
 import { UserProfile, UserRole, Gender, AgeGroup } from './userTypes';
 
 // API/RPC Data Types

@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PuzzleManagement } from './PuzzleManagement';
-import { HeroPuzzleManager } from './HeroPuzzleManager';
+import HeroPuzzleManager from './hero-puzzle/HeroPuzzleManager';
 
 export function GameManagement() {
   return (

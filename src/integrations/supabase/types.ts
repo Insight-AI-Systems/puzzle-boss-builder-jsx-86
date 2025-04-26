@@ -69,6 +69,38 @@ export type Database = {
         }
         Relationships: []
       }
+      category_revenue: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          id: string
+          revenue: number | null
+          transaction_date: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          id?: string
+          revenue?: number | null
+          transaction_date?: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          id?: string
+          revenue?: number | null
+          transaction_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_revenue_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feedback: {
         Row: {
           browser_info: string | null
@@ -814,6 +846,36 @@ export type Database = {
           },
         ]
       }
+      user_activity_metrics: {
+        Row: {
+          active_users: number | null
+          created_at: string | null
+          id: string
+          metric_date: string
+          new_signups: number | null
+          puzzles_completed: number | null
+          revenue: number | null
+        }
+        Insert: {
+          active_users?: number | null
+          created_at?: string | null
+          id?: string
+          metric_date?: string
+          new_signups?: number | null
+          puzzles_completed?: number | null
+          revenue?: number | null
+        }
+        Update: {
+          active_users?: number | null
+          created_at?: string | null
+          id?: string
+          metric_date?: string
+          new_signups?: number | null
+          puzzles_completed?: number | null
+          revenue?: number | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -896,9 +958,25 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_daily_metrics: {
+        Args: { date_param: string }
+        Returns: {
+          active_users: number
+          new_signups: number
+          puzzles_completed: number
+          revenue: number
+        }[]
+      }
       ensure_super_admin: {
         Args: { user_email: string }
         Returns: undefined
+      }
+      get_category_revenue: {
+        Args: { date_param: string }
+        Returns: {
+          category_name: string
+          total_revenue: number
+        }[]
       }
       get_daily_winners: {
         Args: { date_param: string }
@@ -911,6 +989,16 @@ export type Database = {
           prize_value: number
           winner_country: string
           created_at: string
+        }[]
+      }
+      get_monthly_trends: {
+        Args: { months_back?: number }
+        Returns: {
+          month_date: string
+          active_users: number
+          new_signups: number
+          puzzles_completed: number
+          revenue: number
         }[]
       }
       get_puzzle_stats: {
@@ -928,6 +1016,13 @@ export type Database = {
       }
       has_permission: {
         Args: { user_id: string; permission_name: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          user_id: string
+          role_name: Database["public"]["Enums"]["user_role"]
+        }
         Returns: boolean
       }
       is_admin: {
