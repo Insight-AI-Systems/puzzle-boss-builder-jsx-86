@@ -9,14 +9,14 @@ import { PuzzleSearchBar } from './puzzle-management/PuzzleSearchBar';
 import { PuzzleTabs } from './puzzle-management/PuzzleTabs';
 import { useCategories } from "@/hooks/useCategories";
 import { usePuzzles } from "@/hooks/usePuzzles";
-import PuzzleEditPanel from "./PuzzleEditPanel"; // Fixed import path
+import PuzzleEditPanel from "./PuzzleEditPanel"; 
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Puzzle } from "@/hooks/puzzles/puzzleTypes"; // Import the Puzzle type
+import type { Puzzle } from "@/hooks/puzzles/puzzleTypes"; 
 
-const DEFAULT_NEW_PUZZLE = {
+const DEFAULT_NEW_PUZZLE: Partial<Puzzle> = {
   name: "New Puzzle",
   category: "",
   category_id: "",
@@ -45,7 +45,7 @@ export const PuzzleManagement = () => {
   const [editPuzzle, setEditPuzzle] = useState<any>(null);
   const [tableExists, setTableExists] = useState<boolean | null>(null);
   const [newPuzzleDialogOpen, setNewPuzzleDialogOpen] = useState(false);
-  const [newPuzzle, setNewPuzzle] = useState<Partial<Puzzle>>({...DEFAULT_NEW_PUZZLE});
+  const [newPuzzle, setNewPuzzle] = useState<Partial<Puzzle>>(DEFAULT_NEW_PUZZLE);
 
   useEffect(() => {
     const checkTable = async () => {
@@ -61,10 +61,11 @@ export const PuzzleManagement = () => {
 
   useEffect(() => {
     if (newPuzzleDialogOpen) {
-      setNewPuzzle({
+      const initialPuzzle: Partial<Puzzle> = {
         ...DEFAULT_NEW_PUZZLE,
-        puzzleOwner: profile?.display_name || profile?.email || "",
-      });
+        puzzleOwner: profile?.display_name || profile?.email || ""
+      };
+      setNewPuzzle(initialPuzzle);
     }
   }, [newPuzzleDialogOpen, profile]);
   

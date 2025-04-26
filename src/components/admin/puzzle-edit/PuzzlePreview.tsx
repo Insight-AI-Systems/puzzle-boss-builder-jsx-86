@@ -3,6 +3,7 @@ import React from 'react';
 import { Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ImageSelector } from '../image-library/components/ImageSelector';
+import { getGridSizeByPieces } from '@/utils/puzzleUtils';
 
 interface PuzzlePreviewProps {
   puzzle: any;
@@ -17,17 +18,23 @@ export const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
 }) => {
   const [isImageSelectorOpen, setIsImageSelectorOpen] = React.useState(false);
   
-  // Safely extract grid size from difficulty
+  // Safely extract grid size from puzzle data
   let gridSize = 4; // Default value
-  if (puzzle?.difficulty) {
-    // Handle both formats: "3x3" or "easy", "medium", "hard"
-    if (puzzle.difficulty.includes('x')) {
-      gridSize = parseInt(puzzle.difficulty.split('x')[0]) || 4;
-    } else {
-      // For backward compatibility with old format
-      const difficultyMap = { easy: 3, medium: 4, hard: 5 };
-      gridSize = difficultyMap[puzzle.difficulty as keyof typeof difficultyMap] || 4;
+  
+  if (puzzle?.gridSize) {
+    // Direct grid size property (e.g. "4x4")
+    const match = puzzle.gridSize.match(/^(\d+)x/);
+    if (match) {
+      gridSize = parseInt(match[1]) || 4;
     }
+  } else if (puzzle?.pieces) {
+    // Get grid size from pieces count
+    const gridSizeObj = getGridSizeByPieces(puzzle.pieces);
+    const match = gridSizeObj.value.match(/^(\d+)x/);
+    gridSize = match ? parseInt(match[1]) : 4;
+  } else if (puzzle?.difficulty) {
+    // Fallback to difficulty setting
+    gridSize = puzzle.difficulty === 'easy' ? 3 : (puzzle.difficulty === 'medium' ? 5 : 7);
   }
   
   const boxSize = 56;
@@ -37,6 +44,8 @@ export const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
     onChange("imageUrl", imageUrl);
     setIsImageSelectorOpen(false);
   };
+
+  console.log("PuzzlePreview rendering with gridSize:", gridSize, "from puzzle:", puzzle);
 
   return (
     <div className="flex flex-col items-center gap-2">

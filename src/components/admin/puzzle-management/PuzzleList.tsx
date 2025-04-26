@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { TableHeader, TableRow, TableHead, TableBody, Table } from "@/components/ui/table";
+import { TableHeader, TableRow, TableHead, TableBody, Table, TableCell } from "@/components/ui/table";
 import { PuzzleListRow } from './PuzzleListRow';
-import PuzzleEditPanel from '../PuzzleEditPanel'; // Fixed import path
+import PuzzleEditPanel from '../PuzzleEditPanel';
 import type { Puzzle } from '@/hooks/puzzles/puzzleTypes';
 import { useUserProfile } from '@/hooks/useUserProfile';
 

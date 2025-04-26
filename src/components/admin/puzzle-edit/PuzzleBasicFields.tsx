@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import type { Puzzle } from '@/hooks/puzzles/puzzleTypes';
 
 interface PuzzleBasicFieldsProps {
   puzzle: any;
@@ -24,6 +25,17 @@ const GRID_SIZES = [
   { value: '10x10', label: '10×10 (100 pieces)', pieces: 100 },
 ];
 
+// Map grid size values to difficulty levels
+const mapGridSizeToDifficulty = (gridSize: string): "easy" | "medium" | "hard" => {
+  // Logic to determine difficulty based on grid size
+  const sizeParts = gridSize.split('x');
+  const size = parseInt(sizeParts[0]) || 0;
+  
+  if (size <= 4) return "easy";
+  if (size <= 6) return "medium";
+  return "hard";
+};
+
 export const PuzzleBasicFields: React.FC<PuzzleBasicFieldsProps> = ({
   puzzle,
   categories,
@@ -33,7 +45,15 @@ export const PuzzleBasicFields: React.FC<PuzzleBasicFieldsProps> = ({
   // Make sure the difficulty is always initialized
   useEffect(() => {
     if (!puzzle.difficulty && GRID_SIZES.length > 0) {
-      onChange("difficulty", GRID_SIZES[0].value);
+      // First set the grid size
+      const gridSize = GRID_SIZES[0].value;
+      onChange("gridSize", gridSize);
+      
+      // Then set the difficulty based on the grid size
+      const difficulty = mapGridSizeToDifficulty(gridSize);
+      onChange("difficulty", difficulty);
+      
+      // Set the pieces
       onChange("pieces", GRID_SIZES[0].pieces);
     }
   }, [puzzle, onChange]);
@@ -44,7 +64,12 @@ export const PuzzleBasicFields: React.FC<PuzzleBasicFieldsProps> = ({
     return <Badge variant="destructive">Hard</Badge>;
   };
 
-  const currentGridSize = GRID_SIZES.find(size => size.value === puzzle?.difficulty) || GRID_SIZES[0];
+  const currentGridSize = GRID_SIZES.find(size => size.value === puzzle?.gridSize) || 
+                         GRID_SIZES.find(size => {
+                           // Try to find by pieces if gridSize is not set
+                           return size.pieces === puzzle?.pieces;
+                         }) ||
+                         GRID_SIZES[0];
   
   console.log("Current puzzle in PuzzleBasicFields:", puzzle);
   console.log("Current grid size:", currentGridSize);
@@ -107,11 +132,19 @@ export const PuzzleBasicFields: React.FC<PuzzleBasicFieldsProps> = ({
       <div>
         <Label htmlFor="edit-difficulty" className="block mb-1">Grid Size</Label>
         <Select
-          value={puzzle?.difficulty ?? GRID_SIZES[0].value}
+          value={puzzle?.gridSize ?? currentGridSize.value}
           onValueChange={v => {
             console.log("Grid size selected:", v);
             const selectedSize = GRID_SIZES.find(size => size.value === v);
-            onChange("difficulty", v);
+            
+            // Store the grid size for UI purposes
+            onChange("gridSize", v);
+            
+            // Map grid size to difficulty level for backend
+            const difficultyLevel = mapGridSizeToDifficulty(v);
+            onChange("difficulty", difficultyLevel);
+            
+            // Set pieces count
             if (selectedSize) {
               onChange("pieces", selectedSize.pieces);
             }
@@ -119,7 +152,7 @@ export const PuzzleBasicFields: React.FC<PuzzleBasicFieldsProps> = ({
         >
           <SelectTrigger>
             <SelectValue>
-              {puzzle?.difficulty ? (
+              {puzzle?.gridSize ? (
                 <span className="flex items-center gap-2">
                   {currentGridSize.label}
                   {renderDifficultyBadge(currentGridSize.pieces)}
