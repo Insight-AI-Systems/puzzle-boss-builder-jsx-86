@@ -10,7 +10,7 @@ import { PuzzleTabs } from './puzzle-management/PuzzleTabs';
 import { useCategories } from "@/hooks/useCategories";
 import { usePuzzleManagement } from "@/hooks/admin/usePuzzleManagement";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import PuzzleEditPanel from "./puzzle-edit/PuzzleEditPanel";
+import PuzzleEditPanel from "./PuzzleEditPanel";
 import { PuzzleLoadingState } from './puzzle-management/PuzzleLoadingState';
 import { PuzzleErrorState } from './puzzle-management/PuzzleErrorState';
 import { PuzzleEmptyState } from './puzzle-management/PuzzleEmptyState';
