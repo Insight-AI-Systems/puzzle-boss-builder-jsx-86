@@ -42,11 +42,15 @@ export const ImageLibrary = () => {
     setError(null);
     
     try {
+      // Process each file in the array
       for (const file of files) {
+        console.log('Starting upload for file:', file.name);
+        
         // Generate a unique file path with user id to improve security context
         const filePath = `original_images/${user.id}/${Date.now()}-${file.name}`;
+        console.log('File path:', filePath);
         
-        // Upload file to Supabase storage
+        // Step 1: Upload file to Supabase storage
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('original_images')
           .upload(filePath, file);
@@ -55,20 +59,25 @@ export const ImageLibrary = () => {
           console.error('Storage upload error:', uploadError);
           throw uploadError;
         }
+        
+        console.log('File uploaded successfully, getting URL');
 
-        // Get the public URL
+        // Step 2: Get the public URL
         const { data: urlData } = supabase.storage
           .from('original_images')
           .getPublicUrl(filePath);
+          
+        console.log('Public URL obtained:', urlData.publicUrl);
 
-        // Create the product image record with explicit user ID
+        // Step 3: Create the product image record with explicit user ID
+        console.log('Creating product image record with user ID:', user.id);
         const { data: productImageData, error: productImageError } = await supabase
           .from('product_images')
           .insert({
             name: file.name,
             metadata: { size: file.size, type: file.type },
             status: 'pending',
-            created_by: user.id
+            created_by: user.id // Explicitly set the created_by to the user's ID
           })
           .select()
           .single();
@@ -77,8 +86,11 @@ export const ImageLibrary = () => {
           console.error('Product image error:', productImageError);
           throw productImageError;
         }
+        
+        console.log('Product image record created:', productImageData.id);
 
-        // Create the image file record with explicit references
+        // Step 4: Create the image file record with explicit references
+        console.log('Creating image file record');
         const { error: fileRecordError } = await supabase
           .from('image_files')
           .insert({
@@ -94,6 +106,8 @@ export const ImageLibrary = () => {
           console.error('Image file record error:', fileRecordError);
           throw fileRecordError;
         }
+        
+        console.log('Image file record created successfully');
       }
 
       toast({
@@ -127,7 +141,9 @@ export const ImageLibrary = () => {
     setError(null);
     
     try {
-      // Fetch images with role-based filtering
+      console.log('Loading images for user:', user.id);
+      
+      // Fetch images with proper authentication context
       const { data: productImages, error: productImagesError } = await supabase
         .from('product_images')
         .select('*')
@@ -137,6 +153,8 @@ export const ImageLibrary = () => {
         console.error('Error fetching product images:', productImagesError);
         throw productImagesError;
       }
+      
+      console.log('Product images fetched:', productImages?.length || 0);
 
       // Transform data to match ProductImage interface (initially without imageUrl)
       const transformedData: ProductImage[] = (productImages || []).map(item => ({
