@@ -1,10 +1,14 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
 import { ArrowRight } from 'lucide-react';
+import { useHeroPuzzle } from '@/hooks/useHeroPuzzle';
 import PuzzleEnginePlayground from './puzzles/playground/PuzzleEnginePlayground';
 
 const Hero: React.FC = () => {
+  const { puzzleConfig } = useHeroPuzzle();
+
   return (
     <section className="py-12 md:py-20">
       <div className="container mx-auto px-4">
@@ -38,10 +42,10 @@ const Hero: React.FC = () => {
             <PuzzleEnginePlayground 
               heroMode={true} 
               isCondensed={true}
-              selectedImage="mountain"
-              difficulty="easy"
-              miniRows={3}
-              miniColumns={3}
+              selectedImage={puzzleConfig?.image_url || "mountain"}
+              difficulty={puzzleConfig?.difficulty || "easy"}
+              miniRows={puzzleConfig?.difficulty === 'easy' ? 3 : puzzleConfig?.difficulty === 'hard' ? 5 : 4}
+              miniColumns={puzzleConfig?.difficulty === 'easy' ? 3 : puzzleConfig?.difficulty === 'hard' ? 5 : 4}
               showNumbersToggle={true}
             />
           </div>

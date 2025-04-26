@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -9,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useHeroPuzzle, HeroPuzzleConfig } from '@/hooks/useHeroPuzzle';
 import { Loader2, Save, Trash2, Image as ImageIcon } from 'lucide-react';
-import PuzzlePreview from '@/components/puzzles/components/PuzzlePreview';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { ImageSelector } from './image-library/components/ImageSelector';
 
@@ -245,6 +245,12 @@ export const HeroPuzzleManager: React.FC = () => {
           </Button>
         </CardFooter>
       </form>
+      
+      <ImageSelector 
+        isOpen={isImageSelectorOpen}
+        onClose={() => setIsImageSelectorOpen(false)}
+        onSelectImage={handleImageSelected}
+      />
     </Card>
   );
 };

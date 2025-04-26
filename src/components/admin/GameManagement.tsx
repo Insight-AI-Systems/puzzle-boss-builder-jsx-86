@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PuzzleManagement } from './PuzzleManagement';
+import { HeroPuzzleManager } from './HeroPuzzleManager';
 
 export function GameManagement() {
   return (
@@ -10,12 +10,17 @@ export function GameManagement() {
       <Tabs defaultValue="puzzles" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="puzzles">Puzzles</TabsTrigger>
+          <TabsTrigger value="hero">Hero Puzzle</TabsTrigger>
           <TabsTrigger value="leaderboards">Leaderboards</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         
         <TabsContent value="puzzles">
           <PuzzleManagement />
+        </TabsContent>
+
+        <TabsContent value="hero">
+          <HeroPuzzleManager />
         </TabsContent>
         
         <TabsContent value="leaderboards">
