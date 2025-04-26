@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Save, X } from "lucide-react";
 import { PuzzlePreview } from "./puzzle-edit/PuzzlePreview";
@@ -30,9 +30,14 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
 }) => {
   const { validatePuzzleForm } = usePuzzleEditValidation();
 
+  useEffect(() => {
+    console.log("PuzzleEditPanel received puzzle:", puzzle);
+  }, [puzzle]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validatePuzzleForm(puzzle)) {
+      console.log("Submitting puzzle form with data:", puzzle);
       onSave();
     }
   };

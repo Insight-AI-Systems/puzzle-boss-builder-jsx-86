@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -29,6 +30,14 @@ export const PuzzleBasicFields: React.FC<PuzzleBasicFieldsProps> = ({
   currentUser,
   onChange,
 }) => {
+  // Make sure the difficulty is always initialized
+  useEffect(() => {
+    if (!puzzle.difficulty && GRID_SIZES.length > 0) {
+      onChange("difficulty", GRID_SIZES[0].value);
+      onChange("pieces", GRID_SIZES[0].pieces);
+    }
+  }, [puzzle, onChange]);
+
   const renderDifficultyBadge = (pieces: number) => {
     if (pieces <= 16) return <Badge variant="outline">Easy</Badge>;
     if (pieces <= 36) return <Badge variant="secondary">Medium</Badge>;
@@ -36,6 +45,9 @@ export const PuzzleBasicFields: React.FC<PuzzleBasicFieldsProps> = ({
   };
 
   const currentGridSize = GRID_SIZES.find(size => size.value === puzzle?.difficulty) || GRID_SIZES[0];
+  
+  console.log("Current puzzle in PuzzleBasicFields:", puzzle);
+  console.log("Current grid size:", currentGridSize);
 
   return (
     <>
@@ -95,8 +107,9 @@ export const PuzzleBasicFields: React.FC<PuzzleBasicFieldsProps> = ({
       <div>
         <Label htmlFor="edit-difficulty" className="block mb-1">Grid Size</Label>
         <Select
-          value={puzzle?.difficulty ?? ""}
+          value={puzzle?.difficulty ?? GRID_SIZES[0].value}
           onValueChange={v => {
+            console.log("Grid size selected:", v);
             const selectedSize = GRID_SIZES.find(size => size.value === v);
             onChange("difficulty", v);
             if (selectedSize) {

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Puzzle } from "lucide-react";
+import { Plus, Puzzle as PuzzleIcon } from "lucide-react";
 import { PuzzleSearchBar } from './puzzle-management/PuzzleSearchBar';
 import { PuzzleTabs } from './puzzle-management/PuzzleTabs';
 import { useCategories } from "@/hooks/useCategories";
@@ -45,7 +45,7 @@ export const PuzzleManagement = () => {
   const [editPuzzle, setEditPuzzle] = useState<any>(null);
   const [tableExists, setTableExists] = useState<boolean | null>(null);
   const [newPuzzleDialogOpen, setNewPuzzleDialogOpen] = useState(false);
-  const [newPuzzle, setNewPuzzle] = useState<Partial<Puzzle>>({...DEFAULT_NEW_PUZZLE}); // Fixed type
+  const [newPuzzle, setNewPuzzle] = useState<Partial<Puzzle>>({...DEFAULT_NEW_PUZZLE});
 
   useEffect(() => {
     const checkTable = async () => {
@@ -68,13 +68,15 @@ export const PuzzleManagement = () => {
     }
   }, [newPuzzleDialogOpen, profile]);
   
-  // Add missing handler functions
+  // Handler functions
   const handleNewPuzzleChange = (field: string, value: any) => {
+    console.log("Changing new puzzle field:", field, "to value:", value);
     setNewPuzzle(prev => ({ ...prev, [field]: value }));
   };
 
   const saveNewPuzzle = () => {
     if (newPuzzle) {
+      console.log("Saving new puzzle:", newPuzzle);
       createPuzzle(newPuzzle);
       setNewPuzzleDialogOpen(false);
       toast({
@@ -101,6 +103,7 @@ export const PuzzleManagement = () => {
   };
 
   const handleEditChange = (field: string, value: any) => {
+    console.log("Editing puzzle field:", field, "to value:", value);
     setEditPuzzle(prev => ({ ...prev, [field]: value }));
   };
 
@@ -111,6 +114,7 @@ export const PuzzleManagement = () => {
 
   const saveEdit = () => {
     if (editPuzzle) {
+      console.log("Saving edited puzzle:", editPuzzle);
       updatePuzzle(editPuzzle);
       setEditingId(null);
       setEditPuzzle(null);
