@@ -21,20 +21,22 @@ const PuzzlePlay = () => {
         .select('*')
         .eq('id', puzzleId)
         .eq('status', 'active')
-        .single();
+        .maybeSingle();
         
       if (error) throw error;
       if (!data) throw new Error('Puzzle not found or not active');
       
       return data;
     },
-    onError: (err) => {
-      console.error('Error loading puzzle:', err);
-      toast({
-        title: "Error loading puzzle",
-        description: "This puzzle could not be loaded. It may not exist or is not currently active.",
-        variant: "destructive"
-      });
+    meta: {
+      onError: (err: Error) => {
+        console.error('Error loading puzzle:', err);
+        toast({
+          title: "Error loading puzzle",
+          description: "This puzzle could not be loaded. It may not exist or is not currently active.",
+          variant: "destructive"
+        });
+      }
     }
   });
 
@@ -63,9 +65,9 @@ const PuzzlePlay = () => {
   }
 
   // Get rows and columns from puzzle config, with defaults
-  const config = puzzle.puzzle_config || { rows: 4, columns: 4 };
-  const rows = config.rows || 4;
-  const columns = config.columns || 4;
+  const config = puzzle.puzzle_config as { rows: number; columns: number } || { rows: 4, columns: 4 };
+  const rows = config?.rows || 4;
+  const columns = config?.columns || 4;
 
   return (
     <PageLayout title={puzzle.title} className="max-w-7xl">
