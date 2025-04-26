@@ -65,7 +65,7 @@ const PuzzlePlay = () => {
   }
 
   // Get rows and columns from puzzle config, with defaults
-  const config = puzzle.puzzle_config as { rows: number; columns: number } || { rows: 4, columns: 4 };
+  const config = puzzle.puzzle_config as { rows?: number; columns?: number } || {};
   const rows = config?.rows || 4;
   const columns = config?.columns || 4;
 

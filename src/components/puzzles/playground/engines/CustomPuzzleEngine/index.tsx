@@ -37,8 +37,10 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
   const [hasStarted, setHasStarted] = useState(false);
   
   useEffect(() => {
-    console.log("CustomPuzzleEngine received showNumbers:", showNumbers);
-  }, [showNumbers]);
+    console.log("CustomPuzzleEngine initialized with:", { 
+      imageUrl, rows, columns, showNumbers
+    });
+  }, [imageUrl, rows, columns, showNumbers]);
   
   const {
     puzzlePieces,
@@ -62,7 +64,7 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
   const { isLoaded } = usePuzzleImagePreload({
     imageUrl,
     onLoad: () => {
-      console.log("Image loaded successfully in CustomPuzzleEngine");
+      console.log("Image loaded successfully in CustomPuzzleEngine:", imageUrl);
       setIsLoading(false);
     },
     onError: (error) => {
@@ -107,9 +109,8 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     }
   }, [resetPuzzle, resetTimer, onReset]);
 
-  console.log("CustomPuzzleEngine rendering", { 
-    isLoading, imageUrl, rows, columns, isComplete, 
-    hasStarted, showGuideImage, showNumbers, solveTime, puzzlePiecesCount: puzzlePieces.length 
+  console.log("CustomPuzzleEngine rendering with:", { 
+    imageUrl, rows, columns, puzzlePiecesCount: puzzlePieces.length 
   });
 
   return (
