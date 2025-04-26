@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,12 +12,29 @@ interface PuzzleBasicFieldsProps {
   onChange: (field: string, value: any) => void;
 }
 
+const GRID_SIZES = [
+  { value: '3x3', label: '3×3 (9 pieces)', pieces: 9 },
+  { value: '4x4', label: '4×4 (16 pieces)', pieces: 16 },
+  { value: '5x5', label: '5×5 (25 pieces)', pieces: 25 },
+  { value: '6x6', label: '6×6 (36 pieces)', pieces: 36 },
+  { value: '7x7', label: '7×7 (49 pieces)', pieces: 49 },
+  { value: '8x8', label: '8×8 (64 pieces)', pieces: 64 },
+  { value: '9x9', label: '9×9 (81 pieces)', pieces: 81 },
+  { value: '10x10', label: '10×10 (100 pieces)', pieces: 100 },
+];
+
 export const PuzzleBasicFields: React.FC<PuzzleBasicFieldsProps> = ({
   puzzle,
   categories,
   currentUser,
   onChange,
 }) => {
+  const renderDifficultyBadge = (pieces: number) => {
+    if (pieces <= 16) return <Badge variant="outline">Easy</Badge>;
+    if (pieces <= 36) return <Badge variant="secondary">Medium</Badge>;
+    return <Badge variant="destructive">Hard</Badge>;
+  };
+
   return (
     <>
       <div>
@@ -75,24 +91,29 @@ export const PuzzleBasicFields: React.FC<PuzzleBasicFieldsProps> = ({
       </div>
 
       <div>
-        <Label htmlFor="edit-difficulty" className="block mb-1">Difficulty</Label>
+        <Label htmlFor="edit-difficulty" className="block mb-1">Grid Size</Label>
         <Select
           value={puzzle?.difficulty ?? ""}
-          onValueChange={v => onChange("difficulty", v)}
+          onValueChange={v => {
+            const selectedSize = GRID_SIZES.find(size => size.value === v);
+            onChange("difficulty", v);
+            if (selectedSize) {
+              onChange("pieces", selectedSize.pieces);
+            }
+          }}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Difficulty..." />
+            <SelectValue placeholder="Select grid size..." />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="easy">
-              <Badge variant="outline" className="mr-2">Easy</Badge>
-            </SelectItem>
-            <SelectItem value="medium">
-              <Badge variant="secondary" className="mr-2">Medium</Badge>
-            </SelectItem>
-            <SelectItem value="hard">
-              <Badge variant="destructive" className="mr-2">Hard</Badge>
-            </SelectItem>
+            {GRID_SIZES.map((size) => (
+              <SelectItem value={size.value} key={size.value} className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  {size.label}
+                  {renderDifficultyBadge(size.pieces)}
+                </span>
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
