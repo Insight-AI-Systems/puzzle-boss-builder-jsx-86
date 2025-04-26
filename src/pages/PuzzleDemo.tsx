@@ -3,7 +3,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
 import Breadcrumb from '@/components/common/Breadcrumb';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PUZZLE_IMAGES } from '@/components/puzzles/constants/puzzle-images';
+import { DEFAULT_IMAGES, fetchPuzzleImages, PuzzleImage } from '@/components/puzzles/constants/puzzle-images';
 import { useDeviceInfo } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { Puzzle, Clock, RotateCcw } from 'lucide-react';
@@ -19,11 +19,30 @@ const PuzzleDemo: React.FC = () => {
     { label: 'Puzzle Demo', active: true }
   ];
   
-  const [selectedImage, setSelectedImage] = useState<string>(PUZZLE_IMAGES[0].url);
+  const [selectedImage, setSelectedImage] = useState<string>(DEFAULT_IMAGES[0].url);
   const [isLoading, setIsLoading] = useState(false);
+  const [libraryImages, setLibraryImages] = useState<PuzzleImage[]>(DEFAULT_IMAGES);
   const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(
     process.env.NODE_ENV === 'development'
   );
+
+  useEffect(() => {
+    // Fetch available puzzle images
+    const loadImages = async () => {
+      try {
+        const images = await fetchPuzzleImages();
+        if (images.length > 0) {
+          setLibraryImages(images);
+          setSelectedImage(images[0].url);
+        }
+      } catch (err) {
+        console.error('Failed to load puzzle images:', err);
+        setLibraryImages(DEFAULT_IMAGES);
+      }
+    };
+    
+    loadImages();
+  }, []);
 
   const handleImageSelect = useCallback((imageUrl: string) => {
     setIsLoading(true);
@@ -32,7 +51,7 @@ const PuzzleDemo: React.FC = () => {
   
   useEffect(() => {
     const preloadImages = () => {
-      PUZZLE_IMAGES.forEach(img => {
+      libraryImages.forEach(img => {
         const image = new Image();
         image.src = img.url;
       });
@@ -43,7 +62,7 @@ const PuzzleDemo: React.FC = () => {
     } else {
       setTimeout(preloadImages, 1000);
     }
-  }, []);
+  }, [libraryImages]);
 
   return (
     <PageLayout
@@ -122,8 +141,8 @@ const PuzzleDemo: React.FC = () => {
               <ImageSelector 
                 selectedImage={selectedImage}
                 onSelectImage={handleImageSelect}
-                sampleImages={PUZZLE_IMAGES.map(img => img.url)}
                 isLoading={isLoading}
+                images={libraryImages}
               />
             </div>
           )}
