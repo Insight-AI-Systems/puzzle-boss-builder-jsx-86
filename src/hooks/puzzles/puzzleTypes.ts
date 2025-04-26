@@ -19,3 +19,19 @@ export interface Puzzle {
   prizeValue: number;
   created_at?: string;
 }
+
+// Map database status string to our frontend status type
+export function mapStatusFromDatabase(status: string): 'active' | 'inactive' | 'scheduled' | 'completed' | 'draft' {
+  switch (status) {
+    case 'active':
+      return 'active';
+    case 'inactive':
+      return 'inactive';
+    case 'scheduled':
+      return 'scheduled';
+    case 'completed':
+      return 'completed';
+    default:
+      return 'draft';
+  }
+}

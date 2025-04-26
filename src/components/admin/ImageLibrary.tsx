@@ -68,21 +68,59 @@ export const ImageLibrary = () => {
   };
 
   const loadImages = async () => {
-    const { data, error } = await supabase
-      .from('product_images')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('product_images')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) {
+      if (error) {
+        throw error;
+      }
+
+      // Transform data to match ProductImage interface (adding imageUrl)
+      const transformedData: ProductImage[] = (data || []).map(item => {
+        // Try to get image URL from the corresponding image_files record
+        return {
+          ...item,
+          imageUrl: '', // We'll fetch and update these URLs separately
+        };
+      });
+      
+      setImages(transformedData);
+      
+      // Fetch image URLs for each product image
+      for (const image of transformedData) {
+        const { data: fileData } = await supabase
+          .from('image_files')
+          .select('*')
+          .eq('product_image_id', image.id)
+          .single();
+          
+        if (fileData) {
+          const path = fileData.processed_path || fileData.original_path;
+          if (path) {
+            const { data: urlData } = supabase.storage
+              .from(path.includes('processed') ? 'processed_images' : 'original_images')
+              .getPublicUrl(path);
+              
+            // Update the image URL in our state
+            setImages(prevImages => 
+              prevImages.map(img => 
+                img.id === image.id ? { ...img, imageUrl: urlData.publicUrl } : img
+              )
+            );
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading images:', error);
       toast({
         title: "Error",
         description: "Failed to load images",
         variant: "destructive"
       });
-      return;
     }
-
-    setImages(data || []);
   };
 
   useEffect(() => {
