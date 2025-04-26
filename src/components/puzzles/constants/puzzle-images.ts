@@ -42,5 +42,12 @@ export const PUZZLE_IMAGES: PuzzleImage[] = [
     name: 'Laptop',
     url: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1',
     thumbnail: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=100&h=100&fit=crop&auto=format'
+  },
+  {
+    id: 'ducati',
+    name: 'Ducati Motorcycle',
+    url: 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87',
+    thumbnail: 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=100&h=100&fit=crop&auto=format'
   }
 ];
+
