@@ -35,6 +35,8 @@ export const PuzzleBasicFields: React.FC<PuzzleBasicFieldsProps> = ({
     return <Badge variant="destructive">Hard</Badge>;
   };
 
+  const currentGridSize = GRID_SIZES.find(size => size.value === puzzle?.difficulty) || GRID_SIZES[0];
+
   return (
     <>
       <div>
@@ -103,7 +105,16 @@ export const PuzzleBasicFields: React.FC<PuzzleBasicFieldsProps> = ({
           }}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Select grid size..." />
+            <SelectValue>
+              {puzzle?.difficulty ? (
+                <span className="flex items-center gap-2">
+                  {currentGridSize.label}
+                  {renderDifficultyBadge(currentGridSize.pieces)}
+                </span>
+              ) : (
+                "Select grid size..."
+              )}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {GRID_SIZES.map((size) => (
