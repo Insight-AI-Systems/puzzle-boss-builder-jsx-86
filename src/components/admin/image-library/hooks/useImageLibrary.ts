@@ -42,6 +42,7 @@ export const useImageLibrary = (user: User | null) => {
       
       setImages(transformedData);
       
+      // Fetch image URLs for each image
       for (const image of transformedData) {
         const { data: fileData, error: fileError } = await supabase
           .from('image_files')
@@ -50,19 +51,22 @@ export const useImageLibrary = (user: User | null) => {
           .maybeSingle();
           
         if (fileError) {
-          console.error('Error fetching image file:', fileError);
+          console.error('Error fetching image file for ID:', image.id, fileError);
           continue;
         }
         
         if (fileData) {
+          // Get the appropriate path
           const path = fileData.processed_path || fileData.original_path;
           if (path) {
-            const bucketName = path.includes('processed') ? 'processed_images' : 'original_images';
+            const bucketName = 'original_images'; // Default to original images
             
+            console.log(`Getting public URL for image ${image.id} from path: ${path}`);
             const { data: urlData } = supabase.storage
               .from(bucketName)
               .getPublicUrl(path);
-              
+            
+            console.log('Public URL:', urlData.publicUrl);  
             setImages(prevImages => 
               prevImages.map(img => 
                 img.id === image.id ? { ...img, imageUrl: urlData.publicUrl } : img
