@@ -1,11 +1,11 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Clock, Award, TrendingUp } from 'lucide-react';
+import { Users, Clock, Award, Search } from 'lucide-react';
 
 const PUZZLE_CATEGORIES = [
   'Smartphones', 'Laptops', 'Headphones', 'Smartwatches', 'Gaming', 'All Categories'
@@ -119,13 +119,34 @@ const PuzzleCard = ({ puzzle }: { puzzle: typeof PLACEHOLDER_PUZZLES[0] }) => {
 };
 
 const Puzzles = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredPuzzles = PLACEHOLDER_PUZZLES.filter(puzzle => 
+    puzzle.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    puzzle.prize.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    puzzle.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <PageLayout 
       title="Puzzles" 
       subtitle="Compete in skill-based puzzles to win premium prizes"
       className="max-w-6xl"
     >
-      <Tabs defaultValue="all" className="w-full mb-8">
+      <div className="flex items-center justify-between mb-8">
+        <div className="relative w-full max-w-sm">
+          <Input
+            type="text"
+            placeholder="Search puzzles..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        </div>
+      </div>
+
+      <Tabs defaultValue="all" className="w-full">
         <div className="flex justify-between items-center mb-4">
           <TabsList>
             <TabsTrigger value="all">All Puzzles</TabsTrigger>
@@ -149,7 +170,7 @@ const Puzzles = () => {
         
         <TabsContent value="all" className="mt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {PLACEHOLDER_PUZZLES.map((puzzle) => (
+            {filteredPuzzles.map((puzzle) => (
               <PuzzleCard key={puzzle.id} puzzle={puzzle} />
             ))}
           </div>
@@ -157,7 +178,7 @@ const Puzzles = () => {
         
         <TabsContent value="popular" className="mt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {PLACEHOLDER_PUZZLES
+            {filteredPuzzles
               .sort((a, b) => b.players - a.players)
               .map((puzzle) => (
                 <PuzzleCard key={puzzle.id} puzzle={puzzle} />
@@ -167,7 +188,7 @@ const Puzzles = () => {
         
         <TabsContent value="ending" className="mt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {PLACEHOLDER_PUZZLES
+            {filteredPuzzles
               .sort((a, b) => parseInt(a.timeLeft) - parseInt(b.timeLeft))
               .map((puzzle) => (
                 <PuzzleCard key={puzzle.id} puzzle={puzzle} />
@@ -177,7 +198,7 @@ const Puzzles = () => {
         
         <TabsContent value="new" className="mt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {PLACEHOLDER_PUZZLES
+            {filteredPuzzles
               .sort((a, b) => b.id - a.id)
               .map((puzzle) => (
                 <PuzzleCard key={puzzle.id} puzzle={puzzle} />
