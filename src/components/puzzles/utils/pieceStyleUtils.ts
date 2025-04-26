@@ -19,5 +19,6 @@ export const getImagePieceStyle = (piece: BasePuzzlePiece, imageUrl: string, gri
     backgroundSize: `${gridSize * 100}%`,
     backgroundPosition: `${xPosition}% ${yPosition}%`,
     opacity: piece.isDragging ? 0.8 : 1,
+    backgroundRepeat: 'no-repeat',
   };
 };

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -45,14 +44,12 @@ const PuzzleControls: React.FC<PuzzleControlsProps> = ({
     setIsLibrarySelectorOpen(false);
   };
 
-  // Convert string URLs to PuzzleImage objects if needed for ImageSelector
   const convertedImages: PuzzleImage[] = sampleImages.map((url, index) => ({
     id: `image-${index}`,
     name: `Image ${index + 1}`,
     url
   }));
   
-  // More compact controls for mobile
   if (isMobile) {
     return (
       <div className="flex justify-between items-center w-full">
@@ -129,7 +126,6 @@ const PuzzleControls: React.FC<PuzzleControlsProps> = ({
     );
   }
   
-  // Desktop controls with more space
   return (
     <div className="flex justify-between items-center w-full max-w-md">
       <div className="flex space-x-2 items-center">

@@ -36,13 +36,13 @@ const PuzzleContainer: React.FC<PuzzleContainerProps> = ({
   return (
     <div className={`flex flex-col items-center w-full max-w-full px-2 ${getThemeStyles(visualTheme)}`}>
       <ImagePuzzleContainer
-        pieces={pieces as any}  // Type cast to avoid the error while maintaining runtime behavior
+        pieces={pieces as any}
         difficulty={difficulty}
         isSolved={isSolved}
         isLoading={isLoading}
         containerSize={containerSize}
         gridEvents={gridEvents}
-        getPieceStyle={getPieceStyle as any}  // Type cast the style function too
+        getPieceStyle={getPieceStyle as any}
         isTouchDevice={isTouchDevice}
         isMobile={isMobile}
         draggedPiece={draggedPiece as any}

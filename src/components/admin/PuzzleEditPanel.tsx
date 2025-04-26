@@ -29,30 +29,21 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
   onImageUpload,
   currentUser,
 }) => {
-  // Grid configuration based on difficulty
   const grid = { easy: 3, medium: 4, hard: 5 }[puzzle?.difficulty] || 4;
   const boxSize = 56;
   const total = grid * grid;
   
   const { toast } = useToast();
   
-  // Timer toggle logic
   const [timerEnabled, setTimerEnabled] = useState(Boolean(puzzle?.timeLimit && puzzle.timeLimit > 0));
-
-  // Track if targetRevenue was manually changed by the admin
   const [hasManualTargetRevenueEdit, setHasManualTargetRevenueEdit] = useState(false);
-
-  // To prevent onChange("prizeValue") from re-running logic on mount
   const isFirstRender = useRef(true);
-
-  // To manage image selector state
   const [isImageSelectorOpen, setIsImageSelectorOpen] = useState(false);
 
   useEffect(() => {
     setTimerEnabled(Boolean(puzzle?.timeLimit && puzzle.timeLimit > 0));
   }, [puzzle?.timeLimit]);
 
-  // Prize Value → Target Revenue sync unless manually overridden
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
@@ -71,7 +62,6 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
         onChange("targetRevenue", Math.round(valueNum * 2 * 100) / 100);
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [puzzle?.prizeValue]);
 
   useEffect(() => {
@@ -115,7 +105,6 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Basic validation
     if (!puzzle.name?.trim()) {
       toast({
         title: "Validation Error",
@@ -143,13 +132,11 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
       return;
     }
     
-    // If all validation passes, save the puzzle
     onSave();
   };
 
   return (
     <div className="w-full p-4 mt-2 mb-4 bg-muted border rounded-lg shadow-md grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Puzzle Ghost Image Preview */}
       <div className="flex flex-col items-center gap-2">
         <Label className="text-xs mb-1">Puzzle Preview ("Ghost" as seen by users)</Label>
         <div 
@@ -159,7 +146,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           <img
             src={puzzle.imageUrl}
             alt="Puzzle Ghost"
-            className="absolute inset-0 w-full h-full object-cover opacity-40 pointer-events-none"
+            className="absolute inset-0 w-full h-full object-contain opacity-40 pointer-events-none"
           />
           <div
             className="absolute inset-0 grid"
@@ -213,13 +200,11 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
         </div>
       </div>
 
-      {/* Form Fields */}
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-3"
         tabIndex={-1}
       >
-        {/* Puzzle Name */}
         <div>
           <Label htmlFor="edit-name" className="block mb-1">Puzzle Name</Label>
           <Input
@@ -232,7 +217,6 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           />
         </div>
 
-        {/* Puzzle Owner */}
         <div>
           <Label htmlFor="edit-puzzleowner" className="block mb-1">Puzzle Owner</Label>
           <Input
@@ -245,9 +229,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           />
         </div>
 
-        {/* Cost-related fields in one row */}
         <div className="flex flex-col md:flex-row gap-3">
-          {/* Prize Value */}
           <div className="flex-1">
             <Label htmlFor="edit-prizevalue" className="block mb-1">Prize Value ($)</Label>
             <Input
@@ -261,7 +243,6 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
               className="w-full"
             />
           </div>
-          {/* Cost Per Play */}
           <div className="flex-1">
             <Label htmlFor="edit-costperplay" className="block mb-1">Cost per Play ($)</Label>
             <Input
@@ -275,7 +256,6 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
               className="w-full"
             />
           </div>
-          {/* Target Revenue */}
           <div className="flex-1">
             <Label htmlFor="edit-targetrev" className="block mb-1">
               Target Revenue ($)
@@ -293,7 +273,6 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           </div>
         </div>
 
-        {/* Category select */}
         <div>
           <Label htmlFor="edit-category" className="block mb-1">Category</Label>
           <Select
@@ -311,7 +290,6 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           </Select>
         </div>
 
-        {/* Supplier */}
         <div>
           <Label htmlFor="edit-supplier" className="block mb-1">Supplier</Label>
           <Input
@@ -324,7 +302,6 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           />
         </div>
 
-        {/* Difficulty select */}
         <div>
           <Label htmlFor="edit-difficulty" className="block mb-1">Difficulty</Label>
           <Select
@@ -348,7 +325,6 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           </Select>
         </div>
 
-        {/* TIMER SWITCH */}
         <div className="flex items-center gap-3">
           <Label htmlFor="edit-enable-timer" className="mb-0">Enable Timer</Label>
           <Switch
@@ -361,7 +337,6 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
           </span>
         </div>
 
-        {/* Timer (seconds) input, only active when timerEnabled */}
         {timerEnabled && (
           <div>
             <Label htmlFor="edit-timelimit" className="block mb-1">Timer (seconds)</Label>

@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { useHeroPuzzle, HeroPuzzleConfig } from '@/hooks/useHeroPuzzle';
 import { Loader2, Save, Trash2, Image as ImageIcon } from 'lucide-react';
 import PuzzlePreview from '@/components/puzzles/components/PuzzlePreview';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { ImageSelector } from './image-library/components/ImageSelector';
 
 const SAMPLE_IMAGES = [
   'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
@@ -27,6 +29,7 @@ export const HeroPuzzleManager: React.FC = () => {
     description: 'Complete this puzzle to get started!'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isImageSelectorOpen, setIsImageSelectorOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -73,6 +76,11 @@ export const HeroPuzzleManager: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleImageSelected = (imageUrl: string) => {
+    handleChange('image_url', imageUrl);
+    setIsImageSelectorOpen(false);
   };
 
   if (isLoading) {
@@ -146,10 +154,20 @@ export const HeroPuzzleManager: React.FC = () => {
                     type="button"
                     size="icon"
                     variant="outline"
+                    title="Select random sample image"
                     onClick={() => {
                       const randomImage = SAMPLE_IMAGES[Math.floor(Math.random() * SAMPLE_IMAGES.length)];
                       handleChange('image_url', randomImage);
                     }}
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    title="Browse image library"
+                    onClick={() => setIsImageSelectorOpen(true)}
                   >
                     <ImageIcon className="h-4 w-4" />
                   </Button>
@@ -160,10 +178,15 @@ export const HeroPuzzleManager: React.FC = () => {
             <div className="flex flex-col items-center justify-center">
               <h3 className="text-sm font-medium mb-2">Preview</h3>
               {formData.image_url ? (
-                <PuzzlePreview
-                  imageUrl={formData.image_url}
-                  difficulty={formData.difficulty || 'medium'}
-                />
+                <div className="border rounded-lg overflow-hidden bg-black/20 w-[256px] h-[256px]">
+                  <AspectRatio ratio={1/1} className="h-full">
+                    <img 
+                      src={formData.image_url} 
+                      alt="Puzzle preview" 
+                      className="object-contain w-full h-full"
+                    />
+                  </AspectRatio>
+                </div>
               ) : (
                 <div className="border rounded-lg flex items-center justify-center aspect-square w-[256px] h-[256px] bg-black/20">
                   <p className="text-muted-foreground text-sm">No image URL provided</p>
