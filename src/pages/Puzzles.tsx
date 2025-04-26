@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +14,6 @@ const PUZZLE_CATEGORIES = [
 ];
 
 const PuzzleCard = ({ puzzle }) => {
-  // Map the database puzzle fields to the card display
   const difficultyClass = 
     puzzle.difficulty === 'easy' ? 'border-puzzle-gold text-puzzle-gold' : 
     puzzle.difficulty === 'hard' ? 'border-red-500 text-red-500' :
@@ -68,8 +66,10 @@ const Puzzles = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { puzzles, isLoading, isError } = usePuzzles();
   
-  // Only show active puzzles
-  const activePuzzles = puzzles.filter(puzzle => puzzle.status === 'active');
+  const activePuzzles = puzzles.filter(puzzle => puzzle.status === "active");
+  
+  console.log("All puzzles:", puzzles);
+  console.log("Active puzzles:", activePuzzles);
 
   const filteredPuzzles = activePuzzles.filter(puzzle => 
     puzzle.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
