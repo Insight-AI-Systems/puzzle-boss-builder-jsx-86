@@ -1,12 +1,9 @@
+
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RefreshCw, Image } from 'lucide-react';
 import { DifficultyLevel } from '../types/puzzle-types';
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import ImageSelector from './ImageSelector';
-import { PuzzleImage } from '../constants/puzzle-images';
-import { ImageSelector as LibraryImageSelector } from '@/components/admin/image-library/components/ImageSelector';
+import { ImageSelectionDialog } from './controls/ImageSelectionDialog';
+import { DifficultySelector } from './controls/DifficultySelector';
+import { ShuffleButton } from './controls/ShuffleButton';
 
 interface PuzzleControlsProps {
   moveCount: number;
@@ -21,7 +18,6 @@ interface PuzzleControlsProps {
 }
 
 const PuzzleControls: React.FC<PuzzleControlsProps> = ({
-  moveCount,
   difficulty,
   setDifficulty,
   selectedImage,
@@ -34,93 +30,34 @@ const PuzzleControls: React.FC<PuzzleControlsProps> = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLibrarySelectorOpen, setIsLibrarySelectorOpen] = useState(false);
   
-  const handleImageSelected = (image: string) => {
-    setSelectedImage(image);
-    setIsDialogOpen(false);
-  };
-
-  const handleLibraryImageSelected = (imageUrl: string) => {
-    setSelectedImage(imageUrl);
-    setIsLibrarySelectorOpen(false);
-  };
-
-  const convertedImages: PuzzleImage[] = sampleImages.map((url, index) => ({
-    id: `image-${index}`,
-    name: `Image ${index + 1}`,
-    url
-  }));
-  
   if (isMobile) {
     return (
       <div className="flex justify-between items-center w-full">
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 px-2 flex items-center"
-              disabled={isLoading}
-            >
-              <Image className="h-4 w-4 mr-1" />
-              <span className="text-xs">Image</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-[90vw] p-4">
-            <DialogTitle>Select Puzzle Image</DialogTitle>
-            <div className="space-y-4">
-              <ImageSelector
-                selectedImage={selectedImage}
-                onSelectImage={handleImageSelected}
-                sampleImages={sampleImages}
-                compact={true}
-              />
-              <div className="flex justify-center">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => {
-                    setIsDialogOpen(false);
-                    setIsLibrarySelectorOpen(true);
-                  }}
-                >
-                  Browse Image Library
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-        
-        <LibraryImageSelector 
-          isOpen={isLibrarySelectorOpen}
-          onClose={() => setIsLibrarySelectorOpen(false)}
-          onSelectImage={handleLibraryImageSelected}
+        <ImageSelectionDialog
+          selectedImage={selectedImage}
+          onSelectImage={setSelectedImage}
+          sampleImages={sampleImages}
+          isDialogOpen={isDialogOpen}
+          setIsDialogOpen={setIsDialogOpen}
+          isLibrarySelectorOpen={isLibrarySelectorOpen}
+          setIsLibrarySelectorOpen={setIsLibrarySelectorOpen}
+          isLoading={isLoading}
+          isMobile={true}
         />
         
         <div className="flex space-x-1 items-center">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 px-2"
-            onClick={onShuffle}
-            disabled={isLoading}
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          <ShuffleButton
+            onShuffle={onShuffle}
+            isLoading={isLoading}
+            isMobile={true}
+          />
           
-          <Select
-            value={difficulty}
-            onValueChange={(value) => setDifficulty(value as DifficultyLevel)}
-            disabled={isLoading}
-          >
-            <SelectTrigger className="w-16 h-8 text-xs">
-              <SelectValue placeholder="Difficulty" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="3x3">3×3</SelectItem>
-              <SelectItem value="4x4">4×4</SelectItem>
-              <SelectItem value="5x5">5×5</SelectItem>
-            </SelectContent>
-          </Select>
+          <DifficultySelector
+            difficulty={difficulty}
+            setDifficulty={setDifficulty}
+            isLoading={isLoading}
+            isMobile={true}
+          />
         </div>
       </div>
     );
@@ -129,72 +66,29 @@ const PuzzleControls: React.FC<PuzzleControlsProps> = ({
   return (
     <div className="flex justify-between items-center w-full max-w-md">
       <div className="flex space-x-2 items-center">
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              className="space-x-1"
-              disabled={isLoading}
-            >
-              <Image className="h-4 w-4" />
-              <span>Change Image</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-[80vw]">
-            <DialogTitle>Select Puzzle Image</DialogTitle>
-            <div className="space-y-4">
-              <ImageSelector
-                selectedImage={selectedImage}
-                onSelectImage={handleImageSelected}
-                sampleImages={sampleImages}
-              />
-              <div className="flex justify-center">
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setIsDialogOpen(false);
-                    setIsLibrarySelectorOpen(true);
-                  }}
-                >
-                  Browse Image Library
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-        
-        <LibraryImageSelector 
-          isOpen={isLibrarySelectorOpen}
-          onClose={() => setIsLibrarySelectorOpen(false)}
-          onSelectImage={handleLibraryImageSelected}
+        <ImageSelectionDialog
+          selectedImage={selectedImage}
+          onSelectImage={setSelectedImage}
+          sampleImages={sampleImages}
+          isDialogOpen={isDialogOpen}
+          setIsDialogOpen={setIsDialogOpen}
+          isLibrarySelectorOpen={isLibrarySelectorOpen}
+          setIsLibrarySelectorOpen={setIsLibrarySelectorOpen}
+          isLoading={isLoading}
         />
         
-        <Select
-          value={difficulty}
-          onValueChange={(value) => setDifficulty(value as DifficultyLevel)}
-          disabled={isLoading}
-        >
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="Difficulty" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="3x3">3×3 (Easy)</SelectItem>
-            <SelectItem value="4x4">4×4 (Medium)</SelectItem>
-            <SelectItem value="5x5">5×5 (Hard)</SelectItem>
-          </SelectContent>
-        </Select>
+        <DifficultySelector
+          difficulty={difficulty}
+          setDifficulty={setDifficulty}
+          isLoading={isLoading}
+        />
       </div>
       
       <div className="flex items-center space-x-2">
-        <Button
-          variant="outline"
-          className="space-x-1"
-          onClick={onShuffle}
-          disabled={isLoading}
-        >
-          <RefreshCw className="h-4 w-4" />
-          <span>Shuffle</span>
-        </Button>
+        <ShuffleButton
+          onShuffle={onShuffle}
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );
