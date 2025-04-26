@@ -562,6 +562,45 @@ export type Database = {
           },
         ]
       }
+      puzzle_images: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          original_path: string | null
+          processed_path: string | null
+          status: string | null
+          thumbnail_path: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          original_path?: string | null
+          processed_path?: string | null
+          status?: string | null
+          thumbnail_path?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          original_path?: string | null
+          processed_path?: string | null
+          status?: string | null
+          thumbnail_path?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       puzzle_leaderboard: {
         Row: {
           created_at: string

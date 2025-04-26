@@ -1,8 +1,7 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DEFAULT_IMAGES } from '../types/puzzle-types';
-import { PuzzleImage } from '../constants/puzzle-images';
+import { DEFAULT_IMAGES, PuzzleImage, fetchPuzzleImages } from '../constants/puzzle-images';
 
 export interface ImageSelectorProps {
   selectedImage: string;
@@ -18,31 +17,33 @@ const ImageSelector: React.FC<ImageSelectorProps> = ({
   selectedImage,
   onSelectImage,
   onSelect,
-  sampleImages = [],
   isLoading = false,
-  images = [],
   compact = false
 }) => {
+  const [libraryImages, setLibraryImages] = useState<PuzzleImage[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadImages = async () => {
+      try {
+        const images = await fetchPuzzleImages();
+        setLibraryImages(images.length > 0 ? images : DEFAULT_IMAGES);
+      } catch (err) {
+        console.error('Failed to load puzzle images:', err);
+        setError('Failed to load images');
+        setLibraryImages(DEFAULT_IMAGES);
+      }
+    };
+
+    loadImages();
+  }, []);
+
   // Handle both callback patterns
   const handleImageSelection = (image: string) => {
     if (onSelectImage) onSelectImage(image);
     if (onSelect) onSelect(image);
   };
-  
-  // Process image options based on what's provided
-  let imageOptions: string[] = [];
-  
-  if (images && images.length > 0) {
-    // Extract URLs from PuzzleImage objects
-    imageOptions = images.map(img => img.url);
-  } else if (sampleImages && sampleImages.length > 0) {
-    // Use simple string array
-    imageOptions = sampleImages;
-  } else {
-    // Use default images as fallback
-    imageOptions = DEFAULT_IMAGES;
-  }
-  
+
   return (
     <div className={`${compact ? 'p-1' : 'p-2'} bg-black/10 rounded-lg`}>
       <label htmlFor="image-selector" className={`block ${compact ? 'text-xs mb-0.5' : 'mb-1 text-sm'} font-medium`}>
@@ -57,16 +58,16 @@ const ImageSelector: React.FC<ImageSelectorProps> = ({
           <SelectValue placeholder="Select image" />
         </SelectTrigger>
         <SelectContent>
-          {imageOptions.map((image, index) => {
-            const imageName = images && images[index]?.name ? images[index].name : `Image ${index + 1}`;
-            return (
-              <SelectItem key={`img-${index}`} value={image}>
-                {imageName}
-              </SelectItem>
-            );
-          })}
+          {libraryImages.map((image) => (
+            <SelectItem key={image.id} value={image.url}>
+              {image.name}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
+      {error && (
+        <p className="text-xs text-red-500 mt-1">{error}</p>
+      )}
     </div>
   );
 };
