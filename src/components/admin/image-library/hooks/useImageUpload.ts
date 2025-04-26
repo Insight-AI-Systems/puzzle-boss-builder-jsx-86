@@ -1,8 +1,8 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
 import { User } from '@supabase/supabase-js';
+import { toast } from '@/components/ui/use-toast';
 
 export const useImageUpload = (user: User | null, onUploadComplete: () => void) => {
   const [isUploading, setIsUploading] = useState(false);
