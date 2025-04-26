@@ -2,7 +2,7 @@
 import React from 'react';
 import { TableHeader, TableRow, TableHead, TableBody, Table } from "@/components/ui/table";
 import { PuzzleListRow } from './PuzzleListRow';
-import { PuzzleEditPanel } from '../puzzle-edit/PuzzleEditPanel';
+import PuzzleEditPanel from '../PuzzleEditPanel'; // Fixed import path
 import type { Puzzle } from '@/hooks/puzzles/puzzleTypes';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
@@ -60,7 +60,7 @@ export const PuzzleList: React.FC<PuzzleListProps> = ({
           {puzzles.map((puzzle) =>
             editingId === puzzle.id ? (
               <TableRow key={puzzle.id}>
-                <TableCell colSpan={tabValue !== "drafts" && tabValue !== "scheduled" ? 9 : 7} className="bg-muted pt-8 pb-8 px-2">
+                <td colSpan={tabValue !== "drafts" && tabValue !== "scheduled" ? 9 : 7} className="bg-muted pt-8 pb-8 px-2">
                   <PuzzleEditPanel
                     puzzle={editPuzzle}
                     categories={categories}
@@ -70,7 +70,7 @@ export const PuzzleList: React.FC<PuzzleListProps> = ({
                     onImageUpload={handleImageUpload}
                     currentUser={profile?.display_name || profile?.email || ""}
                   />
-                </TableCell>
+                </td>
               </TableRow>
             ) : (
               <PuzzleListRow

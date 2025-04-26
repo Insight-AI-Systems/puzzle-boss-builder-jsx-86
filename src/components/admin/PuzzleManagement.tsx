@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
@@ -8,11 +9,12 @@ import { PuzzleSearchBar } from './puzzle-management/PuzzleSearchBar';
 import { PuzzleTabs } from './puzzle-management/PuzzleTabs';
 import { useCategories } from "@/hooks/useCategories";
 import { usePuzzles } from "@/hooks/usePuzzles";
-import PuzzleEditPanel from "./puzzle-edit/PuzzleEditPanel";
+import PuzzleEditPanel from "./PuzzleEditPanel"; // Fixed import path
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import type { Puzzle } from "@/hooks/puzzles/puzzleTypes"; // Import the Puzzle type
 
 const DEFAULT_NEW_PUZZLE = {
   name: "New Puzzle",
@@ -43,7 +45,7 @@ export const PuzzleManagement = () => {
   const [editPuzzle, setEditPuzzle] = useState<any>(null);
   const [tableExists, setTableExists] = useState<boolean | null>(null);
   const [newPuzzleDialogOpen, setNewPuzzleDialogOpen] = useState(false);
-  const [newPuzzle, setNewPuzzle] = useState<Partial<PuzzleType>>({...DEFAULT_NEW_PUZZLE});
+  const [newPuzzle, setNewPuzzle] = useState<Partial<Puzzle>>({...DEFAULT_NEW_PUZZLE}); // Fixed type
 
   useEffect(() => {
     const checkTable = async () => {
@@ -65,6 +67,65 @@ export const PuzzleManagement = () => {
       });
     }
   }, [newPuzzleDialogOpen, profile]);
+  
+  // Add missing handler functions
+  const handleNewPuzzleChange = (field: string, value: any) => {
+    setNewPuzzle(prev => ({ ...prev, [field]: value }));
+  };
+
+  const saveNewPuzzle = () => {
+    if (newPuzzle) {
+      createPuzzle(newPuzzle);
+      setNewPuzzleDialogOpen(false);
+      toast({
+        title: "Puzzle Created",
+        description: "New puzzle has been created successfully"
+      });
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const imageUrl = event.target?.result as string;
+        if (editingId) {
+          setEditPuzzle(prev => ({ ...prev, imageUrl }));
+        } else {
+          setNewPuzzle(prev => ({ ...prev, imageUrl }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleEditChange = (field: string, value: any) => {
+    setEditPuzzle(prev => ({ ...prev, [field]: value }));
+  };
+
+  const startEdit = (puzzle: Puzzle) => {
+    setEditingId(puzzle.id);
+    setEditPuzzle({ ...puzzle });
+  };
+
+  const saveEdit = () => {
+    if (editPuzzle) {
+      updatePuzzle(editPuzzle);
+      setEditingId(null);
+      setEditPuzzle(null);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditPuzzle(null);
+  };
+
+  const handleToggleStatus = (puzzle: Puzzle) => {
+    const updatedStatus = puzzle.status === 'active' ? 'draft' : 'active';
+    updatePuzzle({ ...puzzle, status: updatedStatus });
+  };
 
   const filteredPuzzles = puzzles.filter(puzzle => 
     puzzle.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
