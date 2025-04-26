@@ -1,50 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Plus, 
-  Puzzle, 
-  Clock, 
-  Award, 
-  Shuffle, 
-  Edit, 
-  Trash2, 
-  Image, 
-  ToggleLeft, 
-  ToggleRight,
-  AlertCircle
-} from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Puzzle } from "lucide-react";
+import { PuzzleSearchBar } from './puzzle-management/PuzzleSearchBar';
+import { PuzzleTabs } from './puzzle-management/PuzzleTabs';
 import { useCategories } from "@/hooks/useCategories";
-import { usePuzzles, Puzzle as PuzzleType } from "@/hooks/usePuzzles";
-import PuzzleEditPanel from "./PuzzleEditPanel";
+import { usePuzzles } from "@/hooks/usePuzzles";
+import PuzzleEditPanel from "./puzzle-edit/PuzzleEditPanel";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const PuzzlePreview = ({ imageUrl, difficulty }: { imageUrl: string, difficulty: string }) => {
-  return (
-    <div className="shadow-md rounded-lg overflow-hidden">
-      <PuzzlePreview
-        imageUrl={imageUrl}
-        difficulty={difficulty}
-      />
-    </div>
-  );
-};
-
-const DEFAULT_NEW_PUZZLE: Partial<PuzzleType> = {
+const DEFAULT_NEW_PUZZLE = {
   name: "New Puzzle",
   category: "",
   category_id: "",
@@ -63,17 +33,17 @@ const DEFAULT_NEW_PUZZLE: Partial<PuzzleType> = {
   puzzleOwner: ""
 };
 
-export const PuzzleManagement: React.FC = () => {
+export const PuzzleManagement = () => {
   const { puzzles, isLoading, isError, createPuzzle, updatePuzzle, deletePuzzle, checkPuzzleTableExists } = usePuzzles();
+  const { data: categories = [] } = useCategories();
+  const { profile } = useUserProfile();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPuzzle, setEditPuzzle] = useState<any>(null);
   const [tableExists, setTableExists] = useState<boolean | null>(null);
   const [newPuzzleDialogOpen, setNewPuzzleDialogOpen] = useState(false);
   const [newPuzzle, setNewPuzzle] = useState<Partial<PuzzleType>>({...DEFAULT_NEW_PUZZLE});
-  const { data: categories = [] } = useCategories();
-  const { profile } = useUserProfile();
-  const { toast } = useToast();
 
   useEffect(() => {
     const checkTable = async () => {
@@ -101,79 +71,6 @@ export const PuzzleManagement: React.FC = () => {
     puzzle.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     puzzle.prize?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const activePuzzles = filteredPuzzles.filter(p => p.status === "active");
-  const scheduledPuzzles = filteredPuzzles.filter(p => p.status === "scheduled");
-  const completedPuzzles = filteredPuzzles.filter(p => p.status === "completed");
-  const draftPuzzles = filteredPuzzles.filter(p => p.status === "draft");
-
-  const formatTime = (seconds: number) => {
-    if (seconds === 0) return "N/A";
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const startEdit = (puzzle: any) => {
-    console.log("Starting edit for puzzle:", puzzle);
-    setEditingId(puzzle.id);
-    setEditPuzzle({ ...puzzle });
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditPuzzle(null);
-  };
-
-  const handleEditChange = (field: string, value: any) => {
-    setEditPuzzle((prev: any) => ({ ...prev, [field]: value }));
-  };
-
-  const saveEdit = () => {
-    if (editPuzzle) {
-      console.log("Saving puzzle:", editPuzzle);
-      updatePuzzle(editPuzzle);
-      setEditingId(null);
-      setEditPuzzle(null);
-    }
-  };
-  
-  const handleNewPuzzleChange = (field: string, value: any) => {
-    setNewPuzzle((prev) => ({ ...prev, [field]: value }));
-  };
-  
-  const saveNewPuzzle = () => {
-    console.log("Creating new puzzle:", newPuzzle);
-    createPuzzle(newPuzzle);
-    setNewPuzzleDialogOpen(false);
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.[0]) return;
-    const url = URL.createObjectURL(e.target.files[0]);
-    
-    if (editingId) {
-      setEditPuzzle((prev: any) => ({ ...prev, imageUrl: url }));
-    } else {
-      setNewPuzzle((prev) => ({ ...prev, imageUrl: url }));
-    }
-  };
-
-  const handleToggleStatus = (puzzle: PuzzleType) => {
-    const newStatus: 'active' | 'inactive' = puzzle.status === 'active' ? 'inactive' : 'active';
-    
-    const updatedPuzzle: Partial<PuzzleType> = { 
-      ...puzzle, 
-      status: newStatus 
-    };
-    
-    updatePuzzle(updatedPuzzle);
-    
-    toast({
-      title: `Puzzle ${newStatus}`,
-      description: `${puzzle.name} is now ${newStatus}.`
-    });
-  };
 
   if (isLoading) {
     return (
@@ -229,27 +126,10 @@ export const PuzzleManagement: React.FC = () => {
       </CardHeader>
       <CardContent>
         <div className="flex justify-between items-center mb-6">
-          <div className="relative w-full max-w-sm">
-            <Input
-              placeholder="Search puzzles..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
-            />
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-          </div>
+          <PuzzleSearchBar 
+            searchTerm={searchTerm} 
+            onSearch={setSearchTerm} 
+          />
           <Dialog open={newPuzzleDialogOpen} onOpenChange={setNewPuzzleDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -295,153 +175,19 @@ export const PuzzleManagement: React.FC = () => {
           </div>
         ) : (
           <Tabs defaultValue="active" className="w-full">
-            <TabsList className="grid grid-cols-4 mb-4">
-              <TabsTrigger value="active" className="flex items-center">
-                <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
-                  {activePuzzles.length}
-                </Badge>
-                Active
-              </TabsTrigger>
-              <TabsTrigger value="scheduled" className="flex items-center">
-                <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
-                  {scheduledPuzzles.length}
-                </Badge>
-                Scheduled
-              </TabsTrigger>
-              <TabsTrigger value="completed" className="flex items-center">
-                <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
-                  {completedPuzzles.length}
-                </Badge>
-                Completed
-              </TabsTrigger>
-              <TabsTrigger value="drafts" className="flex items-center">
-                <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
-                  {draftPuzzles.length}
-                </Badge>
-                Drafts
-              </TabsTrigger>
-            </TabsList>
-            
-            {["active", "scheduled", "completed", "drafts"].map(tabValue => (
-              <TabsContent key={tabValue} value={tabValue} className="space-y-4">
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Difficulty</TableHead>
-                        <TableHead>Time Limit</TableHead>
-                        <TableHead>Prize</TableHead>
-                        {tabValue !== "drafts" && tabValue !== "scheduled" && (
-                          <>
-                            <TableHead>Completions</TableHead>
-                            <TableHead>Avg Time</TableHead>
-                          </>
-                        )}
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredPuzzles
-                        .filter(puzzle => {
-                          if (tabValue === "active") return puzzle.status === "active";
-                          if (tabValue === "scheduled") return puzzle.status === "scheduled";
-                          if (tabValue === "completed") return puzzle.status === "completed";
-                          if (tabValue === "drafts") return puzzle.status === "draft";
-                          return false;
-                        })
-                        .map(puzzle =>
-                          editingId === puzzle.id ? (
-                            <TableRow key={puzzle.id}>
-                              <TableCell colSpan={tabValue !== "drafts" && tabValue !== "scheduled" ? 9 : 7} className="bg-muted pt-8 pb-8 px-2">
-                                <PuzzleEditPanel
-                                  puzzle={editPuzzle}
-                                  categories={categories}
-                                  onChange={handleEditChange}
-                                  onSave={saveEdit}
-                                  onCancel={cancelEdit}
-                                  onImageUpload={handleImageUpload}
-                                  currentUser={profile?.display_name || profile?.email || ""}
-                                />
-                              </TableCell>
-                            </TableRow>
-                          ) : (
-                            <TableRow key={puzzle.id}>
-                              <TableCell className="font-medium align-top">
-                                <span className="flex items-center gap-2">
-                                  {puzzle.imageUrl && (
-                                    <img src={puzzle.imageUrl} alt="Puzzle" className="w-10 h-10 rounded object-cover border border-puzzle-aqua/20" />
-                                  )}
-                                  {puzzle.name}
-                                </span>
-                              </TableCell>
-                              <TableCell className="align-top">
-                                {puzzle.category}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={
-                                  puzzle.difficulty === "easy" ? "outline" :
-                                  puzzle.difficulty === "medium" ? "secondary" : "destructive"
-                                }>
-                                  {puzzle.difficulty.charAt(0).toUpperCase() + puzzle.difficulty.slice(1)}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="flex flex-col gap-1 align-top">
-                                <Clock className="h-3 w-3 mr-1 inline" />
-                                {formatTime(puzzle.timeLimit)}
-                              </TableCell>
-                              <TableCell className="flex flex-col gap-1 align-top">
-                                <span className="flex items-center">
-                                  <Award className="h-3 w-3 mr-1 text-puzzle-aqua" />
-                                  {puzzle.prize || puzzle.name}
-                                </span>
-                              </TableCell>
-                              {tabValue !== "drafts" && tabValue !== "scheduled" && (
-                                <>
-                                  <TableCell>
-                                    {puzzle.completions}
-                                  </TableCell>
-                                  <TableCell>
-                                    {formatTime(puzzle.avgTime || 0)}
-                                  </TableCell>
-                                </>
-                              )}
-                              <TableCell className="text-right align-top">
-                                <div className="flex justify-end gap-1">
-                                  <Button variant="ghost" size="icon" onClick={() => startEdit(puzzle)}>
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon"
-                                    onClick={() => {
-                                      if (window.confirm('Are you sure you want to delete this puzzle?')) {
-                                        deletePuzzle(puzzle.id);
-                                      }
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                  </Button>
-                                  {puzzle.status === "draft" && (
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      onClick={() => handleToggleStatus(puzzle)}
-                                    >
-                                      <Shuffle className="h-4 w-4 text-green-500" />
-                                    </Button>
-                                  )}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          )
-                        )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
-            ))}
+            <PuzzleTabs
+              puzzles={filteredPuzzles}
+              categories={categories}
+              editingId={editingId}
+              editPuzzle={editPuzzle}
+              handleEditChange={handleEditChange}
+              saveEdit={saveEdit}
+              cancelEdit={cancelEdit}
+              startEdit={startEdit}
+              handleImageUpload={handleImageUpload}
+              handleToggleStatus={handleToggleStatus}
+              deletePuzzle={deletePuzzle}
+            />
           </Tabs>
         )}
       </CardContent>
