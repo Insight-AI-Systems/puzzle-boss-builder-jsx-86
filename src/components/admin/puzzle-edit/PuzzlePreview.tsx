@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,9 +15,11 @@ export const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
   onChange,
 }) => {
   const [isImageSelectorOpen, setIsImageSelectorOpen] = React.useState(false);
-  const grid = { easy: 3, medium: 4, hard: 5 }[puzzle?.difficulty] || 4;
+  
+  // Get grid size from difficulty (e.g., "3x3" -> 3)
+  const gridSize = puzzle?.difficulty ? parseInt(puzzle.difficulty.split('x')[0]) : 4;
   const boxSize = 56;
-  const total = grid * grid;
+  const total = gridSize * gridSize;
 
   const handleSelectImage = (imageUrl: string) => {
     onChange("imageUrl", imageUrl);
@@ -27,10 +28,10 @@ export const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <label className="text-xs mb-1">Puzzle Preview ("Ghost" as seen by users)</label>
+      <label className="text-xs mb-1">Puzzle Preview ({gridSize}×{gridSize} Grid)</label>
       <div 
         className="relative bg-gradient-to-br from-puzzle-aqua/20 to-puzzle-black/70 rounded border border-puzzle-aqua/40 flex items-center justify-center overflow-hidden transition-all"
-        style={{ width: boxSize * grid, height: boxSize * grid }}
+        style={{ width: boxSize * gridSize, height: boxSize * gridSize }}
       >
         <img
           src={puzzle.imageUrl}
@@ -40,8 +41,8 @@ export const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
         <div
           className="absolute inset-0 grid"
           style={{
-            gridTemplateRows: `repeat(${grid}, 1fr)`,
-            gridTemplateColumns: `repeat(${grid}, 1fr)`,
+            gridTemplateRows: `repeat(${gridSize}, 1fr)`,
+            gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
           }}
         >
           {Array.from({ length: total }).map((_, i) => (
