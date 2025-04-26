@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { HeroPuzzleConfig } from '@/hooks/useHeroPuzzle';
 import { HeroPuzzleForm } from './HeroPuzzleForm';
@@ -69,10 +70,19 @@ const HeroPuzzleManager: React.FC = () => {
           description: "Hero puzzle configuration updated successfully.",
         });
       } else {
-        // Create a new record
+        // Create a new record - make sure image_url is provided
+        if (!formData.image_url) {
+          throw new Error("Image URL is required");
+        }
+
         const { data, error } = await supabase
           .from('hero_puzzle_config')
-          .insert([rest])
+          .insert([{ 
+            ...rest,
+            image_url: formData.image_url,
+            title: formData.title || 'Welcome Puzzle',
+            difficulty: formData.difficulty || 'medium'
+          }])
           .select()
           .single();
 

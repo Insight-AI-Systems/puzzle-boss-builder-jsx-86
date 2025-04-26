@@ -12,9 +12,57 @@ import {
 } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Loader2 } from 'lucide-react';
 
 export const OverviewTab: React.FC = () => {
-  const { dailyMetrics, monthlyTrends, categoryRevenue } = useAnalytics();
+  const { dailyMetrics, monthlyTrends, categoryRevenue, isLoading } = useAnalytics();
+
+  if (isLoading) {
+    return (
+      <TabsContent value="overview" className="space-y-6">
+        <div className="flex justify-center items-center h-40">
+          <Loader2 className="h-8 w-8 animate-spin text-puzzle-aqua" />
+        </div>
+      </TabsContent>
+    );
+  }
+
+  // Calculate trend directions based on data
+  const getUserTrend = () => {
+    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" };
+    const current = monthlyTrends[0]?.active_users || 0;
+    const previous = monthlyTrends[1]?.active_users || 0;
+    if (previous === 0) return { value: "100%", direction: "up" };
+    const percent = Math.round((current - previous) / previous * 100);
+    return { value: `${Math.abs(percent)}%`, direction: percent >= 0 ? "up" : "down" };
+  };
+
+  const getSignupTrend = () => {
+    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" };
+    const current = monthlyTrends[0]?.new_signups || 0;
+    const previous = monthlyTrends[1]?.new_signups || 0;
+    if (previous === 0) return { value: "100%", direction: "up" };
+    const percent = Math.round((current - previous) / previous * 100);
+    return { value: `${Math.abs(percent)}%`, direction: percent >= 0 ? "up" : "down" };
+  };
+
+  const getPuzzlesTrend = () => {
+    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" };
+    const current = monthlyTrends[0]?.puzzles_completed || 0;
+    const previous = monthlyTrends[1]?.puzzles_completed || 0;
+    if (previous === 0) return { value: "100%", direction: "up" };
+    const percent = Math.round((current - previous) / previous * 100);
+    return { value: `${Math.abs(percent)}%`, direction: percent >= 0 ? "up" : "down" };
+  };
+
+  const getRevenueTrend = () => {
+    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" };
+    const current = monthlyTrends[0]?.revenue || 0;
+    const previous = monthlyTrends[1]?.revenue || 0;
+    if (previous === 0) return { value: "100%", direction: "up" };
+    const percent = Math.round((current - previous) / previous * 100);
+    return { value: `${Math.abs(percent)}%`, direction: percent >= 0 ? "up" : "down" };
+  };
 
   return (
     <TabsContent value="overview" className="space-y-6">
@@ -22,37 +70,25 @@ export const OverviewTab: React.FC = () => {
         <StatCard 
           title="Active Users" 
           value={dailyMetrics?.active_users || 0}
-          trend={{ 
-            value: monthlyTrends?.[0]?.active_users > monthlyTrends?.[1]?.active_users ? "12%" : "-8%",
-            direction: monthlyTrends?.[0]?.active_users > monthlyTrends?.[1]?.active_users ? "up" : "down"
-          }}
+          trend={getUserTrend()}
           subtext="vs. last month"
         />
         <StatCard 
           title="New Signups" 
           value={dailyMetrics?.new_signups || 0}
-          trend={{ 
-            value: monthlyTrends?.[0]?.new_signups > monthlyTrends?.[1]?.new_signups ? "18%" : "-5%",
-            direction: monthlyTrends?.[0]?.new_signups > monthlyTrends?.[1]?.new_signups ? "up" : "down"
-          }}
+          trend={getSignupTrend()}
           subtext="vs. last month"
         />
         <StatCard 
           title="Puzzles Completed" 
           value={dailyMetrics?.puzzles_completed || 0}
-          trend={{ 
-            value: monthlyTrends?.[0]?.puzzles_completed > monthlyTrends?.[1]?.puzzles_completed ? "24%" : "-3%",
-            direction: monthlyTrends?.[0]?.puzzles_completed > monthlyTrends?.[1]?.puzzles_completed ? "up" : "down"
-          }}
+          trend={getPuzzlesTrend()}
           subtext="vs. last month"
         />
         <StatCard 
           title="Revenue" 
           value={`$${dailyMetrics?.revenue || 0}`}
-          trend={{ 
-            value: monthlyTrends?.[0]?.revenue > monthlyTrends?.[1]?.revenue ? "15%" : "-8%",
-            direction: monthlyTrends?.[0]?.revenue > monthlyTrends?.[1]?.revenue ? "up" : "down"
-          }}
+          trend={getRevenueTrend()}
           subtext="vs. last month"
         />
       </div>
@@ -64,7 +100,7 @@ export const OverviewTab: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              {categoryRevenue ? (
+              {categoryRevenue && categoryRevenue.length > 0 ? (
                 <ChartContainer config={{}}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={categoryRevenue}>
@@ -80,7 +116,7 @@ export const OverviewTab: React.FC = () => {
               ) : (
                 <ChartPlaceholder 
                   title="Revenue by Category" 
-                  description="Top 5 categories by revenue"
+                  description="No category revenue data available"
                   type="bar"
                   height="h-full"
                 />
@@ -95,7 +131,7 @@ export const OverviewTab: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              {monthlyTrends ? (
+              {monthlyTrends && monthlyTrends.length > 0 ? (
                 <ChartContainer config={{}}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={monthlyTrends}>
@@ -112,7 +148,7 @@ export const OverviewTab: React.FC = () => {
               ) : (
                 <ChartPlaceholder 
                   title="User Activity" 
-                  description="Monthly active users and signups"
+                  description="No monthly activity data available"
                   type="line"
                   height="h-full"
                 />

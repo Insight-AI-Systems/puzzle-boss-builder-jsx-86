@@ -10,15 +10,32 @@ import { HeroPuzzleConfig } from '@/hooks/useHeroPuzzle';
 
 interface HeroPuzzleFormProps {
   formData: Partial<HeroPuzzleConfig>;
-  handleChange: (key: keyof HeroPuzzleConfig, value: string) => void;
-  onImageSelectorOpen: () => void;
+  onFormUpdate: (updates: Partial<HeroPuzzleConfig>) => void;
+  handleChange?: (key: keyof HeroPuzzleConfig, value: string) => void;
+  onImageSelectorOpen?: () => void;
 }
 
 export const HeroPuzzleForm: React.FC<HeroPuzzleFormProps> = ({
   formData,
+  onFormUpdate,
   handleChange,
   onImageSelectorOpen,
 }) => {
+  // Handle prop compatibility between the two implementations
+  const onChangeValue = (key: keyof HeroPuzzleConfig, value: string) => {
+    if (handleChange) {
+      handleChange(key, value);
+    } else if (onFormUpdate) {
+      onFormUpdate({ [key]: value });
+    }
+  };
+
+  const handleImageSelector = () => {
+    if (onImageSelectorOpen) {
+      onImageSelectorOpen();
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -26,7 +43,7 @@ export const HeroPuzzleForm: React.FC<HeroPuzzleFormProps> = ({
         <Input
           id="title"
           value={formData.title || ''}
-          onChange={(e) => handleChange('title', e.target.value)}
+          onChange={(e) => onChangeValue('title', e.target.value)}
           required
         />
       </div>
@@ -36,7 +53,7 @@ export const HeroPuzzleForm: React.FC<HeroPuzzleFormProps> = ({
         <Textarea
           id="description"
           value={formData.description || ''}
-          onChange={(e) => handleChange('description', e.target.value)}
+          onChange={(e) => onChangeValue('description', e.target.value)}
           rows={3}
         />
       </div>
@@ -45,7 +62,7 @@ export const HeroPuzzleForm: React.FC<HeroPuzzleFormProps> = ({
         <Label htmlFor="difficulty">Difficulty</Label>
         <Select
           value={formData.difficulty}
-          onValueChange={(value) => handleChange('difficulty', value as 'easy' | 'medium' | 'hard')}
+          onValueChange={(value) => onChangeValue('difficulty', value as 'easy' | 'medium' | 'hard')}
         >
           <SelectTrigger id="difficulty">
             <SelectValue placeholder="Select difficulty" />
@@ -64,18 +81,20 @@ export const HeroPuzzleForm: React.FC<HeroPuzzleFormProps> = ({
           <Input
             id="image_url"
             value={formData.image_url || ''}
-            onChange={(e) => handleChange('image_url', e.target.value)}
+            onChange={(e) => onChangeValue('image_url', e.target.value)}
             required
           />
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            title="Browse image library"
-            onClick={onImageSelectorOpen}
-          >
-            <ImageIcon className="h-4 w-4" />
-          </Button>
+          {onImageSelectorOpen && (
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              title="Browse image library"
+              onClick={handleImageSelector}
+            >
+              <ImageIcon className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
     </div>
