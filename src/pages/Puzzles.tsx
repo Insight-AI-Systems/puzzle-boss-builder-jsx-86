@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, Clock, Award, Search } from 'lucide-react';
 import { usePuzzles } from '@/hooks/usePuzzles';
 import { Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const PUZZLE_CATEGORIES = [
   'Smartphones', 'Laptops', 'Headphones', 'Smartwatches', 'Gaming', 'All Categories'
@@ -54,8 +55,11 @@ const PuzzleCard = ({ puzzle }) => {
         </div>
       </CardContent>
       <CardFooter>
-        <Button className="w-full bg-puzzle-aqua hover:bg-puzzle-aqua/80">
-          Play Now
+        <Button 
+          className="w-full bg-puzzle-aqua hover:bg-puzzle-aqua/80"
+          asChild
+        >
+          <Link to={`/puzzle/${puzzle.id}`}>Play Now</Link>
         </Button>
       </CardFooter>
     </Card>

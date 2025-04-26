@@ -42,6 +42,7 @@ import { MainLayout } from '@/components/layouts/MainLayout';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import '@/utils/admin/adminTools';
+import PuzzlePlay from './pages/PuzzlePlay';
 
 function App() {
   const queryClient = new QueryClient();
@@ -135,6 +136,8 @@ function App() {
                       <Route path="/press" element={<Press />} />
                       <Route path="/partnerships" element={<Partnerships />} />
                       <Route path="/unauthorized" element={<Unauthorized />} />
+                      
+                      <Route path="/puzzle/:puzzleId" element={<PuzzlePlay />} />
                       
                       <Route path="*" element={<NotFound />} />
                     </Routes>
