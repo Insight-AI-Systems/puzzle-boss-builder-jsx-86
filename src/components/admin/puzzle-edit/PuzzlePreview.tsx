@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,8 +17,19 @@ export const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
 }) => {
   const [isImageSelectorOpen, setIsImageSelectorOpen] = React.useState(false);
   
-  // Get grid size from difficulty (e.g., "3x3" -> 3)
-  const gridSize = puzzle?.difficulty ? parseInt(puzzle.difficulty.split('x')[0]) : 4;
+  // Safely extract grid size from difficulty
+  let gridSize = 4; // Default value
+  if (puzzle?.difficulty) {
+    // Handle both formats: "3x3" or "easy", "medium", "hard"
+    if (puzzle.difficulty.includes('x')) {
+      gridSize = parseInt(puzzle.difficulty.split('x')[0]) || 4;
+    } else {
+      // For backward compatibility with old format
+      const difficultyMap = { easy: 3, medium: 4, hard: 5 };
+      gridSize = difficultyMap[puzzle.difficulty as keyof typeof difficultyMap] || 4;
+    }
+  }
+  
   const boxSize = 56;
   const total = gridSize * gridSize;
 
