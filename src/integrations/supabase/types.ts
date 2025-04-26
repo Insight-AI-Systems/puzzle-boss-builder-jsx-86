@@ -659,6 +659,7 @@ export type Database = {
       }
       puzzles: {
         Row: {
+          active_players: Json | null
           avg_time: number | null
           category_id: string | null
           completions: number | null
@@ -666,6 +667,7 @@ export type Database = {
           created_at: string
           description: string | null
           difficulty_level: string | null
+          expected_release_date: string | null
           id: string
           image_url: string
           income_target: number
@@ -683,6 +685,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active_players?: Json | null
           avg_time?: number | null
           category_id?: string | null
           completions?: number | null
@@ -690,6 +693,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           difficulty_level?: string | null
+          expected_release_date?: string | null
           id?: string
           image_url: string
           income_target: number
@@ -707,6 +711,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active_players?: Json | null
           avg_time?: number | null
           category_id?: string | null
           completions?: number | null
@@ -714,6 +719,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           difficulty_level?: string | null
+          expected_release_date?: string | null
           id?: string
           image_url?: string
           income_target?: number
@@ -831,7 +837,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      puzzle_top_players: {
+        Row: {
+          completion_time: number | null
+          puzzle_id: string | null
+          rank: number | null
+          user_id: string | null
+          username: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "puzzle_completions_puzzle_id_fkey"
+            columns: ["puzzle_id"]
+            isOneToOne: false
+            referencedRelation: "puzzles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       ensure_super_admin: {
@@ -902,6 +925,10 @@ export type Database = {
       }
       terminate_other_sessions: {
         Args: { current_session_id: string }
+        Returns: undefined
+      }
+      update_puzzle_active_players: {
+        Args: { puzzle_id: string; user_id: string; action: string }
         Returns: undefined
       }
     }

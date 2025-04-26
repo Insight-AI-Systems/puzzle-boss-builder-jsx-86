@@ -1,24 +1,44 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import PageLayout from '@/components/layouts/PageLayout';
 import PuzzleGame from '@/components/puzzles/PuzzleGame';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
 const PuzzlePlay = () => {
   const { puzzleId } = useParams<{ puzzleId: string }>();
   const { toast } = useToast();
-  
+  const [activePlayers, setActivePlayers] = useState<string[]>([]);
+
+  // Mutation to update active players
+  const updateActivePlayers = useMutation({
+    mutationFn: async (action: 'join' | 'leave') => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase.rpc('update_puzzle_active_players', {
+        puzzle_id: puzzleId,
+        user_id: user.id,
+        action: action
+      });
+
+      if (error) {
+        console.error('Error updating active players:', error);
+      }
+    }
+  });
+
+  // Fetch puzzle details
   const { data: puzzle, isLoading, error } = useQuery({
     queryKey: ['puzzle', puzzleId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('puzzles')
-        .select('*')
+        .select('*, active_players')
         .eq('id', puzzleId)
         .eq('status', 'active')
         .maybeSingle();
@@ -37,14 +57,47 @@ const PuzzlePlay = () => {
           variant: "destructive"
         });
       }
+    },
+    // Track active players
+    onSuccess: (data) => {
+      const currentActivePlayers = data.active_players?.map((player: any) => player.user_id) || [];
+      setActivePlayers(currentActivePlayers);
     }
   });
 
+  // Track joining the puzzle when component mounts
   useEffect(() => {
-    if (puzzle) {
-      console.log('Loaded puzzle config:', puzzle.puzzle_config);
-    }
-  }, [puzzle]);
+    updateActivePlayers.mutate('join');
+
+    // Clean up by leaving the puzzle when component unmounts
+    return () => {
+      updateActivePlayers.mutate('leave');
+    };
+  }, [puzzleId]);
+
+  // Real-time subscription to active players
+  useEffect(() => {
+    const channel = supabase
+      .channel('puzzle_active_players')
+      .on(
+        'postgres_changes',
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'puzzles',
+          filter: `id=eq.${puzzleId}` 
+        },
+        (payload) => {
+          const currentActivePlayers = payload.new.active_players?.map((player: any) => player.user_id) || [];
+          setActivePlayers(currentActivePlayers);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [puzzleId]);
 
   if (isLoading) {
     return (
@@ -90,6 +143,11 @@ const PuzzlePlay = () => {
           <div className="flex items-center gap-2">
             <span className="font-medium">Time Limit:</span>
             <span>{Math.floor(puzzle.time_limit / 60)}:{(puzzle.time_limit % 60).toString().padStart(2, '0')}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-puzzle-aqua" />
+            <span className="font-medium">Active Players:</span>
+            <span>{activePlayers.length}</span>
           </div>
         </div>
       </div>
