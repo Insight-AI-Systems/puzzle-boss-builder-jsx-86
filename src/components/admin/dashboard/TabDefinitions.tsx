@@ -3,7 +3,7 @@ import React from 'react';
 import { UserRole } from '@/types/userTypes';
 import { 
   LayoutDashboard, Users, Puzzle, ImageIcon, FileText, Star, 
-  ShoppingCart, Settings, BarChart, Lock, Mail, Bell, AlertCircle
+  ShoppingCart, Settings, BarChart, Lock, Mail, Bell, AlertCircle, Images
 } from "lucide-react";
 
 export interface TabDefinition {
@@ -36,6 +36,12 @@ export const getTabDefinitions = (): TabDefinition[] => [
     id: "categories",
     label: "Categories",
     icon: <ImageIcon className="h-4 w-4 mr-2" />,
+    roles: ['super_admin', 'category_manager']
+  },
+  {
+    id: "images",
+    label: "Image Library",
+    icon: <Images className="h-4 w-4 mr-2" />,
     roles: ['super_admin', 'category_manager']
   },
   {

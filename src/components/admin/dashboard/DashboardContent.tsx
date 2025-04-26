@@ -15,6 +15,7 @@ import { GameManagement } from '../GameManagement';
 import { ContentManagement } from '../ContentManagement';
 import { SecurityDashboard } from '../SecurityDashboard';
 import { EmailManagement } from '../EmailManagement';
+import { ImageLibrary } from '../ImageLibrary';
 import { TabDefinition } from './TabDefinitions';
 import TicketManagement from './TicketManagement';
 
@@ -42,6 +43,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
         return <GameManagement />;
       case 'categories':
         return <CategoryManagement />;
+      case 'images':
+        return <ImageLibrary />;
       case 'content':
         return <ContentManagement />;
       case 'marketing':
