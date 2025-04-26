@@ -141,6 +141,62 @@ export type Database = {
         }
         Relationships: []
       }
+      image_files: {
+        Row: {
+          created_at: string
+          id: string
+          original_height: number | null
+          original_path: string
+          original_size: number | null
+          original_width: number | null
+          processed_height: number | null
+          processed_path: string | null
+          processed_width: number | null
+          processing_status: string
+          product_image_id: string
+          thumbnail_path: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          original_height?: number | null
+          original_path: string
+          original_size?: number | null
+          original_width?: number | null
+          processed_height?: number | null
+          processed_path?: string | null
+          processed_width?: number | null
+          processing_status?: string
+          product_image_id: string
+          thumbnail_path?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          original_height?: number | null
+          original_path?: string
+          original_size?: number | null
+          original_width?: number | null
+          processed_height?: number | null
+          processed_path?: string | null
+          processed_width?: number | null
+          processing_status?: string
+          product_image_id?: string
+          thumbnail_path?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "image_files_product_image_id_fkey"
+            columns: ["product_image_id"]
+            isOneToOne: false
+            referencedRelation: "product_images"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       issues: {
         Row: {
           category: string | null
@@ -268,6 +324,53 @@ export type Database = {
             columns: ["puzzle_id"]
             isOneToOne: false
             referencedRelation: "puzzles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_images: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          metadata: Json
+          name: string
+          status: string
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json
+          name: string
+          status?: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json
+          name?: string
+          status?: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
         ]
