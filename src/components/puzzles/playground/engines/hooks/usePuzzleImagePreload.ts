@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface UsePuzzleImagePreloadProps {
   imageUrl: string;
@@ -14,6 +14,7 @@ export const usePuzzleImagePreload = ({
 }: UsePuzzleImagePreloadProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const cachedImageRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     if (!imageUrl) {
@@ -26,12 +27,22 @@ export const usePuzzleImagePreload = ({
     
     console.log('Preloading image:', imageUrl);
     
+    // Check if we already have this image cached
+    if (cachedImageRef.current?.src === imageUrl && cachedImageRef.current.complete) {
+      console.log('Using cached image from ref:', imageUrl);
+      setIsLoaded(true);
+      if (onLoad) onLoad();
+      return;
+    }
+    
     const img = new Image();
     img.crossOrigin = "anonymous";
     
     img.onload = () => {
       console.log('Image successfully preloaded:', imageUrl);
       setIsLoaded(true);
+      // Store the loaded image in the ref for future use
+      cachedImageRef.current = img;
       if (onLoad) onLoad();
     };
     
@@ -42,6 +53,14 @@ export const usePuzzleImagePreload = ({
       // If it's a blob URL that might have expired, suggest a reload
       if (imageUrl.startsWith('blob:')) {
         console.warn('Blob URL detected which may have expired. Consider refreshing the page.');
+      }
+      
+      // Try to load the image with a cache-busting query param
+      if (!imageUrl.includes('?')) {
+        const cacheBustUrl = `${imageUrl}?t=${Date.now()}`;
+        console.log('Attempting to reload with cache bust:', cacheBustUrl);
+        img.src = cacheBustUrl;
+        return;
       }
       
       const error = new Error(errorMessage);
@@ -55,12 +74,12 @@ export const usePuzzleImagePreload = ({
       // Clean up
       img.onload = null;
       img.onerror = null;
-      
-      // For blob URLs, consider revoking to free memory
-      // But only if we created the blob ourselves, which isn't the case here
-      // if (imageUrl.startsWith('blob:') && weCreatedThisBlob) URL.revokeObjectURL(imageUrl);
     };
   }, [imageUrl, onLoad, onError]);
 
-  return { isLoaded, error };
+  return { 
+    isLoaded, 
+    error,
+    cachedImage: cachedImageRef.current
+  };
 };
