@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,102 +7,47 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, Clock, Award, Search } from 'lucide-react';
+import { usePuzzles } from '@/hooks/usePuzzles';
+import { Loader2 } from 'lucide-react';
 
 const PUZZLE_CATEGORIES = [
   'Smartphones', 'Laptops', 'Headphones', 'Smartwatches', 'Gaming', 'All Categories'
 ];
 
-const PLACEHOLDER_PUZZLES = [
-  {
-    id: 1,
-    title: 'iPhone 15 Pro Challenge',
-    players: 1245,
-    timeLeft: '2 days',
-    difficulty: 'Medium',
-    prize: 'iPhone 15 Pro',
-    category: 'Smartphones',
-    image: 'https://images.unsplash.com/photo-1606041011872-596597976b25?auto=format&fit=crop&q=80&w=400&h=300'
-  },
-  {
-    id: 2,
-    title: 'PlayStation 5 Puzzle',
-    players: 3782,
-    timeLeft: '5 days',
-    difficulty: 'Hard',
-    prize: 'PlayStation 5',
-    category: 'Gaming',
-    image: 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&q=80&w=400&h=300'
-  },
-  {
-    id: 3,
-    title: 'MacBook Air M2 Challenge',
-    players: 2190,
-    timeLeft: '1 day',
-    difficulty: 'Easy',
-    prize: 'MacBook Air M2',
-    category: 'Laptops',
-    image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=400&h=300'
-  },
-  {
-    id: 4,
-    title: 'AirPods Pro Puzzle',
-    players: 987,
-    timeLeft: '3 days',
-    difficulty: 'Easy',
-    prize: 'AirPods Pro',
-    category: 'Headphones',
-    image: 'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?auto=format&fit=crop&q=80&w=400&h=300'
-  },
-  {
-    id: 5,
-    title: 'Samsung Galaxy Watch Challenge',
-    players: 1567,
-    timeLeft: '4 days',
-    difficulty: 'Medium',
-    prize: 'Samsung Galaxy Watch',
-    category: 'Smartwatches',
-    image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?auto=format&fit=crop&q=80&w=400&h=300'
-  },
-  {
-    id: 6,
-    title: 'Nintendo Switch Puzzle',
-    players: 2456,
-    timeLeft: '2 days',
-    difficulty: 'Medium',
-    prize: 'Nintendo Switch',
-    category: 'Gaming',
-    image: 'https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?auto=format&fit=crop&q=80&w=400&h=300'
-  },
-];
-
-const PuzzleCard = ({ puzzle }: { puzzle: typeof PLACEHOLDER_PUZZLES[0] }) => {
+const PuzzleCard = ({ puzzle }) => {
+  // Map the database puzzle fields to the card display
+  const difficultyClass = 
+    puzzle.difficulty === 'easy' ? 'border-puzzle-gold text-puzzle-gold' : 
+    puzzle.difficulty === 'hard' ? 'border-red-500 text-red-500' :
+    'border-puzzle-aqua text-puzzle-aqua';
+  
   return (
     <Card className="overflow-hidden border border-puzzle-aqua/20 hover:border-puzzle-aqua/50 transition-all hover:shadow-lg hover:shadow-puzzle-aqua/10">
       <div className="h-48 w-full overflow-hidden">
         <img 
-          src={puzzle.image} 
-          alt={puzzle.title} 
+          src={puzzle.imageUrl} 
+          alt={puzzle.name} 
           className="w-full h-full object-cover transition-transform hover:scale-105"
         />
       </div>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <Badge className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">{puzzle.category}</Badge>
-          <Badge variant="outline" className="border-puzzle-gold text-puzzle-gold">
-            {puzzle.difficulty}
+          <Badge variant="outline" className={difficultyClass}>
+            {puzzle.difficulty.charAt(0).toUpperCase() + puzzle.difficulty.slice(1)}
           </Badge>
         </div>
-        <CardTitle className="text-lg mt-2">{puzzle.title}</CardTitle>
+        <CardTitle className="text-lg mt-2">{puzzle.name}</CardTitle>
       </CardHeader>
       <CardContent className="pb-2">
         <div className="flex justify-between text-sm text-muted-foreground">
           <div className="flex items-center">
             <Users className="h-4 w-4 mr-1" />
-            <span>{puzzle.players} players</span>
+            <span>{puzzle.completions || 0} completions</span>
           </div>
           <div className="flex items-center">
             <Clock className="h-4 w-4 mr-1" />
-            <span>{puzzle.timeLeft} left</span>
+            <span>{Math.floor(puzzle.timeLimit / 60)}:{(puzzle.timeLimit % 60).toString().padStart(2, '0')} time limit</span>
           </div>
         </div>
         <div className="mt-2 flex items-center">
@@ -120,12 +66,59 @@ const PuzzleCard = ({ puzzle }: { puzzle: typeof PLACEHOLDER_PUZZLES[0] }) => {
 
 const Puzzles = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { puzzles, isLoading, isError } = usePuzzles();
+  
+  // Only show active puzzles
+  const activePuzzles = puzzles.filter(puzzle => puzzle.status === 'active');
 
-  const filteredPuzzles = PLACEHOLDER_PUZZLES.filter(puzzle => 
-    puzzle.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    puzzle.prize.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    puzzle.category.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPuzzles = activePuzzles.filter(puzzle => 
+    puzzle.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    puzzle.prize?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    puzzle.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (isLoading) {
+    return (
+      <PageLayout 
+        title="Puzzles" 
+        subtitle="Loading puzzles..."
+        className="max-w-6xl"
+      >
+        <div className="flex justify-center items-center py-20">
+          <Loader2 className="h-10 w-10 animate-spin text-puzzle-aqua" />
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <PageLayout 
+        title="Puzzles" 
+        subtitle="Error loading puzzles"
+        className="max-w-6xl"
+      >
+        <div className="text-center py-20">
+          <p className="text-red-500 mb-4">Failed to load puzzles. Please try again later.</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (activePuzzles.length === 0) {
+    return (
+      <PageLayout 
+        title="Puzzles" 
+        subtitle="No puzzles available yet"
+        className="max-w-6xl"
+      >
+        <div className="text-center py-20">
+          <p className="text-muted-foreground mb-4">No active puzzles found. Please check back later.</p>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout 
@@ -179,7 +172,7 @@ const Puzzles = () => {
         <TabsContent value="popular" className="mt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPuzzles
-              .sort((a, b) => b.players - a.players)
+              .sort((a, b) => (b.completions || 0) - (a.completions || 0))
               .map((puzzle) => (
                 <PuzzleCard key={puzzle.id} puzzle={puzzle} />
               ))}
@@ -189,7 +182,7 @@ const Puzzles = () => {
         <TabsContent value="ending" className="mt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPuzzles
-              .sort((a, b) => parseInt(a.timeLeft) - parseInt(b.timeLeft))
+              .sort((a, b) => (a.timeLimit || 0) - (b.timeLimit || 0))
               .map((puzzle) => (
                 <PuzzleCard key={puzzle.id} puzzle={puzzle} />
               ))}
@@ -199,7 +192,7 @@ const Puzzles = () => {
         <TabsContent value="new" className="mt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPuzzles
-              .sort((a, b) => b.id - a.id)
+              .sort((a, b) => new Date(b.created_at || Date.now()).getTime() - new Date(a.created_at || Date.now()).getTime())
               .map((puzzle) => (
                 <PuzzleCard key={puzzle.id} puzzle={puzzle} />
               ))}

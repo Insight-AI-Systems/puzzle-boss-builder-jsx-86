@@ -3,26 +3,42 @@ import React from 'react';
 import { Trophy, Clock, Users } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { usePuzzles } from '@/hooks/usePuzzles';
+import { Link } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 
 interface PuzzleCardProps {
   title: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard' | 'Expert';
-  prizePool: string;
-  timeLeft: string;
-  players: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  prize: string;
+  timeLimit: number; // in seconds
+  completions: number;
   imageUrl: string;
+  prizeValue: number;
 }
 
 const difficultyColors = {
-  Easy: 'bg-green-500',
-  Medium: 'bg-yellow-500',
-  Hard: 'bg-red-500',
-  Expert: 'bg-purple-500'
+  easy: 'bg-green-500',
+  medium: 'bg-yellow-500',
+  hard: 'bg-red-500'
 };
 
 const PuzzleCard: React.FC<PuzzleCardProps> = ({ 
-  title, difficulty, prizePool, timeLeft, players, imageUrl 
+  title, difficulty, prize, timeLimit, completions, imageUrl, prizeValue
 }) => {
+  const formattedDifficulty = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+  const formattedPrizeValue = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(prizeValue);
+  
+  // Format time limit as "X days left" or "X hours left"
+  const daysLeft = Math.ceil(timeLimit / (60 * 60 * 24));
+  const timeLeft = daysLeft > 0 ? `${daysLeft} days left` : 'Ending soon';
+  
   return (
     <Card className="card-highlight overflow-hidden group">
       <div className="relative h-48 overflow-hidden">
@@ -33,14 +49,14 @@ const PuzzleCard: React.FC<PuzzleCardProps> = ({
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
         <Badge className={`absolute top-2 right-2 z-20 ${difficultyColors[difficulty]}`}>
-          {difficulty}
+          {formattedDifficulty}
         </Badge>
       </div>
       <CardHeader className="pb-2">
         <CardTitle className="text-xl text-puzzle-white">{title}</CardTitle>
       </CardHeader>
       <CardContent className="pb-2">
-        <div className="text-xl font-game text-puzzle-gold">{prizePool}</div>
+        <div className="text-xl font-game text-puzzle-gold">{formattedPrizeValue}</div>
       </CardContent>
       <CardFooter className="flex justify-between text-sm text-muted-foreground">
         <div className="flex items-center gap-1">
@@ -49,7 +65,7 @@ const PuzzleCard: React.FC<PuzzleCardProps> = ({
         </div>
         <div className="flex items-center gap-1">
           <Users size={14} className="text-puzzle-aqua" />
-          <span>{players} players</span>
+          <span>{completions} players</span>
         </div>
       </CardFooter>
     </Card>
@@ -57,40 +73,32 @@ const PuzzleCard: React.FC<PuzzleCardProps> = ({
 };
 
 const FeaturedPuzzles: React.FC = () => {
-  const puzzles = [
-    {
-      title: "Space Explorer",
-      difficulty: "Medium" as const,
-      prizePool: "$5,000",
-      timeLeft: "2 days left",
-      players: 1247,
-      imageUrl: "https://images.unsplash.com/photo-1454789476662-53eb23ba5907?q=80&w=689&auto=format&fit=crop"
-    },
-    {
-      title: "Ancient Ruins",
-      difficulty: "Hard" as const,
-      prizePool: "$10,000",
-      timeLeft: "5 days left",
-      players: 823,
-      imageUrl: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1470&auto=format&fit=crop"
-    },
-    {
-      title: "Ocean Depths",
-      difficulty: "Easy" as const,
-      prizePool: "$2,500",
-      timeLeft: "1 day left",
-      players: 2156,
-      imageUrl: "https://images.unsplash.com/photo-1518796745738-41048802f99a?q=80&w=1469&auto=format&fit=crop"
-    },
-    {
-      title: "Cosmic Challenge",
-      difficulty: "Expert" as const,
-      prizePool: "$25,000",
-      timeLeft: "7 days left",
-      players: 541,
-      imageUrl: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1422&auto=format&fit=crop"
-    }
-  ];
+  const { puzzles, isLoading, isError } = usePuzzles();
+  
+  // Get active puzzles and sort by prize value (descending)
+  const featuredPuzzles = puzzles
+    .filter(puzzle => puzzle.status === 'active')
+    .sort((a, b) => (b.prizeValue || 0) - (a.prizeValue || 0))
+    .slice(0, 4); // Only show top 4 most valuable puzzles
+  
+  if (isLoading) {
+    return (
+      <section className="py-16" id="prizes">
+        <div className="container mx-auto px-4">
+          <h2 className="section-title text-puzzle-white">
+            Featured <span className="text-puzzle-aqua">Competitions</span>
+          </h2>
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="h-10 w-10 animate-spin text-puzzle-aqua" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+  
+  if (isError || featuredPuzzles.length === 0) {
+    return null; // Don't show the section if there's an error or no puzzles
+  }
 
   return (
     <section className="py-16" id="prizes">
@@ -103,15 +111,24 @@ const FeaturedPuzzles: React.FC = () => {
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {puzzles.map((puzzle, index) => (
-            <PuzzleCard key={index} {...puzzle} />
+          {featuredPuzzles.map((puzzle) => (
+            <PuzzleCard 
+              key={puzzle.id}
+              title={puzzle.name}
+              difficulty={puzzle.difficulty}
+              prize={puzzle.prize || puzzle.name}
+              timeLimit={puzzle.timeLimit}
+              completions={puzzle.completions || 0}
+              imageUrl={puzzle.imageUrl}
+              prizeValue={puzzle.prizeValue || 0}
+            />
           ))}
         </div>
         
         <div className="mt-12 text-center">
-          <button className="btn-primary">
-            View All Competitions
-          </button>
+          <Button className="btn-primary" asChild>
+            <Link to="/puzzles">View All Competitions</Link>
+          </Button>
         </div>
       </div>
     </section>
