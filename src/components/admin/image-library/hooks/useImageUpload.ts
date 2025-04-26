@@ -25,12 +25,15 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
       for (const file of files) {
         console.log('Starting upload for file:', file.name);
         
-        const filePath = `original_images/${user.id}/${Date.now()}-${file.name}`;
+        const filePath = `${user.id}/${Date.now()}-${file.name}`;
         console.log('File path:', filePath);
         
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('original_images')
-          .upload(filePath, file);
+          .upload(filePath, file, {
+            upsert: false,
+            cacheControl: '3600'
+          });
 
         if (uploadError) {
           console.error('Storage upload error:', uploadError);
