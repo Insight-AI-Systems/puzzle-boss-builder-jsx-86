@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Filter, RefreshCw } from 'lucide-react';
+import { Search, Filter, RefreshCw, UploadCloud, AlertCircle } from 'lucide-react';
 import ImageUpload from './ImageUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
@@ -17,6 +17,7 @@ interface ProductImage {
   imageUrl: string;
   status: string;
   created_at: string;
+  created_by: string | null;
 }
 
 export const ImageLibrary = () => {
@@ -24,6 +25,7 @@ export const ImageLibrary = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
   const handleUpload = async (files: File[]) => {
@@ -37,24 +39,29 @@ export const ImageLibrary = () => {
     }
     
     setIsUploading(true);
+    setError(null);
+    
     try {
       for (const file of files) {
-        // Generate a unique file path
-        const filePath = `original_images/${Date.now()}-${file.name}`;
+        // Generate a unique file path with user id to improve security context
+        const filePath = `original_images/${user.id}/${Date.now()}-${file.name}`;
         
         // Upload file to Supabase storage
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('original_images')
           .upload(filePath, file);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError);
+          throw uploadError;
+        }
 
         // Get the public URL
         const { data: urlData } = supabase.storage
           .from('original_images')
           .getPublicUrl(filePath);
 
-        // Insert record into product_images table
+        // Create the product image record with explicit user ID
         const { data: productImageData, error: productImageError } = await supabase
           .from('product_images')
           .insert({
@@ -66,34 +73,42 @@ export const ImageLibrary = () => {
           .select()
           .single();
 
-        if (productImageError) throw productImageError;
+        if (productImageError) {
+          console.error('Product image error:', productImageError);
+          throw productImageError;
+        }
 
-        // Insert record into image_files table
+        // Create the image file record with explicit references
         const { error: fileRecordError } = await supabase
           .from('image_files')
           .insert({
             product_image_id: productImageData.id,
             original_path: filePath,
-            original_width: null, // These would ideally be determined client-side
+            original_width: null, 
             original_height: null,
             original_size: file.size,
             processing_status: 'pending'
           });
 
-        if (fileRecordError) throw fileRecordError;
+        if (fileRecordError) {
+          console.error('Image file record error:', fileRecordError);
+          throw fileRecordError;
+        }
       }
 
       toast({
         title: "Upload Successful",
-        description: `${files.length} images uploaded successfully`
+        description: `${files.length} ${files.length === 1 ? 'image' : 'images'} uploaded successfully`
       });
       
+      // Reload images after successful upload
       loadImages();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload error:', error);
+      setError(`Upload failed: ${error.message || 'Unknown error'}`);
       toast({
         title: "Upload Failed",
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
         variant: "destructive"
       });
     } finally {
@@ -102,14 +117,26 @@ export const ImageLibrary = () => {
   };
 
   const loadImages = async () => {
+    if (!user) {
+      setImages([]);
+      setIsLoading(false);
+      return;
+    }
+    
     setIsLoading(true);
+    setError(null);
+    
     try {
+      // Fetch images with role-based filtering
       const { data: productImages, error: productImagesError } = await supabase
         .from('product_images')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (productImagesError) throw productImagesError;
+      if (productImagesError) {
+        console.error('Error fetching product images:', productImagesError);
+        throw productImagesError;
+      }
 
       // Transform data to match ProductImage interface (initially without imageUrl)
       const transformedData: ProductImage[] = (productImages || []).map(item => ({
@@ -151,8 +178,9 @@ export const ImageLibrary = () => {
           }
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading images:', error);
+      setError(`Failed to load images: ${error.message || 'Unknown error'}`);
       toast({
         title: "Error",
         description: "Failed to load images",
@@ -164,9 +192,7 @@ export const ImageLibrary = () => {
   };
 
   useEffect(() => {
-    if (user) {
-      loadImages();
-    }
+    loadImages();
   }, [user]);
 
   const filteredImages = images.filter(image => 
@@ -186,7 +212,11 @@ export const ImageLibrary = () => {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            Please log in to access the Image Library
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">Authentication Required</h3>
+            <p className="text-muted-foreground">
+              Please log in to access the Image Library
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -198,13 +228,23 @@ export const ImageLibrary = () => {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Image Library</CardTitle>
         <Button variant="outline" size="sm" onClick={handleRefresh}>
-          <RefreshCw className="h-4 w-4 mr-2" />
+          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
           <ImageUpload onUpload={handleUpload} disabled={isUploading} />
+          
+          {error && (
+            <div className="bg-destructive/10 p-4 rounded-md flex items-start gap-3 text-destructive">
+              <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium">Error</p>
+                <p className="text-sm">{error}</p>
+              </div>
+            </div>
+          )}
           
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
@@ -231,7 +271,11 @@ export const ImageLibrary = () => {
             </div>
           ) : filteredImages.length === 0 ? (
             <div className="text-center py-12 border rounded-md">
-              <p className="text-muted-foreground">No images found. Upload some images to get started.</p>
+              <UploadCloud className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground mb-2">No images found</p>
+              <p className="text-sm text-muted-foreground">
+                Upload some images to get started or try a different search term
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -246,13 +290,20 @@ export const ImageLibrary = () => {
                       />
                     ) : (
                       <div className="w-full h-full bg-muted flex items-center justify-center">
-                        Processing...
+                        <p className="text-sm text-muted-foreground">Processing...</p>
                       </div>
                     )}
                   </div>
                   <CardContent className="p-4">
                     <h3 className="font-medium truncate">{image.name}</h3>
-                    <p className="text-sm text-muted-foreground">{image.status}</p>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-xs px-2 py-1 bg-muted rounded-full">
+                        {image.status}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(image.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
