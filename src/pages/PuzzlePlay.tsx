@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,6 +39,12 @@ const PuzzlePlay = () => {
       }
     }
   });
+
+  useEffect(() => {
+    if (puzzle) {
+      console.log('Loaded puzzle config:', puzzle.puzzle_config);
+    }
+  }, [puzzle]);
 
   if (isLoading) {
     return (

@@ -10,6 +10,7 @@ import FirstMoveOverlay from '../FirstMoveOverlay';
 import { PuzzleCompleteBanner } from '../components/PuzzleCompleteBanner';
 import { PuzzleTimerDisplay } from '../components/PuzzleTimerDisplay';
 import { Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import './styles/custom-puzzle.css';
 
 interface CustomPuzzleEngineProps {
@@ -35,6 +36,8 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
   const [solveTime, setSolveTime] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState<string | null>(null);
+  const { toast } = useToast();
   
   useEffect(() => {
     console.log("CustomPuzzleEngine initialized with:", { 
@@ -66,10 +69,18 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     onLoad: () => {
       console.log("Image loaded successfully in CustomPuzzleEngine:", imageUrl);
       setIsLoading(false);
+      setImageLoadError(null);
     },
     onError: (error) => {
       console.error("Error loading puzzle image:", error);
+      setImageLoadError(error.message);
       setIsLoading(false);
+      
+      toast({
+        title: "Error loading puzzle image",
+        description: "There was a problem loading the puzzle image. Try refreshing the page or use a different puzzle.",
+        variant: "destructive"
+      });
     }
   });
 
@@ -125,7 +136,7 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
       </div>
 
       <div className="puzzle-board-container relative">
-        {!hasStarted && !isComplete && !isLoading && (
+        {!hasStarted && !isComplete && !isLoading && !imageLoadError && (
           <FirstMoveOverlay show={true} onFirstMove={handleFirstMove} />
         )}
         
@@ -152,6 +163,20 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
             <div className="text-center">
               <Loader2 className="animate-spin h-8 w-8 mx-auto text-puzzle-aqua" />
               <p className="mt-2 text-puzzle-white">Loading puzzle...</p>
+            </div>
+          </div>
+        )}
+        
+        {imageLoadError && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 rounded-md">
+            <div className="text-center p-4">
+              <p className="text-red-400 font-medium">Failed to load puzzle image</p>
+              <button 
+                className="mt-4 bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-white px-3 py-2 rounded"
+                onClick={() => window.location.reload()}
+              >
+                Refresh Page
+              </button>
             </div>
           </div>
         )}

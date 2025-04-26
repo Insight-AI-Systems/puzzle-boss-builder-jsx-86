@@ -39,6 +39,12 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
       columns,
       showNumbers
     });
+    
+    // Validate that we have the expected number of pieces
+    const expectedPieceCount = rows * columns;
+    if (pieces.length !== expectedPieceCount) {
+      console.warn(`Expected ${expectedPieceCount} pieces but got ${pieces.length}`);
+    }
   }, [pieces, imageUrl, rows, columns, showNumbers]);
 
   // Handle drag start
@@ -84,6 +90,9 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
     }
   };
 
+  // Create an array to represent all grid positions
+  const gridPositions = Array.from({ length: rows * columns }, (_, index) => index);
+
   return (
     <div className="puzzle-board relative bg-black/20 border border-puzzle-aqua/30 rounded-lg overflow-hidden"
          style={{ aspectRatio: '1/1', width: '100%', maxWidth: '500px', margin: '0 auto' }}>
@@ -104,8 +113,8 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
              width: '100%',
              height: '100%',
            }}>
-        {/* Generate grid cells */}
-        {Array.from({ length: rows * columns }).map((_, position) => {
+        {/* Generate grid cells for ALL positions */}
+        {gridPositions.map((position) => {
           const piece = pieces.find(p => p.position === position);
           const isCorrect = piece ? isPieceCorrect(piece.id) : false;
           
