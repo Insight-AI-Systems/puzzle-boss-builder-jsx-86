@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ToggleLeft, ToggleRight, Image, Save, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { ImageSelector } from "./image-library/components/ImageSelector";
 
 interface PuzzleEditPanelProps {
   puzzle: any;
@@ -44,6 +44,9 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
 
   // To prevent onChange("prizeValue") from re-running logic on mount
   const isFirstRender = useRef(true);
+
+  // To manage image selector state
+  const [isImageSelectorOpen, setIsImageSelectorOpen] = useState(false);
 
   useEffect(() => {
     setTimerEnabled(Boolean(puzzle?.timeLimit && puzzle.timeLimit > 0));
@@ -102,6 +105,11 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
     ) {
       setHasManualTargetRevenueEdit(true);
     }
+  };
+
+  const handleSelectImage = (imageUrl: string) => {
+    onChange("imageUrl", imageUrl);
+    setIsImageSelectorOpen(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -177,7 +185,7 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
         <div className="flex items-center gap-2 mt-2">
           <label htmlFor="edit-upload-img" className="flex items-center text-xs cursor-pointer px-2 py-1 rounded border border-puzzle-aqua/50 bg-puzzle-aqua/10 text-puzzle-aqua hover:bg-puzzle-aqua/20">
             <Image className="h-4 w-4 mr-1" />
-            Change image
+            Upload image
           </label>
           <input
             id="edit-upload-img"
@@ -185,6 +193,22 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
             accept="image/*"
             className="hidden"
             onChange={onImageUpload}
+          />
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm"
+            className="text-xs px-2 py-1 h-auto"
+            onClick={() => setIsImageSelectorOpen(true)}
+          >
+            <Image className="h-3 w-3 mr-1" />
+            Browse library
+          </Button>
+
+          <ImageSelector
+            isOpen={isImageSelectorOpen}
+            onClose={() => setIsImageSelectorOpen(false)}
+            onSelectImage={handleSelectImage}
           />
         </div>
       </div>
@@ -405,4 +429,3 @@ const PuzzleEditPanel: React.FC<PuzzleEditPanelProps> = ({
 };
 
 export default PuzzleEditPanel;
-

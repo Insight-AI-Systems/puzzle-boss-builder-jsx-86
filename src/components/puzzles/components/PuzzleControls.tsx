@@ -7,6 +7,7 @@ import { DifficultyLevel } from '../types/puzzle-types';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import ImageSelector from './ImageSelector';
 import { PuzzleImage } from '../constants/puzzle-images';
+import { ImageSelector as LibraryImageSelector } from '@/components/admin/image-library/components/ImageSelector';
 
 interface PuzzleControlsProps {
   moveCount: number;
@@ -32,10 +33,16 @@ const PuzzleControls: React.FC<PuzzleControlsProps> = ({
   isMobile = false
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLibrarySelectorOpen, setIsLibrarySelectorOpen] = useState(false);
   
   const handleImageSelected = (image: string) => {
     setSelectedImage(image);
     setIsDialogOpen(false);
+  };
+
+  const handleLibraryImageSelected = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+    setIsLibrarySelectorOpen(false);
   };
 
   // Convert string URLs to PuzzleImage objects if needed for ImageSelector
@@ -63,14 +70,34 @@ const PuzzleControls: React.FC<PuzzleControlsProps> = ({
           </DialogTrigger>
           <DialogContent className="max-w-[90vw] p-4">
             <DialogTitle>Select Puzzle Image</DialogTitle>
-            <ImageSelector
-              selectedImage={selectedImage}
-              onSelectImage={handleImageSelected}
-              sampleImages={sampleImages}
-              compact={true}
-            />
+            <div className="space-y-4">
+              <ImageSelector
+                selectedImage={selectedImage}
+                onSelectImage={handleImageSelected}
+                sampleImages={sampleImages}
+                compact={true}
+              />
+              <div className="flex justify-center">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    setIsDialogOpen(false);
+                    setIsLibrarySelectorOpen(true);
+                  }}
+                >
+                  Browse Image Library
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
+        
+        <LibraryImageSelector 
+          isOpen={isLibrarySelectorOpen}
+          onClose={() => setIsLibrarySelectorOpen(false)}
+          onSelectImage={handleLibraryImageSelected}
+        />
         
         <div className="flex space-x-1 items-center">
           <Button
@@ -119,13 +146,32 @@ const PuzzleControls: React.FC<PuzzleControlsProps> = ({
           </DialogTrigger>
           <DialogContent className="max-w-[80vw]">
             <DialogTitle>Select Puzzle Image</DialogTitle>
-            <ImageSelector
-              selectedImage={selectedImage}
-              onSelectImage={handleImageSelected}
-              sampleImages={sampleImages}
-            />
+            <div className="space-y-4">
+              <ImageSelector
+                selectedImage={selectedImage}
+                onSelectImage={handleImageSelected}
+                sampleImages={sampleImages}
+              />
+              <div className="flex justify-center">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsDialogOpen(false);
+                    setIsLibrarySelectorOpen(true);
+                  }}
+                >
+                  Browse Image Library
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
+        
+        <LibraryImageSelector 
+          isOpen={isLibrarySelectorOpen}
+          onClose={() => setIsLibrarySelectorOpen(false)}
+          onSelectImage={handleLibraryImageSelected}
+        />
         
         <Select
           value={difficulty}
