@@ -144,8 +144,12 @@ export type Database = {
           category_id: string
           commission_amount: number
           created_at: string
+          email_error: string | null
+          email_sent_at: string | null
+          email_status: string | null
           gross_income: number
           id: string
+          invoice_number: string | null
           manager_id: string
           net_income: number
           payment_date: string | null
@@ -157,8 +161,12 @@ export type Database = {
           category_id: string
           commission_amount?: number
           created_at?: string
+          email_error?: string | null
+          email_sent_at?: string | null
+          email_status?: string | null
           gross_income?: number
           id?: string
+          invoice_number?: string | null
           manager_id: string
           net_income?: number
           payment_date?: string | null
@@ -170,8 +178,12 @@ export type Database = {
           category_id?: string
           commission_amount?: number
           created_at?: string
+          email_error?: string | null
+          email_sent_at?: string | null
+          email_status?: string | null
           gross_income?: number
           id?: string
+          invoice_number?: string | null
           manager_id?: string
           net_income?: number
           payment_date?: string | null
@@ -323,6 +335,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      invoice_templates: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       issues: {
         Row: {

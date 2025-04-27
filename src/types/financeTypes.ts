@@ -72,11 +72,11 @@ export interface CommissionPayment {
   payment_date?: string;
   manager_name?: string;
   category_name?: string;
-  managers?: {
-    profiles?: {
-      username?: string;
-    };
-  };
+  manager_email?: string;
+  invoice_number?: string;
+  email_status?: string;
+  email_sent_at?: string;
+  email_error?: string;
 }
 
 export interface MonthlyFinancialSummary {

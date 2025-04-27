@@ -91,16 +91,19 @@ export function useFinancials() {
         .select(`
           *,
           categories:category_id (name),
-          profiles:user_id (username)
+          user:user_id (
+            email,
+            profiles:id (username)
+          )
         `);
 
       if (error) throw error;
 
       return data.map(manager => ({
         ...manager,
-        username: manager.profiles?.username || 'Unknown',
+        username: manager.user?.profiles?.username || 'Unknown',
         category_name: manager.categories?.name || 'Unknown',
-        profiles: { username: manager.profiles?.username || 'Unknown' }
+        email: manager.user?.email
       })) as CategoryManager[];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch category managers'));
@@ -119,8 +122,9 @@ export function useFinancials() {
         .select(`
           *,
           categories:category_id (name),
-          managers:manager_id (
-            profiles:user_id (username)
+          manager:manager_id (
+            email,
+            profiles:id (username)
           )
         `);
 
@@ -128,8 +132,9 @@ export function useFinancials() {
 
       return data.map(payment => ({
         ...payment,
-        manager_name: payment.managers?.profiles?.username || 'Unknown',
-        category_name: payment.categories?.name || 'Unknown'
+        manager_name: payment.manager?.profiles?.username || 'Unknown',
+        category_name: payment.categories?.name || 'Unknown',
+        manager_email: payment.manager?.email
       })) as CommissionPayment[];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch commission payments'));
