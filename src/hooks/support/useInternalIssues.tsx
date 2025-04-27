@@ -27,7 +27,7 @@ export const useInternalIssues = () => {
     
     const { data: profilesData, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, email')
+      .select('id, email, username')
       .in('id', creatorIds);
       
     if (profilesError) {
@@ -35,9 +35,11 @@ export const useInternalIssues = () => {
       throw profilesError;
     }
     
-    const userEmailMap = new Map();
+    const userInfoMap = new Map();
     profilesData?.forEach(profile => {
-      userEmailMap.set(profile.id, profile.email);
+      // Prefer email if available, otherwise use username or default to ID
+      const userIdentifier = profile.email || profile.username || profile.id;
+      userInfoMap.set(profile.id, userIdentifier);
     });
     
     return issuesData.map(item => ({
@@ -50,7 +52,7 @@ export const useInternalIssues = () => {
       category: 'internal',
       created_at: item.created_at,
       updated_at: item.updated_at,
-      created_by: userEmailMap.get(item.created_by) || 'Unknown',
+      created_by: userInfoMap.get(item.created_by) || item.created_by || 'Unknown',
       comments: [] as TicketComment[]
     } as SupportTicket));
   }, []);
