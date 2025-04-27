@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { SupportTicket, TicketFilters, TicketComment } from "@/types/supportTicketTypes";
+import { SupportTicket, TicketFilters, TicketComment, TicketStatus } from "@/types/supportTicketTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { mapFrontendStatusToDb, DbStatus, mapDbStatusToFrontend } from "@/utils/support/mappings";
@@ -78,9 +78,11 @@ export const useFetchTickets = () => {
         
         // Apply filters if provided
         if (filters?.status && filters.status !== 'pending') {
-          ticketsQuery.eq('status', filters.status);
+          ticketsQuery.eq('status', filters.status as string);
         } else if (filters?.status === 'pending') {
-          ticketsQuery.eq('status', 'pending');
+          // For pending status, we need to handle it as a string
+          // since the database might have a different representation
+          ticketsQuery.eq('status', 'deferred');
         }
         
         if (filters?.search) {
@@ -111,11 +113,14 @@ export const useFetchTickets = () => {
             }));
           }
           
+          // Map database status to frontend status
+          let ticketStatus: TicketStatus = item.status as TicketStatus;
+          
           return {
             id: item.id,
             title: item.title,
             description: item.description,
-            status: item.status as unknown as TicketStatus, // Use type assertion to handle 'pending' status
+            status: ticketStatus,
             priority: 'medium',
             category: 'tech',
             created_at: item.created_at,
