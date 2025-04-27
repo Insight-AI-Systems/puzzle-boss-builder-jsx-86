@@ -9,11 +9,15 @@ import { mapFrontendStatusToDb, DbStatus, mapDbStatusToFrontend } from "@/utils/
 export const useFetchTickets = () => {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const { toast } = useToast();
   const { user, hasRole } = useAuth();
   const isAdmin = hasRole('super_admin') || hasRole('admin');
   
   const fetchTickets = useCallback(async (filters?: Partial<TicketFilters>, isInternalView?: boolean) => {
+    // Reset error state at the start of each fetch
+    setHasError(false);
+    
     if (!user) {
       setTickets([]);
       setIsLoading(false);
@@ -72,13 +76,8 @@ export const useFetchTickets = () => {
         
         // Apply filters if provided
         if (filters?.status) {
-          if (filters.status === 'pending') {
-            // For pending status, we need to handle it as a string in the database
-            ticketsQuery.eq('status', 'deferred' as any); // Using 'any' to bypass TypeScript checking
-          } else {
-            // For other statuses
-            ticketsQuery.eq('status', filters.status as any); // Using 'any' to bypass TypeScript checking
-          }
+          // Type assertion for database query
+          ticketsQuery.eq('status', filters.status === 'pending' ? 'deferred' as any : filters.status as any);
         }
         
         if (filters?.search) {
@@ -110,7 +109,7 @@ export const useFetchTickets = () => {
           }
           
           // Map database status to frontend status
-          let ticketStatus: TicketStatus = mapDbStatusToFrontend(item.status) as TicketStatus;
+          const ticketStatus = mapDbStatusToFrontend(item.status);
           
           return {
             id: item.id,
@@ -132,11 +131,15 @@ export const useFetchTickets = () => {
       setTickets(allTickets);
     } catch (err) {
       console.error("Exception fetching tickets:", err);
-      toast({
-        title: "Failed to load support tickets",
-        description: "An unexpected error occurred. Please try again later.",
-        variant: "destructive",
-      });
+      // Only show toast if we haven't already flagged an error for this fetch attempt
+      if (!hasError) {
+        setHasError(true);
+        toast({
+          title: "Failed to load support tickets",
+          description: "An unexpected error occurred. Please try again later.",
+          variant: "destructive",
+        });
+      }
       setTickets([]);
     } finally {
       setIsLoading(false);
