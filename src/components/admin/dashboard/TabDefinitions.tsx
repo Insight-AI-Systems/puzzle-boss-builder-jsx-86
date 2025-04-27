@@ -14,19 +14,17 @@ export interface TabDefinition {
   roles: UserRole[];
 }
 
-export const getTabDefinitions = (): TabDefinition[] => [
+// Group tabs by functional area for better organization
+const analyticsTabs: TabDefinition[] = [
   {
     id: "analytics",
     label: "Analytics",
     icon: <BarChart className="h-4 w-4 mr-2" />,
     roles: ['super_admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo']
-  },
-  {
-    id: "users",
-    label: "User Management",
-    icon: <Users className="h-4 w-4 mr-2" />,
-    roles: ['super_admin']
-  },
+  }
+];
+
+const contentManagementTabs: TabDefinition[] = [
   {
     id: "puzzles",
     label: "Puzzles",
@@ -50,7 +48,10 @@ export const getTabDefinitions = (): TabDefinition[] => [
     label: "Content",
     icon: <FileText className="h-4 w-4 mr-2" />,
     roles: ['super_admin', 'social_media_manager']
-  },
+  }
+];
+
+const marketingTabs: TabDefinition[] = [
   {
     id: "marketing",
     label: "Marketing",
@@ -62,13 +63,10 @@ export const getTabDefinitions = (): TabDefinition[] => [
     label: "Partners",
     icon: <ShoppingCart className="h-4 w-4 mr-2" />,
     roles: ['super_admin', 'partner_manager']
-  },
-  {
-    id: "finance",
-    label: "Finance",
-    icon: <Settings className="h-4 w-4 mr-2" />,
-    roles: ['super_admin', 'cfo']
-  },
+  }
+];
+
+const systemTabs: TabDefinition[] = [
   {
     id: "security",
     label: "Security",
@@ -87,5 +85,28 @@ export const getTabDefinitions = (): TabDefinition[] => [
     icon: <Bell className="h-4 w-4 mr-2" />,
     roles: ['super_admin']
   }
+];
+
+const userManagementTabs: TabDefinition[] = [
+  {
+    id: "users",
+    label: "User Management",
+    icon: <Users className="h-4 w-4 mr-2" />,
+    roles: ['super_admin']
+  },
+  {
+    id: "finance",
+    label: "Finance",
+    icon: <Settings className="h-4 w-4 mr-2" />,
+    roles: ['super_admin', 'cfo']
+  }
+];
+
+export const getTabDefinitions = (): TabDefinition[] => [
+  ...analyticsTabs,
+  ...userManagementTabs,
+  ...contentManagementTabs,
+  ...marketingTabs,
+  ...systemTabs
 ];
 
