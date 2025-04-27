@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { openSupportsAPI } from '@/services/openSupportsAPI';
 import { useToast } from '@/hooks/use-toast';
@@ -31,15 +30,33 @@ export function useTicketDetails(ticketId: string | undefined) {
     commentContent?: string;
   }) => {
     try {
+      console.log('Sending notification:', {
+        ticketId: payload.ticketId,
+        updateType: payload.updateType,
+        recipientEmail: payload.recipientEmail
+      });
+
       const { error } = await supabase.functions.invoke('send-ticket-notification', {
         body: payload,
       });
       
       if (error) {
         console.error('Error sending notification:', error);
+        toast({
+          title: 'Notification Error',
+          description: 'Failed to send email notification',
+          variant: 'destructive'
+        });
+      } else {
+        console.log('Notification sent successfully');
       }
     } catch (err) {
       console.error('Failed to send notification:', err);
+      toast({
+        title: 'Notification Error',
+        description: 'An unexpected error occurred while sending notification',
+        variant: 'destructive'
+      });
     }
   };
 
