@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -32,7 +33,7 @@ export function useFinancials() {
     }
   };
 
-  const fetchSiteIncomes = async (month: string): Promise<SiteIncome[]> => {
+  const fetchSiteIncomes = async (startDate: string, endDate: string): Promise<SiteIncome[]> => {
     setIsLoading(true);
     setError(null);
     try {
@@ -43,16 +44,25 @@ export function useFinancials() {
           categories:category_id(name),
           profiles:user_id(username)
         `)
-        .like('date', `${month}%`);
+        .gte('date', startDate)
+        .lte('date', endDate);
 
       if (error) throw error;
       
-      return data?.map(item => ({
-        ...item,
-        source_type: item.source_type as SourceType,
-        profiles: { username: item.profiles?.username || 'Anonymous' },
-        categories: { name: item.categories?.name || 'Unknown' }
-      })) || [];
+      return data?.map(item => {
+        // If profiles is an object with error, provide default username
+        const username = typeof item.profiles === 'object' && 
+                        item.profiles !== null && 
+                        !('username' in item.profiles) 
+                        ? 'Anonymous' 
+                        : item.profiles?.username || 'Anonymous';
+
+        return {
+          ...item,
+          source_type: item.source_type as SourceType,
+          profiles: { username }
+        };
+      }) || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch site incomes'));
       return [];
@@ -101,15 +111,30 @@ export function useFinancials() {
 
       if (error) throw error;
 
-      return data.map(manager => ({
-        ...manager,
-        username: manager.profiles?.username || 'Unknown',
-        category_name: manager.categories?.name || 'Unknown',
-        profiles: {
-          username: manager.profiles?.username || 'Unknown',
-          email: manager.profiles?.email
+      return data.map(manager => {
+        // Handle potential error in profiles relation
+        let username = 'Unknown';
+        let email = undefined;
+        
+        if (typeof manager.profiles === 'object' && manager.profiles !== null) {
+          if ('username' in manager.profiles) {
+            username = manager.profiles.username || 'Unknown';
+          }
+          if ('email' in manager.profiles) {
+            email = manager.profiles.email;
+          }
         }
-      })) || [];
+
+        return {
+          ...manager,
+          username: username,
+          category_name: manager.categories?.name || 'Unknown',
+          profiles: {
+            username: username,
+            email: email
+          }
+        };
+      }) || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch category managers'));
       return [];
@@ -132,13 +157,28 @@ export function useFinancials() {
 
       if (error) throw error;
 
-      return data.map(payment => ({
-        ...payment,
-        manager_name: payment.manager?.username || 'Unknown',
-        manager_email: payment.manager?.email,
-        category_name: payment.categories?.name || 'Unknown',
-        payment_status: payment.payment_status as PaymentStatus
-      })) || [];
+      return data.map(payment => {
+        // Handle potential error in manager relation
+        let managerName = 'Unknown';
+        let managerEmail = undefined;
+        
+        if (typeof payment.manager === 'object' && payment.manager !== null) {
+          if ('username' in payment.manager) {
+            managerName = payment.manager.username || 'Unknown';
+          }
+          if ('email' in payment.manager) {
+            managerEmail = payment.manager.email;
+          }
+        }
+
+        return {
+          ...payment,
+          manager_name: managerName,
+          manager_email: managerEmail,
+          category_name: payment.categories?.name || 'Unknown',
+          payment_status: payment.payment_status as PaymentStatus
+        };
+      }) || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch commission payments'));
       return [];

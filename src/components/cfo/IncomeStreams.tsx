@@ -1,469 +1,160 @@
 import React, { useEffect, useState } from 'react';
+import { format } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { SiteIncome, SourceType } from '@/types/financeTypes';
 import { useFinancials } from '@/hooks/useFinancials';
 import { useFinancialRecords } from '@/hooks/useFinancialRecords';
-import { SiteIncome, SourceType } from '@/types/financeTypes';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { 
-  ColumnDef, 
-  flexRender, 
-  getCoreRowModel, 
-  useReactTable, 
-  getSortedRowModel, 
-  SortingState, 
-  getPaginationRowModel 
-} from '@tanstack/react-table';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  PieChart,
-  Pie,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  Cell,
-} from 'recharts';
-import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
-import { Download, ArrowUpDown, Calendar } from 'lucide-react';
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
-
-interface IncomeStreamsProps {
-  selectedMonth: string;
-}
-
-const FINANCE_COLORS = {
-  income: {
-    membership: '#10b981',    // Green
-    'pay-to-play': '#059669', // Darker Green
-    sponsorship: '#047857',   // Even Darker Green
-    other: '#064e3b',        // Darkest Green
-  },
-  costs: {
-    operational: '#f97316',   // Orange
-    marketing: '#ea580c',     // Darker Orange
-    other: '#c2410c',        // Darkest Orange
-  },
-  prizes: {
-    regular: '#3b82f6',      // Blue
-    special: '#2563eb',      // Darker Blue
-  },
-  commissions: {
-    standard: '#8b5cf6',     // Purple
-    bonus: '#7c3aed',        // Darker Purple
-  }
-};
+import { DetailDialog } from './details/DetailDialog';
+import { IncomeDetail } from './details/IncomeDetail';
 
 const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) => {
-  const { fetchSiteIncomes } = useFinancials();
-  const { fetchIncomeRecords, exportDataToCSV } = useFinancialRecords();
   const [incomeData, setIncomeData] = useState<SiteIncome[]>([]);
+  const [filteredIncomes, setFilteredIncomes] = useState<SiteIncome[]>([]);
+  const [sourceFilter, setSourceFilter] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedIncome, setSelectedIncome] = useState<SiteIncome | null>(null);
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [sourceFilter, setSourceFilter] = useState<string>('all');
-  const [isLoading, setIsLoading] = useState(false);
+  const { fetchSiteIncomes, isLoading } = useFinancials();
+  const { exportDataToCSV } = useFinancialRecords();
 
-  const COLORS = {
-    membership: '#10b981',    // Emerald
-    'pay-to-play': '#059669', // Green
-    sponsorship: '#047857',   // Dark Green
-    other: '#064e3b',        // Darker Green
-  };
-
+  // Load income data for the selected month
   useEffect(() => {
     const loadIncomeData = async () => {
-      const startDate = format(startOfMonth(parseISO(`${selectedMonth}-01`)), 'yyyy-MM-dd');
-      const endDate = format(endOfMonth(parseISO(`${selectedMonth}-01`)), 'yyyy-MM-dd');
+      const startDate = `${selectedMonth}-01`;
+      const endDate = `${selectedMonth}-31`;
+      const incomes = await fetchSiteIncomes(startDate, endDate);
       
-      const filter = sourceFilter !== 'all' ? sourceFilter : undefined;
-      setIsLoading(true);
-      const data = await fetchIncomeRecords(startDate, endDate, filter);
-      setIncomeData(data.map(item => ({
-        ...item,
-        source_type: item.source_type as SourceType
-      })));
-      setIsLoading(false);
+      // Type-safe handling for incomes
+      const typeSafeIncomes: SiteIncome[] = incomes.map(income => ({
+        id: income.id,
+        source_type: income.source_type,
+        amount: income.amount,
+        user_id: income.user_id || undefined,
+        category_id: income.category_id || undefined,
+        date: income.date,
+        method: income.method,
+        notes: income.notes || undefined,
+        profiles: { 
+          username: typeof income.profiles === 'object' && income.profiles && 'username' in income.profiles 
+            ? income.profiles.username
+            : undefined 
+        },
+        categories: income.categories
+      }));
+      
+      setIncomeData(typeSafeIncomes);
+      setFilteredIncomes(typeSafeIncomes);
     };
     
     loadIncomeData();
-  }, [selectedMonth, sourceFilter]);
+  }, [selectedMonth, fetchSiteIncomes]);
 
-  const columns: ColumnDef<SiteIncome>[] = [
-    {
-      accessorKey: 'date',
-      header: ({ column }) => (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-              >
-                Date
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Click to sort by date</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      ),
-      cell: ({ row }) => format(parseISO(row.getValue('date')), 'MMM dd, yyyy'),
-    },
-    {
-      accessorKey: 'source_type',
-      header: ({ column }) => (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-              >
-                Source
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Click to sort by income source</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      ),
-      cell: ({ row }) => {
-        const sourceType = row.getValue('source_type') as SourceType;
-        const color = FINANCE_COLORS.income[sourceType as keyof typeof FINANCE_COLORS.income] || FINANCE_COLORS.income.other;
-        
-        return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <div 
-                  className="px-2 py-1 rounded-full text-xs font-medium w-fit"
-                  style={{ 
-                    backgroundColor: `${color}20`,
-                    color: color 
-                  }}
-                >
-                  {sourceType}
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{sourceType === 'membership' ? 'Revenue from member subscriptions' : 
-                    sourceType === 'pay-to-play' ? 'Individual puzzle purchase revenue' :
-                    sourceType === 'sponsorship' ? 'Partner sponsorship income' : 
-                    'Other revenue streams'}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
-      },
-    },
-    {
-      accessorKey: 'amount',
-      header: ({ column }) => (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-              >
-                Amount
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Click to sort by amount</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      ),
-      cell: ({ row }) => {
-        const amount = row.getValue('amount') as number;
-        return (
-          <div className={`text-right font-medium ${amount < 0 ? 'text-red-500' : 'text-green-500'}`}>
-            ${amount.toFixed(2)}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'method',
-      header: 'Method',
-    },
-    {
-      accessorKey: 'categories.name',
-      header: 'Category',
-      cell: ({ row }) => {
-        const categories = (row.original as any)?.categories;
-        return categories?.name || 'N/A';
-      }
-    },
-    {
-      accessorKey: 'notes',
-      header: 'Notes',
-      cell: ({ row }) => {
-        const notes = row.getValue('notes') as string;
-        return notes ? notes.slice(0, 25) + (notes.length > 25 ? '...' : '') : 'N/A';
-      },
-    },
-  ];
-
-  const table = useReactTable({
-    data: incomeData,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange: setSorting,
-    state: {
-      sorting,
-    },
-  });
-
-  const calculateChartData = () => {
-    const aggregated: Record<string, number> = {};
+  // Filter incomes based on source type and search term
+  useEffect(() => {
+    let filtered = incomeData;
     
-    incomeData.forEach(income => {
-      if (!aggregated[income.source_type]) {
-        aggregated[income.source_type] = 0;
-      }
-      aggregated[income.source_type] += income.amount;
-    });
+    if (sourceFilter) {
+      filtered = filtered.filter(income => income.source_type === sourceFilter);
+    }
     
-    return Object.keys(aggregated).map(key => ({
-      name: key,
-      value: aggregated[key],
-    }));
-  };
+    if (searchTerm) {
+      filtered = filtered.filter(income => 
+        income.profiles?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        income.notes?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    setFilteredIncomes(filtered);
+  }, [incomeData, sourceFilter, searchTerm]);
 
-  const chartData = calculateChartData();
-
-  const handleExportCSV = () => {
-    exportDataToCSV(incomeData, `income-${selectedMonth}`);
+  const handleExport = () => {
+    exportDataToCSV(filteredIncomes, `income-${selectedMonth}`);
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap justify-between items-center gap-4">
+      <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Income Streams</h2>
-        
-        <div className="flex flex-wrap items-center gap-3">
-          <Select
-            value={sourceFilter}
-            onValueChange={setSourceFilter}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by source" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Sources</SelectItem>
-              <SelectItem value={SourceType.MEMBERSHIP}>Membership</SelectItem>
-              <SelectItem value={SourceType.PUZZLE}>Puzzle</SelectItem>
-              <SelectItem value={SourceType.PRIZE}>Prize</SelectItem>
-              <SelectItem value={SourceType.OTHER}>Other</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button variant="outline" size="sm" onClick={handleExportCSV} className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Export CSV
-          </Button>
-        </div>
+        <Button onClick={handleExport}>Export to CSV</Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Income Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {chartData.length > 0 ? (
-              <ChartContainer 
-                config={Object.fromEntries(
-                  Object.entries(COLORS).map(([key, value]) => [key, { color: value }])
-                )}
-                className="aspect-[4/3]"
-              >
-                <PieChart>
-                  <Pie
-                    dataKey="value"
-                    nameKey="name"
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    label={(entry) => `${entry.name}: $${entry.value.toFixed(0)}`}
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={COLORS[entry.name as keyof typeof COLORS]} 
-                      />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip content={<ChartTooltipContent />} />
-                </PieChart>
-              </ChartContainer>
-            ) : (
-              <div className="h-80 flex items-center justify-center">
-                <p className="text-muted-foreground">No data available</p>
-              </div>
-            )}
-            
-            <div className="mt-6 grid grid-cols-2 gap-2">
-              {Object.entries(COLORS).map(([key, color]) => (
-                <div key={key} className="flex items-center">
-                  <div
-                    className="w-3 h-3 rounded-full mr-2"
-                    style={{ backgroundColor: color }}
-                  />
-                  <span className="text-sm capitalize">{key}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
             <CardTitle>Income Records</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="h-80 flex items-center justify-center">
-                <p>Loading income data...</p>
-              </div>
-            ) : (
-              <div>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id}>
-                          {headerGroup.headers.map((header) => (
-                            <TableHead key={header.id}>
-                              {header.isPlaceholder
-                                ? null
-                                : flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext()
-                                  )}
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableHeader>
-                    <TableBody>
-                      {table.getRowModel().rows?.length ? (
-                        table.getRowModel().rows.map((row) => (
-                          <TableRow
-                            key={row.id}
-                            className="cursor-pointer hover:bg-muted/50"
-                            onClick={() => setSelectedIncome(row.original)}
-                          >
-                            {row.getVisibleCells().map((cell) => (
-                              <TableCell key={cell.id}>
-                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={columns.length} className="h-24 text-center">
-                            No income records for this period.
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-                
-                <div className="flex items-center justify-end space-x-2 py-4">
-                  <div className="flex-1 text-sm text-muted-foreground">
-                    {`Showing ${table.getRowModel().rows?.length} of ${incomeData.length} records`}
-                  </div>
-                  <div className="space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => table.previousPage()}
-                      disabled={!table.getCanPreviousPage()}
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => table.nextPage()}
-                      disabled={!table.getCanNextPage()}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Monthly Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Total Income</p>
-                <p className="text-2xl font-bold text-green-500">
-                  ${incomeData.reduce((sum, item) => sum + item.amount, 0).toFixed(2)}
-                </p>
-              </div>
-              
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Number of Transactions</p>
-                <p className="text-2xl font-bold">{incomeData.length}</p>
-              </div>
-              
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Average Transaction</p>
-                <p className="text-2xl font-bold">
-                  ${incomeData.length > 0
-                    ? (incomeData.reduce((sum, item) => sum + item.amount, 0) / incomeData.length).toFixed(2)
-                    : "0.00"
-                  }
-                </p>
-              </div>
-              
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Largest Transaction</p>
-                <p className="text-2xl font-bold">
-                  ${incomeData.length > 0
-                    ? Math.max(...incomeData.map(item => item.amount)).toFixed(2)
-                    : "0.00"
-                  }
-                </p>
-              </div>
+            <div>
+              <select 
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value)}
+                className="border border-gray-300 rounded px-2 py-1 bg-background"
+              >
+                <option value="">All Sources</option>
+                <option value={SourceType.MEMBERSHIP}>Membership</option>
+                <option value={SourceType.PUZZLE}>Pay-to-Play</option>
+                <option value={SourceType.PRIZE}>Prize</option>
+                <option value={SourceType.SPONSORSHIP}>Sponsorship</option>
+                <option value={SourceType.OTHER}>Other</option>
+              </select>
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="ml-2 border border-gray-300 rounded px-2 py-1 bg-background"
+              />
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead>
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Source
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    User
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredIncomes.map((income) => (
+                  <tr key={income.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {income.source_type}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      ${income.amount.toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {income.profiles?.username || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {format(new Date(income.date), 'yyyy-MM-dd')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <Button variant="link" onClick={() => setSelectedIncome(income)}>
+                        View Details
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+      
       {selectedIncome && (
         <IncomeDetail
           income={selectedIncome}

@@ -1,174 +1,198 @@
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { CommissionPayment, CategoryManager, SiteIncome, SiteExpense } from '@/types/financeTypes';
+import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Dialog } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 import { useFinancials } from '@/hooks/useFinancials';
 import { useCommissionManagement } from '@/hooks/useCommissionManagement';
-import { CommissionHeader } from './commissions/CommissionHeader';
-import { CommissionTableHeader } from './commissions/CommissionTableHeader';
 import { CommissionTable } from './commissions/CommissionTable';
 import { CommissionCharts } from './commissions/CommissionCharts';
+import { CommissionHeader } from './commissions/CommissionHeader';
 import { ManagerDetailDialog } from './details/ManagerDetailDialog';
+import { InvoiceEmailDialog } from './InvoiceEmailDialog';
+import { 
+  CategoryManager, 
+  CommissionPayment, 
+  PaymentStatus, 
+  SiteIncome, 
+  SiteExpense 
+} from '@/types/financeTypes';
 
 interface CommissionsManagementProps {
   selectedMonth: string;
 }
 
 const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedMonth }) => {
-  const {
-    fetchCommissionPayments,
-    isLoading: isLoadingFinancials
-  } = useFinancials();
-
-  const {
-    generateCommissions,
-    isLoading: isLoadingCommissions
-  } = useCommissionManagement();
-
   const [payments, setPayments] = useState<CommissionPayment[]>([]);
+  const [managers, setManagers] = useState<CategoryManager[]>([]);
+  const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
   const [filterManager, setFilterManager] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
-  const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
-  const [selectedManager, setSelectedManager] = useState<CategoryManager | null>(null);
-  const [managerIncome, setManagerIncome] = useState<SiteIncome[]>([]);
+  const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState<boolean>(false);
+  const [selectedManager, setSelectedManager] = useState<CommissionPayment | null>(null);
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState<boolean>(false);
+  const [managerIncomes, setManagerIncomes] = useState<SiteIncome[]>([]);
   const [managerExpenses, setManagerExpenses] = useState<SiteExpense[]>([]);
+  
+  const { toast } = useToast();
+  const { 
+    fetchCommissionPayments, 
+    fetchCategoryManagers, 
+    isLoading, 
+    error,
+    fetchSiteIncomes,
+    fetchSiteExpenses
+  } = useFinancials();
+  const { updatePaymentStatus, generateCommissions, isLoading: isActionLoading } = useCommissionManagement();
 
+  // Fetch commission data
   useEffect(() => {
-    const loadData = async () => {
+    const loadCommissionData = async () => {
       const paymentsData = await fetchCommissionPayments();
-      setPayments(paymentsData);
+      setPayments(paymentsData.filter(payment => payment.period === selectedMonth));
+      
+      const managersData = await fetchCategoryManagers();
+      setManagers(managersData);
     };
-    loadData();
-  }, [selectedMonth, fetchCommissionPayments]);
-
-  const handleGenerateCommissions = async () => {
-    await generateCommissions(selectedMonth);
-    const updatedPayments = await fetchCommissionPayments();
-    setPayments(updatedPayments);
-  };
-
-  const handleSelectPayment = (paymentId: string) => {
-    setSelectedPayments(prev => 
-      prev.includes(paymentId) 
-        ? prev.filter(id => id !== paymentId)
-        : [...prev, paymentId]
-    );
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    setSelectedPayments(checked ? filteredPayments.map(p => p.id) : []);
-  };
-
-  const handleEmailSuccess = () => {
-    setSelectedPayments([]);
-    const loadData = async () => {
-      const updatedPayments = await fetchCommissionPayments();
-      setPayments(updatedPayments);
-    };
-    loadData();
-  };
-
-  const exportToCSV = () => {
-    const headers = ['Manager', 'Category', 'Period', 'Gross Income', 'Net Income', 'Commission', 'Status'];
-    const csvData = filteredPayments.map(p => [
-      p.manager_name,
-      p.category_name,
-      p.period,
-      p.gross_income,
-      p.net_income,
-      p.commission_amount,
-      p.payment_status
-    ].join(','));
     
-    const csv = [headers.join(','), ...csvData].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `commissions-${selectedMonth}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    loadCommissionData();
+  }, [selectedMonth, fetchCommissionPayments, fetchCategoryManagers]);
+
+  // Handle manager selection for detailed view
+  const handleManagerSelect = async (payment: CommissionPayment) => {
+    setSelectedManager(payment);
+    
+    if (payment.category_id) {
+      // Fetch income and expense data for this manager's category
+      const startDate = `${selectedMonth}-01`;
+      const endDate = `${selectedMonth}-31`;
+      
+      const incomes = await fetchSiteIncomes(startDate, endDate);
+      const expenses = await fetchSiteExpenses(startDate, endDate);
+      
+      setManagerIncomes(incomes.filter(income => income.category_id === payment.category_id));
+      setManagerExpenses(expenses.filter(expense => expense.category_id === payment.category_id));
+    }
   };
 
   const getStatusColor = (status: PaymentStatus) => {
     switch (status) {
-      case PaymentStatus.PAID:
-        return 'bg-green-100 text-green-800';
       case PaymentStatus.PENDING:
         return 'bg-yellow-100 text-yellow-800';
       case PaymentStatus.APPROVED:
         return 'bg-blue-100 text-blue-800';
+      case PaymentStatus.PAID:
+        return 'bg-green-100 text-green-800';
+      case PaymentStatus.REJECTED:
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handleManagerSelect = async (manager: CategoryManager) => {
-    setSelectedManager(manager);
-    
-    const incomeData = await fetchSiteIncomes(selectedMonth);
-    const expensesData = await fetchSiteExpenses(selectedMonth);
-    
-    setManagerIncome(incomeData.filter(income => income.category_id === manager.category_id));
-    setManagerExpenses(expensesData.filter(expense => expense.category_id === manager.category_id));
-  };
-
   const filteredPayments = payments.filter(payment => {
-    return (!filterManager || payment.manager_name?.toLowerCase().includes(filterManager.toLowerCase())) &&
-           (!filterCategory || payment.category_name?.toLowerCase().includes(filterCategory.toLowerCase())) &&
-           (!filterStatus || payment.payment_status === filterStatus);
+    if (filterManager && !payment.manager_name?.toLowerCase().includes(filterManager.toLowerCase())) return false;
+    if (filterCategory && !payment.category_name?.toLowerCase().includes(filterCategory.toLowerCase())) return false;
+    if (filterStatus && payment.payment_status !== filterStatus) return false;
+    return true;
   });
 
-  const managerPayments = payments.filter(
-    payment => selectedManager && payment.manager_id === selectedManager.user_id
-  );
-
   return (
-    <Card>
-      <CardContent className="space-y-6">
-        <CommissionHeader
-          selectedPayments={selectedPayments}
-          onGenerateCommissions={handleGenerateCommissions}
-          onExportToCSV={exportToCSV}
-          onEmailSuccess={handleEmailSuccess}
-          isLoadingCommissions={isLoadingCommissions}
-        />
+    <div className="space-y-6">
+      <CommissionHeader 
+        selectedMonth={selectedMonth}
+        setIsGenerateDialogOpen={setIsGenerateDialogOpen}
+        selectedCount={selectedPayments.length}
+        filterManager={filterManager}
+        setFilterManager={setFilterManager}
+        filterCategory={filterCategory}
+        setFilterCategory={setFilterCategory}
+        filterStatus={filterStatus}
+        setFilterStatus={setFilterStatus}
+      />
+      
+      <CommissionCharts payments={payments} />
 
-        <CommissionTableHeader
-          filterManager={filterManager}
-          setFilterManager={setFilterManager}
-          filterCategory={filterCategory}
-          setFilterCategory={setFilterCategory}
-          filterStatus={filterStatus}
-          setFilterStatus={setFilterStatus}
-        />
-
-        <div className="mb-8">
-          <CommissionTable
+      <Card>
+        <CardHeader>
+          <CardTitle>Commission Payments</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <CommissionTable 
             payments={filteredPayments}
             selectedPayments={selectedPayments}
-            onSelectPayment={handleSelectPayment}
-            onSelectAll={handleSelectAll}
+            onSelectPayment={(id) => {
+              setSelectedPayments(prev => 
+                prev.includes(id) ? prev.filter(paymentId => paymentId !== id) : [...prev, id]
+              );
+            }}
+            onSelectAll={(checked) => {
+              setSelectedPayments(checked ? filteredPayments.map(p => p.id) : []);
+            }}
             getStatusColor={getStatusColor}
             onManagerSelect={handleManagerSelect}
           />
+        </CardContent>
+      </Card>
+
+      {/* Generate Commissions Dialog */}
+      <Dialog open={isGenerateDialogOpen} onOpenChange={setIsGenerateDialogOpen}>
+        <div className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Generate Commissions</h3>
+          <p>Are you sure you want to generate commission calculations for {format(new Date(`${selectedMonth}-01`), 'MMMM yyyy')}?</p>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setIsGenerateDialogOpen(false)}>Cancel</Button>
+            <Button 
+              isLoading={isActionLoading} 
+              onClick={async () => {
+                await generateCommissions(selectedMonth);
+                const updatedPayments = await fetchCommissionPayments();
+                setPayments(updatedPayments.filter(payment => payment.period === selectedMonth));
+                setIsGenerateDialogOpen(false);
+              }}
+            >
+              Generate
+            </Button>
+          </div>
         </div>
-
-        <CommissionCharts payments={filteredPayments} />
-
-        {selectedManager && (
-          <ManagerDetailDialog
-            open={!!selectedManager}
-            onOpenChange={(open) => !open && setSelectedManager(null)}
-            manager={selectedManager}
-            commissionHistory={managerPayments}
-            relatedIncome={managerIncome}
-            relatedExpenses={managerExpenses}
-          />
-        )}
-      </CardContent>
-    </Card>
+      </Dialog>
+      
+      {/* Manager Detail Dialog */}
+      {selectedManager && (
+        <ManagerDetailDialog
+          payment={selectedManager}
+          open={!!selectedManager}
+          onOpenChange={(open) => !open && setSelectedManager(null)}
+          incomes={managerIncomes}
+          expenses={managerExpenses}
+          getStatusColor={getStatusColor}
+          onStatusChange={async (status) => {
+            await updatePaymentStatus(selectedManager.id, status);
+            const updatedPayments = await fetchCommissionPayments();
+            setPayments(updatedPayments.filter(payment => payment.period === selectedMonth));
+          }}
+          onSendEmail={() => {
+            setIsEmailDialogOpen(true);
+          }}
+        />
+      )}
+      
+      {/* Invoice Email Dialog */}
+      {selectedManager && (
+        <InvoiceEmailDialog 
+          open={isEmailDialogOpen}
+          onOpenChange={setIsEmailDialogOpen}
+          manager={{
+            id: selectedManager.manager_id,
+            name: selectedManager.manager_name || 'Unknown',
+            email: selectedManager.manager_email || '',
+          }}
+          payment={selectedManager}
+        />
+      )}
+    </div>
   );
 };
 
