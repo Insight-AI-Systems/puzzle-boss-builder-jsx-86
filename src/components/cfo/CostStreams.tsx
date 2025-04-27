@@ -3,11 +3,12 @@ import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExpenseType, SiteExpense } from '@/types/financeTypes';
-import { useExpenseRecords } from '@/hooks/useExpenseRecords';
+import { useFinancials } from '@/hooks/useFinancials';
 import { ExpenseDetail } from './details/ExpenseDetail';
 import { ExpenseCharts } from './expenses/ExpenseCharts';
 import { ExpenseFilters } from './expenses/ExpenseFilters';
 import { ExpenseTable } from './expenses/ExpenseTable';
+import { useFinancialRecords } from '@/hooks/useFinancialRecords';
 
 const CostStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) => {
   const [expenses, setExpenses] = useState<SiteExpense[]>([]);
@@ -15,18 +16,21 @@ const CostStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) => 
   const [expenseTypeFilter, setExpenseTypeFilter] = useState<ExpenseType | ''>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedExpense, setSelectedExpense] = useState<SiteExpense | null>(null);
-  const { fetchExpenseRecords, exportToCSV, isLoading } = useExpenseRecords();
+  const { fetchSiteExpenses, isLoading } = useFinancials();
+  const { exportDataToCSV } = useFinancialRecords();
 
   useEffect(() => {
     const loadExpenses = async () => {
-      const startDate = `${selectedMonth}-01`;
-      const endDate = `${selectedMonth}-31`;
-      const expensesData = await fetchExpenseRecords(startDate, endDate);
-      setExpenses(expensesData);
-      setFilteredExpenses(expensesData);
+      try {
+        const expensesData = await fetchSiteExpenses(selectedMonth);
+        setExpenses(expensesData);
+        setFilteredExpenses(expensesData);
+      } catch (error) {
+        console.error("Error loading expenses:", error);
+      }
     };
     loadExpenses();
-  }, [selectedMonth, fetchExpenseRecords]);
+  }, [selectedMonth, fetchSiteExpenses]);
 
   useEffect(() => {
     let filtered = expenses;
@@ -45,6 +49,7 @@ const CostStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) => 
     setFilteredExpenses(filtered);
   }, [expenses, expenseTypeFilter, searchTerm]);
 
+  // Prepare chart data
   const expensesByType = Object.entries(
     expenses.reduce((acc, curr) => {
       const type = curr.expense_type;
@@ -54,7 +59,7 @@ const CostStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) => 
   ).map(([name, value]) => ({ name, value }));
 
   const handleExport = () => {
-    exportToCSV(filteredExpenses, `expenses-${selectedMonth}`);
+    exportDataToCSV(filteredExpenses, `expenses-${selectedMonth}`);
   };
 
   return (
@@ -79,10 +84,16 @@ const CostStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) => 
           </div>
         </CardHeader>
         <CardContent>
-          <ExpenseTable 
-            expenses={filteredExpenses}
-            onSelectExpense={setSelectedExpense}
-          />
+          {filteredExpenses.length > 0 ? (
+            <ExpenseTable 
+              expenses={filteredExpenses}
+              onSelectExpense={setSelectedExpense}
+            />
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No expenses found for the selected criteria.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

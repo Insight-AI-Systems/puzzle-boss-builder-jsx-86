@@ -27,7 +27,14 @@ export function useExpenseRecords() {
       const { data, error: queryError } = await query;
 
       if (queryError) throw queryError;
-      return (data as SiteExpense[]) || [];
+      
+      return (data || []).map(item => ({
+        ...item,
+        expense_type: item.expense_type as ExpenseType,
+        categories: { 
+          name: item.categories?.name || 'Unknown'
+        }
+      })) as SiteExpense[];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch expense records'));
       return [];
@@ -39,10 +46,21 @@ export function useExpenseRecords() {
   const exportToCSV = (data: SiteExpense[], filename: string) => {
     if (!data.length) return;
 
-    const headers = Object.keys(data[0]).join(',');
-    const csvData = data.map(row => Object.values(row).join(',')).join('\n');
+    // Convert data to CSV format
+    const headers = Object.keys(data[0])
+      .filter(key => typeof data[0][key as keyof SiteExpense] !== 'object')
+      .join(',');
+      
+    const csvData = data.map(row => {
+      return Object.entries(row)
+        .filter(([key, value]) => typeof value !== 'object')
+        .map(([_, value]) => value)
+        .join(',');
+    }).join('\n');
+    
     const csv = `${headers}\n${csvData}`;
     
+    // Create and download file
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');

@@ -34,11 +34,11 @@ export const ExpenseFilters = ({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="">All Types</SelectItem>
-          <SelectItem value="prizes">Prizes</SelectItem>
-          <SelectItem value="salaries">Salaries</SelectItem>
-          <SelectItem value="infrastructure">Infrastructure</SelectItem>
-          <SelectItem value="commissions">Commissions</SelectItem>
-          <SelectItem value="other">Other</SelectItem>
+          <SelectItem value={ExpenseType.PRIZES}>Prizes</SelectItem>
+          <SelectItem value={ExpenseType.OPERATIONAL}>Operational</SelectItem>
+          <SelectItem value={ExpenseType.MARKETING}>Marketing</SelectItem>
+          <SelectItem value={ExpenseType.COMMISSIONS}>Commissions</SelectItem>
+          <SelectItem value={ExpenseType.OTHER}>Other</SelectItem>
         </SelectContent>
       </Select>
     </div>

@@ -1,3 +1,4 @@
+
 export enum SourceType {
   MEMBERSHIP = 'membership',
   PUZZLE = 'pay-to-play',
@@ -57,7 +58,7 @@ export interface CategoryManager {
   category_name?: string;
   created_at?: string;
   updated_at?: string;
-  profiles?: { username?: string };
+  profiles?: { username?: string; email?: string };
   categories?: { name: string };
 }
 

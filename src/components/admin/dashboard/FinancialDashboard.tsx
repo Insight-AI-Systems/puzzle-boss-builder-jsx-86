@@ -6,7 +6,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useFinancials } from '@/hooks/useFinancials';
 import { Loader2, Download } from 'lucide-react';
-import { MonthlyFinancialSummary, PaymentStatus } from '@/types/financeTypes';
+import { MonthlyFinancialSummary } from '@/types/financeTypes';
 
 export const FinancialDashboard: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
@@ -32,6 +32,11 @@ export const FinancialDashboard: React.FC = () => {
 
   const handleMonthChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedMonth(event.target.value);
+  };
+
+  const handleExport = () => {
+    // Export functionality placeholder
+    console.log('Exporting financial data...');
   };
 
   const months = [];
@@ -75,7 +80,7 @@ export const FinancialDashboard: React.FC = () => {
               </option>
             ))}
           </select>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" /> Export
           </Button>
         </div>
@@ -117,7 +122,7 @@ export const FinancialDashboard: React.FC = () => {
                 ${trendData?.net_profit.toFixed(2) || '0.00'}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {trendData?.net_profit
+                {trendData?.net_profit !== undefined
                   ? `${trendData.net_profit >= 0 ? 'Profit' : 'Loss'} for period`
                   : 'No profit data available'}
               </p>

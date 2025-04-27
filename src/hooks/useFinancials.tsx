@@ -50,12 +50,10 @@ export function useFinancials() {
       if (error) throw error;
       
       return data?.map(item => {
-        // If profiles is an object with error, provide default username
-        const username = typeof item.profiles === 'object' && 
-                        item.profiles !== null && 
-                        !('username' in item.profiles) 
-                        ? 'Anonymous' 
-                        : item.profiles?.username || 'Anonymous';
+        // Safe access to nested properties
+        const username = item.profiles && typeof item.profiles === 'object' && 
+                        'username' in item.profiles ? 
+                        item.profiles.username : 'Anonymous';
 
         return {
           ...item,
@@ -112,17 +110,15 @@ export function useFinancials() {
       if (error) throw error;
 
       return data.map(manager => {
-        // Handle potential error in profiles relation
+        // Safe access to nested properties
         let username = 'Unknown';
         let email = undefined;
         
-        if (typeof manager.profiles === 'object' && manager.profiles !== null) {
-          if ('username' in manager.profiles) {
-            username = manager.profiles.username || 'Unknown';
-          }
-          if ('email' in manager.profiles) {
-            email = manager.profiles.email;
-          }
+        if (manager.profiles && typeof manager.profiles === 'object') {
+          username = 'username' in manager.profiles ? 
+                    (manager.profiles.username || 'Unknown') : 'Unknown';
+          email = 'email' in manager.profiles ? 
+                 manager.profiles.email : undefined;
         }
 
         return {
@@ -158,17 +154,15 @@ export function useFinancials() {
       if (error) throw error;
 
       return data.map(payment => {
-        // Handle potential error in manager relation
+        // Safe access to nested properties
         let managerName = 'Unknown';
         let managerEmail = undefined;
         
-        if (typeof payment.manager === 'object' && payment.manager !== null) {
-          if ('username' in payment.manager) {
-            managerName = payment.manager.username || 'Unknown';
-          }
-          if ('email' in payment.manager) {
-            managerEmail = payment.manager.email;
-          }
+        if (payment.manager && typeof payment.manager === 'object') {
+          managerName = 'username' in payment.manager ? 
+                       (payment.manager.username || 'Unknown') : 'Unknown';
+          managerEmail = 'email' in payment.manager ? 
+                        payment.manager.email : undefined;
         }
 
         return {

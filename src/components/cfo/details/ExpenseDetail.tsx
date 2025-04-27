@@ -1,7 +1,13 @@
 
 import React from 'react';
 import { format } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription 
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { SiteExpense } from '@/types/financeTypes';
 import { DetailDialog } from './DetailDialog';
 
@@ -11,56 +17,62 @@ interface ExpenseDetailProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export const ExpenseDetail = ({ expense, open, onOpenChange }: ExpenseDetailProps) => {
+export const ExpenseDetail: React.FC<ExpenseDetailProps> = ({
+  expense,
+  open,
+  onOpenChange
+}) => {
   return (
-    <DetailDialog 
-      open={open} 
-      onOpenChange={onOpenChange}
-      title={`Expense Record Details - ${format(new Date(expense.date), 'MMM dd, yyyy')}`}
-    >
-      <div className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium">Amount</p>
-              <p className="text-2xl font-bold text-red-600">${expense.amount.toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Expense Type</p>
-              <p className="text-lg capitalize">{expense.expense_type}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Category</p>
-              <p>{expense.categories?.name || 'Uncategorized'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Payee</p>
-              <p>{expense.payee || 'N/A'}</p>
-            </div>
-          </CardContent>
-        </Card>
+    <DetailDialog open={open} onOpenChange={onOpenChange} title="Expense Details">
+      <DialogHeader>
+        <DialogDescription>
+          {expense.expense_type} expense from {format(new Date(expense.date), 'MMMM d, yyyy')}
+        </DialogDescription>
+      </DialogHeader>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Additional Details</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
+      <div className="py-4">
+        <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+          <div>
+            <dt className="text-sm font-medium text-gray-500">Amount</dt>
+            <dd className="text-lg">${expense.amount.toFixed(2)}</dd>
+          </div>
+          
+          <div>
+            <dt className="text-sm font-medium text-gray-500">Type</dt>
+            <dd className="capitalize">{expense.expense_type}</dd>
+          </div>
+          
+          <div>
+            <dt className="text-sm font-medium text-gray-500">Date</dt>
+            <dd>{format(new Date(expense.date), 'MMMM d, yyyy')}</dd>
+          </div>
+          
+          {expense.payee && (
             <div>
-              <p className="text-sm font-medium">Transaction Date</p>
-              <p>{format(new Date(expense.date), 'MMMM dd, yyyy')}</p>
+              <dt className="text-sm font-medium text-gray-500">Payee</dt>
+              <dd>{expense.payee}</dd>
             </div>
-            {expense.notes && (
-              <div className="col-span-2">
-                <p className="text-sm font-medium">Notes</p>
-                <p className="mt-1 text-sm">{expense.notes}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          )}
+          
+          {expense.category_id && (
+            <div>
+              <dt className="text-sm font-medium text-gray-500">Category</dt>
+              <dd>{expense.categories?.name || 'Unknown category'}</dd>
+            </div>
+          )}
+          
+          {expense.notes && (
+            <div className="col-span-2">
+              <dt className="text-sm font-medium text-gray-500">Notes</dt>
+              <dd className="whitespace-pre-wrap">{expense.notes}</dd>
+            </div>
+          )}
+        </dl>
       </div>
+
+      <DialogFooter>
+        <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+      </DialogFooter>
     </DetailDialog>
   );
 };
