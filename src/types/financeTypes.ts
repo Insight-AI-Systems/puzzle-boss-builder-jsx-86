@@ -1,4 +1,3 @@
-
 export type SourceType = 'membership' | 'pay-to-play' | 'sponsorship' | 'other';
 export type ExpenseType = 'prizes' | 'salaries' | 'infrastructure' | 'commissions' | 'other';
 export type PaymentStatus = 'pending' | 'processing' | 'paid' | 'cancelled';
@@ -13,7 +12,7 @@ export interface SiteIncome {
   date: string;
   method: string;
   notes?: string;
-  categories?: { name: string }; // For join results
+  categories?: { name: string };
 }
 
 export interface SiteExpense {
@@ -24,7 +23,7 @@ export interface SiteExpense {
   category_id?: string;
   date: string;
   notes?: string;
-  categories?: { name: string }; // For join results
+  categories?: { name: string };
 }
 
 export interface CategoryManager {
@@ -88,4 +87,17 @@ export interface FinancialChartData {
   name: string;
   value: number;
   color?: string;
+}
+
+export interface MembershipSummary {
+  period: string;
+  total_members: number;
+  new_members: number;
+  churned_members: number;
+  revenue: number;
+}
+
+export interface FinancialOverviewProps {
+  trends: MonthlyFinancialSummary[];
+  timeframe?: TimeFrame;
 }

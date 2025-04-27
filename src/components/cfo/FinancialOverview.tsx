@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MonthlyFinancialSummary } from '@/types/financeTypes';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MonthlyFinancialSummary, TimeFrame } from '@/types/financeTypes';
 import { 
   LineChart, 
   Line, 
@@ -12,178 +13,165 @@ import {
   Legend, 
   ResponsiveContainer,
   AreaChart,
-  Area,
-  BarChart,
-  Bar
+  Area
 } from 'recharts';
 import { format, parse } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { CircleDollarSign } from 'lucide-react';
 
 interface FinancialOverviewProps {
   trends: MonthlyFinancialSummary[];
+  timeframe?: TimeFrame;
 }
 
-const FinancialOverview: React.FC<FinancialOverviewProps> = ({ trends }) => {
-  // Format data for charts
+const FinancialOverview: React.FC<FinancialOverviewProps> = ({ trends, timeframe = 'monthly' }) => {
+  const latestTrend = trends[trends.length - 1];
+  
   const chartData = trends.map(item => ({
     name: format(parse(item.period, 'yyyy-MM', new Date()), 'MMM yyyy'),
     income: item.total_income,
     expenses: item.total_expenses,
-    profit: item.net_profit,
-    prizes: item.prize_expenses,
-    commissions: item.commissions_paid
+    profit: item.net_profit
   }));
+
+  const kpis = [
+    {
+      title: "Gross Income",
+      value: latestTrend?.total_income || 0,
+      change: "+12.3%",
+      icon: CircleDollarSign,
+      color: "text-emerald-500"
+    },
+    {
+      title: "Total Expenses",
+      value: latestTrend?.total_expenses || 0,
+      change: "-2.1%",
+      icon: CircleDollarSign,
+      color: "text-red-500"
+    },
+    {
+      title: "Net Profit",
+      value: latestTrend?.net_profit || 0,
+      change: "+15.2%",
+      icon: CircleDollarSign,
+      color: "text-blue-500"
+    },
+    {
+      title: "Unpaid Commissions",
+      value: latestTrend?.commissions_paid || 0,
+      change: "Pending",
+      icon: CircleDollarSign,
+      color: "text-yellow-500"
+    }
+  ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Financial Trends</h2>
-        <Button variant="outline" size="sm" className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
-          Export Data
-        </Button>
+        <h2 className="text-3xl font-bold">Financial Overview</h2>
+        <Select defaultValue={timeframe}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select timeframe" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="weekly">Weekly</SelectItem>
+            <SelectItem value="monthly">Monthly</SelectItem>
+            <SelectItem value="quarterly">Quarterly</SelectItem>
+            <SelectItem value="yearly">Yearly</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {kpis.map((kpi, index) => (
+          <Card key={index}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {kpi.title}
+              </CardTitle>
+              <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${kpi.value.toLocaleString()}</div>
+              <p className={`text-xs ${kpi.color}`}>
+                {kpi.change}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Income vs Expenses Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Income vs Expenses</CardTitle>
-            <CardDescription>Monthly comparison of revenue and costs</CardDescription>
+            <CardDescription>Monthly comparison</CardDescription>
           </CardHeader>
-          <CardContent className="pt-2">
+          <CardContent className="h-[400px]">
             <ChartContainer 
               config={{
                 income: { color: "#10b981" },
                 expenses: { color: "#ef4444" },
               }}
-              className="aspect-[4/3]"
             >
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip content={<ChartTooltipContent />} />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="income"
-                  name="Income"
-                  strokeWidth={2}
-                  activeDot={{ r: 6 }}
-                  stroke="var(--color-income)"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="expenses"
-                  name="Expenses"
-                  strokeWidth={2}
-                  stroke="var(--color-expenses)"
-                />
-              </LineChart>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip content={<ChartTooltipContent />} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="income"
+                    name="Income"
+                    stroke="var(--color-income)"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="expenses"
+                    name="Expenses"
+                    stroke="var(--color-expenses)"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </ChartContainer>
           </CardContent>
         </Card>
 
-        {/* Net Profit Area Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Net Profit Trend</CardTitle>
-            <CardDescription>Monthly profit/loss visualization</CardDescription>
+            <CardDescription>Monthly profit analysis</CardDescription>
           </CardHeader>
-          <CardContent className="pt-2">
+          <CardContent className="h-[400px]">
             <ChartContainer 
               config={{
-                profit: { color: "#10b981" },
+                profit: { color: "#3b82f6" },
               }}
-              className="aspect-[4/3]"
             >
-              <AreaChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip content={<ChartTooltipContent />} />
-                <Area
-                  type="monotone"
-                  dataKey="profit"
-                  name="Net Profit"
-                  fill="var(--color-profit)"
-                  fillOpacity={0.3}
-                  stroke="var(--color-profit)"
-                />
-              </AreaChart>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip content={<ChartTooltipContent />} />
+                  <Area
+                    type="monotone"
+                    dataKey="profit"
+                    name="Net Profit"
+                    stroke="var(--color-profit)"
+                    fill="var(--color-profit)"
+                    fillOpacity={0.2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </ChartContainer>
-          </CardContent>
-        </Card>
-
-        {/* Expense Categories Breakdown */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Expense Breakdown</CardTitle>
-            <CardDescription>Prizes vs Commissions</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <ChartContainer 
-              config={{
-                prizes: { color: "#f97316" },
-                commissions: { color: "#8b5cf6" },
-              }}
-              className="aspect-[4/3]"
-            >
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip content={<ChartTooltipContent />} />
-                <Legend />
-                <Bar dataKey="prizes" name="Prize Expenses" fill="var(--color-prizes)" />
-                <Bar dataKey="commissions" name="Commission Expenses" fill="var(--color-commissions)" />
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-
-        {/* Key Performance Indicators */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Financial KPIs</CardTitle>
-            <CardDescription>Key performance indicators over time</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <div className="space-y-4">
-              {trends.length > 0 && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Profit Margin (Latest)</p>
-                    <div className="text-2xl font-bold">
-                      {((chartData[chartData.length - 1].profit / chartData[chartData.length - 1].income) * 100).toFixed(1)}%
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Cost Ratio</p>
-                    <div className="text-2xl font-bold">
-                      {((chartData[chartData.length - 1].expenses / chartData[chartData.length - 1].income) * 100).toFixed(1)}%
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Revenue Growth</p>
-                    <div className="text-2xl font-bold">
-                      {chartData.length > 1 ? 
-                        ((chartData[chartData.length - 1].income / chartData[chartData.length - 2].income - 1) * 100).toFixed(1) + '%' : 
-                        'N/A'}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Prize Expense Ratio</p>
-                    <div className="text-2xl font-bold">
-                      {((chartData[chartData.length - 1].prizes / chartData[chartData.length - 1].expenses) * 100).toFixed(1)}%
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
           </CardContent>
         </Card>
       </div>

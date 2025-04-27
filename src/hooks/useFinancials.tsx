@@ -6,7 +6,10 @@ import {
   SiteExpense,
   CategoryManager,
   CommissionPayment,
-  MonthlyFinancialSummary
+  MonthlyFinancialSummary,
+  SourceType,
+  ExpenseType,
+  PaymentStatus
 } from '@/types/financeTypes';
 
 export function useFinancials() {
@@ -36,14 +39,14 @@ export function useFinancials() {
     try {
       const { data, error } = await supabase
         .from('site_income')
-        .select(`
-          *,
-          categories:category_id (name)
-        `)
+        .select('*, categories:category_id (name)')
         .like('date', `${month}%`);
 
       if (error) throw error;
-      return data || [];
+      return data.map(item => ({
+        ...item,
+        source_type: item.source_type as SourceType,
+      })) || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch site incomes'));
       return [];
@@ -58,14 +61,14 @@ export function useFinancials() {
     try {
       const { data, error } = await supabase
         .from('site_expenses')
-        .select(`
-          *,
-          categories:category_id (name)
-        `)
+        .select('*, categories:category_id (name)')
         .like('date', `${month}%`);
 
       if (error) throw error;
-      return data || [];
+      return data.map(item => ({
+        ...item,
+        expense_type: item.expense_type as ExpenseType,
+      })) || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch site expenses'));
       return [];
@@ -110,10 +113,9 @@ export function useFinancials() {
         .select(`
           *,
           categories:category_id (name),
-          category_managers!inner (
-            id,
+          category_managers:manager_id (
             user_id,
-            profiles (username)
+            profiles:user_id (username)
           )
         `);
 
@@ -121,6 +123,7 @@ export function useFinancials() {
 
       return data.map(payment => ({
         ...payment,
+        payment_status: payment.payment_status as PaymentStatus,
         manager_name: payment.category_managers?.profiles?.username || 'Unknown',
         category_name: payment.categories?.name || 'Unknown'
       })) || [];
