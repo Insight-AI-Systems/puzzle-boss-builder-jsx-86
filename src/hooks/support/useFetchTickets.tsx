@@ -96,25 +96,35 @@ export const useFetchTickets = () => {
         }
         
         // Map tickets data to SupportTicket format
-        const mappedTickets = ticketsData.map(item => ({
-          id: item.id,
-          title: item.title,
-          description: item.description,
-          status: item.status === 'pending' ? 'open' : item.status,
-          priority: 'medium',
-          category: 'tech',
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          created_by: item.created_by_email || item.created_by,
-          comments: (item.comments || []).map((comment: any) => ({
-            id: comment.id || crypto.randomUUID(),
-            ticket_id: item.id,
-            content: comment.content,
-            created_by: comment.created_by,
-            created_at: comment.created_at || new Date().toISOString(),
-            is_staff: comment.is_staff
-          }))
-        } as SupportTicket));
+        const mappedTickets = ticketsData.map(item => {
+          // Ensure comments is treated as an array
+          let comments: TicketComment[] = [];
+          
+          // Parse comments if they exist and are in the correct format
+          if (item.comments && Array.isArray(item.comments)) {
+            comments = item.comments.map((comment: any) => ({
+              id: comment.id || crypto.randomUUID(),
+              ticket_id: item.id,
+              content: comment.content,
+              created_by: comment.created_by,
+              created_at: comment.created_at || new Date().toISOString(),
+              is_staff: comment.is_staff
+            }));
+          }
+          
+          return {
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            status: item.status === 'pending' ? 'open' : item.status,
+            priority: 'medium',
+            category: 'tech',
+            created_at: item.created_at,
+            updated_at: item.updated_at,
+            created_by: item.created_by_email || item.created_by,
+            comments: comments
+          } as SupportTicket;
+        });
         
         allTickets = mappedTickets;
       }
