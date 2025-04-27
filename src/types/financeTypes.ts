@@ -32,7 +32,7 @@ export interface SiteIncome {
   method: string;
   notes?: string;
   categories?: { name: string };
-  profiles?: { username: string };
+  profiles?: { username?: string };
 }
 
 export interface SiteExpense {
@@ -52,11 +52,11 @@ export interface CategoryManager {
   category_id: string;
   commission_percent: number;
   active: boolean;
-  username: string;
-  category_name: string;
+  username?: string;
+  category_name?: string;
   created_at?: string;
   updated_at?: string;
-  profiles?: { username: string };
+  profiles?: { username?: string };
   categories?: { name: string };
 }
 
@@ -70,8 +70,13 @@ export interface CommissionPayment {
   commission_amount: number;
   payment_status: PaymentStatus;
   payment_date?: string;
-  manager_name: string;
-  category_name: string;
+  manager_name?: string;
+  category_name?: string;
+  managers?: {
+    profiles?: {
+      username?: string;
+    };
+  };
 }
 
 export interface MonthlyFinancialSummary {
@@ -92,7 +97,7 @@ export interface Membership {
   end_date?: string;
   last_payment_date?: string;
   amount: number;
-  profiles?: { username: string };
+  profiles?: { username?: string };
 }
 
 export type MembershipStats = {

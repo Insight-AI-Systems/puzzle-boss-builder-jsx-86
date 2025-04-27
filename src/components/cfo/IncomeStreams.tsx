@@ -276,10 +276,10 @@ const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) =
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Sources</SelectItem>
-              <SelectItem value="membership">Membership</SelectItem>
-              <SelectItem value="pay-to-play">Pay to Play</SelectItem>
-              <SelectItem value="sponsorship">Sponsorship</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
+              <SelectItem value={SourceType.MEMBERSHIP}>Membership</SelectItem>
+              <SelectItem value={SourceType.PUZZLE}>Puzzle</SelectItem>
+              <SelectItem value={SourceType.PRIZE}>Prize</SelectItem>
+              <SelectItem value={SourceType.OTHER}>Other</SelectItem>
             </SelectContent>
           </Select>
           
