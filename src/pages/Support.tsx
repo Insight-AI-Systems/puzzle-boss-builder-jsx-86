@@ -44,7 +44,7 @@ const Support = () => {
             
             <Button variant="destructive" className="flex items-center gap-2" onClick={handleInternalIssuesClick}>
               <ShieldAlert size={16} />
-              <span>Internal Issues</span>
+              <span>Create Internal Ticket</span>
             </Button>
           </div>}
         
