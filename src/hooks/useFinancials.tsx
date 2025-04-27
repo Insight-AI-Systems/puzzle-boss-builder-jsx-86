@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -40,18 +41,18 @@ export function useFinancials() {
         .from('site_income')
         .select(`
           *,
-          categories:category_id (name),
-          profiles:user_id (username)
+          categories(name),
+          profiles:user_id(username)
         `)
         .like('date', `${month}%`);
 
       if (error) throw error;
       
-      return (data || []).map(item => ({
+      return data?.map(item => ({
         ...item,
-        source_type: item.source_type as SourceType,
+        source_type: item.source_type,
         profiles: { username: item.profiles?.username || 'Unknown' }
-      })) as SiteIncome[];
+      })) || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch site incomes'));
       return [];
@@ -121,10 +122,10 @@ export function useFinancials() {
         .from('commission_payments')
         .select(`
           *,
-          categories:category_id (name),
-          manager:manager_id (
-            email,
-            profiles:id (username)
+          categories:category_id(name),
+          profiles:manager_id(
+            username,
+            email
           )
         `);
 
@@ -132,9 +133,9 @@ export function useFinancials() {
 
       return data.map(payment => ({
         ...payment,
-        manager_name: payment.manager?.profiles?.username || 'Unknown',
+        manager_name: payment.profiles?.username || 'Unknown',
         category_name: payment.categories?.name || 'Unknown',
-        manager_email: payment.manager?.email
+        manager_email: payment.profiles?.email
       })) as CommissionPayment[];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch commission payments'));

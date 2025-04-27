@@ -1280,6 +1280,10 @@ export type Database = {
           revenue: number
         }[]
       }
+      calculate_monthly_commissions: {
+        Args: { month_param: string }
+        Returns: undefined
+      }
       ensure_super_admin: {
         Args: { user_email: string }
         Returns: undefined

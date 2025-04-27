@@ -10,9 +10,11 @@ import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Download } from 'lucide-react';
 
+type ExportFormat = 'csv' | 'excel';
+
 export const BatchExportDialog = () => {
   const [date, setDate] = useState<DateRange | undefined>();
-  const [format, setFormat] = useState<'csv' | 'excel'>('csv');
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('csv');
   const [isExporting, setIsExporting] = useState(false);
   const { fetchSiteIncomes, fetchSiteExpenses, fetchCommissionPayments } = useFinancials();
 
@@ -31,7 +33,7 @@ export const BatchExportDialog = () => {
         fetchCommissionPayments()
       ]);
 
-      await exportFinancialData(incomes, expenses, commissions, period, format);
+      await exportFinancialData(incomes, expenses, commissions, period, exportFormat);
     } catch (error) {
       console.error('Export failed:', error);
     } finally {
@@ -59,7 +61,7 @@ export const BatchExportDialog = () => {
           
           <div className="space-y-2">
             <label className="text-sm font-medium">Export Format</label>
-            <Select value={format} onValueChange={(value: 'csv' | 'excel') => setFormat(value)}>
+            <Select value={exportFormat} onValueChange={(value: ExportFormat) => setExportFormat(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select format" />
               </SelectTrigger>

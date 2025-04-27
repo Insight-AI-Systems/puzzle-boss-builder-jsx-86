@@ -24,7 +24,7 @@ export type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export interface SiteIncome {
   id: string;
-  source_type: SourceType;
+  source_type: 'membership' | 'pay-to-play' | 'sponsorship' | 'other';
   amount: number;
   user_id?: string;
   category_id?: string;

@@ -47,7 +47,6 @@ export const exportFinancialData = async (
 ) => {
   const zip = new JSZip();
   
-  // Convert each dataset to CSV/Excel format
   const datasets = [
     { data: incomeData, name: 'income' },
     { data: expenseData, name: 'expenses' },
@@ -67,11 +66,8 @@ export const exportFinancialData = async (
     
     const fileContent = [headers.join(','), ...csvData].join('\n');
     const extension = format === 'excel' ? 'xls' : 'csv';
-    const mimeType = format === 'excel' ? 'application/vnd.ms-excel' : 'text/csv';
     
-    zip.file(`${name}-${period}.${extension}`, fileContent, { 
-      type: `${mimeType};charset=utf-8;` 
-    });
+    zip.file(`${name}-${period}.${extension}`, fileContent);
   });
 
   // Generate and download the zip file
