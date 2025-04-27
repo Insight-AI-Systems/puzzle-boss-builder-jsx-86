@@ -12,8 +12,8 @@ import NavLinks from './NavLinks';
 import UserMenu from './UserMenu';
 import AuthButtons from './AuthButtons';
 import MobileMenu from './MobileMenu';
-import { mainNavItems, adminNavItems } from './NavbarData';
-import { mainNavItems as configMainNavItems } from '@/config/navigation';
+import { mainNavItems } from './NavbarData';
+import { adminNavItems } from '@/config/navigation'; // Fixed import path for adminNavItems
 
 // Special admin email that should always have access
 const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
