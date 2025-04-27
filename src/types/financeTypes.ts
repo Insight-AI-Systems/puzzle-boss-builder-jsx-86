@@ -1,4 +1,3 @@
-
 export enum SourceType {
   MEMBERSHIP = 'membership',
   PUZZLE = 'puzzle',
@@ -104,4 +103,3 @@ export interface MembershipStats {
   revenue: number;
   churn_rate: number;
 }
-

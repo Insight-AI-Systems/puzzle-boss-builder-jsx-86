@@ -40,10 +40,6 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
     const fetchMembershipData = async () => {
       setIsLoading(true);
       try {
-        // This is a mock implementation since we don't have actual membership data in the database
-        // In a real implementation, you'd fetch this from a membership_stats table or calculate it
-        
-        // Generate 6 months of mock data including the selected month
         const currentDate = parseISO(`${selectedMonth}-01`);
         const mockData: MembershipStats[] = [];
         
@@ -51,18 +47,20 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
           const date = subMonths(currentDate, i);
           const period = format(date, 'yyyy-MM');
           
-          // Generate some reasonable random values
+          // Generate mock data with correct types
           const active = Math.floor(Math.random() * 500) + 800;
-          const lapsed = Math.floor(Math.random() * 50) + 50;
+          const expired = Math.floor(Math.random() * 50) + 50;
           const canceled = Math.floor(Math.random() * 30) + 20;
-          const revenue = active * (Math.random() * 10 + 15); // $15-25 per member
+          const revenue = active * (Math.random() * 10 + 15);
+          const churn_rate = (canceled / active) * 100;
           
           mockData.push({
             period,
             active_members: active,
-            lapsed_members: lapsed,
+            expired_members: expired,
             canceled_members: canceled,
-            revenue
+            revenue,
+            churn_rate
           });
         }
         
@@ -80,21 +78,22 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
     
     fetchMembershipData();
   }, [selectedMonth]);
-  
+
   // Get the data for the selected month
   const currentMonthData = membershipData.find(data => data.period === selectedMonth) || {
     period: selectedMonth,
     active_members: 0,
     lapsed_members: 0,
     canceled_members: 0,
-    revenue: 0
+    revenue: 0,
+    churn_rate: 0
   };
 
   // Format data for the trend charts
   const memberTrendData = membershipData.map(item => ({
     name: format(parseISO(`${item.period}-01`), 'MMM yyyy'),
     active: item.active_members,
-    lapsed: item.lapsed_members,
+    lapsed: item.expired_members,
     canceled: item.canceled_members
   }));
 

@@ -1,4 +1,3 @@
-
 import { UserRole } from '@/types/userTypes';
 
 // Define the base NavItem interface
@@ -18,5 +17,10 @@ export const mainNavItems: MainNavItem[] = [
   { name: 'Prizes Won', path: '/prizes' },
   { name: 'Support', path: '/support' },
   { name: 'How It Works', path: '/how-it-works' },
-  { name: 'Puzzle Demo', path: '/puzzle-demo' }
+  { name: 'Puzzle Demo', path: '/puzzle-demo' },
+  {
+    name: 'CFO Portal',
+    path: '/cfo-dashboard',
+    roles: ['cfo', 'super_admin', 'admin']
+  }
 ];

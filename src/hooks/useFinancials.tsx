@@ -47,7 +47,12 @@ export function useFinancials() {
         .like('date', `${month}%`);
 
       if (error) throw error;
-      return data as SiteIncome[] || [];
+      
+      return (data || []).map(item => ({
+        ...item,
+        source_type: item.source_type as SourceType,
+        profiles: { username: item.profiles?.username || 'Unknown' }
+      }));
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch site incomes'));
       return [];
@@ -95,7 +100,8 @@ export function useFinancials() {
       return data.map(manager => ({
         ...manager,
         username: manager.profiles?.username || 'Unknown',
-        category_name: manager.categories?.name || 'Unknown'
+        category_name: manager.categories?.name || 'Unknown',
+        profiles: { username: manager.profiles?.username || 'Unknown' }
       })) as CategoryManager[];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch category managers'));
