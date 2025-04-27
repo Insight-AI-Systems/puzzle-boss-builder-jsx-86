@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider"
@@ -33,7 +34,8 @@ import {
   Partnerships,
   NotFound,
   Auth,
-  BetaNotes
+  BetaNotes,
+  SupportAdmin
 } from '@/pages';
 import PuzzleTestPlayground from '@/pages/PuzzleTestPlayground';
 import Unauthorized from '@/pages/Unauthorized';
