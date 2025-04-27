@@ -1,8 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const sendgridApiKey = Deno.env.get("SENDGRID_API_KEY");
+const siteUrl = Deno.env.get("SITE_URL") || "https://puzzleboss.com";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,6 +36,10 @@ serve(async (req) => {
       commentContent 
     }: EmailNotificationPayload = await req.json();
 
+    if (!sendgridApiKey) {
+      throw new Error("SendGrid API key is not configured");
+    }
+
     let subject, htmlContent;
 
     if (updateType === 'status') {
@@ -43,7 +47,7 @@ serve(async (req) => {
       htmlContent = `
         <h2>Ticket Status Update</h2>
         <p>The status of ticket "${ticketTitle}" has been updated to: <strong>${newStatus}</strong></p>
-        <p>You can view the ticket details <a href="${Deno.env.get('SITE_URL')}/support/tickets/${ticketId}">here</a>.</p>
+        <p>You can view the ticket details <a href="${siteUrl}/support/tickets/${ticketId}">here</a>.</p>
       `;
     } else {
       subject = `New Comment on Ticket: ${ticketTitle}`;
@@ -53,18 +57,39 @@ serve(async (req) => {
         <p style="padding: 10px; background-color: #f5f5f5; border-left: 4px solid #0070f3;">
           ${commentContent}
         </p>
-        <p>You can view the full conversation <a href="${Deno.env.get('SITE_URL')}/support/tickets/${ticketId}">here</a>.</p>
+        <p>You can view the full conversation <a href="${siteUrl}/support/tickets/${ticketId}">here</a>.</p>
       `;
     }
 
-    const emailResponse = await resend.emails.send({
-      from: 'Support System <onboarding@resend.dev>',
-      to: [recipientEmail],
-      subject: subject,
-      html: htmlContent,
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${sendgridApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        personalizations: [{
+          to: [{ email: recipientEmail }],
+          subject: subject,
+        }],
+        from: { 
+          email: 'support@puzzleboss.com', 
+          name: 'Puzzle Boss Support' 
+        },
+        content: [{
+          type: 'text/html',
+          value: htmlContent
+        }]
+      })
     });
 
-    console.log('Email notification sent:', emailResponse);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('SendGrid API error:', errorText);
+      throw new Error(`Email sending failed: ${errorText}`);
+    }
+
+    console.log('Email notification sent successfully');
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

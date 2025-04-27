@@ -1,14 +1,17 @@
 
 export type TicketType = 'internal' | 'external';
-export type TicketStatus = 'open' | 'in-progress' | 'resolved' | 'closed';
+export type TicketStatus = 'open' | 'in-progress' | 'resolved' | 'closed' | 'pending';
 export type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
-export type TicketCategory = 'tech' | 'billing' | 'general';
+export type TicketCategory = 'tech' | 'billing' | 'general' | 'internal';
 
 export interface TicketComment {
   id: string;
   author: string;
   content: string;
   timestamp: string;
+  is_staff?: boolean;
+  created_by?: string;
+  created_at?: string;
 }
 
 export interface Ticket {
