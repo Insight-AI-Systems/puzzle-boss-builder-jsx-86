@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useEffect, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -22,8 +23,9 @@ import {
 import { useFinancials } from '@/hooks/useFinancials';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
-import { BarChart, LineChart, Line, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from 'recharts';
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { CategoryManager, CommissionPayment } from '@/types/financeTypes';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+import { ChartContainer } from '@/components/ui/chart';
 import { HelpCircle } from 'lucide-react';
 
 interface CommissionsManagementProps {
@@ -32,34 +34,43 @@ interface CommissionsManagementProps {
 
 const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedMonth }) => {
   const {
-    categoryManagers,
-    commissionPayments,
     fetchCategoryManagers,
     fetchCommissionPayments,
-    generateCommissionsForMonth,
+    generateCommissions,
     isLoading
   } = useFinancials();
 
-  React.useEffect(() => {
-    fetchCategoryManagers();
-    fetchCommissionPayments();
+  const [managers, setManagers] = useState<CategoryManager[]>([]);
+  const [payments, setPayments] = useState<CommissionPayment[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const managersData = await fetchCategoryManagers();
+      const paymentsData = await fetchCommissionPayments();
+      setManagers(managersData);
+      setPayments(paymentsData);
+    };
+    loadData();
   }, []);
 
-  const generateCommissions = async () => {
-    await generateCommissionsForMonth(selectedMonth);
-    await fetchCommissionPayments();
+  const handleGenerateCommissions = async () => {
+    await generateCommissions(selectedMonth);
+    const updatedPayments = await fetchCommissionPayments();
+    setPayments(updatedPayments);
   };
 
-  // Mock data for charts
-  const chartData = [
-    { name: 'Category A', commission: 2400 },
-    { name: 'Category B', commission: 1398 },
-    { name: 'Category C', commission: 9800 },
-    { name: 'Category D', commission: 3908 },
-    { name: 'Category E', commission: 4800 },
-    { name: 'Category F', commission: 3800 },
-    { name: 'Category G', commission: 4300 },
-  ];
+  // Prepare data for the chart
+  const chartData = payments.map(payment => ({
+    name: payment.category_name,
+    commission: payment.commission_amount
+  }));
+
+  const chartConfig = {
+    commission: {
+      label: 'Commission Amount',
+      color: '#8884d8'
+    }
+  };
 
   return (
     <Card>
@@ -77,7 +88,9 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
             </Tooltip>
           </TooltipProvider>
         </div>
-        <Button onClick={generateCommissions}>Generate Commissions</Button>
+        <Button onClick={handleGenerateCommissions} disabled={isLoading}>
+          Generate Commissions
+        </Button>
       </CardHeader>
       <CardContent>
         <Table>
@@ -92,7 +105,7 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
             </TableRow>
           </TableHeader>
           <TableBody>
-            {commissionPayments?.map((payment) => (
+            {payments.map((payment) => (
               <TableRow key={payment.id}>
                 <TableCell className="font-medium">{payment.period}</TableCell>
                 <TableCell>{payment.manager_name}</TableCell>
@@ -105,13 +118,13 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
           </TableBody>
         </Table>
 
-        <ChartContainer className="mt-4">
+        <ChartContainer className="mt-4" config={chartConfig}>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip content={<ChartTooltipContent />} />
+              <RechartsTooltip />
               <Legend />
               <Bar dataKey="commission" fill="#8884d8" />
             </BarChart>

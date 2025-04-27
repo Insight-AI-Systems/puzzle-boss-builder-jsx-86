@@ -1,3 +1,4 @@
+
 export type SourceType = 'membership' | 'pay-to-play' | 'sponsorship' | 'other';
 export type ExpenseType = 'prizes' | 'salaries' | 'infrastructure' | 'commissions' | 'other';
 export type PaymentStatus = 'pending' | 'processing' | 'paid' | 'cancelled';
