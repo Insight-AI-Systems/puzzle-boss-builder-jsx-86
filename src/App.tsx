@@ -146,6 +146,12 @@ function App() {
                         </ProtectedRoute>
                       } />
                       
+                      <Route path="/support-admin" element={
+                        <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
+                          <SupportAdmin />
+                        </ProtectedRoute>
+                      } />
+                      
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </MainLayout>

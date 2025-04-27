@@ -102,6 +102,12 @@ export const adminNavItems: NavItem[] = [
     icon: Database,
     href: "/admin-dashboard?tab=database",
     roles: ["super_admin"],
+  },
+  {
+    title: "Support Admin",
+    icon: HelpCircle,
+    href: "/support-admin",
+    roles: ["super_admin", "admin"],
   }
 ];
 
