@@ -35,7 +35,10 @@ import {
   CheckCircle2, 
   Clock, 
   CircleDollarSign,
-  XCircle 
+  XCircle,
+  BarChart3,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -47,6 +50,20 @@ import {
   DialogTrigger, 
   DialogClose
 } from '@/components/ui/dialog';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
+import { useToast } from '@/hooks/use-toast';
 
 interface CommissionsManagementProps {
   selectedMonth: string;
@@ -58,15 +75,20 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
     fetchCommissionPayments, 
     calculateCategoryRevenue,
     updateCommissionPaymentStatus,
+    generateCommissionPayments,
     exportDataToCSV, 
     isLoading 
   } = useFinancials();
   
+  const { toast } = useToast();
   const [categoryManagers, setCategoryManagers] = useState<CategoryManager[]>([]);
   const [commissionPayments, setCommissionPayments] = useState<CommissionPayment[]>([]);
   const [categoryRevenues, setCategoryRevenues] = useState<CategoryRevenue[]>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [statusChartData, setStatusChartData] = useState<any[]>([]);
+  const [categoryChartData, setCategoryChartData] = useState<any[]>([]);
+  const [isGeneratingPayments, setIsGeneratingPayments] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -78,10 +100,65 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
       
       const revenues = await calculateCategoryRevenue(selectedMonth);
       setCategoryRevenues(revenues);
+      
+      // Prepare chart data
+      prepareChartData(payments, revenues);
     };
     
     loadData();
   }, [selectedMonth]);
+
+  const prepareChartData = (payments: CommissionPayment[], revenues: CategoryRevenue[]) => {
+    // Status pie chart data
+    const statusCounts = payments.reduce((acc: Record<string, number>, payment) => {
+      const status = payment.payment_status;
+      acc[status] = (acc[status] || 0) + payment.commission_amount;
+      return acc;
+    }, {});
+
+    const statusData = Object.entries(statusCounts).map(([status, amount]) => ({
+      name: status.charAt(0).toUpperCase() + status.slice(1),
+      value: amount,
+    }));
+    setStatusChartData(statusData);
+
+    // Category bar chart data
+    const categoryData = revenues.map(revenue => ({
+      name: revenue.category_name,
+      commission: revenue.commission_amount,
+      revenue: revenue.net_revenue,
+    }));
+    setCategoryChartData(categoryData);
+  };
+
+  const handleGenerateCommissions = async () => {
+    setIsGeneratingPayments(true);
+    try {
+      const success = await generateCommissionPayments(selectedMonth);
+      
+      if (success) {
+        // Refresh the commission payments data
+        const payments = await fetchCommissionPayments(selectedMonth);
+        setCommissionPayments(payments);
+        
+        prepareChartData(payments, categoryRevenues);
+        
+        toast({
+          title: 'Success',
+          description: 'Commission payments have been generated',
+        });
+      }
+    } catch (error) {
+      console.error('Error generating commissions:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate commission payments',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsGeneratingPayments(false);
+    }
+  };
 
   // Column definitions for revenue table
   const revenueColumns: ColumnDef<CategoryRevenue>[] = [
@@ -288,7 +365,7 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
                   </div>
                   <div className="space-y-2">
                     <div className="font-medium">Change Status To:</div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 flex-wrap">
                       {['processing', 'paid', 'cancelled'].map(status => (
                         <Button
                           key={status}
@@ -305,6 +382,7 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
                               // Refresh payments data
                               const updatedPayments = await fetchCommissionPayments(selectedMonth);
                               setCommissionPayments(updatedPayments);
+                              prepareChartData(updatedPayments, categoryRevenues);
                             }
                           }}
                         >
@@ -351,6 +429,11 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
     state: {
       sorting,
     },
+    initialState: {
+      pagination: {
+        pageSize: 5,
+      },
+    },
   });
 
   const handleExportRevenues = () => {
@@ -361,10 +444,113 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
     exportDataToCSV(commissionPayments, `commission-payments-${selectedMonth}`);
   };
 
+  // Status colors for pie chart
+  const PAYMENT_STATUS_COLORS = {
+    Pending: '#f97316',
+    Processing: '#3b82f6',
+    Paid: '#22c55e',
+    Cancelled: '#ef4444'
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Category Manager Commissions</h2>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleGenerateCommissions} 
+            disabled={isGeneratingPayments}
+            className="flex items-center gap-2"
+          >
+            {isGeneratingPayments ? (
+              <>
+                <RefreshCw className="h-4 w-4 animate-spin" /> 
+                Generating...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4" /> 
+                Generate Commissions
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Charts section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Commission Status Pie Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Commission Status</CardTitle>
+            <CardDescription>Distribution of commissions by payment status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              {statusChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={statusChartData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {statusChartData.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={PAYMENT_STATUS_COLORS[entry.name as keyof typeof PAYMENT_STATUS_COLORS] || '#999'} 
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: any) => [`$${parseFloat(value).toFixed(2)}`, 'Amount']}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full">
+                  <AlertCircle className="h-12 w-12 text-muted-foreground mb-2" />
+                  <p className="text-muted-foreground">No commission data available</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Category Revenue Bar Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Category Commissions</CardTitle>
+            <CardDescription>Commission amounts by category</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              {categoryChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={categoryChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip formatter={(value: any) => [`$${parseFloat(value).toFixed(2)}`, 'Amount']} />
+                    <Legend />
+                    <Bar dataKey="commission" name="Commission" fill="#22c55e" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full">
+                  <BarChart3 className="h-12 w-12 text-muted-foreground mb-2" />
+                  <p className="text-muted-foreground">No category data available</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Category Revenue Section */}

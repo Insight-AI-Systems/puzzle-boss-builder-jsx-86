@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -9,6 +8,7 @@ import {
   MonthlyFinancialSummary,
   MembershipSummary,
   CategoryRevenue,
+  PaymentStatus,
   TimeFrame
 } from '@/types/financeTypes';
 import { useToast } from '@/hooks/use-toast';
@@ -90,7 +90,8 @@ export const useFinancials = () => {
       
       if (error) throw error;
       
-      return data;
+      // Cast the data to ensure it matches our type
+      return data as SiteIncome[];
     } catch (error) {
       toast({
         title: 'Error fetching income records',
@@ -127,7 +128,8 @@ export const useFinancials = () => {
       
       if (error) throw error;
       
-      return data;
+      // Cast the data to ensure it matches our type
+      return data as SiteExpense[];
     } catch (error) {
       toast({
         title: 'Error fetching expense records',
@@ -196,11 +198,12 @@ export const useFinancials = () => {
       
       if (error) throw error;
       
-      // Transform data to include manager_name and category_name
+      // Transform data to include manager_name and category_name and ensure type safety
       return data.map(payment => ({
         ...payment,
         manager_name: payment.category_managers?.profiles?.username,
-        category_name: payment.categories?.name
+        category_name: payment.categories?.name,
+        payment_status: payment.payment_status as PaymentStatus
       }));
     } catch (error) {
       toast({
@@ -214,7 +217,7 @@ export const useFinancials = () => {
     }
   };
 
-  // Calculate category revenue and commissions
+  // Calculate category revenue and commissions for a specific period
   const calculateCategoryRevenue = async (period: string): Promise<CategoryRevenue[]> => {
     setIsLoading(true);
     try {
@@ -229,7 +232,7 @@ export const useFinancials = () => {
       
       // For each category, calculate revenue and costs
       for (const category of categories) {
-        // Get income for category
+        // Get income for category in the specified period
         const { data: incomeData, error: incomeError } = await supabase
           .from('site_income')
           .select('amount')
@@ -238,7 +241,7 @@ export const useFinancials = () => {
         
         if (incomeError) throw incomeError;
         
-        // Get expenses for category
+        // Get expenses for category in the specified period
         const { data: expenseData, error: expenseError } = await supabase
           .from('site_expenses')
           .select('amount')
@@ -334,6 +337,80 @@ export const useFinancials = () => {
         variant: 'destructive'
       });
       return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Generate commission payments for a period based on calculated revenue
+  const generateCommissionPayments = async (period: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      // First calculate revenue for all categories
+      const categoryRevenues = await calculateCategoryRevenue(period);
+      
+      // Get all active category managers
+      const { data: managers, error: managersError } = await supabase
+        .from('category_managers')
+        .select('*')
+        .eq('active', true);
+        
+      if (managersError) throw managersError;
+      
+      // Check if there are existing commission payments for this period
+      const { data: existingPayments, error: existingError } = await supabase
+        .from('commission_payments')
+        .select('category_id')
+        .eq('period', period);
+        
+      if (existingError) throw existingError;
+      
+      // Keep track of existing category payments to avoid duplicates
+      const existingCategoryIds = existingPayments.map(p => p.category_id);
+      
+      // Create payments for each manager based on their category's revenue
+      for (const manager of managers) {
+        // Skip if there's already a payment for this category in this period
+        if (existingCategoryIds.includes(manager.category_id)) {
+          continue;
+        }
+        
+        // Find matching category revenue data
+        const revenueData = categoryRevenues.find(r => r.category_id === manager.category_id);
+        
+        if (revenueData && revenueData.net_revenue > 0) {
+          // Create a new commission payment
+          const payment: Omit<CommissionPayment, 'id'> = {
+            manager_id: manager.id,
+            category_id: manager.category_id,
+            period: period,
+            gross_income: revenueData.total_revenue,
+            net_income: revenueData.net_revenue,
+            commission_amount: revenueData.commission_amount,
+            payment_status: 'pending'
+          };
+          
+          const { error: insertError } = await supabase
+            .from('commission_payments')
+            .insert(payment);
+            
+          if (insertError) throw insertError;
+        }
+      }
+      
+      toast({
+        title: 'Commission Payments Generated',
+        description: `Payments for ${period} have been calculated and recorded.`,
+      });
+      
+      return true;
+    } catch (error) {
+      toast({
+        title: 'Error generating commission payments',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive'
+      });
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -452,6 +529,7 @@ export const useFinancials = () => {
     fetchCategoryManagers,
     fetchCommissionPayments,
     calculateCategoryRevenue,
+    generateCommissionPayments,
     addSiteIncome,
     addSiteExpense,
     addCommissionPayment,

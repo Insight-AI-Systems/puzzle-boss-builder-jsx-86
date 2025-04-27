@@ -13,6 +13,7 @@ export interface SiteIncome {
   date: string;
   method: string;
   notes?: string;
+  categories?: { name: string }; // For join results
 }
 
 export interface SiteExpense {
@@ -23,6 +24,7 @@ export interface SiteExpense {
   category_id?: string;
   date: string;
   notes?: string;
+  categories?: { name: string }; // For join results
 }
 
 export interface CategoryManager {
@@ -33,6 +35,8 @@ export interface CategoryManager {
   active: boolean;
   username?: string;
   category_name?: string;
+  profiles?: { username: string }; // For join results
+  categories?: { name: string }; // For join results
 }
 
 export interface CommissionPayment {
@@ -47,6 +51,14 @@ export interface CommissionPayment {
   payment_date?: string;
   manager_name?: string;
   category_name?: string;
+  category_managers?: {
+    id: string;
+    user_id: string;
+    profiles: {
+      username: string;
+    };
+  }; // For join results
+  categories?: { name: string }; // For join results
 }
 
 export interface MonthlyFinancialSummary {
