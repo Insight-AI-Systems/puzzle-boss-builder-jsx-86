@@ -1,28 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MembershipStats } from '@/types/financeTypes';
 import { format, parseISO, subMonths } from 'date-fns';
-import { Download, Users, UserMinus, UserCheck } from 'lucide-react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  Legend,
-  ResponsiveContainer,
-  BarChart,
-  Bar
-} from 'recharts';
-import { supabase } from '@/integrations/supabase/client';
+import { Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { MemberDetailsDialog } from './dialogs/MemberDetailsDialog';
 import { useMemberDetails } from '@/hooks/useMemberDetails';
 import { MemberHistoryDetails } from '@/types/membershipTypes';
+import { MemberStatsCards } from './membership/MemberStatsCards';
+import { MembershipCharts } from './membership/MembershipCharts';
+import { KeyMetrics } from './membership/KeyMetrics';
 
 interface MembershipSummaryProps {
   selectedMonth: string;
@@ -32,13 +19,10 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
   const [isLoading, setIsLoading] = useState(false);
   const [membershipData, setMembershipData] = useState<MembershipStats[]>([]);
   const { toast } = useToast();
-
-  const COLORS = {
-    active: '#10b981',    // Emerald
-    lapsed: '#f59e0b',    // Amber
-    canceled: '#ef4444',  // Red
-    revenue: '#047857'    // Dark Green
-  };
+  const [selectedMember, setSelectedMember] = useState<string | null>(null);
+  const [memberDetails, setMemberDetails] = useState<MemberHistoryDetails | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { fetchMemberDetails } = useMemberDetails();
 
   useEffect(() => {
     const fetchMembershipData = async () => {
@@ -51,7 +35,6 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
           const date = subMonths(currentDate, i);
           const period = format(date, 'yyyy-MM');
           
-          // Generate mock data with correct types
           const active = Math.floor(Math.random() * 500) + 800;
           const expired = Math.floor(Math.random() * 50) + 50;
           const canceled = Math.floor(Math.random() * 30) + 20;
@@ -83,38 +66,9 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
     fetchMembershipData();
   }, [selectedMonth]);
 
-  // Get the data for the selected month
-  const currentMonthData = membershipData.find(data => data.period === selectedMonth) || {
-    period: selectedMonth,
-    active_members: 0,
-    expired_members: 0,  // Updated from lapsed_members
-    canceled_members: 0,
-    revenue: 0,
-    churn_rate: 0
-  };
-
-  // Format data for the trend charts
-  const memberTrendData = membershipData.map(item => ({
-    name: format(parseISO(`${item.period}-01`), 'MMM yyyy'),
-    active: item.active_members,
-    lapsed: item.expired_members,
-    canceled: item.canceled_members
-  }));
-
-  const revenueTrendData = membershipData.map(item => ({
-    name: format(parseISO(`${item.period}-01`), 'MMM yyyy'),
-    revenue: item.revenue
-  }));
-
   const handleExportCSV = () => {
-    // In a real implementation, you would call a function to export the data
     alert('Export functionality would be implemented here');
   };
-
-  const [selectedMember, setSelectedMember] = useState<string | null>(null);
-  const [memberDetails, setMemberDetails] = useState<MemberHistoryDetails | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const { fetchMemberDetails } = useMemberDetails();
 
   const handleMemberClick = async (userId: string, username: string) => {
     const details = await fetchMemberDetails(userId);
@@ -125,6 +79,17 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
     }
   };
 
+  const currentMonthData = membershipData.find(data => data.period === selectedMonth) || {
+    period: selectedMonth,
+    active_members: 0,
+    expired_members: 0,
+    canceled_members: 0,
+    revenue: 0,
+    churn_rate: 0
+  };
+
+  const previousMonthData = membershipData[membershipData.length - 2];
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -134,217 +99,14 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
         </Button>
       </div>
 
-      {/* Member Stats Cards with Tooltips */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center text-sm font-medium text-muted-foreground">
-                    <UserCheck className="mr-2 h-4 w-4 text-green-500" />
-                    Active Members
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {currentMonthData.active_members.toLocaleString()}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {membershipData.length >= 2 && 
-                      `${membershipData[membershipData.length - 1].active_members > membershipData[membershipData.length - 2].active_members ? '+' : ''}${
-                        membershipData[membershipData.length - 1].active_members - membershipData[membershipData.length - 2].active_members
-                      } from last month`
-                    }
-                  </p>
-                </CardContent>
-              </Card>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Current paying members</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+      <MemberStatsCards 
+        currentMonthData={currentMonthData}
+        previousMonthData={previousMonthData}
+      />
 
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center text-sm font-medium text-muted-foreground">
-                    <UserMinus className="mr-2 h-4 w-4 text-orange-500" />
-                    Expired Members
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {currentMonthData.expired_members.toLocaleString()}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {membershipData.length >= 2 && 
-                      `${membershipData[membershipData.length - 1].expired_members > membershipData[membershipData.length - 2].expired_members ? '+' : ''}${
-                        membershipData[membershipData.length - 1].expired_members - membershipData[membershipData.length - 2].expired_members
-                      } from last month`
-                    }
-                  </p>
-                </CardContent>
-              </Card>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Members with expired subscriptions</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+      <MembershipCharts membershipData={membershipData} />
 
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center text-sm font-medium text-muted-foreground">
-                    <Users className="mr-2 h-4 w-4 text-red-500" />
-                    Canceled Members
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {currentMonthData.canceled_members.toLocaleString()}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {membershipData.length >= 2 && 
-                      `${membershipData[membershipData.length - 1].canceled_members > membershipData[membershipData.length - 2].canceled_members ? '+' : ''}${
-                        membershipData[membershipData.length - 1].canceled_members - membershipData[membershipData.length - 2].canceled_members
-                      } from last month`
-                    }
-                  </p>
-                </CardContent>
-              </Card>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Members who have canceled their subscription</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-
-      {/* Membership Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Membership Trends</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <ChartContainer
-              config={{
-                active: { color: COLORS.active },  // Emerald
-                lapsed: { color: COLORS.lapsed },  // Amber
-                canceled: { color: COLORS.canceled },  // Red
-              }}
-              className="aspect-[4/3]"
-            >
-              <LineChart data={memberTrendData}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <RechartsTooltip content={<ChartTooltipContent />} />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="active"
-                  name="Active Members"
-                  stroke={COLORS.active}
-                  strokeWidth={2}
-                  activeDot={{ r: 6 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="lapsed"
-                  name="Lapsed Members"
-                  stroke={COLORS.lapsed}
-                  strokeWidth={2}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="canceled"
-                  name="Canceled Members"
-                  stroke={COLORS.canceled}
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Membership Revenue</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <ChartContainer
-              config={{
-                revenue: { color: COLORS.revenue },  // Dark Green
-              }}
-              className="aspect-[4/3]"
-            >
-              <BarChart data={revenueTrendData}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <RechartsTooltip content={<ChartTooltipContent />} />
-                <Legend />
-                <Bar
-                  dataKey="revenue"
-                  name="Revenue"
-                  fill={COLORS.revenue}
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Membership Metrics */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Key Metrics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Total Members</p>
-              <p className="text-2xl font-bold">
-                {(currentMonthData.active_members + currentMonthData.expired_members).toLocaleString()}
-              </p>
-            </div>
-            
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Retention Rate</p>
-              <p className="text-2xl font-bold">
-                {currentMonthData.active_members > 0 ? 
-                  `${((currentMonthData.active_members / (currentMonthData.active_members + currentMonthData.canceled_members)) * 100).toFixed(1)}%` : 
-                  'N/A'}
-              </p>
-            </div>
-            
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Monthly Revenue</p>
-              <p className="text-2xl font-bold text-green-500">
-                ${currentMonthData.revenue.toFixed(2)}
-              </p>
-            </div>
-            
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Avg. Revenue/Member</p>
-              <p className="text-2xl font-bold">
-                ${currentMonthData.active_members > 0 ? 
-                  (currentMonthData.revenue / currentMonthData.active_members).toFixed(2) : 
-                  '0.00'}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <KeyMetrics currentMonthData={currentMonthData} />
 
       <MemberDetailsDialog
         open={dialogOpen}
