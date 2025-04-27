@@ -1,13 +1,13 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { CommissionPayment, PaymentStatus } from '@/types/financeTypes';
+import { CommissionPayment, CategoryManager, SiteIncome, SiteExpense } from '@/types/financeTypes';
 import { useFinancials } from '@/hooks/useFinancials';
 import { useCommissionManagement } from '@/hooks/useCommissionManagement';
 import { CommissionHeader } from './commissions/CommissionHeader';
 import { CommissionTableHeader } from './commissions/CommissionTableHeader';
 import { CommissionTable } from './commissions/CommissionTable';
 import { CommissionCharts } from './commissions/CommissionCharts';
+import { ManagerDetailDialog } from './details/ManagerDetailDialog';
 
 interface CommissionsManagementProps {
   selectedMonth: string;
@@ -29,6 +29,9 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
   const [filterCategory, setFilterCategory] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
+  const [selectedManager, setSelectedManager] = useState<CategoryManager | null>(null);
+  const [managerIncome, setManagerIncome] = useState<SiteIncome[]>([]);
+  const [managerExpenses, setManagerExpenses] = useState<SiteExpense[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -101,11 +104,25 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
     }
   };
 
+  const handleManagerSelect = async (manager: CategoryManager) => {
+    setSelectedManager(manager);
+    
+    const incomeData = await fetchSiteIncomes(selectedMonth);
+    const expensesData = await fetchSiteExpenses(selectedMonth);
+    
+    setManagerIncome(incomeData.filter(income => income.category_id === manager.category_id));
+    setManagerExpenses(expensesData.filter(expense => expense.category_id === manager.category_id));
+  };
+
   const filteredPayments = payments.filter(payment => {
     return (!filterManager || payment.manager_name?.toLowerCase().includes(filterManager.toLowerCase())) &&
            (!filterCategory || payment.category_name?.toLowerCase().includes(filterCategory.toLowerCase())) &&
            (!filterStatus || payment.payment_status === filterStatus);
   });
+
+  const managerPayments = payments.filter(
+    payment => selectedManager && payment.manager_id === selectedManager.user_id
+  );
 
   return (
     <Card>
@@ -134,10 +151,22 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
             onSelectPayment={handleSelectPayment}
             onSelectAll={handleSelectAll}
             getStatusColor={getStatusColor}
+            onManagerSelect={handleManagerSelect}
           />
         </div>
 
         <CommissionCharts payments={filteredPayments} />
+
+        {selectedManager && (
+          <ManagerDetailDialog
+            open={!!selectedManager}
+            onOpenChange={(open) => !open && setSelectedManager(null)}
+            manager={selectedManager}
+            commissionHistory={managerPayments}
+            relatedIncome={managerIncome}
+            relatedExpenses={managerExpenses}
+          />
+        )}
       </CardContent>
     </Card>
   );

@@ -1,23 +1,25 @@
 
 import React from 'react';
+import { format } from 'date-fns';
 import {
   Table,
-  TableHeader,
   TableBody,
-  TableRow,
+  TableCell,
   TableHead,
-  TableCell
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { format } from 'date-fns';
-import { CommissionPayment } from '@/types/financeTypes';
+import { Button } from "@/components/ui/button";
+import { CommissionPayment, PaymentStatus } from '@/types/financeTypes';
 
 interface CommissionTableProps {
   payments: CommissionPayment[];
   selectedPayments: string[];
-  onSelectPayment: (paymentId: string) => void;
+  onSelectPayment: (id: string) => void;
   onSelectAll: (checked: boolean) => void;
-  getStatusColor: (status: string) => string;
+  getStatusColor: (status: PaymentStatus) => string;
+  onManagerSelect: (payment: CommissionPayment) => void;
 }
 
 export const CommissionTable: React.FC<CommissionTableProps> = ({
@@ -26,25 +28,24 @@ export const CommissionTable: React.FC<CommissionTableProps> = ({
   onSelectPayment,
   onSelectAll,
   getStatusColor,
+  onManagerSelect
 }) => {
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-[50px]">
+          <TableHead className="w-12">
             <Checkbox
-              checked={selectedPayments.length === payments.length && payments.length > 0}
+              checked={payments.length > 0 && selectedPayments.length === payments.length}
               onCheckedChange={onSelectAll}
             />
           </TableHead>
           <TableHead>Manager</TableHead>
           <TableHead>Category</TableHead>
           <TableHead>Period</TableHead>
-          <TableHead>Gross Income</TableHead>
-          <TableHead>Net Income</TableHead>
-          <TableHead>Commission</TableHead>
+          <TableHead>Amount</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead>Email Status</TableHead>
+          <TableHead>Payment Date</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -56,31 +57,25 @@ export const CommissionTable: React.FC<CommissionTableProps> = ({
                 onCheckedChange={() => onSelectPayment(payment.id)}
               />
             </TableCell>
-            <TableCell>{payment.manager_name}</TableCell>
+            <TableCell>
+              <Button
+                variant="link"
+                className="p-0 h-auto font-normal"
+                onClick={() => onManagerSelect(payment)}
+              >
+                {payment.manager_name}
+              </Button>
+            </TableCell>
             <TableCell>{payment.category_name}</TableCell>
             <TableCell>{format(new Date(payment.period), 'MMM yyyy')}</TableCell>
-            <TableCell>${payment.gross_income.toFixed(2)}</TableCell>
-            <TableCell>${payment.net_income.toFixed(2)}</TableCell>
-            <TableCell className="font-medium text-purple-600">
-              ${payment.commission_amount.toFixed(2)}
-            </TableCell>
+            <TableCell>${payment.commission_amount.toFixed(2)}</TableCell>
             <TableCell>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.payment_status)}`}>
+              <span className={`px-2 py-1 rounded text-xs ${getStatusColor(payment.payment_status)}`}>
                 {payment.payment_status}
               </span>
             </TableCell>
             <TableCell>
-              {payment.email_status === 'sent' ? (
-                <span className="text-green-600 text-sm">
-                  Sent {payment.email_sent_at && new Date(payment.email_sent_at).toLocaleDateString()}
-                </span>
-              ) : payment.email_status === 'error' ? (
-                <span className="text-red-600 text-sm" title={payment.email_error || ''}>
-                  Failed to send
-                </span>
-              ) : (
-                <span className="text-gray-500 text-sm">Not sent</span>
-              )}
+              {payment.payment_date ? format(new Date(payment.payment_date), 'yyyy-MM-dd') : '-'}
             </TableCell>
           </TableRow>
         ))}

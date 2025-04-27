@@ -39,7 +39,11 @@ export function useFinancials() {
     try {
       const { data, error } = await supabase
         .from('site_income')
-        .select('*, categories:category_id(name), profiles:user_id(username)')
+        .select(`
+          *,
+          categories:category_id(name),
+          profiles:user_id(username)
+        `)
         .like('date', `${month}%`);
 
       if (error) throw error;
@@ -64,7 +68,10 @@ export function useFinancials() {
     try {
       const { data, error } = await supabase
         .from('site_expenses')
-        .select('*, categories:category_id(name)')
+        .select(`
+          *,
+          categories:category_id(name)
+        `)
         .like('date', `${month}%`);
 
       if (error) throw error;
