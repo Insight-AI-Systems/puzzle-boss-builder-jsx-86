@@ -846,6 +846,45 @@ export type Database = {
           },
         ]
       }
+      tickets: {
+        Row: {
+          assigned_to: string | null
+          comments: Json | null
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          status: Database["public"]["Enums"]["ticket_status"]
+          title: string
+          type: Database["public"]["Enums"]["ticket_type"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          comments?: Json | null
+          created_at?: string
+          created_by: string
+          description: string
+          id?: string
+          status?: Database["public"]["Enums"]["ticket_status"]
+          title: string
+          type?: Database["public"]["Enums"]["ticket_type"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          comments?: Json | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          status?: Database["public"]["Enums"]["ticket_status"]
+          title?: string
+          type?: Database["public"]["Enums"]["ticket_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_activity_metrics: {
         Row: {
           active_users: number | null
@@ -1072,6 +1111,8 @@ export type Database = {
       issue_status: "wip" | "completed" | "deferred"
       note_status: "wip" | "completed"
       puzzle_difficulty: "easy" | "medium" | "hard"
+      ticket_status: "open" | "in-progress" | "resolved" | "closed"
+      ticket_type: "internal" | "external"
       user_role:
         | "admin"
         | "category_manager"
@@ -1201,6 +1242,8 @@ export const Constants = {
       issue_status: ["wip", "completed", "deferred"],
       note_status: ["wip", "completed"],
       puzzle_difficulty: ["easy", "medium", "hard"],
+      ticket_status: ["open", "in-progress", "resolved", "closed"],
+      ticket_type: ["internal", "external"],
       user_role: [
         "admin",
         "category_manager",

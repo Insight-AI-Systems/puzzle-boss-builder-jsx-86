@@ -1,120 +1,67 @@
 
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { openSupportsAPI } from '@/services/openSupportsAPI';
-import { Ticket, TicketFilters, TicketStatus } from '@/types/ticketTypes';
+import { supabase } from '@/integrations/supabase/client';
+import { Ticket } from '@/types/ticketTypes';
 import { useToast } from '@/hooks/use-toast';
 
-const DEFAULT_FILTERS: TicketFilters = {
-  page: 1,
-  limit: 10,
-};
-
-export function useTickets(initialFilters: Partial<TicketFilters> = {}) {
-  const queryClient = useQueryClient();
+export function useTickets() {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const [filters, setFilters] = useState<TicketFilters>({
-    ...DEFAULT_FILTERS,
-    ...initialFilters,
-  });
 
-  // Fetch tickets based on filters
-  const {
-    data: tickets,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ['tickets', filters],
-    queryFn: () => openSupportsAPI.getTickets(filters),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  const fetchTickets = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tickets')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  // Mutation to create a new ticket
-  const createTicket = useMutation({
-    mutationFn: (newTicket: Partial<Ticket>) => 
-      openSupportsAPI.createTicket(newTicket),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      if (error) throw error;
+      setTickets(data);
+    } catch (error: any) {
       toast({
-        title: 'Ticket Created',
-        description: 'Your support ticket has been submitted successfully.',
+        title: "Error fetching tickets",
+        description: error.message,
+        variant: "destructive",
       });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: `Failed to create ticket: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: 'destructive',
-      });
-    },
-  });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // Mutation to update ticket status
-  const updateTicketStatus = useMutation({
-    mutationFn: ({ ticketId, status }: { ticketId: string; status: TicketStatus }) =>
-      openSupportsAPI.changeTicketStatus(ticketId, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tickets'] });
-      toast({
-        title: 'Status Updated',
-        description: 'The ticket status has been updated.',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: `Failed to update ticket status: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: 'destructive',
-      });
-    },
-  });
+  const createTicket = async (title: string, description: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('tickets')
+        .insert([{ 
+          title, 
+          description,
+          type: 'external'
+        }])
+        .select()
+        .single();
 
-  // Polling for ticket updates
+      if (error) throw error;
+      
+      setTickets(prev => [data, ...prev]);
+      toast({
+        title: "Success",
+        description: "Ticket created successfully",
+      });
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Error creating ticket",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      refetch();
-    }, 60000); // Poll every minute
+    fetchTickets();
+  }, []);
 
-    return () => clearInterval(interval);
-  }, [refetch]);
-
-  // Functions to update filters
-  const updateFilters = (newFilters: Partial<TicketFilters>) => {
-    setFilters(prev => ({
-      ...prev,
-      ...newFilters,
-      // Reset to page 1 when changing filters other than page
-      page: newFilters.page !== undefined ? newFilters.page : 1,
-    }));
-  };
-
-  const nextPage = () => {
-    setFilters(prev => ({
-      ...prev,
-      page: prev.page + 1,
-    }));
-  };
-
-  const prevPage = () => {
-    setFilters(prev => ({
-      ...prev,
-      page: Math.max(prev.page - 1, 1),
-    }));
-  };
-
-  return {
-    tickets,
-    isLoading,
-    isError,
-    error,
-    filters,
-    updateFilters,
-    nextPage,
-    prevPage,
-    createTicket,
-    updateTicketStatus,
-    refetch,
-  };
+  return { tickets, isLoading, createTicket, fetchTickets };
 }

@@ -43,6 +43,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import '@/utils/admin/adminTools';
 import PuzzlePlay from './pages/PuzzlePlay';
+import MyTickets from './pages/MyTickets';
 
 function App() {
   const queryClient = new QueryClient();
@@ -138,6 +139,12 @@ function App() {
                       <Route path="/unauthorized" element={<Unauthorized />} />
                       
                       <Route path="/puzzle/:puzzleId" element={<PuzzlePlay />} />
+                      
+                      <Route path="/my-tickets" element={
+                        <ProtectedRoute>
+                          <MyTickets />
+                        </ProtectedRoute>
+                      } />
                       
                       <Route path="*" element={<NotFound />} />
                     </Routes>
