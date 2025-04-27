@@ -28,10 +28,7 @@ export const useFetchTickets = () => {
       if (isInternalView && isAdmin) {
         const { data: issuesData, error: issuesError } = await supabase
           .from('issues')
-          .select(`
-            *,
-            created_by_email:get_user_email(created_by)
-          `)
+          .select('*')
           .eq('category', 'internal')
           .order('created_at', { ascending: false });
           
@@ -51,7 +48,7 @@ export const useFetchTickets = () => {
           category: 'internal',
           created_at: item.created_at,
           updated_at: item.updated_at,
-          created_by: item.created_by_email || item.created_by,
+          created_by: item.created_by,
           comments: []
         } as SupportTicket));
         
@@ -61,10 +58,7 @@ export const useFetchTickets = () => {
       else {
         const ticketsQuery = supabase
           .from('tickets')
-          .select(`
-            *,
-            created_by_email:get_user_email(created_by)
-          `);
+          .select('*');
         
         if (isAdmin) {
           // Admin can see all user tickets
@@ -127,7 +121,7 @@ export const useFetchTickets = () => {
             category: 'tech',
             created_at: item.created_at,
             updated_at: item.updated_at,
-            created_by: item.created_by_email || item.created_by,
+            created_by: item.created_by,
             comments: comments
           } as SupportTicket;
         });
