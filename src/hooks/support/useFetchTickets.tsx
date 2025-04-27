@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { SupportTicket, TicketFilters, TicketComment, TicketStatus } from "@/types/supportTicketTypes";
@@ -15,7 +14,6 @@ export const useFetchTickets = () => {
   const isAdmin = hasRole('super_admin') || hasRole('admin');
   
   const fetchTickets = useCallback(async (filters?: Partial<TicketFilters>, isInternalView?: boolean) => {
-    // Reset error state at the start of each fetch
     setHasError(false);
     
     if (!user) {
@@ -28,11 +26,15 @@ export const useFetchTickets = () => {
       setIsLoading(true);
       let allTickets: SupportTicket[] = [];
       
-      // Logic for fetching internal issues (from issues table)
       if (isInternalView && isAdmin) {
         const { data: issuesData, error: issuesError } = await supabase
           .from('issues')
-          .select('*')
+          .select(`
+            *,
+            profiles:created_by (
+              email
+            )
+          `)
           .eq('category', 'internal')
           .order('created_at', { ascending: false });
           
@@ -41,7 +43,6 @@ export const useFetchTickets = () => {
           throw issuesError;
         }
         
-        // Map issues data to SupportTicket format
         const mappedIssues = issuesData.map(item => ({
           id: item.id,
           title: item.title,
@@ -52,31 +53,31 @@ export const useFetchTickets = () => {
           category: 'internal',
           created_at: item.created_at,
           updated_at: item.updated_at,
-          created_by: item.created_by,
+          created_by: item.profiles?.email || 'Unknown',
           comments: []
         } as SupportTicket));
         
         allTickets = mappedIssues;
       } 
-      // Logic for fetching regular user tickets (from tickets table)
       else {
         const ticketsQuery = supabase
           .from('tickets')
-          .select('*');
+          .select(`
+            *,
+            profiles:created_by (
+              email
+            )
+          `);
         
         if (isAdmin) {
-          // Admin can see all user tickets
           ticketsQuery.order('created_at', { ascending: false });
         } else {
-          // Regular users can only see their own tickets
           ticketsQuery
             .eq('created_by', user.id)
             .order('created_at', { ascending: false });
         }
         
-        // Apply filters if provided
         if (filters?.status) {
-          // Type assertion for database query
           ticketsQuery.eq('status', filters.status === 'pending' ? 'deferred' as any : filters.status as any);
         }
         
@@ -91,12 +92,9 @@ export const useFetchTickets = () => {
           throw ticketsError;
         }
         
-        // Map tickets data to SupportTicket format
         const mappedTickets = ticketsData.map(item => {
-          // Ensure comments is treated as an array
           let comments: TicketComment[] = [];
           
-          // Parse comments if they exist and are in the correct format
           if (item.comments && Array.isArray(item.comments)) {
             comments = item.comments.map((comment: any) => ({
               id: comment.id || crypto.randomUUID(),
@@ -108,7 +106,6 @@ export const useFetchTickets = () => {
             }));
           }
           
-          // Map database status to frontend status
           const ticketStatus = mapDbStatusToFrontend(item.status);
           
           return {
@@ -120,7 +117,7 @@ export const useFetchTickets = () => {
             category: 'tech',
             created_at: item.created_at,
             updated_at: item.updated_at,
-            created_by: item.created_by,
+            created_by: item.profiles?.email || 'Unknown',
             comments: comments
           } as SupportTicket;
         });
@@ -131,7 +128,6 @@ export const useFetchTickets = () => {
       setTickets(allTickets);
     } catch (err) {
       console.error("Exception fetching tickets:", err);
-      // Only show toast if we haven't already flagged an error for this fetch attempt
       if (!hasError) {
         setHasError(true);
         toast({
