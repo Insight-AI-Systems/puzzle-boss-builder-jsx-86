@@ -27,7 +27,8 @@ const Support = () => {
   }
 
   const handleAdminPanelClick = () => {
-    window.open(SUPPORT_SYSTEM_CONFIG.ADMIN_PANEL_URL, '_blank');
+    // Fix: Correctly navigate to the admin dashboard with tickets tab selected
+    navigate('/admin-dashboard?tab=tickets');
   };
 
   const handleInternalIssuesClick = () => {

@@ -67,23 +67,30 @@ export const TicketList = () => {
     
     if (window.confirm('Are you sure you want to delete this ticket? This action cannot be undone.')) {
       try {
-        await supabase
-          .from('issues')
+        // Fix: Use the correct table name based on the internal view
+        const tableName = isInternalView ? 'issues' : 'tickets';
+        
+        const { error } = await supabase
+          .from(tableName)
           .delete()
           .eq('id', ticketId);
           
+        if (error) throw error;
+        
         toast({
           title: "Ticket deleted",
           description: "The ticket has been permanently deleted.",
         });
         
+        // Refresh tickets after deletion
         fetchTickets(filters, isInternalView);
-      } catch (error) {
+      } catch (error: any) {
         toast({
           title: "Error",
           description: "Failed to delete the ticket. Please try again.",
           variant: "destructive",
         });
+        console.error("Delete ticket error:", error);
       }
     }
   };
