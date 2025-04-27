@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { SupportTicket, TicketFilters } from "@/types/supportTicketTypes";
+import { SupportTicket, TicketFilters, TicketComment } from "@/types/supportTicketTypes";
 import { mapDbStatusToFrontend } from "@/utils/support/mappings";
 
 export const useUserTickets = () => {
@@ -58,18 +58,32 @@ export const useUserTickets = () => {
       userEmailMap.set(profile.id, profile.email);
     });
 
-    return ticketsData.map(item => ({
-      id: item.id,
-      title: item.title,
-      description: item.description,
-      status: mapDbStatusToFrontend(item.status),
-      priority: 'medium',
-      category: 'tech',
-      created_at: item.created_at,
-      updated_at: item.updated_at,
-      created_by: userEmailMap.get(item.created_by) || 'Unknown',
-      comments: item.comments || []
-    } as SupportTicket));
+    return ticketsData.map(item => {
+      // Transform comments from Json[] to TicketComment[]
+      const typedComments: TicketComment[] = Array.isArray(item.comments) 
+        ? item.comments.map((comment: any) => ({
+            id: comment.id || `comment-${Math.random().toString(36).substr(2, 9)}`,
+            ticket_id: item.id,
+            content: comment.content || '',
+            created_by: comment.created_by || '',
+            created_at: comment.created_at || new Date().toISOString(),
+            is_staff: comment.is_staff || false
+          }))
+        : [];
+      
+      return {
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        status: mapDbStatusToFrontend(item.status),
+        priority: 'medium',
+        category: 'tech',
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        created_by: userEmailMap.get(item.created_by) || 'Unknown',
+        comments: typedComments
+      } as SupportTicket;
+    });
   }, []);
 
   return { fetchUserTickets };

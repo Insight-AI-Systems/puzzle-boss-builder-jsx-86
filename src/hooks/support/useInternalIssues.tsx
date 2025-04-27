@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { SupportTicket } from "@/types/supportTicketTypes";
+import { SupportTicket, TicketComment } from "@/types/supportTicketTypes";
 import { mapDbStatusToFrontend } from "@/utils/support/mappings";
 
 export const useInternalIssues = () => {
@@ -51,7 +51,7 @@ export const useInternalIssues = () => {
       created_at: item.created_at,
       updated_at: item.updated_at,
       created_by: userEmailMap.get(item.created_by) || 'Unknown',
-      comments: []
+      comments: [] as TicketComment[]
     } as SupportTicket));
   }, []);
 
