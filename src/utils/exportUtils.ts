@@ -1,4 +1,6 @@
 
+import JSZip from 'jszip';
+
 type ExportFormat = 'csv' | 'excel';
 
 export const exportTableData = <T extends Record<string, any>>(
@@ -32,6 +34,52 @@ export const exportTableData = <T extends Record<string, any>>(
     link.download = `${filename}.csv`;
   }
   
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+export const exportFinancialData = async (
+  incomeData: any[],
+  expenseData: any[],
+  commissionData: any[],
+  period: string,
+  format: ExportFormat = 'csv'
+) => {
+  const zip = new JSZip();
+  
+  // Convert each dataset to CSV/Excel format
+  const datasets = [
+    { data: incomeData, name: 'income' },
+    { data: expenseData, name: 'expenses' },
+    { data: commissionData, name: 'commissions' }
+  ];
+
+  datasets.forEach(({ data, name }) => {
+    if (!data.length) return;
+
+    const headers = Object.keys(data[0]);
+    const csvData = data.map(row => 
+      headers.map(header => {
+        const value = row[header];
+        return typeof value === 'object' ? JSON.stringify(value) : value;
+      }).join(',')
+    );
+    
+    const fileContent = [headers.join(','), ...csvData].join('\n');
+    const extension = format === 'excel' ? 'xls' : 'csv';
+    const mimeType = format === 'excel' ? 'application/vnd.ms-excel' : 'text/csv';
+    
+    zip.file(`${name}-${period}.${extension}`, fileContent, { 
+      type: `${mimeType};charset=utf-8;` 
+    });
+  });
+
+  // Generate and download the zip file
+  const content = await zip.generateAsync({ type: 'blob' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(content);
+  link.download = `financial-data-${period}.zip`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
