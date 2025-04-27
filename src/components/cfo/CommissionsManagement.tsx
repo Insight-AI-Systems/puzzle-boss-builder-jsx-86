@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import {
   Card,
@@ -39,6 +38,8 @@ import {
 } from 'recharts';
 import { ChartContainer } from '@/components/ui/chart';
 import { Download } from 'lucide-react';
+import { InvoiceEmailDialog } from './InvoiceEmailDialog';
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface CommissionsManagementProps {
   selectedMonth: string;
@@ -62,6 +63,7 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
   const [filterManager, setFilterManager] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
+  const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -104,7 +106,27 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
            (!filterStatus || payment.payment_status === filterStatus);
   });
 
-  // Prepare data for the charts
+  const handleSelectPayment = (paymentId: string) => {
+    setSelectedPayments(prev => 
+      prev.includes(paymentId) 
+        ? prev.filter(id => id !== paymentId)
+        : [...prev, paymentId]
+    );
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    setSelectedPayments(checked ? filteredPayments.map(p => p.id) : []);
+  };
+
+  const handleEmailSuccess = () => {
+    setSelectedPayments([]);
+    const loadData = async () => {
+      const updatedPayments = await fetchCommissionPayments();
+      setPayments(updatedPayments);
+    };
+    loadData();
+  };
+
   const chartData = payments.map(payment => ({
     name: `${payment.manager_name} - ${format(new Date(payment.period), 'MMM yyyy')}`,
     commission: payment.commission_amount
@@ -150,6 +172,10 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Commissions Management</CardTitle>
         <div className="flex gap-2">
+          <InvoiceEmailDialog 
+            selectedPayments={selectedPayments}
+            onSuccess={handleEmailSuccess}
+          />
           <Button
             variant="outline"
             size="sm"
@@ -200,6 +226,12 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[50px]">
+                  <Checkbox
+                    checked={selectedPayments.length === filteredPayments.length && filteredPayments.length > 0}
+                    onCheckedChange={handleSelectAll}
+                  />
+                </TableHead>
                 <TableHead>Manager</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Period</TableHead>
@@ -207,12 +239,18 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
                 <TableHead>Net Income</TableHead>
                 <TableHead>Commission</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>Email Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredPayments.map((payment) => (
                 <TableRow key={payment.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedPayments.includes(payment.id)}
+                      onCheckedChange={() => handleSelectPayment(payment.id)}
+                    />
+                  </TableCell>
                   <TableCell>{payment.manager_name}</TableCell>
                   <TableCell>{payment.category_name}</TableCell>
                   <TableCell>{format(new Date(payment.period), 'MMM yyyy')}</TableCell>
@@ -227,23 +265,16 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
                     </span>
                   </TableCell>
                   <TableCell>
-                    {payment.payment_status === PaymentStatus.PENDING && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleUpdateStatus(payment.id, PaymentStatus.APPROVED)}
-                      >
-                        Approve
-                      </Button>
-                    )}
-                    {payment.payment_status === PaymentStatus.APPROVED && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleUpdateStatus(payment.id, PaymentStatus.PAID)}
-                      >
-                        Mark as Paid
-                      </Button>
+                    {payment.email_status === 'sent' ? (
+                      <span className="text-green-600 text-sm">
+                        Sent {payment.email_sent_at && new Date(payment.email_sent_at).toLocaleDateString()}
+                      </span>
+                    ) : payment.email_status === 'error' ? (
+                      <span className="text-red-600 text-sm" title={payment.email_error || ''}>
+                        Failed to send
+                      </span>
+                    ) : (
+                      <span className="text-gray-500 text-sm">Not sent</span>
                     )}
                   </TableCell>
                 </TableRow>
