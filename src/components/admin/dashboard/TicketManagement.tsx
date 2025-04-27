@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTickets } from '@/hooks/useTickets';
 import { openSupportsAPI } from '@/services/openSupportsAPI';
