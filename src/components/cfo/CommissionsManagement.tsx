@@ -14,19 +14,31 @@ import {
   TableHead,
   TableCell
 } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useFinancials } from '@/hooks/useFinancials';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
-import { CategoryManager, CommissionPayment } from '@/types/financeTypes';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+import { CategoryManager, CommissionPayment, PaymentStatus } from '@/types/financeTypes';
+import { useFinancials } from '@/hooks/useFinancials';
+import { useCommissionManagement } from '@/hooks/useCommissionManagement';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
 import { ChartContainer } from '@/components/ui/chart';
-import { HelpCircle } from 'lucide-react';
+import { Download } from 'lucide-react';
 
 interface CommissionsManagementProps {
   selectedMonth: string;
@@ -36,12 +48,20 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
   const {
     fetchCategoryManagers,
     fetchCommissionPayments,
-    generateCommissions,
-    isLoading
+    isLoading: isLoadingFinancials
   } = useFinancials();
+
+  const {
+    updatePaymentStatus,
+    generateCommissions,
+    isLoading: isLoadingCommissions
+  } = useCommissionManagement();
 
   const [managers, setManagers] = useState<CategoryManager[]>([]);
   const [payments, setPayments] = useState<CommissionPayment[]>([]);
+  const [filterManager, setFilterManager] = useState<string>('');
+  const [filterCategory, setFilterCategory] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
 
   useEffect(() => {
     const loadData = async () => {
@@ -51,7 +71,7 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
       setPayments(paymentsData);
     };
     loadData();
-  }, []);
+  }, [selectedMonth]);
 
   const handleGenerateCommissions = async () => {
     await generateCommissions(selectedMonth);
@@ -59,77 +79,220 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
     setPayments(updatedPayments);
   };
 
-  // Prepare data for the chart
+  const handleUpdateStatus = async (paymentId: string, status: PaymentStatus) => {
+    await updatePaymentStatus(paymentId, status);
+    const updatedPayments = await fetchCommissionPayments();
+    setPayments(updatedPayments);
+  };
+
+  const getStatusColor = (status: PaymentStatus) => {
+    switch (status) {
+      case PaymentStatus.PAID:
+        return 'bg-green-100 text-green-800';
+      case PaymentStatus.PENDING:
+        return 'bg-yellow-100 text-yellow-800';
+      case PaymentStatus.APPROVED:
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const filteredPayments = payments.filter(payment => {
+    return (!filterManager || payment.manager_name.toLowerCase().includes(filterManager.toLowerCase())) &&
+           (!filterCategory || payment.category_name.toLowerCase().includes(filterCategory.toLowerCase())) &&
+           (!filterStatus || payment.payment_status === filterStatus);
+  });
+
+  // Prepare data for the charts
   const chartData = payments.map(payment => ({
-    name: payment.category_name,
+    name: `${payment.manager_name} - ${format(new Date(payment.period), 'MMM yyyy')}`,
     commission: payment.commission_amount
   }));
 
+  const managerTotals = payments.reduce((acc, payment) => {
+    const key = payment.manager_name;
+    acc[key] = (acc[key] || 0) + payment.commission_amount;
+    return acc;
+  }, {} as Record<string, number>);
+
   const chartConfig = {
     commission: {
-      label: 'Commission Amount',
       color: '#8884d8'
     }
+  };
+
+  const exportToCSV = () => {
+    const headers = ['Manager', 'Category', 'Period', 'Gross Income', 'Net Income', 'Commission', 'Status'];
+    const csvData = filteredPayments.map(p => [
+      p.manager_name,
+      p.category_name,
+      p.period,
+      p.gross_income,
+      p.net_income,
+      p.commission_amount,
+      p.payment_status
+    ].join(','));
+    
+    const csv = [headers.join(','), ...csvData].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `commissions-${selectedMonth}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <div className="flex items-center gap-2">
-          <CardTitle>Commissions Management</CardTitle>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <HelpCircle className="h-4 w-4 text-muted-foreground" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Review and manage category manager commissions</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <CardTitle>Commissions Management</CardTitle>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportToCSV}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" /> Export
+          </Button>
+          <Button 
+            onClick={handleGenerateCommissions}
+            disabled={isLoadingCommissions}
+          >
+            Generate Commissions
+          </Button>
         </div>
-        <Button onClick={handleGenerateCommissions} disabled={isLoading}>
-          Generate Commissions
-        </Button>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[100px]">Period</TableHead>
-              <TableHead>Manager</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Gross Income</TableHead>
-              <TableHead>Commission</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {payments.map((payment) => (
-              <TableRow key={payment.id}>
-                <TableCell className="font-medium">{payment.period}</TableCell>
-                <TableCell>{payment.manager_name}</TableCell>
-                <TableCell>{payment.category_name}</TableCell>
-                <TableCell>${payment.gross_income.toFixed(2)}</TableCell>
-                <TableCell>${payment.commission_amount.toFixed(2)}</TableCell>
-                <TableCell>{payment.payment_status}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <div className="mb-4 flex gap-4">
+          <Input
+            placeholder="Filter by manager..."
+            value={filterManager}
+            onChange={(e) => setFilterManager(e.target.value)}
+            className="max-w-xs"
+          />
+          <Input
+            placeholder="Filter by category..."
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="max-w-xs"
+          />
+          <Select
+            value={filterStatus}
+            onValueChange={setFilterStatus}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Statuses</SelectItem>
+              {Object.values(PaymentStatus).map((status) => (
+                <SelectItem key={status} value={status}>{status}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <ChartContainer className="mt-4" config={chartConfig}>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <RechartsTooltip />
-              <Legend />
-              <Bar dataKey="commission" fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartContainer>
+        <div className="mb-8">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Manager</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Period</TableHead>
+                <TableHead>Gross Income</TableHead>
+                <TableHead>Net Income</TableHead>
+                <TableHead>Commission</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredPayments.map((payment) => (
+                <TableRow key={payment.id}>
+                  <TableCell>{payment.manager_name}</TableCell>
+                  <TableCell>{payment.category_name}</TableCell>
+                  <TableCell>{format(new Date(payment.period), 'MMM yyyy')}</TableCell>
+                  <TableCell>${payment.gross_income.toFixed(2)}</TableCell>
+                  <TableCell>${payment.net_income.toFixed(2)}</TableCell>
+                  <TableCell className="font-medium text-purple-600">
+                    ${payment.commission_amount.toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.payment_status)}`}>
+                      {payment.payment_status}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    {payment.payment_status === PaymentStatus.PENDING && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleUpdateStatus(payment.id, PaymentStatus.APPROVED)}
+                      >
+                        Approve
+                      </Button>
+                    )}
+                    {payment.payment_status === PaymentStatus.APPROVED && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleUpdateStatus(payment.id, PaymentStatus.PAID)}
+                      >
+                        Mark as Paid
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Commission Trends</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig} className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="commission" fill="#8884d8" name="Commission Amount" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Commission by Manager</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig} className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={Object.entries(managerTotals).map(([name, total]) => ({ name, total }))}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="total" fill="#8884d8" name="Total Commission" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </div>
       </CardContent>
     </Card>
   );
