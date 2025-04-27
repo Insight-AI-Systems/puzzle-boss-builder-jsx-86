@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTickets } from '@/hooks/useTickets';
 import { openSupportsAPI } from '@/services/openSupportsAPI';
@@ -31,7 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { TicketStatus, TicketPriority } from '@/types/ticketTypes';
+import { TicketStatus, TicketPriority, Department } from '@/types/ticketTypes';
 import { Search, Filter, RefreshCw } from 'lucide-react';
 
 // Status badge component
@@ -72,7 +73,7 @@ const formatDate = (dateString: string) => {
 
 export default function TicketManagement() {
   const [activeTab, setActiveTab] = useState<string>('all');
-  const [departments, setDepartments] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [search, setSearch] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
   const [selectedPriority, setSelectedPriority] = useState<TicketPriority | null>(null);
@@ -125,9 +126,9 @@ export default function TicketManagement() {
   
   // Handle department change
   const handleDepartmentChange = (value: string) => {
-    const departmentId = value ? parseInt(value) : undefined;
+    const deptId = value === 'all' ? undefined : parseInt(value);
     setSelectedDepartment(value);
-    updateFilters({ departmentId });
+    updateFilters({ departmentId: deptId });
   };
   
   // Handle priority change
@@ -138,7 +139,7 @@ export default function TicketManagement() {
   
   // Handle status change
   const handleStatusChange = (ticketId: string, newStatus: TicketStatus) => {
-    updateTicketStatus.mutate({ ticketId, status: newStatus });
+    updateTicketStatus(ticketId, newStatus);
   };
   
   return (
@@ -240,9 +241,11 @@ export default function TicketManagement() {
                           <TableRow key={ticket.id}>
                             <TableCell className="font-medium">{ticket.id}</TableCell>
                             <TableCell>{ticket.title}</TableCell>
-                            <TableCell>{ticket.userEmail}</TableCell>
+                            <TableCell>{ticket.userEmail || 'Unknown'}</TableCell>
                             <TableCell>
-                              {departments.find(d => d.id === ticket.departmentId)?.name || 'Unknown'}
+                              {ticket.departmentId ? 
+                                departments.find(d => d.id === ticket.departmentId)?.name || 'Unknown' 
+                                : 'General'}
                             </TableCell>
                             <TableCell>
                               <StatusBadge status={ticket.status} />
@@ -250,7 +253,7 @@ export default function TicketManagement() {
                             <TableCell>
                               <PriorityBadge priority={ticket.priority} />
                             </TableCell>
-                            <TableCell>{formatDate(ticket.date)}</TableCell>
+                            <TableCell>{formatDate(ticket.date || ticket.created_at)}</TableCell>
                             <TableCell>
                               <Select 
                                 defaultValue={ticket.status} 
@@ -262,6 +265,7 @@ export default function TicketManagement() {
                                 <SelectContent>
                                   <SelectItem value="open">Open</SelectItem>
                                   <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="in-progress">In Progress</SelectItem>
                                   <SelectItem value="resolved">Resolved</SelectItem>
                                   <SelectItem value="closed">Closed</SelectItem>
                                 </SelectContent>

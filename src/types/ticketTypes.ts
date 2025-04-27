@@ -4,6 +4,12 @@ export type TicketStatus = 'open' | 'in-progress' | 'resolved' | 'closed' | 'pen
 export type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
 export type TicketCategory = 'tech' | 'billing' | 'general' | 'internal';
 
+export interface Department {
+  id: number;
+  name: string;
+  private: boolean;
+}
+
 export interface TicketComment {
   id: string;
   author: string;
@@ -26,6 +32,9 @@ export interface Ticket {
   comments: TicketComment[];
   created_at: string;
   updated_at: string;
+  departmentId?: number;
+  userEmail?: string;
+  date?: string;
 }
 
 export interface TicketFilters {
@@ -33,6 +42,7 @@ export interface TicketFilters {
   type?: TicketType;
   priority?: TicketPriority;
   assigned_to?: string;
+  departmentId?: number;
   search?: string;
   page: number;
   limit: number;

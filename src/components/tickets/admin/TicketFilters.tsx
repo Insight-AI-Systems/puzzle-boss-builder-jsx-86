@@ -8,12 +8,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { TicketStatus, TicketType, TicketFilters } from '@/types/ticketTypes';
+import { TicketStatus, TicketType } from '@/types/ticketTypes';
+import type { TicketFilters as TicketFiltersType } from '@/types/ticketTypes';
 import { Search, Filter } from 'lucide-react';
 
 interface TicketFiltersProps {
-  filters: TicketFilters;
-  onUpdateFilters: (filters: Partial<TicketFilters>) => void;
+  filters: TicketFiltersType;
+  onUpdateFilters: (filters: Partial<TicketFiltersType>) => void;
   onSearch: (e: React.FormEvent) => void;
   searchQuery: string;
   onSearchChange: (value: string) => void;
@@ -54,6 +55,7 @@ export function TicketFilters({
             <SelectItem value="in-progress">In Progress</SelectItem>
             <SelectItem value="resolved">Resolved</SelectItem>
             <SelectItem value="closed">Closed</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
           </SelectContent>
         </Select>
 

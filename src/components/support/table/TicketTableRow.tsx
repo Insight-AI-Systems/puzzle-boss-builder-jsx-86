@@ -48,7 +48,7 @@ export const TicketTableRow = ({ ticket, onClick }: TicketTableRowProps) => {
       <TableCell>
         <PriorityBadge priority={ticket.priority} />
       </TableCell>
-      <TableCell>{formatDate(ticket.date)}</TableCell>
+      <TableCell>{formatDate(ticket.date || ticket.created_at)}</TableCell>
     </TableRow>
   );
 };

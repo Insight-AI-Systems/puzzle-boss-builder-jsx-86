@@ -1,7 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { SUPPORT_SYSTEM_CONFIG, API_PATHS } from './openSupportsConfig';
-import { Ticket, TicketComment, Department, TicketFilters } from '@/types/ticketTypes';
+import { Ticket, TicketComment, TicketFilters, Department } from '@/types/ticketTypes';
 
 // Helper function to handle API requests
 const apiRequest = async (endpoint: string, method: string, data?: any, token?: string) => {

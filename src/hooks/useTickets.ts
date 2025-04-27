@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Ticket, TicketType, TicketStatus, TicketFilters } from '@/types/ticketTypes';
+import { Ticket, TicketType, TicketStatus, TicketFilters, TicketPriority } from '@/types/ticketTypes';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -30,7 +30,9 @@ export function useTickets(initialFilters?: Partial<TicketFilters>) {
         .order('created_at', { ascending: false });
 
       if (filters.status) {
-        query = query.eq('status', filters.status);
+        // Make sure we only use valid statuses for the database query
+        const dbStatus = filters.status === 'pending' ? 'open' : filters.status;
+        query = query.eq('status', dbStatus);
       }
       if (filters.type) {
         query = query.eq('type', filters.type);
@@ -47,7 +49,26 @@ export function useTickets(initialFilters?: Partial<TicketFilters>) {
 
       if (error) throw error;
 
-      setTickets(data as Ticket[]);
+      // Transform the data to match the Ticket interface
+      const transformedTickets = data.map(item => {
+        return {
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          type: item.type as TicketType,
+          status: item.status as TicketStatus,
+          priority: 'medium' as TicketPriority, // Default priority if not present
+          created_by: item.created_by,
+          assigned_to: item.assigned_to,
+          comments: Array.isArray(item.comments) ? item.comments : [],
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          userEmail: 'user@example.com', // Placeholder, replace with actual data if available
+          date: item.created_at // Use created_at as date for display purposes
+        } as Ticket;
+      });
+
+      setTickets(transformedTickets);
     } catch (error: any) {
       setIsError(true);
       toast({
@@ -64,21 +85,39 @@ export function useTickets(initialFilters?: Partial<TicketFilters>) {
     if (!user) return false;
     
     try {
+      const ticketData = {
+        title,
+        description,
+        type,
+        created_by: user.id,
+        status: 'open' as const, // Use 'as const' to ensure type safety
+        priority: 'medium' as TicketPriority // Default priority
+      };
+
       const { data, error } = await supabase
         .from('tickets')
-        .insert({
-          title,
-          description,
-          type,
-          created_by: user.id,
-          status: 'open' as TicketStatus,
-        })
+        .insert(ticketData)
         .select()
         .single();
 
       if (error) throw error;
       
-      setTickets(prev => [data as Ticket, ...prev]);
+      // Transform to match Ticket interface
+      const newTicket: Ticket = {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        type: data.type,
+        status: data.status,
+        priority: 'medium', // Default
+        created_by: data.created_by,
+        assigned_to: data.assigned_to,
+        comments: Array.isArray(data.comments) ? data.comments : [],
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+      
+      setTickets(prev => [newTicket, ...prev]);
       toast({
         title: "Success",
         description: "Ticket created successfully",
@@ -96,9 +135,12 @@ export function useTickets(initialFilters?: Partial<TicketFilters>) {
 
   const updateTicketStatus = async (ticketId: string, newStatus: TicketStatus) => {
     try {
+      // For database compatibility, map 'pending' to a status the DB accepts
+      const dbStatus = newStatus === 'pending' ? 'open' : newStatus;
+      
       const { error } = await supabase
         .from('tickets')
-        .update({ status: newStatus })
+        .update({ status: dbStatus })
         .eq('id', ticketId);
 
       if (error) throw error;

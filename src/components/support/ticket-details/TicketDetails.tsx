@@ -9,6 +9,7 @@ import { useProfileData } from '@/hooks/profile/useProfileData';
 import { TicketHeader } from './TicketHeader';
 import { TicketContent } from './TicketContent';
 import { useToast } from '@/hooks/use-toast';
+import { Ticket, TicketType } from '@/types/ticketTypes';
 
 export const TicketDetails = () => {
   const { ticketId } = useParams<{ ticketId: string }>();
@@ -22,8 +23,31 @@ export const TicketDetails = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const ticket = tickets.find(t => t.id === ticketId);
-  const { data: userProfile } = useProfileData(ticket?.created_by || null);
+  const supportTicket = tickets.find(t => t.id === ticketId);
+  const { data: userProfile } = useProfileData(supportTicket?.created_by || null);
+
+  // Convert from SupportTicket to Ticket
+  const ticket: Ticket | undefined = supportTicket ? {
+    id: supportTicket.id,
+    title: supportTicket.title,
+    description: supportTicket.description,
+    type: (supportTicket.category === 'internal' ? 'internal' : 'external') as TicketType,
+    status: supportTicket.status,
+    priority: supportTicket.priority,
+    created_by: supportTicket.created_by || '',
+    assigned_to: supportTicket.assigned_to,
+    comments: supportTicket.comments?.map(c => ({
+      id: c.id,
+      author: c.created_by || 'Unknown',
+      content: c.content,
+      timestamp: c.created_at,
+      is_staff: c.is_staff,
+      created_by: c.created_by,
+      created_at: c.created_at
+    })) || [],
+    created_at: supportTicket.created_at || '',
+    updated_at: supportTicket.updated_at || ''
+  } : undefined;
 
   const handleAddComment = async () => {
     if (!comment.trim() || !ticketId || isSubmitting) return;
