@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trash2 } from 'lucide-react';
+import { Trash2, User } from 'lucide-react';
 import { TicketStatusBadge } from './TicketStatusBadge';
 import { SupportTicket } from '@/types/supportTicketTypes';
 
@@ -26,22 +26,18 @@ export const TicketTable = ({
   onTicketClick, 
   onDeleteTicket 
 }: TicketTableProps) => {
-  const getTicketSourceInfo = (ticket: SupportTicket) => {
-    // Check if category is a string and equals 'migrated'
-    // This allows for handling cases where category might be dynamically added
-    if (typeof ticket.category === 'string' && ticket.category === 'migrated') {
-      return <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">Migrated</Badge>;
-    }
-    return null;
+  const formatTicketId = (id: string) => {
+    return `#${id.slice(0, 8)}`;
   };
 
   return (
     <Table>
       <TableHeader>
         <TableRow className="border-puzzle-aqua/20">
-          <TableHead className="text-puzzle-aqua">Ticket</TableHead>
+          <TableHead className="text-puzzle-aqua">Ticket ID</TableHead>
+          <TableHead className="text-puzzle-aqua">Subject</TableHead>
+          <TableHead className="text-puzzle-aqua">Created By</TableHead>
           <TableHead className="text-puzzle-aqua">Status</TableHead>
-          <TableHead className="text-puzzle-aqua">Source</TableHead>
           <TableHead className="text-puzzle-aqua">Created</TableHead>
           <TableHead className="text-puzzle-aqua">Last Update</TableHead>
           {isSuperAdmin && <TableHead className="text-puzzle-aqua">Actions</TableHead>}
@@ -57,6 +53,11 @@ export const TicketTable = ({
               onClick={() => onTicketClick(ticket.id)}
               className="font-medium"
             >
+              {formatTicketId(ticket.id)}
+            </TableCell>
+            <TableCell 
+              onClick={() => onTicketClick(ticket.id)}
+            >
               <div>
                 <div className="text-puzzle-white">{ticket.title}</div>
                 <div className="text-sm text-puzzle-white/60 truncate max-w-[300px]">
@@ -65,10 +66,13 @@ export const TicketTable = ({
               </div>
             </TableCell>
             <TableCell onClick={() => onTicketClick(ticket.id)}>
-              <TicketStatusBadge status={ticket.status} />
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-puzzle-aqua/60" />
+                <span>{ticket.created_by || 'Unknown'}</span>
+              </div>
             </TableCell>
             <TableCell onClick={() => onTicketClick(ticket.id)}>
-              {getTicketSourceInfo(ticket)}
+              <TicketStatusBadge status={ticket.status} />
             </TableCell>
             <TableCell onClick={() => onTicketClick(ticket.id)}>
               {ticket.created_at ? new Date(ticket.created_at).toLocaleDateString() : 'N/A'}

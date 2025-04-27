@@ -1,34 +1,32 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowLeft, User } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface TicketHeaderProps {
   ticketId: string;
   refetch: () => void;
 }
 
-export const TicketHeader = ({ ticketId, refetch }: TicketHeaderProps) => {
+export const TicketHeader = ({ ticketId }: TicketHeaderProps) => {
   const navigate = useNavigate();
-  
+  const [searchParams] = useSearchParams();
+  const isInternalView = searchParams.get('view') === 'internal';
+
   return (
-    <div className="flex items-center">
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        onClick={() => navigate('/support/tickets')}
-        className="mr-4"
-      >
-        <ArrowLeft className="h-4 w-4 mr-1" />
-        Back to tickets
-      </Button>
-      
-      <h2 className="text-xl font-bold flex-1">Ticket #{ticketId}</h2>
-      
-      <Button onClick={refetch} variant="outline" size="icon">
-        <RefreshCw className="h-4 w-4" />
-      </Button>
+    <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center gap-4">
+        <Button 
+          variant="outline" 
+          onClick={() => navigate(`/support/tickets${isInternalView ? '?view=internal' : ''}`)}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Tickets
+        </Button>
+        <div className="text-lg font-medium">
+          Ticket <span className="text-puzzle-aqua">#{ticketId.slice(0, 8)}</span>
+        </div>
+      </div>
     </div>
   );
 };
