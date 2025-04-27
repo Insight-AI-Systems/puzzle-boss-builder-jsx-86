@@ -15,7 +15,17 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Loader2 } from 'lucide-react';
 
 export const OverviewTab: React.FC = () => {
-  const { dailyMetrics, monthlyTrends, categoryRevenue, isLoading } = useAnalytics();
+  const { 
+    dailyMetrics, 
+    monthlyTrends, 
+    categoryRevenue, 
+    isLoadingDailyMetrics,
+    isLoadingMonthlyTrends,
+    isLoadingCategoryRevenue
+  } = useAnalytics();
+  
+  // Check if any of the data is loading
+  const isLoading = isLoadingDailyMetrics || isLoadingMonthlyTrends || isLoadingCategoryRevenue;
 
   if (isLoading) {
     return (

@@ -39,8 +39,13 @@ export const useAnalytics = () => {
         
       if (error) throw error;
       
-      // Return the first item as it's a single row result
-      return data[0] as DailyMetrics;
+      // Ensure we're returning a single object, not an array
+      return data && data.length > 0 ? data[0] as DailyMetrics : {
+        active_users: 0,
+        new_signups: 0,
+        puzzles_completed: 0,
+        revenue: 0
+      } as DailyMetrics;
     }
   });
   
