@@ -30,12 +30,16 @@ export function useTicketDetails(ticketId: string | undefined) {
     commentAuthor?: string;
     commentContent?: string;
   }) => {
-    const { error } = await supabase.functions.invoke('send-ticket-notification', {
-      body: payload,
-    });
-    
-    if (error) {
-      console.error('Error sending notification:', error);
+    try {
+      const { error } = await supabase.functions.invoke('send-ticket-notification', {
+        body: payload,
+      });
+      
+      if (error) {
+        console.error('Error sending notification:', error);
+      }
+    } catch (err) {
+      console.error('Failed to send notification:', err);
     }
   };
 
