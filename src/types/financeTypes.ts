@@ -13,6 +13,7 @@ export interface SiteIncome {
   method: string;
   notes?: string;
   categories?: { name: string };
+  profiles?: { username: string };
 }
 
 export interface SiteExpense {
@@ -73,27 +74,17 @@ export interface MonthlyFinancialSummary {
   prize_expenses: number;
 }
 
-export interface CategoryRevenue {
-  category_id: string;
-  category_name: string;
-  total_revenue: number;
-  total_costs: number;
-  net_revenue: number;
-  commission_rate: number;
-  commission_amount: number;
-}
-
 export interface FinancialChartData {
   name: string;
   value: number;
   color?: string;
 }
 
-export interface MembershipSummary {
+export interface MembershipStats {
   period: string;
-  total_members: number;
-  new_members: number;
-  churned_members: number;
+  active_members: number;
+  lapsed_members: number;
+  canceled_members: number;
   revenue: number;
 }
 
