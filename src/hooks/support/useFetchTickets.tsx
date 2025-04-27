@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { SupportTicket, TicketFilters } from "@/types/supportTicketTypes";
+import { SupportTicket, TicketFilters, TicketComment } from "@/types/supportTicketTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { mapFrontendStatusToDb, DbStatus, mapDbStatusToFrontend } from "@/utils/support/mappings";
@@ -28,7 +28,10 @@ export const useFetchTickets = () => {
       if (isInternalView && isAdmin) {
         const { data: issuesData, error: issuesError } = await supabase
           .from('issues')
-          .select('*')
+          .select(`
+            *,
+            created_by_email:get_user_email(created_by)
+          `)
           .eq('category', 'internal')
           .order('created_at', { ascending: false });
           
@@ -43,11 +46,12 @@ export const useFetchTickets = () => {
           title: item.title,
           description: item.description,
           status: mapDbStatusToFrontend(item.status),
-          priority: item.category === 'security' ? 'high' : item.category === 'feature' ? 'low' : 'medium',
+          priority: (item.category === 'security' ? 'high' : 
+                    item.category === 'feature' ? 'low' : 'medium'),
           category: 'internal',
           created_at: item.created_at,
           updated_at: item.updated_at,
-          created_by: item.created_by,
+          created_by: item.created_by_email || item.created_by,
           comments: []
         } as SupportTicket));
         
@@ -57,20 +61,27 @@ export const useFetchTickets = () => {
       else {
         const ticketsQuery = supabase
           .from('tickets')
-          .select('*');
+          .select(`
+            *,
+            created_by_email:get_user_email(created_by)
+          `);
         
         if (isAdmin) {
           // Admin can see all user tickets
           ticketsQuery.order('created_at', { ascending: false });
         } else {
           // Regular users can only see their own tickets
-          ticketsQuery.eq('created_by', user.id)
+          ticketsQuery
+            .eq('created_by', user.id)
             .order('created_at', { ascending: false });
         }
         
         // Apply filters if provided
         if (filters?.status) {
-          ticketsQuery.eq('status', filters.status);
+          const validStatus = ['open', 'in-progress', 'resolved', 'closed'].includes(filters.status) 
+            ? filters.status 
+            : 'open';
+          ticketsQuery.eq('status', validStatus);
         }
         
         if (filters?.search) {
@@ -89,13 +100,20 @@ export const useFetchTickets = () => {
           id: item.id,
           title: item.title,
           description: item.description,
-          status: item.status,
+          status: item.status === 'pending' ? 'open' : item.status,
           priority: 'medium',
           category: 'tech',
           created_at: item.created_at,
           updated_at: item.updated_at,
-          created_by: item.created_by,
-          comments: item.comments || []
+          created_by: item.created_by_email || item.created_by,
+          comments: (item.comments || []).map((comment: any) => ({
+            id: comment.id || crypto.randomUUID(),
+            ticket_id: item.id,
+            content: comment.content,
+            created_by: comment.created_by,
+            created_at: comment.created_at || new Date().toISOString(),
+            is_staff: comment.is_staff
+          }))
         } as SupportTicket));
         
         allTickets = mappedTickets;

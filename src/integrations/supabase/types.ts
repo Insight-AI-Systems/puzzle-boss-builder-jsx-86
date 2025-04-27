@@ -1049,6 +1049,10 @@ export type Database = {
           completion_rate: number
         }[]
       }
+      get_user_email: {
+        Args: { user_id: string }
+        Returns: string
+      }
       handle_password_reset_attempt: {
         Args: { _email: string; _ip_address?: string }
         Returns: string
