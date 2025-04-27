@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
@@ -67,7 +66,6 @@ export const TicketList = () => {
     
     if (window.confirm('Are you sure you want to delete this ticket? This action cannot be undone.')) {
       try {
-        // Fix: Use the correct table name based on the internal view
         const tableName = isInternalView ? 'issues' : 'tickets';
         
         const { error } = await supabase
@@ -82,7 +80,6 @@ export const TicketList = () => {
           description: "The ticket has been permanently deleted.",
         });
         
-        // Refresh tickets after deletion
         fetchTickets(filters, isInternalView);
       } catch (error: any) {
         toast({
@@ -143,10 +140,10 @@ export const TicketList = () => {
           </div>
         ) : tickets.length === 0 ? (
           <div className="text-center py-8">
-            <p className="mb-4">No tickets found.</p>
-            <Button onClick={() => navigate('/support/new-ticket')}>
-              Create {isInternalView ? "Internal Issue" : "Support Ticket"}
-            </Button>
+            <p className="text-puzzle-white/70">
+              No {isInternalView ? 'internal issues' : 'support tickets'} found.
+              Use the {isInternalView ? '"Create Internal Ticket"' : '"New Support Ticket"'} button above to create one.
+            </p>
           </div>
         ) : (
           <TicketTable

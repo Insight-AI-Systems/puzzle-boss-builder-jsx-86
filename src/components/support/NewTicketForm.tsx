@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSupportTickets } from '@/hooks/support/useSupportTickets';
-import { SupportTicket, TicketCategory, TicketPriority } from '@/types/supportTicketTypes';
+import { SupportTicket, TicketCategory } from '@/types/supportTicketTypes';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthCheck } from './form/AuthCheck';
 import { TicketFormHeader } from './form/TicketFormHeader';
@@ -13,15 +13,25 @@ import { InternalTicketFormFields } from './form/InternalTicketFormFields';
 
 export const NewTicketForm = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const ticketType = searchParams.get('type') || 'user';
+  const { user, hasRole } = useAuth();
   const { addTicket } = useSupportTickets();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isAdmin = hasRole('super_admin') || hasRole('admin');
   
+  // Redirect non-admin users trying to create internal tickets
+  useEffect(() => {
+    if (ticketType === 'internal' && !isAdmin) {
+      navigate('/support');
+    }
+  }, [ticketType, isAdmin, navigate]);
+
   const [ticket, setTicket] = useState<Partial<SupportTicket>>({
     title: '',
     description: '',
-    category: 'internal' as TicketCategory,
-    priority: 'medium' as TicketPriority,
+    category: ticketType === 'internal' ? 'internal' : 'tech' as TicketCategory,
+    priority: 'medium',
     id: crypto.randomUUID()
   });
 
@@ -42,7 +52,7 @@ export const NewTicketForm = () => {
     const success = await addTicket(ticket);
     
     if (success) {
-      navigate(`/support/tickets?view=internal`);
+      navigate(`/support/tickets${ticketType === 'internal' ? '?view=internal' : ''}`);
     }
     setIsSubmitting(false);
   };
@@ -63,7 +73,7 @@ export const NewTicketForm = () => {
       </Button>
 
       <Card className="bg-puzzle-black/30 border-puzzle-aqua/20">
-        <TicketFormHeader />
+        <TicketFormHeader isInternal={ticketType === 'internal'} />
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <InternalTicketFormFields
@@ -78,7 +88,7 @@ export const NewTicketForm = () => {
                 disabled={isSubmitting || !ticket.title || !ticket.description}
                 className="ml-auto"
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Issue'}
+                {isSubmitting ? 'Submitting...' : `Submit ${ticketType === 'internal' ? 'Issue' : 'Ticket'}`}
               </Button>
             </CardFooter>
           </form>

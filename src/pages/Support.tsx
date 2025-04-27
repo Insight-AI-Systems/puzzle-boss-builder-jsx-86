@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { ExternalLink, PlusCircle, ShieldAlert } from 'lucide-react';
@@ -10,48 +11,61 @@ import { TicketList } from '@/components/support/TicketList';
 import { TicketDetails } from '@/components/support/ticket-details/TicketDetails';
 import { NewTicketForm } from '@/components/support/NewTicketForm';
 import { useToast } from '@/hooks/use-toast';
+
 const Support = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const {
-    hasRole,
-    user
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
+  const { hasRole, user } = useAuth();
+  const { toast } = useToast();
   const isAdmin = hasRole('super_admin') || hasRole('admin');
+
   let subtitle = "Get help with your account, puzzles, and prizes";
   if (location.pathname.includes('/tickets')) {
     subtitle = "View and manage your support tickets";
   } else if (location.pathname.includes('/new-ticket')) {
     subtitle = "Create a new support ticket";
   }
+
   const handleAdminPanelClick = () => {
-    // Fix: Correctly navigate to the admin dashboard with tickets tab selected
     navigate('/admin-dashboard?tab=tickets');
   };
+
   const handleInternalIssuesClick = () => {
-    navigate('/support/tickets?view=internal');
+    navigate('/support/new-ticket?type=internal');
   };
+
   const handleNewTicketClick = () => {
-    navigate('/support/new-ticket');
+    navigate('/support/new-ticket?type=user');
   };
-  return <PageLayout title={isAdmin ? "Admin Support Center" : "Support Center"} subtitle={subtitle}>
+
+  return (
+    <PageLayout 
+      title={isAdmin ? "Admin Support Center" : "Support Center"} 
+      subtitle={subtitle}
+    >
       <div className="flex justify-between items-center mb-6">
-        {isAdmin && <div className="flex items-center gap-2">
-            
-            
-            <Button variant="destructive" className="flex items-center gap-2" onClick={handleInternalIssuesClick}>
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="destructive" 
+              className="flex items-center gap-2" 
+              onClick={handleInternalIssuesClick}
+            >
               <ShieldAlert size={16} />
               <span>Create Internal Ticket</span>
             </Button>
-          </div>}
+          </div>
+        )}
         
-        {user && <Button className="flex items-center gap-2 ml-auto" onClick={handleNewTicketClick}>
+        {user && (
+          <Button 
+            className="flex items-center gap-2 ml-auto" 
+            onClick={handleNewTicketClick}
+          >
             <PlusCircle size={16} />
             <span>New Support Ticket</span>
-          </Button>}
+          </Button>
+        )}
       </div>
       
       <Routes>
@@ -60,6 +74,8 @@ const Support = () => {
         <Route path="/tickets/:ticketId" element={<TicketDetails />} />
         <Route path="/new-ticket" element={<NewTicketForm />} />
       </Routes>
-    </PageLayout>;
+    </PageLayout>
+  );
 };
+
 export default Support;
