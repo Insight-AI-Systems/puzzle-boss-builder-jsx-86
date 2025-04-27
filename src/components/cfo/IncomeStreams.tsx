@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useFinancials } from '@/hooks/useFinancials';
+import { useFinancialRecords } from '@/hooks/useFinancialRecords';
 import { SiteIncome, SourceType } from '@/types/financeTypes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,8 +43,9 @@ interface IncomeStreamsProps {
   selectedMonth: string;
 }
 
-const IncomeStreams: React.FC<IncomeStreamsProps> = ({ selectedMonth }) => {
-  const { fetchIncomeRecords, exportDataToCSV, isLoading } = useFinancials();
+const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) => {
+  const { fetchSiteIncomes } = useFinancials();
+  const { fetchIncomeRecords, exportDataToCSV } = useFinancialRecords();
   const [incomeData, setIncomeData] = useState<SiteIncome[]>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [sourceFilter, setSourceFilter] = useState<string>('all');

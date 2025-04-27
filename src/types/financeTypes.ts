@@ -74,14 +74,6 @@ export interface MonthlyFinancialSummary {
   prize_expenses: number;
 }
 
-export interface MembershipSummary {
-  period: string;
-  active_members: number;
-  lapsed_members: number;
-  canceled_members: number;
-  revenue: number;
-}
-
 export interface CategoryRevenue {
   category_id: string;
   category_name: string;

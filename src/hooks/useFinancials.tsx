@@ -6,8 +6,7 @@ import {
   SiteExpense,
   CategoryManager,
   CommissionPayment,
-  MonthlyFinancialSummary,
-  CategoryRevenue
+  MonthlyFinancialSummary
 } from '@/types/financeTypes';
 
 export function useFinancials() {
@@ -25,7 +24,7 @@ export function useFinancials() {
         throw error;
       }
 
-      return data || null;
+      return data?.[0] || null;
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch monthly financial summary'));
       return null;
@@ -93,7 +92,7 @@ export function useFinancials() {
         .select(`
           *,
           categories:category_id (name),
-          profiles (username)
+          profiles:user_id (username)
         `);
 
       if (error) {
@@ -104,7 +103,7 @@ export function useFinancials() {
         ...manager,
         username: manager.profiles?.username || 'Unknown',
         category_name: manager.categories?.name || 'Unknown'
-      }));
+      })) || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch category managers'));
       return [];
@@ -122,7 +121,11 @@ export function useFinancials() {
         .select(`
           *,
           categories:category_id (name),
-          category_managers (profiles (username))
+          category_managers!inner (
+            id,
+            user_id,
+            profiles (username)
+          )
         `);
 
       if (error) {
@@ -133,7 +136,7 @@ export function useFinancials() {
         ...payment,
         manager_name: payment.category_managers?.profiles?.username || 'Unknown',
         category_name: payment.categories?.name || 'Unknown'
-      }));
+      })) || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch commission payments'));
       return [];

@@ -36,9 +36,7 @@ const CFODashboard: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [activeTab, setActiveTab] = useState('overview');
   const [financialSummary, setFinancialSummary] = useState<MonthlyFinancialSummary | null>(null);
-  const [financialTrends, setFinancialTrends] = useState<MonthlyFinancialSummary[]>([]);
-  const { fetchMonthlyFinancialSummary, fetchFinancialTrends, isLoading } = useFinancials();
-  const navigate = useNavigate();
+  const { fetchMonthlyFinancialSummary, isLoading } = useFinancials();
 
   useEffect(() => {
     const loadFinancialSummary = async () => {
@@ -46,13 +44,7 @@ const CFODashboard: React.FC = () => {
       setFinancialSummary(summary);
     };
 
-    const loadFinancialTrends = async () => {
-      const trends = await fetchFinancialTrends(6);
-      setFinancialTrends(trends);
-    };
-
     loadFinancialSummary();
-    loadFinancialTrends();
   }, [selectedMonth]);
 
   return (
