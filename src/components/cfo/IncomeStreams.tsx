@@ -4,14 +4,15 @@ import { useFinancialRecords } from '@/hooks/useFinancialRecords';
 import { SiteIncome, SourceType } from '@/types/financeTypes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-  getSortedRowModel,
-  SortingState,
-  getPaginationRowModel,
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { 
+  ColumnDef, 
+  flexRender, 
+  getCoreRowModel, 
+  useReactTable, 
+  getSortedRowModel, 
+  SortingState, 
+  getPaginationRowModel 
 } from '@tanstack/react-table';
 import {
   Table,
@@ -31,7 +32,7 @@ import {
 import {
   PieChart,
   Pie,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
   Cell,
 } from 'recharts';
@@ -43,12 +44,36 @@ interface IncomeStreamsProps {
   selectedMonth: string;
 }
 
+// Define consistent colors for financial categories
+const FINANCE_COLORS = {
+  income: {
+    membership: '#10b981',    // Green
+    'pay-to-play': '#059669', // Darker Green
+    sponsorship: '#047857',   // Even Darker Green
+    other: '#064e3b',        // Darkest Green
+  },
+  costs: {
+    operational: '#f97316',   // Orange
+    marketing: '#ea580c',     // Darker Orange
+    other: '#c2410c',        // Darkest Orange
+  },
+  prizes: {
+    regular: '#3b82f6',      // Blue
+    special: '#2563eb',      // Darker Blue
+  },
+  commissions: {
+    standard: '#8b5cf6',     // Purple
+    bonus: '#7c3aed',        // Darker Purple
+  }
+};
+
 const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) => {
   const { fetchSiteIncomes } = useFinancials();
   const { fetchIncomeRecords, exportDataToCSV } = useFinancialRecords();
   const [incomeData, setIncomeData] = useState<SiteIncome[]>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Chart colors for different income sources
   const COLORS = {
@@ -64,8 +89,13 @@ const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) =
       const endDate = format(endOfMonth(parseISO(`${selectedMonth}-01`)), 'yyyy-MM-dd');
       
       const filter = sourceFilter !== 'all' ? sourceFilter : undefined;
+      setIsLoading(true);
       const data = await fetchIncomeRecords(startDate, endDate, filter);
-      setIncomeData(data);
+      setIncomeData(data.map(item => ({
+        ...item,
+        source_type: item.source_type as SourceType
+      })));
+      setIsLoading(false);
     };
     
     loadIncomeData();
@@ -76,55 +106,102 @@ const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) =
     {
       accessorKey: 'date',
       header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              >
+                Date
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Click to sort by date</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       ),
       cell: ({ row }) => format(parseISO(row.getValue('date')), 'MMM dd, yyyy'),
     },
     {
       accessorKey: 'source_type',
       header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          Source
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              >
+                Source
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Click to sort by income source</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       ),
-      cell: ({ row }) => (
-        <div 
-          className="px-2 py-1 rounded-full text-xs font-medium w-fit"
-          style={{ 
-            backgroundColor: COLORS[row.getValue('source_type') as keyof typeof COLORS] + '20',
-            color: COLORS[row.getValue('source_type') as keyof typeof COLORS] 
-          }}
-        >
-          {row.getValue('source_type')}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const sourceType = row.getValue('source_type') as SourceType;
+        const color = FINANCE_COLORS.income[sourceType as keyof typeof FINANCE_COLORS.income] || FINANCE_COLORS.income.other;
+        
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <div 
+                  className="px-2 py-1 rounded-full text-xs font-medium w-fit"
+                  style={{ 
+                    backgroundColor: `${color}20`,
+                    color: color 
+                  }}
+                >
+                  {sourceType}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{sourceType === 'membership' ? 'Revenue from member subscriptions' : 
+                    sourceType === 'pay-to-play' ? 'Individual puzzle purchase revenue' :
+                    sourceType === 'sponsorship' ? 'Partner sponsorship income' : 
+                    'Other revenue streams'}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      },
     },
     {
       accessorKey: 'amount',
       header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          Amount
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              >
+                Amount
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Click to sort by amount</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       ),
-      cell: ({ row }) => (
-        <div className="text-right font-medium">
-          ${parseFloat(row.getValue('amount')).toFixed(2)}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const amount = row.getValue('amount') as number;
+        return (
+          <div className={`text-right font-medium ${amount < 0 ? 'text-red-500' : 'text-green-500'}`}>
+            ${amount.toFixed(2)}
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'method',
@@ -244,7 +321,7 @@ const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) =
                       />
                     ))}
                   </Pie>
-                  <Tooltip content={<ChartTooltipContent />} />
+                  <RechartsTooltip content={<ChartTooltipContent />} />
                 </PieChart>
               </ChartContainer>
             ) : (

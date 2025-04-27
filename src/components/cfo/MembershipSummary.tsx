@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MembershipStats } from '@/types/financeTypes';
 import { format, parseISO, subMonths } from 'date-fns';
 import { Download, Users, UserMinus, UserCheck } from 'lucide-react';
@@ -10,7 +11,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   Legend,
   ResponsiveContainer,
   BarChart,
@@ -83,7 +84,7 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
   const currentMonthData = membershipData.find(data => data.period === selectedMonth) || {
     period: selectedMonth,
     active_members: 0,
-    lapsed_members: 0,
+    expired_members: 0,  // Updated from lapsed_members
     canceled_members: 0,
     revenue: 0,
     churn_rate: 0
@@ -116,70 +117,97 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
         </Button>
       </div>
 
-      {/* Membership Stats Cards */}
+      {/* Member Stats Cards with Tooltips */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center text-sm font-medium text-muted-foreground">
-              <UserCheck className="mr-2 h-4 w-4 text-green-500" />
-              Active Members
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {currentMonthData.active_members.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {membershipData.length >= 2 && 
-                `${membershipData[membershipData.length - 1].active_members > membershipData[membershipData.length - 2].active_members ? '+' : ''}${
-                  membershipData[membershipData.length - 1].active_members - membershipData[membershipData.length - 2].active_members
-                } from last month`
-              }
-            </p>
-          </CardContent>
-        </Card>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center text-sm font-medium text-muted-foreground">
+                    <UserCheck className="mr-2 h-4 w-4 text-green-500" />
+                    Active Members
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {currentMonthData.active_members.toLocaleString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {membershipData.length >= 2 && 
+                      `${membershipData[membershipData.length - 1].active_members > membershipData[membershipData.length - 2].active_members ? '+' : ''}${
+                        membershipData[membershipData.length - 1].active_members - membershipData[membershipData.length - 2].active_members
+                      } from last month`
+                    }
+                  </p>
+                </CardContent>
+              </Card>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Current paying members</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center text-sm font-medium text-muted-foreground">
-              <UserMinus className="mr-2 h-4 w-4 text-orange-500" />
-              Lapsed Members
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {currentMonthData.lapsed_members.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {membershipData.length >= 2 && 
-                `${membershipData[membershipData.length - 1].lapsed_members > membershipData[membershipData.length - 2].lapsed_members ? '+' : ''}${
-                  membershipData[membershipData.length - 1].lapsed_members - membershipData[membershipData.length - 2].lapsed_members
-                } from last month`
-              }
-            </p>
-          </CardContent>
-        </Card>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center text-sm font-medium text-muted-foreground">
+                    <UserMinus className="mr-2 h-4 w-4 text-orange-500" />
+                    Expired Members
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {currentMonthData.expired_members.toLocaleString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {membershipData.length >= 2 && 
+                      `${membershipData[membershipData.length - 1].expired_members > membershipData[membershipData.length - 2].expired_members ? '+' : ''}${
+                        membershipData[membershipData.length - 1].expired_members - membershipData[membershipData.length - 2].expired_members
+                      } from last month`
+                    }
+                  </p>
+                </CardContent>
+              </Card>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Members with expired subscriptions</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center text-sm font-medium text-muted-foreground">
-              <Users className="mr-2 h-4 w-4 text-red-500" />
-              Canceled Members
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {currentMonthData.canceled_members.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {membershipData.length >= 2 && 
-                `${membershipData[membershipData.length - 1].canceled_members > membershipData[membershipData.length - 2].canceled_members ? '+' : ''}${
-                  membershipData[membershipData.length - 1].canceled_members - membershipData[membershipData.length - 2].canceled_members
-                } from last month`
-              }
-            </p>
-          </CardContent>
-        </Card>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center text-sm font-medium text-muted-foreground">
+                    <Users className="mr-2 h-4 w-4 text-red-500" />
+                    Canceled Members
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {currentMonthData.canceled_members.toLocaleString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {membershipData.length >= 2 && 
+                      `${membershipData[membershipData.length - 1].canceled_members > membershipData[membershipData.length - 2].canceled_members ? '+' : ''}${
+                        membershipData[membershipData.length - 1].canceled_members - membershipData[membershipData.length - 2].canceled_members
+                      } from last month`
+                    }
+                  </p>
+                </CardContent>
+              </Card>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Members who have canceled their subscription</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Membership Charts */}
@@ -201,7 +229,7 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
                 <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip content={<ChartTooltipContent />} />
+                <RechartsTooltip content={<ChartTooltipContent />} />
                 <Legend />
                 <Line
                   type="monotone"
@@ -245,7 +273,7 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
                 <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip content={<ChartTooltipContent />} />
+                <RechartsTooltip content={<ChartTooltipContent />} />
                 <Legend />
                 <Bar
                   dataKey="revenue"
@@ -269,7 +297,7 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Total Members</p>
               <p className="text-2xl font-bold">
-                {(currentMonthData.active_members + currentMonthData.lapsed_members).toLocaleString()}
+                {(currentMonthData.active_members + currentMonthData.expired_members).toLocaleString()}
               </p>
             </div>
             

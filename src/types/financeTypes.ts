@@ -95,11 +95,11 @@ export interface Membership {
   profiles?: { username: string };
 }
 
-export interface MembershipStats {
+export type MembershipStats = {
   period: string;
   active_members: number;
   expired_members: number;
   canceled_members: number;
   revenue: number;
   churn_rate: number;
-}
+};

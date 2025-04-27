@@ -52,7 +52,7 @@ export function useFinancials() {
         ...item,
         source_type: item.source_type as SourceType,
         profiles: { username: item.profiles?.username || 'Unknown' }
-      }));
+      })) as SiteIncome[];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch site incomes'));
       return [];
