@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import {
   Card,
@@ -48,6 +47,7 @@ const CostStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) => 
   const [filteredExpenses, setFilteredExpenses] = useState<SiteExpense[]>([]);
   const [expenseTypeFilter, setExpenseTypeFilter] = useState<ExpenseType | ''>('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedExpense, setSelectedExpense] = useState<SiteExpense | null>(null);
   const { fetchExpenseRecords, exportToCSV, isLoading, error } = useExpenseRecords();
 
   useEffect(() => {
@@ -201,7 +201,11 @@ const CostStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) => 
             </TableHeader>
             <TableBody>
               {filteredExpenses.map((expense) => (
-                <TableRow key={expense.id}>
+                <TableRow 
+                  key={expense.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => setSelectedExpense(expense)}
+                >
                   <TableCell>{format(new Date(expense.date), 'yyyy-MM-dd')}</TableCell>
                   <TableCell>{expense.expense_type}</TableCell>
                   <TableCell>${expense.amount.toFixed(2)}</TableCell>
@@ -214,6 +218,14 @@ const CostStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) => 
           </Table>
         </CardContent>
       </Card>
+
+      {selectedExpense && (
+        <ExpenseDetail
+          expense={selectedExpense}
+          open={!!selectedExpense}
+          onOpenChange={(open) => !open && setSelectedExpense(null)}
+        />
+      )}
     </div>
   );
 };

@@ -44,7 +44,6 @@ interface IncomeStreamsProps {
   selectedMonth: string;
 }
 
-// Define consistent colors for financial categories
 const FINANCE_COLORS = {
   income: {
     membership: '#10b981',    // Green
@@ -71,11 +70,11 @@ const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) =
   const { fetchSiteIncomes } = useFinancials();
   const { fetchIncomeRecords, exportDataToCSV } = useFinancialRecords();
   const [incomeData, setIncomeData] = useState<SiteIncome[]>([]);
+  const [selectedIncome, setSelectedIncome] = useState<SiteIncome | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Chart colors for different income sources
   const COLORS = {
     membership: '#10b981',    // Emerald
     'pay-to-play': '#059669', // Green
@@ -101,7 +100,6 @@ const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) =
     loadIncomeData();
   }, [selectedMonth, sourceFilter]);
 
-  // Column definitions for table
   const columns: ColumnDef<SiteIncome>[] = [
     {
       accessorKey: 'date',
@@ -237,7 +235,6 @@ const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) =
     },
   });
 
-  // Calculate aggregated data for charts
   const calculateChartData = () => {
     const aggregated: Record<string, number> = {};
     
@@ -262,7 +259,6 @@ const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) =
 
   return (
     <div className="space-y-6">
-      {/* Header with filters and export */}
       <div className="flex flex-wrap justify-between items-center gap-4">
         <h2 className="text-xl font-semibold">Income Streams</h2>
         
@@ -291,7 +287,6 @@ const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) =
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Income Distribution Chart */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle>Income Distribution</CardTitle>
@@ -330,7 +325,6 @@ const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) =
               </div>
             )}
             
-            {/* Legend */}
             <div className="mt-6 grid grid-cols-2 gap-2">
               {Object.entries(COLORS).map(([key, color]) => (
                 <div key={key} className="flex items-center">
@@ -345,7 +339,6 @@ const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) =
           </CardContent>
         </Card>
 
-        {/* Income Data Table */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Income Records</CardTitle>
@@ -380,7 +373,8 @@ const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) =
                         table.getRowModel().rows.map((row) => (
                           <TableRow
                             key={row.id}
-                            data-state={row.getIsSelected() && "selected"}
+                            className="cursor-pointer hover:bg-muted/50"
+                            onClick={() => setSelectedIncome(row.original)}
                           >
                             {row.getVisibleCells().map((cell) => (
                               <TableCell key={cell.id}>
@@ -400,7 +394,6 @@ const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) =
                   </Table>
                 </div>
                 
-                {/* Pagination controls */}
                 <div className="flex items-center justify-end space-x-2 py-4">
                   <div className="flex-1 text-sm text-muted-foreground">
                     {`Showing ${table.getRowModel().rows?.length} of ${incomeData.length} records`}
@@ -429,7 +422,6 @@ const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) =
           </CardContent>
         </Card>
 
-        {/* Summary Card */}
         <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>Monthly Summary</CardTitle>
@@ -471,6 +463,14 @@ const IncomeStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) =
           </CardContent>
         </Card>
       </div>
+
+      {selectedIncome && (
+        <IncomeDetail
+          income={selectedIncome}
+          open={!!selectedIncome}
+          onOpenChange={(open) => !open && setSelectedIncome(null)}
+        />
+      )}
     </div>
   );
 };
