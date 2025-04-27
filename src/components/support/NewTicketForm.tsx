@@ -1,42 +1,21 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle,
-  CardFooter
-} from '@/components/ui/card';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch'; 
 import { useSupportTickets } from '@/hooks/support/useSupportTickets';
 import { SupportTicket, TicketCategory, TicketPriority } from '@/types/supportTicketTypes';
-import { SUPPORT_SYSTEM_CONFIG } from '@/services/openSupportsConfig';
-import { AlertCircle, ArrowLeft, ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { AuthCheck } from './form/AuthCheck';
+import { TicketFormHeader } from './form/TicketFormHeader';
+import { InternalTicketFormFields } from './form/InternalTicketFormFields';
 
 export const NewTicketForm = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [searchParams] = useSearchParams();
-  const isInternalView = searchParams.get('view') === 'internal';
-  const { user, hasRole } = useAuth();
-  const { addTicket, isAdmin } = useSupportTickets();
+  const { user } = useAuth();
+  const { addTicket } = useSupportTickets();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Default to internal for internal view, remove manual toggle for admins
-  const [isInternalIssue, setIsInternalIssue] = useState(true);
   
   const [ticket, setTicket] = useState<Partial<SupportTicket>>({
     title: '',
@@ -45,8 +24,6 @@ export const NewTicketForm = () => {
     priority: 'medium' as TicketPriority,
     id: crypto.randomUUID()
   });
-
-  // Remove the useEffect for internal issue toggling since it's now always internal
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -71,22 +48,7 @@ export const NewTicketForm = () => {
   };
 
   if (!user) {
-    return (
-      <Card className="bg-puzzle-black/30 border-puzzle-aqua/20">
-        <CardContent className="pt-6">
-          <div className="text-center py-8">
-            <AlertCircle className="mx-auto h-12 w-12 text-puzzle-aqua mb-4" />
-            <h3 className="text-xl font-medium mb-2">Authentication Required</h3>
-            <p className="text-puzzle-white/70 mb-6">
-              Please log in to create a support ticket.
-            </p>
-            <Button onClick={() => navigate('/auth')}>
-              Sign In
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <AuthCheck />;
   }
 
   return (
@@ -101,63 +63,14 @@ export const NewTicketForm = () => {
       </Button>
 
       <Card className="bg-puzzle-black/30 border-puzzle-aqua/20">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="h-5 w-5 text-red-500" />
-                <span>Create Internal Issue</span>
-              </div>
-            </CardTitle>
-          </div>
-        </CardHeader>
+        <TicketFormHeader />
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  name="title"
-                  placeholder="Briefly describe the internal issue"
-                  value={ticket.title}
-                  onChange={handleInputChange}
-                  required
-                  className="bg-puzzle-black/40 border-puzzle-aqua/20"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="priority">Priority</Label>
-                <Select 
-                  value={ticket.priority} 
-                  onValueChange={(value) => handleSelectChange('priority', value)}
-                >
-                  <SelectTrigger id="priority" className="bg-puzzle-black/40 border-puzzle-aqua/20">
-                    <SelectValue placeholder="Select priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="critical">Critical</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  placeholder="Provide detailed information about the internal issue"
-                  value={ticket.description}
-                  onChange={handleInputChange}
-                  required
-                  className="min-h-[200px] bg-puzzle-black/40 border-puzzle-aqua/20"
-                />
-              </div>
-            </div>
+            <InternalTicketFormFields
+              ticket={ticket}
+              handleInputChange={handleInputChange}
+              handleSelectChange={handleSelectChange}
+            />
             
             <CardFooter className="px-0 pt-6">
               <Button 
