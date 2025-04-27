@@ -1,8 +1,9 @@
+
 import { 
   Home, Users, Puzzle, ImageIcon, FileText, Star, ShoppingCart, 
   Settings, BarChart, User, Mail, Eye, Bell, Trophy, HelpCircle,
   BookOpen, BadgeHelp, ScrollText, Phone, Shield, Layers, Database,
-  LayoutDashboard, TicketIcon
+  LayoutDashboard, TicketIcon, DollarSign
 } from 'lucide-react';
 import { UserRole } from '@/types/userTypes';
 
@@ -105,7 +106,7 @@ export const adminNavItems: NavItem[] = [
   },
   {
     title: "Financial Dashboard",
-    icon: BarChart,
+    icon: DollarSign,
     href: "/cfo-dashboard",
     roles: ["super_admin", "cfo"],
   },
