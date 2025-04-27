@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -51,8 +50,8 @@ export function useFinancials() {
       return data?.map(item => ({
         ...item,
         source_type: item.source_type as SourceType,
-        categories: { name: item.categories?.name || 'Unknown' },
-        profiles: { username: item.profiles?.username || 'Anonymous' }
+        profiles: { username: item.profiles?.username || 'Anonymous' },
+        categories: { name: item.categories?.name || 'Unknown' }
       })) || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch site incomes'));
@@ -105,7 +104,11 @@ export function useFinancials() {
       return data.map(manager => ({
         ...manager,
         username: manager.profiles?.username || 'Unknown',
-        category_name: manager.categories?.name || 'Unknown'
+        category_name: manager.categories?.name || 'Unknown',
+        profiles: {
+          username: manager.profiles?.username || 'Unknown',
+          email: manager.profiles?.email
+        }
       })) || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch category managers'));
@@ -124,16 +127,16 @@ export function useFinancials() {
         .select(`
           *,
           categories:category_id(name),
-          profiles:manager_id(username, email)
+          manager:manager_id(username, email)
         `);
 
       if (error) throw error;
 
       return data.map(payment => ({
         ...payment,
-        manager_name: payment.profiles?.username || 'Unknown',
+        manager_name: payment.manager?.username || 'Unknown',
+        manager_email: payment.manager?.email,
         category_name: payment.categories?.name || 'Unknown',
-        manager_email: payment.profiles?.email,
         payment_status: payment.payment_status as PaymentStatus
       })) || [];
     } catch (err) {
