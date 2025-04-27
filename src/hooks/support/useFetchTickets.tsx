@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { SupportTicket, TicketFilters, TicketComment, TicketStatus } from "@/types/supportTicketTypes";
@@ -27,13 +28,12 @@ export const useFetchTickets = () => {
       let allTickets: SupportTicket[] = [];
       
       if (isInternalView && isAdmin) {
+        // For issues table, join with profiles by creator's user ID
         const { data: issuesData, error: issuesError } = await supabase
           .from('issues')
           .select(`
-            *,
-            profiles:created_by (
-              email
-            )
+            id, title, description, status, category, created_at, updated_at, created_by,
+            profiles (email)
           `)
           .eq('category', 'internal')
           .order('created_at', { ascending: false });
@@ -43,30 +43,34 @@ export const useFetchTickets = () => {
           throw issuesError;
         }
         
-        const mappedIssues = issuesData.map(item => ({
-          id: item.id,
-          title: item.title,
-          description: item.description,
-          status: mapDbStatusToFrontend(item.status),
-          priority: (item.category === 'security' ? 'high' : 
-                    item.category === 'feature' ? 'low' : 'medium'),
-          category: 'internal',
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          created_by: item.profiles?.email || 'Unknown',
-          comments: []
-        } as SupportTicket));
+        const mappedIssues = issuesData.map(item => {
+          // Safely access the email through the joined profiles table
+          const creatorEmail = item.profiles?.email || 'Unknown';
+          
+          return {
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            status: mapDbStatusToFrontend(item.status),
+            priority: (item.category === 'security' ? 'high' : 
+                      item.category === 'feature' ? 'low' : 'medium'),
+            category: 'internal',
+            created_at: item.created_at,
+            updated_at: item.updated_at,
+            created_by: creatorEmail,
+            comments: []
+          } as SupportTicket;
+        });
         
         allTickets = mappedIssues;
       } 
       else {
+        // For tickets table, join with profiles by creator's user ID
         const ticketsQuery = supabase
           .from('tickets')
           .select(`
-            *,
-            profiles:created_by (
-              email
-            )
+            id, title, description, status, created_at, updated_at, created_by, comments,
+            profiles (email)
           `);
         
         if (isAdmin) {
@@ -108,6 +112,9 @@ export const useFetchTickets = () => {
           
           const ticketStatus = mapDbStatusToFrontend(item.status);
           
+          // Safely access the email through the joined profiles table
+          const creatorEmail = item.profiles?.email || 'Unknown';
+          
           return {
             id: item.id,
             title: item.title,
@@ -117,7 +124,7 @@ export const useFetchTickets = () => {
             category: 'tech',
             created_at: item.created_at,
             updated_at: item.updated_at,
-            created_by: item.profiles?.email || 'Unknown',
+            created_by: creatorEmail,
             comments: comments
           } as SupportTicket;
         });
