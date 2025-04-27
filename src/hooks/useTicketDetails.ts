@@ -7,7 +7,6 @@ export function useTicketDetails(ticketId: string | undefined) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Fetch ticket details
   const {
     data: ticketDetails,
     isLoading,
@@ -21,7 +20,6 @@ export function useTicketDetails(ticketId: string | undefined) {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Add comment to ticket
   const addComment = useMutation({
     mutationFn: ({ content, file }: { content: string; file?: string }) => {
       if (!ticketId) throw new Error("No ticket ID provided");
@@ -43,7 +41,6 @@ export function useTicketDetails(ticketId: string | undefined) {
     },
   });
 
-  // Update ticket status
   const updateStatus = useMutation({
     mutationFn: (status: string) => {
       if (!ticketId) throw new Error("No ticket ID provided");

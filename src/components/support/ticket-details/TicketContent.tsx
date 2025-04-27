@@ -42,7 +42,7 @@ export const TicketContent = ({
           <div>
             <CardTitle>{ticket.title}</CardTitle>
             <CardDescription>
-              Submitted by {ticket.userEmail} on {formatDate(ticket.date)}
+              Submitted on {formatDate(ticket.created_at)}
             </CardDescription>
           </div>
           
@@ -64,13 +64,7 @@ export const TicketContent = ({
       
       <CardContent>
         <div className="prose dark:prose-invert max-w-none">
-          <p>{ticket.content}</p>
-          {ticket.file && (
-            <div className="mt-2 flex items-center text-sm">
-              <Paperclip className="h-3 w-3 mr-1" />
-              <a href="#" className="hover:underline">View attachment</a>
-            </div>
-          )}
+          <p>{ticket.description}</p>
         </div>
         
         {comments.length > 0 && (
