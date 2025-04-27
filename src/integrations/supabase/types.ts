@@ -366,6 +366,45 @@ export type Database = {
         }
         Relationships: []
       }
+      memberships: {
+        Row: {
+          amount: number
+          created_at: string
+          end_date: string | null
+          id: string
+          last_payment_date: string | null
+          membership_type: string
+          start_date: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          last_payment_date?: string | null
+          membership_type: string
+          start_date?: string
+          status: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          last_payment_date?: string | null
+          membership_type?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       password_reset_attempts: {
         Row: {
           attempt_count: number | null
@@ -1163,6 +1202,16 @@ export type Database = {
       }
     }
     Views: {
+      membership_stats: {
+        Row: {
+          active_members: number | null
+          canceled_members: number | null
+          expired_members: number | null
+          month: string | null
+          total_revenue: number | null
+        }
+        Relationships: []
+      }
       puzzle_top_players: {
         Row: {
           completion_time: number | null
@@ -1214,6 +1263,17 @@ export type Database = {
           prize_value: number
           winner_country: string
           created_at: string
+        }[]
+      }
+      get_membership_stats: {
+        Args: { start_date: string; end_date: string }
+        Returns: {
+          period: string
+          active_members: number
+          expired_members: number
+          canceled_members: number
+          revenue: number
+          churn_rate: number
         }[]
       }
       get_monthly_financial_summary: {

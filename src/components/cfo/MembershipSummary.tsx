@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MembershipSummary as MembershipData } from '@/types/financeTypes';
+import { MembershipStats } from '@/types/financeTypes';
 import { format, parseISO, subMonths } from 'date-fns';
 import { Download, Users, UserMinus, UserCheck } from 'lucide-react';
 import {
@@ -26,7 +26,7 @@ interface MembershipSummaryProps {
 
 const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [membershipData, setMembershipData] = useState<MembershipData[]>([]);
+  const [membershipData, setMembershipData] = useState<MembershipStats[]>([]);
   const { toast } = useToast();
 
   const COLORS = {
@@ -45,7 +45,7 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
         
         // Generate 6 months of mock data including the selected month
         const currentDate = parseISO(`${selectedMonth}-01`);
-        const mockData: MembershipData[] = [];
+        const mockData: MembershipStats[] = [];
         
         for (let i = 5; i >= 0; i--) {
           const date = subMonths(currentDate, i);
