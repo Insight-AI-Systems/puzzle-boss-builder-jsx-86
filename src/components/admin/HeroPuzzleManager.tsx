@@ -8,6 +8,7 @@ import { ImageSelector } from './image-library/components/ImageSelector';
 import { HeroImageSection } from './hero-puzzle/HeroImageSection';
 import { HeroPuzzleForm } from './hero-puzzle/HeroPuzzleForm';
 import { HeroPuzzleFooter } from './hero-puzzle/HeroPuzzleFooter';
+import { supabase } from '@/integrations/supabase/client';
 
 const HeroPuzzleManager: React.FC = () => {
   const { puzzleConfig, isLoading, updateHeroPuzzle, createHeroPuzzle } = useHeroPuzzle();

@@ -10,7 +10,7 @@ import { HeroPuzzleConfig } from '@/hooks/useHeroPuzzle';
 
 interface HeroPuzzleFormProps {
   formData: Partial<HeroPuzzleConfig>;
-  onFormUpdate: (updates: Partial<HeroPuzzleConfig>) => void;
+  onFormUpdate?: (updates: Partial<HeroPuzzleConfig>) => void;
   handleChange?: (key: keyof HeroPuzzleConfig, value: string) => void;
   onImageSelectorOpen?: () => void;
 }

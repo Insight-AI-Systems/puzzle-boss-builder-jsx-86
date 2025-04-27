@@ -10,7 +10,7 @@ import {
   CardTitle,
   CardContent,
 } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { ChartContainer } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Loader2 } from 'lucide-react';
 
@@ -29,39 +29,39 @@ export const OverviewTab: React.FC = () => {
 
   // Calculate trend directions based on data
   const getUserTrend = () => {
-    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" };
+    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" as "up" | "down" };
     const current = monthlyTrends[0]?.active_users || 0;
     const previous = monthlyTrends[1]?.active_users || 0;
-    if (previous === 0) return { value: "100%", direction: "up" };
+    if (previous === 0) return { value: "100%", direction: "up" as const };
     const percent = Math.round((current - previous) / previous * 100);
-    return { value: `${Math.abs(percent)}%`, direction: percent >= 0 ? "up" : "down" };
+    return { value: `${Math.abs(percent)}%`, direction: percent >= 0 ? "up" as const : "down" as const };
   };
 
   const getSignupTrend = () => {
-    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" };
+    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" as "up" | "down" };
     const current = monthlyTrends[0]?.new_signups || 0;
     const previous = monthlyTrends[1]?.new_signups || 0;
-    if (previous === 0) return { value: "100%", direction: "up" };
+    if (previous === 0) return { value: "100%", direction: "up" as const };
     const percent = Math.round((current - previous) / previous * 100);
-    return { value: `${Math.abs(percent)}%`, direction: percent >= 0 ? "up" : "down" };
+    return { value: `${Math.abs(percent)}%`, direction: percent >= 0 ? "up" as const : "down" as const };
   };
 
   const getPuzzlesTrend = () => {
-    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" };
+    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" as "up" | "down" };
     const current = monthlyTrends[0]?.puzzles_completed || 0;
     const previous = monthlyTrends[1]?.puzzles_completed || 0;
-    if (previous === 0) return { value: "100%", direction: "up" };
+    if (previous === 0) return { value: "100%", direction: "up" as const };
     const percent = Math.round((current - previous) / previous * 100);
-    return { value: `${Math.abs(percent)}%`, direction: percent >= 0 ? "up" : "down" };
+    return { value: `${Math.abs(percent)}%`, direction: percent >= 0 ? "up" as const : "down" as const };
   };
 
   const getRevenueTrend = () => {
-    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" };
+    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" as "up" | "down" };
     const current = monthlyTrends[0]?.revenue || 0;
     const previous = monthlyTrends[1]?.revenue || 0;
-    if (previous === 0) return { value: "100%", direction: "up" };
+    if (previous === 0) return { value: "100%", direction: "up" as const };
     const percent = Math.round((current - previous) / previous * 100);
-    return { value: `${Math.abs(percent)}%`, direction: percent >= 0 ? "up" : "down" };
+    return { value: `${Math.abs(percent)}%`, direction: percent >= 0 ? "up" as const : "down" as const };
   };
 
   return (
