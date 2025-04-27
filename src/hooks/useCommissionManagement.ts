@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CommissionPayment, PaymentStatus } from '@/types/financeTypes';
+import { PaymentStatus } from '@/types/financeTypes';
 import { useToast } from '@/hooks/use-toast';
 
 export function useCommissionManagement() {
@@ -42,39 +42,10 @@ export function useCommissionManagement() {
   const generateCommissions = async (period: string) => {
     setIsLoading(true);
     try {
-      const { data: managers } = await supabase
-        .from('category_managers')
-        .select('*')
-        .eq('active', true);
-
-      if (!managers) return;
-
-      for (const manager of managers) {
-        // Calculate gross income for the category in this period
-        const { data: incomeData } = await supabase
-          .from('site_income')
-          .select('amount')
-          .eq('category_id', manager.category_id)
-          .like('date', `${period}%`);
-
-        const grossIncome = incomeData?.reduce((sum, record) => sum + record.amount, 0) || 0;
-        const commissionAmount = (grossIncome * manager.commission_percent) / 100;
-
-        // Create or update commission payment record
-        const { error } = await supabase
-          .from('commission_payments')
-          .upsert({
-            manager_id: manager.user_id,
-            category_id: manager.category_id,
-            period,
-            gross_income: grossIncome,
-            net_income: grossIncome - commissionAmount,
-            commission_amount: commissionAmount,
-            payment_status: PaymentStatus.PENDING
-          });
-
-        if (error) throw error;
-      }
+      // Call the database function directly
+      const { error } = await supabase.rpc('calculate_monthly_commissions', { month_param: period });
+      
+      if (error) throw error;
 
       toast({
         title: "Success",

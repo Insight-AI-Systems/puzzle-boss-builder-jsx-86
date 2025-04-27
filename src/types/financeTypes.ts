@@ -1,7 +1,9 @@
+
 export enum SourceType {
   MEMBERSHIP = 'membership',
-  PUZZLE = 'puzzle',
+  PUZZLE = 'pay-to-play',
   PRIZE = 'prize',
+  SPONSORSHIP = 'sponsorship',
   OTHER = 'other'
 }
 
@@ -24,7 +26,7 @@ export type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export interface SiteIncome {
   id: string;
-  source_type: 'membership' | 'pay-to-play' | 'sponsorship' | 'other';
+  source_type: string;
   amount: number;
   user_id?: string;
   category_id?: string;

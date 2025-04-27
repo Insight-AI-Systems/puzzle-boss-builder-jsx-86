@@ -102,8 +102,8 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
   };
 
   const filteredPayments = payments.filter(payment => {
-    return (!filterManager || payment.manager_name.toLowerCase().includes(filterManager.toLowerCase())) &&
-           (!filterCategory || payment.category_name.toLowerCase().includes(filterCategory.toLowerCase())) &&
+    return (!filterManager || payment.manager_name?.toLowerCase().includes(filterManager.toLowerCase())) &&
+           (!filterCategory || payment.category_name?.toLowerCase().includes(filterCategory.toLowerCase())) &&
            (!filterStatus || payment.payment_status === filterStatus);
   });
 

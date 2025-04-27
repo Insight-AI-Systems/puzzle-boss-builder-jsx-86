@@ -7,8 +7,6 @@ import {
   CategoryManager,
   CommissionPayment,
   MonthlyFinancialSummary,
-  SourceType,
-  ExpenseType,
   PaymentStatus
 } from '@/types/financeTypes';
 
@@ -42,7 +40,7 @@ export function useFinancials() {
         .select(`
           *,
           categories(name),
-          profiles:user_id(username)
+          profiles(username)
         `)
         .like('date', `${month}%`);
 
@@ -51,7 +49,8 @@ export function useFinancials() {
       return data?.map(item => ({
         ...item,
         source_type: item.source_type,
-        profiles: { username: item.profiles?.username || 'Unknown' }
+        profiles: { username: item.profiles?.username || 'Unknown' },
+        categories: { name: item.categories?.name || 'Unknown' }
       })) || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch site incomes'));
@@ -73,7 +72,7 @@ export function useFinancials() {
       if (error) throw error;
       return data.map(item => ({
         ...item,
-        expense_type: item.expense_type as ExpenseType,
+        expense_type: item.expense_type as any,
       })) || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch site expenses'));
@@ -91,20 +90,17 @@ export function useFinancials() {
         .from('category_managers')
         .select(`
           *,
-          categories:category_id (name),
-          user:user_id (
-            email,
-            profiles:id (username)
-          )
+          categories(name),
+          profiles(username, email)
         `);
 
       if (error) throw error;
 
       return data.map(manager => ({
         ...manager,
-        username: manager.user?.profiles?.username || 'Unknown',
+        username: manager.profiles?.username || 'Unknown',
         category_name: manager.categories?.name || 'Unknown',
-        email: manager.user?.email
+        email: manager.profiles?.email
       })) as CategoryManager[];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch category managers'));
@@ -122,11 +118,8 @@ export function useFinancials() {
         .from('commission_payments')
         .select(`
           *,
-          categories:category_id(name),
-          profiles:manager_id(
-            username,
-            email
-          )
+          categories(name),
+          profiles(username, email)
         `);
 
       if (error) throw error;
@@ -135,7 +128,8 @@ export function useFinancials() {
         ...payment,
         manager_name: payment.profiles?.username || 'Unknown',
         category_name: payment.categories?.name || 'Unknown',
-        manager_email: payment.profiles?.email
+        manager_email: payment.profiles?.email,
+        payment_status: payment.payment_status as PaymentStatus
       })) as CommissionPayment[];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch commission payments'));
