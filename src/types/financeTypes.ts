@@ -1,4 +1,3 @@
-
 export enum SourceType {
   MEMBERSHIP = 'membership',
   PUZZLE = 'pay-to-play',
@@ -79,6 +78,7 @@ export interface CommissionPayment {
   email_status?: string;
   email_sent_at?: string;
   email_error?: string;
+  is_overdue?: boolean;
 }
 
 export interface MonthlyFinancialSummary {

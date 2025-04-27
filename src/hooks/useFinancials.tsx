@@ -39,8 +39,7 @@ export function useFinancials() {
         .from('site_income')
         .select(`
           *,
-          categories(name),
-          profiles(username)
+          categories (name)
         `)
         .like('date', `${month}%`);
 
@@ -49,7 +48,7 @@ export function useFinancials() {
       return data?.map(item => ({
         ...item,
         source_type: item.source_type,
-        profiles: { username: item.profiles?.username || 'Unknown' },
+        profiles: { username: 'Anonymous' },
         categories: { name: item.categories?.name || 'Unknown' }
       })) || [];
     } catch (err) {
@@ -72,7 +71,8 @@ export function useFinancials() {
       if (error) throw error;
       return data.map(item => ({
         ...item,
-        expense_type: item.expense_type as any,
+        expense_type: item.expense_type,
+        categories: { name: item.categories?.name || 'Unknown' }
       })) || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch site expenses'));
@@ -91,7 +91,7 @@ export function useFinancials() {
         .select(`
           *,
           categories(name),
-          profiles(username, email)
+          profiles:user_id(username, email)
         `);
 
       if (error) throw error;
@@ -99,9 +99,8 @@ export function useFinancials() {
       return data.map(manager => ({
         ...manager,
         username: manager.profiles?.username || 'Unknown',
-        category_name: manager.categories?.name || 'Unknown',
-        email: manager.profiles?.email
-      })) as CategoryManager[];
+        category_name: manager.categories?.name || 'Unknown'
+      })) || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch category managers'));
       return [];
@@ -118,8 +117,8 @@ export function useFinancials() {
         .from('commission_payments')
         .select(`
           *,
-          categories(name),
-          profiles(username, email)
+          categories:category_id(name),
+          profiles:manager_id(username, email)
         `);
 
       if (error) throw error;
@@ -130,7 +129,7 @@ export function useFinancials() {
         category_name: payment.categories?.name || 'Unknown',
         manager_email: payment.profiles?.email,
         payment_status: payment.payment_status as PaymentStatus
-      })) as CommissionPayment[];
+      })) || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch commission payments'));
       return [];
