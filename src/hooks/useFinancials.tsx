@@ -150,19 +150,22 @@ export const useFinancials = () => {
         .from('category_managers')
         .select(`
           *,
-          profiles:user_id (username),
-          categories:category_id (name)
-        `)
-        .order('created_at', { ascending: false });
+          profiles:user_id (
+            username
+          ),
+          categories:category_id (
+            name
+          )
+        `);
       
       if (error) throw error;
       
-      // Transform data to include username and category_name
+      // Transform data to match CategoryManager type
       return data.map(manager => ({
         ...manager,
-        username: manager.profiles?.username,
-        category_name: manager.categories?.name
-      }));
+        username: manager.profiles?.username || 'Unknown',
+        category_name: manager.categories?.name || 'Unknown'
+      })) as CategoryManager[];
     } catch (error) {
       toast({
         title: 'Error fetching category managers',
@@ -186,9 +189,13 @@ export const useFinancials = () => {
           category_managers:manager_id (
             id,
             user_id,
-            profiles:user_id (username)
+            profiles:user_id (
+              username
+            )
           ),
-          categories:category_id (name)
+          categories:category_id (
+            name
+          )
         `)
         .order('created_at', { ascending: false });
 
@@ -198,13 +205,13 @@ export const useFinancials = () => {
       
       if (error) throw error;
       
-      // Transform data to include manager_name and category_name and ensure type safety
+      // Transform data to match CommissionPayment type
       return data.map(payment => ({
         ...payment,
-        manager_name: payment.category_managers?.profiles?.username,
-        category_name: payment.categories?.name,
+        manager_name: payment.category_managers?.profiles?.username || 'Unknown',
+        category_name: payment.categories?.name || 'Unknown',
         payment_status: payment.payment_status as PaymentStatus
-      }));
+      })) as CommissionPayment[];
     } catch (error) {
       toast({
         title: 'Error fetching commission payments',

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useFinancials } from '@/hooks/useFinancials';
 import { CategoryManager, CommissionPayment, CategoryRevenue, PaymentStatus } from '@/types/financeTypes';
@@ -64,6 +63,7 @@ import {
   Cell,
 } from 'recharts';
 import { useToast } from '@/hooks/use-toast';
+import { TooltipProvider, Tooltip } from 'react-tooltip';
 
 interface CommissionsManagementProps {
   selectedMonth: string;
@@ -101,7 +101,6 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
       const revenues = await calculateCategoryRevenue(selectedMonth);
       setCategoryRevenues(revenues);
       
-      // Prepare chart data
       prepareChartData(payments, revenues);
     };
     
@@ -109,7 +108,6 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
   }, [selectedMonth]);
 
   const prepareChartData = (payments: CommissionPayment[], revenues: CategoryRevenue[]) => {
-    // Status pie chart data
     const statusCounts = payments.reduce((acc: Record<string, number>, payment) => {
       const status = payment.payment_status;
       acc[status] = (acc[status] || 0) + payment.commission_amount;
@@ -122,7 +120,6 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
     }));
     setStatusChartData(statusData);
 
-    // Category bar chart data
     const categoryData = revenues.map(revenue => ({
       name: revenue.category_name,
       commission: revenue.commission_amount,
@@ -137,7 +134,6 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
       const success = await generateCommissionPayments(selectedMonth);
       
       if (success) {
-        // Refresh the commission payments data
         const payments = await fetchCommissionPayments(selectedMonth);
         setCommissionPayments(payments);
         
@@ -160,7 +156,6 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
     }
   };
 
-  // Column definitions for revenue table
   const revenueColumns: ColumnDef<CategoryRevenue>[] = [
     {
       accessorKey: 'category_name',
@@ -253,12 +248,24 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
     },
   ];
 
-  // Column definitions for payments table
   const paymentColumns: ColumnDef<CommissionPayment>[] = [
     {
       accessorKey: 'category_name',
-      header: 'Category',
-      cell: ({ row }) => row.original.category_name || 'N/A',
+      header: () => (
+        <div className="flex items-center gap-2">
+          Category
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <HelpCircle className="h-4 w-4 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Category the commission is calculated for</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      ),
     },
     {
       accessorKey: 'manager_name',
@@ -379,7 +386,6 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
                                 status as PaymentStatus
                               );
                               
-                              // Refresh payments data
                               const updatedPayments = await fetchCommissionPayments(selectedMonth);
                               setCommissionPayments(updatedPayments);
                               prepareChartData(updatedPayments, categoryRevenues);
@@ -444,7 +450,6 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
     exportDataToCSV(commissionPayments, `commission-payments-${selectedMonth}`);
   };
 
-  // Status colors for pie chart
   const PAYMENT_STATUS_COLORS = {
     Pending: '#f97316',
     Processing: '#3b82f6',
@@ -478,9 +483,7 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
         </div>
       </div>
 
-      {/* Charts section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Commission Status Pie Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Commission Status</CardTitle>
@@ -523,7 +526,6 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
           </CardContent>
         </Card>
 
-        {/* Category Revenue Bar Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Category Commissions</CardTitle>
@@ -553,7 +555,6 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
         </Card>
       </div>
 
-      {/* Category Revenue Section */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -616,7 +617,6 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
         </CardContent>
       </Card>
 
-      {/* Commission Payments Section */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -677,7 +677,6 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
                 </Table>
               </div>
               
-              {/* Pagination controls */}
               <div className="flex items-center justify-end space-x-2 py-4">
                 <div className="flex-1 text-sm text-muted-foreground">
                   {`Showing ${paymentTable.getRowModel().rows?.length} of ${commissionPayments.length} payments`}
@@ -706,7 +705,6 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
         </CardContent>
       </Card>
 
-      {/* Category Manager Summary */}
       <Card>
         <CardHeader>
           <CardTitle>Category Managers</CardTitle>

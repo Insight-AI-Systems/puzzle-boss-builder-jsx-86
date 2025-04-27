@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useFinancials } from '@/hooks/useFinancials';
 import { SiteIncome, SourceType } from '@/types/financeTypes';
@@ -51,10 +50,10 @@ const IncomeStreams: React.FC<IncomeStreamsProps> = ({ selectedMonth }) => {
 
   // Chart colors for different income sources
   const COLORS = {
-    membership: '#10b981',  // green
-    'pay-to-play': '#3b82f6',  // blue
-    sponsorship: '#f59e0b',  // amber
-    other: '#8b5cf6',  // purple
+    membership: '#10b981',    // Emerald
+    'pay-to-play': '#059669', // Green
+    sponsorship: '#047857',   // Dark Green
+    other: '#064e3b',        // Darker Green
   };
 
   useEffect(() => {

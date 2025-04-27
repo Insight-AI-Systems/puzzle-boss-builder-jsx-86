@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,6 +28,13 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
   const [isLoading, setIsLoading] = useState(false);
   const [membershipData, setMembershipData] = useState<MembershipData[]>([]);
   const { toast } = useToast();
+
+  const COLORS = {
+    active: '#10b981',    // Emerald
+    lapsed: '#f59e0b',    // Amber
+    canceled: '#ef4444',  // Red
+    revenue: '#047857'    // Dark Green
+  };
 
   useEffect(() => {
     const fetchMembershipData = async () => {
@@ -186,9 +192,9 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
           <CardContent className="pt-2">
             <ChartContainer
               config={{
-                active: { color: "#10b981" },  // green
-                lapsed: { color: "#f59e0b" },  // amber
-                canceled: { color: "#ef4444" },  // red
+                active: { color: COLORS.active },  // Emerald
+                lapsed: { color: COLORS.lapsed },  // Amber
+                canceled: { color: COLORS.canceled },  // Red
               }}
               className="aspect-[4/3]"
             >
@@ -202,7 +208,7 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
                   type="monotone"
                   dataKey="active"
                   name="Active Members"
-                  stroke="var(--color-active)"
+                  stroke={COLORS.active}
                   strokeWidth={2}
                   activeDot={{ r: 6 }}
                 />
@@ -210,14 +216,14 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
                   type="monotone"
                   dataKey="lapsed"
                   name="Lapsed Members"
-                  stroke="var(--color-lapsed)"
+                  stroke={COLORS.lapsed}
                   strokeWidth={2}
                 />
                 <Line
                   type="monotone"
                   dataKey="canceled"
                   name="Canceled Members"
-                  stroke="var(--color-canceled)"
+                  stroke={COLORS.canceled}
                   strokeWidth={2}
                 />
               </LineChart>
@@ -232,7 +238,7 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
           <CardContent className="pt-2">
             <ChartContainer
               config={{
-                revenue: { color: "#10b981" },  // green
+                revenue: { color: COLORS.revenue },  // Dark Green
               }}
               className="aspect-[4/3]"
             >
@@ -245,7 +251,7 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
                 <Bar
                   dataKey="revenue"
                   name="Revenue"
-                  fill="var(--color-revenue)"
+                  fill={COLORS.revenue}
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>

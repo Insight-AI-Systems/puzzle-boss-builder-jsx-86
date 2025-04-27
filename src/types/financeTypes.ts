@@ -1,4 +1,3 @@
-
 export type SourceType = 'membership' | 'pay-to-play' | 'sponsorship' | 'other';
 export type ExpenseType = 'prizes' | 'salaries' | 'infrastructure' | 'commissions' | 'other';
 export type PaymentStatus = 'pending' | 'processing' | 'paid' | 'cancelled';
@@ -33,10 +32,12 @@ export interface CategoryManager {
   category_id: string;
   commission_percent: number;
   active: boolean;
-  username?: string;
-  category_name?: string;
-  profiles?: { username: string }; // For join results
-  categories?: { name: string }; // For join results
+  username: string;
+  category_name: string;
+  created_at?: string;
+  updated_at?: string;
+  profiles?: { username: string };
+  categories?: { name: string };
 }
 
 export interface CommissionPayment {
@@ -49,16 +50,18 @@ export interface CommissionPayment {
   commission_amount: number;
   payment_status: PaymentStatus;
   payment_date?: string;
-  manager_name?: string;
-  category_name?: string;
+  manager_name: string;
+  category_name: string;
+  created_at?: string;
+  updated_at?: string;
   category_managers?: {
     id: string;
     user_id: string;
     profiles: {
       username: string;
     };
-  }; // For join results
-  categories?: { name: string }; // For join results
+  };
+  categories?: { name: string };
 }
 
 export interface MonthlyFinancialSummary {

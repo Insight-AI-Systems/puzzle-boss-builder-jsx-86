@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { useFinancials } from '@/hooks/useFinancials';
 import { SiteExpense, ExpenseType } from '@/types/financeTypes';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   ColumnDef,
@@ -31,6 +30,7 @@ import {
 import {
   BarChart,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -52,13 +52,12 @@ const CostStreams: React.FC<CostStreamsProps> = ({ selectedMonth }) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [typeFilter, setTypeFilter] = useState<string>('all');
 
-  // Chart colors for different expense types
   const COLORS = {
-    prizes: '#ef4444',  // red
-    salaries: '#f97316',  // orange
-    infrastructure: '#3b82f6',  // blue
-    commissions: '#8b5cf6',  // purple
-    other: '#64748b',  // slate
+    prizes: '#3b82f6',      // Blue
+    salaries: '#f97316',    // Orange
+    infrastructure: '#ef4444', // Red
+    commissions: '#8b5cf6', // Purple
+    other: '#64748b',      // Slate
   };
 
   useEffect(() => {
@@ -74,7 +73,6 @@ const CostStreams: React.FC<CostStreamsProps> = ({ selectedMonth }) => {
     loadExpenseData();
   }, [selectedMonth, typeFilter]);
 
-  // Column definitions for table
   const columns: ColumnDef<SiteExpense>[] = [
     {
       accessorKey: 'date',
@@ -164,7 +162,6 @@ const CostStreams: React.FC<CostStreamsProps> = ({ selectedMonth }) => {
     },
   });
 
-  // Calculate aggregated data for charts
   const calculateChartData = () => {
     const aggregated: Record<string, number> = {};
     
@@ -189,7 +186,6 @@ const CostStreams: React.FC<CostStreamsProps> = ({ selectedMonth }) => {
 
   return (
     <div className="space-y-6">
-      {/* Header with filters and export */}
       <div className="flex flex-wrap justify-between items-center gap-4">
         <h2 className="text-xl font-semibold">Expense Streams</h2>
         
@@ -219,7 +215,6 @@ const CostStreams: React.FC<CostStreamsProps> = ({ selectedMonth }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Expense Distribution Chart */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle>Expense Distribution</CardTitle>
@@ -260,7 +255,6 @@ const CostStreams: React.FC<CostStreamsProps> = ({ selectedMonth }) => {
           </CardContent>
         </Card>
 
-        {/* Expense Data Table */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Expense Records</CardTitle>
@@ -315,7 +309,6 @@ const CostStreams: React.FC<CostStreamsProps> = ({ selectedMonth }) => {
                   </Table>
                 </div>
                 
-                {/* Pagination controls */}
                 <div className="flex items-center justify-end space-x-2 py-4">
                   <div className="flex-1 text-sm text-muted-foreground">
                     {`Showing ${table.getRowModel().rows?.length} of ${expenseData.length} records`}
@@ -344,7 +337,6 @@ const CostStreams: React.FC<CostStreamsProps> = ({ selectedMonth }) => {
           </CardContent>
         </Card>
 
-        {/* Summary Card */}
         <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>Expense Summary</CardTitle>
