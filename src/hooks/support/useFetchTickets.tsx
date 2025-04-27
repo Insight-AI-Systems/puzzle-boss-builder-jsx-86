@@ -28,7 +28,7 @@ export const useFetchTickets = () => {
       let allTickets: SupportTicket[] = [];
       
       if (isInternalView && isAdmin) {
-        // For issues table, need to get the email from profiles by joining on created_by = profiles.id
+        // For issues table, fetch the issues first
         const { data: issuesData, error: issuesError } = await supabase
           .from('issues')
           .select(`
@@ -42,46 +42,50 @@ export const useFetchTickets = () => {
           throw issuesError;
         }
         
-        // Get the unique creator IDs from the issues
-        const creatorIds = [...new Set(issuesData.map(item => item.created_by))];
-        
-        // Fetch profiles for those creators in a separate query
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, email')
-          .in('id', creatorIds);
+        if (!issuesData || issuesData.length === 0) {
+          allTickets = [];
+        } else {
+          // Get the unique creator IDs from the issues
+          const creatorIds = [...new Set(issuesData.map(item => item.created_by))];
           
-        if (profilesError) {
-          console.error("Error fetching profiles:", profilesError);
-          throw profilesError;
+          // Fetch profiles for those creators in a separate query
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, email')
+            .in('id', creatorIds);
+            
+          if (profilesError) {
+            console.error("Error fetching profiles:", profilesError);
+            throw profilesError;
+          }
+          
+          // Create a map of user IDs to emails for quick lookup
+          const userEmailMap = new Map();
+          profilesData?.forEach(profile => {
+            userEmailMap.set(profile.id, profile.email);
+          });
+          
+          const mappedIssues = issuesData.map(item => {
+            // Look up the email using the created_by ID
+            const creatorEmail = userEmailMap.get(item.created_by) || 'Unknown';
+            
+            return {
+              id: item.id,
+              title: item.title,
+              description: item.description,
+              status: mapDbStatusToFrontend(item.status),
+              priority: (item.category === 'security' ? 'high' : 
+                        item.category === 'feature' ? 'low' : 'medium'),
+              category: 'internal',
+              created_at: item.created_at,
+              updated_at: item.updated_at,
+              created_by: creatorEmail,
+              comments: []
+            } as SupportTicket;
+          });
+          
+          allTickets = mappedIssues;
         }
-        
-        // Create a map of user IDs to emails for quick lookup
-        const userEmailMap = new Map();
-        profilesData?.forEach(profile => {
-          userEmailMap.set(profile.id, profile.email);
-        });
-        
-        const mappedIssues = issuesData.map(item => {
-          // Look up the email using the created_by ID
-          const creatorEmail = userEmailMap.get(item.created_by) || 'Unknown';
-          
-          return {
-            id: item.id,
-            title: item.title,
-            description: item.description,
-            status: mapDbStatusToFrontend(item.status),
-            priority: (item.category === 'security' ? 'high' : 
-                      item.category === 'feature' ? 'low' : 'medium'),
-            category: 'internal',
-            created_at: item.created_at,
-            updated_at: item.updated_at,
-            created_by: creatorEmail,
-            comments: []
-          } as SupportTicket;
-        });
-        
-        allTickets = mappedIssues;
       } 
       else {
         // For tickets table, using the same approach
