@@ -77,12 +77,14 @@ export const useFetchTickets = () => {
         }
         
         // Apply filters if provided
-        if (filters?.status && filters.status !== 'pending') {
-          ticketsQuery.eq('status', filters.status as string);
-        } else if (filters?.status === 'pending') {
-          // For pending status, we need to handle it as a string
-          // since the database might have a different representation
-          ticketsQuery.eq('status', 'deferred');
+        if (filters?.status) {
+          if (filters.status === 'pending') {
+            // For pending status, we need to handle it as a string in the database
+            ticketsQuery.eq('status', 'deferred' as any); // Using 'any' to bypass TypeScript checking
+          } else {
+            // For other statuses
+            ticketsQuery.eq('status', filters.status as any); // Using 'any' to bypass TypeScript checking
+          }
         }
         
         if (filters?.search) {
@@ -114,7 +116,7 @@ export const useFetchTickets = () => {
           }
           
           // Map database status to frontend status
-          let ticketStatus: TicketStatus = item.status as TicketStatus;
+          let ticketStatus: TicketStatus = mapDbStatusToFrontend(item.status) as TicketStatus;
           
           return {
             id: item.id,
