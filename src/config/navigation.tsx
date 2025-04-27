@@ -1,4 +1,3 @@
-
 import { 
   Home, Users, Puzzle, ImageIcon, FileText, Star, ShoppingCart, 
   Settings, BarChart, User, Mail, Eye, Bell, Trophy, HelpCircle,
@@ -103,6 +102,12 @@ export const adminNavItems: NavItem[] = [
     icon: Database,
     href: "/admin-dashboard?tab=database",
     roles: ["super_admin"],
+  },
+  {
+    title: "Financial Dashboard",
+    icon: BarChart,
+    href: "/cfo-dashboard",
+    roles: ["super_admin", "cfo"],
   },
   {
     title: "Support Admin",

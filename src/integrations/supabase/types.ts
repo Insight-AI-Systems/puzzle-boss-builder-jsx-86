@@ -69,6 +69,44 @@ export type Database = {
         }
         Relationships: []
       }
+      category_managers: {
+        Row: {
+          active: boolean
+          category_id: string
+          commission_percent: number
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          category_id: string
+          commission_percent?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          category_id?: string
+          commission_percent?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_managers_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_revenue: {
         Row: {
           category_id: string | null
@@ -97,6 +135,63 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_payments: {
+        Row: {
+          category_id: string
+          commission_amount: number
+          created_at: string
+          gross_income: number
+          id: string
+          manager_id: string
+          net_income: number
+          payment_date: string | null
+          payment_status: string
+          period: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          commission_amount?: number
+          created_at?: string
+          gross_income?: number
+          id?: string
+          manager_id: string
+          net_income?: number
+          payment_date?: string | null
+          payment_status?: string
+          period: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          commission_amount?: number
+          created_at?: string
+          gross_income?: number
+          id?: string
+          manager_id?: string
+          net_income?: number
+          payment_date?: string | null
+          payment_status?: string
+          period?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_payments_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_payments_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "category_managers"
             referencedColumns: ["id"]
           },
         ]
@@ -846,6 +941,97 @@ export type Database = {
           },
         ]
       }
+      site_expenses: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string
+          date: string
+          expense_type: string
+          id: string
+          notes: string | null
+          payee: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          date?: string
+          expense_type: string
+          id?: string
+          notes?: string | null
+          payee?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          date?: string
+          expense_type?: string
+          id?: string
+          notes?: string | null
+          payee?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_income: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string
+          date: string
+          id: string
+          method: string
+          notes: string | null
+          source_type: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          source_type: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          source_type?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_income_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tickets: {
         Row: {
           assigned_to: string | null
@@ -1028,6 +1214,17 @@ export type Database = {
           prize_value: number
           winner_country: string
           created_at: string
+        }[]
+      }
+      get_monthly_financial_summary: {
+        Args: { month_param: string }
+        Returns: {
+          period: string
+          total_income: number
+          total_expenses: number
+          net_profit: number
+          commissions_paid: number
+          prize_expenses: number
         }[]
       }
       get_monthly_trends: {

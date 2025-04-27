@@ -45,6 +45,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import '@/utils/admin/adminTools';
 import PuzzlePlay from './pages/PuzzlePlay';
 import MyTickets from './pages/MyTickets';
+import CFODashboard from './pages/CFODashboard';
 
 function App() {
   console.log('Initializing App component');
@@ -151,6 +152,12 @@ function App() {
                       <Route path="/support-admin" element={
                         <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
                           <SupportAdmin />
+                        </ProtectedRoute>
+                      } />
+                      
+                      <Route path="/cfo-dashboard" element={
+                        <ProtectedRoute requiredRoles={['cfo', 'super_admin']}>
+                          <CFODashboard />
                         </ProtectedRoute>
                       } />
                       
