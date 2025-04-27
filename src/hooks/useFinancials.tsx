@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -7,7 +6,9 @@ import {
   CategoryManager,
   CommissionPayment,
   MonthlyFinancialSummary,
-  PaymentStatus
+  PaymentStatus,
+  ExpenseType,
+  SourceType
 } from '@/types/financeTypes';
 
 export function useFinancials() {
@@ -37,19 +38,16 @@ export function useFinancials() {
     try {
       const { data, error } = await supabase
         .from('site_income')
-        .select(`
-          *,
-          categories (name)
-        `)
+        .select('*, categories(name), profiles(username)')
         .like('date', `${month}%`);
 
       if (error) throw error;
       
       return data?.map(item => ({
         ...item,
-        source_type: item.source_type,
-        profiles: { username: 'Anonymous' },
-        categories: { name: item.categories?.name || 'Unknown' }
+        source_type: item.source_type as SourceType,
+        categories: { name: item.categories?.name || 'Unknown' },
+        profiles: { username: item.profiles?.username || 'Anonymous' }
       })) || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch site incomes'));
@@ -65,13 +63,13 @@ export function useFinancials() {
     try {
       const { data, error } = await supabase
         .from('site_expenses')
-        .select('*, categories:category_id (name)')
+        .select('*, categories(name)')
         .like('date', `${month}%`);
 
       if (error) throw error;
-      return data.map(item => ({
+      return data?.map(item => ({
         ...item,
-        expense_type: item.expense_type,
+        expense_type: item.expense_type as ExpenseType,
         categories: { name: item.categories?.name || 'Unknown' }
       })) || [];
     } catch (err) {

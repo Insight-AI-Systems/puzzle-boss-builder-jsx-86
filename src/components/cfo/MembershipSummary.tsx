@@ -20,6 +20,9 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { MemberDetailsDialog } from './dialogs/MemberDetailsDialog';
+import { useMemberDetails } from '@/hooks/useMemberDetails';
+import { MemberHistoryDetails } from '@/types/membershipTypes';
 
 interface MembershipSummaryProps {
   selectedMonth: string;
@@ -106,6 +109,20 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
   const handleExportCSV = () => {
     // In a real implementation, you would call a function to export the data
     alert('Export functionality would be implemented here');
+  };
+
+  const [selectedMember, setSelectedMember] = useState<string | null>(null);
+  const [memberDetails, setMemberDetails] = useState<MemberHistoryDetails | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { fetchMemberDetails } = useMemberDetails();
+
+  const handleMemberClick = async (userId: string, username: string) => {
+    const details = await fetchMemberDetails(userId);
+    if (details) {
+      setMemberDetails(details);
+      setSelectedMember(username);
+      setDialogOpen(true);
+    }
   };
 
   return (
@@ -328,6 +345,13 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
           </div>
         </CardContent>
       </Card>
+
+      <MemberDetailsDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        details={memberDetails}
+        username={selectedMember || ''}
+      />
     </div>
   );
 };

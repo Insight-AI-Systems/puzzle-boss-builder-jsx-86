@@ -1179,6 +1179,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_payment_methods: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          last_used: string | null
+          method_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          last_used?: string | null
+          method_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          last_used?: string | null
+          method_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -1352,6 +1382,17 @@ export type Database = {
       get_user_email: {
         Args: { user_id: string }
         Returns: string
+      }
+      get_user_financial_summary: {
+        Args: { user_id_param: string }
+        Returns: {
+          total_spend: number
+          total_prizes: number
+          membership_revenue: number
+          puzzle_revenue: number
+          last_payment_date: string
+          membership_status: string
+        }[]
       }
       handle_password_reset_attempt: {
         Args: { _email: string; _ip_address?: string }
