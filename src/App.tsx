@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider"
@@ -48,6 +47,7 @@ import PuzzlePlay from './pages/PuzzlePlay';
 import MyTickets from './pages/MyTickets';
 
 function App() {
+  console.log('Initializing App component');
   const queryClient = new QueryClient();
 
   return (

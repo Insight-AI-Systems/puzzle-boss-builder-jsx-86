@@ -23,7 +23,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { hasAllPermissions, hasAnyPermission } = usePermissions();
   const location = useLocation();
 
-  // Add detailed logging
+  // Enhanced debug logging
   useEffect(() => {
     console.log('ProtectedRoute - Access Check:', {
       path: location.pathname,
@@ -37,6 +37,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       requireAllPermissions,
       hasRoleChecks: requiredRoles.map(role => ({ role, hasRole: hasRole(role) }))
     });
+    
+    // Special debug for support-admin access
+    if (location.pathname === '/support-admin') {
+      console.log('SUPPORT ADMIN ACCESS CHECK:', {
+        hasAdminRole: hasRole('admin'),
+        hasSuperAdminRole: hasRole('super_admin'),
+        userEmail: user?.email,
+        userRole,
+        userRoles
+      });
+    }
   }, [location.pathname, isAuthenticated, isLoading, user, userRole, userRoles, requiredRoles, requiredPermissions, requireAllPermissions, hasRole]);
 
   // Show loading state while checking authentication
@@ -57,8 +68,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Enhanced super admin check - Always grant access to super_admin
-  if (hasRole('super_admin')) {
-    console.log('ProtectedRoute - Super admin detected, granting access');
+  if (hasRole('super_admin') || hasRole('admin')) {
+    console.log('ProtectedRoute - Admin detected, granting access');
     return <>{children}</>;
   }
 

@@ -3,6 +3,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { MainNavItem } from './NavbarData';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavLinksProps {
   items: MainNavItem[];
@@ -12,7 +13,8 @@ interface NavLinksProps {
 
 const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) => {
   const location = useLocation();
-  const { profile, isAdmin } = useUserProfile();
+  const { profile } = useUserProfile();
+  const { hasRole, isAdmin } = useAuth();
   
   const isLinkActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -22,7 +24,20 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
   const shouldShowLink = (item: MainNavItem) => {
     if (!item.roles) return true;
     if (!profile) return false;
-    return isAdmin || item.roles.includes(profile.role);
+    
+    // Add debug logging to help troubleshoot role issues
+    console.log('NavLink check:', {
+      linkTitle: item.name,
+      linkPath: item.path,
+      requiredRoles: item.roles,
+      userRole: profile.role,
+      isAdmin,
+      hasAdminRole: hasRole('admin'),
+      hasSuperAdminRole: hasRole('super_admin')
+    });
+    
+    // Show the link if the user has any of the required roles or is admin
+    return isAdmin || item.roles.some(role => hasRole(role));
   };
   
   return (

@@ -5,6 +5,7 @@ import { AdminTicketDashboard } from '@/components/support/admin/AdminTicketDash
 import PageLayout from '@/components/layouts/PageLayout';
 
 const SupportAdmin = () => {
+  console.log('Rendering SupportAdmin page');
   return (
     <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
       <PageLayout 

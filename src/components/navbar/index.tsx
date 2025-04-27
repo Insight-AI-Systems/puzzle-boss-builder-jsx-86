@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Menu, X, LayoutDashboard } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Menu, X, LayoutDashboard, TicketIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -12,7 +12,8 @@ import NavLinks from './NavLinks';
 import UserMenu from './UserMenu';
 import AuthButtons from './AuthButtons';
 import MobileMenu from './MobileMenu';
-import { mainNavItems } from './NavbarData';
+import { mainNavItems, adminNavItems } from './NavbarData';
+import { mainNavItems as configMainNavItems } from '@/config/navigation';
 
 // Special admin email that should always have access
 const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
@@ -23,9 +24,22 @@ const Navbar: React.FC = () => {
   const isMobile = useIsMobile();
   const { isMenuOpen, toggleMenu, closeMenu } = useMobileMenu();
   
-  // Simplified admin check
+  // Enhanced admin check
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
   const isAdminUser = isProtectedAdmin || hasRole('admin') || hasRole('super_admin');
+  
+  // Add debug logging to help troubleshoot
+  useEffect(() => {
+    console.log('Navbar Auth Status:', {
+      isAuthenticated: !!user,
+      userEmail: user?.email,
+      isProtectedAdmin,
+      hasAdminRole: hasRole('admin'),
+      hasSuperAdminRole: hasRole('super_admin'),
+      isAdminUser,
+      profileRole: profile?.role
+    });
+  }, [user, profile, isProtectedAdmin, hasRole, isAdminUser]);
   
   return (
     <nav className="bg-puzzle-black border-b border-puzzle-aqua/20">
@@ -45,13 +59,22 @@ const Navbar: React.FC = () => {
           {/* User Menu / Auth Buttons */}
           <div className="hidden md:flex items-center space-x-2">
             {!isLoading && profile && isAdminUser && (
-              <Link 
-                to="/admin-dashboard"
-                className="flex items-center px-3 py-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
-              >
-                <LayoutDashboard className="h-5 w-5 mr-2" />
-                Admin
-              </Link>
+              <>
+                <Link 
+                  to="/admin-dashboard"
+                  className="flex items-center px-3 py-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
+                >
+                  <LayoutDashboard className="h-5 w-5 mr-2" />
+                  Admin
+                </Link>
+                <Link 
+                  to="/support-admin"
+                  className="flex items-center px-3 py-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
+                >
+                  <TicketIcon className="h-5 w-5 mr-2" />
+                  Support
+                </Link>
+              </>
             )}
             {!isLoading && profile ? (
               <UserMenu profile={profile} />
@@ -65,12 +88,20 @@ const Navbar: React.FC = () => {
             {!isLoading && profile ? (
               <>
                 {isAdminUser && (
-                  <Link 
-                    to="/admin-dashboard"
-                    className="flex items-center px-3 py-2 mr-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
-                  >
-                    <LayoutDashboard className="h-5 w-5" />
-                  </Link>
+                  <>
+                    <Link 
+                      to="/admin-dashboard"
+                      className="flex items-center px-3 py-2 mr-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
+                    >
+                      <LayoutDashboard className="h-5 w-5" />
+                    </Link>
+                    <Link 
+                      to="/support-admin"
+                      className="flex items-center px-3 py-2 mr-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
+                    >
+                      <TicketIcon className="h-5 w-5" />
+                    </Link>
+                  </>
                 )}
                 <UserMenu profile={profile} isMobile={true} />
               </>
