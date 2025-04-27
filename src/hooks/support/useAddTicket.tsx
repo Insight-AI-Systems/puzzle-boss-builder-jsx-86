@@ -35,30 +35,46 @@ export const useAddTicket = (onTicketAdded: () => void) => {
 
       const dbStatus: DbStatus = mapFrontendStatusToDb(newTicket.status as string || 'open');
 
-      const ticketData = {
+      // Create a base ticket object with common fields
+      const baseTicketData = {
         id: newTicket.id || crypto.randomUUID(),
         title: newTicket.title,
         description: newTicket.description,
-        status: dbStatus,
-        category: newTicket.category,
         created_by: user.id,
-        modified_by: user.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString()
       };
 
-      // Use the appropriate table based on the ticket type
-      const tableName = isInternalTicket ? 'issues' : 'tickets';
+      let result;
+      
+      // Handle internal tickets (issues table)
+      if (isInternalTicket) {
+        result = await supabase
+          .from('issues')
+          .insert({
+            ...baseTicketData,
+            status: dbStatus,
+            category: 'bug', // Default internal issue category
+            modified_by: user.id,
+            modified_at: new Date().toISOString()
+          });
+      } 
+      // Handle regular user tickets (tickets table)
+      else {
+        result = await supabase
+          .from('tickets')
+          .insert({
+            ...baseTicketData,
+            status: 'open', // using the ticket_status enum directly
+            type: 'external' // using the ticket_type enum
+          });
+      }
 
-      const { error } = await supabase
-        .from(tableName)
-        .insert(ticketData);
-
-      if (error) {
-        console.error("Error adding ticket:", error);
+      if (result.error) {
+        console.error("Error adding ticket:", result.error);
         toast({
           title: "Ticket Creation Failed",
-          description: `Could not create the ticket: ${error.message}`,
+          description: `Could not create the ticket: ${result.error.message}`,
           variant: "destructive",
         });
         return false;
