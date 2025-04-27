@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider"
@@ -48,7 +47,7 @@ import PuzzlePlay from './pages/PuzzlePlay';
 import MyTickets from './pages/MyTickets';
 import CFODashboard from './pages/CFODashboard';
 
-function App() {
+const App = () => {
   console.log('Initializing App component');
   const queryClient = new QueryClient();
 
@@ -59,114 +58,111 @@ function App() {
           <AuthProvider>
             <Routes>
               <Route path="/auth" element={<Auth />} />
-              <Route 
-                path="/*" 
-                element={
-                  <MainLayout>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/puzzles" element={<Puzzles />} />
-                      <Route path="/prizes" element={<Prizes />} />
-                      <Route path="/how-it-works" element={<HowItWorks />} />
-                      <Route path="/puzzle-demo" element={<PuzzleDemo />} />
-                      <Route path="/membership" element={
-                        <ProtectedRoute>
-                          <Membership />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/about" element={<About />} />
-                      <Route path="/faq" element={<FAQ />} />
-                      <Route path="/contact" element={<Contact />} />
-                      
-                      {/* Support routes */}
-                      <Route path="/support/*" element={<Support />} />
-                      
-                      <Route path="/profile" element={
-                        <ProtectedRoute>
-                          <Profile />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/settings" element={
-                        <ProtectedRoute>
-                          <Settings />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/account" element={
-                        <ProtectedRoute>
-                          <AccountDashboard />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/progress" element={
-                        <ProtectedRoute>
-                          <Progress />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/admin-dashboard" element={
-                        <ProtectedRoute requiredRoles={['super_admin']}>
-                          <AdminDashboard />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/test-dashboard" element={
-                        <ProtectedRoute requiredRoles={['super_admin']}>
-                          <DevDashboard />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/puzzle-tests" element={
-                        <ProtectedRoute requiredRoles={['super_admin']}>
-                          <PuzzleTests />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/puzzle-playground" element={
-                        <ProtectedRoute requiredRoles={['super_admin']}>
-                          <PuzzleTestPlayground />
-                        </ProtectedRoute>
-                      } />
-                      
-                      {/* Guides */}
-                      <Route path="/guides">
-                        <Route path="getting-started-guide" element={<GettingStartedGuide />} />
-                        <Route path="account-management" element={<AccountManagement />} />
-                        <Route path="puzzle-techniques" element={<PuzzleTechniques />} />
-                        <Route path="prize-claim-process" element={<PrizeClaimProcess />} />
-                      </Route>
-                      
-                      {/* Legal pages */}
-                      <Route path="/terms" element={<Terms />} />
-                      <Route path="/privacy" element={<Privacy />} />
-                      <Route path="/contest-rules" element={<ContestRules />} />
-                      <Route path="/cookie-policy" element={<CookiePolicy />} />
-                      
-                      {/* Additional pages */}
-                      <Route path="/careers" element={<Careers />} />
-                      <Route path="/press" element={<Press />} />
-                      <Route path="/partnerships" element={<Partnerships />} />
-                      <Route path="/unauthorized" element={<Unauthorized />} />
-                      
-                      <Route path="/puzzle/:puzzleId" element={<PuzzlePlay />} />
-                      
-                      <Route path="/my-tickets" element={
-                        <ProtectedRoute>
-                          <MyTickets />
-                        </ProtectedRoute>
-                      } />
-                      
-                      <Route path="/support-admin" element={
-                        <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
-                          <SupportAdmin />
-                        </ProtectedRoute>
-                      } />
-                      
-                      <Route path="/cfo-dashboard" element={
-                        <ProtectedRoute requiredRoles={['cfo', 'super_admin']}>
-                          <CFODashboard />
-                        </ProtectedRoute>
-                      } />
-                      
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </MainLayout>
-                } 
-              />
+              <Route path="/*" element={
+                <MainLayout>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/puzzles" element={<Puzzles />} />
+                    <Route path="/prizes" element={<Prizes />} />
+                    <Route path="/how-it-works" element={<HowItWorks />} />
+                    <Route path="/puzzle-demo" element={<PuzzleDemo />} />
+                    <Route path="/membership" element={
+                      <ProtectedRoute>
+                        <Membership />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/faq" element={<FAQ />} />
+                    <Route path="/contact" element={<Contact />} />
+                    
+                    {/* Support routes */}
+                    <Route path="/support/*" element={<Support />} />
+                    
+                    <Route path="/profile" element={
+                      <ProtectedRoute>
+                        <Profile />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/settings" element={
+                      <ProtectedRoute>
+                        <Settings />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/account" element={
+                      <ProtectedRoute>
+                        <AccountDashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/progress" element={
+                      <ProtectedRoute>
+                        <Progress />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin-dashboard" element={
+                      <ProtectedRoute requiredRoles={['super_admin']}>
+                        <AdminDashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/test-dashboard" element={
+                      <ProtectedRoute requiredRoles={['super_admin']}>
+                        <DevDashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/puzzle-tests" element={
+                      <ProtectedRoute requiredRoles={['super_admin']}>
+                        <PuzzleTests />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/puzzle-playground" element={
+                      <ProtectedRoute requiredRoles={['super_admin']}>
+                        <PuzzleTestPlayground />
+                      </ProtectedRoute>
+                    } />
+                    
+                    {/* Guides */}
+                    <Route path="/guides">
+                      <Route path="getting-started-guide" element={<GettingStartedGuide />} />
+                      <Route path="account-management" element={<AccountManagement />} />
+                      <Route path="puzzle-techniques" element={<PuzzleTechniques />} />
+                      <Route path="prize-claim-process" element={<PrizeClaimProcess />} />
+                    </Route>
+                    
+                    {/* Legal pages */}
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/contest-rules" element={<ContestRules />} />
+                    <Route path="/cookie-policy" element={<CookiePolicy />} />
+                    
+                    {/* Additional pages */}
+                    <Route path="/careers" element={<Careers />} />
+                    <Route path="/press" element={<Press />} />
+                    <Route path="/partnerships" element={<Partnerships />} />
+                    <Route path="/unauthorized" element={<Unauthorized />} />
+                    
+                    <Route path="/puzzle/:puzzleId" element={<PuzzlePlay />} />
+                    
+                    <Route path="/my-tickets" element={
+                      <ProtectedRoute>
+                        <MyTickets />
+                      </ProtectedRoute>
+                    } />
+                    
+                    <Route path="/support-admin" element={
+                      <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
+                        <SupportAdmin />
+                      </ProtectedRoute>
+                    } />
+                    
+                    <Route path="/cfo-dashboard/*" element={
+                      <ProtectedRoute requiredRoles={['cfo', 'super_admin']}>
+                        <CFODashboard />
+                      </ProtectedRoute>
+                    } />
+                    
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </MainLayout>
+              } />
             </Routes>
             <Toaster />
           </AuthProvider>

@@ -20,10 +20,7 @@ export function useFinancials() {
       const { data, error } = await supabase
         .rpc('get_monthly_financial_summary', { month_param: period });
 
-      if (error) {
-        throw error;
-      }
-
+      if (error) throw error;
       return data?.[0] || null;
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch monthly financial summary'));
@@ -45,10 +42,7 @@ export function useFinancials() {
         `)
         .like('date', `${month}%`);
 
-      if (error) {
-        throw error;
-      }
-
+      if (error) throw error;
       return data || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch site incomes'));
@@ -70,10 +64,7 @@ export function useFinancials() {
         `)
         .like('date', `${month}%`);
 
-      if (error) {
-        throw error;
-      }
-
+      if (error) throw error;
       return data || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch site expenses'));
@@ -95,9 +86,7 @@ export function useFinancials() {
           profiles:user_id (username)
         `);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       return data.map(manager => ({
         ...manager,
@@ -128,9 +117,7 @@ export function useFinancials() {
           )
         `);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       return data.map(payment => ({
         ...payment,
@@ -145,27 +132,6 @@ export function useFinancials() {
     }
   };
 
-  const generateCommissions = async (period: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-commissions', {
-        body: { period }
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      return data;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to generate commissions'));
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return {
     isLoading,
     error,
@@ -173,7 +139,6 @@ export function useFinancials() {
     fetchSiteIncomes,
     fetchSiteExpenses,
     fetchCategoryManagers,
-    fetchCommissionPayments,
-    generateCommissions
+    fetchCommissionPayments
   };
 }
