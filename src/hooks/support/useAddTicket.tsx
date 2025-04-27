@@ -40,18 +40,18 @@ export const useAddTicket = (onTicketAdded: () => void) => {
         title: newTicket.title,
         description: newTicket.description,
         status: dbStatus,
-        category: isInternalTicket ? 'internal' : 
-                 newTicket.category === 'tech' ? 'bug' : 
-                 newTicket.category === 'billing' ? 'feature' : 
-                 'ui',
+        category: newTicket.category,
         created_by: user.id,
         modified_by: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
 
+      // Use the appropriate table based on the ticket type
+      const tableName = isInternalTicket ? 'issues' : 'tickets';
+
       const { error } = await supabase
-        .from('issues')
+        .from(tableName)
         .insert(ticketData);
 
       if (error) {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
@@ -142,7 +143,7 @@ export const TicketList = () => {
           <div className="text-center py-8">
             <p className="text-puzzle-white/70">
               No {isInternalView ? 'internal issues' : 'support tickets'} found.
-              Use the {isInternalView ? '"Create Internal Ticket"' : '"New Support Ticket"'} button above to create one.
+              Please use the {isInternalView ? '"Create Internal Ticket"' : '"New Support Ticket"'} button at the top of the page to create one.
             </p>
           </div>
         ) : (

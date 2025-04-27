@@ -19,18 +19,19 @@ export const NewTicketForm = () => {
   const { addTicket } = useSupportTickets();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isAdmin = hasRole('super_admin') || hasRole('admin');
+  const isInternal = ticketType === 'internal';
   
   // Redirect non-admin users trying to create internal tickets
   useEffect(() => {
-    if (ticketType === 'internal' && !isAdmin) {
+    if (isInternal && !isAdmin) {
       navigate('/support');
     }
-  }, [ticketType, isAdmin, navigate]);
+  }, [isInternal, isAdmin, navigate]);
 
   const [ticket, setTicket] = useState<Partial<SupportTicket>>({
     title: '',
     description: '',
-    category: ticketType === 'internal' ? 'internal' : 'tech' as TicketCategory,
+    category: isInternal ? 'internal' : 'tech' as TicketCategory,
     priority: 'medium',
     id: crypto.randomUUID()
   });
@@ -49,10 +50,14 @@ export const NewTicketForm = () => {
     if (!user) return;
     
     setIsSubmitting(true);
-    const success = await addTicket(ticket);
+    // Make sure we're passing the correct ticket type parameter
+    const success = await addTicket({
+      ...ticket,
+      category: isInternal ? 'internal' : ticket.category
+    });
     
     if (success) {
-      navigate(`/support/tickets${ticketType === 'internal' ? '?view=internal' : ''}`);
+      navigate(`/support/tickets${isInternal ? '?view=internal' : ''}`);
     }
     setIsSubmitting(false);
   };
@@ -73,7 +78,7 @@ export const NewTicketForm = () => {
       </Button>
 
       <Card className="bg-puzzle-black/30 border-puzzle-aqua/20">
-        <TicketFormHeader isInternal={ticketType === 'internal'} />
+        <TicketFormHeader isInternal={isInternal} />
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <InternalTicketFormFields
@@ -88,7 +93,7 @@ export const NewTicketForm = () => {
                 disabled={isSubmitting || !ticket.title || !ticket.description}
                 className="ml-auto"
               >
-                {isSubmitting ? 'Submitting...' : `Submit ${ticketType === 'internal' ? 'Issue' : 'Ticket'}`}
+                {isSubmitting ? 'Submitting...' : `Submit ${isInternal ? 'Issue' : 'Ticket'}`}
               </Button>
             </CardFooter>
           </form>
