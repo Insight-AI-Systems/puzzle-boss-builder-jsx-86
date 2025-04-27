@@ -33,8 +33,6 @@ export const useAddTicket = (onTicketAdded: () => void) => {
         return false;
       }
 
-      const dbStatus: DbStatus = mapFrontendStatusToDb(newTicket.status as string || 'open');
-
       // Create a base ticket object with common fields
       const baseTicketData = {
         id: newTicket.id || crypto.randomUUID(),
@@ -49,6 +47,8 @@ export const useAddTicket = (onTicketAdded: () => void) => {
       
       // Handle internal tickets (issues table)
       if (isInternalTicket) {
+        const dbStatus: DbStatus = mapFrontendStatusToDb(newTicket.status as string || 'open');
+        
         result = await supabase
           .from('issues')
           .insert({
@@ -80,6 +80,7 @@ export const useAddTicket = (onTicketAdded: () => void) => {
         return false;
       }
 
+      // Ensure we call onTicketAdded to refresh the ticket list
       await onTicketAdded();
       
       toast({

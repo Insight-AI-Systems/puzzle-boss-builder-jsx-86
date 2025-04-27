@@ -22,73 +22,86 @@ export const useFetchTickets = () => {
     
     try {
       setIsLoading(true);
+      let allTickets: SupportTicket[] = [];
       
-      let query = supabase
-        .from('issues')
-        .select('*');
-
-      // If admin is viewing internal issues
-      if (isAdmin && isInternalView) {
-        // Only fetch tickets with 'internal' category for admin internal view
-        query = query
+      // Logic for fetching internal issues (from issues table)
+      if (isInternalView && isAdmin) {
+        const { data: issuesData, error: issuesError } = await supabase
+          .from('issues')
+          .select('*')
           .eq('category', 'internal')
           .order('created_at', { ascending: false });
           
-        console.log('Fetching internal tickets for admin');
-      } else if (isAdmin && !isInternalView) {
-        // Admin viewing regular user tickets (exclude internal ones)
-        query = query
-          .neq('category', 'internal')
-          .order('created_at', { ascending: false });
-          
-        console.log('Fetching all user tickets for admin');
-      } else {
-        // Standard view - user's own tickets, excluding internal ones
-        query = query
-          .eq('created_by', user.id)
-          .neq('category', 'internal')
-          .order('created_at', { ascending: false });
-          
-        console.log('Fetching user tickets');
+        if (issuesError) {
+          console.error("Error fetching internal issues:", issuesError);
+          throw issuesError;
+        }
+        
+        // Map issues data to SupportTicket format
+        const mappedIssues = issuesData.map(item => ({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          status: mapDbStatusToFrontend(item.status),
+          priority: item.category === 'security' ? 'high' : item.category === 'feature' ? 'low' : 'medium',
+          category: 'internal',
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          created_by: item.created_by,
+          comments: []
+        } as SupportTicket));
+        
+        allTickets = mappedIssues;
+      } 
+      // Logic for fetching regular user tickets (from tickets table)
+      else {
+        const ticketsQuery = supabase
+          .from('tickets')
+          .select('*');
+        
+        if (isAdmin) {
+          // Admin can see all user tickets
+          ticketsQuery.order('created_at', { ascending: false });
+        } else {
+          // Regular users can only see their own tickets
+          ticketsQuery.eq('created_by', user.id)
+            .order('created_at', { ascending: false });
+        }
+        
+        // Apply filters if provided
+        if (filters?.status) {
+          ticketsQuery.eq('status', filters.status);
+        }
+        
+        if (filters?.search) {
+          ticketsQuery.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+        }
+        
+        const { data: ticketsData, error: ticketsError } = await ticketsQuery;
+        
+        if (ticketsError) {
+          console.error("Error fetching user tickets:", ticketsError);
+          throw ticketsError;
+        }
+        
+        // Map tickets data to SupportTicket format
+        const mappedTickets = ticketsData.map(item => ({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          status: item.status,
+          priority: 'medium',
+          category: 'tech',
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          created_by: item.created_by,
+          comments: item.comments || []
+        } as SupportTicket));
+        
+        allTickets = mappedTickets;
       }
       
-      // Apply additional filters if provided
-      if (filters?.status) {
-        const dbStatus: DbStatus = mapFrontendStatusToDb(filters.status);
-        query = query.eq('status', dbStatus);
-      }
-      
-      if (filters?.search) {
-        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
-      }
-      
-      const { data, error } = await query;
-          
-      if (error) {
-        console.error("Error fetching support tickets:", error);
-        setTickets([]);
-        toast({
-          title: "Failed to load support tickets",
-          description: "Please try refreshing the page.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      const userTickets = data.map(item => ({
-        id: item.id,
-        title: item.title,
-        description: item.description,
-        status: mapDbStatusToFrontend(item.status),
-        priority: item.category === 'security' ? 'high' : item.category === 'feature' ? 'low' : 'medium',
-        category: item.category || 'tech',
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        created_by: item.created_by,
-        comments: []
-      } as SupportTicket));
-      
-      setTickets(userTickets);
+      setTickets(allTickets);
     } catch (err) {
       console.error("Exception fetching tickets:", err);
       toast({
@@ -96,6 +109,7 @@ export const useFetchTickets = () => {
         description: "An unexpected error occurred. Please try again later.",
         variant: "destructive",
       });
+      setTickets([]);
     } finally {
       setIsLoading(false);
     }

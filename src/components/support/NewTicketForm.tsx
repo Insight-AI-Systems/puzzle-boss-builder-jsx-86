@@ -50,6 +50,7 @@ export const NewTicketForm = () => {
     if (!user) return;
     
     setIsSubmitting(true);
+    
     // Make sure we're passing the correct ticket type parameter
     const success = await addTicket({
       ...ticket,

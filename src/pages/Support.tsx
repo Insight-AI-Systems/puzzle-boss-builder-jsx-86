@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ExternalLink, PlusCircle, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PageLayout from '@/components/layouts/PageLayout';
@@ -15,9 +15,11 @@ import { useToast } from '@/hooks/use-toast';
 const Support = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { hasRole, user } = useAuth();
   const { toast } = useToast();
   const isAdmin = hasRole('super_admin') || hasRole('admin');
+  const isInternalView = searchParams.get('view') === 'internal';
 
   let subtitle = "Get help with your account, puzzles, and prizes";
   if (location.pathname.includes('/tickets')) {
@@ -26,16 +28,12 @@ const Support = () => {
     subtitle = "Create a new support ticket";
   }
 
-  const handleAdminPanelClick = () => {
-    navigate('/admin-dashboard?tab=tickets');
-  };
-
   const handleInternalIssuesClick = () => {
     navigate('/support/new-ticket?type=internal');
   };
 
   const handleNewTicketClick = () => {
-    navigate('/support/new-ticket?type=user');
+    navigate('/support/new-ticket');
   };
 
   return (
