@@ -8,16 +8,16 @@ import { ExpenseDetail } from './details/ExpenseDetail';
 import { ExpenseCharts } from './expenses/ExpenseCharts';
 import { ExpenseFilters } from './expenses/ExpenseFilters';
 import { ExpenseTable } from './expenses/ExpenseTable';
-import { useFinancialRecords } from '@/hooks/useFinancialRecords';
+import { useExpenseRecords } from '@/hooks/useExpenseRecords';
 
 const CostStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) => {
   const [expenses, setExpenses] = useState<SiteExpense[]>([]);
   const [filteredExpenses, setFilteredExpenses] = useState<SiteExpense[]>([]);
-  const [expenseTypeFilter, setExpenseTypeFilter] = useState<ExpenseType | ''>('');
+  const [expenseTypeFilter, setExpenseTypeFilter] = useState<ExpenseType | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedExpense, setSelectedExpense] = useState<SiteExpense | null>(null);
   const { fetchSiteExpenses, isLoading } = useFinancials();
-  const { exportDataToCSV } = useFinancialRecords();
+  const { exportToCSV } = useExpenseRecords();
 
   useEffect(() => {
     const loadExpenses = async () => {
@@ -35,7 +35,7 @@ const CostStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) => 
   useEffect(() => {
     let filtered = expenses;
     
-    if (expenseTypeFilter) {
+    if (expenseTypeFilter !== 'all') {
       filtered = filtered.filter(expense => expense.expense_type === expenseTypeFilter);
     }
     
@@ -59,7 +59,7 @@ const CostStreams: React.FC<{ selectedMonth: string }> = ({ selectedMonth }) => 
   ).map(([name, value]) => ({ name, value }));
 
   const handleExport = () => {
-    exportDataToCSV(filteredExpenses, `expenses-${selectedMonth}`);
+    exportToCSV(filteredExpenses, `expenses-${selectedMonth}`);
   };
 
   return (

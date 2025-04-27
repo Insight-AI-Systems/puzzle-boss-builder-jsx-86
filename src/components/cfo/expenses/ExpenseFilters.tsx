@@ -6,9 +6,9 @@ import { ExpenseType } from '@/types/financeTypes';
 
 interface ExpenseFiltersProps {
   searchTerm: string;
-  expenseTypeFilter: ExpenseType | '';
+  expenseTypeFilter: ExpenseType | 'all';
   onSearchChange: (value: string) => void;
-  onTypeChange: (value: ExpenseType | '') => void;
+  onTypeChange: (value: ExpenseType | 'all') => void;
 }
 
 export const ExpenseFilters = ({
@@ -27,13 +27,13 @@ export const ExpenseFilters = ({
       />
       <Select 
         value={expenseTypeFilter} 
-        onValueChange={(value) => onTypeChange(value as ExpenseType | '')}
+        onValueChange={(value) => onTypeChange(value as ExpenseType | 'all')}
       >
         <SelectTrigger className="w-48">
           <SelectValue placeholder="Filter by type" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Types</SelectItem>
+          <SelectItem value="all">All Types</SelectItem>
           <SelectItem value={ExpenseType.PRIZES}>Prizes</SelectItem>
           <SelectItem value={ExpenseType.OPERATIONAL}>Operational</SelectItem>
           <SelectItem value={ExpenseType.MARKETING}>Marketing</SelectItem>

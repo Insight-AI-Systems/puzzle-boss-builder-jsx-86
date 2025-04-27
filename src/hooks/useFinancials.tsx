@@ -109,7 +109,7 @@ export function useFinancials() {
 
       if (error) throw error;
 
-      return data.map(manager => {
+      return (data || []).map(manager => {
         // Safe access to nested properties
         let username = 'Unknown';
         let email = undefined;
@@ -130,7 +130,7 @@ export function useFinancials() {
             email: email
           }
         };
-      }) || [];
+      });
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch category managers'));
       return [];
@@ -153,7 +153,7 @@ export function useFinancials() {
 
       if (error) throw error;
 
-      return data.map(payment => {
+      return (data || []).map(payment => {
         // Safe access to nested properties
         let managerName = 'Unknown';
         let managerEmail = undefined;
@@ -172,7 +172,7 @@ export function useFinancials() {
           category_name: payment.categories?.name || 'Unknown',
           payment_status: payment.payment_status as PaymentStatus
         };
-      }) || [];
+      });
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch commission payments'));
       return [];
