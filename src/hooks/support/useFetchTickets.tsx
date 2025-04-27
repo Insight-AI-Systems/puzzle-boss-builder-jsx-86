@@ -77,11 +77,10 @@ export const useFetchTickets = () => {
         }
         
         // Apply filters if provided
-        if (filters?.status) {
-          const validStatus = ['open', 'in-progress', 'resolved', 'closed'].includes(filters.status) 
-            ? filters.status 
-            : 'open';
-          ticketsQuery.eq('status', validStatus);
+        if (filters?.status && filters.status !== 'pending') {
+          ticketsQuery.eq('status', filters.status);
+        } else if (filters?.status === 'pending') {
+          ticketsQuery.eq('status', 'pending');
         }
         
         if (filters?.search) {
@@ -116,7 +115,7 @@ export const useFetchTickets = () => {
             id: item.id,
             title: item.title,
             description: item.description,
-            status: item.status === 'pending' ? 'open' : item.status,
+            status: item.status as unknown as TicketStatus, // Use type assertion to handle 'pending' status
             priority: 'medium',
             category: 'tech',
             created_at: item.created_at,
