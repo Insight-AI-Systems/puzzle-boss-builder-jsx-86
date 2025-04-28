@@ -1,6 +1,7 @@
-
 import { useReducer, useEffect, useCallback } from 'react';
 import { PuzzleState, PuzzleAction, PuzzlePiece } from '../types/puzzle-types';
+import { useToast } from '@/hooks/use-toast';
+import { Check, X } from 'lucide-react';
 
 const initialState: PuzzleState = {
   pieces: [],
@@ -16,13 +17,12 @@ function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleState {
       const { totalPieces } = action.payload;
       const pieces: PuzzlePiece[] = Array.from({ length: totalPieces }, (_, i) => ({
         id: `piece-${i}`,
-        position: -1, // -1 means in the staging area (not placed on board)
+        position: -1,
         originalPosition: i,
         isDragging: false,
         isCorrect: false,
       }));
 
-      // Shuffle the pieces randomly for initial placement
       const shuffledPieces = [...pieces].sort(() => Math.random() - 0.5);
       
       return {
@@ -92,12 +92,17 @@ function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleState {
 }
 
 export function usePuzzleState(rows: number, columns: number) {
-  const totalPieces = rows * columns;
   const [state, dispatch] = useReducer(puzzleReducer, initialState);
+  const { toast } = useToast();
 
   const initializePuzzle = useCallback(() => {
-    dispatch({ type: 'INITIALIZE_PIECES', payload: { totalPieces } });
-  }, [totalPieces]);
+    dispatch({ type: 'INITIALIZE_PIECES', payload: { totalPieces: rows * columns } });
+    toast({
+      title: "Puzzle initialized",
+      description: `Started ${rows}x${columns} puzzle`,
+      icon: <Check className="h-4 w-4 text-green-500" />,
+    });
+  }, [rows, columns, toast]);
 
   useEffect(() => {
     initializePuzzle();
@@ -109,8 +114,16 @@ export function usePuzzleState(rows: number, columns: number) {
 
   const movePiece = useCallback((id: string, position: number) => {
     dispatch({ type: 'MOVE_PIECE', payload: { id, position } });
+    const piece = state.pieces.find(p => p.id === id);
+    if (piece && piece.originalPosition === position) {
+      toast({
+        title: "Perfect fit!",
+        description: "Piece placed in correct position",
+        icon: <Check className="h-4 w-4 text-green-500" />,
+      });
+    }
     dispatch({ type: 'CHECK_COMPLETION' });
-  }, []);
+  }, [state.pieces, toast]);
 
   const endDragging = useCallback((id: string) => {
     dispatch({ type: 'END_DRAG', payload: { id } });
@@ -119,7 +132,23 @@ export function usePuzzleState(rows: number, columns: number) {
   const resetPuzzle = useCallback(() => {
     dispatch({ type: 'RESET_PUZZLE' });
     initializePuzzle();
-  }, [initializePuzzle]);
+    toast({
+      title: "Puzzle reset",
+      description: "Starting fresh",
+      icon: <Check className="h-4 w-4 text-blue-500" />,
+    });
+  }, [initializePuzzle, toast]);
+
+  useEffect(() => {
+    if (state.isComplete) {
+      const timeElapsed = getElapsedTime();
+      toast({
+        title: "Puzzle completed! 🎉",
+        description: `Finished in ${state.moves} moves and ${Math.floor(timeElapsed / 60)}:${(timeElapsed % 60).toString().padStart(2, '0')}`,
+        icon: <Check className="h-4 w-4 text-green-500" />,
+      });
+    }
+  }, [state.isComplete, state.moves, toast]);
 
   const getElapsedTime = (): number => {
     if (!state.startTime) return 0;
