@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -157,7 +158,8 @@ export const useAnalytics = () => {
               genderCounts['not_specified'] = 0;
               
               data.forEach((profile) => {
-                if (profile && typeof profile === 'object' && 'gender' in profile) {
+                // Added null check for profile
+                if (profile !== null && typeof profile === 'object' && 'gender' in profile) {
                   const gender = profile.gender || 'not_specified';
                   genderCounts[gender] = (genderCounts[gender] || 0) + 1;
                 }
@@ -184,7 +186,8 @@ export const useAnalytics = () => {
               ageCounts['not_specified'] = 0;
               
               data.forEach((profile) => {
-                if (profile && typeof profile === 'object' && 'age_group' in profile) {
+                // Added null check for profile
+                if (profile !== null && typeof profile === 'object' && 'age_group' in profile) {
                   const ageGroup = profile.age_group || 'not_specified';
                   ageCounts[ageGroup] = (ageCounts[ageGroup] || 0) + 1;
                 }
@@ -211,7 +214,8 @@ export const useAnalytics = () => {
               countryCounts['not_specified'] = 0;
               
               data.forEach((profile) => {
-                if (profile && typeof profile === 'object' && 'country' in profile) {
+                // Added null check for profile
+                if (profile !== null && typeof profile === 'object' && 'country' in profile) {
                   const country = profile.country || 'not_specified';
                   countryCounts[country] = (countryCounts[country] || 0) + 1;
                 }
