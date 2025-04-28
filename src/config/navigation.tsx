@@ -3,7 +3,7 @@ import {
   Home, Users, Puzzle, ImageIcon, FileText, Star, ShoppingCart, 
   Settings, BarChart, User, Mail, Eye, Bell, Trophy, HelpCircle,
   BookOpen, BadgeHelp, ScrollText, Phone, Shield, Layers, Database,
-  LayoutDashboard, TicketIcon, DollarSign
+  LayoutDashboard, TicketIcon, DollarSign, Handshake, FolderKanban
 } from 'lucide-react';
 import { UserRole } from '@/types/userTypes';
 
@@ -48,19 +48,19 @@ export const adminNavItems: NavItem[] = [
     title: "Admin Dashboard",
     icon: LayoutDashboard,
     href: "/admin-dashboard",
-    roles: ["super_admin"],
+    roles: ["super_admin", "admin", "category_manager", "partner_manager", "cfo", "social_media_manager"],
   },
   {
     title: "Users",
     icon: Users,
     href: "/admin-dashboard?tab=users",
-    roles: ["super_admin"],
+    roles: ["super_admin", "admin"],
   },
   {
     title: "Categories",
-    icon: ImageIcon,
+    icon: FolderKanban,
     href: "/admin-dashboard?tab=categories",
-    roles: ["super_admin", "category_manager"],
+    roles: ["super_admin", "admin", "category_manager"],
   },
   {
     title: "Content",
@@ -76,9 +76,9 @@ export const adminNavItems: NavItem[] = [
   },
   {
     title: "Partners",
-    icon: ShoppingCart,
+    icon: Handshake,
     href: "/admin-dashboard?tab=partners",
-    roles: ["super_admin", "partner_manager"],
+    roles: ["super_admin", "admin", "partner_manager"],
   },
   {
     title: "Email",
@@ -96,7 +96,7 @@ export const adminNavItems: NavItem[] = [
     title: "Monitoring",
     icon: Eye,
     href: "/admin-dashboard?tab=monitoring",
-    roles: ["super_admin"],
+    roles: ["super_admin", "admin"],
   },
   {
     title: "Database",
@@ -107,13 +107,13 @@ export const adminNavItems: NavItem[] = [
   {
     title: "Financial Dashboard",
     icon: DollarSign,
-    href: "/cfo-dashboard",
+    href: "/admin-dashboard?tab=financials",
     roles: ["super_admin", "cfo"],
   },
   {
     title: "Support Admin",
     icon: TicketIcon,
-    href: "/support-admin",
+    href: "/admin-dashboard?tab=tickets",
     roles: ["super_admin", "admin"],
   }
 ];

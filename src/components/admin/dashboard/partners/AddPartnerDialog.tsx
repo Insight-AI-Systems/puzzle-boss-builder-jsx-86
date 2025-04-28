@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -111,9 +112,13 @@ const AddPartnerDialog: React.FC<AddPartnerDialogProps> = ({
   });
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
+    // Fix: Ensure the required fields are explicitly set
     const partnerData = {
-      ...data,
+      company_name: data.company_name,
+      contact_name: data.contact_name,
+      email: data.email,
       assigned_to: user?.id,
+      ...data // Include the rest of the data
     };
     
     if (editPartner) {

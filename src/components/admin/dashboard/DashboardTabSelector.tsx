@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserRole } from '@/types/userTypes';
 import { TabDefinition } from './TabDefinitions';
 
 interface DashboardTabSelectorProps {
@@ -25,8 +24,8 @@ export const DashboardTabSelector: React.FC<DashboardTabSelectorProps> = ({
           data-state={activeTab === tab.id ? 'active' : 'inactive'}
           className="data-[state=active]:bg-puzzle-aqua/10 data-[state=active]:text-puzzle-aqua p-2 flex-grow md:flex-none"
         >
-          {tab.icon}
-          <span className="ml-1">{tab.name}</span>
+          <span className="mr-1">{tab.icon}</span>
+          <span>{tab.name}</span>
         </TabsTrigger>
       ))}
     </TabsList>
