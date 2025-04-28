@@ -26,10 +26,13 @@ export const OverviewTab: React.FC = () => {
     isLoadingMonthlyTrends,
     isLoadingCategoryRevenue,
     dateRange,
-    setDateRange
+    setDateRange,
+    getUserTrend,
+    getSignupTrend,
+    getPuzzlesTrend,
+    getRevenueTrend
   } = useAnalytics();
   
-  // Check if any of the data is loading
   const isLoading = isLoadingDailyMetrics || isLoadingMonthlyTrends || isLoadingCategoryRevenue;
 
   if (isLoading) {
@@ -41,43 +44,6 @@ export const OverviewTab: React.FC = () => {
       </TabsContent>
     );
   }
-
-  // Calculate trend directions based on data
-  const getUserTrend = () => {
-    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" as "up" | "down" | "none" };
-    const current = monthlyTrends[0]?.active_users || 0;
-    const previous = monthlyTrends[1]?.active_users || 0;
-    if (previous === 0) return { value: "100%", direction: "up" as const };
-    const percent = Math.round((current - previous) / previous * 100);
-    return { value: `${Math.abs(percent)}%`, direction: percent >= 0 ? "up" as const : "down" as const };
-  };
-
-  const getSignupTrend = () => {
-    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" as "up" | "down" | "none" };
-    const current = monthlyTrends[0]?.new_signups || 0;
-    const previous = monthlyTrends[1]?.new_signups || 0;
-    if (previous === 0) return { value: "100%", direction: "up" as const };
-    const percent = Math.round((current - previous) / previous * 100);
-    return { value: `${Math.abs(percent)}%`, direction: percent >= 0 ? "up" as const : "down" as const };
-  };
-
-  const getPuzzlesTrend = () => {
-    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" as "up" | "down" | "none" };
-    const current = monthlyTrends[0]?.puzzles_completed || 0;
-    const previous = monthlyTrends[1]?.puzzles_completed || 0;
-    if (previous === 0) return { value: "100%", direction: "up" as const };
-    const percent = Math.round((current - previous) / previous * 100);
-    return { value: `${Math.abs(percent)}%`, direction: percent >= 0 ? "up" as const : "down" as const };
-  };
-
-  const getRevenueTrend = () => {
-    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" as "up" | "down" | "none" };
-    const current = monthlyTrends[0]?.revenue || 0;
-    const previous = monthlyTrends[1]?.revenue || 0;
-    if (previous === 0) return { value: "100%", direction: "up" as const };
-    const percent = Math.round((current - previous) / previous * 100);
-    return { value: `${Math.abs(percent)}%`, direction: percent >= 0 ? "up" as const : "down" as const };
-  };
 
   return (
     <TabsContent value="overview" className="space-y-6">
