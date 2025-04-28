@@ -71,7 +71,7 @@ const SVGJigsawPuzzle: React.FC<SVGJigsawPuzzleProps> = ({
       stopTimer();
       toast({
         title: "Puzzle Completed! 🎉",
-        description: `You solved it in ${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}!`,
+        description: `You solved it in ${formatTime(elapsed)}!`,
         variant: "default",
       });
     }

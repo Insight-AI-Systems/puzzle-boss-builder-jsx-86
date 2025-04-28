@@ -20,143 +20,131 @@ export function generatePiecePath(
   const row = Math.floor(position / columns);
   const col = position % columns;
   
-  // Determine which edges should have tabs/slots
-  const hasTopEdge = row > 0;
-  const hasRightEdge = col < columns - 1;
-  const hasBottomEdge = row < rows - 1; 
-  const hasLeftEdge = col > 0;
+  // Determine which edges need tabs/slots
+  const isTopEdge = row === 0;
+  const isRightEdge = col === columns - 1;
+  const isBottomEdge = row === rows - 1;
+  const isLeftEdge = col === 0;
   
-  // Tab/slot size as percentage of width/height (increased for more pronounced shape)
-  const tabSizePercent = 0.4;
+  // Size of the tab/slot as a percentage of the piece width/height
+  const tabWidth = width * 0.35;
+  const tabHeight = height * 0.35;
   
-  // Calculate actual tab size based on piece dimensions
-  const tabWidth = width * tabSizePercent;
-  const tabHeight = height * tabSizePercent;
+  // Tab depth (how much it protrudes or intrudes)
+  const tabDepth = Math.min(width, height) * 0.15;
   
-  // Control points for creating bezier curves
-  // These values control the roundedness of the tabs/slots
-  const tabCurveDepth = 0.7; // Higher value = more pronounced curve
+  // Use pseudo-random but consistent tabs/slots based on position
+  // This ensures connected pieces fit together
+  const hasTopTab = !isTopEdge && ((position * 11) % 2 === 0);
+  const hasRightTab = !isRightEdge && ((position * 7 + col) % 2 === 0);
+  const hasBottomTab = !isBottomEdge && ((position * 13 + row) % 2 === 0);
+  const hasLeftTab = !isLeftEdge && ((position * 5 + col + row) % 2 === 0);
   
-  // Use consistent seeding to ensure tabs match with neighbor slots
-  // Top piece's bottom tab matches bottom piece's top slot, etc.
-  const topTabOut = ((position * 77 + row * 11) % 2) === 0;
-  const rightTabOut = ((position * 67 + col * 13) % 2) === 0;
-  const bottomTabOut = !topTabOut; // Ensures connecting pieces fit together
-  const leftTabOut = !rightTabOut; // Ensures connecting pieces fit together
-  
-  // Start path at top-left corner
-  let path = `M 0,0`;
+  // Start building the path at the top-left corner
+  let path = "M 0,0 ";
   
   // Top edge
-  if (hasTopEdge) {
-    const tabStart = width * 0.3;
-    const tabEnd = width * 0.7;
+  if (isTopEdge) {
+    // Straight line if at the top edge of the puzzle
+    path += `H ${width} `;
+  } else {
+    // First part of the top edge (before the tab/slot)
+    path += `H ${(width - tabWidth) / 2} `;
     
-    // Path to start of tab/slot
-    path += ` L ${tabStart},0`;
-    
-    if (topTabOut) {
-      // Outward tab (bump) with rounded corners
-      path += ` C ${tabStart + tabWidth * 0.1},0 ${tabStart + tabWidth * 0.1},-${tabHeight * tabCurveDepth} ${tabStart + tabWidth * 0.3},-${tabHeight * 0.8}`;
-      path += ` C ${tabStart + tabWidth * 0.4},-${tabHeight} ${tabStart + tabWidth * 0.6},-${tabHeight} ${tabStart + tabWidth * 0.7},-${tabHeight * 0.8}`;
-      path += ` C ${tabStart + tabWidth * 0.9},-${tabHeight * tabCurveDepth} ${tabStart + tabWidth * 0.9},0 ${tabEnd},0`;
+    // Create tab or slot on the top edge
+    if (hasTopTab) {
+      // Create a protruding tab with classic rounded shape
+      path += `Q ${(width - tabWidth) / 2 + tabWidth * 0.15},${-tabDepth * 0.3} ${(width - tabWidth) / 2 + tabWidth * 0.3},${-tabDepth} `;
+      path += `Q ${width / 2},${-tabDepth * 1.5} ${(width + tabWidth) / 2 - tabWidth * 0.3},${-tabDepth} `;
+      path += `Q ${(width + tabWidth) / 2 - tabWidth * 0.15},${-tabDepth * 0.3} ${(width + tabWidth) / 2},0 `;
     } else {
-      // Inward slot (dip) with rounded corners
-      path += ` C ${tabStart + tabWidth * 0.1},0 ${tabStart + tabWidth * 0.1},${tabHeight * tabCurveDepth} ${tabStart + tabWidth * 0.3},${tabHeight * 0.8}`;
-      path += ` C ${tabStart + tabWidth * 0.4},${tabHeight} ${tabStart + tabWidth * 0.6},${tabHeight} ${tabStart + tabWidth * 0.7},${tabHeight * 0.8}`;
-      path += ` C ${tabStart + tabWidth * 0.9},${tabHeight * tabCurveDepth} ${tabStart + tabWidth * 0.9},0 ${tabEnd},0`;
+      // Create an intruding slot with classic rounded shape
+      path += `Q ${(width - tabWidth) / 2 + tabWidth * 0.15},${tabDepth * 0.3} ${(width - tabWidth) / 2 + tabWidth * 0.3},${tabDepth} `;
+      path += `Q ${width / 2},${tabDepth * 1.5} ${(width + tabWidth) / 2 - tabWidth * 0.3},${tabDepth} `;
+      path += `Q ${(width + tabWidth) / 2 - tabWidth * 0.15},${tabDepth * 0.3} ${(width + tabWidth) / 2},0 `;
     }
     
-    // Path to end of top edge
-    path += ` L ${width},0`;
-  } else {
-    // Straight line if at top of puzzle
-    path += ` L ${width},0`;
+    // Complete the top edge
+    path += `H ${width} `;
   }
   
   // Right edge
-  if (hasRightEdge) {
-    const tabStart = height * 0.3;
-    const tabEnd = height * 0.7;
+  if (isRightEdge) {
+    // Straight line if at the right edge of the puzzle
+    path += `V ${height} `;
+  } else {
+    // First part of the right edge (before the tab/slot)
+    path += `V ${(height - tabHeight) / 2} `;
     
-    // Path to start of tab/slot
-    path += ` L ${width},${tabStart}`;
-    
-    if (rightTabOut) {
-      // Outward tab with rounded corners
-      path += ` C ${width},${tabStart + tabHeight * 0.1} ${width + tabWidth * tabCurveDepth},${tabStart + tabHeight * 0.1} ${width + tabWidth * 0.8},${tabStart + tabHeight * 0.3}`;
-      path += ` C ${width + tabWidth},${tabStart + tabHeight * 0.4} ${width + tabWidth},${tabStart + tabHeight * 0.6} ${width + tabWidth * 0.8},${tabStart + tabHeight * 0.7}`;
-      path += ` C ${width + tabWidth * tabCurveDepth},${tabStart + tabHeight * 0.9} ${width},${tabStart + tabHeight * 0.9} ${width},${tabEnd}`;
+    // Create tab or slot on the right edge
+    if (hasRightTab) {
+      // Create a protruding tab with classic rounded shape
+      path += `Q ${width + tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.15} ${width + tabDepth},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
+      path += `Q ${width + tabDepth * 1.5},${height / 2} ${width + tabDepth},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
+      path += `Q ${width + tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.15} ${width},${(height + tabHeight) / 2} `;
     } else {
-      // Inward slot with rounded corners
-      path += ` C ${width},${tabStart + tabHeight * 0.1} ${width - tabWidth * tabCurveDepth},${tabStart + tabHeight * 0.1} ${width - tabWidth * 0.8},${tabStart + tabHeight * 0.3}`;
-      path += ` C ${width - tabWidth},${tabStart + tabHeight * 0.4} ${width - tabWidth},${tabStart + tabHeight * 0.6} ${width - tabWidth * 0.8},${tabStart + tabHeight * 0.7}`;
-      path += ` C ${width - tabWidth * tabCurveDepth},${tabStart + tabHeight * 0.9} ${width},${tabStart + tabHeight * 0.9} ${width},${tabEnd}`;
+      // Create an intruding slot with classic rounded shape
+      path += `Q ${width - tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.15} ${width - tabDepth},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
+      path += `Q ${width - tabDepth * 1.5},${height / 2} ${width - tabDepth},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
+      path += `Q ${width - tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.15} ${width},${(height + tabHeight) / 2} `;
     }
     
-    // Path to end of right edge
-    path += ` L ${width},${height}`;
-  } else {
-    // Straight line if at right edge of puzzle
-    path += ` L ${width},${height}`;
+    // Complete the right edge
+    path += `V ${height} `;
   }
   
-  // Bottom edge
-  if (hasBottomEdge) {
-    const tabStart = width * 0.7;
-    const tabEnd = width * 0.3;
+  // Bottom edge (drawn from right to left)
+  if (isBottomEdge) {
+    // Straight line if at the bottom edge of the puzzle
+    path += `H 0 `;
+  } else {
+    // First part of the bottom edge (before the tab/slot)
+    path += `H ${(width + tabWidth) / 2} `;
     
-    // Path to start of tab/slot (going right to left)
-    path += ` L ${tabStart},${height}`;
-    
-    if (bottomTabOut) {
-      // Outward tab with rounded corners
-      path += ` C ${tabStart - tabWidth * 0.1},${height} ${tabStart - tabWidth * 0.1},${height + tabHeight * tabCurveDepth} ${tabStart - tabWidth * 0.3},${height + tabHeight * 0.8}`;
-      path += ` C ${tabStart - tabWidth * 0.4},${height + tabHeight} ${tabStart - tabWidth * 0.6},${height + tabHeight} ${tabStart - tabWidth * 0.7},${height + tabHeight * 0.8}`;
-      path += ` C ${tabStart - tabWidth * 0.9},${height + tabHeight * tabCurveDepth} ${tabStart - tabWidth * 0.9},${height} ${tabEnd},${height}`;
+    // Create tab or slot on the bottom edge
+    if (hasBottomTab) {
+      // Create a protruding tab with classic rounded shape (inverted)
+      path += `Q ${(width + tabWidth) / 2 - tabWidth * 0.15},${height + tabDepth * 0.3} ${(width + tabWidth) / 2 - tabWidth * 0.3},${height + tabDepth} `;
+      path += `Q ${width / 2},${height + tabDepth * 1.5} ${(width - tabWidth) / 2 + tabWidth * 0.3},${height + tabDepth} `;
+      path += `Q ${(width - tabWidth) / 2 + tabWidth * 0.15},${height + tabDepth * 0.3} ${(width - tabWidth) / 2},${height} `;
     } else {
-      // Inward slot with rounded corners
-      path += ` C ${tabStart - tabWidth * 0.1},${height} ${tabStart - tabWidth * 0.1},${height - tabHeight * tabCurveDepth} ${tabStart - tabWidth * 0.3},${height - tabHeight * 0.8}`;
-      path += ` C ${tabStart - tabWidth * 0.4},${height - tabHeight} ${tabStart - tabWidth * 0.6},${height - tabHeight} ${tabStart - tabWidth * 0.7},${height - tabHeight * 0.8}`;
-      path += ` C ${tabStart - tabWidth * 0.9},${height - tabHeight * tabCurveDepth} ${tabStart - tabWidth * 0.9},${height} ${tabEnd},${height}`;
+      // Create an intruding slot with classic rounded shape (inverted)
+      path += `Q ${(width + tabWidth) / 2 - tabWidth * 0.15},${height - tabDepth * 0.3} ${(width + tabWidth) / 2 - tabWidth * 0.3},${height - tabDepth} `;
+      path += `Q ${width / 2},${height - tabDepth * 1.5} ${(width - tabWidth) / 2 + tabWidth * 0.3},${height - tabDepth} `;
+      path += `Q ${(width - tabWidth) / 2 + tabWidth * 0.15},${height - tabDepth * 0.3} ${(width - tabWidth) / 2},${height} `;
     }
     
-    // Path to end of bottom edge
-    path += ` L 0,${height}`;
-  } else {
-    // Straight line if at bottom of puzzle
-    path += ` L 0,${height}`;
+    // Complete the bottom edge
+    path += `H 0 `;
   }
   
-  // Left edge
-  if (hasLeftEdge) {
-    const tabStart = height * 0.7;
-    const tabEnd = height * 0.3;
+  // Left edge (drawn from bottom to top)
+  if (isLeftEdge) {
+    // Straight line if at the left edge of the puzzle
+    path += `V 0 `;
+  } else {
+    // First part of the left edge (before the tab/slot)
+    path += `V ${(height + tabHeight) / 2} `;
     
-    // Path to start of tab/slot
-    path += ` L 0,${tabStart}`;
-    
-    if (leftTabOut) {
-      // Outward tab with rounded corners
-      path += ` C 0,${tabStart - tabHeight * 0.1} -${tabWidth * tabCurveDepth},${tabStart - tabHeight * 0.1} -${tabWidth * 0.8},${tabStart - tabHeight * 0.3}`;
-      path += ` C -${tabWidth},${tabStart - tabHeight * 0.4} -${tabWidth},${tabStart - tabHeight * 0.6} -${tabWidth * 0.8},${tabStart - tabHeight * 0.7}`;
-      path += ` C -${tabWidth * tabCurveDepth},${tabStart - tabHeight * 0.9} 0,${tabStart - tabHeight * 0.9} 0,${tabEnd}`;
+    // Create tab or slot on the left edge
+    if (hasLeftTab) {
+      // Create a protruding tab with classic rounded shape
+      path += `Q ${-tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.15} ${-tabDepth},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
+      path += `Q ${-tabDepth * 1.5},${height / 2} ${-tabDepth},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
+      path += `Q ${-tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.15} 0,${(height - tabHeight) / 2} `;
     } else {
-      // Inward slot with rounded corners
-      path += ` C 0,${tabStart - tabHeight * 0.1} ${tabWidth * tabCurveDepth},${tabStart - tabHeight * 0.1} ${tabWidth * 0.8},${tabStart - tabHeight * 0.3}`;
-      path += ` C ${tabWidth},${tabStart - tabHeight * 0.4} ${tabWidth},${tabStart - tabHeight * 0.6} ${tabWidth * 0.8},${tabStart - tabHeight * 0.7}`;
-      path += ` C ${tabWidth * tabCurveDepth},${tabStart - tabHeight * 0.9} 0,${tabStart - tabHeight * 0.9} 0,${tabEnd}`;
+      // Create an intruding slot with classic rounded shape
+      path += `Q ${tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.15} ${tabDepth},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
+      path += `Q ${tabDepth * 1.5},${height / 2} ${tabDepth},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
+      path += `Q ${tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.15} 0,${(height - tabHeight) / 2} `;
     }
     
-    // Path to start position
-    path += ` L 0,0`;
-  } else {
-    // Straight line if at left edge of puzzle
-    path += ` L 0,0`;
+    // Complete the left edge
+    path += `V 0 `;
   }
   
-  // Close path
-  path += ` Z`;
+  // Close the path
+  path += "Z";
   
   return path;
 }
