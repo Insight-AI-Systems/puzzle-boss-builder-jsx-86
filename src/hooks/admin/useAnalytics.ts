@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -56,7 +55,9 @@ export const useAnalytics = () => {
       
       if (error) throw error;
       
-      return data as DailyMetrics;
+      return Array.isArray(data) && data.length > 0 
+        ? data[0] as DailyMetrics 
+        : { active_users: 0, new_signups: 0, puzzles_completed: 0, revenue: 0 };
     }
   });
 
@@ -95,7 +96,6 @@ export const useAnalytics = () => {
     };
   };
 
-  // Calculate trends based on real data
   const getUserTrend = () => {
     if (!monthlyTrends || monthlyTrends.length < 2) {
       return { value: "0%", direction: "up" as const };
@@ -136,10 +136,9 @@ export const useAnalytics = () => {
     );
   };
 
-  // Calculate activity breakdown using actual data
   const activityBreakdown: ActivityBreakdown = {
     daily: dailyMetrics?.active_users || 0,
-    weekly: Math.round((monthlyTrends?.[0]?.active_users || 0) / 4), // Approximate weekly from monthly
+    weekly: Math.round((monthlyTrends?.[0]?.active_users || 0) / 4),
     monthly: monthlyTrends?.[0]?.active_users || 0,
     yearly: monthlyTrends?.reduce((sum, item) => sum + (item.active_users || 0), 0) || 0
   };
