@@ -18,6 +18,9 @@ export interface AdminProfilesOptions {
   dateFrom?: string;
   dateTo?: string;
   category?: string;
+  dateRange?: { from?: Date; to?: Date };
+  gender?: string;
+  userType?: 'regular' | 'admin';
 }
 
 export interface ProfilesResult {
@@ -36,9 +39,12 @@ export interface RpcUserData {
   role: string;
   last_sign_in?: string;
   created_at: string;
+  updated_at?: string;
   avatar_url?: string;
   gender?: string;
+  custom_gender?: string;
   age_group?: string;
   country?: string;
   categories_played?: string[];
+  credits?: number;
 }

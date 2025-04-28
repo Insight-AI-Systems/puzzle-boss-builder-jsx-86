@@ -25,7 +25,8 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     refetch 
   } = useAdminProfiles(isAdmin, currentUserId, {
     ...filters.filterOptions,
-    lastLoginSortDirection
+    lastLoginSortDirection,
+    userType: filters.userType
   });
 
   // Handle role change for a single user
@@ -52,7 +53,7 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
   const sendBulkEmail = async (subject: string, message: string) => {
     if (sendEmail && selection.selectedUsers.size > 0) {
       const userIds = Array.from(selection.selectedUsers);
-      await sendEmail.mutateAsync({ userIds, subject, message });
+      await sendEmail.mutateAsync({ userIds, subject, body: message });
     }
   };
 

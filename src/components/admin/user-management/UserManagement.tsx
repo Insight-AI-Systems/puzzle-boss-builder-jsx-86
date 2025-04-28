@@ -7,7 +7,7 @@ import { UserActions } from './UserActions';
 import { UserPagination } from './UserPagination';
 import { UserTypeToggle } from './UserTypeToggle';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
-import { useAuth } from '@/hooks/auth/useAuth'; // Fixed import path
+import { useAuth } from '@/hooks/auth/useAuth';
 import { Loader2 } from 'lucide-react';
 import { EmailDialog } from './EmailDialog';
 import { BulkRoleDialog } from './BulkRoleDialog';
@@ -19,7 +19,6 @@ export const UserManagement: React.FC = () => {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [confirmRoleDialogOpen, setConfirmRoleDialogOpen] = useState(false);
   const [localSearchTerm, setLocalSearchTerm] = useState('');
-  const [userType, setUserType] = useState<'regular' | 'admin'>('regular');
   
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
   const userId = user?.id || null;
@@ -33,6 +32,8 @@ export const UserManagement: React.FC = () => {
     pageSize,
     filterOptions,
     totalPages,
+    userType,
+    setUserType,
     
     // User data
     allProfilesData,
@@ -48,8 +49,8 @@ export const UserManagement: React.FC = () => {
     
     // Actions
     handleExportUsers,
-    sendBulkEmail, // Fixed property name
-    bulkUpdateRoles, // Fixed property name
+    sendBulkEmail,
+    bulkUpdateRoles,
     handleRoleChange,
     
     // Bulk role state
@@ -72,6 +73,7 @@ export const UserManagement: React.FC = () => {
   const handleSendBulkEmail = (subject: string, message: string) => {
     if (sendBulkEmail) {
       sendBulkEmail(subject, message);
+      setEmailDialogOpen(false);
     }
   };
 
@@ -108,7 +110,7 @@ export const UserManagement: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* User insights dashboard */}
-          {userStats && <UserInsightsDashboard userStats={userStats} signupStats={[]} />}
+          {userStats && <UserInsightsDashboard userStats={userStats} signupStats={allProfilesData?.signup_stats || []} />}
           
           {/* User type toggle */}
           <UserTypeToggle 
@@ -122,8 +124,8 @@ export const UserManagement: React.FC = () => {
             onCountryChange={(country) => console.log("Country changed", country)}
             onCategoryChange={(category) => console.log("Category changed", category)}
             onRoleChange={(role) => console.log("Role filter changed", role)}
-            countries={[]}
-            categories={[]}
+            countries={allProfilesData?.countries || []}
+            categories={allProfilesData?.categories || []}
             dateRange={undefined}
           />
           

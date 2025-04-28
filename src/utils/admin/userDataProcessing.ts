@@ -5,6 +5,18 @@ import { UserProfile } from '@/types/userTypes';
 export function filterUserData(data: RpcUserData[], options: AdminProfilesOptions): RpcUserData[] {
   let filtered = [...data];
   
+  // Filter by user type first (admin vs regular)
+  if (options.userType) {
+    const isAdmin = options.userType === 'admin';
+    filtered = filtered.filter(user => {
+      const userRole = user.role || 'player';
+      // Admin roles are super_admin, admin, category_manager, social_media_manager, partner_manager, cfo
+      const adminRoles = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
+      const isUserAdmin = adminRoles.includes(userRole);
+      return isAdmin ? isUserAdmin : !isUserAdmin;
+    });
+  }
+  
   // Filter by search term (email or display name)
   if (options.searchTerm) {
     const searchLower = options.searchTerm.toLowerCase();
@@ -58,18 +70,12 @@ export function filterUserData(data: RpcUserData[], options: AdminProfilesOption
 }
 
 export function transformToUserProfile(userData: RpcUserData): UserProfile {
-  // Add debug logging
-  console.log('Processing user data for profile transformation:', 
-    userData.id, 
-    'Last sign in:', 
-    userData.last_sign_in);
-  
   return {
     id: userData.id,
     email: userData.email,
     display_name: userData.display_name,
     bio: null,
-    avatar_url: null,
+    avatar_url: userData.avatar_url || null,
     role: userData.role as any,
     country: userData.country,
     categories_played: userData.categories_played || [],

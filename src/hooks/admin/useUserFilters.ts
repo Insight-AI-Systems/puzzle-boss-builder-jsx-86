@@ -13,6 +13,7 @@ export function useUserFilters(initialPageSize: number = 10) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [roleSortDirection, setRoleSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [userType, setUserType] = useState<'regular' | 'admin'>('regular');
 
   const filterOptions: AdminProfilesOptions = {
     page,
@@ -22,7 +23,8 @@ export function useUserFilters(initialPageSize: number = 10) {
     role: selectedRole,
     roleSortDirection,
     country: selectedCountry,
-    category: selectedCategory
+    category: selectedCategory,
+    userType
   };
 
   return {
@@ -42,6 +44,8 @@ export function useUserFilters(initialPageSize: number = 10) {
     setSelectedRole,
     roleSortDirection,
     setRoleSortDirection,
+    userType,
+    setUserType,
     filterOptions
   };
 }
