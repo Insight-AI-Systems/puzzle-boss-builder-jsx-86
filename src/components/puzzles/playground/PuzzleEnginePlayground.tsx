@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { RefreshCcw } from 'lucide-react';
 import PuzzleGame from "@/components/puzzles/PuzzleGame";
+import ReactJigsawPuzzleEngine2 from './engines/ReactJigsawPuzzleEngine2';
 import { Textarea } from '@/components/ui/textarea';
 import './engines/styles/jigsaw-puzzle.css';
 
@@ -25,6 +27,9 @@ const SAMPLE_IMAGES = [{
 
 const PUZZLE_ENGINES = [{
   id: 'react-jigsaw-puzzle',
+  name: 'Legacy Jigsaw Puzzle'
+}, {
+  id: 'custom-puzzle',
   name: 'Puzzle Boss Jigsaw Puzzle'
 }];
 
@@ -70,6 +75,7 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
   showNumbersToggle = false
 }) => {
   const [selectedImage, setSelectedImage] = useState(propSelectedImage || SAMPLE_IMAGES[0].id);
+  const [selectedEngine, setSelectedEngine] = useState(PUZZLE_ENGINES[0].id);
   const [difficulty, setDifficulty] = useState(propDifficulty || DIFFICULTY_PRESETS[1].value);
   const [resetKey, setResetKey] = useState(0);
   const [showNumbers, setShowNumbers] = useState(true);
@@ -92,34 +98,54 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
   const columns = heroMode && miniColumns ? miniColumns : currentDifficultyPreset.columns;
   
   if (heroMode) {
-    return <div className="w-full" style={{
-      minHeight: 220
-    }}>
-        <div className="relative border rounded-lg p-2 bg-background">
-          <div className="flex items-center gap-2 mb-2">
-            {showNumbersToggle && <div className="flex items-center space-x-2">
-                <Switch id="hero-show-numbers" checked={showNumbers} onCheckedChange={checked => {
-              setShowNumbers(checked);
-              setResetKey(prev => prev + 1);
-            }} />
-                <Label htmlFor="hero-show-numbers">Numbers</Label>
-              </div>}
-            
-          </div>
-          <PuzzleGame 
-            key={resetKey} 
-            imageUrl={currentImage} 
-            rows={rows} 
-            columns={columns} 
-            puzzleId={`hero-${currentImage}`} 
-            showNumbers={showNumbers} 
-          />
+    return <div className="w-full" style={{ minHeight: 220 }}>
+      <div className="relative border rounded-lg p-2 bg-background">
+        <div className="flex items-center gap-2 mb-2">
+          {showNumbersToggle && (
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="hero-show-numbers" 
+                checked={showNumbers} 
+                onCheckedChange={checked => {
+                  setShowNumbers(checked);
+                  setResetKey(prev => prev + 1);
+                }} 
+              />
+              <Label htmlFor="hero-show-numbers">Numbers</Label>
+            </div>
+          )}
         </div>
-      </div>;
+        <PuzzleGame 
+          key={resetKey} 
+          imageUrl={currentImage} 
+          rows={rows} 
+          columns={columns} 
+          puzzleId={`hero-${currentImage}`} 
+          showNumbers={showNumbers} 
+        />
+      </div>
+    </div>;
   }
   
-  return <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/20 rounded-lg border">
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/20 rounded-lg border">
+        <div>
+          <Label htmlFor="engine-selector" className="mb-2 block">Puzzle Engine</Label>
+          <Select value={selectedEngine} onValueChange={setSelectedEngine}>
+            <SelectTrigger id="engine-selector" className="w-full">
+              <SelectValue placeholder="Select engine..." />
+            </SelectTrigger>
+            <SelectContent>
+              {PUZZLE_ENGINES.map(engine => (
+                <SelectItem key={engine.id} value={engine.id}>
+                  {engine.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div>
           <Label htmlFor="image-selector" className="mb-2 block">Test Image</Label>
           <Select value={selectedImage} onValueChange={setSelectedImage}>
@@ -127,9 +153,11 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
               <SelectValue placeholder="Select image..." />
             </SelectTrigger>
             <SelectContent>
-              {SAMPLE_IMAGES.map(image => <SelectItem key={image.id} value={image.id}>
+              {SAMPLE_IMAGES.map(image => (
+                <SelectItem key={image.id} value={image.id}>
                   {image.alt}
-                </SelectItem>)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -141,9 +169,11 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
               <SelectValue placeholder="Select difficulty..." />
             </SelectTrigger>
             <SelectContent>
-              {DIFFICULTY_PRESETS.map(preset => <SelectItem key={preset.value} value={preset.value}>
+              {DIFFICULTY_PRESETS.map(preset => (
+                <SelectItem key={preset.value} value={preset.value}>
                   {preset.label} ({preset.rows}x{preset.columns})
-                </SelectItem>)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -162,14 +192,23 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
       </div>
       
       <div className="min-h-[500px] relative border rounded-lg p-4 bg-background">
-        <PuzzleGame 
-          key={resetKey} 
-          imageUrl={currentImage} 
-          rows={rows} 
-          columns={columns} 
-          puzzleId={`playground-${currentImage}-${difficulty}`} 
-          showNumbers={showNumbers} 
-        />
+        {selectedEngine === 'react-jigsaw-puzzle' ? (
+          <ReactJigsawPuzzleEngine2
+            key={`${resetKey}-legacy`}
+            imageUrl={currentImage}
+            rows={rows}
+            columns={columns}
+          />
+        ) : (
+          <PuzzleGame 
+            key={`${resetKey}-custom`}
+            imageUrl={currentImage} 
+            rows={rows} 
+            columns={columns} 
+            puzzleId={`playground-${currentImage}-${difficulty}`} 
+            showNumbers={showNumbers} 
+          />
+        )}
       </div>
       
       <div>
@@ -182,7 +221,8 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
           onChange={(e) => handleNotesChange(e.target.value)} 
         />
       </div>
-    </div>;
+    </div>
+  );
 };
 
 export default React.memo(PuzzleEnginePlayground);
