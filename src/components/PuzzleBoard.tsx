@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { usePuzzleState } from '../hooks/usePuzzleState';
 import { usePuzzleSaveState } from '../hooks/usePuzzleSaveState';
@@ -26,6 +27,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   const autoSaveIntervalRef = useRef<number>();
   const boardRef = useRef<HTMLDivElement>(null);
   const [boardSize, setBoardSize] = useState({ width: 400, height: 400 });
+  const [draggedPieceId, setDraggedPieceId] = useState<string | null>(null);
   
   const {
     pieces,
@@ -177,9 +179,13 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
 
   // Add keyboard navigation for the board
   const handleBoardKeyDown = (e: React.KeyboardEvent) => {
-    if (!draggedPiece) return;
+    if (!draggedPieceId) return;
     
-    const currentPosition = pieces.find(p => p.id === draggedPiece)?.position || 0;
+    // Find the current piece and its position
+    const currentPiece = pieces.find(p => p.id === draggedPieceId);
+    if (!currentPiece) return;
+    
+    const currentPosition = currentPiece.position || 0;
     let newPosition = currentPosition;
 
     switch(e.key) {
@@ -197,17 +203,18 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
         break;
       case 'Enter':
       case ' ':
-        onPieceDrop(draggedPiece, currentPosition);
+        movePiece(draggedPieceId, currentPosition);
+        setDraggedPieceId(null);
         break;
       case 'Escape':
-        setDraggedPiece(null);
+        setDraggedPieceId(null);
         break;
       default:
         return;
     }
     
     if (newPosition !== currentPosition) {
-      onPieceDrop(draggedPiece, newPosition);
+      movePiece(draggedPieceId, newPosition);
     }
   };
 
@@ -293,7 +300,10 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
               containerWidth={boardSize.width}
               containerHeight={boardSize.height}
               imageUrl={imageUrl}
-              onDragStart={startDragging}
+              onDragStart={(id) => {
+                startDragging(id);
+                setDraggedPieceId(id);
+              }}
               onDragEnd={handleDragEnd}
             />
           </div>
@@ -325,7 +335,10 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
                 containerWidth={boardSize.width}
                 containerHeight={boardSize.height}
                 imageUrl={imageUrl}
-                onDragStart={startDragging}
+                onDragStart={(id) => {
+                  startDragging(id);
+                  setDraggedPieceId(id);
+                }}
                 onDragEnd={handleDragEnd}
               />
             </div>
