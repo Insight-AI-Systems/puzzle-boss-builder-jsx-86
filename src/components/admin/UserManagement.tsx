@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { UserTypeToggle } from './user-management/UserTypeToggle';
@@ -54,7 +53,7 @@ export function UserManagement() {
   const [recentlySearched, setRecentlySearched] = useState(false);
 
   const currentUserRole = profile?.role || 'player';
-  const currentUserEmail = profile?.id; // In your system, id appears to be the email
+  const currentUserEmail = profile?.id;
 
   console.log('UserManagement - Current user:', {
     role: currentUserRole,
@@ -66,6 +65,11 @@ export function UserManagement() {
     const isAdminOrManager = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'].includes(user.role);
     return userTypeView === 'admin' ? isAdminOrManager : !isAdminOrManager;
   }) || [];
+
+  const filteredStats = {
+    ...userStats,
+    total: filteredUsers.length
+  };
 
   useEffect(() => {
     if (recentlySearched && allProfilesData?.data) {
@@ -141,7 +145,7 @@ export function UserManagement() {
         />
 
         {userStats && (
-          <UserStatsDisplay stats={userStats} />
+          <UserStatsDisplay stats={filteredStats} />
         )}
 
         <UsersTable
