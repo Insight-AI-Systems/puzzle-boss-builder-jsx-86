@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { UserTypeToggle } from './user-management/UserTypeToggle';
 import { UserStatsDisplay } from './user-management/UserStatsDisplay';
@@ -50,6 +51,7 @@ export function UserManagement() {
   const [localSearchTerm, setLocalSearchTerm] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [userTypeView, setUserTypeView] = useState<'regular' | 'admin'>('regular');
+  const [recentlySearched, setRecentlySearched] = useState(false);
 
   const currentUserRole = profile?.role || 'player';
   const currentUserEmail = profile?.id; // In your system, id appears to be the email
