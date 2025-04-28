@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -111,51 +112,129 @@ export const useAnalytics = () => {
   const { data: userDemographics, isLoading: isLoadingUserDemographics } = useQuery({
     queryKey: ['userDemographics'],
     queryFn: async () => {
-      const { data: columnsCheck, error: columnsError } = await supabase
-        .from('profiles')
-        .select('id')
-        .limit(1);
+      try {
+        // Check if profiles table exists and has the required columns
+        const { data: columnsCheck, error: columnsError } = await supabase
+          .from('profiles')
+          .select('id')
+          .limit(1);
+          
+        if (columnsError) {
+          console.error('Error checking profiles table:', columnsError);
+          return {
+            gender_distribution: { 'not_specified': 0 },
+            age_distribution: { 'not_specified': 0 },
+            country_distribution: { 'not_specified': 0 }
+          };
+        }
         
-      if (columnsError) {
-        console.error('Error checking columns:', columnsError);
+        // Check for specific columns directly in the profiles table
+        const hasGenderQuery = await supabase
+          .from('profiles')
+          .select('gender')
+          .limit(1);
+        
+        const hasAgeGroupQuery = await supabase
+          .from('profiles')
+          .select('age_group')
+          .limit(1);
+        
+        const hasCountryQuery = await supabase
+          .from('profiles')
+          .select('country')
+          .limit(1);
+        
+        const hasGender = !hasGenderQuery.error;
+        const hasAgeGroup = !hasAgeGroupQuery.error;
+        const hasCountry = !hasCountryQuery.error;
+        
+        console.log('Column availability:', { hasGender, hasAgeGroup, hasCountry });
+        
+        // Now fetch profiles safely
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, role');
+        
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+          return {
+            gender_distribution: { 'not_specified': 0 },
+            age_distribution: { 'not_specified': 0 },
+            country_distribution: { 'not_specified': 0 }
+          };
+        }
+        
+        const genderCounts: Record<string, number> = { 'not_specified': profiles?.length || 0 };
+        const ageCounts: Record<string, number> = { 'not_specified': profiles?.length || 0 };
+        const countryCounts: Record<string, number> = { 'not_specified': profiles?.length || 0 };
+        
+        // If we have the gender column, fetch actual gender data
+        if (hasGender) {
+          const { data: genderData } = await supabase
+            .from('profiles')
+            .select('gender');
+            
+          if (genderData && genderData.length > 0) {
+            // Reset the default count
+            genderCounts['not_specified'] = 0;
+            
+            // Count each gender
+            genderData.forEach(profile => {
+              const gender = profile.gender || 'not_specified';
+              genderCounts[gender] = (genderCounts[gender] || 0) + 1;
+            });
+          }
+        }
+        
+        // If we have the age_group column, fetch actual age_group data
+        if (hasAgeGroup) {
+          const { data: ageData } = await supabase
+            .from('profiles')
+            .select('age_group');
+            
+          if (ageData && ageData.length > 0) {
+            // Reset the default count
+            ageCounts['not_specified'] = 0;
+            
+            // Count each age group
+            ageData.forEach(profile => {
+              const ageGroup = profile.age_group || 'not_specified';
+              ageCounts[ageGroup] = (ageCounts[ageGroup] || 0) + 1;
+            });
+          }
+        }
+        
+        // If we have the country column, fetch actual country data
+        if (hasCountry) {
+          const { data: countryData } = await supabase
+            .from('profiles')
+            .select('country');
+            
+          if (countryData && countryData.length > 0) {
+            // Reset the default count
+            countryCounts['not_specified'] = 0;
+            
+            // Count each country
+            countryData.forEach(profile => {
+              const country = profile.country || 'not_specified';
+              countryCounts[country] = (countryCounts[country] || 0) + 1;
+            });
+          }
+        }
+        
         return {
-          gender_distribution: {},
-          age_distribution: {},
-          country_distribution: {}
+          gender_distribution: genderCounts,
+          age_distribution: ageCounts,
+          country_distribution: countryCounts
+        };
+      } catch (err) {
+        console.error('Error in user demographics query:', err);
+        return {
+          gender_distribution: { 'not_specified': 0 },
+          age_distribution: { 'not_specified': 0 },
+          country_distribution: { 'not_specified': 0 }
         };
       }
-        
-      const { data: columns } = await supabase.rpc('_system_info');
-      const hasGender = columns?.some(col => col.table === 'profiles' && col.name === 'gender');
-      const hasAgeGroup = columns?.some(col => col.table === 'profiles' && col.name === 'age_group');
-      const hasCountry = columns?.some(col => col.table === 'profiles' && col.name === 'country');
-      
-      console.log('Column availability:', { hasGender, hasAgeGroup, hasCountry });
-      
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, role');
-      
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-        return {
-          gender_distribution: {},
-          age_distribution: {},
-          country_distribution: {}
-        };
-      }
-      
-      const genderCounts: Record<string, number> = { 'not_specified': profiles?.length || 0 };
-      
-      const ageCounts: Record<string, number> = { 'not_specified': profiles?.length || 0 };
-      
-      const countryCounts: Record<string, number> = { 'not_specified': profiles?.length || 0 };
-      
-      return {
-        gender_distribution: genderCounts,
-        age_distribution: ageCounts,
-        country_distribution: countryCounts
-      };
     }
   });
 
