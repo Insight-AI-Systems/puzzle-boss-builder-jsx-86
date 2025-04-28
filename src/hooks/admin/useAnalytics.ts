@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -76,9 +75,10 @@ export const useAnalytics = () => {
       
       if (error) throw error;
       
-      return Array.isArray(data) && data.length > 0 
-        ? data[0] as DailyMetrics 
-        : { active_users: 0, new_signups: 0, puzzles_completed: 0, revenue: 0 };
+      if (Array.isArray(data) && data.length > 0) {
+        return data[0] as DailyMetrics;
+      } 
+      return { active_users: 0, new_signups: 0, puzzles_completed: 0, revenue: 0 };
     }
   });
 
@@ -108,38 +108,48 @@ export const useAnalytics = () => {
     }
   });
 
-  // User metrics from real data
   const { data: userDemographics, isLoading: isLoadingUserDemographics } = useQuery({
     queryKey: ['userDemographics'],
     queryFn: async () => {
-      // Get user profiles for demographic data
+      const { data: columnsCheck, error: columnsError } = await supabase
+        .from('profiles')
+        .select('id')
+        .limit(1);
+        
+      if (columnsError) {
+        console.error('Error checking columns:', columnsError);
+        return {
+          gender_distribution: {},
+          age_distribution: {},
+          country_distribution: {}
+        };
+      }
+        
+      const { data: columns } = await supabase.rpc('_system_info');
+      const hasGender = columns?.some(col => col.table === 'profiles' && col.name === 'gender');
+      const hasAgeGroup = columns?.some(col => col.table === 'profiles' && col.name === 'age_group');
+      const hasCountry = columns?.some(col => col.table === 'profiles' && col.name === 'country');
+      
+      console.log('Column availability:', { hasGender, hasAgeGroup, hasCountry });
+      
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('gender, age_group, country')
-        .not('gender', 'is', null);
+        .select('id, username, role');
       
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        return {
+          gender_distribution: {},
+          age_distribution: {},
+          country_distribution: {}
+        };
+      }
       
-      // Process gender distribution
-      const genderCounts: Record<string, number> = {};
-      profiles?.forEach(profile => {
-        const gender = profile.gender || 'unknown';
-        genderCounts[gender] = (genderCounts[gender] || 0) + 1;
-      });
+      const genderCounts: Record<string, number> = { 'not_specified': profiles?.length || 0 };
       
-      // Process age distribution
-      const ageCounts: Record<string, number> = {};
-      profiles?.forEach(profile => {
-        const age = profile.age_group || 'unknown';
-        ageCounts[age] = (ageCounts[age] || 0) + 1;
-      });
+      const ageCounts: Record<string, number> = { 'not_specified': profiles?.length || 0 };
       
-      // Process country distribution
-      const countryCounts: Record<string, number> = {};
-      profiles?.forEach(profile => {
-        const country = profile.country || 'unknown';
-        countryCounts[country] = (countryCounts[country] || 0) + 1;
-      });
+      const countryCounts: Record<string, number> = { 'not_specified': profiles?.length || 0 };
       
       return {
         gender_distribution: genderCounts,
@@ -149,93 +159,193 @@ export const useAnalytics = () => {
     }
   });
 
-  // Revenue metrics from real data
   const { data: revenueMetrics, isLoading: isLoadingRevenueMetrics } = useQuery({
     queryKey: ['revenueMetrics', fromDate, toDate],
     queryFn: async () => {
-      // Get total revenue
-      const { data: incomeData, error: incomeError } = await supabase
-        .from('site_income')
-        .select('amount, source_type')
-        .gte('date', fromDate)
-        .lte('date', toDate);
-      
-      if (incomeError) throw incomeError;
-      
-      // Calculate total revenue
-      const totalRevenue = incomeData?.reduce((sum, item) => sum + (parseFloat(item.amount as any) || 0), 0) || 0;
-      
-      // Get user count for avg revenue calculation
-      const { count: userCount, error: userError } = await supabase
-        .from('profiles')
-        .select('id', { count: 'exact', head: true });
-      
-      if (userError) throw userError;
-      
-      // Calculate revenue by type
-      const revenueByType: Record<string, number> = {};
-      incomeData?.forEach(item => {
-        const type = item.source_type || 'other';
-        revenueByType[type] = (revenueByType[type] || 0) + (parseFloat(item.amount as any) || 0);
-      });
-      
-      // Filter for credit purchases
-      const creditPurchases = incomeData?.filter(item => 
-        item.source_type === 'puzzle' || item.source_type === 'membership'
-      ).length || 0;
-      
-      return {
-        total_revenue: totalRevenue,
-        avg_revenue_per_user: userCount ? totalRevenue / userCount : 0,
-        credit_purchases: creditPurchases,
-        revenue_by_type: revenueByType
-      };
+      try {
+        const { data: tableCheck, error: tableError } = await supabase
+          .from('site_income')
+          .select('id')
+          .limit(1);
+        
+        if (tableError) {
+          console.error('Error checking site_income table:', tableError);
+          return {
+            total_revenue: 0,
+            avg_revenue_per_user: 0,
+            credit_purchases: 0,
+            revenue_by_type: { 'no_data': 0 }
+          };
+        }
+
+        const { data: incomeData, error: incomeError } = await supabase
+          .from('site_income')
+          .select('amount, source_type')
+          .gte('date', fromDate)
+          .lte('date', toDate);
+        
+        if (incomeError) {
+          console.error('Error fetching income data:', incomeError);
+          return {
+            total_revenue: 0,
+            avg_revenue_per_user: 0,
+            credit_purchases: 0,
+            revenue_by_type: { 'no_data': 0 }
+          };
+        }
+        
+        const totalRevenue = incomeData?.reduce((sum, item) => sum + (parseFloat(item.amount as any) || 0), 0) || 0;
+        
+        const { count: userCount, error: userError } = await supabase
+          .from('profiles')
+          .select('id', { count: 'exact', head: true });
+        
+        if (userError) {
+          console.error('Error counting users:', userError);
+          return {
+            total_revenue: totalRevenue,
+            avg_revenue_per_user: 0,
+            credit_purchases: 0,
+            revenue_by_type: { 'no_data': totalRevenue }
+          };
+        }
+        
+        const revenueByType: Record<string, number> = {};
+        if (incomeData && incomeData.length > 0) {
+          incomeData.forEach(item => {
+            const type = item.source_type || 'other';
+            revenueByType[type] = (revenueByType[type] || 0) + (parseFloat(item.amount as any) || 0);
+          });
+        } else {
+          revenueByType['no_data'] = 0;
+        }
+        
+        const creditPurchases = incomeData?.filter(item => 
+          item.source_type === 'puzzle' || item.source_type === 'membership'
+        ).length || 0;
+        
+        return {
+          total_revenue: totalRevenue,
+          avg_revenue_per_user: userCount ? totalRevenue / userCount : 0,
+          credit_purchases: creditPurchases,
+          revenue_by_type: revenueByType
+        };
+      } catch (err) {
+        console.error('Unexpected error in revenue metrics:', err);
+        return {
+          total_revenue: 0,
+          avg_revenue_per_user: 0,
+          credit_purchases: 0,
+          revenue_by_type: { 'error': 0 }
+        };
+      }
     }
   });
 
-  // Puzzle metrics from real data
   const { data: puzzleMetrics, isLoading: isLoadingPuzzleMetrics } = useQuery({
     queryKey: ['puzzleMetrics', fromDate, toDate],
     queryFn: async () => {
-      // Get active puzzles
-      const { data: activePuzzles, error: puzzlesError } = await supabase
-        .from('puzzles')
-        .select('id')
-        .eq('status', 'active');
-      
-      if (puzzlesError) throw puzzlesError;
-      
-      // Get puzzle completion data
-      const { data: completions, error: completionsError } = await supabase
-        .from('puzzle_completions')
-        .select('completion_time, is_winner');
-      
-      if (completionsError) throw completionsError;
-      
-      // Calculate metrics
-      const totalCompletions = completions?.length || 0;
-      const winners = completions?.filter(c => c.is_winner).length || 0;
-      const completionTimes = completions
-        ?.map(c => parseFloat(c.completion_time as any) || 0)
-        .filter(Boolean);
-      
-      const avgTime = completionTimes?.length 
-        ? completionTimes.reduce((sum, time) => sum + time, 0) / completionTimes.length 
-        : 0;
-      
-      // Get total puzzles for completion rate
-      const { count: puzzleCount, error: countError } = await supabase
-        .from('puzzle_progress')
-        .select('id', { count: 'exact', head: true });
-      
-      if (countError) throw countError;
-      
-      return {
-        active_puzzles: activePuzzles?.length || 0,
-        avg_completion_time: avgTime,
-        completion_rate: puzzleCount ? (totalCompletions / puzzleCount) * 100 : 0,
-        prize_redemption_rate: totalCompletions ? (winners / totalCompletions) * 100 : 0
-      };
+      try {
+        const { data: puzzleCheck, error: puzzleCheckError } = await supabase
+          .from('puzzles')
+          .select('id')
+          .limit(1);
+        
+        if (puzzleCheckError) {
+          console.error('Error checking puzzles table:', puzzleCheckError);
+          return {
+            active_puzzles: 0,
+            avg_completion_time: 0,
+            completion_rate: 0,
+            prize_redemption_rate: 0
+          };
+        }
+
+        const { data: activePuzzles, error: puzzlesError } = await supabase
+          .from('puzzles')
+          .select('id')
+          .eq('status', 'active');
+        
+        if (puzzlesError) {
+          console.error('Error fetching puzzles:', puzzlesError);
+          return {
+            active_puzzles: 0,
+            avg_completion_time: 0,
+            completion_rate: 0,
+            prize_redemption_rate: 0
+          };
+        }
+        
+        const { data: completionCheck, error: completionCheckError } = await supabase
+          .from('puzzle_completions')
+          .select('id')
+          .limit(1);
+        
+        if (completionCheckError) {
+          console.error('Error checking puzzle_completions table:', completionCheckError);
+          return {
+            active_puzzles: activePuzzles?.length || 0,
+            avg_completion_time: 0,
+            completion_rate: 0,
+            prize_redemption_rate: 0
+          };
+        }
+
+        const { data: completions, error: completionsError } = await supabase
+          .from('puzzle_completions')
+          .select('completion_time, is_winner');
+        
+        if (completionsError) {
+          console.error('Error fetching completions:', completionsError);
+          return {
+            active_puzzles: activePuzzles?.length || 0,
+            avg_completion_time: 0,
+            completion_rate: 0,
+            prize_redemption_rate: 0
+          };
+        }
+        
+        const totalCompletions = completions?.length || 0;
+        const winners = completions?.filter(c => c.is_winner).length || 0;
+        const completionTimes = completions
+          ?.map(c => parseFloat(c.completion_time as any) || 0)
+          .filter(Boolean);
+        
+        const avgTime = completionTimes?.length 
+          ? completionTimes.reduce((sum, time) => sum + time, 0) / completionTimes.length 
+          : 0;
+        
+        const { data: progressCheck, error: progressCheckError } = await supabase
+          .from('puzzle_progress')
+          .select('id')
+          .limit(1);
+        
+        let puzzleCount = 0;
+        if (!progressCheckError) {
+          const { count, error: countError } = await supabase
+            .from('puzzle_progress')
+            .select('id', { count: 'exact', head: true });
+          
+          if (!countError) {
+            puzzleCount = count || 0;
+          }
+        }
+        
+        return {
+          active_puzzles: activePuzzles?.length || 0,
+          avg_completion_time: avgTime,
+          completion_rate: puzzleCount ? (totalCompletions / puzzleCount) * 100 : 0,
+          prize_redemption_rate: totalCompletions ? (winners / totalCompletions) * 100 : 0
+        };
+      } catch (err) {
+        console.error('Unexpected error in puzzle metrics:', err);
+        return {
+          active_puzzles: 0,
+          avg_completion_time: 0,
+          completion_rate: 0,
+          prize_redemption_rate: 0
+        };
+      }
     }
   });
 
@@ -295,7 +405,6 @@ export const useAnalytics = () => {
     yearly: monthlyTrends?.reduce((sum, item) => sum + (item.active_users || 0), 0) || 0
   };
 
-  // Format time for display (seconds to mm:ss)
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
