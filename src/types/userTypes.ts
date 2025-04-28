@@ -53,7 +53,7 @@ export interface RolePermission {
 export const ROLE_DEFINITIONS: Record<UserRole, RolePermission> = {
   'super_admin': {
     role: 'super_admin',
-    label: 'Admin',
+    label: 'Super Admin',
     description: 'Complete access to all features and functionality',
     permissions: ['all'],
     canBeAssignedBy: ['super_admin']
