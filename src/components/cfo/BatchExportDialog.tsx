@@ -28,7 +28,7 @@ export const BatchExportDialog = () => {
       const period = `${format(date.from, 'yyyy-MM')}${date.to ? `-to-${format(date.to, 'yyyy-MM')}` : ''}`;
 
       const [incomes, expenses, commissions] = await Promise.all([
-        fetchSiteIncomes(startDate),
+        fetchSiteIncomes(startDate, endDate), // Fix: Added endDate as the second argument
         fetchSiteExpenses(startDate),
         fetchCommissionPayments()
       ]);

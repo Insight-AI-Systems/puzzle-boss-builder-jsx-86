@@ -53,7 +53,7 @@ export function useFinancials() {
         // Safe access to nested properties
         const username = item.profiles && typeof item.profiles === 'object' && 
                         'username' in item.profiles ? 
-                        item.profiles.username as string || 'Anonymous' : 'Anonymous';
+                        (item.profiles.username as string || 'Anonymous') : 'Anonymous';
 
         return {
           ...item,
@@ -118,7 +118,7 @@ export function useFinancials() {
           username = 'username' in manager.profiles ? 
                     ((manager.profiles.username as string) || 'Unknown') : 'Unknown';
           email = 'email' in manager.profiles ? 
-                 manager.profiles.email as string : undefined;
+                 (manager.profiles.email as string) : undefined;
         }
 
         return {
@@ -162,7 +162,7 @@ export function useFinancials() {
           managerName = 'username' in payment.manager ? 
                        ((payment.manager.username as string) || 'Unknown') : 'Unknown';
           managerEmail = 'email' in payment.manager ? 
-                        payment.manager.email as string : undefined;
+                        (payment.manager.email as string) : undefined;
         }
 
         return {

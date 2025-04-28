@@ -17,6 +17,15 @@ export const InvoiceEmailDialog = ({ selectedPayments, onSuccess }: InvoiceEmail
   const { toast } = useToast();
 
   const handleSendEmails = async () => {
+    if (!selectedPayments || selectedPayments.length === 0) {
+      toast({
+        title: "No Invoices Selected",
+        description: "Please select at least one payment to send invoices.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSending(true);
     try {
       const { data, error } = await supabase.functions.invoke('send-invoice-email', {
@@ -44,6 +53,8 @@ export const InvoiceEmailDialog = ({ selectedPayments, onSuccess }: InvoiceEmail
     }
   };
 
+  const paymentsCount = selectedPayments ? selectedPayments.length : 0;
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -62,9 +73,9 @@ export const InvoiceEmailDialog = ({ selectedPayments, onSuccess }: InvoiceEmail
         </DialogHeader>
         <div className="space-y-4 pt-4">
           <p>
-            You are about to send {selectedPayments ? selectedPayments.length : 0} invoice{selectedPayments && selectedPayments.length !== 1 ? 's' : ''} to the respective category managers.
+            You are about to send {paymentsCount} invoice{paymentsCount !== 1 ? 's' : ''} to the respective category managers.
           </p>
-          <div className="flex justify-end gap-2">
+          <div className="mt-4 flex justify-end gap-2">
             <Button variant="outline" onClick={() => setIsOpen(false)}>
               Cancel
             </Button>

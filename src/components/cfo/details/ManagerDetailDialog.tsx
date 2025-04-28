@@ -32,14 +32,18 @@ export const ManagerDetailDialog: React.FC<ManagerDetailDialogProps> = ({
   statusColors,
   onStatusChange
 }) => {
-  const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  // Ensure incomes and expenses are arrays even if undefined is passed
+  const safeIncomes = incomes || [];
+  const safeExpenses = expenses || [];
+  
+  const totalIncome = safeIncomes.reduce((sum, income) => sum + income.amount, 0);
+  const totalExpenses = safeExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Manager Details: {manager.manager_name}</DialogTitle>
+          <DialogTitle>Manager Details: {manager.manager_name || 'Unknown'}</DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -48,7 +52,7 @@ export const ManagerDetailDialog: React.FC<ManagerDetailDialogProps> = ({
               <CardTitle className="text-sm font-medium">Category</CardTitle>
             </CardHeader>
             <CardContent className="py-2">
-              <p className="text-xl font-bold">{manager.category_name}</p>
+              <p className="text-xl font-bold">{manager.category_name || 'Unknown'}</p>
             </CardContent>
           </Card>
           
@@ -97,8 +101,8 @@ export const ManagerDetailDialog: React.FC<ManagerDetailDialogProps> = ({
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold mb-2">Income Sources ({incomes.length})</h3>
-            {incomes.length > 0 ? (
+            <h3 className="text-lg font-semibold mb-2">Income Sources ({safeIncomes.length})</h3>
+            {safeIncomes.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -108,7 +112,7 @@ export const ManagerDetailDialog: React.FC<ManagerDetailDialogProps> = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {incomes.map((income) => (
+                  {safeIncomes.map((income) => (
                     <TableRow key={income.id}>
                       <TableCell>{format(new Date(income.date), 'MMM dd, yyyy')}</TableCell>
                       <TableCell>{income.source_type}</TableCell>
@@ -127,8 +131,8 @@ export const ManagerDetailDialog: React.FC<ManagerDetailDialogProps> = ({
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold mb-2">Expenses ({expenses.length})</h3>
-            {expenses.length > 0 ? (
+            <h3 className="text-lg font-semibold mb-2">Expenses ({safeExpenses.length})</h3>
+            {safeExpenses.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -138,7 +142,7 @@ export const ManagerDetailDialog: React.FC<ManagerDetailDialogProps> = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {expenses.map((expense) => (
+                  {safeExpenses.map((expense) => (
                     <TableRow key={expense.id}>
                       <TableCell>{format(new Date(expense.date), 'MMM dd, yyyy')}</TableCell>
                       <TableCell>{expense.expense_type}</TableCell>

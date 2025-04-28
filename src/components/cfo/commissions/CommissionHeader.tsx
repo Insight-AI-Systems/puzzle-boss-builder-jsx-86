@@ -24,7 +24,7 @@ export const CommissionHeader: React.FC<CommissionHeaderProps> = ({
       <h2 className="text-3xl font-bold">Commissions Management</h2>
       <div className="flex gap-2">
         <InvoiceEmailDialog 
-          selectedPayments={selectedPayments}
+          selectedPayments={selectedPayments || []}
           onSuccess={onEmailSuccess}
         />
         <Button
