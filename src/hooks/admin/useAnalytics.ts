@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -156,14 +155,9 @@ export const useAnalytics = () => {
             if (!usersError && allUsers && allUsers.length > 0) {
               genderCounts['not_specified'] = 0;
               
-              allUsers.forEach(user => {
-                // Fixed TypeScript error - reorder null check
-                if (user && user !== null && typeof user === 'object' && 'gender' in user) {
-                  const gender = user.gender || 'not_specified';
-                  genderCounts[gender as string] = (genderCounts[gender as string] || 0) + 1;
-                } else {
-                  genderCounts['not_specified']++;
-                }
+              allUsers.forEach((userProfile) => {
+                const gender = userProfile?.gender || 'not_specified';
+                genderCounts[gender] = (genderCounts[gender] || 0) + 1;
               });
             }
           } else {
@@ -185,14 +179,9 @@ export const useAnalytics = () => {
             if (!usersError && allUsers && allUsers.length > 0) {
               ageCounts['not_specified'] = 0;
               
-              allUsers.forEach(user => {
-                // Fixed TypeScript error - reorder null check
-                if (user && user !== null && typeof user === 'object' && 'age_group' in user) {
-                  const ageGroup = user.age_group || 'not_specified';
-                  ageCounts[ageGroup as string] = (ageCounts[ageGroup as string] || 0) + 1;
-                } else {
-                  ageCounts['not_specified']++;
-                }
+              allUsers.forEach((userProfile) => {
+                const ageGroup = userProfile?.age_group || 'not_specified';
+                ageCounts[ageGroup] = (ageCounts[ageGroup] || 0) + 1;
               });
             }
           } else {
@@ -214,14 +203,9 @@ export const useAnalytics = () => {
             if (!usersError && allUsers && allUsers.length > 0) {
               countryCounts['not_specified'] = 0;
               
-              allUsers.forEach(user => {
-                // Fixed TypeScript error - reorder null check
-                if (user && user !== null && typeof user === 'object' && 'country' in user) {
-                  const country = user.country || 'not_specified';
-                  countryCounts[country as string] = (countryCounts[country as string] || 0) + 1;
-                } else {
-                  countryCounts['not_specified']++;
-                }
+              allUsers.forEach((userProfile) => {
+                const country = userProfile?.country || 'not_specified';
+                countryCounts[country] = (countryCounts[country] || 0) + 1;
               });
             }
           } else {
