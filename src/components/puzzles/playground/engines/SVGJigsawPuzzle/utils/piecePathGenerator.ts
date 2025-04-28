@@ -1,6 +1,7 @@
 
 /**
  * Generates an SVG path for a jigsaw puzzle piece with traditional rounded tabs and slots
+ * that closely match classic jigsaw puzzle appearance
  * 
  * @param position The position of the piece in the puzzle grid
  * @param rows Total number of rows in the puzzle
@@ -27,11 +28,12 @@ export function generatePiecePath(
   const isLeftEdge = col === 0;
   
   // Size of the tab/slot as a percentage of the piece width/height
-  const tabWidth = width * 0.35;
-  const tabHeight = height * 0.35;
+  const tabWidth = width * 0.36;
+  const tabHeight = height * 0.36;
   
   // Tab depth (how much it protrudes or intrudes)
-  const tabDepth = Math.min(width, height) * 0.15;
+  // Make this more pronounced to match the reference image
+  const tabDepth = Math.min(width, height) * 0.22;
   
   // Use pseudo-random but consistent tabs/slots based on position
   // This ensures connected pieces fit together
@@ -51,17 +53,23 @@ export function generatePiecePath(
     // First part of the top edge (before the tab/slot)
     path += `H ${(width - tabWidth) / 2} `;
     
-    // Create tab or slot on the top edge
+    // Create tab or slot on the top edge with a more pronounced, rounded shape
     if (hasTopTab) {
-      // Create a protruding tab with classic rounded shape
-      path += `Q ${(width - tabWidth) / 2 + tabWidth * 0.15},${-tabDepth * 0.3} ${(width - tabWidth) / 2 + tabWidth * 0.3},${-tabDepth} `;
-      path += `Q ${width / 2},${-tabDepth * 1.5} ${(width + tabWidth) / 2 - tabWidth * 0.3},${-tabDepth} `;
-      path += `Q ${(width + tabWidth) / 2 - tabWidth * 0.15},${-tabDepth * 0.3} ${(width + tabWidth) / 2},0 `;
+      // Create a protruding tab with classic rounded knob shape
+      // Start of the tab
+      path += `Q ${(width - tabWidth) / 2 + tabWidth * 0.1},${-tabDepth * 0.2} ${(width - tabWidth) / 2 + tabWidth * 0.25},${-tabDepth * 0.5} `;
+      // Rounded knob of the tab (exaggerate the curve to match the image)
+      path += `Q ${width / 2},${-tabDepth * 1.8} ${(width + tabWidth) / 2 - tabWidth * 0.25},${-tabDepth * 0.5} `;
+      // End of the tab
+      path += `Q ${(width + tabWidth) / 2 - tabWidth * 0.1},${-tabDepth * 0.2} ${(width + tabWidth) / 2},0 `;
     } else {
-      // Create an intruding slot with classic rounded shape
-      path += `Q ${(width - tabWidth) / 2 + tabWidth * 0.15},${tabDepth * 0.3} ${(width - tabWidth) / 2 + tabWidth * 0.3},${tabDepth} `;
-      path += `Q ${width / 2},${tabDepth * 1.5} ${(width + tabWidth) / 2 - tabWidth * 0.3},${tabDepth} `;
-      path += `Q ${(width + tabWidth) / 2 - tabWidth * 0.15},${tabDepth * 0.3} ${(width + tabWidth) / 2},0 `;
+      // Create an intruding slot with classic rounded indent shape
+      // Start of the slot
+      path += `Q ${(width - tabWidth) / 2 + tabWidth * 0.1},${tabDepth * 0.2} ${(width - tabWidth) / 2 + tabWidth * 0.25},${tabDepth * 0.5} `;
+      // Rounded indent of the slot (exaggerate the curve to match the image)
+      path += `Q ${width / 2},${tabDepth * 1.8} ${(width + tabWidth) / 2 - tabWidth * 0.25},${tabDepth * 0.5} `;
+      // End of the slot
+      path += `Q ${(width + tabWidth) / 2 - tabWidth * 0.1},${tabDepth * 0.2} ${(width + tabWidth) / 2},0 `;
     }
     
     // Complete the top edge
@@ -78,15 +86,21 @@ export function generatePiecePath(
     
     // Create tab or slot on the right edge
     if (hasRightTab) {
-      // Create a protruding tab with classic rounded shape
-      path += `Q ${width + tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.15} ${width + tabDepth},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
-      path += `Q ${width + tabDepth * 1.5},${height / 2} ${width + tabDepth},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
-      path += `Q ${width + tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.15} ${width},${(height + tabHeight) / 2} `;
+      // Create a protruding tab with classic rounded knob shape
+      // Start of the tab
+      path += `Q ${width + tabDepth * 0.2},${(height - tabHeight) / 2 + tabHeight * 0.1} ${width + tabDepth * 0.5},${(height - tabHeight) / 2 + tabHeight * 0.25} `;
+      // Rounded knob of the tab (exaggerate the curve to match the image)
+      path += `Q ${width + tabDepth * 1.8},${height / 2} ${width + tabDepth * 0.5},${(height + tabHeight) / 2 - tabHeight * 0.25} `;
+      // End of the tab
+      path += `Q ${width + tabDepth * 0.2},${(height + tabHeight) / 2 - tabHeight * 0.1} ${width},${(height + tabHeight) / 2} `;
     } else {
-      // Create an intruding slot with classic rounded shape
-      path += `Q ${width - tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.15} ${width - tabDepth},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
-      path += `Q ${width - tabDepth * 1.5},${height / 2} ${width - tabDepth},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
-      path += `Q ${width - tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.15} ${width},${(height + tabHeight) / 2} `;
+      // Create an intruding slot with classic rounded indent shape
+      // Start of the slot
+      path += `Q ${width - tabDepth * 0.2},${(height - tabHeight) / 2 + tabHeight * 0.1} ${width - tabDepth * 0.5},${(height - tabHeight) / 2 + tabHeight * 0.25} `;
+      // Rounded indent of the slot (exaggerate the curve to match the image)
+      path += `Q ${width - tabDepth * 1.8},${height / 2} ${width - tabDepth * 0.5},${(height + tabHeight) / 2 - tabHeight * 0.25} `;
+      // End of the slot
+      path += `Q ${width - tabDepth * 0.2},${(height + tabHeight) / 2 - tabHeight * 0.1} ${width},${(height + tabHeight) / 2} `;
     }
     
     // Complete the right edge
@@ -101,17 +115,23 @@ export function generatePiecePath(
     // First part of the bottom edge (before the tab/slot)
     path += `H ${(width + tabWidth) / 2} `;
     
-    // Create tab or slot on the bottom edge
+    // Create tab or slot on the bottom edge with more pronounced rounded shape
     if (hasBottomTab) {
-      // Create a protruding tab with classic rounded shape (inverted)
-      path += `Q ${(width + tabWidth) / 2 - tabWidth * 0.15},${height + tabDepth * 0.3} ${(width + tabWidth) / 2 - tabWidth * 0.3},${height + tabDepth} `;
-      path += `Q ${width / 2},${height + tabDepth * 1.5} ${(width - tabWidth) / 2 + tabWidth * 0.3},${height + tabDepth} `;
-      path += `Q ${(width - tabWidth) / 2 + tabWidth * 0.15},${height + tabDepth * 0.3} ${(width - tabWidth) / 2},${height} `;
+      // Create a protruding tab with classic rounded knob shape (inverted)
+      // Start of the tab
+      path += `Q ${(width + tabWidth) / 2 - tabWidth * 0.1},${height + tabDepth * 0.2} ${(width + tabWidth) / 2 - tabWidth * 0.25},${height + tabDepth * 0.5} `;
+      // Rounded knob of the tab (exaggerate the curve to match the image)
+      path += `Q ${width / 2},${height + tabDepth * 1.8} ${(width - tabWidth) / 2 + tabWidth * 0.25},${height + tabDepth * 0.5} `;
+      // End of the tab
+      path += `Q ${(width - tabWidth) / 2 + tabWidth * 0.1},${height + tabDepth * 0.2} ${(width - tabWidth) / 2},${height} `;
     } else {
-      // Create an intruding slot with classic rounded shape (inverted)
-      path += `Q ${(width + tabWidth) / 2 - tabWidth * 0.15},${height - tabDepth * 0.3} ${(width + tabWidth) / 2 - tabWidth * 0.3},${height - tabDepth} `;
-      path += `Q ${width / 2},${height - tabDepth * 1.5} ${(width - tabWidth) / 2 + tabWidth * 0.3},${height - tabDepth} `;
-      path += `Q ${(width - tabWidth) / 2 + tabWidth * 0.15},${height - tabDepth * 0.3} ${(width - tabWidth) / 2},${height} `;
+      // Create an intruding slot with classic rounded indent shape (inverted)
+      // Start of the slot
+      path += `Q ${(width + tabWidth) / 2 - tabWidth * 0.1},${height - tabDepth * 0.2} ${(width + tabWidth) / 2 - tabWidth * 0.25},${height - tabDepth * 0.5} `;
+      // Rounded indent of the slot (exaggerate the curve to match the image)
+      path += `Q ${width / 2},${height - tabDepth * 1.8} ${(width - tabWidth) / 2 + tabWidth * 0.25},${height - tabDepth * 0.5} `;
+      // End of the slot
+      path += `Q ${(width - tabWidth) / 2 + tabWidth * 0.1},${height - tabDepth * 0.2} ${(width - tabWidth) / 2},${height} `;
     }
     
     // Complete the bottom edge
@@ -128,15 +148,21 @@ export function generatePiecePath(
     
     // Create tab or slot on the left edge
     if (hasLeftTab) {
-      // Create a protruding tab with classic rounded shape
-      path += `Q ${-tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.15} ${-tabDepth},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
-      path += `Q ${-tabDepth * 1.5},${height / 2} ${-tabDepth},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
-      path += `Q ${-tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.15} 0,${(height - tabHeight) / 2} `;
+      // Create a protruding tab with classic rounded knob shape
+      // Start of the tab
+      path += `Q ${-tabDepth * 0.2},${(height + tabHeight) / 2 - tabHeight * 0.1} ${-tabDepth * 0.5},${(height + tabHeight) / 2 - tabHeight * 0.25} `;
+      // Rounded knob of the tab (exaggerate the curve to match the image)
+      path += `Q ${-tabDepth * 1.8},${height / 2} ${-tabDepth * 0.5},${(height - tabHeight) / 2 + tabHeight * 0.25} `;
+      // End of the tab
+      path += `Q ${-tabDepth * 0.2},${(height - tabHeight) / 2 + tabHeight * 0.1} 0,${(height - tabHeight) / 2} `;
     } else {
-      // Create an intruding slot with classic rounded shape
-      path += `Q ${tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.15} ${tabDepth},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
-      path += `Q ${tabDepth * 1.5},${height / 2} ${tabDepth},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
-      path += `Q ${tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.15} 0,${(height - tabHeight) / 2} `;
+      // Create an intruding slot with classic rounded indent shape
+      // Start of the slot
+      path += `Q ${tabDepth * 0.2},${(height + tabHeight) / 2 - tabHeight * 0.1} ${tabDepth * 0.5},${(height + tabHeight) / 2 - tabHeight * 0.25} `;
+      // Rounded indent of the slot (exaggerate the curve to match the image)
+      path += `Q ${tabDepth * 1.8},${height / 2} ${tabDepth * 0.5},${(height - tabHeight) / 2 + tabHeight * 0.25} `;
+      // End of the slot
+      path += `Q ${tabDepth * 0.2},${(height - tabHeight) / 2 + tabHeight * 0.1} 0,${(height - tabHeight) / 2} `;
     }
     
     // Complete the left edge

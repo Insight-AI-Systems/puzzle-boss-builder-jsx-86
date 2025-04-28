@@ -101,6 +101,7 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
   // Create unique IDs for the SVG elements
   const clipPathId = `piece-clip-${piece.id}`;
   const shadowId = `drop-shadow-${piece.id}`;
+  const patternId = `piece-texture-${piece.id}`;
   
   return (
     <div
@@ -121,7 +122,7 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
       onDoubleClick={onDoubleClick}
       data-piece-id={piece.id}
     >
-      {/* SVG for clip path and filters */}
+      {/* SVG for clip path, filters, and patterns */}
       <svg style={{ position: 'absolute', width: 0, height: 0 }}>
         <defs>
           {/* Clip path for the image */}
@@ -134,11 +135,26 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
             <feDropShadow 
               dx="3" 
               dy="3" 
-              stdDeviation="3" 
-              floodColor="rgba(0,0,0,0.6)" 
-              floodOpacity="0.6"
+              stdDeviation="3.5" 
+              floodColor="rgba(0,0,0,0.7)" 
+              floodOpacity="0.7"
             />
           </filter>
+          
+          {/* Optional subtle texture pattern for pieces */}
+          <pattern id={patternId} patternUnits="userSpaceOnUse" width="100" height="100" patternTransform="scale(0.15)">
+            <rect width="100%" height="100%" fill="rgba(255,255,255,0.02)"/>
+            <path d="M 0,10 L 100,10" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
+            <path d="M 0,30 L 100,30" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
+            <path d="M 0,50 L 100,50" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
+            <path d="M 0,70 L 100,70" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
+            <path d="M 0,90 L 100,90" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
+            <path d="M 10,0 L 10,100" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
+            <path d="M 30,0 L 30,100" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
+            <path d="M 50,0 L 50,100" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
+            <path d="M 70,0 L 70,100" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
+            <path d="M 90,0 L 90,100" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
+          </pattern>
         </defs>
       </svg>
       
@@ -167,7 +183,7 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
           }}
         />
         
-        {/* SVG outline for the piece shape */}
+        {/* SVG outline for the piece shape with more pronounced appearance */}
         <svg 
           width="100%" 
           height="100%" 
@@ -179,12 +195,22 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
             pointerEvents: 'none' 
           }}
         >
+          {/* Optional subtle texture overlay */}
+          <path 
+            d={piecePath} 
+            fill={`url(#${patternId})`}
+            fillOpacity="0.15"
+            stroke="none"
+          />
+          
+          {/* Piece outline */}
           <path 
             d={piecePath} 
             fill="none" 
-            stroke={isCorrect ? "rgba(100, 255, 100, 0.8)" : "rgba(255, 255, 255, 0.8)"}
-            strokeWidth={isDragging ? "2.5" : "1.5"}
+            stroke={isCorrect ? "rgba(100, 255, 100, 0.9)" : "rgba(255, 255, 255, 0.9)"}
+            strokeWidth={isDragging ? "2.8" : "1.8"}
             strokeLinejoin="round"
+            strokeLinecap="round"
             filter={isDragging ? `url(#${shadowId})` : ''}
           />
         </svg>
@@ -213,7 +239,7 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
                 boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
               }}
             >
-              {piece.id + 1}
+              {piece.originalPosition + 1}
             </span>
           </div>
         )}
