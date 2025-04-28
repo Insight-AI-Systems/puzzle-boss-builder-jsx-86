@@ -144,14 +144,14 @@ export const useAnalytics = () => {
         const countryCounts: Record<string, number> = { 'not_specified': userCount || 0 };
 
         try {
-          const { data: genderTest } = await supabase
+          const { data: genderTest, error: genderTestError } = await supabase
             .from('profiles')
             .select('gender')
             .limit(1);
             
-          if (genderTest) {
-            const { data: allUsers } = await supabase.from('profiles').select('gender');
-            if (allUsers && allUsers.length > 0) {
+          if (genderTest && !genderTestError) {
+            const { data: allUsers, error: usersError } = await supabase.from('profiles').select('gender');
+            if (allUsers && !usersError && allUsers.length > 0) {
               genderCounts['not_specified'] = 0;
               
               allUsers.forEach(user => {
@@ -159,20 +159,22 @@ export const useAnalytics = () => {
                 genderCounts[gender] = (genderCounts[gender] || 0) + 1;
               });
             }
+          } else {
+            console.log('Gender column not available or error occurred:', genderTestError);
           }
         } catch (error) {
-          console.log('Gender column not available:', error);
+          console.log('Error checking gender column:', error);
         }
         
         try {
-          const { data: ageTest } = await supabase
+          const { data: ageTest, error: ageTestError } = await supabase
             .from('profiles')
             .select('age_group')
             .limit(1);
             
-          if (ageTest) {
-            const { data: allUsers } = await supabase.from('profiles').select('age_group');
-            if (allUsers && allUsers.length > 0) {
+          if (ageTest && !ageTestError) {
+            const { data: allUsers, error: usersError } = await supabase.from('profiles').select('age_group');
+            if (allUsers && !usersError && allUsers.length > 0) {
               ageCounts['not_specified'] = 0;
               
               allUsers.forEach(user => {
@@ -180,20 +182,22 @@ export const useAnalytics = () => {
                 ageCounts[ageGroup] = (ageCounts[ageGroup] || 0) + 1;
               });
             }
+          } else {
+            console.log('Age group column not available or error occurred:', ageTestError);
           }
         } catch (error) {
-          console.log('Age group column not available:', error);
+          console.log('Error checking age_group column:', error);
         }
         
         try {
-          const { data: countryTest } = await supabase
+          const { data: countryTest, error: countryTestError } = await supabase
             .from('profiles')
             .select('country')
             .limit(1);
             
-          if (countryTest) {
-            const { data: allUsers } = await supabase.from('profiles').select('country');
-            if (allUsers && allUsers.length > 0) {
+          if (countryTest && !countryTestError) {
+            const { data: allUsers, error: usersError } = await supabase.from('profiles').select('country');
+            if (allUsers && !usersError && allUsers.length > 0) {
               countryCounts['not_specified'] = 0;
               
               allUsers.forEach(user => {
@@ -201,9 +205,11 @@ export const useAnalytics = () => {
                 countryCounts[country] = (countryCounts[country] || 0) + 1;
               });
             }
+          } else {
+            console.log('Country column not available or error occurred:', countryTestError);
           }
         } catch (error) {
-          console.log('Country column not available:', error);
+          console.log('Error checking country column:', error);
         }
         
         return {
