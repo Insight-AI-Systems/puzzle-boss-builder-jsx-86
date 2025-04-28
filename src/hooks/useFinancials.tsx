@@ -52,7 +52,7 @@ export function useFinancials() {
       return (data || []).map(item => {
         // Safe access to nested properties with null checks
         const username = item.profiles && typeof item.profiles === 'object' ? 
-                        (item.profiles.username as string || 'Anonymous') : 'Anonymous';
+                        ((item.profiles as any).username as string || 'Anonymous') : 'Anonymous';
 
         return {
           ...item,
@@ -114,10 +114,11 @@ export function useFinancials() {
         let email: string | undefined = undefined;
         
         if (manager.profiles && typeof manager.profiles === 'object') {
-          username = 'username' in manager.profiles ? 
-                    ((manager.profiles.username as string) || 'Unknown') : 'Unknown';
-          email = 'email' in manager.profiles ? 
-                 (manager.profiles.email as string) : undefined;
+          const profiles = manager.profiles as any;
+          username = profiles && 'username' in profiles ? 
+                    (profiles.username as string || 'Unknown') : 'Unknown';
+          email = profiles && 'email' in profiles ? 
+                 (profiles.email as string) : undefined;
         }
 
         return {
@@ -158,10 +159,11 @@ export function useFinancials() {
         let managerEmail: string | undefined = undefined;
         
         if (payment.manager && typeof payment.manager === 'object') {
-          managerName = 'username' in payment.manager ? 
-                       ((payment.manager.username as string) || 'Unknown') : 'Unknown';
-          managerEmail = 'email' in payment.manager ? 
-                        (payment.manager.email as string) : undefined;
+          const manager = payment.manager as any;
+          managerName = manager && 'username' in manager ? 
+                       (manager.username as string || 'Unknown') : 'Unknown';
+          managerEmail = manager && 'email' in manager ? 
+                        (manager.email as string) : undefined;
         }
 
         return {

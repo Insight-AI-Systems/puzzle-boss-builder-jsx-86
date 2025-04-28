@@ -34,14 +34,21 @@ export function useMembershipRecords() {
     setIsLoading(true);
     setError(null);
     try {
+      console.log('Fetching membership stats with start_date:', startDate, 'end_date:', endDate);
       const { data, error } = await supabase.rpc('get_membership_stats', {
         start_date: startDate,
         end_date: endDate
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error in useMembershipRecords.fetchMembershipStats:', error);
+        throw error;
+      }
+      
+      console.log('Membership stats API response:', data);
       return data || [];
     } catch (err) {
+      console.error('Exception in useMembershipRecords.fetchMembershipStats:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch membership stats'));
       return [];
     } finally {

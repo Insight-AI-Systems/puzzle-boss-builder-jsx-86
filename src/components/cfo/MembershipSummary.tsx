@@ -30,6 +30,7 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
     const fetchMembershipData = async () => {
       setIsLoading(true);
       try {
+        // Calculate the start date (6 months back from the selected month)
         const endDate = parseISO(`${selectedMonth}-01`);
         const startDate = new Date(endDate);
         startDate.setMonth(startDate.getMonth() - 5); // Get 6 months of data
@@ -40,20 +41,36 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
         });
 
         if (error) {
+          console.error('Error fetching membership data:', error);
           throw error;
         }
 
-        const formattedData: MembershipStats[] = (data || []).map(item => ({
-          period: format(new Date(item.period), 'yyyy-MM'),
-          active_members: item.active_members || 0,
-          expired_members: item.expired_members || 0,
-          canceled_members: item.canceled_members || 0,
-          revenue: item.revenue || 0,
-          churn_rate: item.churn_rate || 0
-        }));
+        // Log the raw data for debugging
+        console.log('Membership stats raw data:', data);
 
+        if (!data || data.length === 0) {
+          console.warn('No membership data returned from the database');
+          setMembershipData([]);
+          return;
+        }
+
+        const formattedData: MembershipStats[] = data.map((item: any) => {
+          // Ensure period is formatted consistently as YYYY-MM
+          const periodDate = new Date(item.period);
+          return {
+            period: format(periodDate, 'yyyy-MM'),
+            active_members: item.active_members || 0,
+            expired_members: item.expired_members || 0,
+            canceled_members: item.canceled_members || 0,
+            revenue: item.monthly_revenue || 0,
+            churn_rate: item.monthly_churn || 0
+          };
+        });
+
+        console.log('Formatted membership data:', formattedData);
         setMembershipData(formattedData);
       } catch (error) {
+        console.error('Error in membership data fetch:', error);
         toast({
           title: 'Error fetching membership data',
           description: error instanceof Error ? error.message : 'Unknown error',
@@ -95,7 +112,8 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
     }
   };
 
-  const currentMonthData = membershipData.find(data => data.period === selectedMonth) || {
+  // Fallback data if no current month is found
+  const defaultMonthData: MembershipStats = {
     period: selectedMonth,
     active_members: 0,
     expired_members: 0,
@@ -104,7 +122,12 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
     churn_rate: 0
   };
 
-  const previousMonthData = membershipData[membershipData.length - 2];
+  // Find the data for the selected month, or use default
+  const currentMonthData = membershipData.find(data => data.period === selectedMonth) || defaultMonthData;
+
+  // Get the previous month's data if available
+  const previousMonthIndex = membershipData.findIndex(data => data.period === selectedMonth) - 1;
+  const previousMonthData = previousMonthIndex >= 0 ? membershipData[previousMonthIndex] : undefined;
 
   return (
     <div className="space-y-6">
@@ -124,6 +147,11 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
       {isLoading ? (
         <div className="flex items-center justify-center min-h-[200px]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : membershipData.length === 0 ? (
+        <div className="flex flex-col items-center justify-center min-h-[200px] text-center p-8">
+          <p className="text-muted-foreground mb-4">No membership data available for the selected period.</p>
+          <p className="text-sm">This might be because there are no memberships recorded in the database, or there might be an issue with the database function.</p>
         </div>
       ) : (
         <>
