@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { PuzzlePiece as PuzzlePieceType } from '../types/puzzle-types';
@@ -32,6 +31,20 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
   const originalRow = Math.floor(Number(piece.id.split('-')[1]) / columns);
   const originalCol = Number(piece.id.split('-')[1]) % columns;
 
+  // Handle keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!pieceRef.current) return;
+    
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onDragStart(piece.id);
+    }
+    
+    if (e.key === 'Escape') {
+      pieceRef.current.blur();
+    }
+  };
+
   useEffect(() => {
     if (!pieceRef.current) return;
 
@@ -46,6 +59,14 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
       onDragStart(piece.id);
+
+      // Announce drag start for screen readers
+      const announcement = document.createElement('div');
+      announcement.setAttribute('role', 'status');
+      announcement.setAttribute('aria-live', 'polite');
+      announcement.textContent = `Started dragging puzzle piece ${Number(piece.id.split('-')[1]) + 1}`;
+      document.body.appendChild(announcement);
+      setTimeout(() => announcement.remove(), 1000);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
@@ -80,6 +101,11 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
     };
   }, [piece.id, onDragStart, onDragEnd]);
 
+  const piecePosition = piece.isCorrect ? "correct position" : "incorrect position";
+  const ariaLabel = `Puzzle piece ${Number(piece.id.split('-')[1]) + 1} in ${piecePosition}. ${
+    piece.isDragging ? "Currently being dragged" : "Press Enter or Space to drag"
+  }`;
+
   return (
     <motion.div
       ref={pieceRef}
@@ -87,7 +113,14 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
         touch-none cursor-grab active:cursor-grabbing rounded-sm shadow-md
         ${piece.isCorrect ? 'ring-2 ring-green-500' : ''}
         ${piece.isDragging ? 'z-10 opacity-80' : 'z-0 opacity-100'}
+        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+        hover:ring-2 hover:ring-blue-300
       `}
+      tabIndex={0}
+      role="button"
+      aria-label={ariaLabel}
+      aria-grabbed={piece.isDragging}
+      onKeyDown={handleKeyDown}
       drag
       dragSnapToOrigin={false}
       style={{
@@ -109,7 +142,6 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
       whileTap={{ scale: 1.05 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       data-piece-id={piece.id}
-      aria-label={`Puzzle piece ${piece.id}`}
     />
   );
 };

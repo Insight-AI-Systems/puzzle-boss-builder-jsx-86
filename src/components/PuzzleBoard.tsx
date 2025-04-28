@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { usePuzzleState } from '../hooks/usePuzzleState';
 import { usePuzzleSaveState } from '../hooks/usePuzzleSaveState';
@@ -176,6 +175,42 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   const stagingAreaPieces = pieces.filter(p => p.position === -1);
   const boardPieces = pieces.filter(p => p.position >= 0);
 
+  // Add keyboard navigation for the board
+  const handleBoardKeyDown = (e: React.KeyboardEvent) => {
+    if (!draggedPiece) return;
+    
+    const currentPosition = pieces.find(p => p.id === draggedPiece)?.position || 0;
+    let newPosition = currentPosition;
+
+    switch(e.key) {
+      case 'ArrowLeft':
+        newPosition = Math.max(0, currentPosition - 1);
+        break;
+      case 'ArrowRight':
+        newPosition = Math.min(rows * columns - 1, currentPosition + 1);
+        break;
+      case 'ArrowUp':
+        newPosition = Math.max(0, currentPosition - columns);
+        break;
+      case 'ArrowDown':
+        newPosition = Math.min(rows * columns - 1, currentPosition + columns);
+        break;
+      case 'Enter':
+      case ' ':
+        onPieceDrop(draggedPiece, currentPosition);
+        break;
+      case 'Escape':
+        setDraggedPiece(null);
+        break;
+      default:
+        return;
+    }
+    
+    if (newPosition !== currentPosition) {
+      onPieceDrop(draggedPiece, newPosition);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-2 sm:p-4">
       <ResumeGameDialog
@@ -184,7 +219,12 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
         onNewGame={handleNewGame}
       />
       
-      <div className="w-full flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6 space-y-4 sm:space-y-0">
+      {/* Status region for game progress */}
+      <div 
+        role="region" 
+        aria-label="Game Progress" 
+        className="w-full flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6 space-y-4 sm:space-y-0"
+      >
         <div className="flex flex-col w-full sm:w-2/3">
           <div className="flex justify-between mb-2">
             <span className="text-xs sm:text-sm font-medium">Progress: {Math.round(completionPercentage)}%</span>
@@ -226,6 +266,10 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
+        role="grid"
+        aria-label="Puzzle Board"
+        onKeyDown={handleBoardKeyDown}
+        tabIndex={-1}
       >
         {!isComplete && boardPieces.map(piece => (
           <div 
@@ -237,6 +281,10 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
               width: `${boardSize.width / columns}px`,
               height: `${boardSize.height / rows}px`
             }}
+            role="gridcell"
+            aria-colindex={(piece.position % columns) + 1}
+            aria-rowindex={Math.floor(piece.position / columns) + 1}
+            data-position={piece.position}
           >
             <PuzzlePiece
               piece={piece}
@@ -252,11 +300,24 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
         ))}
       </div>
 
-      <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200 w-full overflow-x-auto">
-        <h3 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Pieces</h3>
-        <div className="flex flex-wrap gap-1 sm:gap-2 justify-center">
+      {/* Staging area for unused pieces */}
+      <div 
+        className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200 w-full overflow-x-auto"
+        role="region"
+        aria-label="Available puzzle pieces"
+      >
+        <h3 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Available Pieces</h3>
+        <div 
+          className="flex flex-wrap gap-1 sm:gap-2 justify-center"
+          role="list"
+          aria-label="Unused puzzle pieces"
+        >
           {stagingAreaPieces.map(piece => (
-            <div key={piece.id} className="relative">
+            <div 
+              key={piece.id} 
+              className="relative"
+              role="listitem"
+            >
               <PuzzlePiece
                 piece={piece}
                 rows={rows}
