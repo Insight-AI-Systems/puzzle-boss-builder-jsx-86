@@ -98,9 +98,11 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
     };
   }, [onTouchStart, onDragEnd]);
   
-  // Create a unique ID for the SVG clip path
+  // Create unique IDs for the SVG elements
   const clipPathId = `piece-clip-${piece.id}`;
   const shadowPathId = `piece-shadow-${piece.id}`;
+  const shadowId = `drop-shadow-${piece.id}`;
+  const textureId = `texture-${piece.id}`;
   
   return (
     <div
@@ -121,7 +123,7 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
       onDoubleClick={onDoubleClick}
       data-piece-id={piece.id}
     >
-      {/* SVG for clip path and piece outline */}
+      {/* SVG for clip path, filters, and piece outline */}
       <svg style={{ position: 'absolute', width: 0, height: 0 }}>
         <defs>
           {/* Clip path for the image */}
@@ -129,10 +131,22 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
             <path d={piecePath} />
           </clipPath>
           
-          {/* Filter for drop shadow */}
-          <filter id={shadowPathId} x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="1" dy="1" stdDeviation="2" floodColor="rgba(0,0,0,0.5)" floodOpacity="0.5"/>
+          {/* Filter for enhanced drop shadow */}
+          <filter id={shadowId} x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow 
+              dx="3" 
+              dy="3" 
+              stdDeviation="4" 
+              floodColor="rgba(0,0,0,0.5)" 
+              floodOpacity="0.5"
+            />
           </filter>
+
+          {/* Subtle texture for the piece */}
+          <pattern id={textureId} patternUnits="userSpaceOnUse" width="40" height="40" patternTransform="rotate(45)">
+            <rect width="40" height="40" fill="rgba(255,255,255,0.02)"/>
+            <line x1="0" y1="0" x2="0" y2="40" stroke="rgba(255,255,255,0.03)" strokeWidth="20"/>
+          </pattern>
         </defs>
       </svg>
       
@@ -162,7 +176,25 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
           }}
         />
         
-        {/* SVG outline overlay for the piece */}
+        {/* Texture overlay */}
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            zIndex: 2,
+            clipPath: `url(#${clipPathId})`,
+            WebkitClipPath: `url(#${clipPathId})`,
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            backgroundImage: `url(#${textureId})`,
+            opacity: 0.7,
+            mixBlendMode: 'overlay',
+          }}
+        />
+        
+        {/* SVG outline overlay for the piece - enhanced with better stroke and glow */}
         <svg 
           width="100%" 
           height="100%" 
@@ -170,23 +202,37 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
             position: 'absolute', 
             top: 0, 
             left: 0, 
-            zIndex: 2, 
+            zIndex: 3, 
             pointerEvents: 'none' 
           }}
         >
           <path 
             d={piecePath} 
             fill="none" 
-            stroke="rgba(255, 255, 255, 0.7)" 
-            strokeWidth="2"
-            filter={isDragging ? `url(#${shadowPathId})` : ''}
+            stroke={isCorrect ? "rgba(100, 255, 100, 0.8)" : "rgba(255, 255, 255, 0.8)"}
+            strokeWidth={isDragging ? "3" : "2"}
+            filter={isDragging ? `url(#${shadowId})` : ''}
           />
         </svg>
         
         {/* Number overlay if showNumber is true */}
         {showNumber && (
-          <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 3 }}>
-            <span className="text-white text-lg font-bold drop-shadow-md bg-black/40 px-2 py-1 rounded-full">
+          <div 
+            className="absolute inset-0 flex items-center justify-center" 
+            style={{ 
+              zIndex: 4,
+              pointerEvents: 'none' 
+            }}
+          >
+            <span 
+              className="text-white text-lg font-bold drop-shadow-md" 
+              style={{
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                padding: '2px 8px',
+                borderRadius: '999px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+              }}
+            >
               {piece.id + 1}
             </span>
           </div>

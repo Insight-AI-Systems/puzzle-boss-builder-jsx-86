@@ -1,6 +1,6 @@
 
 /**
- * Generates an SVG path for a jigsaw puzzle piece
+ * Generates an SVG path for a jigsaw puzzle piece with traditional rounded tabs and slots
  * 
  * @param position The position of the piece in the puzzle grid
  * @param rows Total number of rows in the puzzle
@@ -21,125 +21,138 @@ export function generatePiecePath(
   const col = position % columns;
   
   // Determine which edges should have tabs/slots
-  const hasTopTab = row > 0;
-  const hasRightTab = col < columns - 1;
-  const hasBottomTab = row < rows - 1; 
-  const hasLeftTab = col > 0;
+  const hasTopEdge = row > 0;
+  const hasRightEdge = col < columns - 1;
+  const hasBottomEdge = row < rows - 1; 
+  const hasLeftEdge = col > 0;
   
-  // Size of tab/slot (as percentage of width/height)
-  // Increased from 0.25 to 0.35 for more pronounced tabs/slots
-  const tabSize = 0.35;
-  // Curve intensity controls how much the tabs/slots curve (higher = more curved)
-  const curveIntensity = 0.5;
+  // Tab/slot size as percentage of width/height (increased for more pronounced shape)
+  const tabSizePercent = 0.4;
   
-  // Randomize tab/slot direction based on position
-  // Using a more consistent seed pattern to ensure tabs match with neighbor slots
-  const topTabOut = ((position + row) % 2) === 0;
-  const rightTabOut = ((position + col) % 2) === 0;
-  const bottomTabOut = ((position + row + 1) % 2) === 0; // Inverse of top for connecting pieces
-  const leftTabOut = ((position + col + 1) % 2) === 0;   // Inverse of right for connecting pieces
+  // Calculate actual tab size based on piece dimensions
+  const tabWidth = width * tabSizePercent;
+  const tabHeight = height * tabSizePercent;
+  
+  // Control points for creating bezier curves
+  // These values control the roundedness of the tabs/slots
+  const tabCurveDepth = 0.7; // Higher value = more pronounced curve
+  
+  // Use consistent seeding to ensure tabs match with neighbor slots
+  // Top piece's bottom tab matches bottom piece's top slot, etc.
+  const topTabOut = ((position * 77 + row * 11) % 2) === 0;
+  const rightTabOut = ((position * 67 + col * 13) % 2) === 0;
+  const bottomTabOut = !topTabOut; // Ensures connecting pieces fit together
+  const leftTabOut = !rightTabOut; // Ensures connecting pieces fit together
   
   // Start path at top-left corner
-  let path = `M 0 0`;
+  let path = `M 0,0`;
   
   // Top edge
-  if (hasTopTab) {
-    // First third of top edge
-    path += ` L ${width * (0.5 - tabSize)} 0`;
+  if (hasTopEdge) {
+    const tabStart = width * 0.3;
+    const tabEnd = width * 0.7;
     
-    // Tab or slot on top edge
+    // Path to start of tab/slot
+    path += ` L ${tabStart},0`;
+    
     if (topTabOut) {
-      // Outward tab - more pronounced curve
-      path += ` C ${width * (0.5 - tabSize * 0.8)} ${-height * tabSize * curveIntensity}, 
-                  ${width * (0.5 + tabSize * 0.8)} ${-height * tabSize * curveIntensity}, 
-                  ${width * (0.5 + tabSize)} 0`;
+      // Outward tab (bump) with rounded corners
+      path += ` C ${tabStart + tabWidth * 0.1},0 ${tabStart + tabWidth * 0.1},-${tabHeight * tabCurveDepth} ${tabStart + tabWidth * 0.3},-${tabHeight * 0.8}`;
+      path += ` C ${tabStart + tabWidth * 0.4},-${tabHeight} ${tabStart + tabWidth * 0.6},-${tabHeight} ${tabStart + tabWidth * 0.7},-${tabHeight * 0.8}`;
+      path += ` C ${tabStart + tabWidth * 0.9},-${tabHeight * tabCurveDepth} ${tabStart + tabWidth * 0.9},0 ${tabEnd},0`;
     } else {
-      // Inward slot - more pronounced curve
-      path += ` C ${width * (0.5 - tabSize * 0.8)} ${height * tabSize * curveIntensity}, 
-                  ${width * (0.5 + tabSize * 0.8)} ${height * tabSize * curveIntensity}, 
-                  ${width * (0.5 + tabSize)} 0`;
+      // Inward slot (dip) with rounded corners
+      path += ` C ${tabStart + tabWidth * 0.1},0 ${tabStart + tabWidth * 0.1},${tabHeight * tabCurveDepth} ${tabStart + tabWidth * 0.3},${tabHeight * 0.8}`;
+      path += ` C ${tabStart + tabWidth * 0.4},${tabHeight} ${tabStart + tabWidth * 0.6},${tabHeight} ${tabStart + tabWidth * 0.7},${tabHeight * 0.8}`;
+      path += ` C ${tabStart + tabWidth * 0.9},${tabHeight * tabCurveDepth} ${tabStart + tabWidth * 0.9},0 ${tabEnd},0`;
     }
     
-    // Remaining top edge
-    path += ` L ${width} 0`;
+    // Path to end of top edge
+    path += ` L ${width},0`;
   } else {
     // Straight line if at top of puzzle
-    path += ` L ${width} 0`;
+    path += ` L ${width},0`;
   }
   
   // Right edge
-  if (hasRightTab) {
-    // First third of right edge
-    path += ` L ${width} ${height * (0.5 - tabSize)}`;
+  if (hasRightEdge) {
+    const tabStart = height * 0.3;
+    const tabEnd = height * 0.7;
     
-    // Tab or slot on right edge
+    // Path to start of tab/slot
+    path += ` L ${width},${tabStart}`;
+    
     if (rightTabOut) {
-      // Outward tab
-      path += ` C ${width + width * tabSize * curveIntensity} ${height * (0.5 - tabSize * 0.8)}, 
-                  ${width + width * tabSize * curveIntensity} ${height * (0.5 + tabSize * 0.8)}, 
-                  ${width} ${height * (0.5 + tabSize)}`;
+      // Outward tab with rounded corners
+      path += ` C ${width},${tabStart + tabHeight * 0.1} ${width + tabWidth * tabCurveDepth},${tabStart + tabHeight * 0.1} ${width + tabWidth * 0.8},${tabStart + tabHeight * 0.3}`;
+      path += ` C ${width + tabWidth},${tabStart + tabHeight * 0.4} ${width + tabWidth},${tabStart + tabHeight * 0.6} ${width + tabWidth * 0.8},${tabStart + tabHeight * 0.7}`;
+      path += ` C ${width + tabWidth * tabCurveDepth},${tabStart + tabHeight * 0.9} ${width},${tabStart + tabHeight * 0.9} ${width},${tabEnd}`;
     } else {
-      // Inward slot
-      path += ` C ${width - width * tabSize * curveIntensity} ${height * (0.5 - tabSize * 0.8)}, 
-                  ${width - width * tabSize * curveIntensity} ${height * (0.5 + tabSize * 0.8)}, 
-                  ${width} ${height * (0.5 + tabSize)}`;
+      // Inward slot with rounded corners
+      path += ` C ${width},${tabStart + tabHeight * 0.1} ${width - tabWidth * tabCurveDepth},${tabStart + tabHeight * 0.1} ${width - tabWidth * 0.8},${tabStart + tabHeight * 0.3}`;
+      path += ` C ${width - tabWidth},${tabStart + tabHeight * 0.4} ${width - tabWidth},${tabStart + tabHeight * 0.6} ${width - tabWidth * 0.8},${tabStart + tabHeight * 0.7}`;
+      path += ` C ${width - tabWidth * tabCurveDepth},${tabStart + tabHeight * 0.9} ${width},${tabStart + tabHeight * 0.9} ${width},${tabEnd}`;
     }
     
-    // Remaining right edge
-    path += ` L ${width} ${height}`;
+    // Path to end of right edge
+    path += ` L ${width},${height}`;
   } else {
     // Straight line if at right edge of puzzle
-    path += ` L ${width} ${height}`;
+    path += ` L ${width},${height}`;
   }
   
   // Bottom edge
-  if (hasBottomTab) {
-    // First third of bottom edge
-    path += ` L ${width * (0.5 + tabSize)} ${height}`;
+  if (hasBottomEdge) {
+    const tabStart = width * 0.7;
+    const tabEnd = width * 0.3;
     
-    // Tab or slot on bottom edge
+    // Path to start of tab/slot (going right to left)
+    path += ` L ${tabStart},${height}`;
+    
     if (bottomTabOut) {
-      // Outward tab
-      path += ` C ${width * (0.5 + tabSize * 0.8)} ${height + height * tabSize * curveIntensity}, 
-                  ${width * (0.5 - tabSize * 0.8)} ${height + height * tabSize * curveIntensity}, 
-                  ${width * (0.5 - tabSize)} ${height}`;
+      // Outward tab with rounded corners
+      path += ` C ${tabStart - tabWidth * 0.1},${height} ${tabStart - tabWidth * 0.1},${height + tabHeight * tabCurveDepth} ${tabStart - tabWidth * 0.3},${height + tabHeight * 0.8}`;
+      path += ` C ${tabStart - tabWidth * 0.4},${height + tabHeight} ${tabStart - tabWidth * 0.6},${height + tabHeight} ${tabStart - tabWidth * 0.7},${height + tabHeight * 0.8}`;
+      path += ` C ${tabStart - tabWidth * 0.9},${height + tabHeight * tabCurveDepth} ${tabStart - tabWidth * 0.9},${height} ${tabEnd},${height}`;
     } else {
-      // Inward slot
-      path += ` C ${width * (0.5 + tabSize * 0.8)} ${height - height * tabSize * curveIntensity}, 
-                  ${width * (0.5 - tabSize * 0.8)} ${height - height * tabSize * curveIntensity}, 
-                  ${width * (0.5 - tabSize)} ${height}`;
+      // Inward slot with rounded corners
+      path += ` C ${tabStart - tabWidth * 0.1},${height} ${tabStart - tabWidth * 0.1},${height - tabHeight * tabCurveDepth} ${tabStart - tabWidth * 0.3},${height - tabHeight * 0.8}`;
+      path += ` C ${tabStart - tabWidth * 0.4},${height - tabHeight} ${tabStart - tabWidth * 0.6},${height - tabHeight} ${tabStart - tabWidth * 0.7},${height - tabHeight * 0.8}`;
+      path += ` C ${tabStart - tabWidth * 0.9},${height - tabHeight * tabCurveDepth} ${tabStart - tabWidth * 0.9},${height} ${tabEnd},${height}`;
     }
     
-    // Remaining bottom edge
-    path += ` L 0 ${height}`;
+    // Path to end of bottom edge
+    path += ` L 0,${height}`;
   } else {
     // Straight line if at bottom of puzzle
-    path += ` L 0 ${height}`;
+    path += ` L 0,${height}`;
   }
   
   // Left edge
-  if (hasLeftTab) {
-    // First third of left edge
-    path += ` L 0 ${height * (0.5 + tabSize)}`;
+  if (hasLeftEdge) {
+    const tabStart = height * 0.7;
+    const tabEnd = height * 0.3;
     
-    // Tab or slot on left edge
+    // Path to start of tab/slot
+    path += ` L 0,${tabStart}`;
+    
     if (leftTabOut) {
-      // Outward tab
-      path += ` C ${-width * tabSize * curveIntensity} ${height * (0.5 + tabSize * 0.8)}, 
-                  ${-width * tabSize * curveIntensity} ${height * (0.5 - tabSize * 0.8)}, 
-                  0 ${height * (0.5 - tabSize)}`;
+      // Outward tab with rounded corners
+      path += ` C 0,${tabStart - tabHeight * 0.1} -${tabWidth * tabCurveDepth},${tabStart - tabHeight * 0.1} -${tabWidth * 0.8},${tabStart - tabHeight * 0.3}`;
+      path += ` C -${tabWidth},${tabStart - tabHeight * 0.4} -${tabWidth},${tabStart - tabHeight * 0.6} -${tabWidth * 0.8},${tabStart - tabHeight * 0.7}`;
+      path += ` C -${tabWidth * tabCurveDepth},${tabStart - tabHeight * 0.9} 0,${tabStart - tabHeight * 0.9} 0,${tabEnd}`;
     } else {
-      // Inward slot
-      path += ` C ${width * tabSize * curveIntensity} ${height * (0.5 + tabSize * 0.8)}, 
-                  ${width * tabSize * curveIntensity} ${height * (0.5 - tabSize * 0.8)}, 
-                  0 ${height * (0.5 - tabSize)}`;
+      // Inward slot with rounded corners
+      path += ` C 0,${tabStart - tabHeight * 0.1} ${tabWidth * tabCurveDepth},${tabStart - tabHeight * 0.1} ${tabWidth * 0.8},${tabStart - tabHeight * 0.3}`;
+      path += ` C ${tabWidth},${tabStart - tabHeight * 0.4} ${tabWidth},${tabStart - tabHeight * 0.6} ${tabWidth * 0.8},${tabStart - tabHeight * 0.7}`;
+      path += ` C ${tabWidth * tabCurveDepth},${tabStart - tabHeight * 0.9} 0,${tabStart - tabHeight * 0.9} 0,${tabEnd}`;
     }
     
-    // Back to start
-    path += ` L 0 0`;
+    // Path to start position
+    path += ` L 0,0`;
   } else {
     // Straight line if at left edge of puzzle
-    path += ` L 0 0`;
+    path += ` L 0,0`;
   }
   
   // Close path

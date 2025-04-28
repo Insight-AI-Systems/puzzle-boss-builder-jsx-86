@@ -7,6 +7,9 @@
   --puzzle-correct-shadow: 0 2px 8px rgba(0, 255, 0, 0.3);
   --puzzle-piece-outline: rgba(255, 255, 255, 0.7);
   --puzzle-piece-outline-hover: rgba(255, 255, 255, 0.9);
+  --puzzle-piece-stroke: #ffffff;
+  --puzzle-piece-stroke-width: 1.5px;
+  --puzzle-piece-glow: 0 0 5px rgba(255, 255, 255, 0.5);
 }
 
 /* Puzzle board container */
@@ -44,11 +47,13 @@
   z-index: 1;
   cursor: grab;
   will-change: transform;
+  filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.4));
 }
 
 .puzzle-piece.correct {
   box-shadow: var(--puzzle-correct-shadow);
   z-index: 0; /* Lower z-index for correctly placed pieces */
+  filter: drop-shadow(1px 1px 2px rgba(0, 200, 0, 0.4));
 }
 
 .puzzle-piece:hover {
@@ -63,9 +68,16 @@
   z-index: 10;
   cursor: grabbing;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  filter: drop-shadow(3px 3px 5px rgba(0, 0, 0, 0.5));
 }
 
-/* Add a subtle glow effect for incorrect pieces */
+/* Add a subtle glow effect for pieces */
+.puzzle-piece path {
+  stroke: var(--puzzle-piece-stroke);
+  stroke-width: var(--puzzle-piece-stroke-width);
+}
+
+/* Enhanced hover effect */
 .puzzle-piece:not(.correct):not(.dragging):hover path {
   stroke: var(--puzzle-piece-outline-hover);
   stroke-width: 2.5px;
