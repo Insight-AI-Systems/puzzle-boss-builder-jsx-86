@@ -1,180 +1,201 @@
 
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle 
 } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { format } from 'date-fns';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer
-} from 'recharts';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CategoryManager, CommissionPayment, SiteIncome, SiteExpense } from '@/types/financeTypes';
+import { PaymentStatus, CommissionPayment, SiteIncome, SiteExpense } from '@/types/financeTypes';
 
 interface ManagerDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  manager: CategoryManager;
-  commissionHistory: CommissionPayment[];
-  relatedIncome: SiteIncome[];
-  relatedExpenses: SiteExpense[];
+  manager: CommissionPayment;
+  incomes: SiteIncome[];
+  expenses: SiteExpense[];
+  statusColors: Record<PaymentStatus, string>;
+  onStatusChange: (status: PaymentStatus) => void;
 }
 
-export const ManagerDetailDialog = ({
+export const ManagerDetailDialog: React.FC<ManagerDetailDialogProps> = ({
   open,
   onOpenChange,
   manager,
-  commissionHistory,
-  relatedIncome,
-  relatedExpenses
-}: ManagerDetailDialogProps) => {
-  const commissionData = commissionHistory.map(payment => ({
-    month: format(new Date(payment.period), 'MMM yyyy'),
-    amount: payment.commission_amount
-  }));
+  incomes,
+  expenses,
+  statusColors,
+  onStatusChange
+}) => {
+  const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Manager Details: {manager.username}</DialogTitle>
+          <DialogTitle>Manager Details: {manager.manager_name}</DialogTitle>
         </DialogHeader>
-        <ScrollArea className="h-full max-h-[calc(90vh-100px)] pr-4">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Manager Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Category</p>
-                    <p className="font-medium">{manager.category_name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Commission Rate</p>
-                    <p className="font-medium">{manager.commission_percent}%</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Commission History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={commissionData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar dataKey="amount" fill="#8884d8" name="Commission Amount" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card>
+            <CardHeader className="py-4">
+              <CardTitle className="text-sm font-medium">Category</CardTitle>
+            </CardHeader>
+            <CardContent className="py-2">
+              <p className="text-xl font-bold">{manager.category_name}</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="py-4">
+              <CardTitle className="text-sm font-medium">Commission</CardTitle>
+            </CardHeader>
+            <CardContent className="py-2">
+              <p className="text-xl font-bold">${manager.commission_amount.toFixed(2)}</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="py-4">
+              <CardTitle className="text-sm font-medium">Status</CardTitle>
+            </CardHeader>
+            <CardContent className="py-2">
+              <Badge className={statusColors[manager.payment_status]}>
+                {manager.payment_status}
+              </Badge>
+            </CardContent>
+          </Card>
+        </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Commission Payment History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Period</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Payment Date</TableHead>
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Commission Details</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Period</TableHead>
+                  <TableHead>Gross Income</TableHead>
+                  <TableHead>Net Income</TableHead>
+                  <TableHead>Commission</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell>{manager.period}</TableCell>
+                  <TableCell>${manager.gross_income.toFixed(2)}</TableCell>
+                  <TableCell>${manager.net_income.toFixed(2)}</TableCell>
+                  <TableCell>${manager.commission_amount.toFixed(2)}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Income Sources ({incomes.length})</h3>
+            {incomes.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Source</TableHead>
+                    <TableHead>Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {incomes.map((income) => (
+                    <TableRow key={income.id}>
+                      <TableCell>{format(new Date(income.date), 'MMM dd, yyyy')}</TableCell>
+                      <TableCell>{income.source_type}</TableCell>
+                      <TableCell>${income.amount.toFixed(2)}</TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {commissionHistory.map((payment) => (
-                      <TableRow key={payment.id}>
-                        <TableCell>{format(new Date(payment.period), 'MMM yyyy')}</TableCell>
-                        <TableCell>${payment.commission_amount.toFixed(2)}</TableCell>
-                        <TableCell className="capitalize">{payment.payment_status}</TableCell>
-                        <TableCell>
-                          {payment.payment_date 
-                            ? format(new Date(payment.payment_date), 'yyyy-MM-dd')
-                            : '-'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+                  ))}
+                  <TableRow>
+                    <TableCell colSpan={2} className="font-bold">Total</TableCell>
+                    <TableCell className="font-bold">${totalIncome.toFixed(2)}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            ) : (
+              <p>No income records found for this period.</p>
+            )}
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Related Income</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Type</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {relatedIncome.map((income) => (
-                        <TableRow key={income.id}>
-                          <TableCell>{format(new Date(income.date), 'yyyy-MM-dd')}</TableCell>
-                          <TableCell>${income.amount.toFixed(2)}</TableCell>
-                          <TableCell className="capitalize">{income.source_type}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Expenses ({expenses.length})</h3>
+            {expenses.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {expenses.map((expense) => (
+                    <TableRow key={expense.id}>
+                      <TableCell>{format(new Date(expense.date), 'MMM dd, yyyy')}</TableCell>
+                      <TableCell>{expense.expense_type}</TableCell>
+                      <TableCell>${expense.amount.toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow>
+                    <TableCell colSpan={2} className="font-bold">Total</TableCell>
+                    <TableCell className="font-bold">${totalExpenses.toFixed(2)}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            ) : (
+              <p>No expense records found for this period.</p>
+            )}
+          </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Related Expenses</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Type</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {relatedExpenses.map((expense) => (
-                        <TableRow key={expense.id}>
-                          <TableCell>{format(new Date(expense.date), 'yyyy-MM-dd')}</TableCell>
-                          <TableCell>${expense.amount.toFixed(2)}</TableCell>
-                          <TableCell className="capitalize">{expense.expense_type}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
+          <div className="flex justify-between items-center pt-4 border-t">
+            <div>
+              <h3 className="text-lg font-semibold">Change Status</h3>
+            </div>
+            <div className="flex gap-2">
+              {manager.payment_status !== PaymentStatus.PENDING && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => onStatusChange(PaymentStatus.PENDING)}
+                >
+                  Set As Pending
+                </Button>
+              )}
+              {manager.payment_status !== PaymentStatus.APPROVED && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => onStatusChange(PaymentStatus.APPROVED)}
+                >
+                  Approve
+                </Button>
+              )}
+              {manager.payment_status !== PaymentStatus.PAID && (
+                <Button 
+                  variant="default" 
+                  onClick={() => onStatusChange(PaymentStatus.PAID)}
+                >
+                  Mark As Paid
+                </Button>
+              )}
+              {manager.payment_status !== PaymentStatus.REJECTED && (
+                <Button 
+                  variant="destructive" 
+                  onClick={() => onStatusChange(PaymentStatus.REJECTED)}
+                >
+                  Reject
+                </Button>
+              )}
             </div>
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );

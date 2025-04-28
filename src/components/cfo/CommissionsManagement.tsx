@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,7 +33,6 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState<boolean>(false);
   const [selectedManager, setSelectedManager] = useState<CommissionPayment | null>(null);
-  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState<boolean>(false);
   const [managerIncomes, setManagerIncomes] = useState<SiteIncome[]>([]);
   const [managerExpenses, setManagerExpenses] = useState<SiteExpense[]>([]);
   
@@ -70,7 +70,7 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
       const endDate = `${selectedMonth}-31`;
       
       const incomes = await fetchSiteIncomes(startDate, endDate);
-      const expenses = await fetchSiteExpenses(startDate, endDate);
+      const expenses = await fetchSiteExpenses(selectedMonth);
       
       setManagerIncomes(incomes.filter(income => income.category_id === payment.category_id));
       setManagerExpenses(expenses.filter(expense => expense.category_id === payment.category_id));
@@ -99,19 +99,59 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
     return true;
   });
 
+  // Handler function for sending email
+  const handleEmailSuccess = () => {
+    // Refresh data after emails are sent
+    const loadCommissionData = async () => {
+      const paymentsData = await fetchCommissionPayments();
+      setPayments(paymentsData.filter(payment => payment.period === selectedMonth));
+    };
+    
+    loadCommissionData();
+  };
+
   return (
     <div className="space-y-6">
-      <CommissionHeader 
-        selectedMonth={selectedMonth}
-        setIsGenerateDialogOpen={setIsGenerateDialogOpen}
-        selectedCount={selectedPayments.length}
-        filterManager={filterManager}
-        setFilterManager={setFilterManager}
-        filterCategory={filterCategory}
-        setFilterCategory={setFilterCategory}
-        filterStatus={filterStatus}
-        setFilterStatus={setFilterStatus}
-      />
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold">Commissions Management</h2>
+        <div className="flex gap-2">
+          <InvoiceEmailDialog 
+            selectedPayments={selectedPayments}
+            onSuccess={handleEmailSuccess}
+          />
+          <Button
+            variant="outline"
+            onClick={() => {
+              // Add export functionality
+              const csvContent = filteredPayments
+                .map(payment => 
+                  `${payment.manager_name},${payment.category_name},${payment.period},${payment.commission_amount},${payment.payment_status}`
+                )
+                .join('\n');
+              const csv = "Manager,Category,Period,Commission Amount,Status\n" + csvContent;
+              const blob = new Blob([csv], { type: 'text/csv' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.setAttribute('href', url);
+              a.setAttribute('download', `commissions-${selectedMonth}.csv`);
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+            }}
+            className="flex items-center gap-2"
+          >
+            Export
+          </Button>
+          <Button 
+            onClick={async () => {
+              setIsGenerateDialogOpen(true);
+            }}
+            disabled={isActionLoading}
+          >
+            Generate Commissions
+          </Button>
+        </div>
+      </div>
       
       <CommissionCharts payments={payments} />
 
@@ -145,7 +185,6 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
           <div className="mt-4 flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setIsGenerateDialogOpen(false)}>Cancel</Button>
             <Button 
-              isLoading={isActionLoading} 
               onClick={async () => {
                 await generateCommissions(selectedMonth);
                 const updatedPayments = await fetchCommissionPayments();
@@ -153,7 +192,7 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
                 setIsGenerateDialogOpen(false);
               }}
             >
-              Generate
+              {isActionLoading ? 'Generating...' : 'Generate'}
             </Button>
           </div>
         </div>
@@ -162,34 +201,24 @@ const CommissionsManagement: React.FC<CommissionsManagementProps> = ({ selectedM
       {/* Manager Detail Dialog */}
       {selectedManager && (
         <ManagerDetailDialog
-          payment={selectedManager}
           open={!!selectedManager}
           onOpenChange={(open) => !open && setSelectedManager(null)}
+          manager={selectedManager}
           incomes={managerIncomes}
           expenses={managerExpenses}
-          getStatusColor={getStatusColor}
+          statusColors={{
+            [PaymentStatus.PENDING]: getStatusColor(PaymentStatus.PENDING),
+            [PaymentStatus.APPROVED]: getStatusColor(PaymentStatus.APPROVED),
+            [PaymentStatus.PAID]: getStatusColor(PaymentStatus.PAID),
+            [PaymentStatus.REJECTED]: getStatusColor(PaymentStatus.REJECTED)
+          }}
           onStatusChange={async (status) => {
-            await updatePaymentStatus(selectedManager.id, status);
-            const updatedPayments = await fetchCommissionPayments();
-            setPayments(updatedPayments.filter(payment => payment.period === selectedMonth));
+            if (selectedManager) {
+              await updatePaymentStatus(selectedManager.id, status);
+              const updatedPayments = await fetchCommissionPayments();
+              setPayments(updatedPayments.filter(payment => payment.period === selectedMonth));
+            }
           }}
-          onSendEmail={() => {
-            setIsEmailDialogOpen(true);
-          }}
-        />
-      )}
-      
-      {/* Invoice Email Dialog */}
-      {selectedManager && (
-        <InvoiceEmailDialog 
-          open={isEmailDialogOpen}
-          onOpenChange={setIsEmailDialogOpen}
-          manager={{
-            id: selectedManager.manager_id,
-            name: selectedManager.manager_name || 'Unknown',
-            email: selectedManager.manager_email || '',
-          }}
-          payment={selectedManager}
         />
       )}
     </div>

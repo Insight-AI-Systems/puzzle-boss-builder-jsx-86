@@ -50,7 +50,7 @@ export const InvoiceEmailDialog = ({ selectedPayments, onSuccess }: InvoiceEmail
         <Button 
           variant="outline" 
           className="gap-2"
-          disabled={selectedPayments.length === 0}
+          disabled={!selectedPayments || selectedPayments.length === 0}
         >
           <Mail className="h-4 w-4" />
           Send Invoices
@@ -62,7 +62,7 @@ export const InvoiceEmailDialog = ({ selectedPayments, onSuccess }: InvoiceEmail
         </DialogHeader>
         <div className="space-y-4 pt-4">
           <p>
-            You are about to send {selectedPayments.length} invoice{selectedPayments.length !== 1 ? 's' : ''} to the respective category managers.
+            You are about to send {selectedPayments ? selectedPayments.length : 0} invoice{selectedPayments && selectedPayments.length !== 1 ? 's' : ''} to the respective category managers.
           </p>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setIsOpen(false)}>

@@ -49,18 +49,18 @@ export function useFinancials() {
 
       if (error) throw error;
       
-      return data?.map(item => {
+      return (data || []).map(item => {
         // Safe access to nested properties
         const username = item.profiles && typeof item.profiles === 'object' && 
                         'username' in item.profiles ? 
-                        item.profiles.username : 'Anonymous';
+                        item.profiles.username as string || 'Anonymous' : 'Anonymous';
 
         return {
           ...item,
           source_type: item.source_type as SourceType,
           profiles: { username }
         };
-      }) || [];
+      });
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch site incomes'));
       return [];
@@ -82,11 +82,11 @@ export function useFinancials() {
         .like('date', `${month}%`);
 
       if (error) throw error;
-      return data?.map(item => ({
+      return (data || []).map(item => ({
         ...item,
         expense_type: item.expense_type as ExpenseType,
         categories: { name: item.categories?.name || 'Unknown' }
-      })) || [];
+      }));
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch site expenses'));
       return [];
@@ -116,9 +116,9 @@ export function useFinancials() {
         
         if (manager.profiles && typeof manager.profiles === 'object') {
           username = 'username' in manager.profiles ? 
-                    (manager.profiles.username || 'Unknown') : 'Unknown';
+                    ((manager.profiles.username as string) || 'Unknown') : 'Unknown';
           email = 'email' in manager.profiles ? 
-                 manager.profiles.email : undefined;
+                 manager.profiles.email as string : undefined;
         }
 
         return {
@@ -160,9 +160,9 @@ export function useFinancials() {
         
         if (payment.manager && typeof payment.manager === 'object') {
           managerName = 'username' in payment.manager ? 
-                       (payment.manager.username || 'Unknown') : 'Unknown';
+                       ((payment.manager.username as string) || 'Unknown') : 'Unknown';
           managerEmail = 'email' in payment.manager ? 
-                        payment.manager.email : undefined;
+                        payment.manager.email as string : undefined;
         }
 
         return {
