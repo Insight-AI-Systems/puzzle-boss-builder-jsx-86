@@ -1,10 +1,16 @@
 
 import { Category } from '@/hooks/useCategories';
 
-export interface AdminCategory extends Category {
+export interface AdminCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  image_url: string | null;
+  status: string;
+  icon?: string;
   puzzleCount?: number;
   activeCount?: number;
-  status?: 'active' | 'inactive';
   imageUrl?: string;
 }
 

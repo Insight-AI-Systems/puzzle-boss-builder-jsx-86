@@ -8,8 +8,8 @@ export interface Category {
   slug: string;
   description: string | null;
   image_url: string | null;
-  status: string | null;
-  icon?: string; // Add the icon property
+  status: string;
+  icon?: string;
 }
 
 export function useCategories() {

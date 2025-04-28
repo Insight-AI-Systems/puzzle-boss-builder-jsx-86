@@ -1,13 +1,13 @@
 
 import React from 'react';
 import { OverviewDashboard } from "./OverviewDashboard";
-import { CategoryManagement } from "./CategoryManagement"; // Fixed import
+import { CategoryManagement } from "../CategoryManagement";
 import { FinancialDashboard } from "./FinancialDashboard";
 import { PartnersDashboard } from "./partners/PartnersDashboard";
 import { NotificationsDashboard } from "./NotificationsDashboard";
 import { MonitoringDashboard } from "./MonitoringDashboard";
 import { MarketingDashboard } from "./MarketingDashboard";
-import TicketManagement from "./TicketManagement"; // Fixed import
+import TicketManagement from "./TicketManagement";
 
 // Comment out imports that don't exist yet
 // These will need to be implemented separately

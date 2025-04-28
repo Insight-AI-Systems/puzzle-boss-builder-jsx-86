@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -90,7 +89,7 @@ const AddPartnerDialog: React.FC<AddPartnerDialogProps> = ({
       tax_id: editPartner.tax_id || '',
       description: editPartner.description || '',
       status: editPartner.status,
-      onboarding_stage: editPartner.onboarding_stage as any,
+      onboarding_stage: editPartner.onboarding_stage,
       notes: editPartner.notes || '',
     } : {
       company_name: '',

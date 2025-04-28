@@ -77,14 +77,14 @@ interface UsePartnerManagementReturn {
   isLoading: boolean;
   isLoadingDetails: boolean;
   error: string | null;
-  createPartner: (partner: Partial<Partner> & { company_name: string; contact_name: string; email: string; }) => void;
-  updatePartner: (id: string, partner: Partial<Partner> & { onboarding_stage?: 'invited' | 'registration_started' | 'registration_completed' | 'documents_pending' | 'documents_submitted' | 'contract_sent' | 'contract_signed' | 'approved' | 'rejected'; }) => void;
+  createPartner: (partner: { company_name: string; contact_name: string; email: string; } & Partial<Omit<Partner, 'company_name' | 'contact_name' | 'email'>>) => void;
+  updatePartner: (id: string, partner: Partial<Partner>) => void;
   deletePartner: (id: string) => void;
-  createProduct: (product: Partial<PartnerProduct> & { name: string; description: string; partner_id: string; price: number; quantity: number; }) => void;
+  createProduct: (product: { name: string; description: string; partner_id: string; price: number; quantity: number; } & Partial<Omit<PartnerProduct, 'name' | 'description' | 'partner_id' | 'price' | 'quantity'>>) => void;
   updateProduct: (id: string, product: Partial<PartnerProduct>) => void;
   deleteProduct: (id: string) => void;
-  createCommunication: (communication: Partial<PartnerCommunication> & { partner_id: string; type: 'email' | 'call' | 'meeting' | 'note'; subject: string; content: string; }) => void;
-  createAgreement: (agreement: Partial<PartnerAgreement> & { partner_id: string; name: string; version: string; }) => void;
+  createCommunication: (communication: { partner_id: string; type: 'email' | 'call' | 'meeting' | 'note'; subject: string; content: string; } & Partial<Omit<PartnerCommunication, 'partner_id' | 'type' | 'subject' | 'content'>>) => void;
+  createAgreement: (agreement: { partner_id: string; name: string; version: string; } & Partial<Omit<PartnerAgreement, 'partner_id' | 'name' | 'version'>>) => void;
   updateAgreement: (id: string, agreement: Partial<PartnerAgreement>) => void;
 }
 
@@ -108,7 +108,7 @@ export function usePartnerManagement(
         .order('company_name');
 
       if (error) throw new Error(error.message);
-      return data;
+      return data as Partner[];
     }
   });
 
@@ -128,7 +128,7 @@ export function usePartnerManagement(
         .single();
 
       if (error) throw new Error(error.message);
-      return data;
+      return data as Partner;
     },
     enabled: !!selectedPartnerId
   });
@@ -148,7 +148,11 @@ export function usePartnerManagement(
         .order('created_at', { ascending: false });
 
       if (error) throw new Error(error.message);
-      return data;
+      
+      return (data || []).map(product => ({
+        ...product,
+        images: Array.isArray(product.images) ? product.images : []
+      })) as PartnerProduct[];
     },
     enabled: !!selectedPartnerId
   });
@@ -168,7 +172,7 @@ export function usePartnerManagement(
         .order('sent_at', { ascending: false });
 
       if (error) throw new Error(error.message);
-      return data;
+      return data as PartnerCommunication[];
     },
     enabled: !!selectedPartnerId
   });
@@ -188,7 +192,7 @@ export function usePartnerManagement(
         .order('created_at', { ascending: false });
 
       if (error) throw new Error(error.message);
-      return data;
+      return data as PartnerAgreement[];
     },
     enabled: !!selectedPartnerId
   });
@@ -210,7 +214,7 @@ export function usePartnerManagement(
   }, [partnersError, partnerDetailsError, productsError, communicationsError, agreementsError]);
 
   const createPartnerMutation = useMutation({
-    mutationFn: async (newPartner: Partial<Partner> & { company_name: string; contact_name: string; email: string; }) => {
+    mutationFn: async (newPartner: { company_name: string; contact_name: string; email: string; } & Partial<Partner>) => {
       const { data, error } = await supabase
         .from('partners')
         .insert(newPartner)
@@ -238,7 +242,7 @@ export function usePartnerManagement(
   });
 
   const updatePartnerMutation = useMutation({
-    mutationFn: async ({ id, partner }: { id: string, partner: Partial<Partner> & { onboarding_stage?: 'invited' | 'registration_started' | 'registration_completed' | 'documents_pending' | 'documents_submitted' | 'contract_sent' | 'contract_signed' | 'approved' | 'rejected'; } }) => {
+    mutationFn: async ({ id, partner }: { id: string, partner: Partial<Partner> }) => {
       const { data, error } = await supabase
         .from('partners')
         .update(partner)
@@ -294,7 +298,7 @@ export function usePartnerManagement(
   });
 
   const createProductMutation = useMutation({
-    mutationFn: async (newProduct: Partial<PartnerProduct> & { name: string; description: string; partner_id: string; price: number; quantity: number; }) => {
+    mutationFn: async (newProduct: { name: string; description: string; partner_id: string; price: number; quantity: number; } & Partial<PartnerProduct>) => {
       const { data, error } = await supabase
         .from('partner_products')
         .insert(newProduct)
@@ -377,7 +381,7 @@ export function usePartnerManagement(
   });
 
   const createCommunicationMutation = useMutation({
-    mutationFn: async (newCommunication: Partial<PartnerCommunication> & { partner_id: string; type: 'email' | 'call' | 'meeting' | 'note'; subject: string; content: string; }) => {
+    mutationFn: async (newCommunication: { partner_id: string; type: 'email' | 'call' | 'meeting' | 'note'; subject: string; content: string; } & Partial<PartnerCommunication>) => {
       const { data, error } = await supabase
         .from('partner_communications')
         .insert(newCommunication)
@@ -405,7 +409,7 @@ export function usePartnerManagement(
   });
 
   const createAgreementMutation = useMutation({
-    mutationFn: async (newAgreement: Partial<PartnerAgreement> & { partner_id: string; name: string; version: string; }) => {
+    mutationFn: async (newAgreement: { partner_id: string; name: string; version: string; } & Partial<PartnerAgreement>) => {
       const { data, error } = await supabase
         .from('partner_agreements')
         .insert(newAgreement)
