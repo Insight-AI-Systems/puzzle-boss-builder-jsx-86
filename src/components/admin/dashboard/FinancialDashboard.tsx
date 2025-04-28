@@ -7,28 +7,35 @@ import { Button } from "@/components/ui/button";
 import { useFinancials } from '@/hooks/useFinancials';
 import { Loader2, Download } from 'lucide-react';
 import { MonthlyFinancialSummary } from '@/types/financeTypes';
+import { useToast } from '@/hooks/use-toast';
 
 export const FinancialDashboard: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
-  const [trendData, setTrendData] = useState<MonthlyFinancialSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const { fetchMonthlyFinancialSummary } = useFinancials();
+  const [financialData, setFinancialData] = useState<MonthlyFinancialSummary | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { fetchMonthlyFinancialSummary, error } = useFinancials();
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadFinancialData = async () => {
       setIsLoading(true);
       try {
         const summary = await fetchMonthlyFinancialSummary(selectedMonth);
-        if (summary) {
-          setTrendData(summary);
-        }
+        setFinancialData(summary);
+      } catch (err) {
+        console.error('Error loading financial data:', err);
+        toast({
+          title: "Error loading financial data",
+          description: err instanceof Error ? err.message : "An unknown error occurred",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
     };
     
     loadFinancialData();
-  }, [selectedMonth, fetchMonthlyFinancialSummary]);
+  }, [selectedMonth, fetchMonthlyFinancialSummary, toast]);
 
   const handleMonthChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedMonth(event.target.value);
@@ -37,6 +44,10 @@ export const FinancialDashboard: React.FC = () => {
   const handleExport = () => {
     // Export functionality placeholder
     console.log('Exporting financial data...');
+    toast({
+      title: "Export initiated",
+      description: "Your financial data is being prepared for export",
+    });
   };
 
   const months = [];
@@ -60,6 +71,13 @@ export const FinancialDashboard: React.FC = () => {
       </Card>
     );
   }
+
+  // Default values for financial data if none is available
+  const totalIncome = financialData?.total_income ?? 0;
+  const totalExpenses = financialData?.total_expenses ?? 0;
+  const netProfit = financialData?.net_profit ?? 0;
+  const commissionsPaid = financialData?.commissions_paid ?? 0;
+  const prizeExpenses = financialData?.prize_expenses ?? 0;
 
   return (
     <Card className="w-full">
@@ -92,9 +110,9 @@ export const FinancialDashboard: React.FC = () => {
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${trendData?.total_income.toFixed(2) || '0.00'}</div>
+              <div className="text-2xl font-bold">${totalIncome.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                {trendData?.total_income && trendData.total_income > 0
+                {totalIncome > 0
                   ? 'For selected period'
                   : 'No revenue data available'}
               </p>
@@ -105,9 +123,9 @@ export const FinancialDashboard: React.FC = () => {
               <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${trendData?.total_expenses.toFixed(2) || '0.00'}</div>
+              <div className="text-2xl font-bold">${totalExpenses.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                {trendData?.total_expenses && trendData.total_expenses > 0
+                {totalExpenses > 0
                   ? 'For selected period'
                   : 'No expense data available'}
               </p>
@@ -118,12 +136,12 @@ export const FinancialDashboard: React.FC = () => {
               <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${trendData?.net_profit && trendData.net_profit < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                ${trendData?.net_profit.toFixed(2) || '0.00'}
+              <div className={`text-2xl font-bold ${netProfit < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                ${netProfit.toFixed(2)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {trendData?.net_profit !== undefined
-                  ? `${trendData.net_profit >= 0 ? 'Profit' : 'Loss'} for period`
+                {netProfit !== 0
+                  ? `${netProfit >= 0 ? 'Profit' : 'Loss'} for period`
                   : 'No profit data available'}
               </p>
             </CardContent>
@@ -144,16 +162,16 @@ export const FinancialDashboard: React.FC = () => {
                 <CardDescription>Key financial metrics for the selected period</CardDescription>
               </CardHeader>
               <CardContent>
-                {trendData ? (
+                {financialData ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <h4 className="text-sm font-medium mb-1">Commissions Paid</h4>
-                        <p className="text-lg">${trendData.commissions_paid.toFixed(2)}</p>
+                        <p className="text-lg">${commissionsPaid.toFixed(2)}</p>
                       </div>
                       <div>
                         <h4 className="text-sm font-medium mb-1">Prize Expenses</h4>
-                        <p className="text-lg">${trendData.prize_expenses.toFixed(2)}</p>
+                        <p className="text-lg">${prizeExpenses.toFixed(2)}</p>
                       </div>
                     </div>
                     

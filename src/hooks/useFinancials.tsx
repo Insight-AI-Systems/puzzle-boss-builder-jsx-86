@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -23,11 +22,31 @@ export function useFinancials() {
       const { data, error } = await supabase
         .rpc('get_monthly_financial_summary', { month_param: period });
 
-      if (error) throw error;
-      return data?.[0] || null;
+      if (error) {
+        console.error('Error fetching monthly summary:', error);
+        throw error;
+      }
+      
+      console.log('Monthly summary data:', data);
+      return data?.[0] || {
+        period,
+        total_income: 0,
+        total_expenses: 0,
+        net_profit: 0,
+        commissions_paid: 0,
+        prize_expenses: 0
+      };
     } catch (err) {
+      console.error('Exception in fetchMonthlyFinancialSummary:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch monthly financial summary'));
-      return null;
+      return {
+        period,
+        total_income: 0,
+        total_expenses: 0,
+        net_profit: 0,
+        commissions_paid: 0,
+        prize_expenses: 0
+      };
     } finally {
       setIsLoading(false);
     }
@@ -50,7 +69,6 @@ export function useFinancials() {
       if (error) throw error;
       
       return (data || []).map(item => {
-        // Safe access to nested properties with null checks
         const username = item.profiles && typeof item.profiles === 'object' ? 
                         ((item.profiles as any).username as string || 'Anonymous') : 'Anonymous';
 
@@ -109,7 +127,6 @@ export function useFinancials() {
       if (error) throw error;
 
       return (data || []).map(manager => {
-        // Safe access to nested properties with null checks
         let username = 'Unknown';
         let email: string | undefined = undefined;
         
@@ -154,7 +171,6 @@ export function useFinancials() {
       if (error) throw error;
 
       return (data || []).map(payment => {
-        // Safe access to nested properties with null checks
         let managerName = 'Unknown';
         let managerEmail: string | undefined = undefined;
         
