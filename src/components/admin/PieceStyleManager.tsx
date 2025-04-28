@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { PuzzlePiece, Upload } from "lucide-react";
+import { Puzzle, Upload } from "lucide-react";
 
 interface PieceStyleManagerProps {
   currentStyle: string;
@@ -66,7 +66,7 @@ export const PieceStyleManager: React.FC<PieceStyleManagerProps> = ({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
-          <PuzzlePiece className="h-5 w-5 mr-2" />
+          <Puzzle className="h-5 w-5 mr-2" />
           Piece Styles
         </CardTitle>
       </CardHeader>
