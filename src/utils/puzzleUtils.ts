@@ -1,42 +1,51 @@
 
-/**
- * Maps between UI grid sizes and backend difficulty levels
- */
+export const calculatePiecePosition = (
+  index: number,
+  rows: number,
+  columns: number,
+  containerWidth: number,
+  containerHeight: number
+): { x: number; y: number } => {
+  const pieceWidth = containerWidth / columns;
+  const pieceHeight = containerHeight / rows;
+  
+  const row = Math.floor(index / columns);
+  const col = index % columns;
+  
+  return {
+    x: col * pieceWidth,
+    y: row * pieceHeight
+  };
+};
 
-export type GridSize = '3x3' | '4x4' | '5x5' | '6x6' | '7x7' | '8x8' | '9x9' | '10x10';
-export type DifficultyLevel = 'easy' | 'medium' | 'hard';
+export const calculatePieceStyle = (
+  pieceId: string, 
+  position: number,
+  rows: number,
+  columns: number,
+  containerWidth: number,
+  containerHeight: number,
+  image: string
+): React.CSSProperties => {
+  const pieceIndex = parseInt(pieceId.split('-')[1]);
+  const pieceWidth = containerWidth / columns;
+  const pieceHeight = containerHeight / rows;
+  
+  // Calculate the position in the original image
+  const originalRow = Math.floor(pieceIndex / columns);
+  const originalCol = pieceIndex % columns;
+  
+  return {
+    width: `${pieceWidth}px`,
+    height: `${pieceHeight}px`,
+    backgroundImage: `url(${image})`,
+    backgroundSize: `${containerWidth}px ${containerHeight}px`,
+    backgroundPosition: `-${originalCol * pieceWidth}px -${originalRow * pieceHeight}px`,
+  };
+};
 
-export const GRID_SIZES = [
-  { value: '3x3', label: '3×3 (9 pieces)', pieces: 9, difficulty: 'easy' as DifficultyLevel },
-  { value: '4x4', label: '4×4 (16 pieces)', pieces: 16, difficulty: 'easy' as DifficultyLevel },
-  { value: '5x5', label: '5×5 (25 pieces)', pieces: 25, difficulty: 'medium' as DifficultyLevel },
-  { value: '6x6', label: '6×6 (36 pieces)', pieces: 36, difficulty: 'medium' as DifficultyLevel },
-  { value: '7x7', label: '7×7 (49 pieces)', pieces: 49, difficulty: 'hard' as DifficultyLevel },
-  { value: '8x8', label: '8×8 (64 pieces)', pieces: 64, difficulty: 'hard' as DifficultyLevel },
-  { value: '9x9', label: '9×9 (81 pieces)', pieces: 81, difficulty: 'hard' as DifficultyLevel },
-  { value: '10x10', label: '10×10 (100 pieces)', pieces: 100, difficulty: 'hard' as DifficultyLevel },
-];
-
-/**
- * Maps a grid size to its corresponding difficulty level
- */
-export function mapGridSizeToDifficulty(gridSize: string): DifficultyLevel {
-  const gridSizeConfig = GRID_SIZES.find(size => size.value === gridSize);
-  return (gridSizeConfig?.difficulty || 'medium') as DifficultyLevel;
-}
-
-/**
- * Gets grid size configuration based on pieces count
- */
-export function getGridSizeByPieces(pieces: number) {
-  return GRID_SIZES.find(size => size.pieces === pieces) || GRID_SIZES[1]; // Default to 4x4
-}
-
-/**
- * Gets grid size configuration based on difficulty
- */
-export function getGridSizeByDifficulty(difficulty: DifficultyLevel) {
-  // Return the smallest grid size for the given difficulty
-  const match = GRID_SIZES.find(size => size.difficulty === difficulty);
-  return match || GRID_SIZES[1]; // Default to 4x4
-}
+export const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
