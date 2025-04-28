@@ -40,17 +40,23 @@ export function usePuzzleSettings() {
       // If no settings found, return defaults
       if (!data) return DEFAULT_SETTINGS;
       
-      // Cast the settings from the database to our expected type
-      // With fallbacks to defaults if properties are missing
-      const dbSettings = (data as PuzzleSettingsDB).settings as Partial<PuzzleSettings>;
-      
-      return {
-        showGuide: dbSettings.showGuide ?? DEFAULT_SETTINGS.showGuide,
-        soundEnabled: dbSettings.soundEnabled ?? DEFAULT_SETTINGS.soundEnabled,
-        volume: dbSettings.volume ?? DEFAULT_SETTINGS.volume,
-        difficulty: dbSettings.difficulty ?? DEFAULT_SETTINGS.difficulty,
-        theme: dbSettings.theme ?? DEFAULT_SETTINGS.theme
-      };
+      // Extract and parse settings from the database
+      try {
+        // The actual DB schema might store settings as a JSON object
+        const settingsData = data.settings;
+        
+        // Ensure we have all required fields with fallbacks
+        return {
+          showGuide: settingsData?.showGuide ?? DEFAULT_SETTINGS.showGuide,
+          soundEnabled: settingsData?.soundEnabled ?? DEFAULT_SETTINGS.soundEnabled,
+          volume: settingsData?.volume ?? DEFAULT_SETTINGS.volume,
+          difficulty: settingsData?.difficulty ?? DEFAULT_SETTINGS.difficulty,
+          theme: settingsData?.theme ?? DEFAULT_SETTINGS.theme
+        };
+      } catch (e) {
+        console.error("Error parsing settings:", e);
+        return DEFAULT_SETTINGS;
+      }
     }
   });
 
@@ -68,7 +74,7 @@ export function usePuzzleSettings() {
         .upsert({
           user_id: user.id,
           settings_type: 'user',
-          settings: mergedSettings
+          settings: mergedSettings  // Store the entire settings object
         })
         .select()
         .single();

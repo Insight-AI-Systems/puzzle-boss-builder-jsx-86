@@ -31,8 +31,34 @@ export function usePuzzleProgress(puzzleId: string) {
       // If no data exists for this puzzle, return null
       if (!data) return null;
       
-      // Map DB data to frontend model
-      return mapDbToFrontendProgress(data as PuzzleProgressDB);
+      // Map DB data to frontend model by extracting relevant fields
+      // The actual DB schema differs from our PuzzleProgressDB interface
+      const { 
+        id, 
+        user_id, 
+        puzzle_id, 
+        is_completed, 
+        progress: puzzleProgress, 
+        completion_time, 
+        last_updated, 
+        start_time 
+      } = data;
+      
+      // Create a properly formatted PuzzleProgress object
+      const mappedProgress: PuzzleProgress = {
+        id,
+        userId: user_id,
+        puzzleId: puzzle_id,
+        completionPercentage: puzzleProgress?.completion_percentage || 0,
+        timeSpent: completion_time || 0,
+        lastPlayed: last_updated,
+        isComplete: is_completed || false,
+        moves: puzzleProgress?.moves || 0,
+        correctPieces: puzzleProgress?.correct_pieces || 0,
+        totalPieces: puzzleProgress?.total_pieces || 0
+      };
+      
+      return mappedProgress;
     },
     enabled // Only run this query if puzzleId is provided
   });
@@ -44,28 +70,51 @@ export function usePuzzleProgress(puzzleId: string) {
       
       if (!user) throw new Error("User not authenticated");
       
-      // Convert frontend model to DB model
-      const dbData = mapFrontendToDbProgress(newProgress, user.id);
-      
-      // Ensure puzzle_id is always set correctly
-      // This is required by the database schema
-      dbData.puzzle_id = newProgress.puzzleId || puzzleId;
-      
-      // Ensure puzzle_id is set and create a properly typed object for the upsert
-      const dataForUpsert = {
-        ...dbData,
-        puzzle_id: dbData.puzzle_id, // Enforce non-optional
-        user_id: user.id // Ensure user_id is always set
+      // Convert our frontend model to match the actual DB schema
+      const dbData = {
+        user_id: user.id,
+        puzzle_id: newProgress.puzzleId || puzzleId,
+        is_completed: newProgress.isComplete || false,
+        completion_time: newProgress.timeSpent || 0,
+        progress: {
+          completion_percentage: newProgress.completionPercentage || 0,
+          moves: newProgress.moves || 0,
+          correct_pieces: newProgress.correctPieces || 0,
+          total_pieces: newProgress.totalPieces || 0
+        }
       };
       
       const { data, error } = await supabase
         .from('puzzle_progress')
-        .upsert(dataForUpsert)
+        .upsert(dbData)
         .select()
         .single();
 
       if (error) throw error;
-      return mapDbToFrontendProgress(data as PuzzleProgressDB);
+      
+      // Convert the response back to our frontend model
+      const { 
+        id, 
+        user_id, 
+        puzzle_id, 
+        is_completed, 
+        progress: puzzleProgress, 
+        completion_time, 
+        last_updated 
+      } = data;
+      
+      return {
+        id,
+        userId: user_id,
+        puzzleId: puzzle_id,
+        completionPercentage: puzzleProgress?.completion_percentage || 0,
+        timeSpent: completion_time || 0,
+        lastPlayed: last_updated,
+        isComplete: is_completed || false,
+        moves: puzzleProgress?.moves || 0,
+        correctPieces: puzzleProgress?.correct_pieces || 0,
+        totalPieces: puzzleProgress?.total_pieces || 0
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['puzzle-progress', puzzleId] });
