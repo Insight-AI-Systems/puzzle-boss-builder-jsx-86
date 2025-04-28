@@ -1,7 +1,8 @@
+
 import { useReducer, useEffect, useCallback } from 'react';
 import { PuzzleState, PuzzleAction, PuzzlePiece } from '../types/puzzle-types';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 const initialState: PuzzleState = {
   pieces: [],
@@ -96,7 +97,10 @@ export function usePuzzleState(rows: number, columns: number) {
   const { toast } = useToast();
 
   const initializePuzzle = useCallback(() => {
-    dispatch({ type: 'INITIALIZE_PIECES', payload: { totalPieces: rows * columns } });
+    dispatch({ 
+      type: 'INITIALIZE_PIECES', 
+      payload: { totalPieces: rows * columns } 
+    });
     toast({
       title: "Puzzle initialized",
       description: `Started ${rows}x${columns} puzzle`,
