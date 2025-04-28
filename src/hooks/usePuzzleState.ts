@@ -1,4 +1,3 @@
-
 import { useReducer, useEffect, useCallback } from 'react';
 import { PuzzleState, PuzzleAction, PuzzlePiece } from '../types/puzzle-types';
 import { useToast } from '@/hooks/use-toast';
@@ -87,6 +86,13 @@ function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleState {
       return initialState;
     }
 
+    case 'LOAD_SAVED_STATE': {
+      return {
+        ...action.payload,
+        startTime: Date.now() - (action.payload.timeSpent * 1000)
+      };
+    }
+
     default:
       return state;
   }
@@ -164,6 +170,15 @@ export function usePuzzleState(rows: number, columns: number) {
     return Math.floor((endTime - state.startTime) / 1000);
   };
 
+  const loadSavedState = useCallback((savedState: PuzzleState) => {
+    dispatch({ type: 'LOAD_SAVED_STATE', payload: savedState });
+    toast({
+      title: "Game Restored",
+      description: "Your previous progress has been loaded",
+      icon: "check"
+    });
+  }, [toast]);
+
   return {
     pieces: state.pieces,
     isComplete: state.isComplete,
@@ -173,5 +188,6 @@ export function usePuzzleState(rows: number, columns: number) {
     endDragging,
     resetPuzzle,
     getElapsedTime,
+    loadSavedState,
   };
 }

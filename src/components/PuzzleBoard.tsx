@@ -1,6 +1,7 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { usePuzzleState } from '../hooks/usePuzzleState';
+import { usePuzzleSaveState } from '../hooks/usePuzzleSaveState';
+import { ResumeGameDialog } from './puzzles/ResumeGameDialog';
 import PuzzlePiece from './PuzzlePiece';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -21,8 +22,10 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   rows = 3,
   columns = 3,
 }) => {
-  const [boardSize, setBoardSize] = useState({ width: 600, height: 600 });
+  const [showResumeDialog, setShowResumeDialog] = useState(false);
+  const autoSaveIntervalRef = useRef<number>();
   const boardRef = useRef<HTMLDivElement>(null);
+  
   const {
     pieces,
     isComplete,
@@ -31,11 +34,66 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
     movePiece,
     endDragging,
     resetPuzzle,
-    getElapsedTime
+    getElapsedTime,
+    loadSavedState
   } = usePuzzleState(rows, columns);
 
-  const { elapsed, start, stop, reset } = useTimer();
+  const { elapsed, start, stop, reset, setElapsed } = useTimer();
   const [hasStarted, setHasStarted] = useState(false);
+
+  const { hasSavedState, saveState, loadState, clearSavedState } = usePuzzleSaveState(imageUrl);
+
+  useEffect(() => {
+    if (hasSavedState) {
+      setShowResumeDialog(true);
+    }
+  }, [hasSavedState]);
+
+  const handleResume = () => {
+    const savedState = loadState();
+    if (savedState) {
+      loadSavedState(savedState);
+      setElapsed(savedState.timeSpent);
+      setHasStarted(true);
+      start();
+    }
+    setShowResumeDialog(false);
+  };
+
+  const handleNewGame = () => {
+    clearSavedState();
+    resetPuzzle();
+    reset();
+    setHasStarted(false);
+    setShowResumeDialog(false);
+  };
+
+  useEffect(() => {
+    if (hasStarted && !isComplete) {
+      autoSaveIntervalRef.current = window.setInterval(() => {
+        saveState({
+          pieces,
+          isComplete,
+          moves,
+          timeSpent: elapsed,
+          startTime: null,
+          endTime: null
+        });
+      }, 5000); // Save every 5 seconds
+    }
+
+    return () => {
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current);
+      }
+    };
+  }, [hasStarted, isComplete, pieces, moves, elapsed, saveState]);
+
+  useEffect(() => {
+    if (isComplete) {
+      clearSavedState();
+    }
+  }, [isComplete, clearSavedState]);
 
   const handleFirstMove = () => {
     if (!hasStarted) {
@@ -63,7 +121,6 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
       if (boardRef.current) {
         const container = boardRef.current.parentElement;
         if (container) {
-          // More responsive sizing based on screen width
           const screenWidth = window.innerWidth;
           let maxWidth;
           
@@ -119,6 +176,12 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
 
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-2 sm:p-4">
+      <ResumeGameDialog
+        open={showResumeDialog}
+        onResume={handleResume}
+        onNewGame={handleNewGame}
+      />
+      
       <div className="w-full flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6 space-y-4 sm:space-y-0">
         <div className="flex flex-col w-full sm:w-2/3">
           <div className="flex justify-between mb-2">

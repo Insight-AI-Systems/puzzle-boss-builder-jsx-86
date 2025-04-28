@@ -20,7 +20,8 @@ export type PuzzleAction =
   | { type: 'MOVE_PIECE'; payload: { id: string; position: number } }
   | { type: 'END_DRAG'; payload: { id: string } }
   | { type: 'CHECK_COMPLETION' }
-  | { type: 'RESET_PUZZLE' };
+  | { type: 'RESET_PUZZLE' }
+  | { type: 'LOAD_SAVED_STATE'; payload: PuzzleState };
 
 export interface PuzzleSettings {
   showGuide: boolean;
