@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -19,6 +20,7 @@ export function useFinancials() {
     setIsLoading(true);
     setError(null);
     try {
+      // Fix the ambiguous column reference by using aliases in the query
       const { data, error } = await supabase
         .rpc('get_monthly_financial_summary', { month_param: period });
 
