@@ -3,26 +3,31 @@
 .svg-jigsaw-puzzle {
   --puzzle-border-color: rgba(255, 255, 255, 0.3);
   --puzzle-cell-highlight: rgba(255, 255, 255, 0.15);
-  --puzzle-piece-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  --puzzle-correct-shadow: 0 2px 8px rgba(0, 255, 0, 0.2);
+  --puzzle-piece-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  --puzzle-correct-shadow: 0 2px 8px rgba(0, 255, 0, 0.3);
+  --puzzle-piece-outline: rgba(255, 255, 255, 0.7);
+  --puzzle-piece-outline-hover: rgba(255, 255, 255, 0.9);
 }
 
 /* Puzzle board container */
 .puzzle-board {
   touch-action: none;
   user-select: none;
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.3);
   border-radius: 0.5rem;
-  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
   position: relative;
   min-height: 300px;
   transition: all 0.3s ease;
+  padding: 16px;
 }
 
 /* Empty cells for piece placement */
 .puzzle-cell {
   border: 1px dashed var(--puzzle-border-color);
   transition: all 0.15s ease-in-out;
+  border-radius: 0;
+  position: relative;
 }
 
 .puzzle-cell.empty-cell.highlight {
@@ -37,36 +42,58 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   box-shadow: var(--puzzle-piece-shadow);
   z-index: 1;
-  border: 1px solid rgba(255, 255, 255, 0.4);  /* Add visible border */
-  cursor: grab;  /* Add cursor indication */
+  cursor: grab;
+  will-change: transform;
 }
 
 .puzzle-piece.correct {
   box-shadow: var(--puzzle-correct-shadow);
   z-index: 0; /* Lower z-index for correctly placed pieces */
-  border-color: rgba(0, 255, 0, 0.5);  /* Highlight border for correct pieces */
 }
 
 .puzzle-piece:hover {
-  transform: scale(1.02);
+  transform: scale(1.03);
   z-index: 2;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
 }
 
 .puzzle-piece.dragging {
-  transform: scale(1.05);
-  opacity: 0.9;
+  transform: scale(1.08);
+  opacity: 0.95;
   z-index: 10;
-  cursor: grabbing;  /* Change cursor when dragging */
+  cursor: grabbing;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Add a subtle glow effect for incorrect pieces */
+.puzzle-piece:not(.correct):not(.dragging):hover path {
+  stroke: var(--puzzle-piece-outline-hover);
+  stroke-width: 2.5px;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
 }
 
 /* Staging area */
 .staging-area {
   transition: all 0.3s ease;
-  padding: 1rem;  /* Add padding to staging area */
-  border: 1px dashed rgba(255, 255, 255, 0.2);  /* Add subtle border */
+  padding: 1rem;
+  border: 1px dashed rgba(255, 255, 255, 0.3);
   border-radius: 0.5rem;
   margin-top: 1rem;
-  background-color: rgba(0, 0, 0, 0.1);  /* Slight background color */
+  background-color: rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Piece drop animation */
+@keyframes piece-drop {
+  0% { transform: translateY(-10px); opacity: 0.7; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.staging-area .puzzle-piece {
+  animation: piece-drop 0.3s ease forwards;
 }
 
 /* Completed puzzle effect */
@@ -92,4 +119,10 @@
   .staging-area {
     padding: 0.5rem;
   }
+}
+
+/* Fix for the completion message display */
+.svg-jigsaw-puzzle .mt-4.p-4.bg-green-100 {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }

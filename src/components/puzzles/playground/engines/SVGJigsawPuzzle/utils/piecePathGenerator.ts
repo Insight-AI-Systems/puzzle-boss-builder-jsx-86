@@ -27,14 +27,17 @@ export function generatePiecePath(
   const hasLeftTab = col > 0;
   
   // Size of tab/slot (as percentage of width/height)
-  const tabSize = 0.25;
+  // Increased from 0.25 to 0.35 for more pronounced tabs/slots
+  const tabSize = 0.35;
+  // Curve intensity controls how much the tabs/slots curve (higher = more curved)
+  const curveIntensity = 0.5;
   
   // Randomize tab/slot direction based on position
-  // Use position as seed for consistent results
-  const topTabOut = ((position * 13) % 2) === 0;
-  const rightTabOut = ((position * 7) % 2) === 0;
-  const bottomTabOut = ((position * 11) % 2) === 0;
-  const leftTabOut = ((position * 5) % 2) === 0;
+  // Using a more consistent seed pattern to ensure tabs match with neighbor slots
+  const topTabOut = ((position + row) % 2) === 0;
+  const rightTabOut = ((position + col) % 2) === 0;
+  const bottomTabOut = ((position + row + 1) % 2) === 0; // Inverse of top for connecting pieces
+  const leftTabOut = ((position + col + 1) % 2) === 0;   // Inverse of right for connecting pieces
   
   // Start path at top-left corner
   let path = `M 0 0`;
@@ -46,11 +49,15 @@ export function generatePiecePath(
     
     // Tab or slot on top edge
     if (topTabOut) {
-      // Outward tab
-      path += ` C ${width * (0.5 - tabSize)} ${-height * tabSize * 0.5}, ${width * (0.5 + tabSize)} ${-height * tabSize * 0.5}, ${width * (0.5 + tabSize)} 0`;
+      // Outward tab - more pronounced curve
+      path += ` C ${width * (0.5 - tabSize * 0.8)} ${-height * tabSize * curveIntensity}, 
+                  ${width * (0.5 + tabSize * 0.8)} ${-height * tabSize * curveIntensity}, 
+                  ${width * (0.5 + tabSize)} 0`;
     } else {
-      // Inward slot
-      path += ` C ${width * (0.5 - tabSize)} ${height * tabSize * 0.5}, ${width * (0.5 + tabSize)} ${height * tabSize * 0.5}, ${width * (0.5 + tabSize)} 0`;
+      // Inward slot - more pronounced curve
+      path += ` C ${width * (0.5 - tabSize * 0.8)} ${height * tabSize * curveIntensity}, 
+                  ${width * (0.5 + tabSize * 0.8)} ${height * tabSize * curveIntensity}, 
+                  ${width * (0.5 + tabSize)} 0`;
     }
     
     // Remaining top edge
@@ -68,10 +75,14 @@ export function generatePiecePath(
     // Tab or slot on right edge
     if (rightTabOut) {
       // Outward tab
-      path += ` C ${width + width * tabSize * 0.5} ${height * (0.5 - tabSize)}, ${width + width * tabSize * 0.5} ${height * (0.5 + tabSize)}, ${width} ${height * (0.5 + tabSize)}`;
+      path += ` C ${width + width * tabSize * curveIntensity} ${height * (0.5 - tabSize * 0.8)}, 
+                  ${width + width * tabSize * curveIntensity} ${height * (0.5 + tabSize * 0.8)}, 
+                  ${width} ${height * (0.5 + tabSize)}`;
     } else {
       // Inward slot
-      path += ` C ${width - width * tabSize * 0.5} ${height * (0.5 - tabSize)}, ${width - width * tabSize * 0.5} ${height * (0.5 + tabSize)}, ${width} ${height * (0.5 + tabSize)}`;
+      path += ` C ${width - width * tabSize * curveIntensity} ${height * (0.5 - tabSize * 0.8)}, 
+                  ${width - width * tabSize * curveIntensity} ${height * (0.5 + tabSize * 0.8)}, 
+                  ${width} ${height * (0.5 + tabSize)}`;
     }
     
     // Remaining right edge
@@ -89,10 +100,14 @@ export function generatePiecePath(
     // Tab or slot on bottom edge
     if (bottomTabOut) {
       // Outward tab
-      path += ` C ${width * (0.5 + tabSize)} ${height + height * tabSize * 0.5}, ${width * (0.5 - tabSize)} ${height + height * tabSize * 0.5}, ${width * (0.5 - tabSize)} ${height}`;
+      path += ` C ${width * (0.5 + tabSize * 0.8)} ${height + height * tabSize * curveIntensity}, 
+                  ${width * (0.5 - tabSize * 0.8)} ${height + height * tabSize * curveIntensity}, 
+                  ${width * (0.5 - tabSize)} ${height}`;
     } else {
       // Inward slot
-      path += ` C ${width * (0.5 + tabSize)} ${height - height * tabSize * 0.5}, ${width * (0.5 - tabSize)} ${height - height * tabSize * 0.5}, ${width * (0.5 - tabSize)} ${height}`;
+      path += ` C ${width * (0.5 + tabSize * 0.8)} ${height - height * tabSize * curveIntensity}, 
+                  ${width * (0.5 - tabSize * 0.8)} ${height - height * tabSize * curveIntensity}, 
+                  ${width * (0.5 - tabSize)} ${height}`;
     }
     
     // Remaining bottom edge
@@ -110,10 +125,14 @@ export function generatePiecePath(
     // Tab or slot on left edge
     if (leftTabOut) {
       // Outward tab
-      path += ` C ${-width * tabSize * 0.5} ${height * (0.5 + tabSize)}, ${-width * tabSize * 0.5} ${height * (0.5 - tabSize)}, 0 ${height * (0.5 - tabSize)}`;
+      path += ` C ${-width * tabSize * curveIntensity} ${height * (0.5 + tabSize * 0.8)}, 
+                  ${-width * tabSize * curveIntensity} ${height * (0.5 - tabSize * 0.8)}, 
+                  0 ${height * (0.5 - tabSize)}`;
     } else {
       // Inward slot
-      path += ` C ${width * tabSize * 0.5} ${height * (0.5 + tabSize)}, ${width * tabSize * 0.5} ${height * (0.5 - tabSize)}, 0 ${height * (0.5 - tabSize)}`;
+      path += ` C ${width * tabSize * curveIntensity} ${height * (0.5 + tabSize * 0.8)}, 
+                  ${width * tabSize * curveIntensity} ${height * (0.5 - tabSize * 0.8)}, 
+                  0 ${height * (0.5 - tabSize)}`;
     }
     
     // Back to start

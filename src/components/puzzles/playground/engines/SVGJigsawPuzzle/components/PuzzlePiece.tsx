@@ -100,6 +100,7 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
   
   // Create a unique ID for the SVG clip path
   const clipPathId = `piece-clip-${piece.id}`;
+  const shadowPathId = `piece-shadow-${piece.id}`;
   
   return (
     <div
@@ -120,12 +121,18 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
       onDoubleClick={onDoubleClick}
       data-piece-id={piece.id}
     >
-      {/* SVG for clip path */}
+      {/* SVG for clip path and piece outline */}
       <svg style={{ position: 'absolute', width: 0, height: 0 }}>
         <defs>
+          {/* Clip path for the image */}
           <clipPath id={clipPathId}>
             <path d={piecePath} />
           </clipPath>
+          
+          {/* Filter for drop shadow */}
+          <filter id={shadowPathId} x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="1" dy="1" stdDeviation="2" floodColor="rgba(0,0,0,0.5)" floodOpacity="0.5"/>
+          </filter>
         </defs>
       </svg>
       
@@ -135,17 +142,51 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
         style={{
           width: '100%',
           height: '100%',
-          backgroundImage: `url(${imageUrl})`,
-          backgroundSize: `${columns * width}px ${rows * height}px`,
-          backgroundPosition: `${backgroundPositionX}px ${backgroundPositionY}px`,
-          clipPath: `url(#${clipPathId})`,
-          WebkitClipPath: `url(#${clipPathId})`,
+          position: 'relative',
         }}
       >
+        {/* Background image with clip path */}
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            backgroundImage: `url(${imageUrl})`,
+            backgroundSize: `${columns * width}px ${rows * height}px`,
+            backgroundPosition: `${backgroundPositionX}px ${backgroundPositionY}px`,
+            clipPath: `url(#${clipPathId})`,
+            WebkitClipPath: `url(#${clipPathId})`,
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            zIndex: 1,
+          }}
+        />
+        
+        {/* SVG outline overlay for the piece */}
+        <svg 
+          width="100%" 
+          height="100%" 
+          style={{ 
+            position: 'absolute', 
+            top: 0, 
+            left: 0, 
+            zIndex: 2, 
+            pointerEvents: 'none' 
+          }}
+        >
+          <path 
+            d={piecePath} 
+            fill="none" 
+            stroke="rgba(255, 255, 255, 0.7)" 
+            strokeWidth="2"
+            filter={isDragging ? `url(#${shadowPathId})` : ''}
+          />
+        </svg>
+        
         {/* Number overlay if showNumber is true */}
         {showNumber && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-white text-lg font-bold drop-shadow-md">
+          <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 3 }}>
+            <span className="text-white text-lg font-bold drop-shadow-md bg-black/40 px-2 py-1 rounded-full">
               {piece.id + 1}
             </span>
           </div>

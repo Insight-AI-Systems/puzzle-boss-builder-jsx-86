@@ -139,7 +139,7 @@ const SVGJigsawPuzzle: React.FC<SVGJigsawPuzzleProps> = ({
       {isComplete && (
         <div className="mt-4 p-4 bg-green-100 border border-green-300 rounded-lg text-center">
           <h3 className="text-green-800 font-bold text-xl">Puzzle Completed!</h3>
-          <p className="text-green-700">Time: {Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}</p>
+          <p className="text-green-700">Time: {Math.floor(elapsed / 60)}:{(elapsed % 60).toString().padStart(2, '0')}</p>
         </div>
       )}
     </div>
