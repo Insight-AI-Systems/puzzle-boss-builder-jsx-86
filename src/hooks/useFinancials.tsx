@@ -50,9 +50,8 @@ export function useFinancials() {
       if (error) throw error;
       
       return (data || []).map(item => {
-        // Safe access to nested properties
-        const username = item.profiles && typeof item.profiles === 'object' && 
-                        'username' in item.profiles ? 
+        // Safe access to nested properties with null checks
+        const username = item.profiles && typeof item.profiles === 'object' ? 
                         (item.profiles.username as string || 'Anonymous') : 'Anonymous';
 
         return {
@@ -110,9 +109,9 @@ export function useFinancials() {
       if (error) throw error;
 
       return (data || []).map(manager => {
-        // Safe access to nested properties
+        // Safe access to nested properties with null checks
         let username = 'Unknown';
-        let email = undefined;
+        let email: string | undefined = undefined;
         
         if (manager.profiles && typeof manager.profiles === 'object') {
           username = 'username' in manager.profiles ? 
@@ -154,9 +153,9 @@ export function useFinancials() {
       if (error) throw error;
 
       return (data || []).map(payment => {
-        // Safe access to nested properties
+        // Safe access to nested properties with null checks
         let managerName = 'Unknown';
-        let managerEmail = undefined;
+        let managerEmail: string | undefined = undefined;
         
         if (payment.manager && typeof payment.manager === 'object') {
           managerName = 'username' in payment.manager ? 
