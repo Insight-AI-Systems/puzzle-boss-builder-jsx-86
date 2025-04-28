@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -156,9 +157,9 @@ export const useAnalytics = () => {
               genderCounts['not_specified'] = 0;
               
               allUsers.forEach(user => {
-                if (user && typeof user === 'object' && 'gender' in user && user !== null) {
+                if (user && typeof user === 'object' && user !== null && 'gender' in user) {
                   const gender = user.gender || 'not_specified';
-                  genderCounts[gender] = (genderCounts[gender] || 0) + 1;
+                  genderCounts[gender as string] = (genderCounts[gender as string] || 0) + 1;
                 } else {
                   genderCounts['not_specified']++;
                 }
@@ -184,9 +185,9 @@ export const useAnalytics = () => {
               ageCounts['not_specified'] = 0;
               
               allUsers.forEach(user => {
-                if (user && typeof user === 'object' && 'age_group' in user && user !== null) {
+                if (user && typeof user === 'object' && user !== null && 'age_group' in user) {
                   const ageGroup = user.age_group || 'not_specified';
-                  ageCounts[ageGroup] = (ageCounts[ageGroup] || 0) + 1;
+                  ageCounts[ageGroup as string] = (ageCounts[ageGroup as string] || 0) + 1;
                 } else {
                   ageCounts['not_specified']++;
                 }
@@ -212,9 +213,9 @@ export const useAnalytics = () => {
               countryCounts['not_specified'] = 0;
               
               allUsers.forEach(user => {
-                if (user && typeof user === 'object' && 'country' in user && user !== null) {
+                if (user && typeof user === 'object' && user !== null && 'country' in user) {
                   const country = user.country || 'not_specified';
-                  countryCounts[country] = (countryCounts[country] || 0) + 1;
+                  countryCounts[country as string] = (countryCounts[country as string] || 0) + 1;
                 } else {
                   countryCounts['not_specified']++;
                 }
