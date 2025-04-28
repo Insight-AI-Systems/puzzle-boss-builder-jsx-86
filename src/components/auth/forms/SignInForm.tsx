@@ -56,7 +56,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={isLoading}
-          required
+          required={!email} // Only required if there's no email value
           autoComplete="email"
         />
       </div>
