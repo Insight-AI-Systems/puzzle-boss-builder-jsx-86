@@ -155,8 +155,10 @@ export const useAnalytics = () => {
               genderCounts['not_specified'] = 0;
               
               allUsers.forEach(user => {
-                const gender = user.gender || 'not_specified';
-                genderCounts[gender] = (genderCounts[gender] || 0) + 1;
+                if (user) {
+                  const gender = user.gender || 'not_specified';
+                  genderCounts[gender] = (genderCounts[gender] || 0) + 1;
+                }
               });
             }
           } else {
@@ -178,8 +180,10 @@ export const useAnalytics = () => {
               ageCounts['not_specified'] = 0;
               
               allUsers.forEach(user => {
-                const ageGroup = user.age_group || 'not_specified';
-                ageCounts[ageGroup] = (ageCounts[ageGroup] || 0) + 1;
+                if (user) {
+                  const ageGroup = user.age_group || 'not_specified';
+                  ageCounts[ageGroup] = (ageCounts[ageGroup] || 0) + 1;
+                }
               });
             }
           } else {
@@ -201,8 +205,10 @@ export const useAnalytics = () => {
               countryCounts['not_specified'] = 0;
               
               allUsers.forEach(user => {
-                const country = user.country || 'not_specified';
-                countryCounts[country] = (countryCounts[country] || 0) + 1;
+                if (user) {
+                  const country = user.country || 'not_specified';
+                  countryCounts[country] = (countryCounts[country] || 0) + 1;
+                }
               });
             }
           } else {
