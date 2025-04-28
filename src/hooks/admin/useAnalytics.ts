@@ -151,14 +151,17 @@ export const useAnalytics = () => {
             .select('gender')
             .limit(1);
             
-          if (!genderTestError && genderTest) {
+          if (!genderTestError && genderTest && genderTest.length > 0 && 'gender' in genderTest[0]) {
             const { data, error: usersError } = await supabase.from('profiles').select('gender');
             
             if (!usersError && data && data.length > 0) {
               genderCounts['not_specified'] = 0;
               
               data.forEach((userProfile) => {
-                const gender = userProfile?.gender || 'not_specified';
+                // Safely access gender with a type check
+                const gender = userProfile && typeof userProfile === 'object' && 'gender' in userProfile 
+                  ? userProfile.gender || 'not_specified' 
+                  : 'not_specified';
                 genderCounts[gender] = (genderCounts[gender] || 0) + 1;
               });
             }
@@ -176,14 +179,17 @@ export const useAnalytics = () => {
             .select('age_group')
             .limit(1);
             
-          if (!ageTestError && ageTest) {
+          if (!ageTestError && ageTest && ageTest.length > 0 && 'age_group' in ageTest[0]) {
             const { data, error: usersError } = await supabase.from('profiles').select('age_group');
             
             if (!usersError && data && data.length > 0) {
               ageCounts['not_specified'] = 0;
               
               data.forEach((userProfile) => {
-                const ageGroup = userProfile?.age_group || 'not_specified';
+                // Safely access age_group with a type check
+                const ageGroup = userProfile && typeof userProfile === 'object' && 'age_group' in userProfile
+                  ? userProfile.age_group || 'not_specified'
+                  : 'not_specified';
                 ageCounts[ageGroup] = (ageCounts[ageGroup] || 0) + 1;
               });
             }
@@ -201,14 +207,17 @@ export const useAnalytics = () => {
             .select('country')
             .limit(1);
             
-          if (!countryTestError && countryTest) {
+          if (!countryTestError && countryTest && countryTest.length > 0 && 'country' in countryTest[0]) {
             const { data, error: usersError } = await supabase.from('profiles').select('country');
             
             if (!usersError && data && data.length > 0) {
               countryCounts['not_specified'] = 0;
               
               data.forEach((userProfile) => {
-                const country = userProfile?.country || 'not_specified';
+                // Safely access country with a type check
+                const country = userProfile && typeof userProfile === 'object' && 'country' in userProfile
+                  ? userProfile.country || 'not_specified'
+                  : 'not_specified';
                 countryCounts[country] = (countryCounts[country] || 0) + 1;
               });
             }
