@@ -49,6 +49,13 @@ export function useTimer(initialElapsed: number = 0) {
     stop();
   }, [stop]);
 
+  const setElapsed = useCallback((newElapsed: number) => {
+    setState(prev => ({
+      ...prev,
+      elapsed: newElapsed
+    }));
+  }, []);
+
   useEffect(() => {
     if (state.isRunning && state.startTime !== null) {
       timerRef.current = window.setInterval(() => {
@@ -71,6 +78,7 @@ export function useTimer(initialElapsed: number = 0) {
     start,
     stop,
     pause,
-    reset
+    reset,
+    setElapsed
   };
 }

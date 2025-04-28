@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { usePuzzleState } from '../hooks/usePuzzleState';
 import { usePuzzleSaveState } from '../hooks/usePuzzleSaveState';
@@ -25,6 +26,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const autoSaveIntervalRef = useRef<number>();
   const boardRef = useRef<HTMLDivElement>(null);
+  const [boardSize, setBoardSize] = useState({ width: 400, height: 400 });
   
   const {
     pieces,
@@ -53,7 +55,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
     const savedState = loadState();
     if (savedState) {
       loadSavedState(savedState);
-      setElapsed(savedState.timeSpent);
+      setElapsed(savedState.timeSpent || 0);
       setHasStarted(true);
       start();
     }

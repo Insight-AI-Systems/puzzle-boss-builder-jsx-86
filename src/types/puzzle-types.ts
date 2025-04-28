@@ -12,6 +12,7 @@ export type PuzzleState = {
   moves: number;
   startTime: number | null;
   endTime: number | null;
+  timeSpent?: number;
 };
 
 export type PuzzleAction =

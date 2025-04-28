@@ -8,6 +8,7 @@ const STORAGE_KEY = 'puzzle_save_state';
 interface SavedPuzzleState extends PuzzleState {
   timestamp: number;
   imageUrl: string;
+  timeSpent: number; // Add explicit timeSpent property
 }
 
 export function usePuzzleSaveState(imageUrl: string) {
@@ -15,7 +16,7 @@ export function usePuzzleSaveState(imageUrl: string) {
   const { toast } = useToast();
 
   // Auto-save current state
-  const saveState = (currentState: PuzzleState) => {
+  const saveState = (currentState: PuzzleState & { timeSpent: number }) => {
     try {
       const stateToSave: SavedPuzzleState = {
         ...currentState,

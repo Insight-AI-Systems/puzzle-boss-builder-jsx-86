@@ -1,7 +1,6 @@
 import { useReducer, useEffect, useCallback } from 'react';
 import { PuzzleState, PuzzleAction, PuzzlePiece } from '../types/puzzle-types';
 import { useToast } from '@/hooks/use-toast';
-import { Check } from 'lucide-react';
 
 const initialState: PuzzleState = {
   pieces: [],
@@ -9,6 +8,7 @@ const initialState: PuzzleState = {
   moves: 0,
   startTime: null,
   endTime: null,
+  timeSpent: 0
 };
 
 function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleState {
@@ -32,6 +32,7 @@ function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleState {
         moves: 0,
         startTime: Date.now(),
         endTime: null,
+        timeSpent: 0
       };
     }
 
@@ -87,9 +88,10 @@ function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleState {
     }
 
     case 'LOAD_SAVED_STATE': {
+      const savedState = action.payload;
       return {
-        ...action.payload,
-        startTime: Date.now() - (action.payload.timeSpent * 1000)
+        ...savedState,
+        startTime: Date.now() - ((savedState.timeSpent || 0) * 1000)
       };
     }
 
@@ -110,7 +112,6 @@ export function usePuzzleState(rows: number, columns: number) {
     toast({
       title: "Puzzle initialized",
       description: `Started ${rows}x${columns} puzzle`,
-      // Fix: Convert JSX to string for icon
       icon: "check"
     });
   }, [rows, columns, toast]);
@@ -130,7 +131,6 @@ export function usePuzzleState(rows: number, columns: number) {
       toast({
         title: "Perfect fit!",
         description: "Piece placed in correct position",
-        // Fix: Convert JSX to string for icon
         icon: "check"
       });
     }
@@ -147,7 +147,6 @@ export function usePuzzleState(rows: number, columns: number) {
     toast({
       title: "Puzzle reset",
       description: "Starting fresh",
-      // Fix: Convert JSX to string for icon
       icon: "info"
     });
   }, [initializePuzzle, toast]);
@@ -158,7 +157,6 @@ export function usePuzzleState(rows: number, columns: number) {
       toast({
         title: "Puzzle completed! 🎉",
         description: `Finished in ${state.moves} moves and ${Math.floor(timeElapsed / 60)}:${(timeElapsed % 60).toString().padStart(2, '0')}`,
-        // Fix: Convert JSX to string for icon
         icon: "check"
       });
     }
