@@ -28,7 +28,9 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
 }) => {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleSubmit();
+    if (email) { // Only submit if there's an email
+      handleSubmit();
+    }
   };
 
   return (
@@ -56,7 +58,7 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={isLoading}
-          required={!email} // Only required if there's no email value
+          required={!email} // Only required validation if email is empty
           autoComplete="email"
         />
       </div>
@@ -64,7 +66,7 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
       <Button
         type="submit"
         className="w-full"
-        disabled={isLoading || !!successMessage}
+        disabled={isLoading || !!successMessage || !email} // Disable if no email
       >
         {isLoading ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -86,7 +88,7 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
       
       <div className="text-xs text-center text-muted-foreground">
         <Info className="inline-block h-3 w-3 mr-1" />
-        For security reasons, we won't disclose if an email exists
+        For security reasons, we won&apos;t disclose if an email exists
       </div>
     </form>
   );
