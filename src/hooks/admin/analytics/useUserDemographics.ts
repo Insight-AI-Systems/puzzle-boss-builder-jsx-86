@@ -10,7 +10,7 @@ export const useUserDemographics = () => {
       try {
         const { data: users } = await supabase
           .from('profiles')
-          .select('gender:role, age_group, country');
+          .select('gender, age_group, country');
 
         const genderCounts: Record<string, number> = { 'not_specified': 0 };
         const ageCounts: Record<string, number> = { 'not_specified': 0 };
@@ -20,7 +20,7 @@ export const useUserDemographics = () => {
           users.forEach((profile) => {
             if (profile) {
               // Process gender
-              const gender = profile.role || 'not_specified';
+              const gender = profile.gender || 'not_specified';
               genderCounts[gender] = (genderCounts[gender] || 0) + 1;
 
               // Process age group

@@ -10,6 +10,8 @@ import { useTrendCalculations } from './analytics/useTrendCalculations';
 import { usePuzzleMetrics } from './analytics/usePuzzleMetrics';
 import { useRevenueMetrics } from './analytics/useRevenueMetrics';
 import type { ActivityBreakdown } from './types/analyticsTypes';
+// Import the formatTime utility
+import { formatTime } from '@/components/puzzles/hooks/usePuzzleState';
 
 export const useAnalytics = () => {
   const [selectedDate] = useState<Date>(new Date());
@@ -67,7 +69,8 @@ export const useAnalytics = () => {
     getUserTrend,
     getSignupTrend,
     getPuzzlesTrend,
-    getRevenueTrend
+    getRevenueTrend,
+    formatTime // Export the formatTime utility
   };
 };
 
