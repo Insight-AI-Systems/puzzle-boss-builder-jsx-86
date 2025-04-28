@@ -1,228 +1,208 @@
-import React, { useState, useCallback } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
-import { RefreshCcw } from 'lucide-react';
-import PuzzleGame from "@/components/puzzles/PuzzleGame";
-import ReactJigsawPuzzleEngine2 from './engines/ReactJigsawPuzzleEngine2';
-import { Textarea } from '@/components/ui/textarea';
-import './engines/styles/jigsaw-puzzle.css';
-import './engines/CustomPuzzleEngine/styles/puzzle.css';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Switch } from "@/components/ui/switch";
+import { useForm } from "react-hook-form";
+import { cn } from "@/lib/utils";
+import ReactJigsawPuzzleEngine from './engines/ReactJigsawPuzzleEngine';
+import CustomPuzzleEngine from './engines/CustomPuzzleEngine';
+import SVGJigsawPuzzle from './engines/SVGJigsawPuzzle';
 
-const SAMPLE_IMAGES = [{
-  id: "mountain",
-  url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
-  alt: "Mountain Lake"
-}, {
-  id: "code",
-  url: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7",
-  alt: "Code"
-}, {
-  id: "matrix",
-  url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5",
-  alt: "Matrix"
-}];
+// Sample images for testing
+const TEST_IMAGES = [
+  '/images/puzzle-test-1.jpg',
+  '/images/puzzle-test-2.jpg',
+  '/images/puzzle-test-3.jpg',
+  'https://images.unsplash.com/photo-1682687220063-4742bd7fd538',
+  'https://images.unsplash.com/photo-1682695796954-bad0d0f59ff1'
+];
 
-const PUZZLE_ENGINES = [{
-  id: 'react-jigsaw-puzzle',
-  name: 'Legacy Jigsaw Puzzle'
-}, {
-  id: 'custom-puzzle',
-  name: 'Puzzle Boss Jigsaw Puzzle'
-}];
-
-const DIFFICULTY_PRESETS = [{
-  value: 'easy',
-  label: 'Easy',
-  rows: 3,
-  columns: 3
-}, {
-  value: 'medium',
-  label: 'Medium',
-  rows: 4,
-  columns: 4
-}, {
-  value: 'hard',
-  label: 'Hard',
-  rows: 5,
-  columns: 5
-}, {
-  value: 'expert',
-  label: 'Expert',
-  rows: 6,
-  columns: 6
-}];
-
-interface PuzzleEnginePlaygroundProps {
-  heroMode?: boolean;
-  isCondensed?: boolean;
-  selectedImage?: string;
-  difficulty?: string;
-  miniRows?: number;
-  miniColumns?: number;
-  showNumbersToggle?: boolean;
-}
-
-const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
-  heroMode = false,
-  isCondensed = false,
-  selectedImage: propSelectedImage,
-  difficulty: propDifficulty,
-  miniRows,
-  miniColumns,
-  showNumbersToggle = false
-}) => {
-  const [selectedImage, setSelectedImage] = useState(propSelectedImage || SAMPLE_IMAGES[0].id);
-  const [selectedEngine, setSelectedEngine] = useState(PUZZLE_ENGINES[0].id);
-  const [difficulty, setDifficulty] = useState(propDifficulty || DIFFICULTY_PRESETS[1].value);
-  const [resetKey, setResetKey] = useState(0);
+const PuzzleEnginePlayground = () => {
+  const [selectedEngine, setSelectedEngine] = useState('custom');
+  const [selectedImage, setSelectedImage] = useState(TEST_IMAGES[0]);
+  const [rows, setRows] = useState(3);
+  const [columns, setColumns] = useState(3);
   const [showNumbers, setShowNumbers] = useState(true);
-  const [notes, setNotes] = useState<Record<string, string>>({});
-  
-  const handleResetPuzzle = useCallback(() => {
-    setResetKey(prev => prev + 1);
-  }, []);
-  
-  const handleNotesChange = (value: string) => {
-    setNotes(prev => ({
-      ...prev,
-      'puzzle': value
-    }));
+
+  const form = useForm<{ showNumbers: boolean }>({
+    defaultValues: {
+      showNumbers: true,
+    },
+  });
+
+  const handleDifficultyChange = (newRows: number, newColumns: number) => {
+    setRows(newRows);
+    setColumns(newColumns);
   };
-  
-  const currentImage = SAMPLE_IMAGES.find(img => img.id === selectedImage)?.url || SAMPLE_IMAGES[0].url;
-  const currentDifficultyPreset = DIFFICULTY_PRESETS.find(d => d.value === difficulty) || DIFFICULTY_PRESETS[1];
-  const rows = heroMode && miniRows ? miniRows : currentDifficultyPreset.rows;
-  const columns = heroMode && miniColumns ? miniColumns : currentDifficultyPreset.columns;
-  
-  if (heroMode) {
-    return <div className="w-full" style={{ minHeight: 220 }}>
-      <div className="relative border rounded-lg p-2 bg-background">
-        <div className="flex items-center gap-2 mb-2">
-          {showNumbersToggle && (
-            <div className="flex items-center space-x-2">
-              <Switch 
-                id="hero-show-numbers" 
-                checked={showNumbers} 
-                onCheckedChange={checked => {
-                  setShowNumbers(checked);
-                  setResetKey(prev => prev + 1);
-                }} 
-              />
-              <Label htmlFor="hero-show-numbers">Numbers</Label>
-            </div>
-          )}
-        </div>
-        <PuzzleGame 
-          key={resetKey} 
-          imageUrl={currentImage} 
-          rows={rows} 
-          columns={columns} 
-          puzzleId={`hero-${currentImage}`} 
-          showNumbers={showNumbers} 
-        />
-      </div>
-    </div>;
-  }
-  
+
+  const handleImageSelect = (img: string) => {
+    setSelectedImage(img);
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/20 rounded-lg border">
-        <div>
-          <Label htmlFor="engine-selector" className="mb-2 block">Puzzle Engine</Label>
-          <Select value={selectedEngine} onValueChange={setSelectedEngine}>
-            <SelectTrigger id="engine-selector" className="w-full">
-              <SelectValue placeholder="Select engine..." />
-            </SelectTrigger>
-            <SelectContent>
-              {PUZZLE_ENGINES.map(engine => (
-                <SelectItem key={engine.id} value={engine.id}>
-                  {engine.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <div className="container mx-auto py-8 px-4">
+      <div className="mb-8 space-y-4">
+        <h1 className="text-3xl font-bold">Puzzle Engine Playground</h1>
+        <p className="text-muted-foreground">
+          Test different puzzle engines with various configurations.
+        </p>
+
+        {/* Engine selection */}
+        <div className="flex flex-wrap gap-4">
+          <Card className={`cursor-pointer transition-all ${selectedEngine === 'legacy' ? 'ring-2 ring-puzzle-aqua' : 'opacity-70'}`}
+            onClick={() => setSelectedEngine('legacy')}>
+            <CardHeader>
+              <CardTitle>Legacy Jigsaw Puzzle</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm">The original jigsaw puzzle.</p>
+            </CardContent>
+          </Card>
+
+          <Card className={`cursor-pointer transition-all ${selectedEngine === 'custom' ? 'ring-2 ring-puzzle-aqua' : 'opacity-70'}`}
+            onClick={() => setSelectedEngine('custom')}>
+            <CardHeader>
+              <CardTitle>Puzzle Boss Jigsaw Puzzle</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm">Custom implementation with advanced features.</p>
+            </CardContent>
+          </Card>
+
+          <Card className={`cursor-pointer transition-all ${selectedEngine === 'svg-jigsaw' ? 'ring-2 ring-puzzle-aqua' : 'opacity-70'}`}
+            onClick={() => setSelectedEngine('svg-jigsaw')}>
+            <CardHeader>
+              <CardTitle>SVG Jigsaw Puzzle</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm">SVG-based jigsaw with realistic piece shapes.</p>
+            </CardContent>
+          </Card>
         </div>
 
-        <div>
-          <Label htmlFor="image-selector" className="mb-2 block">Test Image</Label>
-          <Select value={selectedImage} onValueChange={setSelectedImage}>
-            <SelectTrigger id="image-selector" className="w-full">
-              <SelectValue placeholder="Select image..." />
-            </SelectTrigger>
-            <SelectContent>
-              {SAMPLE_IMAGES.map(image => (
-                <SelectItem key={image.id} value={image.id}>
-                  {image.alt}
-                </SelectItem>
+        {/* Configuration options */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Difficulty</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                className={cn(
+                  "border rounded-md p-2 text-sm transition-colors hover:bg-secondary hover:text-secondary-foreground",
+                  rows === 3 && columns === 3 ? "bg-muted" : "bg-background"
+                )}
+                onClick={() => handleDifficultyChange(3, 3)}
+              >
+                Easy (3x3)
+              </button>
+              <button
+                className={cn(
+                  "border rounded-md p-2 text-sm transition-colors hover:bg-secondary hover:text-secondary-foreground",
+                  rows === 4 && columns === 4 ? "bg-muted" : "bg-background"
+                )}
+                onClick={() => handleDifficultyChange(4, 4)}
+              >
+                Medium (4x4)
+              </button>
+              <button
+                className={cn(
+                  "border rounded-md p-2 text-sm transition-colors hover:bg-secondary hover:text-secondary-foreground",
+                  rows === 5 && columns === 5 ? "bg-muted" : "bg-background"
+                )}
+                onClick={() => handleDifficultyChange(5, 5)}
+              >
+                Hard (5x5)
+              </button>
+              <button
+                className={cn(
+                  "border rounded-md p-2 text-sm transition-colors hover:bg-secondary hover:text-secondary-foreground",
+                  rows === 6 && columns === 6 ? "bg-muted" : "bg-background"
+                )}
+                onClick={() => handleDifficultyChange(6, 6)}
+              >
+                Expert (6x6)
+              </button>
+            </div>
+
+            <FormField
+              control={form.control}
+              name="showNumbers"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel>Show Numbers</FormLabel>
+                    <FormDescription>Display numbers on puzzle pieces</FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Puzzle Image</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {TEST_IMAGES.map((img, idx) => (
+                <div
+                  key={idx}
+                  className={`cursor-pointer rounded-md overflow-hidden border-2 aspect-square ${selectedImage === img ? 'border-puzzle-aqua' : 'border-transparent'}`}
+                  onClick={() => handleImageSelect(img)}
+                >
+                  <img 
+                    src={img} 
+                    alt={`Test image ${idx + 1}`} 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               ))}
-            </SelectContent>
-          </Select>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <Separator className="my-8" />
+      
+      {/* Puzzle Engine Render */}
+      <div className="py-4">
+        <h2 className="text-2xl font-bold mb-6">
+          {selectedEngine === 'legacy' && 'Legacy Jigsaw Puzzle'}
+          {selectedEngine === 'custom' && 'Puzzle Boss Jigsaw Puzzle'}
+          {selectedEngine === 'svg-jigsaw' && 'SVG Jigsaw Puzzle'}
+        </h2>
         
-        <div>
-          <Label htmlFor="difficulty-selector" className="mb-2 block">Difficulty</Label>
-          <Select value={difficulty} onValueChange={setDifficulty}>
-            <SelectTrigger id="difficulty-selector" className="w-full">
-              <SelectValue placeholder="Select difficulty..." />
-            </SelectTrigger>
-            <SelectContent>
-              {DIFFICULTY_PRESETS.map(preset => (
-                <SelectItem key={preset.value} value={preset.value}>
-                  {preset.label} ({preset.rows}x{preset.columns})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Switch id="show-numbers" checked={showNumbers} onCheckedChange={setShowNumbers} />
-          <Label htmlFor="show-numbers">Show Numbers</Label>
-        </div>
-      </div>
-      
-      <div className="flex justify-end">
-        <Button variant="outline" onClick={handleResetPuzzle} className="flex items-center gap-2">
-          <RefreshCcw className="h-4 w-4" />
-          Reset Puzzle
-        </Button>
-      </div>
-      
-      <div className="min-h-[500px] relative border rounded-lg p-4 bg-background">
-        {selectedEngine === 'react-jigsaw-puzzle' ? (
-          <ReactJigsawPuzzleEngine2
-            key={`${resetKey}-legacy`}
-            imageUrl={currentImage}
-            rows={rows}
-            columns={columns}
-          />
-        ) : (
-          <PuzzleGame 
-            key={`${resetKey}-custom`}
-            imageUrl={currentImage} 
+        {selectedEngine === 'legacy' && (
+          <ReactJigsawPuzzleEngine 
+            imageUrl={selectedImage} 
             rows={rows} 
             columns={columns} 
-            puzzleId={`playground-${currentImage}-${difficulty}`} 
-            showNumbers={showNumbers} 
           />
         )}
-      </div>
-      
-      <div>
-        <Label htmlFor="evaluation-notes" className="mb-2 block">Evaluation Notes</Label>
-        <Textarea 
-          id="evaluation-notes" 
-          placeholder="Add your notes, observations, and feedback about this puzzle engine here..." 
-          className="min-h-[120px]" 
-          value={notes['puzzle'] || ''} 
-          onChange={(e) => handleNotesChange(e.target.value)} 
-        />
+        
+        {selectedEngine === 'custom' && (
+          <CustomPuzzleEngine 
+            imageUrl={selectedImage} 
+            rows={rows} 
+            columns={columns} 
+            showNumbers={form.watch("showNumbers")}
+          />
+        )}
+
+        {selectedEngine === 'svg-jigsaw' && (
+          <SVGJigsawPuzzle
+            imageUrl={selectedImage} 
+            rows={rows} 
+            columns={columns} 
+            showNumbers={form.watch("showNumbers")}
+          />
+        )}
       </div>
     </div>
   );
 };
 
-export default React.memo(PuzzleEnginePlayground);
+export default PuzzleEnginePlayground;

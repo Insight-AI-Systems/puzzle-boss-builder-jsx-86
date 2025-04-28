@@ -1,175 +1,134 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ReloadIcon } from "@radix-ui/react-icons"
+import { DEFAULT_IMAGES } from './puzzles/types/puzzle-types';
+import CustomPuzzleEngine from './puzzles/playground/engines/CustomPuzzleEngine';
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { useHeroPuzzle } from '@/hooks/useHeroPuzzle';
-import { usePuzzleTimer } from '@/components/puzzles/playground/engines/hooks/usePuzzleTimer';
-import { usePuzzleCompletion } from '@/components/puzzles/playground/engines/hooks/usePuzzleCompletion';
-import CustomPuzzleEngine from '@/components/puzzles/playground/engines/CustomPuzzleEngine';
-import { PuzzleCongratulationSplash } from '@/components/puzzles/playground/engines/components/PuzzleCongratulationSplash';
-import { Loader2, PuzzleIcon, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { DifficultyLevel, difficultyConfig } from './puzzles/types/puzzle-types';
+interface Puzzle {
+  imageUrl: string;
+  rows?: number;
+  columns?: number;
+}
 
-const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb';
+const PUZZLES: Puzzle[] = [
+  { imageUrl: DEFAULT_IMAGES[0], rows: 3, columns: 4 },
+  { imageUrl: DEFAULT_IMAGES[1], rows: 4, columns: 4 },
+  { imageUrl: DEFAULT_IMAGES[2], rows: 5, columns: 5 },
+  { imageUrl: DEFAULT_IMAGES[3], rows: 6, columns: 6 },
+  { imageUrl: DEFAULT_IMAGES[4], rows: 7, columns: 7 },
+];
 
-const HeroPuzzle: React.FC = () => {
-  const { puzzleConfig, isLoading } = useHeroPuzzle();
-  const [resetKey, setResetKey] = useState(0);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>('3x3');
-  const [showNumbers, setShowNumbers] = useState(true);
-  
-  const {
-    elapsed,
-    start: startTimer,
-    stop: stopTimer,
-    reset: resetTimer,
-    isRunning
-  } = usePuzzleTimer();
-  
-  const imageUrl = puzzleConfig?.image_url || FALLBACK_IMAGE;
-  const rows = difficultyConfig[selectedDifficulty].gridSize;
-  
-  const { completed, solveTime, handlePuzzleComplete, resetCompletion } = usePuzzleCompletion({
-    imageUrl,
-    rows,
-    columns: rows
-  });
-  
-  const handleGameStart = useCallback(() => {
-    if (!isRunning) startTimer();
-  }, [isRunning, startTimer]);
-  
-  const handlePuzzleSolved = useCallback((timeElapsedSeconds: number) => {
-    stopTimer();
-    handlePuzzleComplete(timeElapsedSeconds * 1000);
-  }, [stopTimer, handlePuzzleComplete]);
-  
-  const handlePlayAgain = useCallback(() => {
-    console.log("Play Again clicked - resetting game state");
-    resetTimer();
-    resetCompletion();
-    setResetKey(prev => prev + 1);
-  }, [resetTimer, resetCompletion]);
+interface PuzzleEngineProps {
+  key: string;
+  imageUrl: string;
+  rows: number;
+  columns: number;
+  showNumbers: boolean;
+  onComplete: (timeElapsedSeconds: number) => void;
+  onReset: () => void;
+}
 
-  const handleDifficultyChange = useCallback((difficulty: DifficultyLevel) => {
-    setSelectedDifficulty(difficulty);
-    resetCompletion();
-    resetTimer();
-    setResetKey(prev => prev + 1);
-  }, [resetCompletion, resetTimer]);
+const HeroPuzzle = () => {
+  const [activePuzzle, setActivePuzzle] = useState<Puzzle | null>(PUZZLES[0]);
+  const [showNumbers, setShowNumbers] = useState(false);
+  const [puzzleKey, setPuzzleKey] = useState(0);
+  const [completionTime, setCompletionTime] = useState<number | null>(null);
 
-  const handleToggleNumbers = useCallback((checked: boolean) => {
-    console.log('Toggling numbers visibility:', checked);
-    setShowNumbers(checked);
-    // Force a re-render of the puzzle with new showNumbers state
-    setResetKey(current => current + 1);
-  }, []);
+  const handlePuzzleSelect = (puzzle: Puzzle) => {
+    setActivePuzzle(puzzle);
+    setPuzzleKey(prevKey => prevKey + 1); // Force remount
+    setCompletionTime(null); // Reset completion time
+  };
 
-  // Debug logging for showNumbers state
-  useEffect(() => {
-    console.log('HeroPuzzle: showNumbers state updated:', showNumbers);
-  }, [showNumbers]);
+  const handleShowNumbersToggle = () => {
+    setShowNumbers(prev => !prev);
+  };
 
-  useEffect(() => {
-    console.log('HeroPuzzle: resetKey updated:', resetKey);
-  }, [resetKey]);
+  const handleComplete = (timeElapsedSeconds: number) => {
+    setCompletionTime(timeElapsedSeconds);
+  };
 
-  console.log('HeroPuzzle rendering', { 
-    puzzleConfig, 
-    isLoading, 
-    imageUrl, 
-    rows, 
-    completed, 
-    solveTime,
-    resetKey,
-    selectedDifficulty,
-    showNumbers
-  });
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-48 bg-black/30 rounded-lg">
-        <Loader2 className="w-8 h-8 text-puzzle-aqua animate-spin" />
-      </div>
-    );
-  }
+  const handleReset = () => {
+    setCompletionTime(null);
+  };
 
   return (
-    <div className="relative w-full max-w-xl mx-auto bg-gradient-to-b from-black/60 to-black/80 rounded-xl shadow-xl border border-puzzle-aqua/30 overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-puzzle-aqua/10 via-transparent to-transparent opacity-50"></div>
-      
-      <header className="flex items-center justify-between p-3 border-b border-puzzle-aqua/20">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <PuzzleIcon className="w-5 h-5 text-puzzle-aqua" />
-            <span className="font-bold text-puzzle-aqua">{puzzleConfig?.title || "Welcome Puzzle"}</span>
+    <section className="w-full py-12 md:py-24 lg:py-32 border-b">
+      <div className="container px-4 md:px-6">
+        <div className="grid gap-6 lg:grid-cols-3 lg:gap-12">
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+              Unleash Your Inner Puzzle Solver
+            </h2>
+            <p className="max-w-[600px] text-gray-500 md:text-xl dark:text-gray-400">
+              Piece together moments of joy with our interactive online jigsaw puzzle.
+            </p>
           </div>
-          
-          <Select value={selectedDifficulty} onValueChange={handleDifficultyChange}>
-            <SelectTrigger className="w-[120px] bg-black/40 border-puzzle-aqua/30 text-puzzle-aqua">
-              <SelectValue placeholder="Difficulty" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(difficultyConfig).map(([key, config]) => (
-                <SelectItem key={key} value={key}>
-                  {config.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <div className="flex items-center gap-2">
-            <Switch
-              id="numbers-toggle"
-              checked={showNumbers}
-              onCheckedChange={handleToggleNumbers}
-              aria-label="Toggle numbers visibility"
-            />
-            <label
-              htmlFor="numbers-toggle"
-              className="text-sm text-puzzle-aqua cursor-pointer select-none"
-              onClick={() => handleToggleNumbers(!showNumbers)}
-            >
-              Numbers
-            </label>
+          {/* Puzzle Engine */}
+          <div className="relative z-10">
+            {/* A time key is used to fully reset the puzzle when imageUrl changes */}
+            {activePuzzle && (
+              <CustomPuzzleEngine
+                key={`${activePuzzle.imageUrl}-${puzzleKey}`}
+                imageUrl={activePuzzle.imageUrl}
+                rows={activePuzzle.rows || 3}
+                columns={activePuzzle.columns || 3}
+                showNumbers={showNumbers}
+                onComplete={handleComplete}
+                onReset={handleReset}
+              />
+            )}
+          </div>
+          <div className="flex flex-col justify-between">
+            <div className="space-y-4">
+              <h3 className="text-2xl font-semibold">Select a Puzzle</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {PUZZLES.map((puzzle, index) => (
+                  <Card
+                    key={index}
+                    className={`cursor-pointer ${activePuzzle === puzzle ? "ring-2 ring-primary" : "opacity-75 hover:opacity-100"
+                      }`}
+                    onClick={() => handlePuzzleSelect(puzzle)}
+                  >
+                    <CardContent className="flex items-center justify-center p-0">
+                      <AspectRatio ratio={4 / 3}>
+                        <img
+                          src={puzzle.imageUrl}
+                          alt={`Puzzle ${index + 1}`}
+                          className="object-cover"
+                        />
+                      </AspectRatio>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-between items-center">
+              <label
+                htmlFor="show-numbers"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Show Numbers
+              </label>
+              <input
+                type="checkbox"
+                id="show-numbers"
+                checked={showNumbers}
+                onChange={handleShowNumbersToggle}
+                className="ml-2 h-4 w-4 rounded border-gray-200 text-primary focus:ring-primary disabled:opacity-50 disabled:pointer-events-none ring-offset-background focus:ring-offset-0"
+              />
+            </div>
+            {completionTime !== null && (
+              <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+                Completed in {Math.floor(completionTime / 60)}:{(completionTime % 60).toString().padStart(2, '0')}
+              </div>
+            )}
           </div>
         </div>
-      </header>
-      
-      <div className="relative p-4">
-        <CustomPuzzleEngine 
-          key={`hero-puzzle-${resetKey}`}
-          imageUrl={imageUrl}
-          rows={rows} 
-          columns={rows} 
-          showGuideImage={true}
-          onComplete={handlePuzzleSolved}
-          onReset={resetCompletion}
-          showNumbers={showNumbers}
-        />
-        
-        {completed && (
-          <PuzzleCongratulationSplash 
-            show={completed} 
-            solveTime={solveTime} 
-            onPlayAgain={handlePlayAgain} 
-          />
-        )}
       </div>
-      
-      <footer className="flex justify-between items-center p-3 bg-black/40 border-t border-puzzle-aqua/20">
-        <div className="text-xs text-puzzle-gold">
-          Difficulty: <span className="capitalize">{difficultyConfig[selectedDifficulty].label}</span>
-        </div>
-        <Button className="bg-puzzle-gold hover:bg-puzzle-gold/80 text-puzzle-black" size="sm" asChild>
-          <Link to="/puzzles">
-            More Puzzles <ExternalLink className="ml-1 w-3 h-3" />
-          </Link>
-        </Button>
-      </footer>
-    </div>
+    </section>
   );
 };
 

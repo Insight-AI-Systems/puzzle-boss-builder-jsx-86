@@ -5,19 +5,24 @@ import { PuzzleControls } from './components/PuzzleControls';
 import { usePuzzleState } from './hooks/usePuzzleState';
 import { usePuzzleTimer } from '../hooks/usePuzzleTimer';
 import { usePuzzleImagePreload } from '../hooks/usePuzzleImagePreload';
+import './styles/puzzle.css';
 
-interface CustomPuzzleEngineProps {
+export interface CustomPuzzleEngineProps {
   imageUrl: string;
   rows: number;
   columns: number;
   showNumbers?: boolean;
+  onComplete?: (timeElapsedSeconds: number) => void;
+  onReset?: () => void;
 }
 
 const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
   imageUrl,
   rows,
   columns,
-  showNumbers = true // Default to showing numbers
+  showNumbers = true,
+  onComplete,
+  onReset
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [draggedPiece, setDraggedPiece] = useState<number | null>(null);
@@ -47,8 +52,11 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     if (puzzleIsComplete && !isComplete) {
       stopTimer();
       setIsComplete(true);
+      if (onComplete) {
+        onComplete(elapsed);
+      }
     }
-  }, [puzzleIsComplete, stopTimer, isComplete]);
+  }, [puzzleIsComplete, stopTimer, isComplete, onComplete, elapsed]);
 
   // Handle first move
   const handleDragStart = useCallback(() => {
@@ -72,7 +80,10 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
     resetPuzzle();
     resetTimer();
     setIsComplete(false);
-  }, [resetPuzzle, resetTimer]);
+    if (onReset) {
+      onReset();
+    }
+  }, [resetPuzzle, resetTimer, onReset]);
 
   return (
     <div className="custom-puzzle-engine w-full max-w-3xl mx-auto">
