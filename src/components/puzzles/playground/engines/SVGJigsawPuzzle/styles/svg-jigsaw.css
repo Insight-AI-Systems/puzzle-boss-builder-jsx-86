@@ -3,12 +3,12 @@
 .svg-jigsaw-puzzle {
   --puzzle-border-color: rgba(255, 255, 255, 0.3);
   --puzzle-cell-highlight: rgba(255, 255, 255, 0.15);
-  --puzzle-piece-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --puzzle-piece-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
   --puzzle-correct-shadow: 0 2px 8px rgba(0, 255, 0, 0.3);
   --puzzle-piece-outline: rgba(255, 255, 255, 0.8);
   --puzzle-piece-outline-hover: rgba(255, 255, 255, 0.95);
   --puzzle-piece-stroke: #ffffff;
-  --puzzle-piece-stroke-width: 1.8px;
+  --puzzle-piece-stroke-width: 2.2px;
   --puzzle-piece-glow: 0 0 5px rgba(255, 255, 255, 0.5);
 }
 
@@ -47,7 +47,7 @@
   z-index: 1;
   cursor: grab;
   will-change: transform;
-  filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(3px 3px 8px rgba(0, 0, 0, 0.7));
   transform-origin: center;
 }
 
@@ -60,7 +60,7 @@
 .puzzle-piece:hover {
   transform: scale(1.05);
   z-index: 2;
-  filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.7));
+  filter: drop-shadow(4px 4px 10px rgba(0, 0, 0, 0.8));
 }
 
 .puzzle-piece.dragging {
@@ -68,7 +68,7 @@
   opacity: 0.95;
   z-index: 10;
   cursor: grabbing;
-  filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.8));
+  filter: drop-shadow(6px 6px 12px rgba(0, 0, 0, 0.9));
 }
 
 /* Enhance piece outline for better visibility */
@@ -82,8 +82,8 @@
 /* Enhanced hover effect */
 .puzzle-piece:not(.correct):not(.dragging):hover path {
   stroke: var(--puzzle-piece-outline-hover);
-  stroke-width: 2.5px;
-  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+  stroke-width: 3px;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.8));
 }
 
 /* Staging area */

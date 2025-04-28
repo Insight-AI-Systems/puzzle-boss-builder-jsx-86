@@ -130,30 +130,30 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
             <path d={piecePath} />
           </clipPath>
           
-          {/* Drop shadow filter for enhanced 3D effect */}
+          {/* Enhanced drop shadow filter for more pronounced 3D effect */}
           <filter id={shadowId} x="-50%" y="-50%" width="200%" height="200%">
             <feDropShadow 
               dx="3" 
-              dy="3" 
-              stdDeviation="3.5" 
-              floodColor="rgba(0,0,0,0.7)" 
-              floodOpacity="0.7"
+              dy="5" 
+              stdDeviation="4" 
+              floodColor="rgba(0,0,0,0.75)" 
+              floodOpacity="0.8"
             />
           </filter>
           
-          {/* Optional subtle texture pattern for pieces */}
-          <pattern id={patternId} patternUnits="userSpaceOnUse" width="100" height="100" patternTransform="scale(0.15)">
-            <rect width="100%" height="100%" fill="rgba(255,255,255,0.02)"/>
-            <path d="M 0,10 L 100,10" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
-            <path d="M 0,30 L 100,30" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
-            <path d="M 0,50 L 100,50" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
-            <path d="M 0,70 L 100,70" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
-            <path d="M 0,90 L 100,90" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
-            <path d="M 10,0 L 10,100" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
-            <path d="M 30,0 L 30,100" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
-            <path d="M 50,0 L 50,100" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
-            <path d="M 70,0 L 70,100" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
-            <path d="M 90,0 L 90,100" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
+          {/* Subtle texture pattern for pieces - slightly enhanced */}
+          <pattern id={patternId} patternUnits="userSpaceOnUse" width="100" height="100" patternTransform="scale(0.12)">
+            <rect width="100%" height="100%" fill="rgba(255,255,255,0.03)"/>
+            <path d="M 0,10 L 100,10" stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
+            <path d="M 0,30 L 100,30" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
+            <path d="M 0,50 L 100,50" stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
+            <path d="M 0,70 L 100,70" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
+            <path d="M 0,90 L 100,90" stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
+            <path d="M 10,0 L 10,100" stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
+            <path d="M 30,0 L 30,100" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
+            <path d="M 50,0 L 50,100" stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
+            <path d="M 70,0 L 70,100" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
+            <path d="M 90,0 L 90,100" stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
           </pattern>
         </defs>
       </svg>
@@ -199,16 +199,16 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
           <path 
             d={piecePath} 
             fill={`url(#${patternId})`}
-            fillOpacity="0.15"
+            fillOpacity="0.2"
             stroke="none"
           />
           
-          {/* Piece outline */}
+          {/* Piece outline - enhanced for classic jigsaw look */}
           <path 
             d={piecePath} 
             fill="none" 
             stroke={isCorrect ? "rgba(100, 255, 100, 0.9)" : "rgba(255, 255, 255, 0.9)"}
-            strokeWidth={isDragging ? "2.8" : "1.8"}
+            strokeWidth={isDragging ? "3.2" : "2.2"}
             strokeLinejoin="round"
             strokeLinecap="round"
             filter={isDragging ? `url(#${shadowId})` : ''}
@@ -230,13 +230,13 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
           >
             <span 
               style={{
-                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
                 color: 'white',
                 padding: '2px 8px',
                 borderRadius: '9999px',
                 fontSize: '14px',
                 fontWeight: 'bold',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                boxShadow: '0 1px 3px rgba(0,0,0,0.5)'
               }}
             >
               {piece.originalPosition + 1}
