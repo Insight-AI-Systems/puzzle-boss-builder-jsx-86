@@ -7,6 +7,8 @@ import { useMonthlyTrends } from './analytics/useMonthlyTrends';
 import { useCategoryRevenue } from './analytics/useCategoryRevenue';
 import { useUserDemographics } from './analytics/useUserDemographics';
 import { useTrendCalculations } from './analytics/useTrendCalculations';
+import { usePuzzleMetrics } from './analytics/usePuzzleMetrics';
+import { useRevenueMetrics } from './analytics/useRevenueMetrics';
 import type { ActivityBreakdown } from './types/analyticsTypes';
 
 export const useAnalytics = () => {
@@ -24,11 +26,12 @@ export const useAnalytics = () => {
     format(endOfDay(dateRange.to), 'yyyy-MM-dd') : 
     format(new Date(), 'yyyy-MM-dd');
 
-  // Use the new modularized hooks
   const { data: dailyMetrics, isLoading: isLoadingDailyMetrics } = useDailyMetrics(selectedDate);
   const { data: monthlyTrends, isLoading: isLoadingMonthlyTrends } = useMonthlyTrends(fromDate, toDate);
   const { data: categoryRevenue, isLoading: isLoadingCategoryRevenue } = useCategoryRevenue(selectedDate);
   const { data: userDemographics, isLoading: isLoadingUserDemographics } = useUserDemographics();
+  const { data: puzzleMetrics, isLoading: isLoadingPuzzleMetrics } = usePuzzleMetrics();
+  const { data: revenueMetrics, isLoading: isLoadingRevenueMetrics } = useRevenueMetrics();
 
   const {
     getUserTrend,
@@ -44,23 +47,20 @@ export const useAnalytics = () => {
     yearly: monthlyTrends?.reduce((sum, item) => sum + (item.active_users || 0), 0) || 0
   };
 
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   return {
     dailyMetrics,
     monthlyTrends,
     categoryRevenue,
     userDemographics,
+    puzzleMetrics,
+    revenueMetrics,
     activityBreakdown,
-    formatTime,
     isLoadingDailyMetrics,
     isLoadingMonthlyTrends,
     isLoadingCategoryRevenue,
     isLoadingUserDemographics,
+    isLoadingPuzzleMetrics,
+    isLoadingRevenueMetrics,
     selectedDate,
     dateRange,
     setDateRange,

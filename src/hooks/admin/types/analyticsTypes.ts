@@ -19,24 +19,10 @@ export interface CategoryRevenue {
   total_revenue: number;
 }
 
-export interface ActivityBreakdown {
-  daily: number;
-  weekly: number;
-  monthly: number;
-  yearly: number;
-}
-
 export interface UserDemographics {
   gender_distribution: Record<string, number>;
   age_distribution: Record<string, number>;
   country_distribution: Record<string, number>;
-}
-
-export interface RevenueMetrics {
-  total_revenue: number;
-  avg_revenue_per_user: number;
-  credit_purchases: number;
-  revenue_by_type: Record<string, number>;
 }
 
 export interface PuzzleMetrics {
@@ -46,14 +32,21 @@ export interface PuzzleMetrics {
   prize_redemption_rate: number;
 }
 
+export interface RevenueMetrics {
+  total_revenue: number;
+  avg_revenue_per_user: number;
+  credit_purchases: number;
+  revenue_by_type: Record<string, number>;
+}
+
+export interface ActivityBreakdown {
+  daily: number;
+  weekly: number;
+  monthly: number;
+  yearly: number;
+}
+
 export interface TrendValue {
   value: string;
   direction: "up" | "down";
-}
-
-export interface AnalyticsTrendHelpers {
-  getUserTrend: () => TrendValue;
-  getSignupTrend: () => TrendValue;
-  getPuzzlesTrend: () => TrendValue;
-  getRevenueTrend: () => TrendValue;
 }
