@@ -1,4 +1,3 @@
-
 interface ImageSliceOptions {
   image: HTMLImageElement;
   rows: number;

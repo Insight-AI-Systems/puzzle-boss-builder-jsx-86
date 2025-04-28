@@ -1,16 +1,14 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { usePuzzleState } from '../hooks/usePuzzleState';
 import { usePuzzleSaveState } from '../hooks/usePuzzleSaveState';
 import { ResumeGameDialog } from './puzzles/ResumeGameDialog';
-import PuzzlePiece from './PuzzlePiece';
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { ArrowPathIcon, CheckCircleIcon } from '@heroicons/react/24/solid';
+import { GameProgress } from './puzzles/components/GameProgress';
+import { StagingArea } from './puzzles/components/StagingArea';
+import { usePuzzleBoardSize } from './puzzles/hooks/usePuzzleBoardSize';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import { useTimer } from '../hooks/useTimer';
-import { PuzzleTimer } from './PuzzleTimer';
 import { useToast } from '@/hooks/use-toast';
-import { ToastProvider } from '@/components/providers/ToastProvider';
+import PuzzlePiece from './PuzzlePiece';
 
 interface PuzzleBoardProps {
   imageUrl: string;
@@ -26,7 +24,6 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const autoSaveIntervalRef = useRef<number>();
   const boardRef = useRef<HTMLDivElement>(null);
-  const [boardSize, setBoardSize] = useState({ width: 400, height: 400 });
   const [draggedPieceId, setDraggedPieceId] = useState<string | null>(null);
   
   const {
@@ -43,6 +40,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
 
   const { elapsed, start, stop, reset, setElapsed } = useTimer();
   const [hasStarted, setHasStarted] = useState(false);
+  const boardSize = usePuzzleBoardSize(boardRef);
 
   const { hasSavedState, saveState, loadState, clearSavedState } = usePuzzleSaveState(imageUrl);
 
@@ -82,7 +80,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
           startTime: null,
           endTime: null
         });
-      }, 5000); // Save every 5 seconds
+      }, 5000);
     }
 
     return () => {
@@ -117,89 +115,35 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
     setHasStarted(false);
   };
 
-  const [elapsedTime, setElapsedTime] = useState(0);
-
-  useEffect(() => {
-    const updateBoardSize = () => {
-      if (boardRef.current) {
-        const container = boardRef.current.parentElement;
-        if (container) {
-          const screenWidth = window.innerWidth;
-          let maxWidth;
-          
-          if (screenWidth < 640) { // sm
-            maxWidth = Math.min(screenWidth - 32, 400); // Smaller on mobile
-          } else if (screenWidth < 768) { // md
-            maxWidth = Math.min(screenWidth - 48, 500);
-          } else {
-            maxWidth = Math.min(container.clientWidth - 32, 600);
-          }
-          
-          const aspectRatio = 1;
-          setBoardSize({
-            width: maxWidth,
-            height: maxWidth * aspectRatio
-          });
-        }
-      }
-    };
-
-    updateBoardSize();
-    window.addEventListener('resize', updateBoardSize);
-    return () => window.removeEventListener('resize', updateBoardSize);
-  }, []);
-
-  useEffect(() => {
-    if (isComplete) return;
-
-    const timer = setInterval(() => {
-      setElapsedTime(getElapsedTime());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isComplete, getElapsedTime]);
-
-  const completionPercentage = (pieces.filter(piece => piece.isCorrect).length / pieces.length) * 100;
-
-  const handleDragEnd = (id: string, position: number) => {
-    endDragging(id);
-    
-    const boardRect = boardRef.current?.getBoundingClientRect();
-    if (boardRect) {
-      movePiece(id, position);
-      
-      if (!hasStarted) {
-        handleFirstMove();
-      }
-    }
-  };
-
-  const stagingAreaPieces = pieces.filter(p => p.position === -1);
-  const boardPieces = pieces.filter(p => p.position >= 0);
-
-  // Add keyboard navigation for the board
   const handleBoardKeyDown = (e: React.KeyboardEvent) => {
     if (!draggedPieceId) return;
     
-    // Find the current piece and its position
     const currentPiece = pieces.find(p => p.id === draggedPieceId);
     if (!currentPiece) return;
     
-    const currentPosition = currentPiece.position || 0;
+    const currentPosition = currentPiece.position;
     let newPosition = currentPosition;
 
     switch(e.key) {
       case 'ArrowLeft':
-        newPosition = Math.max(0, currentPosition - 1);
+        if (currentPosition % columns > 0) {
+          newPosition = currentPosition - 1;
+        }
         break;
       case 'ArrowRight':
-        newPosition = Math.min(rows * columns - 1, currentPosition + 1);
+        if (currentPosition % columns < columns - 1) {
+          newPosition = currentPosition + 1;
+        }
         break;
       case 'ArrowUp':
-        newPosition = Math.max(0, currentPosition - columns);
+        if (currentPosition >= columns) {
+          newPosition = currentPosition - columns;
+        }
         break;
       case 'ArrowDown':
-        newPosition = Math.min(rows * columns - 1, currentPosition + columns);
+        if (currentPosition < (rows * columns) - columns) {
+          newPosition = currentPosition + columns;
+        }
         break;
       case 'Enter':
       case ' ':
@@ -218,6 +162,10 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
     }
   };
 
+  const completionPercentage = (pieces.filter(piece => piece.isCorrect).length / pieces.length) * 100;
+  const stagingAreaPieces = pieces.filter(p => p.position === -1);
+  const boardPieces = pieces.filter(p => p.position >= 0);
+
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-2 sm:p-4">
       <ResumeGameDialog
@@ -226,39 +174,18 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
         onNewGame={handleNewGame}
       />
       
-      {/* Status region for game progress */}
-      <div 
-        role="region" 
-        aria-label="Game Progress" 
-        className="w-full flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6 space-y-4 sm:space-y-0"
-      >
-        <div className="flex flex-col w-full sm:w-2/3">
-          <div className="flex justify-between mb-2">
-            <span className="text-xs sm:text-sm font-medium">Progress: {Math.round(completionPercentage)}%</span>
-            <span className="text-xs sm:text-sm font-medium">Moves: {moves}</span>
-          </div>
-          <Progress value={completionPercentage} className="h-2" />
-        </div>
-        
-        <div className="flex items-center space-x-2 sm:space-x-4">
-          <PuzzleTimer seconds={elapsed} />
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleReset}
-            className="flex items-center text-xs sm:text-sm"
-          >
-            <ArrowPathIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-            Reset
-          </Button>
-        </div>
-      </div>
+      <GameProgress 
+        completionPercentage={completionPercentage}
+        moves={moves}
+        elapsed={elapsed}
+        onReset={handleReset}
+      />
 
       {isComplete && (
         <div className="w-full bg-green-100 border border-green-300 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 flex items-center">
           <CheckCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 mr-2" />
           <span className="text-green-800 font-medium text-sm sm:text-base">
-            Puzzle completed in {moves} moves and {Math.floor(elapsedTime / 60)}:{(elapsedTime % 60).toString().padStart(2, '0')}!
+            Puzzle completed in {moves} moves and {Math.floor(getElapsedTime() / 60)}:{(getElapsedTime() % 60).toString().padStart(2, '0')}!
           </span>
         </div>
       )}
@@ -304,47 +231,41 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
                 startDragging(id);
                 setDraggedPieceId(id);
               }}
-              onDragEnd={handleDragEnd}
+              onDragEnd={(id, position) => {
+                endDragging(id);
+                movePiece(id, position);
+                setDraggedPieceId(null);
+                if (!hasStarted) {
+                  setHasStarted(true);
+                  start();
+                }
+              }}
             />
           </div>
         ))}
       </div>
 
-      {/* Staging area for unused pieces */}
-      <div 
-        className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200 w-full overflow-x-auto"
-        role="region"
-        aria-label="Available puzzle pieces"
-      >
-        <h3 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Available Pieces</h3>
-        <div 
-          className="flex flex-wrap gap-1 sm:gap-2 justify-center"
-          role="list"
-          aria-label="Unused puzzle pieces"
-        >
-          {stagingAreaPieces.map(piece => (
-            <div 
-              key={piece.id} 
-              className="relative"
-              role="listitem"
-            >
-              <PuzzlePiece
-                piece={piece}
-                rows={rows}
-                columns={columns}
-                containerWidth={boardSize.width}
-                containerHeight={boardSize.height}
-                imageUrl={imageUrl}
-                onDragStart={(id) => {
-                  startDragging(id);
-                  setDraggedPieceId(id);
-                }}
-                onDragEnd={handleDragEnd}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
+      <StagingArea
+        pieces={stagingAreaPieces}
+        rows={rows}
+        columns={columns}
+        containerWidth={boardSize.width}
+        containerHeight={boardSize.height}
+        imageUrl={imageUrl}
+        onDragStart={(id) => {
+          startDragging(id);
+          setDraggedPieceId(id);
+        }}
+        onDragEnd={(id, position) => {
+          endDragging(id);
+          movePiece(id, position);
+          setDraggedPieceId(null);
+          if (!hasStarted) {
+            setHasStarted(true);
+            start();
+          }
+        }}
+      />
     </div>
   );
 };
