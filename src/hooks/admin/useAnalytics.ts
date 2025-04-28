@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,6 +30,26 @@ export interface ActivityBreakdown {
   weekly: number;
   monthly: number;
   yearly: number;
+}
+
+export interface UserDemographics {
+  gender_distribution: Record<string, number>;
+  age_distribution: Record<string, number>;
+  country_distribution: Record<string, number>;
+}
+
+export interface RevenueMetrics {
+  total_revenue: number;
+  avg_revenue_per_user: number;
+  credit_purchases: number;
+  revenue_by_type: Record<string, number>;
+}
+
+export interface PuzzleMetrics {
+  active_puzzles: number;
+  avg_completion_time: number;
+  completion_rate: number;
+  prize_redemption_rate: number;
 }
 
 export const useAnalytics = () => {
@@ -84,6 +105,137 @@ export const useAnalytics = () => {
       if (error) throw error;
       
       return data as CategoryRevenue[];
+    }
+  });
+
+  // User metrics from real data
+  const { data: userDemographics, isLoading: isLoadingUserDemographics } = useQuery({
+    queryKey: ['userDemographics'],
+    queryFn: async () => {
+      // Get user profiles for demographic data
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('gender, age_group, country')
+        .not('gender', 'is', null);
+      
+      if (profilesError) throw profilesError;
+      
+      // Process gender distribution
+      const genderCounts: Record<string, number> = {};
+      profiles?.forEach(profile => {
+        const gender = profile.gender || 'unknown';
+        genderCounts[gender] = (genderCounts[gender] || 0) + 1;
+      });
+      
+      // Process age distribution
+      const ageCounts: Record<string, number> = {};
+      profiles?.forEach(profile => {
+        const age = profile.age_group || 'unknown';
+        ageCounts[age] = (ageCounts[age] || 0) + 1;
+      });
+      
+      // Process country distribution
+      const countryCounts: Record<string, number> = {};
+      profiles?.forEach(profile => {
+        const country = profile.country || 'unknown';
+        countryCounts[country] = (countryCounts[country] || 0) + 1;
+      });
+      
+      return {
+        gender_distribution: genderCounts,
+        age_distribution: ageCounts,
+        country_distribution: countryCounts
+      };
+    }
+  });
+
+  // Revenue metrics from real data
+  const { data: revenueMetrics, isLoading: isLoadingRevenueMetrics } = useQuery({
+    queryKey: ['revenueMetrics', fromDate, toDate],
+    queryFn: async () => {
+      // Get total revenue
+      const { data: incomeData, error: incomeError } = await supabase
+        .from('site_income')
+        .select('amount, source_type')
+        .gte('date', fromDate)
+        .lte('date', toDate);
+      
+      if (incomeError) throw incomeError;
+      
+      // Calculate total revenue
+      const totalRevenue = incomeData?.reduce((sum, item) => sum + (parseFloat(item.amount as any) || 0), 0) || 0;
+      
+      // Get user count for avg revenue calculation
+      const { count: userCount, error: userError } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true });
+      
+      if (userError) throw userError;
+      
+      // Calculate revenue by type
+      const revenueByType: Record<string, number> = {};
+      incomeData?.forEach(item => {
+        const type = item.source_type || 'other';
+        revenueByType[type] = (revenueByType[type] || 0) + (parseFloat(item.amount as any) || 0);
+      });
+      
+      // Filter for credit purchases
+      const creditPurchases = incomeData?.filter(item => 
+        item.source_type === 'puzzle' || item.source_type === 'membership'
+      ).length || 0;
+      
+      return {
+        total_revenue: totalRevenue,
+        avg_revenue_per_user: userCount ? totalRevenue / userCount : 0,
+        credit_purchases: creditPurchases,
+        revenue_by_type: revenueByType
+      };
+    }
+  });
+
+  // Puzzle metrics from real data
+  const { data: puzzleMetrics, isLoading: isLoadingPuzzleMetrics } = useQuery({
+    queryKey: ['puzzleMetrics', fromDate, toDate],
+    queryFn: async () => {
+      // Get active puzzles
+      const { data: activePuzzles, error: puzzlesError } = await supabase
+        .from('puzzles')
+        .select('id')
+        .eq('status', 'active');
+      
+      if (puzzlesError) throw puzzlesError;
+      
+      // Get puzzle completion data
+      const { data: completions, error: completionsError } = await supabase
+        .from('puzzle_completions')
+        .select('completion_time, is_winner');
+      
+      if (completionsError) throw completionsError;
+      
+      // Calculate metrics
+      const totalCompletions = completions?.length || 0;
+      const winners = completions?.filter(c => c.is_winner).length || 0;
+      const completionTimes = completions
+        ?.map(c => parseFloat(c.completion_time as any) || 0)
+        .filter(Boolean);
+      
+      const avgTime = completionTimes?.length 
+        ? completionTimes.reduce((sum, time) => sum + time, 0) / completionTimes.length 
+        : 0;
+      
+      // Get total puzzles for completion rate
+      const { count: puzzleCount, error: countError } = await supabase
+        .from('puzzle_progress')
+        .select('id', { count: 'exact', head: true });
+      
+      if (countError) throw countError;
+      
+      return {
+        active_puzzles: activePuzzles?.length || 0,
+        avg_completion_time: avgTime,
+        completion_rate: puzzleCount ? (totalCompletions / puzzleCount) * 100 : 0,
+        prize_redemption_rate: totalCompletions ? (winners / totalCompletions) * 100 : 0
+      };
     }
   });
 
@@ -143,14 +295,28 @@ export const useAnalytics = () => {
     yearly: monthlyTrends?.reduce((sum, item) => sum + (item.active_users || 0), 0) || 0
   };
 
+  // Format time for display (seconds to mm:ss)
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return {
     dailyMetrics,
     monthlyTrends,
     categoryRevenue,
+    userDemographics,
+    revenueMetrics,
+    puzzleMetrics,
     activityBreakdown,
+    formatTime,
     isLoadingDailyMetrics,
     isLoadingMonthlyTrends,
     isLoadingCategoryRevenue,
+    isLoadingUserDemographics,
+    isLoadingRevenueMetrics,
+    isLoadingPuzzleMetrics,
     selectedDate,
     dateRange,
     setDateRange,
