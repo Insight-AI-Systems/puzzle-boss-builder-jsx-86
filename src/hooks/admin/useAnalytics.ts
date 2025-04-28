@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -143,6 +144,7 @@ export const useAnalytics = () => {
         const ageCounts: Record<string, number> = { 'not_specified': userCount || 0 };
         const countryCounts: Record<string, number> = { 'not_specified': userCount || 0 };
 
+        // Check for and process gender data
         try {
           const { data: genderTest, error: genderTestError } = await supabase
             .from('profiles')
@@ -150,12 +152,12 @@ export const useAnalytics = () => {
             .limit(1);
             
           if (!genderTestError && genderTest) {
-            const { data: allUsers, error: usersError } = await supabase.from('profiles').select('gender');
+            const { data, error: usersError } = await supabase.from('profiles').select('gender');
             
-            if (!usersError && allUsers && allUsers.length > 0) {
+            if (!usersError && data && data.length > 0) {
               genderCounts['not_specified'] = 0;
               
-              allUsers.forEach((userProfile) => {
+              data.forEach((userProfile) => {
                 const gender = userProfile?.gender || 'not_specified';
                 genderCounts[gender] = (genderCounts[gender] || 0) + 1;
               });
@@ -167,6 +169,7 @@ export const useAnalytics = () => {
           console.log('Error checking gender column:', error);
         }
         
+        // Check for and process age group data
         try {
           const { data: ageTest, error: ageTestError } = await supabase
             .from('profiles')
@@ -174,12 +177,12 @@ export const useAnalytics = () => {
             .limit(1);
             
           if (!ageTestError && ageTest) {
-            const { data: allUsers, error: usersError } = await supabase.from('profiles').select('age_group');
+            const { data, error: usersError } = await supabase.from('profiles').select('age_group');
             
-            if (!usersError && allUsers && allUsers.length > 0) {
+            if (!usersError && data && data.length > 0) {
               ageCounts['not_specified'] = 0;
               
-              allUsers.forEach((userProfile) => {
+              data.forEach((userProfile) => {
                 const ageGroup = userProfile?.age_group || 'not_specified';
                 ageCounts[ageGroup] = (ageCounts[ageGroup] || 0) + 1;
               });
@@ -191,6 +194,7 @@ export const useAnalytics = () => {
           console.log('Error checking age_group column:', error);
         }
         
+        // Check for and process country data
         try {
           const { data: countryTest, error: countryTestError } = await supabase
             .from('profiles')
@@ -198,12 +202,12 @@ export const useAnalytics = () => {
             .limit(1);
             
           if (!countryTestError && countryTest) {
-            const { data: allUsers, error: usersError } = await supabase.from('profiles').select('country');
+            const { data, error: usersError } = await supabase.from('profiles').select('country');
             
-            if (!usersError && allUsers && allUsers.length > 0) {
+            if (!usersError && data && data.length > 0) {
               countryCounts['not_specified'] = 0;
               
-              allUsers.forEach((userProfile) => {
+              data.forEach((userProfile) => {
                 const country = userProfile?.country || 'not_specified';
                 countryCounts[country] = (countryCounts[country] || 0) + 1;
               });
