@@ -35,12 +35,24 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
     }
   }, [email]);
 
+  // Clear validation error when component mounts if email is already present
+  useEffect(() => {
+    if (email) {
+      setValidationError('');
+    }
+  }, []);
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Client-side validation
     if (!email) {
       setValidationError('Email is required');
       return;
     }
+    
+    // Clear validation error before submitting
+    setValidationError('');
     
     handleSubmit();
   };

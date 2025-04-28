@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -33,6 +34,10 @@ export function usePasswordReset(): PasswordResetState & PasswordResetActions {
   const { toast } = useToast();
 
   const validateResetForm = (): boolean => {
+    // Clear any previous error messages first
+    setErrorMessage('');
+    
+    // In password reset form without password fields
     if (!password && !confirmPassword) {
       if (!email) {
         setErrorMessage('Email is required');
@@ -41,6 +46,7 @@ export function usePasswordReset(): PasswordResetState & PasswordResetActions {
       return true;
     }
 
+    // In password reset form with password fields
     if (!password) {
       setErrorMessage('Password is required');
       return false;
@@ -92,13 +98,17 @@ export function usePasswordReset(): PasswordResetState & PasswordResetActions {
   };
 
   const handlePasswordResetRequest = async () => {
-    if (!validateResetForm()) {
+    // Clear error message to prevent showing both form validation error and API error
+    setErrorMessage('');
+    
+    // Only validate if email is empty - don't show error if email is already present
+    if (!email) {
+      setErrorMessage('Email is required');
       return;
     }
     
     try {
       setIsLoading(true);
-      setErrorMessage('');
       setSuccessMessage('');
       
       const isRateLimited = await checkIfRateLimited(email);
