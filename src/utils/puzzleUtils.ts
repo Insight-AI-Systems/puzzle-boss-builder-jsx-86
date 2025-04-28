@@ -1,4 +1,3 @@
-
 export const calculatePiecePosition = (
   index: number,
   rows: number,
@@ -48,4 +47,20 @@ export const formatTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+export const getGridSizeByPieces = (pieceCount: number) => {
+  switch (pieceCount) {
+    case 9:
+      return { value: "3x3", label: "Easy (3×3)" };
+    case 16:
+      return { value: "4x4", label: "Medium (4×4)" };
+    case 25:
+      return { value: "5x5", label: "Hard (5×5)" };
+    case 36:
+      return { value: "6x6", label: "Expert (6×6)" };
+    default:
+      // Default to 4x4 if the count doesn't match any predefined grid
+      return { value: "4x4", label: "Medium (4×4)" };
+  }
 };
