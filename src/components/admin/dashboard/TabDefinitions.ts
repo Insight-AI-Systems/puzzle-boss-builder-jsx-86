@@ -8,8 +8,8 @@ import { NotificationsDashboard } from "./NotificationsDashboard";
 import { MonitoringDashboard } from "./MonitoringDashboard";
 import { MarketingDashboard } from "./MarketingDashboard";
 import TicketManagement from "./TicketManagement";
-import { PuzzleManagement } from "@/components/admin/PuzzleManagement"; // Fixed path
-import { UserManagement } from "@/components/admin/UserManagement"; // Fixed path
+import { PuzzleManagement } from "@/components/admin/PuzzleManagement"; 
+import { UserManagement } from "@/components/admin/UserManagement"; // Import from the wrapper
 import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
 import { ContentManagement } from "@/components/admin/ContentManagement";
 import { EmailManagement } from "@/components/admin/EmailManagement";

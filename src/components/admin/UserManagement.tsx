@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { UserManagement as OriginalUserManagement } from '@/components/admin/user-management/UserManagement';
+import { UserManagement as OriginalUserManagement } from './user-management/UserManagement';
 
 export const UserManagement: React.FC = () => {
   // Check if the original component exists and use it, otherwise use a placeholder
