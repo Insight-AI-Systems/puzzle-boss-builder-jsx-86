@@ -3,6 +3,8 @@ import React from 'react';
 import { TabsContent } from "@/components/ui/tabs";
 import { StatCard } from '../StatCard';
 import { ChartPlaceholder } from '../ChartPlaceholder';
+import { DateRangeSelector } from '../DateRangeSelector';
+import { ActivityBreakdownCard } from '../ActivityBreakdownCard';
 import { useAnalytics } from '@/hooks/admin/useAnalytics';
 import {
   Card,
@@ -19,9 +21,12 @@ export const OverviewTab: React.FC = () => {
     dailyMetrics, 
     monthlyTrends, 
     categoryRevenue, 
+    activityBreakdown,
     isLoadingDailyMetrics,
     isLoadingMonthlyTrends,
-    isLoadingCategoryRevenue
+    isLoadingCategoryRevenue,
+    dateRange,
+    setDateRange
   } = useAnalytics();
   
   // Check if any of the data is loading
@@ -39,7 +44,7 @@ export const OverviewTab: React.FC = () => {
 
   // Calculate trend directions based on data
   const getUserTrend = () => {
-    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" as "up" | "down" };
+    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" as "up" | "down" | "none" };
     const current = monthlyTrends[0]?.active_users || 0;
     const previous = monthlyTrends[1]?.active_users || 0;
     if (previous === 0) return { value: "100%", direction: "up" as const };
@@ -48,7 +53,7 @@ export const OverviewTab: React.FC = () => {
   };
 
   const getSignupTrend = () => {
-    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" as "up" | "down" };
+    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" as "up" | "down" | "none" };
     const current = monthlyTrends[0]?.new_signups || 0;
     const previous = monthlyTrends[1]?.new_signups || 0;
     if (previous === 0) return { value: "100%", direction: "up" as const };
@@ -57,7 +62,7 @@ export const OverviewTab: React.FC = () => {
   };
 
   const getPuzzlesTrend = () => {
-    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" as "up" | "down" };
+    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" as "up" | "down" | "none" };
     const current = monthlyTrends[0]?.puzzles_completed || 0;
     const previous = monthlyTrends[1]?.puzzles_completed || 0;
     if (previous === 0) return { value: "100%", direction: "up" as const };
@@ -66,7 +71,7 @@ export const OverviewTab: React.FC = () => {
   };
 
   const getRevenueTrend = () => {
-    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" as "up" | "down" };
+    if (!monthlyTrends || monthlyTrends.length < 2) return { value: "0%", direction: "none" as "up" | "down" | "none" };
     const current = monthlyTrends[0]?.revenue || 0;
     const previous = monthlyTrends[1]?.revenue || 0;
     if (previous === 0) return { value: "100%", direction: "up" as const };
@@ -76,6 +81,13 @@ export const OverviewTab: React.FC = () => {
 
   return (
     <TabsContent value="overview" className="space-y-6">
+      <DateRangeSelector 
+        dateRange={dateRange}
+        onDateChange={setDateRange}
+      />
+      
+      <ActivityBreakdownCard data={activityBreakdown} />
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <StatCard 
           title="Active Users" 

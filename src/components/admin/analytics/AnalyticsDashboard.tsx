@@ -14,7 +14,7 @@ export const AnalyticsDashboard: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle>Analytics Dashboard</CardTitle>
-          <CardDescription>Performance metrics and user engagement</CardDescription>
+          <CardDescription>Performance metrics and user engagement with date filtering</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="overview" className="space-y-6">
