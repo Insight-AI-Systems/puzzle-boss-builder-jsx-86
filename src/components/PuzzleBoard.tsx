@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { usePuzzleState } from '../hooks/usePuzzleState';
 import PuzzlePiece from './PuzzlePiece';
@@ -32,13 +33,14 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   } = usePuzzleState(rows, columns);
 
   const { elapsed, start, stop, reset } = useTimer();
-
-  // Remove the old elapsed time state and timer effect
-  // const [elapsedTime, setElapsedTime] = useState(0);
+  
+  // Track if the game has started
+  const [hasStarted, setHasStarted] = useState(false);
   
   // Start timer on first move
   const handleFirstMove = () => {
     if (!hasStarted) {
+      setHasStarted(true);
       start();
     }
   };
@@ -54,6 +56,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   const handleReset = () => {
     reset();
     resetPuzzle();
+    setHasStarted(false);
   };
 
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -104,6 +107,11 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
       // Simple snap to grid logic could be implemented here
       // For now, we're assuming the drop position is valid
       movePiece(id, position);
+      
+      // Start timer on first move
+      if (!hasStarted) {
+        handleFirstMove();
+      }
     }
   };
 

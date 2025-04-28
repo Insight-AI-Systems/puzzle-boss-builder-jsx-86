@@ -31,8 +31,7 @@ export function usePuzzleProgress(puzzleId: string) {
       // If no data exists for this puzzle, return null
       if (!data) return null;
       
-      // Map DB data to frontend model by extracting relevant fields
-      // The actual DB schema differs from our PuzzleProgressDB interface
+      // Extract the data from the database response
       const { 
         id, 
         user_id, 
@@ -44,18 +43,23 @@ export function usePuzzleProgress(puzzleId: string) {
         start_time 
       } = data;
       
+      // Parse the progress object safely
+      const progressData = typeof puzzleProgress === 'string' 
+        ? JSON.parse(puzzleProgress) 
+        : puzzleProgress || {};
+        
       // Create a properly formatted PuzzleProgress object
       const mappedProgress: PuzzleProgress = {
         id,
         userId: user_id,
         puzzleId: puzzle_id,
-        completionPercentage: puzzleProgress?.completion_percentage || 0,
+        completionPercentage: progressData.completion_percentage || 0,
         timeSpent: completion_time || 0,
         lastPlayed: last_updated,
         isComplete: is_completed || false,
-        moves: puzzleProgress?.moves || 0,
-        correctPieces: puzzleProgress?.correct_pieces || 0,
-        totalPieces: puzzleProgress?.total_pieces || 0
+        moves: progressData.moves || 0,
+        correctPieces: progressData.correct_pieces || 0,
+        totalPieces: progressData.total_pieces || 0
       };
       
       return mappedProgress;
@@ -70,18 +74,21 @@ export function usePuzzleProgress(puzzleId: string) {
       
       if (!user) throw new Error("User not authenticated");
       
+      // Prepare the progress object
+      const progressData = {
+        completion_percentage: newProgress.completionPercentage || 0,
+        moves: newProgress.moves || 0,
+        correct_pieces: newProgress.correctPieces || 0,
+        total_pieces: newProgress.totalPieces || 0
+      };
+      
       // Convert our frontend model to match the actual DB schema
       const dbData = {
         user_id: user.id,
         puzzle_id: newProgress.puzzleId || puzzleId,
         is_completed: newProgress.isComplete || false,
         completion_time: newProgress.timeSpent || 0,
-        progress: {
-          completion_percentage: newProgress.completionPercentage || 0,
-          moves: newProgress.moves || 0,
-          correct_pieces: newProgress.correctPieces || 0,
-          total_pieces: newProgress.totalPieces || 0
-        }
+        progress: progressData
       };
       
       const { data, error } = await supabase
@@ -92,28 +99,23 @@ export function usePuzzleProgress(puzzleId: string) {
 
       if (error) throw error;
       
-      // Convert the response back to our frontend model
-      const { 
-        id, 
-        user_id, 
-        puzzle_id, 
-        is_completed, 
-        progress: puzzleProgress, 
-        completion_time, 
-        last_updated 
-      } = data;
+      // Parse the progress object safely
+      const returnedProgressData = typeof data.progress === 'string'
+        ? JSON.parse(data.progress)
+        : data.progress || {};
       
+      // Convert the response back to our frontend model
       return {
-        id,
-        userId: user_id,
-        puzzleId: puzzle_id,
-        completionPercentage: puzzleProgress?.completion_percentage || 0,
-        timeSpent: completion_time || 0,
-        lastPlayed: last_updated,
-        isComplete: is_completed || false,
-        moves: puzzleProgress?.moves || 0,
-        correctPieces: puzzleProgress?.correct_pieces || 0,
-        totalPieces: puzzleProgress?.total_pieces || 0
+        id: data.id,
+        userId: data.user_id,
+        puzzleId: data.puzzle_id,
+        completionPercentage: returnedProgressData.completion_percentage || 0,
+        timeSpent: data.completion_time || 0,
+        lastPlayed: data.last_updated,
+        isComplete: data.is_completed || false,
+        moves: returnedProgressData.moves || 0,
+        correctPieces: returnedProgressData.correct_pieces || 0,
+        totalPieces: returnedProgressData.total_pieces || 0
       };
     },
     onSuccess: () => {

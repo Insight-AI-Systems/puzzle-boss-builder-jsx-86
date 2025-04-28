@@ -42,16 +42,18 @@ export function usePuzzleSettings() {
       
       // Extract and parse settings from the database
       try {
-        // The actual DB schema might store settings as a JSON object
-        const settingsData = data.settings;
+        // Parse the settings object if it's a string
+        const settingsData = typeof data.settings === 'string'
+          ? JSON.parse(data.settings)
+          : data.settings || {};
         
         // Ensure we have all required fields with fallbacks
         return {
-          showGuide: settingsData?.showGuide ?? DEFAULT_SETTINGS.showGuide,
-          soundEnabled: settingsData?.soundEnabled ?? DEFAULT_SETTINGS.soundEnabled,
-          volume: settingsData?.volume ?? DEFAULT_SETTINGS.volume,
-          difficulty: settingsData?.difficulty ?? DEFAULT_SETTINGS.difficulty,
-          theme: settingsData?.theme ?? DEFAULT_SETTINGS.theme
+          showGuide: settingsData.showGuide ?? DEFAULT_SETTINGS.showGuide,
+          soundEnabled: settingsData.soundEnabled ?? DEFAULT_SETTINGS.soundEnabled,
+          volume: settingsData.volume ?? DEFAULT_SETTINGS.volume,
+          difficulty: settingsData.difficulty ?? DEFAULT_SETTINGS.difficulty,
+          theme: settingsData.theme ?? DEFAULT_SETTINGS.theme
         };
       } catch (e) {
         console.error("Error parsing settings:", e);
