@@ -2,22 +2,7 @@
 import React from 'react';
 import { TabsContent } from "@/components/ui/tabs";
 import { UserProfile } from '@/types/userTypes';
-import { OverviewDashboard } from './OverviewDashboard';
-import { CategoryManagement } from './CategoryManagement';
-import { MarketingDashboard } from './MarketingDashboard';
-import { PartnersDashboard } from './PartnersDashboard';
-import { FinancialDashboard } from './FinancialDashboard';
-import { MonitoringDashboard } from './MonitoringDashboard';
-import { NotificationsDashboard } from './NotificationsDashboard';
-import { AnalyticsDashboard } from '../analytics/AnalyticsDashboard';
-import { UserManagement } from '../UserManagement';
-import { GameManagement } from '../GameManagement';
-import { ContentManagement } from '../ContentManagement';
-import { SecurityDashboard } from '../SecurityDashboard';
-import { EmailManagement } from '../EmailManagement';
-import { ImageLibrary } from '../ImageLibrary';
 import { TabDefinition } from './TabDefinitions';
-import TicketManagement from './TicketManagement';
 
 interface DashboardContentProps {
   accessibleTabs: TabDefinition[];
@@ -30,44 +15,6 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
   profile,
   activeTab
 }) => {
-  // Map tab IDs to their corresponding components
-  const getComponentForTab = (tabId: string) => {
-    switch (tabId) {
-      case 'overview':
-        return <OverviewDashboard profile={profile} />;
-      case 'analytics':
-        return <AnalyticsDashboard />;
-      case 'users':
-        return <UserManagement />;
-      case 'puzzles':
-        return <GameManagement />;
-      case 'categories':
-        return <CategoryManagement />;
-      case 'images':
-        return <ImageLibrary />;
-      case 'content':
-        return <ContentManagement />;
-      case 'marketing':
-        return <MarketingDashboard />;
-      case 'partners':
-        return <PartnersDashboard />;
-      case 'finance':
-        return <FinancialDashboard />;
-      case 'security':
-        return <SecurityDashboard />;
-      case 'email':
-        return <EmailManagement />;
-      case 'monitoring':
-        return <MonitoringDashboard />;
-      case 'notifications':
-        return <NotificationsDashboard />;
-      case 'tickets':
-        return <TicketManagement />;
-      default:
-        return <div>Tab content not found</div>;
-    }
-  };
-
   return (
     <>
       {accessibleTabs.map(tab => (
@@ -78,7 +25,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
           // Only apply forceMount={true} if this is the active tab
           {...(tab.id === activeTab ? { forceMount: true } : {})}
         >
-          {getComponentForTab(tab.id)}
+          {/* Create an element of the component type with the profile prop */}
+          {React.createElement(tab.component, { profile })}
         </TabsContent>
       ))}
     </>

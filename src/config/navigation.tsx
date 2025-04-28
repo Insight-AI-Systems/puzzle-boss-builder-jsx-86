@@ -3,7 +3,8 @@ import {
   Home, Users, Puzzle, ImageIcon, FileText, Star, ShoppingCart, 
   Settings, BarChart, User, Mail, Eye, Bell, Trophy, HelpCircle,
   BookOpen, BadgeHelp, ScrollText, Phone, Shield, Layers, Database,
-  LayoutDashboard, TicketIcon, DollarSign, Handshake, FolderKanban
+  LayoutDashboard, TicketIcon, DollarSign, Handshake, FolderKanban,
+  Megaphone, Activity, Info
 } from 'lucide-react';
 import { UserRole } from '@/types/userTypes';
 
@@ -51,10 +52,22 @@ export const adminNavItems: NavItem[] = [
     roles: ["super_admin", "admin", "category_manager", "partner_manager", "cfo", "social_media_manager"],
   },
   {
+    title: "Analytics",
+    icon: BarChart,
+    href: "/admin-dashboard?tab=analytics",
+    roles: ["super_admin", "admin", "cfo", "category_manager"],
+  },
+  {
     title: "Users",
     icon: Users,
     href: "/admin-dashboard?tab=users",
     roles: ["super_admin", "admin"],
+  },
+  {
+    title: "Puzzles",
+    icon: Puzzle,
+    href: "/admin-dashboard?tab=puzzles",
+    roles: ["super_admin", "admin", "category_manager"],
   },
   {
     title: "Categories",
@@ -70,7 +83,7 @@ export const adminNavItems: NavItem[] = [
   },
   {
     title: "Marketing",
-    icon: Star,
+    icon: Megaphone,
     href: "/admin-dashboard?tab=marketing",
     roles: ["super_admin", "social_media_manager"],
   },
@@ -81,10 +94,10 @@ export const adminNavItems: NavItem[] = [
     roles: ["super_admin", "admin", "partner_manager"],
   },
   {
-    title: "Email",
-    icon: Mail,
-    href: "/admin-dashboard?tab=email",
-    roles: ["super_admin"],
+    title: "Financial Dashboard",
+    icon: DollarSign,
+    href: "/admin-dashboard?tab=financials",
+    roles: ["super_admin", "cfo"],
   },
   {
     title: "Security",
@@ -93,22 +106,22 @@ export const adminNavItems: NavItem[] = [
     roles: ["super_admin"],
   },
   {
+    title: "Email",
+    icon: Mail,
+    href: "/admin-dashboard?tab=email",
+    roles: ["super_admin"],
+  },
+  {
     title: "Monitoring",
-    icon: Eye,
+    icon: Activity,
     href: "/admin-dashboard?tab=monitoring",
     roles: ["super_admin", "admin"],
   },
   {
-    title: "Database",
-    icon: Database,
-    href: "/admin-dashboard?tab=database",
-    roles: ["super_admin"],
-  },
-  {
-    title: "Financial Dashboard",
-    icon: DollarSign,
-    href: "/admin-dashboard?tab=financials",
-    roles: ["super_admin", "cfo"],
+    title: "Notifications",
+    icon: Bell,
+    href: "/admin-dashboard?tab=notifications",
+    roles: ["super_admin", "admin"],
   },
   {
     title: "Support Admin",

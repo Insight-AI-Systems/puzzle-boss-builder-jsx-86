@@ -1,21 +1,19 @@
 
 import React from 'react';
 import { OverviewDashboard } from "./OverviewDashboard";
-import { CategoryManagement } from "../CategoryManagement";
+import { CategoryManagement } from "./CategoryManagement";
 import { FinancialDashboard } from "./FinancialDashboard";
 import { PartnersDashboard } from "./partners/PartnersDashboard";
 import { NotificationsDashboard } from "./NotificationsDashboard";
 import { MonitoringDashboard } from "./MonitoringDashboard";
 import { MarketingDashboard } from "./MarketingDashboard";
 import TicketManagement from "./TicketManagement";
-
-// Comment out imports that don't exist yet
-// These will need to be implemented separately
-// import { UserManagement } from "@/components/admin/user-management/UserManagement";
-// import { PuzzleManagement } from "@/components/admin/puzzle-management/PuzzleManagement";
-// import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
-// import HeroPuzzleManager from "@/components/admin/hero-puzzle/HeroPuzzleManager";
-// import { AnalyticsDashboard } from "@/components/admin/analytics/AnalyticsDashboard";
+import { UserManagement } from "../UserManagement";
+import { GameManagement } from "../GameManagement";
+import { AnalyticsDashboard } from "../analytics/AnalyticsDashboard";
+import { SecurityDashboard } from "../SecurityDashboard";
+import { ContentManagement } from "../ContentManagement";
+import { EmailManagement } from "../EmailManagement";
 
 export interface TabDefinition {
   id: string;
@@ -34,30 +32,13 @@ export function getTabDefinitions(): TabDefinition[] {
       component: OverviewDashboard,
       roles: ["super_admin", "admin", "category_manager", "partner_manager", "cfo", "social_media_manager"]
     },
-    /* 
     {
-      id: "puzzles",
-      name: "Puzzles",
-      icon: "PuzzlePiece",
-      component: PuzzleManagement,
-      roles: ["super_admin", "admin", "category_manager"]
+      id: "analytics",
+      name: "Analytics",
+      icon: "BarChart",
+      component: AnalyticsDashboard,
+      roles: ["super_admin", "admin", "cfo", "category_manager"]
     },
-    */
-    {
-      id: "categories",
-      name: "Categories",
-      icon: "FolderKanban",
-      component: CategoryManagement,
-      roles: ["super_admin", "admin", "category_manager"]
-    },
-    {
-      id: "partners",
-      name: "Partners",
-      icon: "Handshake",
-      component: PartnersDashboard,
-      roles: ["super_admin", "admin", "partner_manager"]
-    },
-    /* 
     {
       id: "users",
       name: "Users",
@@ -66,19 +47,25 @@ export function getTabDefinitions(): TabDefinition[] {
       roles: ["super_admin", "admin"]
     },
     {
-      id: "hero",
-      name: "Hero Puzzle",
-      icon: "Layout",
-      component: HeroPuzzleManager,
-      roles: ["super_admin", "admin"]
+      id: "puzzles",
+      name: "Puzzles",
+      icon: "Puzzle",
+      component: GameManagement,
+      roles: ["super_admin", "admin", "category_manager"]
     },
-    */
     {
-      id: "financials",
-      name: "Financials",
-      icon: "DollarSign",
-      component: FinancialDashboard,
-      roles: ["super_admin", "admin", "cfo"]
+      id: "categories",
+      name: "Categories",
+      icon: "FolderKanban",
+      component: CategoryManagement,
+      roles: ["super_admin", "admin", "category_manager"]
+    },
+    {
+      id: "content",
+      name: "Content",
+      icon: "FileText",
+      component: ContentManagement,
+      roles: ["super_admin", "social_media_manager"]
     },
     {
       id: "marketing",
@@ -87,15 +74,34 @@ export function getTabDefinitions(): TabDefinition[] {
       component: MarketingDashboard,
       roles: ["super_admin", "admin", "social_media_manager"]
     },
-    /* 
     {
-      id: "analytics",
-      name: "Analytics",
-      icon: "BarChart",
-      component: AnalyticsDashboard,
-      roles: ["super_admin", "admin", "cfo", "category_manager"]
+      id: "partners",
+      name: "Partners",
+      icon: "Handshake",
+      component: PartnersDashboard,
+      roles: ["super_admin", "admin", "partner_manager"]
     },
-    */
+    {
+      id: "financials",
+      name: "Financials",
+      icon: "DollarSign",
+      component: FinancialDashboard,
+      roles: ["super_admin", "admin", "cfo"]
+    },
+    {
+      id: "security",
+      name: "Security",
+      icon: "Shield",
+      component: SecurityDashboard,
+      roles: ["super_admin", "admin"]
+    },
+    {
+      id: "email",
+      name: "Email",
+      icon: "Mail",
+      component: EmailManagement,
+      roles: ["super_admin"]
+    },
     {
       id: "notifications",
       name: "Notifications",
@@ -117,14 +123,5 @@ export function getTabDefinitions(): TabDefinition[] {
       component: MonitoringDashboard,
       roles: ["super_admin", "admin"]
     }
-    /*
-    {
-      id: "security",
-      name: "Security",
-      icon: "Shield",
-      component: SecurityDashboard,
-      roles: ["super_admin", "admin"]
-    }
-    */
   ];
 }

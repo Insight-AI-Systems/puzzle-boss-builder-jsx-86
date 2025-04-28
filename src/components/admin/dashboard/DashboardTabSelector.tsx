@@ -2,7 +2,11 @@
 import React from 'react';
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabDefinition } from './TabDefinitions';
-import * as LucideIcons from 'lucide-react';
+import { 
+  LayoutDashboard, Users, Puzzle, FolderKanban, FileText, 
+  Megaphone, Handshake, DollarSign, Shield, Mail, Bell, 
+  Activity, TicketCheck, Info, BarChart
+} from 'lucide-react';
 
 interface DashboardTabSelectorProps {
   accessibleTabs: TabDefinition[];
@@ -15,13 +19,26 @@ export const DashboardTabSelector: React.FC<DashboardTabSelectorProps> = ({
   activeTab,
   onTabChange
 }) => {
-  // Function to dynamically render the icon based on its name
+  // Function to render the icon based on its name
   const renderIcon = (iconName: string) => {
-    // Type assertion to access the icon components by name
-    const icons = LucideIcons as Record<string, React.ComponentType<any>>;
-    const IconComponent = icons[iconName];
-    
-    return IconComponent ? <IconComponent className="h-5 w-5" /> : null;
+    switch (iconName) {
+      case "LayoutDashboard": return <LayoutDashboard className="h-5 w-5" />;
+      case "Users": return <Users className="h-5 w-5" />;
+      case "Puzzle": return <Puzzle className="h-5 w-5" />;
+      case "FolderKanban": return <FolderKanban className="h-5 w-5" />;
+      case "FileText": return <FileText className="h-5 w-5" />;
+      case "Megaphone": return <Megaphone className="h-5 w-5" />;
+      case "Handshake": return <Handshake className="h-5 w-5" />;
+      case "DollarSign": return <DollarSign className="h-5 w-5" />;
+      case "Shield": return <Shield className="h-5 w-5" />;
+      case "Mail": return <Mail className="h-5 w-5" />;
+      case "Bell": return <Bell className="h-5 w-5" />;
+      case "Activity": return <Activity className="h-5 w-5" />;
+      case "TicketCheck": return <TicketCheck className="h-5 w-5" />;
+      case "Info": return <Info className="h-5 w-5" />;
+      case "BarChart": return <BarChart className="h-5 w-5" />;
+      default: return null;
+    }
   };
 
   return (
