@@ -149,15 +149,18 @@ export const useAnalytics = () => {
             .select('gender')
             .limit(1);
             
-          if (genderTest && !genderTestError) {
+          if (!genderTestError && genderTest) {
             const { data: allUsers, error: usersError } = await supabase.from('profiles').select('gender');
-            if (allUsers && !usersError && allUsers.length > 0) {
+            
+            if (!usersError && allUsers && allUsers.length > 0) {
               genderCounts['not_specified'] = 0;
               
               allUsers.forEach(user => {
-                if (user) {
+                if (user && typeof user === 'object' && 'gender' in user) {
                   const gender = user.gender || 'not_specified';
                   genderCounts[gender] = (genderCounts[gender] || 0) + 1;
+                } else {
+                  genderCounts['not_specified']++;
                 }
               });
             }
@@ -174,15 +177,18 @@ export const useAnalytics = () => {
             .select('age_group')
             .limit(1);
             
-          if (ageTest && !ageTestError) {
+          if (!ageTestError && ageTest) {
             const { data: allUsers, error: usersError } = await supabase.from('profiles').select('age_group');
-            if (allUsers && !usersError && allUsers.length > 0) {
+            
+            if (!usersError && allUsers && allUsers.length > 0) {
               ageCounts['not_specified'] = 0;
               
               allUsers.forEach(user => {
-                if (user) {
+                if (user && typeof user === 'object' && 'age_group' in user) {
                   const ageGroup = user.age_group || 'not_specified';
                   ageCounts[ageGroup] = (ageCounts[ageGroup] || 0) + 1;
+                } else {
+                  ageCounts['not_specified']++;
                 }
               });
             }
@@ -199,15 +205,18 @@ export const useAnalytics = () => {
             .select('country')
             .limit(1);
             
-          if (countryTest && !countryTestError) {
+          if (!countryTestError && countryTest) {
             const { data: allUsers, error: usersError } = await supabase.from('profiles').select('country');
-            if (allUsers && !usersError && allUsers.length > 0) {
+            
+            if (!usersError && allUsers && allUsers.length > 0) {
               countryCounts['not_specified'] = 0;
               
               allUsers.forEach(user => {
-                if (user) {
+                if (user && typeof user === 'object' && 'country' in user) {
                   const country = user.country || 'not_specified';
                   countryCounts[country] = (countryCounts[country] || 0) + 1;
+                } else {
+                  countryCounts['not_specified']++;
                 }
               });
             }
