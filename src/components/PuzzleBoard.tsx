@@ -1,10 +1,11 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { usePuzzleState } from '../hooks/usePuzzleState';
 import PuzzlePiece from './PuzzlePiece';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowPathIcon, CheckCircleIcon } from '@heroicons/react/24/solid';
+import { useTimer } from '../hooks/useTimer';
+import { PuzzleTimer } from './PuzzleTimer';
 
 interface PuzzleBoardProps {
   imageUrl: string;
@@ -29,6 +30,31 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
     resetPuzzle,
     getElapsedTime
   } = usePuzzleState(rows, columns);
+
+  const { elapsed, start, stop, reset } = useTimer();
+
+  // Remove the old elapsed time state and timer effect
+  // const [elapsedTime, setElapsedTime] = useState(0);
+  
+  // Start timer on first move
+  const handleFirstMove = () => {
+    if (!hasStarted) {
+      start();
+    }
+  };
+
+  // Stop timer on completion
+  useEffect(() => {
+    if (isComplete) {
+      stop();
+    }
+  }, [isComplete, stop]);
+
+  // Reset timer when puzzle is reset
+  const handleReset = () => {
+    reset();
+    resetPuzzle();
+  };
 
   const [elapsedTime, setElapsedTime] = useState(0);
 
@@ -97,13 +123,11 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
         </div>
         
         <div className="flex items-center space-x-4">
-          <div className="text-sm font-medium">
-            Time: {Math.floor(elapsedTime / 60)}:{(elapsedTime % 60).toString().padStart(2, '0')}
-          </div>
+          <PuzzleTimer seconds={elapsed} />
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={resetPuzzle}
+            onClick={handleReset}
             className="flex items-center"
           >
             <ArrowPathIcon className="w-4 h-4 mr-2" />
