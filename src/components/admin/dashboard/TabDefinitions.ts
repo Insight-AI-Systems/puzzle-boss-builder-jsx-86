@@ -8,15 +8,12 @@ import { NotificationsDashboard } from "./NotificationsDashboard";
 import { MonitoringDashboard } from "./MonitoringDashboard";
 import { MarketingDashboard } from "./MarketingDashboard";
 import TicketManagement from "./TicketManagement";
-
-// Comment out imports that don't exist yet
-// These will need to be implemented separately
-// import { UserManagement } from "@/components/admin/user-management/UserManagement";
-// import { PuzzleManagement } from "@/components/admin/puzzle-management/PuzzleManagement";
-// import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
-// import { ContentManagement } from "@/components/admin/ContentManagement";
-// import { EmailManagement } from "@/components/admin/EmailManagement";
-// import { AnalyticsDashboard } from "@/components/admin/analytics/AnalyticsDashboard";
+import { UserManagement } from "@/components/admin/user-management/UserManagement";
+import { PuzzleManagement } from "@/components/admin/puzzle-management/PuzzleManagement";
+import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
+import { ContentManagement } from "@/components/admin/ContentManagement";
+import { EmailManagement } from "@/components/admin/EmailManagement";
+import { AnalyticsDashboard } from "@/components/admin/analytics/AnalyticsDashboard";
 
 export interface TabDefinition {
   id: string;
@@ -35,7 +32,6 @@ export function getTabDefinitions(): TabDefinition[] {
       component: OverviewDashboard,
       roles: ["super_admin", "admin", "category_manager", "partner_manager", "cfo", "social_media_manager"]
     },
-    /* 
     {
       id: "analytics",
       name: "Analytics",
@@ -53,11 +49,10 @@ export function getTabDefinitions(): TabDefinition[] {
     {
       id: "puzzles",
       name: "Puzzles",
-      icon: "PuzzlePiece",
+      icon: "Puzzle",
       component: PuzzleManagement,
       roles: ["super_admin", "admin", "category_manager"]
     },
-    */
     {
       id: "categories",
       name: "Categories",
@@ -65,7 +60,6 @@ export function getTabDefinitions(): TabDefinition[] {
       component: CategoryManagement,
       roles: ["super_admin", "admin", "category_manager"]
     },
-    /* 
     {
       id: "content",
       name: "Content",
@@ -73,7 +67,6 @@ export function getTabDefinitions(): TabDefinition[] {
       component: ContentManagement,
       roles: ["super_admin", "social_media_manager"]
     },
-    */
     {
       id: "marketing",
       name: "Marketing",
@@ -95,7 +88,6 @@ export function getTabDefinitions(): TabDefinition[] {
       component: FinancialDashboard,
       roles: ["super_admin", "admin", "cfo"]
     },
-    /* 
     {
       id: "security",
       name: "Security",
@@ -110,7 +102,6 @@ export function getTabDefinitions(): TabDefinition[] {
       component: EmailManagement,
       roles: ["super_admin"]
     },
-    */
     {
       id: "notifications",
       name: "Notifications",
