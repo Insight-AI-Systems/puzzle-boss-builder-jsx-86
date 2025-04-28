@@ -10,23 +10,19 @@ import {
 import { Users, UserPlus, Activity } from 'lucide-react';
 
 interface UserInsightsDashboardProps {
-  userStats: UserStats | null;
+  stats: UserStats;
   signupStats: MonthlySignupData[];
 }
 
-export function UserInsightsDashboard({ userStats, signupStats }: UserInsightsDashboardProps) {
-  if (!userStats) {
-    return null;
-  }
-
+export function UserInsightsDashboard({ stats, signupStats }: UserInsightsDashboardProps) {
   // Prepare data for pie chart
-  const genderData = Object.entries(userStats.genderBreakdown || {}).map(([name, value]) => ({
+  const genderData = Object.entries(stats.genderBreakdown || {}).map(([name, value]) => ({
     name: formatGenderName(name),
     value
   }));
 
   // Age breakdown data
-  const ageData = Object.entries(userStats.ageBreakdown || {}).map(([name, value]) => ({
+  const ageData = Object.entries(stats.ageBreakdown || {}).map(([name, value]) => ({
     name,
     value
   }));
@@ -45,7 +41,7 @@ export function UserInsightsDashboard({ userStats, signupStats }: UserInsightsDa
       <div className="flex flex-col md:flex-row justify-between gap-4">
         <StatCard 
           title="Total Users" 
-          value={userStats.total} 
+          value={stats.total} 
           icon={<Users className="h-6 w-6 text-puzzle-aqua" />} 
         />
 
@@ -53,7 +49,7 @@ export function UserInsightsDashboard({ userStats, signupStats }: UserInsightsDa
           <div className="text-lg font-medium mb-2">Gender Distribution</div>
           <div className="flex flex-wrap gap-2">
             {genderData.map((item, index) => (
-              <div key={item.name} className="bg-puzzle-black/10 rounded-full px-3 py-1 text-sm flex items-center">
+              <div key={item.name} className="bg-muted rounded-full px-3 py-1 text-sm flex items-center">
                 <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
                 <span>{item.name}: </span>
                 <span className="font-bold ml-1">{String(item.value)}</span>
@@ -67,7 +63,7 @@ export function UserInsightsDashboard({ userStats, signupStats }: UserInsightsDa
             <div className="text-lg font-medium mb-2">Age Distribution</div>
             <div className="flex flex-wrap gap-2">
               {ageData.map((item, index) => (
-                <div key={item.name} className="bg-puzzle-black/10 rounded-full px-3 py-1 text-sm flex items-center">
+                <div key={item.name} className="bg-muted rounded-full px-3 py-1 text-sm flex items-center">
                   <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
                   <span>{item.name}: </span>
                   <span className="font-bold ml-1">{String(item.value)}</span>
@@ -169,7 +165,7 @@ export function UserInsightsDashboard({ userStats, signupStats }: UserInsightsDa
         </TabsContent>
 
         <TabsContent value="engagement" className="border rounded-md p-4">
-          <div className="flex justify-center items-center h-64 text-puzzle-aqua">
+          <div className="flex justify-center items-center h-64">
             <div className="text-center">
               <div className="mb-4 text-xl font-medium">Coming Soon</div>
               <p>Puzzle completion stats and user engagement metrics will be available here.</p>
@@ -184,13 +180,13 @@ export function UserInsightsDashboard({ userStats, signupStats }: UserInsightsDa
 
 function StatCard({ title, value, icon }: { title: string; value: number; icon: React.ReactNode }) {
   return (
-    <Card className="bg-gradient-to-tr from-puzzle-black/5 to-puzzle-aqua/10 p-4 flex-1">
+    <Card className="bg-gradient-to-tr from-muted/50 to-muted/10 p-4 flex-1">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-muted-foreground">{title}</p>
-          <h4 className="text-3xl font-bold text-puzzle-aqua mt-1">{value.toLocaleString()}</h4>
+          <h4 className="text-3xl font-bold mt-1">{value.toLocaleString()}</h4>
         </div>
-        <div className="p-2 bg-puzzle-black/10 rounded-full">
+        <div className="p-2 bg-muted/30 rounded-full">
           {icon}
         </div>
       </div>

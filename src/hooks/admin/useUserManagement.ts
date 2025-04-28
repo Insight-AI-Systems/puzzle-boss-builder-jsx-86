@@ -76,17 +76,27 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
   }, [allProfilesData]);
 
   return {
-    // Spread all the props from individual hooks
+    // Filter props from useUserFilters
     ...filters,
-    ...selection,
+    // Selection props 
+    selectedUsers: selection.selectedUsers,
+    setSelectedUsers: selection.setSelectedUsers,
+    handleUserSelection: selection.handleUserSelection,
+    handleSelectAllUsers: selection.handleSelectAllUsers,
+    // Email props
     ...emails,
+    // Roles props
     ...roles,
+    // Data props
     allProfilesData,
     isLoadingProfiles,
     profileError,
+    // Export functionality
     handleExportUsers: () => handleExportUsers(allProfilesData?.data),
+    // Stats and calculated values
     totalPages: Math.ceil((allProfilesData?.count || 0) / filters.pageSize),
     userStats,
+    // Sorting props
     lastLoginSortDirection,
     setLastLoginSortDirection
   };

@@ -7,11 +7,12 @@ import { UserActions } from './UserActions';
 import { UserPagination } from './UserPagination';
 import { UserTypeToggle } from './UserTypeToggle';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
-import { useAuth } from '@/hooks/auth/useAuth';
+import { useAuth } from '@/hooks/auth/useAuthProvider';
 import { Loader2 } from 'lucide-react';
 import { EmailDialog } from './EmailDialog';
 import { BulkRoleDialog } from './BulkRoleDialog';
 import { UserInsightsDashboard } from './UserInsightsDashboard';
+import { UserRole } from '@/types/userTypes';
 
 export const UserManagement: React.FC = () => {
   const { user, userRole } = useAuth();
@@ -41,15 +42,20 @@ export const UserManagement: React.FC = () => {
     
     // Selection
     selectedUsers,
-    toggleUserSelection,
-    toggleAllUsers,
-    clearSelection,
+    handleUserSelection,
+    handleSelectAllUsers,
+    setSelectedUsers,
     
     // Actions
     handleExportUsers,
     handleSendBulkEmail,
-    handleBulkRoleUpdate,
+    handleBulkRoleChange,
     handleRoleChange,
+    
+    // Bulk role state
+    bulkRole,
+    setBulkRole,
+    isBulkRoleChanging,
     
     // Sorting
     lastLoginSortDirection,
@@ -87,7 +93,7 @@ export const UserManagement: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* User insights dashboard */}
-          {userStats && <UserInsightsDashboard stats={userStats} />}
+          {userStats && <UserInsightsDashboard stats={userStats} signupStats={[]} />}
           
           {/* User type toggle */}
           <UserTypeToggle 
@@ -134,8 +140,8 @@ export const UserManagement: React.FC = () => {
                   onSortByRole={() => console.log("Sort by role")}
                   onSortByLastLogin={setLastLoginSortDirection}
                   selectedUsers={selectedUsers}
-                  onUserSelection={toggleUserSelection}
-                  onSelectAll={toggleAllUsers}
+                  onUserSelection={handleUserSelection}
+                  onSelectAll={handleSelectAllUsers}
                   lastLoginSortDirection={lastLoginSortDirection}
                 />
               )}
@@ -171,10 +177,10 @@ export const UserManagement: React.FC = () => {
         open={confirmRoleDialogOpen}
         onOpenChange={setConfirmRoleDialogOpen}
         selectedCount={selectedUsers.size}
-        onConfirm={(role) => {
-          handleBulkRoleUpdate(role);
-          setConfirmRoleDialogOpen(false);
-        }}
+        bulkRole={bulkRole}
+        setBulkRole={setBulkRole}
+        onUpdateRoles={handleBulkRoleChange}
+        isUpdating={isBulkRoleChanging}
       />
     </div>
   );

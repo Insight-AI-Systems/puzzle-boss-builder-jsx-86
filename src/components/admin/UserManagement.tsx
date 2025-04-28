@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { UserManagement as OriginalUserManagement } from './user-management/UserManagement';
 
 export const UserManagement: React.FC = () => {
-  // Check if the original component exists and use it, otherwise use a placeholder
+  // Use a try-catch to safely render the component
   try {
     return <OriginalUserManagement />;
   } catch (e) {
+    console.error("Error rendering UserManagement:", e);
     return (
       <Card>
         <CardHeader>
