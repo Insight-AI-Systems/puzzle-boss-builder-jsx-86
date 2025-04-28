@@ -104,7 +104,8 @@ export function usePuzzleState(rows: number, columns: number) {
     toast({
       title: "Puzzle initialized",
       description: `Started ${rows}x${columns} puzzle`,
-      icon: <Check className="h-4 w-4 text-green-500" />,
+      // Fix: Convert JSX to string for icon
+      icon: "check"
     });
   }, [rows, columns, toast]);
 
@@ -123,7 +124,8 @@ export function usePuzzleState(rows: number, columns: number) {
       toast({
         title: "Perfect fit!",
         description: "Piece placed in correct position",
-        icon: <Check className="h-4 w-4 text-green-500" />,
+        // Fix: Convert JSX to string for icon
+        icon: "check"
       });
     }
     dispatch({ type: 'CHECK_COMPLETION' });
@@ -139,7 +141,8 @@ export function usePuzzleState(rows: number, columns: number) {
     toast({
       title: "Puzzle reset",
       description: "Starting fresh",
-      icon: <Check className="h-4 w-4 text-blue-500" />,
+      // Fix: Convert JSX to string for icon
+      icon: "info"
     });
   }, [initializePuzzle, toast]);
 
@@ -149,7 +152,8 @@ export function usePuzzleState(rows: number, columns: number) {
       toast({
         title: "Puzzle completed! 🎉",
         description: `Finished in ${state.moves} moves and ${Math.floor(timeElapsed / 60)}:${(timeElapsed % 60).toString().padStart(2, '0')}`,
-        icon: <Check className="h-4 w-4 text-green-500" />,
+        // Fix: Convert JSX to string for icon
+        icon: "check"
       });
     }
   }, [state.isComplete, state.moves, toast]);
