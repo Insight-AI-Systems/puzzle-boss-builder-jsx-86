@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,11 +26,23 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
   handleSubmit,
   goBack,
 }) => {
+  const [validationError, setValidationError] = useState<string>('');
+  
+  // Clear validation error when email changes or is already set
+  useEffect(() => {
+    if (email) {
+      setValidationError('');
+    }
+  }, [email]);
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) { // Only submit if there's an email
-      handleSubmit();
+    if (!email) {
+      setValidationError('Email is required');
+      return;
     }
+    
+    handleSubmit();
   };
 
   return (
@@ -49,6 +61,13 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
         </Alert>
       )}
 
+      {validationError && !errorMessage && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{validationError}</AlertDescription>
+        </Alert>
+      )}
+
       <div className="space-y-2">
         <Label htmlFor="reset-email">Email</Label>
         <Input
@@ -58,7 +77,6 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={isLoading}
-          required={!email} // Only required validation if email is empty
           autoComplete="email"
         />
       </div>
@@ -66,7 +84,7 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
       <Button
         type="submit"
         className="w-full"
-        disabled={isLoading || !!successMessage || !email} // Disable if no email
+        disabled={isLoading || !!successMessage || !email}
       >
         {isLoading ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
