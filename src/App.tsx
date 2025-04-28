@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider"
@@ -38,6 +39,7 @@ import {
 } from '@/pages';
 import PuzzleTestPlayground from '@/pages/PuzzleTestPlayground';
 import Unauthorized from '@/pages/Unauthorized';
+import AdminPanel from '@/pages/AdminPanel';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layouts/MainLayout';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -118,6 +120,7 @@ const App = () => {
                         <PuzzleTestPlayground />
                       </ProtectedRoute>
                     } />
+                    <Route path="/admin-panel" element={<AdminPanel />} />
                     
                     {/* Guides */}
                     <Route path="/guides">
