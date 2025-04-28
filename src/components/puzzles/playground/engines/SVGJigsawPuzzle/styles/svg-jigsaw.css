@@ -37,11 +37,14 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   box-shadow: var(--puzzle-piece-shadow);
   z-index: 1;
+  border: 1px solid rgba(255, 255, 255, 0.4);  /* Add visible border */
+  cursor: grab;  /* Add cursor indication */
 }
 
 .puzzle-piece.correct {
   box-shadow: var(--puzzle-correct-shadow);
   z-index: 0; /* Lower z-index for correctly placed pieces */
+  border-color: rgba(0, 255, 0, 0.5);  /* Highlight border for correct pieces */
 }
 
 .puzzle-piece:hover {
@@ -53,11 +56,17 @@
   transform: scale(1.05);
   opacity: 0.9;
   z-index: 10;
+  cursor: grabbing;  /* Change cursor when dragging */
 }
 
 /* Staging area */
 .staging-area {
   transition: all 0.3s ease;
+  padding: 1rem;  /* Add padding to staging area */
+  border: 1px dashed rgba(255, 255, 255, 0.2);  /* Add subtle border */
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+  background-color: rgba(0, 0, 0, 0.1);  /* Slight background color */
 }
 
 /* Completed puzzle effect */

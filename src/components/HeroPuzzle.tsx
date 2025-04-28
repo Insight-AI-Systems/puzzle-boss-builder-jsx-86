@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ReloadIcon } from "@radix-ui/react-icons"
+import { RefreshCw } from "lucide-react";
 import { DEFAULT_IMAGES } from './puzzles/types/puzzle-types';
 import CustomPuzzleEngine from './puzzles/playground/engines/CustomPuzzleEngine';
 
