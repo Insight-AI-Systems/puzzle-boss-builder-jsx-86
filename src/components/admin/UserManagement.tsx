@@ -1,6 +1,6 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
+import { UserTypeToggle } from './user-management/UserTypeToggle';
 import { UserStatsDisplay } from './user-management/UserStatsDisplay';
 import { UsersTable } from './user-management/UsersTable';
 import { EmailDialog } from './user-management/EmailDialog';
@@ -11,6 +11,7 @@ import { UserPagination } from './user-management/UserPagination';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useQueryClient } from '@tanstack/react-query';
+import { UserProfile } from '@/types/userTypes';
 
 export function UserManagement() {
   const { profile } = useUserProfile();
@@ -48,8 +49,7 @@ export function UserManagement() {
 
   const [localSearchTerm, setLocalSearchTerm] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
-  // Track if we recently performed a search
-  const [recentlySearched, setRecentlySearched] = useState(false);
+  const [userTypeView, setUserTypeView] = useState<'regular' | 'admin'>('regular');
 
   const currentUserRole = profile?.role || 'player';
   const currentUserEmail = profile?.id; // In your system, id appears to be the email
@@ -60,12 +60,14 @@ export function UserManagement() {
     profile
   });
 
-  // Effect to clear search after search completion
+  const filteredUsers = allProfilesData?.data.filter(user => {
+    const isAdminOrManager = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'].includes(user.role);
+    return userTypeView === 'admin' ? isAdminOrManager : !isAdminOrManager;
+  }) || [];
+
   useEffect(() => {
     if (recentlySearched && allProfilesData?.data) {
-      // Reset the flag and clear search after data has been loaded
       setRecentlySearched(false);
-      // Let the data load with search term first
       const timer = setTimeout(() => {
         setLocalSearchTerm('');
         setSearchTerm('');
@@ -78,7 +80,7 @@ export function UserManagement() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSearchTerm(localSearchTerm);
-    setRecentlySearched(true); // Set this flag to true after search
+    setRecentlySearched(true);
   };
 
   const handleSortByRole = () => {
@@ -116,6 +118,11 @@ export function UserManagement() {
   return (
     <Card className="w-full">
       <CardContent className="space-y-6">
+        <UserTypeToggle 
+          value={userTypeView} 
+          onChange={setUserTypeView} 
+        />
+        
         <UserActions
           localSearchTerm={localSearchTerm}
           setLocalSearchTerm={setLocalSearchTerm}
@@ -136,7 +143,7 @@ export function UserManagement() {
         )}
 
         <UsersTable
-          users={allProfilesData?.data || []}
+          users={filteredUsers}
           currentUserRole={currentUserRole}
           currentUserEmail={currentUserEmail}
           onRoleChange={handleRoleChange}
@@ -152,7 +159,7 @@ export function UserManagement() {
           page={page}
           setPage={setPage}
           totalPages={totalPages}
-          currentCount={(allProfilesData?.data || []).length}
+          currentCount={filteredUsers.length}
           totalCount={allProfilesData?.count || 0}
         />
       </CardContent>
