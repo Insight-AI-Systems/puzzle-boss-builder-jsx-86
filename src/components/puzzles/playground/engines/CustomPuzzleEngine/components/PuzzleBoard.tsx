@@ -30,29 +30,21 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   setDraggedPiece
 }) => {
   const [selectedPiece, setSelectedPiece] = useState<number | null>(null);
-  
+
   useEffect(() => {
-    console.log("PuzzleBoard received:", {
-      imageUrl,
+    console.log("PuzzleBoard rendered with:", {
       piecesCount: pieces.length,
       rows,
       columns,
       showNumbers
     });
-    
-    // Validate that we have the expected number of pieces
-    const expectedPieceCount = rows * columns;
-    if (pieces.length !== expectedPieceCount) {
-      console.warn(`Expected ${expectedPieceCount} pieces but got ${pieces.length}`);
-    }
-  }, [pieces, imageUrl, rows, columns, showNumbers]);
+  }, [pieces, rows, columns, showNumbers]);
 
   // Handle drag start
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, id: number) => {
     onDragStart();
     e.dataTransfer.setData('text/plain', id.toString());
     setDraggedPiece(id);
-    console.log('Drag started with piece:', id);
   };
 
   // Handle drag over (to allow drop)
@@ -130,11 +122,11 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
             >
               {piece && (
                 <div
-                  draggable="true"
+                  draggable={true}
                   onDragStart={(e) => handleDragStart(e, piece.id)}
                   onClick={() => handlePieceClick(piece.id)}
                   className={`puzzle-piece absolute inset-0 cursor-pointer transition-all
-                              ${isCorrect ? 'border-2 border-green-500/50' : 'border border-white/20'} 
+                              ${isCorrect ? 'border-2 border-green-500/50' : 'border-2 border-white/20'} 
                               ${draggedPiece === piece.id ? 'opacity-50' : 'opacity-100'}
                               ${selectedPiece === piece.id ? 'ring-2 ring-puzzle-gold scale-95' : ''}
                               ${selectedPiece !== null && selectedPiece !== piece.id ? 'hover:ring-2 hover:ring-blue-500' : ''}
@@ -146,7 +138,7 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
                   }}
                 >
                   {showNumbers && (
-                    <span className="absolute top-1 left-1 text-xs bg-black/70 px-1 py-0.5 rounded-full w-5 h-5 flex items-center justify-center text-white font-medium">
+                    <span className="absolute top-1 left-1 text-xs bg-black/70 px-1 py-0.5 rounded-full min-w-5 h-5 flex items-center justify-center text-white font-medium">
                       {piece.id + 1}
                     </span>
                   )}

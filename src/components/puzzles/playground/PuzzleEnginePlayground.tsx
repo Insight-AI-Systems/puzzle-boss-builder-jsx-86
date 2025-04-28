@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,6 +9,7 @@ import PuzzleGame from "@/components/puzzles/PuzzleGame";
 import ReactJigsawPuzzleEngine2 from './engines/ReactJigsawPuzzleEngine2';
 import { Textarea } from '@/components/ui/textarea';
 import './engines/styles/jigsaw-puzzle.css';
+import './engines/CustomPuzzleEngine/styles/puzzle.css';
 
 const SAMPLE_IMAGES = [{
   id: "mountain",
