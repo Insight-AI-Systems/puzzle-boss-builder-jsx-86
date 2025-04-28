@@ -1,7 +1,8 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MembershipStats } from '@/types/financeTypes';
-import { format, parseISO, subMonths } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { MemberDetailsDialog } from './dialogs/MemberDetailsDialog';
@@ -10,6 +11,7 @@ import { MemberHistoryDetails } from '@/types/membershipTypes';
 import { MemberStatsCards } from './membership/MemberStatsCards';
 import { MembershipCharts } from './membership/MembershipCharts';
 import { KeyMetrics } from './membership/KeyMetrics';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MembershipSummaryProps {
   selectedMonth: string;
@@ -28,30 +30,29 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
     const fetchMembershipData = async () => {
       setIsLoading(true);
       try {
-        const currentDate = parseISO(`${selectedMonth}-01`);
-        const mockData: MembershipStats[] = [];
-        
-        for (let i = 5; i >= 0; i--) {
-          const date = subMonths(currentDate, i);
-          const period = format(date, 'yyyy-MM');
-          
-          const active = Math.floor(Math.random() * 500) + 800;
-          const expired = Math.floor(Math.random() * 50) + 50;
-          const canceled = Math.floor(Math.random() * 30) + 20;
-          const revenue = active * (Math.random() * 10 + 15);
-          const churn_rate = (canceled / active) * 100;
-          
-          mockData.push({
-            period,
-            active_members: active,
-            expired_members: expired,
-            canceled_members: canceled,
-            revenue,
-            churn_rate
-          });
+        const endDate = parseISO(`${selectedMonth}-01`);
+        const startDate = new Date(endDate);
+        startDate.setMonth(startDate.getMonth() - 5); // Get 6 months of data
+
+        const { data, error } = await supabase.rpc('get_membership_stats', {
+          start_date: format(startDate, 'yyyy-MM-dd'),
+          end_date: format(endDate, 'yyyy-MM-dd')
+        });
+
+        if (error) {
+          throw error;
         }
-        
-        setMembershipData(mockData);
+
+        const formattedData: MembershipStats[] = (data || []).map(item => ({
+          period: format(new Date(item.period), 'yyyy-MM'),
+          active_members: item.active_members || 0,
+          expired_members: item.expired_members || 0,
+          canceled_members: item.canceled_members || 0,
+          revenue: item.revenue || 0,
+          churn_rate: item.churn_rate || 0
+        }));
+
+        setMembershipData(formattedData);
       } catch (error) {
         toast({
           title: 'Error fetching membership data',
@@ -64,10 +65,25 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
     };
     
     fetchMembershipData();
-  }, [selectedMonth]);
+  }, [selectedMonth, toast]);
 
   const handleExportCSV = () => {
-    alert('Export functionality would be implemented here');
+    if (!membershipData.length) return;
+    
+    const headers = Object.keys(membershipData[0]).join(',');
+    const csvData = membershipData.map(row => 
+      Object.values(row).join(',')
+    ).join('\n');
+    
+    const csv = `${headers}\n${csvData}`;
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `membership-stats-${selectedMonth}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleMemberClick = async (userId: string, username: string) => {
@@ -94,26 +110,40 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Membership Summary</h2>
-        <Button variant="outline" size="sm" onClick={handleExportCSV} className="flex items-center gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleExportCSV} 
+          disabled={!membershipData.length}
+          className="flex items-center gap-2"
+        >
           <Download className="h-4 w-4" /> Export Data
         </Button>
       </div>
 
-      <MemberStatsCards 
-        currentMonthData={currentMonthData}
-        previousMonthData={previousMonthData}
-      />
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-[200px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : (
+        <>
+          <MemberStatsCards 
+            currentMonthData={currentMonthData}
+            previousMonthData={previousMonthData}
+          />
 
-      <MembershipCharts membershipData={membershipData} />
+          <MembershipCharts membershipData={membershipData} />
 
-      <KeyMetrics currentMonthData={currentMonthData} />
+          <KeyMetrics currentMonthData={currentMonthData} />
 
-      <MemberDetailsDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        details={memberDetails}
-        username={selectedMember || ''}
-      />
+          <MemberDetailsDialog
+            open={dialogOpen}
+            onOpenChange={setDialogOpen}
+            details={memberDetails}
+            username={selectedMember || ''}
+          />
+        </>
+      )}
     </div>
   );
 };
