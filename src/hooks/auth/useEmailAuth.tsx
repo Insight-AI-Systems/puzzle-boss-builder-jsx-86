@@ -119,7 +119,7 @@ export function useEmailAuth(): EmailAuthState & {
           session: data.session ? 'Session exists' : 'No session'
         });
 
-        // Explicitly create profile if user was created but profile might not have been
+        // Enhanced profile creation with better error handling
         if (data.user?.id) {
           try {
             console.log('Creating profile for new user:', data.user.id);
@@ -133,15 +133,17 @@ export function useEmailAuth(): EmailAuthState & {
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
                 avatar_url: null
-              });
+              }, { onConflict: 'id' });
               
             if (profileError) {
               console.error('Profile creation error:', profileError);
+              // Continue with auth flow even if profile creation has issues
             } else {
               console.log('Profile created successfully');
             }
           } catch (profileErr) {
             console.error('Exception creating profile:', profileErr);
+            // Continue with auth flow even if profile creation fails
           }
         }
 
@@ -164,33 +166,48 @@ export function useEmailAuth(): EmailAuthState & {
           navigate('/', { replace: true });
         }
       } else {
+        // Sign in flow with enhanced error logging
+        console.log('Signing in with email:', email);
+        
         const { data, error } = await supabase.auth.signInWithPassword({ 
           email, 
           password
         });
         
         if (error) {
+          console.error('Sign in error:', error);
           handleAuthError(error, setErrorMessage);
           
           toast({
             title: 'Authentication Error',
-            description: errorMessage || 'An error occurred during authentication',
+            description: error.message || 'An error occurred during authentication',
             variant: 'destructive',
           });
           return;
         }
         
-        toast({
-          title: 'Welcome back!',
-          description: 'Successfully signed in.',
-        });
-        
         if (data.session) {
+          console.log('Sign in successful, session established');
+          toast({
+            title: 'Welcome back!',
+            description: 'Successfully signed in.',
+          });
+          
           navigate('/', { replace: true });
+        } else {
+          console.error('Sign in completed but no session was returned');
+          setErrorMessage('Authentication succeeded but session creation failed');
         }
       }
     } catch (error) {
       console.error('Authentication exception:', error);
+      
+      // Enhanced error reporting
+      const errorDetails = error instanceof Error ? 
+        `${error.name}: ${error.message}` : 
+        'Unknown error occurred';
+      
+      console.error('Authentication error details:', errorDetails);
       handleAuthError(error as AuthError | Error, setErrorMessage);
       
       toast({
