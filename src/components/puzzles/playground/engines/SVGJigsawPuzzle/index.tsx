@@ -13,13 +13,15 @@ interface SVGJigsawPuzzleProps {
   rows: number;
   columns: number;
   showNumbers?: boolean;
+  showGhost?: boolean;
 }
 
 const SVGJigsawPuzzle: React.FC<SVGJigsawPuzzleProps> = ({
   imageUrl,
   rows = 3,
   columns = 3,
-  showNumbers = false
+  showNumbers = false,
+  showGhost = true
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
@@ -35,10 +37,17 @@ const SVGJigsawPuzzle: React.FC<SVGJigsawPuzzleProps> = ({
     stagingPieces,
     boardPieces,
     movePieceToStaging,
-    showGhost,
+    showGhost: internalShowGhost,
     toggleGhost,
     percentComplete
   } = usePuzzleState(rows, columns, imageUrl);
+
+  // Override the internal showGhost state with the prop if provided
+  useEffect(() => {
+    if (showGhost !== undefined && internalShowGhost !== showGhost) {
+      toggleGhost();
+    }
+  }, [showGhost, internalShowGhost, toggleGhost]);
 
   // Set up timer
   const {
@@ -99,7 +108,7 @@ const SVGJigsawPuzzle: React.FC<SVGJigsawPuzzleProps> = ({
         elapsed={elapsed}
         isComplete={isComplete}
         onReset={handleReset}
-        showGhost={showGhost}
+        showGhost={internalShowGhost}
         toggleGhost={toggleGhost}
         percentComplete={percentComplete}
       />
@@ -119,7 +128,7 @@ const SVGJigsawPuzzle: React.FC<SVGJigsawPuzzleProps> = ({
             onPiecePlaced={placePiece}
             onPieceRemoved={movePieceToStaging}
             isPieceCorrect={isPieceCorrect}
-            showGhost={showGhost}
+            showGhost={internalShowGhost}
             showNumbers={showNumbers}
             onFirstInteraction={handleFirstInteraction}
             isComplete={isComplete}
@@ -130,7 +139,7 @@ const SVGJigsawPuzzle: React.FC<SVGJigsawPuzzleProps> = ({
       {isComplete && (
         <div className="mt-4 p-4 bg-green-100 border border-green-300 rounded-lg text-center">
           <h3 className="text-green-800 font-bold text-xl">Puzzle Completed!</h3>
-          <p className="text-green-700">Time: {Math.floor(elapsed / 60)}:{(elapsed % 60).toString().padStart(2, '0')}</p>
+          <p className="text-green-700">Time: {Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}</p>
         </div>
       )}
     </div>
