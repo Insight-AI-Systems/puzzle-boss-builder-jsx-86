@@ -444,6 +444,232 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_agreements: {
+        Row: {
+          created_at: string
+          document_url: string | null
+          effective_from: string | null
+          effective_to: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          partner_id: string
+          signed_at: string | null
+          status: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          document_url?: string | null
+          effective_from?: string | null
+          effective_to?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          partner_id: string
+          signed_at?: string | null
+          status?: string
+          updated_at?: string
+          version: string
+        }
+        Update: {
+          created_at?: string
+          document_url?: string | null
+          effective_from?: string | null
+          effective_to?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          partner_id?: string
+          signed_at?: string | null
+          status?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_agreements_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_communications: {
+        Row: {
+          content: string
+          id: string
+          metadata: Json | null
+          partner_id: string
+          sent_at: string
+          sent_by: string | null
+          subject: string
+          type: Database["public"]["Enums"]["communication_type"]
+        }
+        Insert: {
+          content: string
+          id?: string
+          metadata?: Json | null
+          partner_id: string
+          sent_at?: string
+          sent_by?: string | null
+          subject: string
+          type: Database["public"]["Enums"]["communication_type"]
+        }
+        Update: {
+          content?: string
+          id?: string
+          metadata?: Json | null
+          partner_id?: string
+          sent_at?: string
+          sent_by?: string | null
+          subject?: string
+          type?: Database["public"]["Enums"]["communication_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_communications_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_products: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          description: string
+          id: string
+          images: Json | null
+          metadata: Json | null
+          name: string
+          partner_id: string
+          price: number
+          quantity: number
+          shipping_info: Json | null
+          status: Database["public"]["Enums"]["product_status"]
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          images?: Json | null
+          metadata?: Json | null
+          name: string
+          partner_id: string
+          price: number
+          quantity: number
+          shipping_info?: Json | null
+          status?: Database["public"]["Enums"]["product_status"]
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          images?: Json | null
+          metadata?: Json | null
+          name?: string
+          partner_id?: string
+          price?: number
+          quantity?: number
+          shipping_info?: Json | null
+          status?: Database["public"]["Enums"]["product_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_products_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          address: string | null
+          assigned_to: string | null
+          city: string | null
+          company_name: string
+          contact_name: string
+          country: string | null
+          created_at: string
+          description: string | null
+          email: string
+          id: string
+          metadata: Json | null
+          notes: string | null
+          onboarding_stage: Database["public"]["Enums"]["onboarding_stage"]
+          phone: string | null
+          postal_code: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["partner_status"]
+          tax_id: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          assigned_to?: string | null
+          city?: string | null
+          company_name: string
+          contact_name: string
+          country?: string | null
+          created_at?: string
+          description?: string | null
+          email: string
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          onboarding_stage?: Database["public"]["Enums"]["onboarding_stage"]
+          phone?: string | null
+          postal_code?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["partner_status"]
+          tax_id?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          assigned_to?: string | null
+          city?: string | null
+          company_name?: string
+          contact_name?: string
+          country?: string | null
+          created_at?: string
+          description?: string | null
+          email?: string
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          onboarding_stage?: Database["public"]["Enums"]["onboarding_stage"]
+          phone?: string | null
+          postal_code?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["partner_status"]
+          tax_id?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       password_reset_attempts: {
         Row: {
           attempt_count: number | null
@@ -1452,9 +1678,22 @@ export type Database = {
     }
     Enums: {
       age_group: "13-17" | "18-24" | "25-34" | "35-44" | "45-60" | "60+"
+      communication_type: "email" | "call" | "meeting" | "note"
       feedback_type: "bug" | "suggestion" | "question" | "other"
       issue_status: "wip" | "completed" | "deferred"
       note_status: "wip" | "completed"
+      onboarding_stage:
+        | "invited"
+        | "registration_started"
+        | "registration_completed"
+        | "documents_pending"
+        | "documents_submitted"
+        | "contract_sent"
+        | "contract_signed"
+        | "approved"
+        | "rejected"
+      partner_status: "prospect" | "active" | "inactive" | "suspended"
+      product_status: "draft" | "pending_approval" | "approved" | "rejected"
       puzzle_difficulty: "easy" | "medium" | "hard"
       ticket_status: "open" | "in-progress" | "resolved" | "closed"
       ticket_type: "internal" | "external"
@@ -1583,9 +1822,23 @@ export const Constants = {
   public: {
     Enums: {
       age_group: ["13-17", "18-24", "25-34", "35-44", "45-60", "60+"],
+      communication_type: ["email", "call", "meeting", "note"],
       feedback_type: ["bug", "suggestion", "question", "other"],
       issue_status: ["wip", "completed", "deferred"],
       note_status: ["wip", "completed"],
+      onboarding_stage: [
+        "invited",
+        "registration_started",
+        "registration_completed",
+        "documents_pending",
+        "documents_submitted",
+        "contract_sent",
+        "contract_signed",
+        "approved",
+        "rejected",
+      ],
+      partner_status: ["prospect", "active", "inactive", "suspended"],
+      product_status: ["draft", "pending_approval", "approved", "rejected"],
       puzzle_difficulty: ["easy", "medium", "hard"],
       ticket_status: ["open", "in-progress", "resolved", "closed"],
       ticket_type: ["internal", "external"],
