@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,7 +15,7 @@ export interface Partner {
   postal_code: string | null;
   country: string | null;
   status: 'prospect' | 'active' | 'inactive' | 'suspended';
-  onboarding_stage: string;
+  onboarding_stage: 'invited' | 'registration_started' | 'registration_completed' | 'documents_pending' | 'documents_submitted' | 'contract_sent' | 'contract_signed' | 'approved' | 'rejected';
   website: string | null;
   tax_id: string | null;
   description: string | null;
@@ -78,14 +77,14 @@ interface UsePartnerManagementReturn {
   isLoading: boolean;
   isLoadingDetails: boolean;
   error: string | null;
-  createPartner: (partner: Partial<Partner>) => void;
-  updatePartner: (id: string, partner: Partial<Partner>) => void;
+  createPartner: (partner: Partial<Partner> & { company_name: string; contact_name: string; email: string; }) => void;
+  updatePartner: (id: string, partner: Partial<Partner> & { onboarding_stage?: 'invited' | 'registration_started' | 'registration_completed' | 'documents_pending' | 'documents_submitted' | 'contract_sent' | 'contract_signed' | 'approved' | 'rejected'; }) => void;
   deletePartner: (id: string) => void;
-  createProduct: (product: Partial<PartnerProduct>) => void;
+  createProduct: (product: Partial<PartnerProduct> & { name: string; description: string; partner_id: string; price: number; quantity: number; }) => void;
   updateProduct: (id: string, product: Partial<PartnerProduct>) => void;
   deleteProduct: (id: string) => void;
-  createCommunication: (communication: Partial<PartnerCommunication>) => void;
-  createAgreement: (agreement: Partial<PartnerAgreement>) => void;
+  createCommunication: (communication: Partial<PartnerCommunication> & { partner_id: string; type: 'email' | 'call' | 'meeting' | 'note'; subject: string; content: string; }) => void;
+  createAgreement: (agreement: Partial<PartnerAgreement> & { partner_id: string; name: string; version: string; }) => void;
   updateAgreement: (id: string, agreement: Partial<PartnerAgreement>) => void;
 }
 
@@ -96,7 +95,6 @@ export function usePartnerManagement(
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
 
-  // Query to fetch all partners
   const {
     data: partners,
     isLoading,
@@ -114,7 +112,6 @@ export function usePartnerManagement(
     }
   });
 
-  // Query to fetch selected partner details
   const {
     data: selectedPartner,
     isLoading: isLoadingDetails,
@@ -136,7 +133,6 @@ export function usePartnerManagement(
     enabled: !!selectedPartnerId
   });
 
-  // Query to fetch partner products
   const {
     data: products,
     error: productsError
@@ -157,7 +153,6 @@ export function usePartnerManagement(
     enabled: !!selectedPartnerId
   });
 
-  // Query to fetch partner communications
   const {
     data: communications,
     error: communicationsError
@@ -178,7 +173,6 @@ export function usePartnerManagement(
     enabled: !!selectedPartnerId
   });
 
-  // Query to fetch partner agreements
   const {
     data: agreements,
     error: agreementsError
@@ -199,7 +193,6 @@ export function usePartnerManagement(
     enabled: !!selectedPartnerId
   });
 
-  // Handle any errors from queries
   useEffect(() => {
     const errors = [
       partnersError, 
@@ -216,9 +209,8 @@ export function usePartnerManagement(
     }
   }, [partnersError, partnerDetailsError, productsError, communicationsError, agreementsError]);
 
-  // Mutation to create a partner
   const createPartnerMutation = useMutation({
-    mutationFn: async (newPartner: Partial<Partner>) => {
+    mutationFn: async (newPartner: Partial<Partner> & { company_name: string; contact_name: string; email: string; }) => {
       const { data, error } = await supabase
         .from('partners')
         .insert(newPartner)
@@ -245,9 +237,8 @@ export function usePartnerManagement(
     }
   });
 
-  // Mutation to update a partner
   const updatePartnerMutation = useMutation({
-    mutationFn: async ({ id, partner }: { id: string, partner: Partial<Partner> }) => {
+    mutationFn: async ({ id, partner }: { id: string, partner: Partial<Partner> & { onboarding_stage?: 'invited' | 'registration_started' | 'registration_completed' | 'documents_pending' | 'documents_submitted' | 'contract_sent' | 'contract_signed' | 'approved' | 'rejected'; } }) => {
       const { data, error } = await supabase
         .from('partners')
         .update(partner)
@@ -276,7 +267,6 @@ export function usePartnerManagement(
     }
   });
 
-  // Mutation to delete a partner
   const deletePartnerMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
@@ -303,9 +293,8 @@ export function usePartnerManagement(
     }
   });
 
-  // Mutation to create a product
   const createProductMutation = useMutation({
-    mutationFn: async (newProduct: Partial<PartnerProduct>) => {
+    mutationFn: async (newProduct: Partial<PartnerProduct> & { name: string; description: string; partner_id: string; price: number; quantity: number; }) => {
       const { data, error } = await supabase
         .from('partner_products')
         .insert(newProduct)
@@ -332,7 +321,6 @@ export function usePartnerManagement(
     }
   });
 
-  // Mutation to update a product
   const updateProductMutation = useMutation({
     mutationFn: async ({ id, product }: { id: string, product: Partial<PartnerProduct> }) => {
       const { data, error } = await supabase
@@ -362,7 +350,6 @@ export function usePartnerManagement(
     }
   });
 
-  // Mutation to delete a product
   const deleteProductMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
@@ -389,9 +376,8 @@ export function usePartnerManagement(
     }
   });
 
-  // Mutation to create a communication
   const createCommunicationMutation = useMutation({
-    mutationFn: async (newCommunication: Partial<PartnerCommunication>) => {
+    mutationFn: async (newCommunication: Partial<PartnerCommunication> & { partner_id: string; type: 'email' | 'call' | 'meeting' | 'note'; subject: string; content: string; }) => {
       const { data, error } = await supabase
         .from('partner_communications')
         .insert(newCommunication)
@@ -418,9 +404,8 @@ export function usePartnerManagement(
     }
   });
 
-  // Mutation to create an agreement
   const createAgreementMutation = useMutation({
-    mutationFn: async (newAgreement: Partial<PartnerAgreement>) => {
+    mutationFn: async (newAgreement: Partial<PartnerAgreement> & { partner_id: string; name: string; version: string; }) => {
       const { data, error } = await supabase
         .from('partner_agreements')
         .insert(newAgreement)
@@ -447,7 +432,6 @@ export function usePartnerManagement(
     }
   });
 
-  // Mutation to update an agreement
   const updateAgreementMutation = useMutation({
     mutationFn: async ({ id, agreement }: { id: string, agreement: Partial<PartnerAgreement> }) => {
       const { data, error } = await supabase

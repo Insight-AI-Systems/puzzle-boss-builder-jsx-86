@@ -9,6 +9,7 @@ export interface Category {
   description: string | null;
   image_url: string | null;
   status: string | null;
+  icon?: string; // Add the icon property
 }
 
 export function useCategories() {

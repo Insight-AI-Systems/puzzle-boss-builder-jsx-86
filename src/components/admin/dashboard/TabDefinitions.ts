@@ -1,17 +1,21 @@
 
+import React from 'react';
 import { OverviewDashboard } from "./OverviewDashboard";
-import CategoryManagement from "./CategoryManagement";
+import { CategoryManagement } from "./CategoryManagement"; // Fixed import
 import { FinancialDashboard } from "./FinancialDashboard";
 import { PartnersDashboard } from "./partners/PartnersDashboard";
 import { NotificationsDashboard } from "./NotificationsDashboard";
 import { MonitoringDashboard } from "./MonitoringDashboard";
 import { MarketingDashboard } from "./MarketingDashboard";
-import { TicketManagement } from "./TicketManagement";
-import { UserManagement } from "@/components/admin/user-management/UserManagement";
-import { PuzzleManagement } from "@/components/admin/puzzle-management/PuzzleManagement";
-import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
-import { HeroPuzzleManager } from "@/components/admin/hero-puzzle/HeroPuzzleManager";
-import { AnalyticsDashboard } from "@/components/admin/analytics/AnalyticsDashboard";
+import TicketManagement from "./TicketManagement"; // Fixed import
+
+// Comment out imports that don't exist yet
+// These will need to be implemented separately
+// import { UserManagement } from "@/components/admin/user-management/UserManagement";
+// import { PuzzleManagement } from "@/components/admin/puzzle-management/PuzzleManagement";
+// import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
+// import HeroPuzzleManager from "@/components/admin/hero-puzzle/HeroPuzzleManager";
+// import { AnalyticsDashboard } from "@/components/admin/analytics/AnalyticsDashboard";
 
 export interface TabDefinition {
   id: string;
@@ -30,6 +34,7 @@ export function getTabDefinitions(): TabDefinition[] {
       component: OverviewDashboard,
       roles: ["super_admin", "admin", "category_manager", "partner_manager", "cfo", "social_media_manager"]
     },
+    /* 
     {
       id: "puzzles",
       name: "Puzzles",
@@ -37,6 +42,7 @@ export function getTabDefinitions(): TabDefinition[] {
       component: PuzzleManagement,
       roles: ["super_admin", "admin", "category_manager"]
     },
+    */
     {
       id: "categories",
       name: "Categories",
@@ -51,6 +57,7 @@ export function getTabDefinitions(): TabDefinition[] {
       component: PartnersDashboard,
       roles: ["super_admin", "admin", "partner_manager"]
     },
+    /* 
     {
       id: "users",
       name: "Users",
@@ -65,6 +72,7 @@ export function getTabDefinitions(): TabDefinition[] {
       component: HeroPuzzleManager,
       roles: ["super_admin", "admin"]
     },
+    */
     {
       id: "financials",
       name: "Financials",
@@ -79,6 +87,7 @@ export function getTabDefinitions(): TabDefinition[] {
       component: MarketingDashboard,
       roles: ["super_admin", "admin", "social_media_manager"]
     },
+    /* 
     {
       id: "analytics",
       name: "Analytics",
@@ -86,6 +95,7 @@ export function getTabDefinitions(): TabDefinition[] {
       component: AnalyticsDashboard,
       roles: ["super_admin", "admin", "cfo", "category_manager"]
     },
+    */
     {
       id: "notifications",
       name: "Notifications",
@@ -106,7 +116,8 @@ export function getTabDefinitions(): TabDefinition[] {
       icon: "Activity",
       component: MonitoringDashboard,
       roles: ["super_admin", "admin"]
-    },
+    }
+    /*
     {
       id: "security",
       name: "Security",
@@ -114,5 +125,6 @@ export function getTabDefinitions(): TabDefinition[] {
       component: SecurityDashboard,
       roles: ["super_admin", "admin"]
     }
+    */
   ];
 }

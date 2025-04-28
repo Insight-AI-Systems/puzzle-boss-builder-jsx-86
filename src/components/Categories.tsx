@@ -121,7 +121,7 @@ const Categories: React.FC = () => {
               key={category.id}
               title={category.name}
               description={category.description || `Explore our ${category.name} puzzle collection`}
-              icon={category.icon}
+              icon={category.icon || undefined}
               color={getColorForIndex(index)}
             />
           ))}

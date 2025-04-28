@@ -26,7 +26,7 @@ export const DashboardTabSelector: React.FC<DashboardTabSelectorProps> = ({
           className="data-[state=active]:bg-puzzle-aqua/10 data-[state=active]:text-puzzle-aqua p-2 flex-grow md:flex-none"
         >
           {tab.icon}
-          <span className="ml-1">{tab.label}</span>
+          <span className="ml-1">{tab.name}</span>
         </TabsTrigger>
       ))}
     </TabsList>

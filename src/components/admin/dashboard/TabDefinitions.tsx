@@ -1,112 +1,129 @@
-
 import React from 'react';
-import { UserRole } from '@/types/userTypes';
-import { 
-  LayoutDashboard, Users, Puzzle, ImageIcon, FileText, Star, 
-  ShoppingCart, Settings, BarChart, Lock, Mail, Bell, 
-  Images
-} from "lucide-react";
+import { OverviewDashboard } from "./OverviewDashboard";
+import { CategoryManagement } from "./CategoryManagement"; // Fixed import
+import { FinancialDashboard } from "./FinancialDashboard";
+import { PartnersDashboard } from "./partners/PartnersDashboard";
+import { NotificationsDashboard } from "./NotificationsDashboard";
+import { MonitoringDashboard } from "./MonitoringDashboard";
+import { MarketingDashboard } from "./MarketingDashboard";
+import TicketManagement from "./TicketManagement"; // Fixed import
+
+// Comment out imports that don't exist yet
+// These will need to be implemented separately
+// import { UserManagement } from "@/components/admin/user-management/UserManagement";
+// import { PuzzleManagement } from "@/components/admin/puzzle-management/PuzzleManagement";
+// import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
+// import HeroPuzzleManager from "@/components/admin/hero-puzzle/HeroPuzzleManager";
+// import { AnalyticsDashboard } from "@/components/admin/analytics/AnalyticsDashboard";
 
 export interface TabDefinition {
   id: string;
-  label: string;
-  icon: React.ReactNode;
-  roles: UserRole[];
+  name: string;
+  icon: string;
+  component: React.ComponentType<any>;
+  roles: string[];
 }
 
-// Group tabs by functional area for better organization
-const analyticsTabs: TabDefinition[] = [
-  {
-    id: "analytics",
-    label: "Analytics",
-    icon: <BarChart className="h-4 w-4 mr-2" />,
-    roles: ['super_admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo']
-  }
-];
-
-const contentManagementTabs: TabDefinition[] = [
-  {
-    id: "puzzles",
-    label: "Puzzles",
-    icon: <Puzzle className="h-4 w-4 mr-2" />,
-    roles: ['super_admin', 'category_manager']
-  },
-  {
-    id: "categories",
-    label: "Categories",
-    icon: <ImageIcon className="h-4 w-4 mr-2" />,
-    roles: ['super_admin', 'category_manager']
-  },
-  {
-    id: "images",
-    label: "Image Library",
-    icon: <Images className="h-4 w-4 mr-2" />,
-    roles: ['super_admin', 'category_manager']
-  },
-  {
-    id: "content",
-    label: "Content",
-    icon: <FileText className="h-4 w-4 mr-2" />,
-    roles: ['super_admin', 'social_media_manager']
-  }
-];
-
-const marketingTabs: TabDefinition[] = [
-  {
-    id: "marketing",
-    label: "Marketing",
-    icon: <Star className="h-4 w-4 mr-2" />,
-    roles: ['super_admin', 'social_media_manager']
-  },
-  {
-    id: "partners",
-    label: "Partners",
-    icon: <ShoppingCart className="h-4 w-4 mr-2" />,
-    roles: ['super_admin', 'partner_manager']
-  }
-];
-
-const systemTabs: TabDefinition[] = [
-  {
-    id: "security",
-    label: "Security",
-    icon: <Lock className="h-4 w-4 mr-2" />,
-    roles: ['super_admin']
-  },
-  {
-    id: "email",
-    label: "Email",
-    icon: <Mail className="h-4 w-4 mr-2" />,
-    roles: ['super_admin']
-  },
-  {
-    id: "notifications",
-    label: "Notifications",
-    icon: <Bell className="h-4 w-4 mr-2" />,
-    roles: ['super_admin']
-  }
-];
-
-const userManagementTabs: TabDefinition[] = [
-  {
-    id: "users",
-    label: "User Management",
-    icon: <Users className="h-4 w-4 mr-2" />,
-    roles: ['super_admin']
-  },
-  {
-    id: "finance",
-    label: "Finance",
-    icon: <Settings className="h-4 w-4 mr-2" />,
-    roles: ['super_admin', 'cfo']
-  }
-];
-
-export const getTabDefinitions = (): TabDefinition[] => [
-  ...analyticsTabs,
-  ...userManagementTabs,
-  ...contentManagementTabs,
-  ...marketingTabs,
-  ...systemTabs
-];
-
+export function getTabDefinitions(): TabDefinition[] {
+  return [
+    {
+      id: "overview",
+      name: "Overview",
+      icon: "LayoutDashboard",
+      component: OverviewDashboard,
+      roles: ["super_admin", "admin", "category_manager", "partner_manager", "cfo", "social_media_manager"]
+    },
+    /* 
+    {
+      id: "puzzles",
+      name: "Puzzles",
+      icon: "PuzzlePiece",
+      component: PuzzleManagement,
+      roles: ["super_admin", "admin", "category_manager"]
+    },
+    */
+    {
+      id: "categories",
+      name: "Categories",
+      icon: "FolderKanban",
+      component: CategoryManagement,
+      roles: ["super_admin", "admin", "category_manager"]
+    },
+    {
+      id: "partners",
+      name: "Partners",
+      icon: "Handshake",
+      component: PartnersDashboard,
+      roles: ["super_admin", "admin", "partner_manager"]
+    },
+    /* 
+    {
+      id: "users",
+      name: "Users",
+      icon: "Users",
+      component: UserManagement,
+      roles: ["super_admin", "admin"]
+    },
+    {
+      id: "hero",
+      name: "Hero Puzzle",
+      icon: "Layout",
+      component: HeroPuzzleManager,
+      roles: ["super_admin", "admin"]
+    },
+    */
+    {
+      id: "financials",
+      name: "Financials",
+      icon: "DollarSign",
+      component: FinancialDashboard,
+      roles: ["super_admin", "admin", "cfo"]
+    },
+    {
+      id: "marketing",
+      name: "Marketing",
+      icon: "Megaphone",
+      component: MarketingDashboard,
+      roles: ["super_admin", "admin", "social_media_manager"]
+    },
+    /* 
+    {
+      id: "analytics",
+      name: "Analytics",
+      icon: "BarChart",
+      component: AnalyticsDashboard,
+      roles: ["super_admin", "admin", "cfo", "category_manager"]
+    },
+    */
+    {
+      id: "notifications",
+      name: "Notifications",
+      icon: "Bell",
+      component: NotificationsDashboard,
+      roles: ["super_admin", "admin"]
+    },
+    {
+      id: "tickets",
+      name: "Support Tickets",
+      icon: "TicketCheck",
+      component: TicketManagement,
+      roles: ["super_admin", "admin"]
+    },
+    {
+      id: "monitoring",
+      name: "Monitoring",
+      icon: "Activity",
+      component: MonitoringDashboard,
+      roles: ["super_admin", "admin"]
+    }
+    /*
+    {
+      id: "security",
+      name: "Security",
+      icon: "Shield",
+      component: SecurityDashboard,
+      roles: ["super_admin", "admin"]
+    }
+    */
+  ];
+}
