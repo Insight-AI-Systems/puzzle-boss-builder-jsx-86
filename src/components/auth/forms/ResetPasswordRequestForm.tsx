@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,14 +27,12 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
 }) => {
   const [validationError, setValidationError] = useState<string>('');
   
-  // Clear validation error when email changes or is already set
   useEffect(() => {
     if (email) {
       setValidationError('');
     }
   }, [email]);
 
-  // Clear validation error when component mounts if email is already present
   useEffect(() => {
     if (email) {
       setValidationError('');
@@ -45,13 +42,11 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Client-side validation
     if (!email) {
       setValidationError('Email is required');
       return;
     }
     
-    // Clear validation error before submitting
     setValidationError('');
     
     handleSubmit();
@@ -60,9 +55,9 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       {errorMessage && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{errorMessage}</AlertDescription>
+        <Alert variant="warning" className="border-yellow-500 bg-yellow-500/10">
+          <AlertCircle className="h-4 w-4 text-yellow-300" />
+          <AlertDescription className="text-yellow-300">{errorMessage}</AlertDescription>
         </Alert>
       )}
       
@@ -74,9 +69,9 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
       )}
 
       {validationError && !errorMessage && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{validationError}</AlertDescription>
+        <Alert variant="warning" className="border-yellow-500 bg-yellow-500/10">
+          <AlertCircle className="h-4 w-4 text-yellow-300" />
+          <AlertDescription className="text-yellow-300">{validationError}</AlertDescription>
         </Alert>
       )}
 
