@@ -1,3 +1,4 @@
+
 interface ImageSliceOptions {
   image: HTMLImageElement;
   rows: number;
@@ -5,7 +6,7 @@ interface ImageSliceOptions {
   pieceSize?: { width: number; height: number };
 }
 
-interface ProcessedPieceImage {
+export interface ProcessedPieceImage {
   id: string;
   imageData: string;
   row: number;
