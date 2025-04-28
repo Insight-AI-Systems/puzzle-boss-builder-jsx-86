@@ -157,7 +157,8 @@ export const useAnalytics = () => {
               genderCounts['not_specified'] = 0;
               
               allUsers.forEach(user => {
-                if (user && typeof user === 'object' && user !== null && 'gender' in user) {
+                // Fixed TypeScript error - reorder null check
+                if (user && user !== null && typeof user === 'object' && 'gender' in user) {
                   const gender = user.gender || 'not_specified';
                   genderCounts[gender as string] = (genderCounts[gender as string] || 0) + 1;
                 } else {
@@ -185,7 +186,8 @@ export const useAnalytics = () => {
               ageCounts['not_specified'] = 0;
               
               allUsers.forEach(user => {
-                if (user && typeof user === 'object' && user !== null && 'age_group' in user) {
+                // Fixed TypeScript error - reorder null check
+                if (user && user !== null && typeof user === 'object' && 'age_group' in user) {
                   const ageGroup = user.age_group || 'not_specified';
                   ageCounts[ageGroup as string] = (ageCounts[ageGroup as string] || 0) + 1;
                 } else {
@@ -213,7 +215,8 @@ export const useAnalytics = () => {
               countryCounts['not_specified'] = 0;
               
               allUsers.forEach(user => {
-                if (user && typeof user === 'object' && user !== null && 'country' in user) {
+                // Fixed TypeScript error - reorder null check
+                if (user && user !== null && typeof user === 'object' && 'country' in user) {
                   const country = user.country || 'not_specified';
                   countryCounts[country as string] = (countryCounts[country as string] || 0) + 1;
                 } else {
