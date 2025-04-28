@@ -3,13 +3,13 @@ import React from 'react';
 import { OverviewDashboard } from "./OverviewDashboard";
 import { CategoryManagement } from "./CategoryManagement";
 import { FinancialDashboard } from "./FinancialDashboard";
-import { PartnersDashboard } from "./partners/PartnersDashboard"; // Updated import path
+import { PartnersDashboard } from "./partners/PartnersDashboard";
 import { NotificationsDashboard } from "./NotificationsDashboard";
 import { MonitoringDashboard } from "./MonitoringDashboard";
 import { MarketingDashboard } from "./MarketingDashboard";
 import TicketManagement from "./TicketManagement";
-import { UserManagement } from "@/components/admin/user-management/UserManagement";
-import { PuzzleManagement } from "@/components/admin/puzzle-management/PuzzleManagement";
+import { PuzzleManagement } from "@/components/admin/PuzzleManagement"; // Fixed path
+import { UserManagement } from "@/components/admin/UserManagement"; // Fixed path
 import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
 import { ContentManagement } from "@/components/admin/ContentManagement";
 import { EmailManagement } from "@/components/admin/EmailManagement";
