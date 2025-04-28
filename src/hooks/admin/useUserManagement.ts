@@ -1,7 +1,5 @@
 
 import { useUserFilters } from './useUserFilters';
-import { useUserEmails } from './useUserEmails';
-import { useUserRoles } from './useUserRoles';
 import { useUserSelection } from './useUserSelection';
 import { useUserExport } from './useUserExport';
 import { useAdminProfiles } from '@/hooks/useAdminProfiles';
@@ -14,37 +12,49 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
   const selection = useUserSelection();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [lastLoginSortDirection, setLastLoginSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [bulkRole, setBulkRole] = useState<UserRole | null>(null);
+  const [isBulkRoleChanging, setIsBulkRoleChanging] = useState(false);
   
   const { 
     data: allProfilesData, 
     isLoading: isLoadingProfiles, 
     error: profileError,
     updateUserRole,
-    bulkUpdateRoles,
-    sendBulkEmail,
+    bulkUpdateRoles: updateRoles,
+    sendBulkEmail: sendEmail,
     refetch 
   } = useAdminProfiles(isAdmin, currentUserId, {
     ...filters.filterOptions,
     lastLoginSortDirection
   });
 
-  const emails = useUserEmails({ 
-    sendBulkEmail, 
-    selectedUsers: selection.selectedUsers 
-  });
-
-  const roles = useUserRoles({ 
-    updateUserRole: async (userId: string, newRole: UserRole) => {
+  // Handle role change for a single user
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
+    if (updateUserRole) {
       updateUserRole.mutate({ userId, newRole });
-    }, 
-    bulkUpdateRoles: async (userIds: string[], newRole: UserRole) => {
-      bulkUpdateRoles.mutate({ userIds, newRole });
-    }, 
-    refetch,
-    selectedUsers: selection.selectedUsers 
-  });
+    }
+  };
 
-  const { handleExportUsers } = useUserExport();
+  // Handle bulk role updates
+  const bulkUpdateRoles = async (userIds: string[], newRole: UserRole) => {
+    if (updateRoles) {
+      setIsBulkRoleChanging(true);
+      try {
+        await updateRoles.mutateAsync({ userIds, newRole });
+        selection.setSelectedUsers(new Set());
+      } finally {
+        setIsBulkRoleChanging(false);
+      }
+    }
+  };
+
+  // Handle sending bulk emails
+  const sendBulkEmail = async (subject: string, message: string) => {
+    if (sendEmail && selection.selectedUsers.size > 0) {
+      const userIds = Array.from(selection.selectedUsers);
+      await sendEmail.mutateAsync({ userIds, subject, message });
+    }
+  };
 
   // Calculate user statistics when data changes
   useEffect(() => {
@@ -75,6 +85,8 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     }
   }, [allProfilesData]);
 
+  const { handleExportUsers } = useUserExport();
+
   return {
     // Filter props from useUserFilters
     ...filters,
@@ -83,10 +95,10 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     setSelectedUsers: selection.setSelectedUsers,
     handleUserSelection: selection.handleUserSelection,
     handleSelectAllUsers: selection.handleSelectAllUsers,
-    // Email props
-    ...emails,
-    // Roles props
-    ...roles,
+    // Email and role management
+    sendBulkEmail,
+    bulkUpdateRoles,
+    handleRoleChange,
     // Data props
     allProfilesData,
     isLoadingProfiles,
@@ -98,6 +110,10 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     userStats,
     // Sorting props
     lastLoginSortDirection,
-    setLastLoginSortDirection
+    setLastLoginSortDirection,
+    // Bulk role props
+    bulkRole,
+    setBulkRole,
+    isBulkRoleChanging
   };
 }

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Dialog,
@@ -8,7 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { RoleSelector } from './RoleSelector';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { UserRole } from '@/types/userTypes';
 import { Loader2 } from 'lucide-react';
 
@@ -16,7 +18,7 @@ interface BulkRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedCount: number;
-  bulkRole: UserRole;
+  bulkRole: UserRole | null;
   setBulkRole: (role: UserRole) => void;
   onUpdateRoles: () => void;
   isUpdating: boolean;
@@ -31,6 +33,16 @@ export function BulkRoleDialog({
   onUpdateRoles,
   isUpdating
 }: BulkRoleDialogProps) {
+  const roles: {value: UserRole, label: string}[] = [
+    { value: 'player', label: 'Player' },
+    { value: 'admin', label: 'Admin' },
+    { value: 'super_admin', label: 'Super Admin' },
+    { value: 'category_manager', label: 'Category Manager' },
+    { value: 'partner_manager', label: 'Partner Manager' },
+    { value: 'social_media_manager', label: 'Social Media Manager' },
+    { value: 'cfo', label: 'CFO' }
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -42,11 +54,14 @@ export function BulkRoleDialog({
         </DialogHeader>
 
         <div className="py-4">
-          <RoleSelector 
-            currentRole={bulkRole}
-            onRoleChange={setBulkRole} 
-            label="Select the new role to assign" 
-          />
+          <RadioGroup value={bulkRole || undefined} onValueChange={(value) => setBulkRole(value as UserRole)}>
+            {roles.map((role) => (
+              <div className="flex items-center space-x-2" key={role.value}>
+                <RadioGroupItem value={role.value} id={`role-${role.value}`} />
+                <Label htmlFor={`role-${role.value}`}>{role.label}</Label>
+              </div>
+            ))}
+          </RadioGroup>
         </div>
 
         <DialogFooter>

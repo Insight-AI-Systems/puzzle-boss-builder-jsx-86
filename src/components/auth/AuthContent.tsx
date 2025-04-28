@@ -19,43 +19,94 @@ export const AuthContent: React.FC<AuthContentProps> = ({
   setCurrentView,
   lastEnteredEmail
 }) => {
+  const auth = useAuth();
+  
+  // Use the auth hook from contexts/AuthContext.tsx
+  // We'll create a compatibility layer here
   const {
-    email,
-    password,
-    confirmPassword,
-    username,
-    rememberMe,
-    acceptTerms,
-    errorMessage,
+    signIn,
+    signUp,
     resetPassword,
-    resetConfirmPassword,
-    resetErrorMessage,
-    resetSuccessMessage,
-    isLoading,
-    setEmail,
-    setPassword,
-    setConfirmPassword,
-    setUsername,
-    setRememberMe,
-    setAcceptTerms,
-    setErrorMessage,
-    resetForm,
-    handleEmailAuth,
-    handleGoogleAuth,
-    setResetPassword,
-    setResetConfirmPassword,
-    setResetErrorMessage,
-    handlePasswordResetRequest,
-    handlePasswordReset
-  } = useAuth();
-
+    updatePassword,
+    error
+  } = auth;
+  
+  // Local state for form handling
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
+  const [username, setUsername] = React.useState('');
+  const [rememberMe, setRememberMe] = React.useState(false);
+  const [acceptTerms, setAcceptTerms] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState('');
+  const [resetPasswordVal, setResetPassword] = React.useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = React.useState('');
+  const [resetErrorMessage, setResetErrorMessage] = React.useState('');
+  const [resetSuccessMessage, setResetSuccessMessage] = React.useState('');
+  
   // Clear error messages when changing views
   React.useEffect(() => {
     setErrorMessage('');
-  }, [currentView, setErrorMessage]);
+    setResetErrorMessage('');
+    
+    if (error) {
+      setErrorMessage(error.message || 'Authentication error');
+    }
+  }, [currentView, error]);
+
+  // Helper functions for auth operations
+  const handleEmailAuth = async (isSignUp: boolean) => {
+    try {
+      if (isSignUp) {
+        await signUp(email, password, { username, acceptTerms });
+      } else {
+        await signIn(email, password, { rememberMe });
+      }
+    } catch (err) {
+      const error = err as Error;
+      setErrorMessage(error.message || 'Authentication failed');
+    }
+  };
+  
+  const handleGoogleAuth = async () => {
+    // Implement Google auth if needed
+    console.log("Google auth not implemented");
+  };
+  
+  const handlePasswordResetRequest = async () => {
+    try {
+      await resetPassword(email);
+      setResetSuccessMessage('Password reset link has been sent to your email');
+    } catch (err) {
+      const error = err as Error;
+      setResetErrorMessage(error.message || 'Failed to send reset link');
+    }
+  };
+  
+  const handlePasswordReset = async () => {
+    try {
+      await updatePassword(resetPasswordVal);
+      setCurrentView('reset-success');
+    } catch (err) {
+      const error = err as Error;
+      setResetErrorMessage(error.message || 'Failed to update password');
+    }
+  };
+  
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setUsername('');
+    setRememberMe(false);
+    setAcceptTerms(false);
+    setErrorMessage('');
+  };
 
   const handleVerificationResend = async () => {
     console.log('Attempting to resend verification email to:', lastEnteredEmail);
+    // Implement verification resend logic
+    setEmail(lastEnteredEmail);
     await handleEmailAuth(true);
   };
 
@@ -72,7 +123,7 @@ export const AuthContent: React.FC<AuthContentProps> = ({
             rememberMe={rememberMe}
             acceptTerms={acceptTerms}
             errorMessage={errorMessage}
-            isLoading={isLoading}
+            isLoading={auth.isLoading}
             setEmail={setEmail}
             setPassword={setPassword}
             setConfirmPassword={setConfirmPassword}
@@ -93,7 +144,7 @@ export const AuthContent: React.FC<AuthContentProps> = ({
             email={email}
             errorMessage={resetErrorMessage}
             successMessage={resetSuccessMessage}
-            isLoading={isLoading}
+            isLoading={auth.isLoading}
             setEmail={setEmail}
             handlePasswordResetRequest={handlePasswordResetRequest}
             goBack={() => {
@@ -106,11 +157,11 @@ export const AuthContent: React.FC<AuthContentProps> = ({
       case 'reset-confirm':
         return (
           <ResetPasswordConfirmView 
-            password={resetPassword}
+            password={resetPasswordVal}
             confirmPassword={resetConfirmPassword}
             errorMessage={resetErrorMessage}
             successMessage={resetSuccessMessage}
-            isLoading={isLoading}
+            isLoading={auth.isLoading}
             setPassword={setResetPassword}
             setConfirmPassword={setResetConfirmPassword}
             handlePasswordReset={handlePasswordReset}

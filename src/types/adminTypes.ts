@@ -1,46 +1,23 @@
-import { UserProfile, UserRole, Gender, AgeGroup } from './userTypes';
 
-// API/RPC Data Types
-export interface RpcUserData {
-  id: string;
-  email?: string;
-  display_name?: string;
-  role?: string;
-  country?: string;
-  categories_played?: string[];
-  credits?: number;
-  created_at: string;
-  updated_at?: string;
-  last_sign_in?: string | null;
-  gender?: string | null;
-  custom_gender?: string | null;
-  age_group?: string | null;
-}
+import { UserProfile } from './userTypes';
 
-// User Statistics Types
 export interface UserStats {
   total: number;
   genderBreakdown: { [key: string]: number };
   ageBreakdown?: { [key: string]: number };
 }
 
-export interface MonthlySignupData {
-  month: string;
-  count: number;
-}
-
-// Admin Panel Options and Results
 export interface AdminProfilesOptions {
   page?: number;
   pageSize?: number;
-  searchTerm?: string;
-  dateRange?: { from?: Date; to?: Date };
-  role?: UserRole | null;
   roleSortDirection?: 'asc' | 'desc';
   lastLoginSortDirection?: 'asc' | 'desc';
-  country?: string | null;
-  category?: string | null;
-  gender?: string | null;
+  searchTerm?: string;
+  role?: string;
+  country?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  category?: string;
 }
 
 export interface ProfilesResult {
@@ -49,5 +26,19 @@ export interface ProfilesResult {
   countries: string[];
   categories: string[];
   genders: string[];
-  signup_stats: MonthlySignupData[];
+  signup_stats: Array<{month: string; count: number}>;
+}
+
+export interface RpcUserData {
+  id: string;
+  email?: string;
+  display_name?: string;
+  role: string;
+  last_sign_in?: string;
+  created_at: string;
+  avatar_url?: string;
+  gender?: string;
+  age_group?: string;
+  country?: string;
+  categories_played?: string[];
 }

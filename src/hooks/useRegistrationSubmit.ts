@@ -10,23 +10,19 @@ export const useRegistrationSubmit = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { handleEmailAuth, setEmail, setPassword, setConfirmPassword, setUsername, setAcceptTerms } = useAuth();
+  const auth = useAuth();
 
   const handleSubmit = async (formData: RegistrationFormData) => {
     setIsLoading(true);
     
     try {
-      // Set auth form data
-      setEmail(formData.email);
-      setPassword(formData.password);
-      setConfirmPassword(formData.confirmPassword);
-      setUsername(formData.name);
-      setAcceptTerms(formData.agreeTerms);
+      // Use the signUp method from the auth context
+      await auth.signUp(formData.email, formData.password, {
+        username: formData.name,
+        acceptTerms: formData.agreeTerms,
+      });
       
-      // Use the auth system to sign up
-      await handleEmailAuth(true);
-      
-      // Verify user creation in auth.users and profiles
+      // Verify user creation in auth.users
       const { data: authUser, error: authError } = await supabase.auth.getUser();
       
       if (authError || !authUser.user) {

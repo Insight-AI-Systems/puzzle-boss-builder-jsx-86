@@ -7,7 +7,7 @@ import { UserActions } from './UserActions';
 import { UserPagination } from './UserPagination';
 import { UserTypeToggle } from './UserTypeToggle';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
-import { useAuth } from '@/hooks/auth/useAuthProvider';
+import { useAuth } from '@/hooks/auth/useAuth'; // Fixed import path
 import { Loader2 } from 'lucide-react';
 import { EmailDialog } from './EmailDialog';
 import { BulkRoleDialog } from './BulkRoleDialog';
@@ -48,8 +48,8 @@ export const UserManagement: React.FC = () => {
     
     // Actions
     handleExportUsers,
-    handleSendBulkEmail,
-    handleBulkRoleChange,
+    sendBulkEmail, // Fixed property name
+    bulkUpdateRoles, // Fixed property name
     handleRoleChange,
     
     // Bulk role state
@@ -66,6 +66,21 @@ export const UserManagement: React.FC = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSearchTerm(localSearchTerm);
+  };
+
+  // Handle sending bulk emails
+  const handleSendBulkEmail = (subject: string, message: string) => {
+    if (sendBulkEmail) {
+      sendBulkEmail(subject, message);
+    }
+  };
+
+  // Handle bulk role updates
+  const handleBulkRoleChange = () => {
+    if (bulkUpdateRoles && bulkRole) {
+      bulkUpdateRoles(Array.from(selectedUsers), bulkRole);
+      setConfirmRoleDialogOpen(false);
+    }
   };
 
   if (profileError) {
@@ -93,7 +108,7 @@ export const UserManagement: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* User insights dashboard */}
-          {userStats && <UserInsightsDashboard stats={userStats} signupStats={[]} />}
+          {userStats && <UserInsightsDashboard userStats={userStats} signupStats={[]} />}
           
           {/* User type toggle */}
           <UserTypeToggle 
@@ -166,10 +181,7 @@ export const UserManagement: React.FC = () => {
         open={emailDialogOpen} 
         onOpenChange={setEmailDialogOpen}
         selectedCount={selectedUsers.size}
-        onSend={(subject, message) => {
-          handleSendBulkEmail(subject, message);
-          setEmailDialogOpen(false);
-        }}
+        onSend={handleSendBulkEmail}
       />
       
       {/* Role Update Dialog */}
