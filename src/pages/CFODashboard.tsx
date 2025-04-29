@@ -72,7 +72,14 @@ const CFODashboard = () => {
   const loadFinancialData = useCallback(async () => {
     try {
       console.log('Loading financial data for', selectedMonth);
-      const summary = await fetchMonthlyFinancialSummary(selectedMonth);
+      let summary = null;
+      
+      try {
+        summary = await fetchMonthlyFinancialSummary(selectedMonth);
+      } catch (fetchErr) {
+        console.error('Error in fetchMonthlyFinancialSummary:', fetchErr);
+        // We'll use the default data below
+      }
       
       // Set data with fallback for null
       setTrends(summary ? [summary] : [createDefaultSummary()]);

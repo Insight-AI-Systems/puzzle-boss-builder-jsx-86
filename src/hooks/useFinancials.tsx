@@ -25,21 +25,22 @@ export function useFinancials(): FinancialsHookReturn {
     operation: () => Promise<T>,
     errorMessage: string
   ): Promise<T> => {
-    // Don't set loading state if already loading to prevent UI flickering
-    if (!isLoading) {
-      setIsLoading(true);
-    }
+    // Set initial state
+    setIsLoading(true);
     setError(null);
     
     try {
+      // Execute the operation
       const result = await operation();
       return result;
     } catch (err) {
-      const actualError = err instanceof Error ? err : new Error(errorMessage);
+      // Handle error
       console.error(`Financial operation failed: ${errorMessage}`, err);
+      const actualError = err instanceof Error ? err : new Error(errorMessage);
       setError(actualError);
       throw actualError;
     } finally {
+      // Always reset loading state
       setIsLoading(false);
     }
   };

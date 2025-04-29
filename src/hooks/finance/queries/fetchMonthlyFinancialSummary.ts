@@ -11,7 +11,7 @@ export async function fetchMonthlyFinancialSummary(
   period: string
 ): Promise<MonthlyFinancialSummary | null> {
   try {
-    // Create a safe query with proper parameters
+    // Use an aliased parameter name to avoid column name ambiguity
     const { data, error: dbError } = await supabase
       .rpc('get_monthly_financial_summary', { month_param: period });
 
@@ -24,7 +24,14 @@ export async function fetchMonthlyFinancialSummary(
     
     // If data exists and is not empty, return the first item
     if (data && data.length > 0) {
-      return data[0] as MonthlyFinancialSummary;
+      return {
+        period: period, // Use the input parameter to avoid ambiguity
+        total_income: data[0].total_income || 0,
+        total_expenses: data[0].total_expenses || 0,
+        net_profit: data[0].net_profit || 0,
+        commissions_paid: data[0].commissions_paid || 0,
+        prize_expenses: data[0].prize_expenses || 0
+      };
     }
     
     // Return default object if no data

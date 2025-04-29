@@ -24,14 +24,14 @@ export const FinancialDashboard: React.FC = () => {
   const { toast } = useToast();
 
   // Create default summary object to prevent null values
-  const createDefaultSummary = (period: string): MonthlyFinancialSummary => ({
+  const createDefaultSummary = useCallback((period: string): MonthlyFinancialSummary => ({
     period,
     total_income: 0,
     total_expenses: 0,
     net_profit: 0,
     commissions_paid: 0,
     prize_expenses: 0
-  });
+  }), []);
 
   const loadFinancialData = useCallback(async () => {
     setIsLoading(true);
@@ -39,7 +39,14 @@ export const FinancialDashboard: React.FC = () => {
     
     try {
       console.log('Loading financial summary for', selectedMonth);
-      const summary = await fetchMonthlyFinancialSummary(selectedMonth);
+      let summary: MonthlyFinancialSummary | null = null;
+      
+      try {
+        summary = await fetchMonthlyFinancialSummary(selectedMonth);
+      } catch (fetchError) {
+        console.error('Error in fetchMonthlyFinancialSummary:', fetchError);
+        // Even if the fetch fails, we'll still set default data below
+      }
       
       // Always set valid data to prevent rendering issues
       setFinancialData(summary || createDefaultSummary(selectedMonth));
@@ -57,7 +64,7 @@ export const FinancialDashboard: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedMonth, fetchMonthlyFinancialSummary, toast]);
+  }, [selectedMonth, fetchMonthlyFinancialSummary, createDefaultSummary, toast]);
   
   useEffect(() => {
     loadFinancialData();
@@ -96,7 +103,7 @@ export const FinancialDashboard: React.FC = () => {
         
         toast({
           title: "Export completed",
-          description: "Financial data has been exported successfully",
+          description: `Financial data has been exported successfully`,
         });
       } catch (exportErr) {
         console.error('Error during export:', exportErr);
@@ -149,7 +156,7 @@ export const FinancialDashboard: React.FC = () => {
               </div>
             )}
             
-            {/* Always render financial data UI, even with default data */}
+            {/* Always render financial data UI with guaranteed valid data */}
             <FinancialSummaryCards financialData={financialData} />
             
             <Tabs defaultValue="overview" className="w-full">
