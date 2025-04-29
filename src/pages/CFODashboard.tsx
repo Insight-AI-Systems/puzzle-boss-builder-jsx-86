@@ -17,6 +17,8 @@ import { Loader2 } from 'lucide-react';
 import { ErrorDisplay } from '@/components/dashboard/ErrorDisplay';
 
 const CFODashboard = () => {
+  console.log('[CFO UI] CFODashboard component rendering');
+  
   const { hasRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -24,16 +26,32 @@ const CFODashboard = () => {
   const [timeframe, setTimeframe] = useState<TimeFrame>('monthly');
   const [trends, setTrends] = useState<MonthlyFinancialSummary[]>([]);
   const [isAccessChecking, setIsAccessChecking] = useState(true);
+  const [renderCount, setRenderCount] = useState(0);
   const { fetchMonthlyFinancialSummary, isLoading, error } = useFinancials();
+
+  // Debugging - log component lifecycle
+  useEffect(() => {
+    console.log('[CFO UI] CFODashboard mounted or updated');
+    setRenderCount(prev => prev + 1);
+    console.log('[CFO UI] Render count:', renderCount + 1);
+    
+    return () => {
+      console.log('[CFO UI] CFODashboard unmounting');
+    };
+  }, [renderCount]);
 
   // Check if user has CFO access
   useEffect(() => {
     const checkAccess = async () => {
+      console.log('[CFO UI] Checking user access permissions');
       try {
         const hasCfoAccess = await hasRole('cfo');
         const hasAdminAccess = await hasRole('super_admin') || await hasRole('admin');
         
+        console.log('[CFO UI] Access check result:', { hasCfoAccess, hasAdminAccess });
+        
         if (!hasCfoAccess && !hasAdminAccess) {
+          console.log('[CFO UI] Access denied, redirecting to unauthorized');
           toast({
             title: "Access Denied",
             description: "You don't have permission to access the CFO dashboard",
@@ -42,7 +60,7 @@ const CFODashboard = () => {
           navigate('/unauthorized');
         }
       } catch (err) {
-        console.error('Error checking user role:', err);
+        console.error('[CFO UI] Error checking user role:', err);
         toast({
           title: "Authentication Error",
           description: "Unable to verify your access permissions",
@@ -50,6 +68,7 @@ const CFODashboard = () => {
         });
         navigate('/unauthorized');
       } finally {
+        console.log('[CFO UI] Access check completed');
         setIsAccessChecking(false);
       }
     };
@@ -59,6 +78,7 @@ const CFODashboard = () => {
 
   // Create a default financial summary
   const createDefaultSummary = useCallback((): MonthlyFinancialSummary => {
+    console.log('[CFO UI] Creating default financial summary');
     return {
       period: selectedMonth,
       total_income: 0,
@@ -70,21 +90,25 @@ const CFODashboard = () => {
   }, [selectedMonth]);
 
   const loadFinancialData = useCallback(async () => {
+    console.log('[CFO UI] loadFinancialData called for month:', selectedMonth);
     try {
-      console.log('Loading financial data for', selectedMonth);
+      console.log('[CFO UI] Attempting to fetch financial summary');
       let summary = null;
       
       try {
         summary = await fetchMonthlyFinancialSummary(selectedMonth);
+        console.log('[CFO UI] fetchMonthlyFinancialSummary returned:', summary);
       } catch (fetchErr) {
-        console.error('Error in fetchMonthlyFinancialSummary:', fetchErr);
+        console.error('[CFO UI] Error in fetchMonthlyFinancialSummary:', fetchErr);
         // We'll use the default data below
       }
       
       // Set data with fallback for null
-      setTrends(summary ? [summary] : [createDefaultSummary()]);
+      const finalData = summary ? [summary] : [createDefaultSummary()];
+      console.log('[CFO UI] Setting trends state to:', finalData);
+      setTrends(finalData);
     } catch (err) {
-      console.error('Error loading financial data:', err);
+      console.error('[CFO UI] Error loading financial data:', err);
       toast({
         title: "Failed to load financial data",
         description: err instanceof Error ? err.message : "An unknown error occurred",
@@ -92,19 +116,32 @@ const CFODashboard = () => {
       });
       
       // Set default data to prevent showing a loading screen forever
+      console.log('[CFO UI] Setting fallback data after error');
       setTrends([createDefaultSummary()]);
     }
   }, [selectedMonth, fetchMonthlyFinancialSummary, toast, createDefaultSummary]);
 
   useEffect(() => {
     if (!isAccessChecking) {
+      console.log('[CFO UI] Access check completed, loading financial data');
       loadFinancialData();
+    } else {
+      console.log('[CFO UI] Access check in progress, skipping data load');
     }
   }, [isAccessChecking, loadFinancialData]);
 
   const handleRetry = () => {
+    console.log('[CFO UI] Retry button clicked');
     loadFinancialData();
   };
+
+  console.log('[CFO UI] CFODashboard render state:', { 
+    isAccessChecking, 
+    isLoading, 
+    hasError: !!error, 
+    trendsLength: trends.length,
+    selectedMonth
+  });
 
   if (isAccessChecking) {
     return (

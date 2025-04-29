@@ -15,45 +15,70 @@ import { ErrorDisplay } from '@/components/dashboard/ErrorDisplay';
 import { MonthlyFinancialSummary } from '@/types/financeTypes';
 
 export const FinancialDashboard: React.FC = () => {
+  console.log('[FINANCE UI] FinancialDashboard component rendering');
+  
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [financialData, setFinancialData] = useState<MonthlyFinancialSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [exportLoading, setExportLoading] = useState(false);
   const [loadError, setLoadError] = useState<Error | null>(null);
+  const [renderCount, setRenderCount] = useState(0);
+  
   const { fetchMonthlyFinancialSummary, fetchSiteIncomes, fetchSiteExpenses, fetchCommissionPayments } = useFinancials();
   const { toast } = useToast();
 
+  // Debugging - log component lifecycle
+  useEffect(() => {
+    console.log('[FINANCE UI] FinancialDashboard mounted or updated');
+    setRenderCount(prev => prev + 1);
+    console.log('[FINANCE UI] Render count:', renderCount + 1);
+    
+    return () => {
+      console.log('[FINANCE UI] FinancialDashboard unmounting');
+    };
+  }, [renderCount]);
+
   // Create default summary object to prevent null values
-  const createDefaultSummary = useCallback((period: string): MonthlyFinancialSummary => ({
-    period,
-    total_income: 0,
-    total_expenses: 0,
-    net_profit: 0,
-    commissions_paid: 0,
-    prize_expenses: 0
-  }), []);
+  const createDefaultSummary = useCallback((period: string): MonthlyFinancialSummary => {
+    console.log('[FINANCE UI] Creating default summary for period:', period);
+    return {
+      period,
+      total_income: 0,
+      total_expenses: 0,
+      net_profit: 0,
+      commissions_paid: 0,
+      prize_expenses: 0
+    };
+  }, []);
 
   const loadFinancialData = useCallback(async () => {
+    console.log('[FINANCE UI] loadFinancialData called for month:', selectedMonth);
     setIsLoading(true);
     setLoadError(null);
     
     try {
-      console.log('Loading financial summary for', selectedMonth);
+      console.log('[FINANCE UI] Attempting to fetch financial summary');
       let summary: MonthlyFinancialSummary | null = null;
       
       try {
+        console.log('[FINANCE UI] Calling fetchMonthlyFinancialSummary');
         summary = await fetchMonthlyFinancialSummary(selectedMonth);
+        console.log('[FINANCE UI] fetchMonthlyFinancialSummary returned:', summary);
       } catch (fetchError) {
-        console.error('Error in fetchMonthlyFinancialSummary:', fetchError);
+        console.error('[FINANCE UI] Error in fetchMonthlyFinancialSummary:', fetchError);
         // Even if the fetch fails, we'll still set default data below
       }
       
       // Always set valid data to prevent rendering issues
-      setFinancialData(summary || createDefaultSummary(selectedMonth));
+      const finalData = summary || createDefaultSummary(selectedMonth);
+      console.log('[FINANCE UI] Setting financial data state to:', finalData);
+      setFinancialData(finalData);
+      
     } catch (err) {
-      console.error('Error loading financial data:', err);
+      console.error('[FINANCE UI] Error loading financial data:', err);
       setLoadError(err instanceof Error ? err : new Error('Unknown error occurred'));
       // Set fallback data even on error
+      console.log('[FINANCE UI] Setting fallback data after error');
       setFinancialData(createDefaultSummary(selectedMonth));
       
       toast({
@@ -62,20 +87,25 @@ export const FinancialDashboard: React.FC = () => {
         variant: "destructive",
       });
     } finally {
+      console.log('[FINANCE UI] Finished loading data, setting isLoading = false');
       setIsLoading(false);
     }
   }, [selectedMonth, fetchMonthlyFinancialSummary, createDefaultSummary, toast]);
   
   useEffect(() => {
+    console.log('[FINANCE UI] useEffect - loadFinancialData dependency changed');
     loadFinancialData();
   }, [loadFinancialData]);
 
   const handleMonthChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedMonth(event.target.value);
+    const newMonth = event.target.value;
+    console.log('[FINANCE UI] Month changed to:', newMonth);
+    setSelectedMonth(newMonth);
   };
 
   const handleExport = async () => {
     try {
+      console.log('[FINANCE UI] Export initiated');
       setExportLoading(true);
       toast({
         title: "Export initiated",
@@ -88,6 +118,7 @@ export const FinancialDashboard: React.FC = () => {
       const endDate = `${selectedMonth}-${lastDay}`;
       
       try {
+        console.log('[FINANCE UI] Fetching export data');
         // Fetch all required data
         const [incomeData, expenseData, commissionData] = await Promise.all([
           fetchSiteIncomes(startDate, endDate),
@@ -99,6 +130,7 @@ export const FinancialDashboard: React.FC = () => {
         const filteredCommissions = commissionData.filter(c => c.period === selectedMonth);
         
         // Export the data
+        console.log('[FINANCE UI] Calling exportFinancialData function');
         await exportFinancialData(incomeData, expenseData, filteredCommissions, selectedMonth);
         
         toast({
@@ -106,7 +138,7 @@ export const FinancialDashboard: React.FC = () => {
           description: `Financial data has been exported successfully`,
         });
       } catch (exportErr) {
-        console.error('Error during export:', exportErr);
+        console.error('[FINANCE UI] Error during export:', exportErr);
         toast({
           title: "Export failed",
           description: exportErr instanceof Error ? exportErr.message : "An unknown error occurred during export",
@@ -114,13 +146,22 @@ export const FinancialDashboard: React.FC = () => {
         });
       }
     } finally {
+      console.log('[FINANCE UI] Export completed, resetting export loading state');
       setExportLoading(false);
     }
   };
 
   const handleRetry = () => {
+    console.log('[FINANCE UI] Retry button clicked');
     loadFinancialData();
   };
+
+  console.log('[FINANCE UI] FinancialDashboard render state:', { 
+    isLoading, 
+    hasError: !!loadError, 
+    hasFinancialData: !!financialData,
+    selectedMonth
+  });
 
   // Always render a Card to prevent UI flashing
   return (
@@ -157,20 +198,24 @@ export const FinancialDashboard: React.FC = () => {
             )}
             
             {/* Always render financial data UI with guaranteed valid data */}
-            <FinancialSummaryCards financialData={financialData} />
-            
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="mb-4">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="commissions">Commissions</TabsTrigger>
-                <TabsTrigger value="expenses">Expenses</TabsTrigger>
-              </TabsList>
-              
-              <FinancialTabContent 
-                financialData={financialData}
-                selectedMonth={selectedMonth}
-              />
-            </Tabs>
+            {financialData && (
+              <>
+                <FinancialSummaryCards financialData={financialData} />
+                
+                <Tabs defaultValue="overview" className="w-full">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="commissions">Commissions</TabsTrigger>
+                    <TabsTrigger value="expenses">Expenses</TabsTrigger>
+                  </TabsList>
+                  
+                  <FinancialTabContent 
+                    financialData={financialData}
+                    selectedMonth={selectedMonth}
+                  />
+                </Tabs>
+              </>
+            )}
           </>
         )}
       </CardContent>

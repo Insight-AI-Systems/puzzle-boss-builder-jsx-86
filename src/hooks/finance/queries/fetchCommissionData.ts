@@ -7,7 +7,11 @@ import { CommissionPayment, PaymentStatus } from '@/types/financeTypes';
  * @returns Promise resolving to an array of commission payments
  */
 export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
+  console.log('[FINANCE DEBUG] fetchCommissionPayments called');
+  
   try {
+    console.log('[FINANCE DEBUG] Executing Supabase query for commission payments');
+    
     const { data, error } = await supabase
       .from('commission_payments')
       .select(`
@@ -17,11 +21,14 @@ export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
       `);
 
     if (error) {
-      console.error('Supabase error fetching commission payments:', error);
+      console.error('[FINANCE ERROR] Supabase error fetching commission payments:', error);
+      console.error('[FINANCE ERROR] Error details:', JSON.stringify(error));
       throw error;
     }
 
-    return (data || []).map(payment => {
+    console.log('[FINANCE DEBUG] Raw commission data returned:', data ? data.length : 'none');
+    
+    const processedData = (data || []).map(payment => {
       let managerName = 'Unknown';
       let managerEmail: string | undefined = undefined;
       
@@ -41,8 +48,12 @@ export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
         payment_status: payment.payment_status as PaymentStatus
       };
     });
+    
+    console.log('[FINANCE DEBUG] Processed commission payments count:', processedData.length);
+    return processedData;
   } catch (err) {
-    console.error('Error fetching commission payments:', err);
+    console.error('[FINANCE ERROR] Error fetching commission payments:', err);
+    console.error('[FINANCE ERROR] Stack trace:', err instanceof Error ? err.stack : 'No stack trace');
     return [];
   }
 }

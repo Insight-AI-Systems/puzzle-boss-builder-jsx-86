@@ -12,12 +12,16 @@ export async function fetchSiteIncomes(
   startDate: string, 
   endDate: string
 ): Promise<SiteIncome[]> {
+  console.log('[FINANCE DEBUG] fetchSiteIncomes called with dates:', { startDate, endDate });
+  
   if (!startDate || !endDate || typeof startDate !== 'string' || typeof endDate !== 'string') {
-    console.error('Invalid date parameters in fetchSiteIncomes:', { startDate, endDate });
+    console.error('[FINANCE ERROR] Invalid date parameters in fetchSiteIncomes:', { startDate, endDate });
     return [];
   }
 
   try {
+    console.log('[FINANCE DEBUG] Executing Supabase query for income between:', startDate, 'and', endDate);
+    
     const { data, error } = await supabase
       .from('site_income')
       .select(`
@@ -29,11 +33,14 @@ export async function fetchSiteIncomes(
       .lte('date', endDate);
 
     if (error) {
-      console.error('Supabase error fetching site incomes:', error);
+      console.error('[FINANCE ERROR] Supabase error fetching site incomes:', error);
+      console.error('[FINANCE ERROR] Error details:', JSON.stringify(error));
       throw error;
     }
     
-    return (data || []).map(item => {
+    console.log('[FINANCE DEBUG] Raw income data returned:', data ? data.length : 'none');
+    
+    const processedData = (data || []).map(item => {
       const username = item.profiles && typeof item.profiles === 'object' ? 
                      ((item.profiles as any).username as string || 'Anonymous') : 'Anonymous';
 
@@ -43,8 +50,12 @@ export async function fetchSiteIncomes(
         profiles: { username }
       };
     });
+    
+    console.log('[FINANCE DEBUG] Processed income count:', processedData.length);
+    return processedData;
   } catch (err) {
-    console.error('Error fetching site incomes:', err);
+    console.error('[FINANCE ERROR] Error fetching site incomes:', err);
+    console.error('[FINANCE ERROR] Stack trace:', err instanceof Error ? err.stack : 'No stack trace');
     return [];
   }
 }
