@@ -16,7 +16,10 @@ export async function fetchCategoryManagers(): Promise<CategoryManager[]> {
         profiles:user_id(username, email)
       `);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error fetching category managers:', error);
+      throw error;
+    }
 
     return (data || []).map(manager => {
       let username = 'Unknown';

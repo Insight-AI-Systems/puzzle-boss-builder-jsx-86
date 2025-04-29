@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,50 +11,57 @@ import { FinancialSummaryCards } from './financial-dashboard/FinancialSummaryCar
 import { FinancialTabContent } from './financial-dashboard/FinancialTabContent';
 import { Button } from "@/components/ui/button";
 import { exportFinancialData } from '@/utils/exportUtils';
+import { ErrorDisplay } from '@/components/dashboard/ErrorDisplay';
+import { MonthlyFinancialSummary } from '@/types/financeTypes';
 
 export const FinancialDashboard: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
-  const [financialData, setFinancialData] = useState<any>(null);
+  const [financialData, setFinancialData] = useState<MonthlyFinancialSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [exportLoading, setExportLoading] = useState(false);
   const [loadError, setLoadError] = useState<Error | null>(null);
   const { fetchMonthlyFinancialSummary, fetchSiteIncomes, fetchSiteExpenses, fetchCommissionPayments } = useFinancials();
   const { toast } = useToast();
 
-  useEffect(() => {
-    const loadFinancialData = async () => {
-      setIsLoading(true);
-      setLoadError(null);
-      try {
-        console.log('Loading financial summary for', selectedMonth);
-        const summary = await fetchMonthlyFinancialSummary(selectedMonth);
-        
-        // If summary is empty or undefined, create a default summary object
-        const fallbackSummary = {
-          period: selectedMonth,
-          total_income: 0,
-          total_expenses: 0,
-          net_profit: 0,
-          commissions_paid: 0,
-          prize_expenses: 0
-        };
-        
-        setFinancialData(summary || fallbackSummary);
-      } catch (err) {
-        console.error('Error loading financial data:', err);
-        setLoadError(err instanceof Error ? err : new Error('Unknown error occurred'));
-        toast({
-          title: "Error loading financial data",
-          description: err instanceof Error ? err.message : "An unknown error occurred",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Create default summary object to prevent null values
+  const createDefaultSummary = (period: string): MonthlyFinancialSummary => ({
+    period,
+    total_income: 0,
+    total_expenses: 0,
+    net_profit: 0,
+    commissions_paid: 0,
+    prize_expenses: 0
+  });
+
+  const loadFinancialData = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
     
-    loadFinancialData();
+    try {
+      console.log('Loading financial summary for', selectedMonth);
+      const summary = await fetchMonthlyFinancialSummary(selectedMonth);
+      
+      // Always set valid data to prevent rendering issues
+      setFinancialData(summary || createDefaultSummary(selectedMonth));
+    } catch (err) {
+      console.error('Error loading financial data:', err);
+      setLoadError(err instanceof Error ? err : new Error('Unknown error occurred'));
+      // Set fallback data even on error
+      setFinancialData(createDefaultSummary(selectedMonth));
+      
+      toast({
+        title: "Error loading financial data",
+        description: err instanceof Error ? err.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }, [selectedMonth, fetchMonthlyFinancialSummary, toast]);
+  
+  useEffect(() => {
+    loadFinancialData();
+  }, [loadFinancialData]);
 
   const handleMonthChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedMonth(event.target.value);
@@ -104,39 +111,11 @@ export const FinancialDashboard: React.FC = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <Card className="w-full">
-        <CardContent className="flex justify-center items-center p-8">
-          <div className="flex flex-col items-center">
-            <Loader2 className="h-8 w-8 animate-spin text-puzzle-aqua" />
-            <p className="mt-2 text-sm text-muted-foreground">Loading financial data...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleRetry = () => {
+    loadFinancialData();
+  };
 
-  if (loadError) {
-    return (
-      <Card className="w-full">
-        <CardContent className="flex flex-col items-center p-8">
-          <div className="bg-destructive/10 p-4 rounded-md w-full max-w-lg text-center">
-            <h3 className="font-semibold text-destructive">Error loading financial data</h3>
-            <p className="text-sm mt-2">{loadError.message}</p>
-            <Button 
-              onClick={() => window.location.reload()}
-              variant="outline" 
-              className="mt-4"
-            >
-              Retry
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  // Always render a Card to prevent UI flashing
   return (
     <Card className="w-full">
       <FinancialDashboardHeader
@@ -146,8 +125,31 @@ export const FinancialDashboard: React.FC = () => {
         isExporting={exportLoading}
       />
       <CardContent>
-        {financialData ? (
+        {isLoading ? (
+          <div className="flex justify-center items-center p-8">
+            <div className="flex flex-col items-center">
+              <Loader2 className="h-8 w-8 animate-spin text-puzzle-aqua" />
+              <p className="mt-2 text-sm text-muted-foreground">Loading financial data...</p>
+            </div>
+          </div>
+        ) : (
           <>
+            {loadError && (
+              <div className="mb-4">
+                <ErrorDisplay error={loadError.message} />
+                <div className="flex justify-center mt-2">
+                  <Button 
+                    onClick={handleRetry}
+                    variant="outline" 
+                    size="sm"
+                  >
+                    Retry Loading Data
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {/* Always render financial data UI, even with default data */}
             <FinancialSummaryCards financialData={financialData} />
             
             <Tabs defaultValue="overview" className="w-full">
@@ -163,10 +165,6 @@ export const FinancialDashboard: React.FC = () => {
               />
             </Tabs>
           </>
-        ) : (
-          <div className="text-center p-8">
-            <p>No financial data available for the selected period.</p>
-          </div>
         )}
       </CardContent>
     </Card>

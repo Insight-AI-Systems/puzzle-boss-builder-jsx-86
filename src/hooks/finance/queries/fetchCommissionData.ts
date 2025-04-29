@@ -16,7 +16,10 @@ export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
         manager:manager_id(username, email)
       `);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error fetching commission payments:', error);
+      throw error;
+    }
 
     return (data || []).map(payment => {
       let managerName = 'Unknown';

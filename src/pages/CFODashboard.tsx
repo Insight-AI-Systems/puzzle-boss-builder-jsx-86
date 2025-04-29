@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -14,6 +14,7 @@ import CommissionsManagement from '@/components/cfo/CommissionsManagement';
 import { useFinancials } from '@/hooks/useFinancials';
 import { MonthlyFinancialSummary, TimeFrame } from '@/types/financeTypes';
 import { Loader2 } from 'lucide-react';
+import { ErrorDisplay } from '@/components/dashboard/ErrorDisplay';
 
 const CFODashboard = () => {
   const { hasRole } = useAuth();
@@ -22,6 +23,7 @@ const CFODashboard = () => {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [timeframe, setTimeframe] = useState<TimeFrame>('monthly');
   const [trends, setTrends] = useState<MonthlyFinancialSummary[]>([]);
+  const [isAccessChecking, setIsAccessChecking] = useState(true);
   const { fetchMonthlyFinancialSummary, isLoading, error } = useFinancials();
 
   // Check if user has CFO access
@@ -47,96 +49,62 @@ const CFODashboard = () => {
           variant: "destructive",
         });
         navigate('/unauthorized');
+      } finally {
+        setIsAccessChecking(false);
       }
     };
     
     checkAccess();
   }, [hasRole, navigate, toast]);
 
-  useEffect(() => {
-    const loadFinancialData = async () => {
-      try {
-        console.log('Loading financial data for', selectedMonth);
-        const summary = await fetchMonthlyFinancialSummary(selectedMonth);
-        
-        // Create a default/fallback summary if none is returned
-        if (summary) {
-          setTrends([summary]);
-        } else {
-          // Set a default summary if none is returned
-          const defaultSummary: MonthlyFinancialSummary = {
-            period: selectedMonth,
-            total_income: 0,
-            total_expenses: 0,
-            net_profit: 0,
-            commissions_paid: 0,
-            prize_expenses: 0
-          };
-          setTrends([defaultSummary]);
-        }
-      } catch (err) {
-        console.error('Error loading financial data:', err);
-        toast({
-          title: "Failed to load financial data",
-          description: err instanceof Error ? err.message : "An unknown error occurred",
-          variant: "destructive"
-        });
-        
-        // Set default data to prevent showing a loading screen forever
-        const defaultSummary: MonthlyFinancialSummary = {
-          period: selectedMonth,
-          total_income: 0,
-          total_expenses: 0,
-          net_profit: 0,
-          commissions_paid: 0,
-          prize_expenses: 0
-        };
-        setTrends([defaultSummary]);
-      }
+  // Create a default financial summary
+  const createDefaultSummary = useCallback((): MonthlyFinancialSummary => {
+    return {
+      period: selectedMonth,
+      total_income: 0,
+      total_expenses: 0,
+      net_profit: 0,
+      commissions_paid: 0,
+      prize_expenses: 0
     };
-    
-    loadFinancialData();
-  }, [selectedMonth, fetchMonthlyFinancialSummary, toast]);
+  }, [selectedMonth]);
 
-  if (isLoading) {
+  const loadFinancialData = useCallback(async () => {
+    try {
+      console.log('Loading financial data for', selectedMonth);
+      const summary = await fetchMonthlyFinancialSummary(selectedMonth);
+      
+      // Set data with fallback for null
+      setTrends(summary ? [summary] : [createDefaultSummary()]);
+    } catch (err) {
+      console.error('Error loading financial data:', err);
+      toast({
+        title: "Failed to load financial data",
+        description: err instanceof Error ? err.message : "An unknown error occurred",
+        variant: "destructive"
+      });
+      
+      // Set default data to prevent showing a loading screen forever
+      setTrends([createDefaultSummary()]);
+    }
+  }, [selectedMonth, fetchMonthlyFinancialSummary, toast, createDefaultSummary]);
+
+  useEffect(() => {
+    if (!isAccessChecking) {
+      loadFinancialData();
+    }
+  }, [isAccessChecking, loadFinancialData]);
+
+  const handleRetry = () => {
+    loadFinancialData();
+  };
+
+  if (isAccessChecking) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="flex flex-col items-center">
           <Loader2 className="h-12 w-12 animate-spin text-puzzle-aqua" />
-          <p className="mt-4 text-lg">Loading financial data...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 max-w-2xl">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">
-                Error loading financial data
-              </h3>
-              <div className="mt-2 text-sm text-red-700">
-                <p>{error instanceof Error ? error.message : 'Unknown error occurred'}</p>
-              </div>
-              <div className="mt-4">
-                <button
-                  type="button"
-                  onClick={() => window.location.reload()}
-                  className="inline-flex items-center rounded-md border border-transparent bg-red-100 px-4 py-2 text-sm font-medium text-red-800 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                >
-                  Retry
-                </button>
-              </div>
-            </div>
-          </div>
+          <p className="mt-4 text-lg">Verifying access...</p>
         </div>
       </div>
     );
@@ -147,13 +115,34 @@ const CFODashboard = () => {
       <div className="flex min-h-screen w-full">
         <CFOSidebar />
         <main className="flex-1 p-6 overflow-auto">
-          <Routes>
-            <Route index element={<FinancialOverview trends={trends} timeframe={timeframe} />} />
-            <Route path="income" element={<IncomeStreams selectedMonth={selectedMonth} />} />
-            <Route path="expenses" element={<CostStreams selectedMonth={selectedMonth} />} />
-            <Route path="memberships" element={<MembershipSummary selectedMonth={selectedMonth} />} />
-            <Route path="commissions" element={<CommissionsManagement selectedMonth={selectedMonth} />} />
-          </Routes>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="flex flex-col items-center">
+                <Loader2 className="h-12 w-12 animate-spin text-puzzle-aqua" />
+                <p className="mt-4 text-lg">Loading financial data...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="mb-6">
+              <ErrorDisplay error={error.message} />
+              <div className="flex justify-center mt-4">
+                <button
+                  onClick={handleRetry}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Retry Loading Data
+                </button>
+              </div>
+            </div>
+          ) : (
+            <Routes>
+              <Route index element={<FinancialOverview trends={trends} timeframe={timeframe} />} />
+              <Route path="income" element={<IncomeStreams selectedMonth={selectedMonth} />} />
+              <Route path="expenses" element={<CostStreams selectedMonth={selectedMonth} />} />
+              <Route path="memberships" element={<MembershipSummary selectedMonth={selectedMonth} />} />
+              <Route path="commissions" element={<CommissionsManagement selectedMonth={selectedMonth} />} />
+            </Routes>
+          )}
         </main>
       </div>
     </ProtectedRoute>

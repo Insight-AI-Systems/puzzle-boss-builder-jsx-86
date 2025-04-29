@@ -15,16 +15,28 @@ export function useFinancials(): FinancialsHookReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
+  /**
+   * Wraps API operations with loading state and error handling
+   * @param operation - Async function to execute
+   * @param errorMessage - Fallback error message
+   * @returns Result of the operation
+   */
   const wrapWithLoadingAndError = async <T,>(
     operation: () => Promise<T>,
     errorMessage: string
   ): Promise<T> => {
-    setIsLoading(true);
+    // Don't set loading state if already loading to prevent UI flickering
+    if (!isLoading) {
+      setIsLoading(true);
+    }
     setError(null);
+    
     try {
-      return await operation();
+      const result = await operation();
+      return result;
     } catch (err) {
       const actualError = err instanceof Error ? err : new Error(errorMessage);
+      console.error(`Financial operation failed: ${errorMessage}`, err);
       setError(actualError);
       throw actualError;
     } finally {

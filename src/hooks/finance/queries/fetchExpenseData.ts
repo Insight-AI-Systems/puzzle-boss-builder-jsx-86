@@ -8,6 +8,11 @@ import { SiteExpense, ExpenseType } from '@/types/financeTypes';
  * @returns Promise resolving to an array of expense records
  */
 export async function fetchSiteExpenses(month: string): Promise<SiteExpense[]> {
+  if (!month || typeof month !== 'string') {
+    console.error('Invalid month parameter in fetchSiteExpenses:', month);
+    return [];
+  }
+
   try {
     const { data, error } = await supabase
       .from('site_expenses')
@@ -17,7 +22,11 @@ export async function fetchSiteExpenses(month: string): Promise<SiteExpense[]> {
       `)
       .like('date', `${month}%`);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error fetching site expenses:', error);
+      throw error;
+    }
+    
     return (data || []).map(item => ({
       ...item,
       expense_type: item.expense_type as ExpenseType,

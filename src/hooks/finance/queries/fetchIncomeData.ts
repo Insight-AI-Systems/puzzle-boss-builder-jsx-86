@@ -12,6 +12,11 @@ export async function fetchSiteIncomes(
   startDate: string, 
   endDate: string
 ): Promise<SiteIncome[]> {
+  if (!startDate || !endDate || typeof startDate !== 'string' || typeof endDate !== 'string') {
+    console.error('Invalid date parameters in fetchSiteIncomes:', { startDate, endDate });
+    return [];
+  }
+
   try {
     const { data, error } = await supabase
       .from('site_income')
@@ -23,11 +28,14 @@ export async function fetchSiteIncomes(
       .gte('date', startDate)
       .lte('date', endDate);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error fetching site incomes:', error);
+      throw error;
+    }
     
     return (data || []).map(item => {
       const username = item.profiles && typeof item.profiles === 'object' ? 
-                      ((item.profiles as any).username as string || 'Anonymous') : 'Anonymous';
+                     ((item.profiles as any).username as string || 'Anonymous') : 'Anonymous';
 
       return {
         ...item,
