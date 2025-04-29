@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFinancials } from '@/hooks/useFinancials';
-import { Loader2, Download } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FinancialDashboardHeader } from './financial-dashboard/FinancialDashboardHeader';
 import { FinancialSummaryCards } from './financial-dashboard/FinancialSummaryCards';

@@ -25,7 +25,6 @@ export function useFinancials(): FinancialsHookReturn {
     operation: () => Promise<T>,
     errorMessage: string
   ): Promise<T> => {
-    // Set initial state
     setIsLoading(true);
     setError(null);
     
