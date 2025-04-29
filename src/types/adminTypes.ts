@@ -48,3 +48,19 @@ export interface RpcUserData {
   categories_played?: string[];
   credits?: number;
 }
+
+// Financial data interfaces for better type checking
+export interface FinancialFilterOptions {
+  period?: string;
+  startDate?: string;
+  endDate?: string;
+  sourceType?: string;
+  expenseType?: string;
+  searchTerm?: string;
+  status?: string;
+}
+
+export interface ExportOptions {
+  format: 'csv' | 'excel';
+  filename: string;
+}

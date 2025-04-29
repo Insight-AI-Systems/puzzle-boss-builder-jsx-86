@@ -18,13 +18,23 @@ export function useUserFilters(initialPageSize: number = 10) {
   const filterOptions: AdminProfilesOptions = {
     page,
     pageSize,
-    searchTerm,
+    searchTerm: searchTerm.trim(), // Trim whitespace to avoid unnecessary queries
     dateRange,
     role: selectedRole,
     roleSortDirection,
     country: selectedCountry,
     category: selectedCategory,
     userType
+  };
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setDateRange(undefined);
+    setSelectedCountry(null);
+    setSelectedCategory(null);
+    setSelectedRole(null);
+    setRoleSortDirection('asc');
+    setPage(0);
   };
 
   return {
@@ -46,6 +56,7 @@ export function useUserFilters(initialPageSize: number = 10) {
     setRoleSortDirection,
     userType,
     setUserType,
-    filterOptions
+    filterOptions,
+    resetFilters
   };
 }

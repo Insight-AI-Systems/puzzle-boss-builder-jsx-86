@@ -12,7 +12,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 export const RevenueTab: React.FC = () => {
   const { 
     revenueMetrics, 
-    isLoadingRevenueMetrics 
+    isLoadingRevenueMetrics,
+    error 
   } = useAnalytics();
 
   if (isLoadingRevenueMetrics) {
@@ -21,6 +22,21 @@ export const RevenueTab: React.FC = () => {
         <div className="flex justify-center items-center h-40">
           <Loader2 className="h-8 w-8 animate-spin text-puzzle-aqua" />
         </div>
+      </TabsContent>
+    );
+  }
+
+  if (error) {
+    return (
+      <TabsContent value="revenue" className="space-y-6">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center p-6">
+            <p className="text-destructive font-medium">Error loading revenue data</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              {error instanceof Error ? error.message : 'An unknown error occurred'}
+            </p>
+          </CardContent>
+        </Card>
       </TabsContent>
     );
   }
