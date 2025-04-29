@@ -33,7 +33,7 @@ export const useAnalytics = () => {
   const { data: categoryRevenue, isLoading: isLoadingCategoryRevenue } = useCategoryRevenue(selectedDate);
   const { data: userDemographics, isLoading: isLoadingUserDemographics } = useUserDemographics();
   const { data: puzzleMetrics, isLoading: isLoadingPuzzleMetrics } = usePuzzleMetrics();
-  const { data: revenueMetrics, isLoading: isLoadingRevenueMetrics } = useRevenueMetrics();
+  const { data: revenueMetrics, isLoading: isLoadingRevenueMetrics, error: revenueError } = useRevenueMetrics();
 
   const {
     getUserTrend,
@@ -57,6 +57,7 @@ export const useAnalytics = () => {
     puzzleMetrics,
     revenueMetrics,
     activityBreakdown,
+    error: revenueError, // Add the error property
     isLoadingDailyMetrics,
     isLoadingMonthlyTrends,
     isLoadingCategoryRevenue,
@@ -75,3 +76,4 @@ export const useAnalytics = () => {
 };
 
 export type * from './types/analyticsTypes';
+

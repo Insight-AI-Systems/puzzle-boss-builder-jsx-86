@@ -50,3 +50,4 @@ export interface TrendValue {
   value: string;
   direction: "up" | "down";
 }
+
