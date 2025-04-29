@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Routes, Route, Navigate, useNavigate, Outlet } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -27,13 +27,23 @@ const CFODashboard = () => {
   // Check if user has CFO access
   useEffect(() => {
     const checkAccess = async () => {
-      const hasCfoAccess = await hasRole('cfo');
-      const hasAdminAccess = await hasRole('super_admin') || await hasRole('admin');
-      
-      if (!hasCfoAccess && !hasAdminAccess) {
+      try {
+        const hasCfoAccess = await hasRole('cfo');
+        const hasAdminAccess = await hasRole('super_admin') || await hasRole('admin');
+        
+        if (!hasCfoAccess && !hasAdminAccess) {
+          toast({
+            title: "Access Denied",
+            description: "You don't have permission to access the CFO dashboard",
+            variant: "destructive",
+          });
+          navigate('/unauthorized');
+        }
+      } catch (err) {
+        console.error('Error checking user role:', err);
         toast({
-          title: "Access Denied",
-          description: "You don't have permission to access the CFO dashboard",
+          title: "Authentication Error",
+          description: "Unable to verify your access permissions",
           variant: "destructive",
         });
         navigate('/unauthorized');
@@ -48,8 +58,21 @@ const CFODashboard = () => {
       try {
         console.log('Loading financial data for', selectedMonth);
         const summary = await fetchMonthlyFinancialSummary(selectedMonth);
+        
+        // Create a default/fallback summary if none is returned
         if (summary) {
           setTrends([summary]);
+        } else {
+          // Set a default summary if none is returned
+          const defaultSummary: MonthlyFinancialSummary = {
+            period: selectedMonth,
+            total_income: 0,
+            total_expenses: 0,
+            net_profit: 0,
+            commissions_paid: 0,
+            prize_expenses: 0
+          };
+          setTrends([defaultSummary]);
         }
       } catch (err) {
         console.error('Error loading financial data:', err);
@@ -58,6 +81,17 @@ const CFODashboard = () => {
           description: err instanceof Error ? err.message : "An unknown error occurred",
           variant: "destructive"
         });
+        
+        // Set default data to prevent showing a loading screen forever
+        const defaultSummary: MonthlyFinancialSummary = {
+          period: selectedMonth,
+          total_income: 0,
+          total_expenses: 0,
+          net_profit: 0,
+          commissions_paid: 0,
+          prize_expenses: 0
+        };
+        setTrends([defaultSummary]);
       }
     };
     
@@ -90,7 +124,7 @@ const CFODashboard = () => {
                 Error loading financial data
               </h3>
               <div className="mt-2 text-sm text-red-700">
-                <p>{error.message}</p>
+                <p>{error instanceof Error ? error.message : 'Unknown error occurred'}</p>
               </div>
               <div className="mt-4">
                 <button

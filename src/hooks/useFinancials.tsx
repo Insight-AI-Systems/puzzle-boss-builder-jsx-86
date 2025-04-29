@@ -20,17 +20,24 @@ export function useFinancials() {
     setIsLoading(true);
     setError(null);
     try {
-      // Fix the ambiguous column reference by using aliases in the query
-      const { data, error } = await supabase
+      // Create a safe query with proper parameters
+      const { data, error: dbError } = await supabase
         .rpc('get_monthly_financial_summary', { month_param: period });
 
-      if (error) {
-        console.error('Error fetching monthly summary:', error);
-        throw error;
+      if (dbError) {
+        console.error('Database error fetching monthly summary:', dbError);
+        throw dbError;
       }
       
       console.log('Monthly summary data:', data);
-      return data?.[0] || {
+      
+      // If data exists and is not empty, return the first item
+      if (data && data.length > 0) {
+        return data[0] as MonthlyFinancialSummary;
+      }
+      
+      // Return default object if no data
+      return {
         period,
         total_income: 0,
         total_expenses: 0,
@@ -41,6 +48,8 @@ export function useFinancials() {
     } catch (err) {
       console.error('Exception in fetchMonthlyFinancialSummary:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch monthly financial summary'));
+      
+      // Return a default object instead of throwing to prevent UI from breaking
       return {
         period,
         total_income: 0,
