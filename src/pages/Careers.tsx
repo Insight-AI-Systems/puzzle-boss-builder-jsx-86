@@ -1,4 +1,3 @@
-
 import React from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BriefcaseIcon, Globe, Users, Zap, HeartHandshake, Trophy, BarChart } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const jobOpenings = [
   {
@@ -81,6 +81,21 @@ const jobOpenings = [
       "Understanding of RESTful APIs and WebSockets",
       "Experience with serverless architecture",
       "Knowledge of security best practices"
+    ]
+  },
+  {
+    id: 6,
+    title: "Category Manager",
+    department: "Content",
+    location: "Remote",
+    type: "Flexible",
+    description: "We're looking for energetic Category Managers to take charge of individual prize categories. You'll source amazing prizes, promote puzzles on social media, and earn between 5–25% of net profits from each game.",
+    requirements: [
+      "Product sourcing experience for your category",
+      "Social media and forum marketing skills",
+      "Self-motivated with entrepreneurial spirit",
+      "Interest in puzzles and game mechanics",
+      "Passion for creating engaging experiences"
     ]
   }
 ];
@@ -222,6 +237,68 @@ const Careers = () => {
             </Card>
           ))}
         </div>
+      </div>
+      
+      <div className="mb-16">
+        <Card className="border-puzzle-aqua/20 bg-puzzle-black/50">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl text-puzzle-aqua">Category Managers Wanted!</CardTitle>
+            <CardDescription className="text-lg">
+              We're growing fast and looking for energetic Category Managers to take charge of individual prize categories.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="font-medium text-puzzle-white mb-2">Each Category Manager will:</h3>
+              <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                <li>Source amazing real-world prizes (like iPhones, trips, or watches)</li>
+                <li>Promote their puzzle on social media and forums</li>
+                <li>Earn <strong>5–25%</strong> of net profits from each game</li>
+              </ul>
+            </div>
+            
+            <div className="bg-puzzle-aqua/10 p-4 rounded-md">
+              <p className="font-medium text-puzzle-white">🧩 <strong>You promote the puzzle – we handle logistics.</strong></p>
+              <p className="text-muted-foreground mt-1">Our Partner Manager takes care of delivery, fulfilment, and logistics once a prize is won. You just focus on the fun stuff.</p>
+            </div>
+            
+            <div>
+              <h3 className="font-medium text-puzzle-white mb-2">Prize categories currently open for management:</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Smartphones</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Laptops</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Headphones</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Smartwatches</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Gaming Consoles</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Cameras</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Home Appliances</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Fashion Apparel</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Sneakers</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Jewelry</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Fitness Gear</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Kitchen Gadgets</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Toys</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Outdoor and Adventure</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Gift Cards</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Vacations / Experiences</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Pets</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Car / Bikes</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Beauty</div>
+                <div className="p-2 bg-puzzle-aqua/5 rounded text-muted-foreground text-sm">Hobbies / Home Decor</div>
+              </div>
+            </div>
+            
+            <div className="bg-puzzle-aqua/10 p-4 rounded-md">
+              <p className="font-medium text-puzzle-white">💼 This is a <strong>remote, flexible opportunity</strong> with real income potential.</p>
+              <p className="text-muted-foreground mt-1">If you're product-savvy, social media-friendly, and want to grow your own prize brand within ThePuzzleBoss, we'd love to hear from you.</p>
+            </div>
+          </CardContent>
+          <CardFooter className="justify-center">
+            <Button className="bg-puzzle-aqua hover:bg-puzzle-aqua/80" asChild>
+              <a href="mailto:info@thepuzzleboss.com">Apply Now</a>
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
       
       <div className="mb-16">
