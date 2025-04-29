@@ -11,6 +11,8 @@ export async function fetchMonthlyFinancialSummary(
   period: string
 ): Promise<MonthlyFinancialSummary | null> {
   try {
+    console.log('Fetching monthly summary for period:', period);
+    
     // Use an aliased parameter name to avoid column name ambiguity
     const { data, error: dbError } = await supabase
       .rpc('get_monthly_financial_summary', { month_param: period });
