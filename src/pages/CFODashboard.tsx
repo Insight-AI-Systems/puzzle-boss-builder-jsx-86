@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -11,139 +11,86 @@ import IncomeStreams from '@/components/cfo/IncomeStreams';
 import CostStreams from '@/components/cfo/CostStreams';
 import MembershipSummary from '@/components/cfo/MembershipSummary';
 import CommissionsManagement from '@/components/cfo/CommissionsManagement';
-import { useFinancials } from '@/hooks/useFinancials';
 import { MonthlyFinancialSummary, TimeFrame } from '@/types/financeTypes';
 import { Loader2 } from 'lucide-react';
 import { ErrorDisplay } from '@/components/dashboard/ErrorDisplay';
+import { FinancialDataProvider } from '@/contexts/FinancialDataContext';
 
 const CFODashboard = () => {
   console.log('[CFO UI] CFODashboard component rendering');
   
-  const { hasRole } = useAuth();
+  const { hasRole, isLoading: authLoading, rolesLoaded } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [timeframe, setTimeframe] = useState<TimeFrame>('monthly');
-  const [trends, setTrends] = useState<MonthlyFinancialSummary[]>([]);
   const [isAccessChecking, setIsAccessChecking] = useState(true);
-  const [renderCount, setRenderCount] = useState(0);
-  const { fetchMonthlyFinancialSummary, isLoading, error } = useFinancials();
-
+  const isMounted = useRef(true);
+  
   // Debugging - log component lifecycle
   useEffect(() => {
-    console.log('[CFO UI] CFODashboard mounted or updated');
-    setRenderCount(prev => prev + 1);
-    console.log('[CFO UI] Render count:', renderCount + 1);
+    console.log('[CFO UI] CFODashboard mounted');
     
     return () => {
       console.log('[CFO UI] CFODashboard unmounting');
+      isMounted.current = false;
     };
-  }, [renderCount]);
+  }, []);
 
   // Check if user has CFO access
   useEffect(() => {
+    // Skip access check if auth is still loading or roles aren't loaded
+    if (authLoading || !rolesLoaded) {
+      console.log('[CFO UI] Auth still loading, delaying access check');
+      return;
+    }
+
     const checkAccess = async () => {
       console.log('[CFO UI] Checking user access permissions');
       try {
-        const hasCfoAccess = await hasRole('cfo');
-        const hasAdminAccess = await hasRole('super_admin') || await hasRole('admin');
+        const hasCfoAccess = hasRole('cfo');
+        const hasAdminAccess = hasRole('super_admin') || hasRole('admin');
         
         console.log('[CFO UI] Access check result:', { hasCfoAccess, hasAdminAccess });
         
         if (!hasCfoAccess && !hasAdminAccess) {
           console.log('[CFO UI] Access denied, redirecting to unauthorized');
+          if (isMounted.current) {
+            toast({
+              title: "Access Denied",
+              description: "You don't have permission to access the CFO dashboard",
+              variant: "destructive",
+            });
+            navigate('/unauthorized');
+          }
+        }
+      } catch (err) {
+        console.error('[CFO UI] Error checking user role:', err);
+        if (isMounted.current) {
           toast({
-            title: "Access Denied",
-            description: "You don't have permission to access the CFO dashboard",
+            title: "Authentication Error",
+            description: "Unable to verify your access permissions",
             variant: "destructive",
           });
           navigate('/unauthorized');
         }
-      } catch (err) {
-        console.error('[CFO UI] Error checking user role:', err);
-        toast({
-          title: "Authentication Error",
-          description: "Unable to verify your access permissions",
-          variant: "destructive",
-        });
-        navigate('/unauthorized');
       } finally {
         console.log('[CFO UI] Access check completed');
-        setIsAccessChecking(false);
+        if (isMounted.current) {
+          setIsAccessChecking(false);
+        }
       }
     };
     
     checkAccess();
-  }, [hasRole, navigate, toast]);
-
-  // Create a default financial summary
-  const createDefaultSummary = useCallback((): MonthlyFinancialSummary => {
-    console.log('[CFO UI] Creating default financial summary');
-    return {
-      period: selectedMonth,
-      total_income: 0,
-      total_expenses: 0,
-      net_profit: 0,
-      commissions_paid: 0,
-      prize_expenses: 0
-    };
-  }, [selectedMonth]);
-
-  const loadFinancialData = useCallback(async () => {
-    console.log('[CFO UI] loadFinancialData called for month:', selectedMonth);
-    try {
-      console.log('[CFO UI] Attempting to fetch financial summary');
-      let summary = null;
-      
-      try {
-        summary = await fetchMonthlyFinancialSummary(selectedMonth);
-        console.log('[CFO UI] fetchMonthlyFinancialSummary returned:', summary);
-      } catch (fetchErr) {
-        console.error('[CFO UI] Error in fetchMonthlyFinancialSummary:', fetchErr);
-        // We'll use the default data below
-      }
-      
-      // Set data with fallback for null
-      const finalData = summary ? [summary] : [createDefaultSummary()];
-      console.log('[CFO UI] Setting trends state to:', finalData);
-      setTrends(finalData);
-    } catch (err) {
-      console.error('[CFO UI] Error loading financial data:', err);
-      toast({
-        title: "Failed to load financial data",
-        description: err instanceof Error ? err.message : "An unknown error occurred",
-        variant: "destructive"
-      });
-      
-      // Set default data to prevent showing a loading screen forever
-      console.log('[CFO UI] Setting fallback data after error');
-      setTrends([createDefaultSummary()]);
-    }
-  }, [selectedMonth, fetchMonthlyFinancialSummary, toast, createDefaultSummary]);
-
-  useEffect(() => {
-    if (!isAccessChecking) {
-      console.log('[CFO UI] Access check completed, loading financial data');
-      loadFinancialData();
-    } else {
-      console.log('[CFO UI] Access check in progress, skipping data load');
-    }
-  }, [isAccessChecking, loadFinancialData]);
-
-  const handleRetry = () => {
-    console.log('[CFO UI] Retry button clicked');
-    loadFinancialData();
-  };
+  }, [hasRole, navigate, toast, authLoading, rolesLoaded]);
 
   console.log('[CFO UI] CFODashboard render state:', { 
     isAccessChecking, 
-    isLoading, 
-    hasError: !!error, 
-    trendsLength: trends.length,
-    selectedMonth
+    authLoading,
+    rolesLoaded
   });
 
-  if (isAccessChecking) {
+  if (authLoading || !rolesLoaded || isAccessChecking) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="flex flex-col items-center">
@@ -156,39 +103,20 @@ const CFODashboard = () => {
 
   return (
     <ProtectedRoute requiredRoles={['cfo', 'super_admin', 'admin']}>
-      <div className="flex min-h-screen w-full">
-        <CFOSidebar />
-        <main className="flex-1 p-6 overflow-auto">
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="flex flex-col items-center">
-                <Loader2 className="h-12 w-12 animate-spin text-puzzle-aqua" />
-                <p className="mt-4 text-lg">Loading financial data...</p>
-              </div>
-            </div>
-          ) : error ? (
-            <div className="mb-6">
-              <ErrorDisplay error={error.message} />
-              <div className="flex justify-center mt-4">
-                <button
-                  onClick={handleRetry}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Retry Loading Data
-                </button>
-              </div>
-            </div>
-          ) : (
+      <FinancialDataProvider>
+        <div className="flex min-h-screen w-full">
+          <CFOSidebar />
+          <main className="flex-1 p-6 overflow-auto">
             <Routes>
-              <Route index element={<FinancialOverview trends={trends} timeframe={timeframe} />} />
-              <Route path="income" element={<IncomeStreams selectedMonth={selectedMonth} />} />
-              <Route path="expenses" element={<CostStreams selectedMonth={selectedMonth} />} />
-              <Route path="memberships" element={<MembershipSummary selectedMonth={selectedMonth} />} />
-              <Route path="commissions" element={<CommissionsManagement selectedMonth={selectedMonth} />} />
+              <Route index element={<FinancialOverview timeframe={timeframe} />} />
+              <Route path="income" element={<IncomeStreams />} />
+              <Route path="expenses" element={<CostStreams />} />
+              <Route path="memberships" element={<MembershipSummary />} />
+              <Route path="commissions" element={<CommissionsManagement />} />
             </Routes>
-          )}
-        </main>
-      </div>
+          </main>
+        </div>
+      </FinancialDataProvider>
     </ProtectedRoute>
   );
 };

@@ -19,9 +19,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredPermissions = [],
   requireAllPermissions = false
 }) => {
-  const { isAuthenticated, isLoading, hasRole, user, userRole, userRoles } = useAuth();
+  const { isAuthenticated, isLoading, hasRole, user, userRole, userRoles, rolesLoaded } = useAuth();
   const { hasAllPermissions, hasAnyPermission } = usePermissions();
   const location = useLocation();
+  
+  // Calculate if we're fully ready to render the protected content
+  const isAuthReady = !isLoading && (!isAuthenticated || rolesLoaded);
 
   // Enhanced debug logging
   useEffect(() => {
@@ -29,6 +32,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       path: location.pathname,
       isAuthenticated,
       isLoading,
+      rolesLoaded,
+      isAuthReady,
       user: user ? { id: user.id, email: user.email } : null,
       userRole,
       userRoles,
@@ -48,14 +53,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         userRoles
       });
     }
-  }, [location.pathname, isAuthenticated, isLoading, user, userRole, userRoles, requiredRoles, requiredPermissions, requireAllPermissions, hasRole]);
+  }, [location.pathname, isAuthenticated, isLoading, user, userRole, userRoles, requiredRoles, requiredPermissions, requireAllPermissions, hasRole, rolesLoaded, isAuthReady]);
 
   // Show loading state while checking authentication
-  if (isLoading) {
-    console.log('ProtectedRoute - Still loading auth state');
+  if (!isAuthReady) {
+    console.log('ProtectedRoute - Still waiting for auth state to be ready');
     return (
       <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+          <p className="mt-4 text-sm text-muted-foreground">Verifying access permissions...</p>
+        </div>
       </div>
     );
   }

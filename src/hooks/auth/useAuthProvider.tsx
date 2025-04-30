@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +13,10 @@ export function useAuthProvider() {
   const [lastAuthAttempt, setLastAuthAttempt] = useState<number>(0);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [error, setError] = useState<AuthError | Error | null>(authStateError);
+  const [rolesLoaded, setRolesLoaded] = useState(false);
+  
+  // Use ref to cache hasRole results
+  const roleCache = useRef<Record<string, boolean>>({});
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -24,8 +28,14 @@ export function useAuthProvider() {
 
   const clearAuthError = () => setError(null);
 
-  const fetchUserRoles = async (userId: string) => {
+  const fetchUserRoles = useCallback(async (userId: string) => {
     try {
+      // Skip if roles are already loaded for this user
+      if (rolesLoaded && userRoles.length > 0) {
+        console.log('fetchUserRoles - Roles already loaded, skipping fetch');
+        return;
+      }
+
       // Add more debug logging
       console.log('fetchUserRoles - Debug Info:', {
         fetchingRolesForUserId: userId,
@@ -55,6 +65,9 @@ export function useAuthProvider() {
         console.log('fetchUserRoles - Special super admin email detected');
         setUserRoles(['super_admin']);
         setUserRole('super_admin');
+        setRolesLoaded(true);
+        // Clear role cache when roles change
+        roleCache.current = {};
         return;
       }
 
@@ -68,6 +81,9 @@ export function useAuthProvider() {
         console.log('fetchUserRoles - Role found in profile:', profile.role);
         setUserRoles([profile.role]);
         setUserRole(profile.role as UserRole);
+        setRolesLoaded(true);
+        // Clear role cache when roles change
+        roleCache.current = {};
         return;
       }
 
@@ -92,27 +108,37 @@ export function useAuthProvider() {
         console.log('fetchUserRoles - Roles found in user_roles table:', extractedRoles);
         setUserRoles(extractedRoles);
         setUserRole(extractedRoles[0] as UserRole);
+        setRolesLoaded(true);
+        // Clear role cache when roles change
+        roleCache.current = {};
       } else {
         console.log('fetchUserRoles - No roles found, defaulting to player');
         setUserRoles(['player']);
         setUserRole('player');
+        setRolesLoaded(true);
+        // Clear role cache when roles change
+        roleCache.current = {};
       }
     } catch (error) {
       console.error('Error fetching user roles:', error);
       setUserRoles(['player']);
       setUserRole('player');
+      setRolesLoaded(true);
+      // Clear role cache when roles change
+      roleCache.current = {};
     }
-  };
+  }, [session, userRoles, rolesLoaded]);
 
   return {
     user: session?.user ?? null,
     session,
-    isLoading: authStateLoading,
+    isLoading: authStateLoading || (!rolesLoaded && isAuthenticated),
     error,
     isAuthenticated,
     isAdmin,
     userRole,
     userRoles,
+    rolesLoaded,
     clearAuthError,
     fetchUserRoles,
     setError,
@@ -120,6 +146,7 @@ export function useAuthProvider() {
     setLastAuthAttempt,
     MIN_TIME_BETWEEN_AUTH_ATTEMPTS,
     toast,
-    navigate
+    navigate,
+    roleCache
   };
 }

@@ -10,22 +10,19 @@ import { MonthlyFinancialSummary } from '@/types/financeTypes';
 export async function fetchMonthlyFinancialSummary(
   period: string
 ): Promise<MonthlyFinancialSummary | null> {
+  if (!period || typeof period !== 'string' || !period.match(/^\d{4}-\d{2}$/)) {
+    console.error('[FINANCE ERROR] Invalid period format:', period);
+    throw new Error('Invalid period format. Expected YYYY-MM');
+  }
+  
   try {
     console.log('[FINANCE DEBUG] Fetch started for period:', period);
-    
-    // Validate input
-    if (!period || typeof period !== 'string' || !period.match(/^\d{4}-\d{2}$/)) {
-      console.error('[FINANCE ERROR] Invalid period format:', period);
-      throw new Error('Invalid period format. Expected YYYY-MM');
-    }
-    
-    console.log('[FINANCE DEBUG] Calling Supabase RPC with param:', { month_param: period });
     
     // Use an aliased parameter name to avoid column name ambiguity
     const { data, error: dbError } = await supabase
       .rpc('get_monthly_financial_summary', { month_param: period });
 
-    // Log database response
+    // Handle database errors
     if (dbError) {
       console.error('[FINANCE ERROR] Database error fetching monthly summary:', dbError);
       console.error('[FINANCE ERROR] Error details:', JSON.stringify(dbError));
@@ -33,12 +30,12 @@ export async function fetchMonthlyFinancialSummary(
     }
     
     // Log successful response
-    console.log('[FINANCE DEBUG] Monthly summary raw data:', JSON.stringify(data));
+    console.log('[FINANCE DEBUG] Monthly summary raw data:', data);
     
     // If data exists and is not empty, return the first item
     if (data && data.length > 0) {
-      const result = {
-        period: period, // Use the input parameter to avoid ambiguity
+      const result: MonthlyFinancialSummary = {
+        period,
         total_income: data[0].total_income || 0,
         total_expenses: data[0].total_expenses || 0,
         net_profit: data[0].net_profit || 0,
@@ -46,12 +43,9 @@ export async function fetchMonthlyFinancialSummary(
         prize_expenses: data[0].prize_expenses || 0
       };
       
-      console.log('[FINANCE DEBUG] Processed summary data:', JSON.stringify(result));
+      console.log('[FINANCE DEBUG] Processed summary data:', result);
       return result;
     }
-    
-    // Log when no data is found
-    console.log('[FINANCE DEBUG] No financial data found for period:', period);
     
     // Return default object if no data
     const defaultResult = {
@@ -63,23 +57,17 @@ export async function fetchMonthlyFinancialSummary(
       prize_expenses: 0
     };
     
-    console.log('[FINANCE DEBUG] Returning default summary:', JSON.stringify(defaultResult));
+    console.log('[FINANCE DEBUG] No data found, returning default:', defaultResult);
     return defaultResult;
   } catch (err) {
     console.error('[FINANCE ERROR] Exception in fetchMonthlyFinancialSummary:', err);
     console.error('[FINANCE ERROR] Stack trace:', err instanceof Error ? err.stack : 'No stack trace');
-    
-    // Return a default object instead of throwing to prevent UI from breaking
-    const errorResult = {
-      period,
-      total_income: 0,
-      total_expenses: 0,
-      net_profit: 0,
-      commissions_paid: 0,
-      prize_expenses: 0
-    };
-    
-    console.log('[FINANCE DEBUG] Returning error fallback data:', JSON.stringify(errorResult));
-    return errorResult;
+
+    if (err instanceof Error) {
+      // Rethrow the error for the caller to handle
+      throw err;
+    } else {
+      throw new Error('Unknown error occurred while fetching financial data');
+    }
   }
 }

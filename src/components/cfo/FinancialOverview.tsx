@@ -1,28 +1,84 @@
-import React from 'react';
+
+import React, { useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { RevenueChart } from './charts/RevenueChart';
 import { ExpenseChart } from './charts/ExpenseChart';
 import { ExpenseTrendsChart } from './charts/ExpenseTrendsChart';
-import { MonthlyFinancialSummary, TimeFrame } from '@/types/financeTypes';
+import { TimeFrame } from '@/types/financeTypes';
 import { format } from 'date-fns';
 import { BatchExportDialog } from './BatchExportDialog';
+import { useFinancialData } from '@/contexts/FinancialDataContext';
+import { Loader2 } from 'lucide-react';
+import { ErrorDisplay } from '@/components/dashboard/ErrorDisplay';
 
 interface FinancialOverviewProps {
-  trends: MonthlyFinancialSummary[];
   timeframe: TimeFrame;
 }
 
-const FinancialOverview: React.FC<FinancialOverviewProps> = ({ trends, timeframe }) => {
-  const totalRevenue = trends.reduce((sum, month) => sum + month.total_income, 0);
-  const totalExpenses = trends.reduce((sum, month) => sum + month.total_expenses, 0);
-  const netProfit = trends.reduce((sum, month) => sum + month.net_profit, 0);
+const FinancialOverview: React.FC<FinancialOverviewProps> = ({ timeframe }) => {
+  const { financialSummary, isLoading, error, refreshData } = useFinancialData();
+  const isMounted = useRef(true);
+  
+  useEffect(() => {
+    console.log('[CFO UI] FinancialOverview mounted');
+    return () => {
+      console.log('[CFO UI] FinancialOverview unmounting');
+      isMounted.current = false;
+    };
+  }, []);
+  
+  const handleRetry = () => {
+    if (isMounted.current) {
+      refreshData();
+    }
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-12 w-12 animate-spin text-puzzle-aqua" />
+          <p className="mt-4 text-lg">Loading financial data...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="mb-6">
+        <ErrorDisplay error={error.message} />
+        <div className="flex justify-center mt-4">
+          <Button
+            onClick={handleRetry}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry Loading Data
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!financialSummary) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <p className="text-lg">No financial data available.</p>
+      </div>
+    );
+  }
+  
+  const trends = [financialSummary];
+  const totalRevenue = financialSummary.total_income || 0;
+  const totalExpenses = financialSummary.total_expenses || 0;
+  const netProfit = financialSummary.net_profit || 0;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Card>
+        <Card className="w-full">
           <CardHeader>
             <CardTitle>Financial Overview</CardTitle>
             <CardDescription>Key financial metrics at a glance</CardDescription>

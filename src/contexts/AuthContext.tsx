@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useRef } from 'react';
 import { AuthError, User, Session } from '@supabase/supabase-js';
 import { UserRole } from '@/types/userTypes';
 import { useAuthProvider } from '@/hooks/auth/useAuthProvider';
@@ -27,6 +27,7 @@ export interface AuthContextType {
   hasRole: (role: string) => boolean;
   userRole: UserRole | null;
   userRoles: string[];
+  rolesLoaded: boolean;
   
   clearAuthError: () => void;
 }
@@ -47,6 +48,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAdmin,
     userRole,
     userRoles,
+    rolesLoaded,
     clearAuthError,
     fetchUserRoles,
     setError,
@@ -54,7 +56,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setLastAuthAttempt,
     MIN_TIME_BETWEEN_AUTH_ATTEMPTS,
     toast,
-    navigate
+    navigate,
+    roleCache
   } = useAuthProvider();
 
   const {
@@ -74,13 +77,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     fetchUserRoles
   });
 
+  // Role initialization - only fetch roles if not loaded
   useEffect(() => {
-    if (session?.user) {
+    if (session?.user && !rolesLoaded) {
+      console.log('AuthProvider - Fetching roles for user:', session.user.id);
       setTimeout(() => {
         fetchUserRoles(session.user.id);
       }, 0);
     }
-  }, [session?.user]);
+  }, [session?.user, fetchUserRoles, rolesLoaded]);
 
   const handleSignIn = async (email: string, password: string, options?: { rememberMe?: boolean }) => {
     await signIn(email, password, options);
@@ -105,6 +110,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const hasRole = (role: string): boolean => {
+    // Check cache first
+    const cacheKey = `${user?.id || 'anonymous'}-${role}`;
+    
+    if (roleCache.current[cacheKey] !== undefined) {
+      console.log(`DEBUG - Using cached hasRole result for ${role}:`, roleCache.current[cacheKey]);
+      return roleCache.current[cacheKey];
+    }
+    
     // Enhanced debug logging
     console.log('DEBUG - hasRole check:', {
       requestedRole: role,
@@ -112,30 +125,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
       protectedAdminEmail: PROTECTED_ADMIN_EMAIL,
       isProtectedAdmin: user?.email === PROTECTED_ADMIN_EMAIL,
       currentUserRole: userRole,
-      availableRoles: userRoles
+      availableRoles: userRoles,
+      rolesLoaded
     });
     
     // Always give access to the protected admin email
     if (user?.email === PROTECTED_ADMIN_EMAIL) {
       console.log('DEBUG - Protected admin email detected, granting access');
+      roleCache.current[cacheKey] = true;
       return true;
     }
     
     // Super admin can access all roles
     if (userRole === 'super_admin') {
       console.log('DEBUG - Super admin detected, granting access');
+      roleCache.current[cacheKey] = true;
       return true;
     }
     
     // Exact role match
     if (userRole === role) {
       console.log(`DEBUG - Exact role match: ${userRole} = ${role}`);
+      roleCache.current[cacheKey] = true;
       return true;
     }
     
     // Check role array as fallback
     const hasRoleInArray = userRoles.includes(role);
     console.log(`DEBUG - Role array check: ${role} in [${userRoles.join(', ')}] = ${hasRoleInArray}`);
+    
+    // Cache result
+    roleCache.current[cacheKey] = hasRoleInArray;
     return hasRoleInArray;
   };
 
@@ -155,6 +175,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     hasRole,
     userRole,
     userRoles,
+    rolesLoaded,
     clearAuthError
   };
 

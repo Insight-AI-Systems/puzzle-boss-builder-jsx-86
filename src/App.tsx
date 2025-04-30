@@ -1,177 +1,154 @@
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import CFODashboard from "@/pages/CFODashboard";
+import AdminDashboard from "@/pages/AdminDashboard";
+import Auth from "@/pages/Auth";
+import FinancialErrorBoundary from "@/components/finance/FinancialErrorBoundary";
+import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { SecurityProvider } from "@/hooks/useSecurityContext";
+import { Suspense, lazy } from "react";
+import { Loader2 } from "lucide-react";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
-import React from 'react';
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
-import {
-  Index,
-  Puzzles,
-  Prizes,
-  HowItWorks,
-  PuzzleDemo,
-  Membership,
-  About,
-  FAQ,
-  Contact,
-  Support,
-  Profile,
-  Settings,
-  AccountDashboard,
-  Progress,
-  AdminDashboard,
-  DevDashboard,
-  PuzzleTests,
-  GettingStartedGuide,
-  AccountManagement,
-  PuzzleTechniques,
-  PrizeClaimProcess,
-  Terms,
-  Privacy,
-  ContestRules,
-  CookiePolicy,
-  Careers,
-  Press,
-  Partnerships,
-  NotFound,
-  Auth,
-  BetaNotes,
-  SupportAdmin
-} from '@/pages';
-import PuzzleTestPlayground from '@/pages/PuzzleTestPlayground';
-import Unauthorized from '@/pages/Unauthorized';
-import AdminPanel from '@/pages/AdminPanel';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MainLayout } from '@/components/layouts/MainLayout';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import '@/utils/admin/adminTools';
-import PuzzlePlay from './pages/PuzzlePlay';
-import MyTickets from './pages/MyTickets';
-import CFODashboard from './pages/CFODashboard';
+// Lazy-loaded components
+const Home = lazy(() => import("@/pages/Home"));
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Profile = lazy(() => import("@/pages/Profile"));
+const PuzzlePlay = lazy(() => import("@/pages/PuzzlePlay"));
+const PuzzleCreate = lazy(() => import("@/pages/PuzzleCreate"));
+const PuzzleEdit = lazy(() => import("@/pages/PuzzleEdit"));
+const PuzzleList = lazy(() => import("@/pages/PuzzleList"));
+const CategoryManagement = lazy(() => import("@/pages/CategoryManagement"));
+const Unauthorized = lazy(() => import("@/pages/Unauthorized"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+const SupportAdmin = lazy(() => import("@/pages/SupportAdmin"));
+const PrivacyPolicy = lazy(() => import("@/pages/legal/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("@/pages/legal/TermsOfService"));
 
-const App = () => {
-  console.log('Initializing App component');
-  const queryClient = new QueryClient();
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
+function App() {
   return (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="dark" storageKey="puzzleboss-theme">
-          <AuthProvider>
-            <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/*" element={
-                <MainLayout>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/puzzles" element={<Puzzles />} />
-                    <Route path="/prizes" element={<Prizes />} />
-                    <Route path="/how-it-works" element={<HowItWorks />} />
-                    <Route path="/puzzle-demo" element={<PuzzleDemo />} />
-                    <Route path="/membership" element={
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="dark" storageKey="puzzle-boss-theme">
+        <AuthProvider>
+          <SecurityProvider>
+            <Router>
+              <Suspense
+                fallback={
+                  <div className="flex h-screen w-full items-center justify-center">
+                    <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+                  </div>
+                }
+              >
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route
+                    path="/dashboard"
+                    element={
                       <ProtectedRoute>
-                        <Membership />
+                        <Dashboard />
                       </ProtectedRoute>
-                    } />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/faq" element={<FAQ />} />
-                    <Route path="/contact" element={<Contact />} />
-                    
-                    {/* Support routes */}
-                    <Route path="/support/*" element={<Support />} />
-                    
-                    <Route path="/profile" element={
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
                       <ProtectedRoute>
                         <Profile />
                       </ProtectedRoute>
-                    } />
-                    <Route path="/settings" element={
+                    }
+                  />
+                  <Route
+                    path="/puzzles"
+                    element={
                       <ProtectedRoute>
-                        <Settings />
+                        <PuzzleList />
                       </ProtectedRoute>
-                    } />
-                    <Route path="/account" element={
+                    }
+                  />
+                  <Route
+                    path="/puzzles/play/:id"
+                    element={
                       <ProtectedRoute>
-                        <AccountDashboard />
+                        <PuzzlePlay />
                       </ProtectedRoute>
-                    } />
-                    <Route path="/progress" element={
-                      <ProtectedRoute>
-                        <Progress />
+                    }
+                  />
+                  <Route
+                    path="/puzzles/create"
+                    element={
+                      <ProtectedRoute requiredRoles={["category_manager", "admin"]}>
+                        <PuzzleCreate />
                       </ProtectedRoute>
-                    } />
-                    <Route path="/admin-dashboard" element={
-                      <ProtectedRoute requiredRoles={['super_admin']}>
+                    }
+                  />
+                  <Route
+                    path="/puzzles/edit/:id"
+                    element={
+                      <ProtectedRoute requiredRoles={["category_manager", "admin"]}>
+                        <PuzzleEdit />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/categories"
+                    element={
+                      <ProtectedRoute requiredRoles={["category_manager", "admin"]}>
+                        <CategoryManagement />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin-dashboard/*"
+                    element={
+                      <ProtectedRoute requiredRoles={["super_admin", "admin", "category_manager", "social_media_manager", "partner_manager", "cfo"]}>
                         <AdminDashboard />
                       </ProtectedRoute>
-                    } />
-                    <Route path="/test-dashboard" element={
-                      <ProtectedRoute requiredRoles={['super_admin']}>
-                        <DevDashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/puzzle-tests" element={
-                      <ProtectedRoute requiredRoles={['super_admin']}>
-                        <PuzzleTests />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/puzzle-playground" element={
-                      <ProtectedRoute requiredRoles={['super_admin']}>
-                        <PuzzleTestPlayground />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin-panel" element={<AdminPanel />} />
-                    
-                    {/* Guides */}
-                    <Route path="/guides">
-                      <Route path="getting-started-guide" element={<GettingStartedGuide />} />
-                      <Route path="account-management" element={<AccountManagement />} />
-                      <Route path="puzzle-techniques" element={<PuzzleTechniques />} />
-                      <Route path="prize-claim-process" element={<PrizeClaimProcess />} />
-                    </Route>
-                    
-                    {/* Legal pages */}
-                    <Route path="/terms" element={<Terms />} />
-                    <Route path="/privacy" element={<Privacy />} />
-                    <Route path="/contest-rules" element={<ContestRules />} />
-                    <Route path="/cookie-policy" element={<CookiePolicy />} />
-                    
-                    {/* Additional pages */}
-                    <Route path="/careers" element={<Careers />} />
-                    <Route path="/press" element={<Press />} />
-                    <Route path="/partnerships" element={<Partnerships />} />
-                    <Route path="/unauthorized" element={<Unauthorized />} />
-                    
-                    <Route path="/puzzle/:puzzleId" element={<PuzzlePlay />} />
-                    
-                    <Route path="/my-tickets" element={
-                      <ProtectedRoute>
-                        <MyTickets />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/support-admin" element={
-                      <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
+                    }
+                  />
+                  <Route 
+                    path="/cfo-dashboard/*" 
+                    element={
+                      <FinancialErrorBoundary>
+                        <CFODashboard />
+                      </FinancialErrorBoundary>
+                    } 
+                  />
+                  <Route
+                    path="/support-admin/*"
+                    element={
+                      <ProtectedRoute requiredRoles={["super_admin", "admin"]}>
                         <SupportAdmin />
                       </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/cfo-dashboard/*" element={
-                      <ProtectedRoute requiredRoles={['cfo', 'super_admin']}>
-                        <CFODashboard />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </MainLayout>
-              } />
-            </Routes>
+                    }
+                  />
+                  <Route path="/unauthorized" element={<Unauthorized />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/terms-of-service" element={<TermsOfService />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </Router>
             <Toaster />
-          </AuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
+          </SecurityProvider>
+        </AuthProvider>
+      </ThemeProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 }
 
