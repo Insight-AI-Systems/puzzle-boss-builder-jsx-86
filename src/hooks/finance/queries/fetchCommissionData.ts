@@ -15,7 +15,8 @@ export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
       .from('commission_payments')
       .select(`
         *,
-        categories:category_id (name)
+        categories:category_id (name),
+        profiles:manager_id (username, email)
       `);
     
     if (error) {
@@ -33,11 +34,11 @@ export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
           gross_income: item.gross_income || 0,
           net_income: item.net_income || 0,
           commission_amount: item.commission_amount || 0,
-          payment_status: (item.payment_status as PaymentStatus) || 'pending',
-          manager_name: item.manager_name || 'Unknown',
-          manager_email: item.manager_email || 'unknown@example.com',
+          payment_status: (item.payment_status as PaymentStatus) || PaymentStatus.PENDING,
+          manager_name: item.profiles?.username || 'Unknown',
+          manager_email: item.profiles?.email || 'unknown@example.com',
           category_name: item.categories?.name || 'Unknown',
-          is_overdue: item.is_overdue || false
+          is_overdue: false // Default value since property doesn't exist in DB
         } as CommissionPayment;
       });
     } else {
@@ -47,6 +48,37 @@ export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
     return safeResult;
   } catch (err) {
     debugLog('FINANCE HOOK', 'Exception in fetchCommissionPayments:', DebugLevel.ERROR, err);
+    throw err;
+  }
+}
+
+// Add the missing updateCommissionStatus function
+export async function updateCommissionStatus(paymentId: string, status: PaymentStatus): Promise<void> {
+  debugLog('FINANCE HOOK', `updateCommissionStatus called for ID: ${paymentId} with status: ${status}`, DebugLevel.INFO);
+  
+  try {
+    const updateData: { payment_status: PaymentStatus; payment_date?: string | null } = {
+      payment_status: status
+    };
+    
+    // Add payment date when status is set to PAID
+    if (status === PaymentStatus.PAID) {
+      updateData.payment_date = new Date().toISOString();
+    }
+    
+    const { error } = await supabase
+      .from('commission_payments')
+      .update(updateData)
+      .eq('id', paymentId);
+    
+    if (error) {
+      debugLog('FINANCE HOOK', 'Error updating commission payment status:', DebugLevel.ERROR, error);
+      throw error;
+    }
+    
+    debugLog('FINANCE HOOK', `Successfully updated payment ${paymentId} to ${status}`, DebugLevel.INFO);
+  } catch (err) {
+    debugLog('FINANCE HOOK', 'Exception in updateCommissionStatus:', DebugLevel.ERROR, err);
     throw err;
   }
 }
