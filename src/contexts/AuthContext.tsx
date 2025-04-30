@@ -56,24 +56,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setLastAuthAttempt,
     MIN_TIME_BETWEEN_AUTH_ATTEMPTS,
     toast,
-    navigate,
     roleCache
   } = useAuthProvider();
 
-  const {
-    signIn,
-    signUp,
-    signOut,
-    resetPassword,
-    updatePassword,
-    refreshSession
-  } = useAuthOperations({
+  // Implement authentication operations without useNavigate dependencies
+  const auth = useAuthOperations({
     lastAuthAttempt,
     setLastAuthAttempt,
     MIN_TIME_BETWEEN_AUTH_ATTEMPTS,
     setError,
     toast,
-    navigate,
     fetchUserRoles
   });
 
@@ -88,7 +80,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [session?.user, fetchUserRoles, rolesLoaded]);
 
   const handleSignIn = async (email: string, password: string, options?: { rememberMe?: boolean }) => {
-    await signIn(email, password, options);
+    await auth.signIn(email, password, options);
     
     // If sign-in was successful and we have a user session, update the last_sign_in
     if (session?.user) {
@@ -165,11 +157,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
     error,
     signIn: handleSignIn,
-    signUp,
-    signOut,
-    resetPassword,
-    updatePassword,
-    refreshSession,
+    signUp: auth.signUp,
+    signOut: auth.signOut,
+    resetPassword: auth.resetPassword,
+    updatePassword: auth.updatePassword,
+    refreshSession: auth.refreshSession,
     isAuthenticated,
     isAdmin: userRole === 'super_admin' || user?.email === PROTECTED_ADMIN_EMAIL,
     hasRole,

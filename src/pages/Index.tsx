@@ -83,7 +83,6 @@ function Index() {
           Try Our Puzzle Demo
         </Link>
       </div>
-      {/* Add debug component */}
       <PageDebugger componentName="Index" />
     </main>
   );

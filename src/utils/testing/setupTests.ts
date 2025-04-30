@@ -23,3 +23,21 @@ jest.mock('@/integrations/supabase/client', () => ({
     },
   },
 }));
+
+// Set up a global browser-like environment for tests
+global.window = Object.create(window);
+Object.defineProperty(window, 'localStorage', {
+  value: {
+    getItem: jest.fn(),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+    clear: jest.fn(),
+  },
+});
+
+// Mock browser console to avoid too much noise in tests
+console.error = jest.fn();
+console.warn = jest.fn();
+console.log = jest.fn();
+console.debug = jest.fn();
+

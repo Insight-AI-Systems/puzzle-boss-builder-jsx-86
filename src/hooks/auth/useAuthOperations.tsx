@@ -1,14 +1,13 @@
 
-import { User, Session, AuthError } from '@supabase/supabase-js';
+import React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AuthOperationsProps {
   lastAuthAttempt: number;
-  setLastAuthAttempt: (time: number) => void;
+  setLastAuthAttempt: React.Dispatch<React.SetStateAction<number>>;
   MIN_TIME_BETWEEN_AUTH_ATTEMPTS: number;
-  setError: (error: Error | AuthError | null) => void;
+  setError: React.Dispatch<React.SetStateAction<Error | null>>;
   toast: any;
-  navigate: (path: string) => void;
   fetchUserRoles: (userId: string) => Promise<void>;
 }
 
@@ -18,313 +17,287 @@ export function useAuthOperations({
   MIN_TIME_BETWEEN_AUTH_ATTEMPTS,
   setError,
   toast,
-  navigate,
   fetchUserRoles
 }: AuthOperationsProps) {
-  const checkRateLimit = (): boolean => {
-    const now = Date.now();
-    if (now - lastAuthAttempt < MIN_TIME_BETWEEN_AUTH_ATTEMPTS) {
-      setError(new Error('Too many auth attempts. Please wait before trying again.'));
-      return false;
-    }
-    setLastAuthAttempt(now);
-    return true;
-  };
-
-  const refreshSession = async (): Promise<void> => {
-    try {
-      const { data, error } = await supabase.auth.refreshSession();
-      
-      if (error) {
-        console.error('Session refresh error:', error);
-        throw error;
-      }
-      
-      if (data.session?.user) {
-        await fetchUserRoles(data.session.user.id);
-      }
-    } catch (e) {
-      console.error('Session refresh error:', e);
-      if (e instanceof AuthError && e.status === 401) {
-        navigate('/auth');
-      }
-      throw e;
-    }
-  };
-
+  
+  // Sign in with email and password
   const signIn = async (email: string, password: string, options?: { rememberMe?: boolean }) => {
-    if (!checkRateLimit()) return;
-    
     try {
-      setError(null);
+      // Rate limiting check
+      const now = Date.now();
+      if (now - lastAuthAttempt < MIN_TIME_BETWEEN_AUTH_ATTEMPTS) {
+        setError(new Error('Please wait before trying again'));
+        toast({
+          title: 'Rate limited',
+          description: 'Please wait a moment before trying again.',
+          variant: 'destructive',
+        });
+        return;
+      }
       
+      setLastAuthAttempt(now);
+      
+      // Attempt sign in
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
-        password
+        password 
       });
       
-      if (error) throw error;
-      
-      if (data.session && data.user) {
-        await trackSessionActivity(data.session, data.user);
+      if (error) {
+        console.error('Sign in error:', error);
+        setError(error);
+        toast({
+          title: 'Authentication failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
       }
       
-      toast({
-        title: 'Welcome back!',
-        description: 'Successfully signed in.',
-      });
+      console.log('Sign in successful:', data);
       
-    } catch (e) {
-      console.error('Sign in error:', e);
-      setError(e instanceof Error ? e : new Error('Unknown sign in error'));
+      // Clear any previous errors
+      setError(null);
       
+      if (data.user) {
+        // Fetch user role
+        await fetchUserRoles(data.user.id);
+        
+        // Success toast
+        toast({
+          title: 'Welcome back!',
+          description: 'You have successfully signed in.',
+        });
+      }
+    } catch (error) {
+      console.error('Exception during sign in:', error);
+      setError(error as Error);
       toast({
-        title: 'Authentication failed',
-        description: 'Invalid email or password',
+        title: 'Authentication error',
+        description: 'An unexpected error occurred. Please try again.',
         variant: 'destructive',
       });
     }
   };
-
+  
+  // Sign up with email and password
   const signUp = async (email: string, password: string, metadata?: { [key: string]: any }) => {
-    if (!checkRateLimit()) return;
-
     try {
-      setError(null);
+      // Rate limiting check
+      const now = Date.now();
+      if (now - lastAuthAttempt < MIN_TIME_BETWEEN_AUTH_ATTEMPTS) {
+        setError(new Error('Please wait before trying again'));
+        toast({
+          title: 'Rate limited',
+          description: 'Please wait a moment before trying again.',
+          variant: 'destructive',
+        });
+        return;
+      }
       
-      const userMetadata = metadata || {
-        username: email.split('@')[0],
-        avatar_url: null,
-        bio: null
-      };
+      setLastAuthAttempt(now);
       
-      console.log('Starting sign up process for email:', email);
-      console.log('With redirect URL:', `${window.location.origin}/auth?verificationSuccess=true`);
-      
-      // Enhanced signup with more detailed logging
+      // Attempt sign up
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: userMetadata,
-          emailRedirectTo: `${window.location.origin}/auth?verificationSuccess=true`
-        }
+          data: {
+            ...metadata,
+            display_name: metadata?.username || email.split('@')[0],
+          },
+        },
       });
       
-      console.log('Sign up response details:', {
-        user: data.user ? {
-          id: data.user.id,
-          email: data.user.email,
-          confirmationSentAt: data.user.confirmation_sent_at,
-          identitiesLength: data.user.identities?.length
-        } : null,
-        session: data.session ? 'Session exists' : 'No session',
-        error: error ? error.message : 'No error'
-      });
-      
-      if (error) throw error;
-      
-      const requiresConfirmation = !data.session;
-      
-      // Check if confirmation was sent
-      if (data.user?.confirmation_sent_at) {
-        console.log('Confirmation email timestamp:', data.user.confirmation_sent_at);
-        
+      if (error) {
+        console.error('Sign up error:', error);
+        setError(error);
         toast({
-          title: 'Verification email sent!',
-          description: `A verification email has been sent to ${email}. Please check your inbox and spam folder.`,
+          title: 'Registration failed',
+          description: error.message,
+          variant: 'destructive',
         });
-      } else {
-        console.warn('No confirmation_sent_at timestamp in response');
+        return;
       }
       
-      if (requiresConfirmation) {
+      console.log('Sign up successful:', data);
+      
+      // Clear any previous errors
+      setError(null);
+      
+      // Check if email confirmation is required
+      if (data.user && data.user.identities && data.user.identities.length === 0) {
         toast({
-          title: 'Account created!',
-          description: 'Please check your email to verify your account. If you don\'t see it, check your spam folder.',
+          title: 'Account already exists',
+          description: 'This email address is already registered. Please sign in.',
         });
-        navigate('/auth?view=verification-pending');
-      } else {
+        return;
+      }
+      
+      if (data.user && !data.session) {
         toast({
-          title: 'Account created!',
+          title: 'Verification required',
+          description: 'Please check your email to verify your account.',
+        });
+      } else if (data.user) {
+        // If auto-confirmed (development mode), fetch user role
+        await fetchUserRoles(data.user.id);
+        
+        toast({
+          title: 'Welcome!',
           description: 'Your account has been created successfully.',
         });
       }
-
-      // Track sign up in profile if available
-      if (data.user?.id) {
-        try {
-          await supabase
-            .from('profiles')
-            .upsert({
-              id: data.user.id,
-              username: userMetadata.username,
-              email: email,
-              created_at: new Date().toISOString(),
-              last_sign_in: new Date().toISOString(),
-              avatar_url: userMetadata.avatar_url
-            });
-        } catch (profileError) {
-          console.error('Error creating profile:', profileError);
-          // Non-critical error, don't throw
-        }
-      }
-    } catch (e) {
-      console.error('Sign up error:', e);
-      setError(e instanceof Error ? e : new Error('Unknown sign up error'));
-      
+    } catch (error) {
+      console.error('Exception during sign up:', error);
+      setError(error as Error);
       toast({
-        title: 'Registration failed',
-        description: e instanceof Error ? e.message : 'Failed to create account',
+        title: 'Registration error',
+        description: 'An unexpected error occurred. Please try again.',
         variant: 'destructive',
       });
     }
   };
-
+  
+  // Sign out
   const signOut = async () => {
     try {
-      setError(null);
-      
-      // Get current session first
-      const { data: sessionData } = await supabase.auth.getSession();
-      
-      if (sessionData.session?.access_token && sessionData.session?.user) {
-        await supabase
-          .from('user_sessions')
-          .update({ is_active: false })
-          .eq('user_id', sessionData.session.user.id)
-          .eq('session_token', sessionData.session.access_token);
-      }
-      
       const { error } = await supabase.auth.signOut();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Sign out error:', error);
+        setError(error);
+        toast({
+          title: 'Sign out failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Clear any previous errors
+      setError(null);
       
       toast({
         title: 'Signed out',
-        description: 'You have been successfully logged out.',
+        description: 'You have been successfully signed out.',
       });
-
-      // Fix: Remove the second argument from navigate
-      navigate('/');
-    } catch (e) {
-      console.error('Sign out error:', e);
-      setError(e instanceof Error ? e : new Error('Unknown sign out error'));
-      
+    } catch (error) {
+      console.error('Exception during sign out:', error);
+      setError(error as Error);
       toast({
-        title: 'Logout failed',
-        description: e instanceof Error ? e.message : 'Failed to log out',
+        title: 'Sign out error',
+        description: 'An unexpected error occurred. Please try again.',
         variant: 'destructive',
       });
     }
   };
-
+  
+  // Reset password request
   const resetPassword = async (email: string) => {
-    if (!checkRateLimit()) return;
-
     try {
-      setError(null);
+      // Rate limiting check
+      const now = Date.now();
+      if (now - lastAuthAttempt < MIN_TIME_BETWEEN_AUTH_ATTEMPTS) {
+        setError(new Error('Please wait before trying again'));
+        toast({
+          title: 'Rate limited',
+          description: 'Please wait a moment before trying again.',
+          variant: 'destructive',
+        });
+        return;
+      }
       
-      const startTime = Date.now();
+      setLastAuthAttempt(now);
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth?type=recovery`,
       });
       
-      if (error) throw error;
-      
-      const elapsedTime = Date.now() - startTime;
-      if (elapsedTime < 1000) {
-        await new Promise(resolve => setTimeout(resolve, 1000 - elapsedTime));
-      }
-      
-      toast({
-        title: 'Password reset email sent',
-        description: 'If an account with this email exists, you will receive password reset instructions.',
-      });
-      
-      navigate('/auth?view=verification-pending');
-    } catch (e) {
-      console.error('Password reset error:', e);
-      setError(e instanceof Error ? e : new Error('Unknown password reset error'));
-      
-      const elapsedTime = Date.now() - lastAuthAttempt;
-      if (elapsedTime < 1000) {
-        await new Promise(resolve => setTimeout(resolve, 1000 - elapsedTime));
-      }
-      
-      toast({
-        title: 'Password reset email sent',
-        description: 'If an account with this email exists, you will receive password reset instructions.',
-      });
-    }
-  };
-
-  const updatePassword = async (password: string) => {
-    try {
-      setError(null);
-      
-      if (!password || password.length < 8) {
-        setError(new Error('Password must be at least 8 characters'));
+      if (error) {
+        console.error('Password reset request error:', error);
+        setError(error);
+        toast({
+          title: 'Password reset failed',
+          description: error.message,
+          variant: 'destructive',
+        });
         return;
       }
       
-      const { error } = await supabase.auth.updateUser({ password });
+      // Clear any previous errors
+      setError(null);
       
-      if (error) throw error;
+      toast({
+        title: 'Password reset email sent',
+        description: 'Check your email for the password reset link.',
+      });
+    } catch (error) {
+      console.error('Exception during password reset request:', error);
+      setError(error as Error);
+      toast({
+        title: 'Password reset error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Update password after reset
+  const updatePassword = async (password: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password,
+      });
       
-      // Get current session to access user ID
-      const { data: sessionData } = await supabase.auth.getSession();
-      
-      if (sessionData.session?.user) {
-        await supabase
-          .from('profiles')
-          .update({
-            last_password_change: new Date().toISOString()
-          })
-          .eq('id', sessionData.session.user.id);
+      if (error) {
+        console.error('Password update error:', error);
+        setError(error);
+        toast({
+          title: 'Password update failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
       }
+      
+      // Clear any previous errors
+      setError(null);
       
       toast({
         title: 'Password updated',
         description: 'Your password has been updated successfully.',
       });
-      
-      // Fix: Remove the second argument from navigate
-      navigate('/');
-    } catch (e) {
-      console.error('Update password error:', e);
-      setError(e instanceof Error ? e : new Error('Unknown update password error'));
-      
+    } catch (error) {
+      console.error('Exception during password update:', error);
+      setError(error as Error);
       toast({
-        title: 'Password update failed',
-        description: e instanceof Error ? e.message : 'Failed to update password',
+        title: 'Password update error',
+        description: 'An unexpected error occurred. Please try again.',
         variant: 'destructive',
       });
     }
   };
-
-  const trackSessionActivity = async (session: Session, user: User) => {
+  
+  // Refresh session
+  const refreshSession = async () => {
     try {
-      await supabase
-        .from('user_sessions')
-        .insert({
-          user_id: user.id,
-          session_token: session.access_token,
-          user_agent: navigator.userAgent,
-          ip_address: 'client-side',
-          device_info: {
-            platform: navigator.platform,
-            userAgent: navigator.userAgent,
-            language: navigator.language
-          },
-          is_active: true
-        });
+      const { error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        console.error('Session refresh error:', error);
+        setError(error);
+        return;
+      }
+      
+      // Clear any previous errors
+      setError(null);
     } catch (error) {
-      console.error('Error creating session record:', error);
+      console.error('Exception during session refresh:', error);
+      setError(error as Error);
     }
   };
-
+  
   return {
     signIn,
     signUp,

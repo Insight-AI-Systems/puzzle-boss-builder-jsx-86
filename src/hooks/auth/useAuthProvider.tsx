@@ -1,11 +1,10 @@
 
 import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { UserRole } from '@/types/userTypes';
 import { useAuthState } from './useAuthState';
+import { useToast } from '@/hooks/use-toast';
 
 export function useAuthProvider() {
   const { currentUserId, session, isLoading: authStateLoading, error: authStateError } = useAuthState();
@@ -19,7 +18,6 @@ export function useAuthProvider() {
   const roleCache = useRef<Record<string, boolean>>({});
   
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const MIN_TIME_BETWEEN_AUTH_ATTEMPTS = 2000;
   
@@ -146,7 +144,6 @@ export function useAuthProvider() {
     setLastAuthAttempt,
     MIN_TIME_BETWEEN_AUTH_ATTEMPTS,
     toast,
-    navigate,
     roleCache
   };
 }

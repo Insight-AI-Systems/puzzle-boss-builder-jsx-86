@@ -44,9 +44,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark" storageKey="puzzle-boss-theme">
-        <AuthProvider>
-          <SecurityProvider>
-            <Router>
+        <Router>
+          <AuthProvider>
+            <SecurityProvider>
               <Suspense
                 fallback={
                   <div className="flex h-screen w-full items-center justify-center">
@@ -124,9 +124,11 @@ function App() {
                   <Route 
                     path="/cfo-dashboard/*" 
                     element={
-                      <FinancialErrorBoundary>
-                        <CFODashboard />
-                      </FinancialErrorBoundary>
+                      <ProtectedRoute requiredRoles={["super_admin", "cfo"]}>
+                        <FinancialErrorBoundary>
+                          <CFODashboard />
+                        </FinancialErrorBoundary>
+                      </ProtectedRoute>
                     } 
                   />
                   <Route
@@ -143,10 +145,10 @@ function App() {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
-            </Router>
-            <Toaster />
-          </SecurityProvider>
-        </AuthProvider>
+              <Toaster />
+            </SecurityProvider>
+          </AuthProvider>
+        </Router>
       </ThemeProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

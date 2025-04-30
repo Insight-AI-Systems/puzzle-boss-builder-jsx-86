@@ -37,19 +37,25 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   
   // Initialize security features
   useEffect(() => {
-    // Initialize CSRF protection
-    initCsrfProtection();
-    setCsrfToken(getCsrfToken());
-    
-    // Log security initialization
-    logSecurityEvent({
-      eventType: SecurityEventType.LOGIN_SUCCESS,
-      userId: user?.id,
-      severity: 'info',
-      details: { action: 'security_context_initialized' }
-    });
-    
-    setIsInitialized(true);
+    try {
+      console.log('Initializing security context');
+      // Initialize CSRF protection
+      initCsrfProtection();
+      setCsrfToken(getCsrfToken());
+      
+      // Log security initialization
+      logSecurityEvent({
+        eventType: SecurityEventType.LOGIN_SUCCESS,
+        userId: user?.id,
+        severity: 'info',
+        details: { action: 'security_context_initialized' }
+      });
+      
+      setIsInitialized(true);
+      console.log('Security context initialized successfully');
+    } catch (error) {
+      console.error('Error initializing security context:', error);
+    }
   }, []);
   
   // Update CSRF token when authentication state changes
