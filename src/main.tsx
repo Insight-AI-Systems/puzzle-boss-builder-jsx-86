@@ -50,8 +50,12 @@ if (!container) {
 }
 
 // Custom error boundary for the entire app
-class ErrorFallback extends React.Component<{}, { hasError: boolean, error: Error | null }> {
-  constructor(props: {}) {
+interface ErrorFallbackProps {
+  children: React.ReactNode;
+}
+
+class ErrorFallback extends React.Component<ErrorFallbackProps, { hasError: boolean, error: Error | null }> {
+  constructor(props: ErrorFallbackProps) {
     super(props);
     this.state = { hasError: false, error: null };
   }
@@ -99,4 +103,3 @@ root.render(
     </ErrorFallback>
   </React.StrictMode>
 );
-
