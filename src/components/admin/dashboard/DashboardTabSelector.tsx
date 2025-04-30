@@ -51,7 +51,7 @@ export const DashboardTabSelector: React.FC<DashboardTabSelectorProps> = ({
           data-state={activeTab === tab.id ? 'active' : 'inactive'}
           className="data-[state=active]:bg-puzzle-aqua/10 data-[state=active]:text-puzzle-aqua p-2 flex-grow md:flex-none"
         >
-          <span className="mr-1">{renderIcon(tab.icon)}</span>
+          <span className="mr-1">{tab.icon && renderIcon(tab.icon)}</span>
           <span>{tab.name}</span>
         </TabsTrigger>
       ))}

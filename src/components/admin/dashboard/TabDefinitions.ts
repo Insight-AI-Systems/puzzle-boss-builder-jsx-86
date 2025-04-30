@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { OverviewDashboard } from "./OverviewDashboard";
 import { CategoryManagement } from "./CategoryManagement";
@@ -13,6 +12,7 @@ import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
 import { ContentManagement } from "@/components/admin/ContentManagement";
 import { EmailManagement } from "@/components/admin/EmailManagement";
 import { AnalyticsDashboard } from "@/components/admin/analytics/AnalyticsDashboard";
+import { FinancialDashboard } from "./financial-dashboard/FinancialDashboard";
 
 export interface TabDefinition {
   id: string;
@@ -114,6 +114,13 @@ export function getTabDefinitions(): TabDefinition[] {
       icon: "Activity",
       component: MonitoringDashboard,
       roles: ["super_admin", "admin"]
+    },
+    {
+      id: "finance",
+      name: "Finance",
+      icon: "DollarSign",
+      component: FinancialDashboard,
+      roles: ["super_admin", "admin", "cfo"]
     }
   ];
 }

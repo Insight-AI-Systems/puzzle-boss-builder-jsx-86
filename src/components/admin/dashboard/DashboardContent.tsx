@@ -12,6 +12,7 @@ import { PuzzleManagement } from "@/components/admin/PuzzleManagement";
 import { MarketingDashboard } from "./MarketingDashboard";
 import { NotificationsDashboard } from "./NotificationsDashboard";
 import { MonitoringDashboard } from "./MonitoringDashboard";
+import { FinancialDashboard } from "./financial-dashboard/FinancialDashboard";
 
 interface DashboardContentProps {
   accessibleTabs: TabDefinition[];
@@ -65,6 +66,15 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
           <MarketingDashboard />
         ) : (
           <NoAccessMessage resourceName="Marketing & Social" />
+        )}
+      </TabsContent>
+
+      {/* Finance Tab */}
+      <TabsContent value="finance" className="space-y-4">
+        {isTabAccessible('finance') ? (
+          <FinancialDashboard />
+        ) : (
+          <NoAccessMessage resourceName="Financial Dashboard" />
         )}
       </TabsContent>
 
