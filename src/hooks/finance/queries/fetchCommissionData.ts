@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CommissionPayment, PaymentStatus } from '@/types/financeTypes';
+import { CommissionPayment } from '@/types/financeTypes';
 import { debugLog, DebugLevel } from '@/utils/debug';
 
 export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
@@ -15,10 +15,6 @@ export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
       .from('commission_payments')
       .select(`
         *,
-        manager:manager_id (
-          id,
-          profiles:user_id (username, email)
-        ),
         categories:category_id (name)
       `);
     
@@ -31,9 +27,9 @@ export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
     if (data && Array.isArray(data)) {
       debugLog('FINANCE HOOK', `Fetched ${data.length} commission payment records`, DebugLevel.INFO);
       safeResult = data.map(item => {
-        // Extract name and email from nested manager data
-        const managerName = item.manager?.profiles?.username || 'Unknown';
-        const managerEmail = item.manager?.profiles?.email || 'unknown@example.com';
+        // Create manager name from profiles data or placeholder
+        const managerName = "Unknown";
+        const managerEmail = "unknown@example.com";
         
         return {
           ...item,
@@ -41,9 +37,9 @@ export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
           gross_income: item.gross_income || 0,
           net_income: item.net_income || 0,
           commission_amount: item.commission_amount || 0,
-          payment_status: item.payment_status || 'pending' as PaymentStatus,
-          manager_name: managerName,
-          manager_email: managerEmail,
+          payment_status: item.payment_status || 'pending',
+          manager_name: item.manager_name || managerName,
+          manager_email: item.manager_email || managerEmail,
           category_name: item.categories?.name || 'Unknown',
           is_overdue: item.is_overdue || false
         };

@@ -8,7 +8,7 @@ export type UserRole =
   | 'cfo' 
   | 'player';
 
-export type Gender = 'male' | 'female' | 'non-binary' | 'prefer_not_to_say' | 'other';
+export type Gender = 'male' | 'female' | 'non-binary' | 'custom' | 'prefer-not-to-say' | 'other';
 
 export type AgeGroup = 'under_18' | '18_24' | '25_34' | '35_44' | '45_54' | '55_64' | '65_plus';
 
@@ -39,6 +39,7 @@ export interface UserProfile {
   achievements: string[];
   referral_code: string | null;
   gender?: Gender;
+  custom_gender?: string | null;
   age_group?: AgeGroup;
   created_at: string;
   updated_at: string;

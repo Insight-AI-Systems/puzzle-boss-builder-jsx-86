@@ -39,7 +39,7 @@ export interface SiteIncome {
 
 export interface SiteExpense {
   id: string;
-  expense_type: ExpenseType;
+  expense_type: string;
   amount: number;
   payee?: string;
   category_id?: string;
@@ -70,7 +70,7 @@ export interface CommissionPayment {
   gross_income: number;
   net_income: number;
   commission_amount: number;
-  payment_status: PaymentStatus;
+  payment_status: string;
   payment_date?: string;
   manager_name?: string;
   category_name?: string;

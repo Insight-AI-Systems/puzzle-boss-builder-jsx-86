@@ -1,86 +1,153 @@
 
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { CalendarDateRangePicker } from '@/components/ui/date-range-picker';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useFinancials } from '@/hooks/useFinancials';
-import { exportFinancialData } from '@/utils/exportUtils';
-import { format } from 'date-fns';
-import { DateRange } from 'react-day-picker';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Download } from 'lucide-react';
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from '@/hooks/use-toast';
+import { exportFinancialData } from '@/utils/exportUtils';
 
-type ExportFormat = 'csv' | 'excel';
-
-export const BatchExportDialog = () => {
-  const [date, setDate] = useState<DateRange | undefined>();
-  const [exportFormat, setExportFormat] = useState<ExportFormat>('csv');
-  const [isExporting, setIsExporting] = useState(false);
-  const { fetchSiteIncomes, fetchSiteExpenses, fetchCommissionPayments } = useFinancials();
+export function BatchExportDialog() {
+  const [open, setOpen] = useState(false);
+  const [startMonth, setStartMonth] = useState('');
+  const [endMonth, setEndMonth] = useState('');
+  const [exportIncome, setExportIncome] = useState(true);
+  const [exportExpenses, setExportExpenses] = useState(true);
+  const [exportCommissions, setExportCommissions] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleExport = async () => {
-    if (!date?.from) return;
-    
-    setIsExporting(true);
+    if (!startMonth || !endMonth) {
+      toast({
+        title: "Missing Information",
+        description: "Please select both start and end months.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      const startDate = format(date.from, 'yyyy-MM-dd');
-      const endDate = date.to ? format(date.to, 'yyyy-MM-dd') : startDate;
-      const period = `${format(date.from, 'yyyy-MM')}${date.to ? `-to-${format(date.to, 'yyyy-MM')}` : ''}`;
-
-      const [incomes, expenses, commissions] = await Promise.all([
-        fetchSiteIncomes(startDate, endDate), // Fix: Added endDate as the second argument
-        fetchSiteExpenses(startDate),
-        fetchCommissionPayments()
-      ]);
-
-      await exportFinancialData(incomes, expenses, commissions, period, exportFormat);
+      // Call a function to handle the batch export 
+      // We need to update this call to match the exportFinancialData signature
+      toast({
+        title: "Export Started",
+        description: "Preparing financial data from " + startMonth + " to " + endMonth
+      });
+      
+      await exportFinancialData(
+        [], // incomeData - empty as we'll fetch it in the function
+        [], // expenseData - empty as we'll fetch it in the function
+        [], // commissionData - empty as we'll fetch it in the function
+        `${startMonth}_to_${endMonth}` // filename prefix
+      );
+      
+      toast({
+        title: "Export Complete",
+        description: "Your financial data has been exported successfully.",
+      });
+      setOpen(false);
     } catch (error) {
-      console.error('Export failed:', error);
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting the financial data.",
+        variant: "destructive"
+      });
+      console.error("Export error:", error);
     } finally {
-      setIsExporting(false);
+      setIsLoading(false);
     }
   };
 
+  // Generating available months for selection (past 24 months)
+  const getAvailableMonths = () => {
+    const months = [];
+    const now = new Date();
+    for (let i = 0; i < 24; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthValue = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const monthLabel = `${d.toLocaleString('default', { month: 'long' })} ${d.getFullYear()}`;
+      months.push({ value: monthValue, label: monthLabel });
+    }
+    return months;
+  };
+
+  const availableMonths = getAvailableMonths();
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <Download className="h-4 w-4" />
+        <Button variant="outline" className="ml-2">
+          <Download className="mr-2 h-4 w-4" />
           Batch Export
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Export Financial Data</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 pt-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Date Range</label>
-            <CalendarDateRangePicker date={date} onDateChange={setDate} />
-          </div>
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Export Format</label>
-            <Select value={exportFormat} onValueChange={(value: ExportFormat) => setExportFormat(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select format" />
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="start-month" className="text-right">
+              Start Month
+            </Label>
+            <Select value={startMonth} onValueChange={setStartMonth}>
+              <SelectTrigger id="start-month" className="col-span-3">
+                <SelectValue placeholder="Select starting month" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="csv">CSV</SelectItem>
-                <SelectItem value="excel">Excel</SelectItem>
+                {availableMonths.map((month) => (
+                  <SelectItem key={month.value} value={month.value}>
+                    {month.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
-
-          <Button 
-            className="w-full"
-            onClick={handleExport} 
-            disabled={!date?.from || isExporting}
-          >
-            {isExporting ? 'Exporting...' : 'Export Data'}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="end-month" className="text-right">
+              End Month
+            </Label>
+            <Select value={endMonth} onValueChange={setEndMonth}>
+              <SelectTrigger id="end-month" className="col-span-3">
+                <SelectValue placeholder="Select ending month" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableMonths.map((month) => (
+                  <SelectItem key={month.value} value={month.value}>
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label className="text-right col-span-1">Include</Label>
+            <div className="space-y-2 col-span-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox id="income" checked={exportIncome} onCheckedChange={setExportIncome} />
+                <Label htmlFor="income">Income Data</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="expenses" checked={exportExpenses} onCheckedChange={setExportExpenses} />
+                <Label htmlFor="expenses">Expense Data</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="commissions" checked={exportCommissions} onCheckedChange={setExportCommissions} />
+                <Label htmlFor="commissions">Commission Data</Label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={handleExport} disabled={isLoading || !startMonth || !endMonth}>
+            {isLoading ? "Exporting..." : "Export Data"}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
-};
+}

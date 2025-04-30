@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { UserProfile, Gender } from '@/types/userTypes';
+import { UserProfile } from '@/types/userTypes';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { ProfileHeader } from './form/ProfileHeader';
 import { ProfileAvatar } from './form/ProfileAvatar';
@@ -14,7 +14,7 @@ export function UserProfileForm() {
     display_name: '',
     bio: '',
     avatar_url: '',
-    gender: null,
+    gender: undefined,
     custom_gender: null,
   });
 
@@ -24,7 +24,7 @@ export function UserProfileForm() {
         display_name: profile.display_name || '',
         bio: profile.bio || '',
         avatar_url: profile.avatar_url || '',
-        gender: profile.gender || null,
+        gender: profile.gender || undefined,
         custom_gender: profile.custom_gender || null,
       });
       console.log("Profile data loaded:", profile);

@@ -6,19 +6,18 @@ export async function fetchMonthlyFinancialSummary(period: string): Promise<Mont
   console.log('[FINANCE HOOK] fetchMonthlyFinancialSummary called for period:', period);
   
   try {
-    // Try to fetch from the monthly_financial_summary view/table
-    const { data: summaryData, error: summaryError } = await supabase
-      .from('monthly_financial_summary')
-      .select('*')
-      .eq('period', period)
-      .single();
+    // Call the stored function instead of trying to access a view
+    const { data: summaryData, error: summaryError } = await supabase.rpc(
+      'get_monthly_financial_summary',
+      { month_param: period }
+    );
     
     console.log('[FINANCE HOOK] Monthly summary query result:', { 
       data: summaryData, 
       error: summaryError ? { code: summaryError.code, message: summaryError.message } : null 
     });
     
-    if (summaryError && summaryError.code !== 'PGRST116') {
+    if (summaryError) {
       console.error('[FINANCE HOOK] Error fetching monthly summary:', summaryError);
       throw summaryError;
     }
@@ -26,7 +25,7 @@ export async function fetchMonthlyFinancialSummary(period: string): Promise<Mont
     if (summaryData) {
       console.log('[FINANCE HOOK] Monthly summary data:', [summaryData]);
       return {
-        period: summaryData.period,
+        period: summaryData.period || period,
         total_income: summaryData.total_income || 0,
         total_expenses: summaryData.total_expenses || 0,
         net_profit: summaryData.net_profit || 0,
@@ -36,7 +35,7 @@ export async function fetchMonthlyFinancialSummary(period: string): Promise<Mont
     }
     
     // If no data found, construct summary from raw tables
-    console.log('[FINANCE HOOK] No summary found in monthly_financial_summary, calculating from raw tables');
+    console.log('[FINANCE HOOK] No summary found, calculating from raw tables');
     
     // Create fallback data
     const fallbackData: MonthlyFinancialSummary = {

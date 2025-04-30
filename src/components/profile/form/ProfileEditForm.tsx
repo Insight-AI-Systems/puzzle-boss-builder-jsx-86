@@ -36,7 +36,19 @@ export function ProfileEditForm({
     onChange(simulatedEvent);
   };
 
-  const ageGroupOptions: AgeGroup[] = ['13-17', '18-24', '25-34', '35-44', '45-60', '60+'];
+  // Map the display values to our actual AgeGroup type values
+  const ageGroupMapping: Record<string, AgeGroup> = {
+    '13-17': 'under_18',
+    '18-24': '18_24',
+    '25-34': '25_34',
+    '35-44': '35_44',
+    '45-54': '45_54',
+    '55-64': '55_64',
+    '60+': '65_plus'
+  };
+
+  // The display values for age groups that will appear in the UI
+  const ageGroupDisplayValues = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '60+'];
 
   if (!isEditing) {
     return (
@@ -168,16 +180,16 @@ export function ProfileEditForm({
       <div className="space-y-2">
         <Label htmlFor="age_group" className="text-puzzle-white">Age Range</Label>
         <Select 
-          value={formData.age_group || undefined}
-          onValueChange={(value) => handleSelectChange('age_group', value)}
+          value={Object.entries(ageGroupMapping).find(([_, value]) => value === formData.age_group)?.[0] || undefined}
+          onValueChange={(displayValue) => handleSelectChange('age_group', ageGroupMapping[displayValue])}
         >
           <SelectTrigger className="bg-puzzle-black/50 border-puzzle-aqua/30 text-puzzle-white w-full">
             <SelectValue placeholder="Select your age range" />
           </SelectTrigger>
           <SelectContent>
-            {ageGroupOptions.map((ageGroup) => (
-              <SelectItem key={ageGroup} value={ageGroup}>
-                {ageGroup}
+            {ageGroupDisplayValues.map((displayValue) => (
+              <SelectItem key={displayValue} value={displayValue}>
+                {displayValue}
               </SelectItem>
             ))}
           </SelectContent>

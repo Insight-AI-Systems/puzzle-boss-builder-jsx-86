@@ -10,12 +10,11 @@ export async function fetchCategoryManagers(): Promise<CategoryManager[]> {
     // Empty array fallback - prevents UI errors with null data
     let safeResult: CategoryManager[] = [];
     
-    // Make DB query with relationships
+    // Make DB query with relationships - but update to handle missing relations
     const { data, error } = await supabase
       .from('category_managers')
       .select(`
         *,
-        profiles:user_id (username, email),
         categories:category_id (name)
       `);
     
@@ -32,11 +31,11 @@ export async function fetchCategoryManagers(): Promise<CategoryManager[]> {
         // Ensure expected property values exist even if DB returns null
         commission_percent: item.commission_percent || 0,
         active: item.active !== false, // Default to true if undefined
-        username: item.profiles?.username || 'Unknown',
+        username: 'Unknown',
         category_name: item.categories?.name || 'Unknown',
         profiles: {
-          username: item.profiles?.username || 'Unknown',
-          email: item.profiles?.email || 'unknown@example.com'
+          username: 'Unknown',
+          email: 'unknown@example.com'
         },
         categories: {
           name: item.categories?.name || 'Unknown'

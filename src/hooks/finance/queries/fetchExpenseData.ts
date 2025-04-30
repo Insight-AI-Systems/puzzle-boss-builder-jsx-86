@@ -46,7 +46,7 @@ export async function fetchSiteExpenses(month: string): Promise<SiteExpense[]> {
         date: item.date,
         id: item.id,
         categories: item.categories || { name: 'Unknown' }
-      }));
+      } as SiteExpense));
     } else {
       debugLog('FINANCE HOOK', 'No expense data found or invalid response format', DebugLevel.WARN);
     }
