@@ -21,6 +21,8 @@ const mockSession: Session = {
   refresh_token: 'test-refresh-token',
   user: mockUser,
   expires_at: 123456789,
+  expires_in: 3600,
+  token_type: 'bearer'
 };
 
 describe('RoleBasedAccess Component', () => {
@@ -40,7 +42,7 @@ describe('RoleBasedAccess Component', () => {
       signUp: jest.fn(),
       signOut: jest.fn(),
       resetPassword: jest.fn(),
-      updateUserProfile: jest.fn(),
+      updatePassword: jest.fn(),
       refreshSession: jest.fn(),
       setError: jest.fn(),
       clearAuthError: jest.fn(),
@@ -48,7 +50,7 @@ describe('RoleBasedAccess Component', () => {
 
     render(
       <AuthContext.Provider value={mockAuthContext}>
-        <RoleBasedAccess requiredRoles={['super_admin']}>
+        <RoleBasedAccess allowedRoles={['super_admin']}>
           <div data-testid="protected-content">Protected Content</div>
         </RoleBasedAccess>
       </AuthContext.Provider>
@@ -73,7 +75,7 @@ describe('RoleBasedAccess Component', () => {
       signUp: jest.fn(),
       signOut: jest.fn(),
       resetPassword: jest.fn(),
-      updateUserProfile: jest.fn(),
+      updatePassword: jest.fn(),
       refreshSession: jest.fn(),
       setError: jest.fn(),
       clearAuthError: jest.fn(),
@@ -81,7 +83,7 @@ describe('RoleBasedAccess Component', () => {
 
     render(
       <AuthContext.Provider value={mockAuthContext}>
-        <RoleBasedAccess requiredRoles={['admin']}>
+        <RoleBasedAccess allowedRoles={['admin']}>
           <div data-testid="protected-content">Protected Content</div>
         </RoleBasedAccess>
       </AuthContext.Provider>
@@ -106,7 +108,7 @@ describe('RoleBasedAccess Component', () => {
       signUp: jest.fn(),
       signOut: jest.fn(),
       resetPassword: jest.fn(),
-      updateUserProfile: jest.fn(),
+      updatePassword: jest.fn(),
       refreshSession: jest.fn(),
       setError: jest.fn(),
       clearAuthError: jest.fn(),
@@ -114,7 +116,7 @@ describe('RoleBasedAccess Component', () => {
 
     render(
       <AuthContext.Provider value={mockAuthContext}>
-        <RoleBasedAccess requiredRoles={['super_admin', 'admin']}>
+        <RoleBasedAccess allowedRoles={['super_admin', 'admin']}>
           <div data-testid="protected-content">Protected Content</div>
         </RoleBasedAccess>
       </AuthContext.Provider>

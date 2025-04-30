@@ -1,124 +1,43 @@
 
-import React, { useEffect } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
-import { usePermissions } from '@/hooks/usePermissions';
 import { UserRole } from '@/types/userTypes';
+import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRoles?: UserRole[];
-  requiredPermissions?: string[];
-  requireAllPermissions?: boolean;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
-  requiredRoles = [],
-  requiredPermissions = [],
-  requireAllPermissions = false
+  requiredRoles = [] 
 }) => {
-  const { isAuthenticated, isLoading, hasRole, user, userRole, userRoles, rolesLoaded } = useAuth();
-  const { hasAllPermissions, hasAnyPermission } = usePermissions();
-  const location = useLocation();
-  
-  // Calculate if we're fully ready to render the protected content
-  const isAuthReady = !isLoading && (!isAuthenticated || rolesLoaded);
+  const { isAuthenticated, isLoading, hasRole, rolesLoaded } = useAuth();
 
-  // Enhanced debug logging
-  useEffect(() => {
-    console.log('ProtectedRoute - Access Check:', {
-      path: location.pathname,
-      isAuthenticated,
-      isLoading,
-      rolesLoaded,
-      isAuthReady,
-      user: user ? { id: user.id, email: user.email } : null,
-      userRole,
-      userRoles,
-      requiredRoles,
-      requiredPermissions,
-      requireAllPermissions,
-      hasRoleChecks: requiredRoles.map(role => ({ role, hasRole: hasRole(role) }))
-    });
-    
-    // Special debug for support-admin access
-    if (location.pathname === '/support-admin') {
-      console.log('SUPPORT ADMIN ACCESS CHECK:', {
-        hasAdminRole: hasRole('admin'),
-        hasSuperAdminRole: hasRole('super_admin'),
-        userEmail: user?.email,
-        userRole,
-        userRoles
-      });
-    }
-  }, [location.pathname, isAuthenticated, isLoading, user, userRole, userRoles, requiredRoles, requiredPermissions, requireAllPermissions, hasRole, rolesLoaded, isAuthReady]);
-
-  // Show loading state while checking authentication
-  if (!isAuthReady) {
-    console.log('ProtectedRoute - Still waiting for auth state to be ready');
+  if (isLoading || !rolesLoaded) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
-        <div className="flex flex-col items-center">
-          <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
-          <p className="mt-4 text-sm text-muted-foreground">Verifying access permissions...</p>
-        </div>
+        <Loader2 className="h-8 w-8 animate-spin text-puzzle-aqua" />
       </div>
     );
   }
 
-  // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    console.log('ProtectedRoute - User not authenticated, redirecting to login');
-    // Save the location they were trying to access
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+    return <Navigate to="/auth" replace />;
   }
 
-  // Enhanced super admin check - Always grant access to super_admin
-  if (hasRole('super_admin') || hasRole('admin')) {
-    console.log('ProtectedRoute - Admin detected, granting access');
-    return <>{children}</>;
-  }
-
-  // Check for required roles if specified
+  // If roles are specified, check if user has any of them
   if (requiredRoles.length > 0) {
-    const roleChecks = requiredRoles.map(role => ({ 
-      role, 
-      hasRole: hasRole(role) 
-    }));
-    
-    console.log('ProtectedRoute - Role checks:', roleChecks);
-    
-    const hasRequiredRole = roleChecks.some(check => check.hasRole);
-    
+    const hasRequiredRole = requiredRoles.some(role => hasRole(role));
+
     if (!hasRequiredRole) {
-      console.log('ProtectedRoute - Access denied due to missing required role');
-      // Redirect to unauthorized page if user doesn't have required role
       return <Navigate to="/unauthorized" replace />;
     }
   }
 
-  // Check for required permissions if specified
-  if (requiredPermissions.length > 0) {
-    const hasRequiredPermissions = requireAllPermissions
-      ? hasAllPermissions(requiredPermissions)
-      : hasAnyPermission(requiredPermissions);
-    
-    console.log('ProtectedRoute - Permission check result:', {
-      requiredPermissions,
-      requireAll: requireAllPermissions,
-      hasRequiredPermissions
-    });
-    
-    if (!hasRequiredPermissions) {
-      console.log('ProtectedRoute - Access denied due to missing required permissions');
-      // Redirect to unauthorized page if user doesn't have required permissions
-      return <Navigate to="/unauthorized" replace />;
-    }
-  }
-
-  // If authenticated and authorized, render the children
-  console.log('ProtectedRoute - Access granted');
   return <>{children}</>;
 };
+
+export default ProtectedRoute;
