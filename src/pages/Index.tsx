@@ -11,15 +11,28 @@ import ConceptSection from '@/components/ConceptSection';
 import RegistrationCTA from '@/components/RegistrationCTA';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Link } from 'react-router-dom';
+import { PageDebugger } from '@/components/debug/PageDebugger';
+import { useAuth } from '@/contexts/AuthContext';
 
 function Index() {
-  const { isAdmin, profile, isLoading } = useUserProfile();
+  const { isAdmin, profile, isLoading: profileLoading } = useUserProfile();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   
-  console.log("Index page rendering", { isAdmin, hasProfile: !!profile, isLoading });
+  console.log("Index page rendering", { 
+    isAdmin, 
+    hasProfile: !!profile, 
+    profileRole: profile?.role,
+    isLoading: profileLoading,
+    authLoading,
+    isAuthenticated
+  });
   
   useEffect(() => {
-    if (!isLoading && profile?.role === 'super_admin') {
+    // Debug message to verify component rendering
+    console.log('Index page mounted');
+    
+    if (!profileLoading && profile?.role === 'super_admin') {
       const userWantsAdmin = window.localStorage.getItem('redirect_to_admin') === 'true';
       
       if (userWantsAdmin) {
@@ -33,10 +46,27 @@ function Index() {
         }
       }
     }
-  }, [isLoading, profile, navigate]);
+  }, [profileLoading, profile, navigate]);
+
+  // Add fallback rendering state for debugging
+  if (authLoading || profileLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-puzzle-aqua border-t-transparent mx-auto"></div>
+          <p>Loading application data...</p>
+          <p className="text-sm text-gray-500">
+            {authLoading ? 'Authenticating...' : ''}
+            {profileLoading ? 'Loading profile...' : ''}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <main>
+    <main className="min-h-screen">
+      <h1 className="sr-only">The Puzzle Boss - Home</h1>
       <Hero />
       <ConceptSection />
       <HowItWorks />
@@ -53,6 +83,8 @@ function Index() {
           Try Our Puzzle Demo
         </Link>
       </div>
+      {/* Add debug component */}
+      <PageDebugger componentName="Index" />
     </main>
   );
 }

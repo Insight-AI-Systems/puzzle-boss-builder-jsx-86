@@ -5,6 +5,7 @@ import { AuthContext, AuthContextType } from '@/contexts/AuthContext';
 import { RoleBasedAccess } from '../RoleBasedAccess';
 import { Session, User } from '@supabase/supabase-js';
 import { UserRole } from '@/types/userTypes';
+import '@testing-library/jest-dom';
 
 // Mock user and session
 const mockUser: User = {
@@ -37,6 +38,7 @@ describe('RoleBasedAccess Component', () => {
       userRole: 'super_admin' as UserRole,
       userRoles: ['super_admin'] as UserRole[],
       hasRole: (role: string) => role === 'super_admin',
+      isAdmin: true, // Add missing property
       rolesLoaded: true,
       signIn: jest.fn(),
       signUp: jest.fn(),
@@ -69,6 +71,7 @@ describe('RoleBasedAccess Component', () => {
       userRole: 'player' as UserRole,
       userRoles: ['player'] as UserRole[],
       hasRole: (role: string) => role === 'player',
+      isAdmin: false, // Add missing property
       rolesLoaded: true,
       signIn: jest.fn(),
       signUp: jest.fn(),
@@ -101,6 +104,7 @@ describe('RoleBasedAccess Component', () => {
       userRole: 'admin' as UserRole,
       userRoles: ['admin', 'editor'] as UserRole[],
       hasRole: (testRole: string) => ['admin', 'editor'].includes(testRole),
+      isAdmin: false, // Add missing property
       rolesLoaded: true,
       signIn: jest.fn(),
       signUp: jest.fn(),
