@@ -3,7 +3,7 @@ import React from 'react';
 import { TabsContent } from '@/components/ui/tabs';
 import { TabDefinition } from './TabDefinitions';
 import { NoAccessMessage } from '@/components/auth/NoAccessMessage';
-import { Profile, UserProfile } from '@/types/userTypes';
+import { UserProfile } from '@/types/userTypes';
 
 // Import the components needed for each tab
 import { OverviewDashboard } from "./OverviewDashboard";

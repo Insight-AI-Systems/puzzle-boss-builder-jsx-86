@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -13,9 +12,9 @@ export function BatchExportDialog() {
   const [open, setOpen] = useState(false);
   const [startMonth, setStartMonth] = useState('');
   const [endMonth, setEndMonth] = useState('');
-  const [exportIncome, setExportIncome] = useState(true);
-  const [exportExpenses, setExportExpenses] = useState(true);
-  const [exportCommissions, setExportCommissions] = useState(true);
+  const [includeIncomes, setIncludeIncomes] = useState(true);
+  const [includeExpenses, setIncludeExpenses] = useState(true);
+  const [includeCommissions, setIncludeCommissions] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -128,16 +127,28 @@ export function BatchExportDialog() {
             <Label className="text-right col-span-1">Include</Label>
             <div className="space-y-2 col-span-3">
               <div className="flex items-center space-x-2">
-                <Checkbox id="income" checked={exportIncome} onCheckedChange={setExportIncome} />
-                <Label htmlFor="income">Income Data</Label>
+                <Checkbox 
+                  id="includeIncomes" 
+                  checked={includeIncomes}
+                  onCheckedChange={(checked) => setIncludeIncomes(checked === true)}
+                />
+                <Label htmlFor="includeIncomes">Include Income Data</Label>
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="expenses" checked={exportExpenses} onCheckedChange={setExportExpenses} />
-                <Label htmlFor="expenses">Expense Data</Label>
+              <div className="flex items-center space-x-2 mt-2">
+                <Checkbox 
+                  id="includeExpenses" 
+                  checked={includeExpenses} 
+                  onCheckedChange={(checked) => setIncludeExpenses(checked === true)}
+                />
+                <Label htmlFor="includeExpenses">Include Expense Data</Label>
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="commissions" checked={exportCommissions} onCheckedChange={setExportCommissions} />
-                <Label htmlFor="commissions">Commission Data</Label>
+              <div className="flex items-center space-x-2 mt-2">
+                <Checkbox 
+                  id="includeCommissions" 
+                  checked={includeCommissions} 
+                  onCheckedChange={(checked) => setIncludeCommissions(checked === true)}
+                />
+                <Label htmlFor="includeCommissions">Include Commission Data</Label>
               </div>
             </div>
           </div>

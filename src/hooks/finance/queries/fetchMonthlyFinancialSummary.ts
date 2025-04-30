@@ -6,11 +6,9 @@ export async function fetchMonthlyFinancialSummary(period: string): Promise<Mont
   console.log('[FINANCE HOOK] fetchMonthlyFinancialSummary called for period:', period);
   
   try {
-    // Call the stored function instead of trying to access a view
-    const { data: summaryData, error: summaryError } = await supabase.rpc(
-      'get_monthly_financial_summary',
-      { month_param: period }
-    );
+    // Call the stored function to get financial data
+    const { data: summaryData, error: summaryError } = await supabase
+      .rpc('get_monthly_financial_summary', { month_param: period });
     
     console.log('[FINANCE HOOK] Monthly summary query result:', { 
       data: summaryData, 
@@ -22,15 +20,18 @@ export async function fetchMonthlyFinancialSummary(period: string): Promise<Mont
       throw summaryError;
     }
     
-    if (summaryData) {
-      console.log('[FINANCE HOOK] Monthly summary data:', [summaryData]);
+    if (summaryData && summaryData[0]) {
+      // Access the first item in the array
+      const firstItem = summaryData[0];
+      console.log('[FINANCE HOOK] Monthly summary data:', firstItem);
+      
       return {
-        period: summaryData.period || period,
-        total_income: summaryData.total_income || 0,
-        total_expenses: summaryData.total_expenses || 0,
-        net_profit: summaryData.net_profit || 0,
-        commissions_paid: summaryData.commissions_paid || 0,
-        prize_expenses: summaryData.prize_expenses || 0
+        period: firstItem.period || period,
+        total_income: firstItem.total_income || 0,
+        total_expenses: firstItem.total_expenses || 0,
+        net_profit: firstItem.net_profit || 0,
+        commissions_paid: firstItem.commissions_paid || 0,
+        prize_expenses: firstItem.prize_expenses || 0
       };
     }
     
@@ -48,7 +49,7 @@ export async function fetchMonthlyFinancialSummary(period: string): Promise<Mont
     };
     
     // Log the fallback data being returned
-    console.log('[FINANCE HOOK] Monthly summary data:', [fallbackData]);
+    console.log('[FINANCE HOOK] Monthly summary data:', fallbackData);
     
     return fallbackData;
   } catch (error) {

@@ -1,54 +1,65 @@
-
-import React from 'react';
-import { format } from 'date-fns';
-import { TableCell, TableRow } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { CommissionPayment, PaymentStatus } from '@/types/financeTypes';
+import React, { useState } from 'react';
+import { PaymentStatus } from '@/types/financeTypes';
+import { updateCommissionStatus } from '@/hooks/finance/queries/fetchCommissionData';
+import { toast } from '@/hooks/use-toast';
 
 interface CommissionTableRowProps {
-  payment: CommissionPayment;
-  isSelected: boolean;
-  onSelectPayment: (id: string) => void;
-  getStatusColor: (status: PaymentStatus) => string;
-  onManagerSelect: (payment: CommissionPayment) => void;
+  commission: {
+    id: string;
+    period: string;
+    gross_income: number;
+    net_income: number;
+    commission_amount: number;
+    payment_status: PaymentStatus;
+  };
+  onStatusChange?: (id: string, status: PaymentStatus) => void;
 }
 
-export const CommissionTableRow: React.FC<CommissionTableRowProps> = ({
-  payment,
-  isSelected,
-  onSelectPayment,
-  getStatusColor,
-  onManagerSelect
-}) => {
+const CommissionTableRow: React.FC<CommissionTableRowProps> = ({ commission, onStatusChange }) => {
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleStatusChange = (newStatus: PaymentStatus) => {
+    setIsUpdating(true);
+    updateCommissionStatus(commission.id, newStatus)
+      .then(() => {
+        toast({
+          title: "Status Updated",
+          description: `Commission status changed to ${newStatus}`,
+        });
+        if (onStatusChange) onStatusChange(commission.id, newStatus);
+      })
+      .catch(err => {
+        toast({
+          title: "Update Failed",
+          description: err.message || "Failed to update commission status",
+          variant: "destructive",
+        });
+      })
+      .finally(() => {
+        setIsUpdating(false);
+      });
+  };
+
   return (
-    <TableRow>
-      <TableCell>
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={() => onSelectPayment(payment.id)}
-        />
-      </TableCell>
-      <TableCell>
-        <Button
-          variant="link"
-          className="p-0 h-auto font-normal"
-          onClick={() => onManagerSelect(payment)}
+    <tr>
+      <td>{commission.period}</td>
+      <td>${commission.gross_income.toFixed(2)}</td>
+      <td>${commission.net_income.toFixed(2)}</td>
+      <td>${commission.commission_amount.toFixed(2)}</td>
+      <td>
+        <select
+          value={commission.payment_status}
+          onChange={(e) => handleStatusChange(e.target.value as PaymentStatus)}
+          disabled={isUpdating}
         >
-          {payment.manager_name}
-        </Button>
-      </TableCell>
-      <TableCell>{payment.category_name}</TableCell>
-      <TableCell>{format(new Date(payment.period), 'MMM yyyy')}</TableCell>
-      <TableCell>${payment.commission_amount.toFixed(2)}</TableCell>
-      <TableCell>
-        <span className={`px-2 py-1 rounded text-xs ${getStatusColor(payment.payment_status)}`}>
-          {payment.payment_status}
-        </span>
-      </TableCell>
-      <TableCell>
-        {payment.payment_date ? format(new Date(payment.payment_date), 'yyyy-MM-dd') : '-'}
-      </TableCell>
-    </TableRow>
+          <option value={PaymentStatus.PENDING}>Pending</option>
+          <option value={PaymentStatus.APPROVED}>Approved</option>
+          <option value={PaymentStatus.PAID}>Paid</option>
+          <option value={PaymentStatus.REJECTED}>Rejected</option>
+        </select>
+      </td>
+    </tr>
   );
 };
+
+export default CommissionTableRow;

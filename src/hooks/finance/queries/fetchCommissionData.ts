@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CommissionPayment } from '@/types/financeTypes';
+import { CommissionPayment, PaymentStatus } from '@/types/financeTypes';
 import { debugLog, DebugLevel } from '@/utils/debug';
 
 export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
@@ -27,22 +27,18 @@ export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
     if (data && Array.isArray(data)) {
       debugLog('FINANCE HOOK', `Fetched ${data.length} commission payment records`, DebugLevel.INFO);
       safeResult = data.map(item => {
-        // Create manager name from profiles data or placeholder
-        const managerName = "Unknown";
-        const managerEmail = "unknown@example.com";
-        
         return {
           ...item,
           // Ensure expected property values exist even if DB returns null
           gross_income: item.gross_income || 0,
           net_income: item.net_income || 0,
           commission_amount: item.commission_amount || 0,
-          payment_status: item.payment_status || 'pending',
-          manager_name: item.manager_name || managerName,
-          manager_email: item.manager_email || managerEmail,
+          payment_status: (item.payment_status as PaymentStatus) || 'pending',
+          manager_name: item.manager_name || 'Unknown',
+          manager_email: item.manager_email || 'unknown@example.com',
           category_name: item.categories?.name || 'Unknown',
           is_overdue: item.is_overdue || false
-        };
+        } as CommissionPayment;
       });
     } else {
       debugLog('FINANCE HOOK', 'No commission payment data found or invalid response format', DebugLevel.WARN);
