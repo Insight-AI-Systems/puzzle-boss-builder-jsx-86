@@ -2,15 +2,16 @@
 import React from 'react';
 import { TabsContent } from '@/components/ui/tabs';
 import { TabDefinition } from './TabDefinitions';
-import { OverviewTab } from './tabs/OverviewTab';
-import { UsersTab } from './tabs/UsersTab';
-import { PuzzlesTab } from './tabs/PuzzlesTab';
-import { SettingsTab } from './tabs/SettingsTab';
-import { MarketingTab } from './tabs/MarketingTab';
-import { SchedulingTab } from './tabs/SchedulingTab';
-import { FinancialDashboard } from './FinancialDashboard';
 import { NoAccessMessage } from '@/components/auth/NoAccessMessage';
 import { Profile } from '@/types/userTypes';
+
+// Import the components needed for each tab
+import { OverviewDashboard } from "./OverviewDashboard";
+import { UserManagement } from "@/components/admin/UserManagement";
+import { PuzzleManagement } from "@/components/admin/PuzzleManagement";
+import { MarketingDashboard } from "./MarketingDashboard";
+import { NotificationsDashboard } from "./NotificationsDashboard";
+import { MonitoringDashboard } from "./MonitoringDashboard";
 
 interface DashboardContentProps {
   accessibleTabs: TabDefinition[];
@@ -34,7 +35,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
       {/* Overview Tab */}
       <TabsContent value="overview" className="space-y-4">
         {isTabAccessible('overview') ? (
-          <OverviewTab />
+          <OverviewDashboard />
         ) : (
           <NoAccessMessage resourceName="Dashboard Overview" />
         )}
@@ -43,7 +44,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
       {/* Users Tab */}
       <TabsContent value="users" className="space-y-4">
         {isTabAccessible('users') ? (
-          <UsersTab />
+          <UserManagement />
         ) : (
           <NoAccessMessage resourceName="User Management" />
         )}
@@ -52,25 +53,16 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
       {/* Puzzles Tab */}
       <TabsContent value="puzzles" className="space-y-4">
         {isTabAccessible('puzzles') ? (
-          <PuzzlesTab />
+          <PuzzleManagement />
         ) : (
           <NoAccessMessage resourceName="Puzzle Management" />
-        )}
-      </TabsContent>
-
-      {/* Finances Tab */}
-      <TabsContent value="finances" className="space-y-4">
-        {isTabAccessible('finances') ? (
-          <FinancialDashboard />
-        ) : (
-          <NoAccessMessage resourceName="Financial Overview" />
         )}
       </TabsContent>
 
       {/* Marketing Tab */}
       <TabsContent value="marketing" className="space-y-4">
         {isTabAccessible('marketing') ? (
-          <MarketingTab />
+          <MarketingDashboard />
         ) : (
           <NoAccessMessage resourceName="Marketing & Social" />
         )}
@@ -79,7 +71,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
       {/* Scheduling Tab */}
       <TabsContent value="scheduling" className="space-y-4">
         {isTabAccessible('scheduling') ? (
-          <SchedulingTab />
+          <NotificationsDashboard />
         ) : (
           <NoAccessMessage resourceName="Content Schedule" />
         )}
@@ -88,7 +80,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
       {/* Settings Tab */}
       <TabsContent value="settings" className="space-y-4">
         {isTabAccessible('settings') ? (
-          <SettingsTab />
+          <MonitoringDashboard />
         ) : (
           <NoAccessMessage resourceName="Dashboard Settings" />
         )}

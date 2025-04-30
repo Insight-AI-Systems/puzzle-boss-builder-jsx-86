@@ -1,5 +1,5 @@
 
-import { MailsIcon, BarChart, Users, ShoppingCart, Settings, Calendar, Briefcase } from 'lucide-react';
+import { MailsIcon, BarChart, Users, ShoppingCart, Settings, Calendar } from 'lucide-react';
 
 export interface TabDefinition {
   id: string;
@@ -27,12 +27,6 @@ export function getTabDefinitions(): TabDefinition[] {
       label: "Puzzle Management",
       icon: <ShoppingCart className="h-4 w-4" />,
       roles: ["super_admin", "admin", "category_manager"]
-    },
-    {
-      id: "finances",
-      label: "Financial Overview",
-      icon: <Briefcase className="h-4 w-4" />,
-      roles: ["super_admin", "admin", "cfo"]
     },
     {
       id: "marketing",

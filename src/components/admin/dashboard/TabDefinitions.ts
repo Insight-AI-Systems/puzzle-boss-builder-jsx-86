@@ -2,14 +2,13 @@
 import React from 'react';
 import { OverviewDashboard } from "./OverviewDashboard";
 import { CategoryManagement } from "./CategoryManagement";
-import { FinancialDashboard } from "./FinancialDashboard";
 import { PartnersDashboard } from "./partners/PartnersDashboard";
 import { NotificationsDashboard } from "./NotificationsDashboard";
 import { MonitoringDashboard } from "./MonitoringDashboard";
 import { MarketingDashboard } from "./MarketingDashboard";
 import TicketManagement from "./TicketManagement";
 import { PuzzleManagement } from "@/components/admin/PuzzleManagement"; 
-import { UserManagement } from "@/components/admin/UserManagement"; // Import from the wrapper
+import { UserManagement } from "@/components/admin/UserManagement"; 
 import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
 import { ContentManagement } from "@/components/admin/ContentManagement";
 import { EmailManagement } from "@/components/admin/EmailManagement";
@@ -80,13 +79,6 @@ export function getTabDefinitions(): TabDefinition[] {
       icon: "Handshake",
       component: PartnersDashboard,
       roles: ["super_admin", "admin", "partner_manager"]
-    },
-    {
-      id: "financials",
-      name: "Financials",
-      icon: "DollarSign",
-      component: FinancialDashboard,
-      roles: ["super_admin", "admin", "cfo"]
     },
     {
       id: "security",

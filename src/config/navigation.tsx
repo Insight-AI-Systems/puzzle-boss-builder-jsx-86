@@ -94,9 +94,9 @@ export const adminNavItems: NavItem[] = [
     roles: ["super_admin", "admin", "partner_manager"],
   },
   {
-    title: "Financial Dashboard",
+    title: "CFO Dashboard",
     icon: DollarSign,
-    href: "/admin-dashboard?tab=financials",
+    href: "/cfo-dashboard",
     roles: ["super_admin", "cfo"],
   },
   {
