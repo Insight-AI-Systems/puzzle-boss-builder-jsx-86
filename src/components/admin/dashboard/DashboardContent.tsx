@@ -3,7 +3,7 @@ import React from 'react';
 import { TabsContent } from '@/components/ui/tabs';
 import { TabDefinition } from './TabDefinitions';
 import { NoAccessMessage } from '@/components/auth/NoAccessMessage';
-import { Profile } from '@/types/userTypes';
+import { Profile, UserProfile } from '@/types/userTypes';
 
 // Import the components needed for each tab
 import { OverviewDashboard } from "./OverviewDashboard";
@@ -15,7 +15,7 @@ import { MonitoringDashboard } from "./MonitoringDashboard";
 
 interface DashboardContentProps {
   accessibleTabs: TabDefinition[];
-  profile: Profile;
+  profile: UserProfile;
   activeTab: string;
 }
 
@@ -35,7 +35,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
       {/* Overview Tab */}
       <TabsContent value="overview" className="space-y-4">
         {isTabAccessible('overview') ? (
-          <OverviewDashboard />
+          <OverviewDashboard profile={profile} />
         ) : (
           <NoAccessMessage resourceName="Dashboard Overview" />
         )}
