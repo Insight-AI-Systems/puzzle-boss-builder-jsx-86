@@ -1,123 +1,59 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { format } from 'date-fns';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import CFOSidebar from '@/components/cfo/CFOSidebar';
-import FinancialOverview from '@/components/cfo/FinancialOverview';
-import IncomeStreams from '@/components/cfo/IncomeStreams';
-import CostStreams from '@/components/cfo/CostStreams';
-import MembershipSummary from '@/components/cfo/MembershipSummary';
-import CommissionsManagement from '@/components/cfo/CommissionsManagement';
-import { TimeFrame } from '@/types/financeTypes';
-import { Loader2 } from 'lucide-react';
-import { FinancialDataProvider } from '@/contexts/FinancialDataContext';
+import React from "react";
+import { MainLayout } from "@/components/layouts/MainLayout";
+import CFOSidebar from "@/components/cfo/CFOSidebar";
+import FinancialOverview from "@/components/cfo/FinancialOverview";
+import IncomeStreams from "@/components/cfo/IncomeStreams";
+import CostStreams from "@/components/cfo/CostStreams";
+import CommissionsManagement from "@/components/cfo/CommissionsManagement";
+import MembershipSummary from "@/components/cfo/MembershipSummary";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const CFODashboard = () => {
-  console.log('[CFO UI] CFODashboard component rendering');
-  
-  const { hasRole, isLoading: authLoading, rolesLoaded } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [timeframe, setTimeframe] = useState<TimeFrame>('monthly');
-  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
-  const [isAccessChecking, setIsAccessChecking] = useState(true);
-  const isMounted = useRef(true);
-  
-  // Debugging - log component lifecycle
-  useEffect(() => {
-    console.log('[CFO UI] CFODashboard mounted');
-    
-    return () => {
-      console.log('[CFO UI] CFODashboard unmounting');
-      isMounted.current = false;
-    };
-  }, []);
-
-  // Check if user has CFO access
-  useEffect(() => {
-    // Skip access check if auth is still loading or roles aren't loaded
-    if (authLoading || !rolesLoaded) {
-      console.log('[CFO UI] Auth still loading, delaying access check');
-      return;
-    }
-
-    const checkAccess = async () => {
-      console.log('[CFO UI] Checking user access permissions');
-      try {
-        const hasCfoAccess = hasRole('cfo');
-        const hasAdminAccess = hasRole('super_admin') || hasRole('admin');
-        
-        console.log('[CFO UI] Access check result:', { hasCfoAccess, hasAdminAccess });
-        
-        if (!hasCfoAccess && !hasAdminAccess) {
-          console.log('[CFO UI] Access denied, redirecting to unauthorized');
-          if (isMounted.current) {
-            toast({
-              title: "Access Denied",
-              description: "You don't have permission to access the CFO dashboard",
-              variant: "destructive",
-            });
-            navigate('/unauthorized');
-          }
-        }
-      } catch (err) {
-        console.error('[CFO UI] Error checking user role:', err);
-        if (isMounted.current) {
-          toast({
-            title: "Authentication Error",
-            description: "Unable to verify your access permissions",
-            variant: "destructive",
-          });
-          navigate('/unauthorized');
-        }
-      } finally {
-        console.log('[CFO UI] Access check completed');
-        if (isMounted.current) {
-          setIsAccessChecking(false);
-        }
-      }
-    };
-    
-    checkAccess();
-  }, [hasRole, navigate, toast, authLoading, rolesLoaded]);
-
-  console.log('[CFO UI] CFODashboard render state:', { 
-    isAccessChecking, 
-    authLoading,
-    rolesLoaded
-  });
-
-  if (authLoading || !rolesLoaded || isAccessChecking) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="flex flex-col items-center">
-          <Loader2 className="h-12 w-12 animate-spin text-puzzle-aqua" />
-          <p className="mt-4 text-lg">Verifying access...</p>
-        </div>
-      </div>
-    );
-  }
+const CFODashboard: React.FC = () => {
+  const [activeTab, setActiveTab] = React.useState("overview");
 
   return (
-    <ProtectedRoute requiredRoles={['cfo', 'super_admin', 'admin']}>
-      <FinancialDataProvider>
-        <div className="flex min-h-screen w-full">
-          <CFOSidebar />
-          <main className="flex-1 p-6 overflow-auto">
-            <Routes>
-              <Route index element={<FinancialOverview timeframe={timeframe} />} />
-              <Route path="income" element={<IncomeStreams selectedMonth={selectedMonth} />} />
-              <Route path="expenses" element={<CostStreams selectedMonth={selectedMonth} />} />
-              <Route path="memberships" element={<MembershipSummary selectedMonth={selectedMonth} />} />
-              <Route path="commissions" element={<CommissionsManagement selectedMonth={selectedMonth} />} />
-            </Routes>
-          </main>
-        </div>
-      </FinancialDataProvider>
-    </ProtectedRoute>
+    <MainLayout>
+      <div className="flex flex-col md:flex-row min-h-[calc(100vh-4rem)] bg-puzzle-black">
+        <CFOSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        
+        <main className="flex-1 p-6 overflow-auto">
+          <div className="max-w-6xl mx-auto">
+            <h1 className="text-3xl font-game text-puzzle-gold mb-6">CFO Dashboard</h1>
+            
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="bg-puzzle-black/50 border border-puzzle-aqua/20 mb-6">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="income">Income</TabsTrigger>
+                <TabsTrigger value="expenses">Expenses</TabsTrigger>
+                <TabsTrigger value="commissions">Commissions</TabsTrigger>
+                <TabsTrigger value="membership">Membership</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="overview">
+                <FinancialOverview />
+              </TabsContent>
+              
+              <TabsContent value="income">
+                <IncomeStreams />
+              </TabsContent>
+              
+              <TabsContent value="expenses">
+                <CostStreams />
+              </TabsContent>
+              
+              <TabsContent value="commissions">
+                <CommissionsManagement />
+              </TabsContent>
+              
+              <TabsContent value="membership">
+                <MembershipSummary />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </main>
+      </div>
+    </MainLayout>
   );
 };
 
