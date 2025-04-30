@@ -15,14 +15,14 @@ import { Suspense, lazy } from "react";
 import { Loader2 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
-// Lazy-loaded components - using existing pages from the index file
+// Lazy-loaded components
 const Home = lazy(() => import("@/pages/Index"));
 const Dashboard = lazy(() => import("@/pages/AccountDashboard"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const PuzzlePlay = lazy(() => import("@/pages/PuzzlePlay"));
-const PuzzleCreate = lazy(() => import("@/pages/Puzzles")); // Fallback to existing page
-const PuzzleEdit = lazy(() => import("@/pages/Puzzles")); // Fallback to existing page
-const PuzzleList = lazy(() => import("@/pages/Puzzles")); // Fallback to existing page
+const PuzzleCreate = lazy(() => import("@/pages/Puzzles")); // Using existing page
+const PuzzleEdit = lazy(() => import("@/pages/Puzzles")); // Using existing page
+const PuzzleList = lazy(() => import("@/pages/Puzzles")); // Using existing page
 const CategoryManagement = lazy(() => import("@/pages/AdminDashboard")); // Fallback to admin dashboard
 const Unauthorized = lazy(() => import("@/pages/Unauthorized"));
 const NotFound = lazy(() => import("@/pages/NotFound"));

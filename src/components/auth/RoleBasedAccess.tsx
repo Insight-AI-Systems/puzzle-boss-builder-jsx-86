@@ -25,12 +25,23 @@ export const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
   const { user, hasRole } = useAuth();
   const { hasPermission, hasAllPermissions, hasAnyPermission } = usePermissions();
 
+  console.log('RoleBasedAccess - Debug:', {
+    user: !!user,
+    allowedRoles,
+    requiredPermissions
+  });
+
   // Not authenticated
-  if (!user) return <>{fallback}</>;
+  if (!user) {
+    console.log('RoleBasedAccess - User not authenticated, rendering fallback');
+    return <>{fallback}</>;
+  }
 
   // Check roles if specified
   const hasRequiredRole = allowedRoles.length === 0 || 
     allowedRoles.some(role => hasRole(role));
+
+  console.log('RoleBasedAccess - Role check result:', { hasRequiredRole });
 
   // Check permissions if specified
   let hasRequiredPermissions = true;
@@ -38,13 +49,17 @@ export const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
     hasRequiredPermissions = requireAllPermissions
       ? hasAllPermissions(requiredPermissions)
       : hasAnyPermission(requiredPermissions);
+    
+    console.log('RoleBasedAccess - Permission check result:', { hasRequiredPermissions });
   }
 
   // Render children only if user has required role AND permissions
   if (hasRequiredRole && hasRequiredPermissions) {
+    console.log('RoleBasedAccess - Access granted, rendering children');
     return <>{children}</>;
   }
 
+  console.log('RoleBasedAccess - Access denied, rendering fallback');
   return <>{fallback}</>;
 };
 

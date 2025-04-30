@@ -11,9 +11,8 @@ import IncomeStreams from '@/components/cfo/IncomeStreams';
 import CostStreams from '@/components/cfo/CostStreams';
 import MembershipSummary from '@/components/cfo/MembershipSummary';
 import CommissionsManagement from '@/components/cfo/CommissionsManagement';
-import { MonthlyFinancialSummary, TimeFrame } from '@/types/financeTypes';
+import { TimeFrame } from '@/types/financeTypes';
 import { Loader2 } from 'lucide-react';
-import { ErrorDisplay } from '@/components/dashboard/ErrorDisplay';
 import { FinancialDataProvider } from '@/contexts/FinancialDataContext';
 
 const CFODashboard = () => {
