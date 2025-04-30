@@ -1,61 +1,52 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { SiteIncome, SourceType } from '@/types/financeTypes';
+import { supabase } from '@/integrations/supabase/client';
+import { SiteIncome } from '@/types/financeTypes';
+import { debugLog, DebugLevel } from '@/utils/debug';
 
-/**
- * Fetches income data for a specified date range
- * @param startDate - Start date in YYYY-MM-DD format
- * @param endDate - End date in YYYY-MM-DD format
- * @returns Promise resolving to an array of income records
- */
-export async function fetchSiteIncomes(
-  startDate: string, 
-  endDate: string
-): Promise<SiteIncome[]> {
-  console.log('[FINANCE DEBUG] fetchSiteIncomes called with dates:', { startDate, endDate });
+export async function fetchSiteIncomes(startDate: string, endDate: string): Promise<SiteIncome[]> {
+  debugLog('FINANCE HOOK', `fetchSiteIncomes called with date range: ${startDate} to ${endDate}`, DebugLevel.INFO);
   
-  if (!startDate || !endDate || typeof startDate !== 'string' || typeof endDate !== 'string') {
-    console.error('[FINANCE ERROR] Invalid date parameters in fetchSiteIncomes:', { startDate, endDate });
-    return [];
-  }
-
   try {
-    console.log('[FINANCE DEBUG] Executing Supabase query for income between:', startDate, 'and', endDate);
+    // Empty array fallback - prevents UI errors with null data
+    let safeResult: SiteIncome[] = [];
     
+    // Make DB query with relationships
     const { data, error } = await supabase
       .from('site_income')
       .select(`
         *,
-        categories:category_id(name),
-        profiles:user_id(username)
+        categories:category_id (name),
+        profiles:user_id (username)
       `)
       .gte('date', startDate)
       .lte('date', endDate);
-
+    
     if (error) {
-      console.error('[FINANCE ERROR] Supabase error fetching site incomes:', error);
-      console.error('[FINANCE ERROR] Error details:', JSON.stringify(error));
+      debugLog('FINANCE HOOK', 'Error fetching site incomes:', DebugLevel.ERROR, error);
       throw error;
     }
     
-    console.log('[FINANCE DEBUG] Raw income data returned:', data ? data.length : 'none');
-    
-    const processedData = (data || []).map(item => {
-      const username = item.profiles && typeof item.profiles === 'object' ? 
-                     ((item.profiles as any).username as string || 'Anonymous') : 'Anonymous';
-
-      return {
+    // Process data if available
+    if (data && Array.isArray(data)) {
+      debugLog('FINANCE HOOK', `Fetched ${data.length} income records`, DebugLevel.INFO);
+      safeResult = data.map(item => ({
         ...item,
-        source_type: item.source_type as SourceType,
-        profiles: { username }
-      };
-    });
+        // Ensure expected property values exist even if DB returns null
+        amount: item.amount || 0,
+        source_type: item.source_type || 'other',
+        method: item.method || 'unknown',
+        date: item.date,
+        id: item.id,
+        categories: item.categories || { name: 'Unknown' },
+        profiles: item.profiles || { username: 'Unknown' }
+      }));
+    } else {
+      debugLog('FINANCE HOOK', 'No income data found or invalid response format', DebugLevel.WARN);
+    }
     
-    console.log('[FINANCE DEBUG] Processed income count:', processedData.length);
-    return processedData;
+    return safeResult;
   } catch (err) {
-    console.error('[FINANCE ERROR] Error fetching site incomes:', err);
-    console.error('[FINANCE ERROR] Stack trace:', err instanceof Error ? err.stack : 'No stack trace');
-    return [];
+    debugLog('FINANCE HOOK', 'Exception in fetchSiteIncomes:', DebugLevel.ERROR, err);
+    throw err;
   }
 }

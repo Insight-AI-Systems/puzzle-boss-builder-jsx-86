@@ -1,19 +1,24 @@
 
 import React from 'react';
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from 'lucide-react';
+import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ErrorDisplayProps {
-  error: string | null;
+  error: string;
+  title?: string;
 }
 
-export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error }) => {
-  if (!error) return null;
-  
+export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
+  error,
+  title = "There was a problem"
+}) => {
   return (
-    <Alert variant="warning" className="mb-4">
-      <AlertCircle className="h-4 w-4" />
-      <AlertDescription>{error}</AlertDescription>
+    <Alert variant="destructive">
+      <ExclamationTriangleIcon className="h-4 w-4" />
+      <AlertTitle>{title}</AlertTitle>
+      <AlertDescription>
+        {error}
+      </AlertDescription>
     </Alert>
   );
 };

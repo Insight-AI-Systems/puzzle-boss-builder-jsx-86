@@ -1,59 +1,60 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
 import { CommissionPayment, PaymentStatus } from '@/types/financeTypes';
+import { debugLog, DebugLevel } from '@/utils/debug';
 
-/**
- * Fetches commission payment data from the database
- * @returns Promise resolving to an array of commission payments
- */
 export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
-  console.log('[FINANCE DEBUG] fetchCommissionPayments called');
+  debugLog('FINANCE HOOK', 'fetchCommissionPayments called', DebugLevel.INFO);
   
   try {
-    console.log('[FINANCE DEBUG] Executing Supabase query for commission payments');
+    // Empty array fallback - prevents UI errors with null data
+    let safeResult: CommissionPayment[] = [];
     
+    // Make DB query
     const { data, error } = await supabase
       .from('commission_payments')
       .select(`
         *,
-        categories:category_id(name),
-        manager:manager_id(username, email)
+        manager:manager_id (
+          id,
+          profiles:user_id (username, email)
+        ),
+        categories:category_id (name)
       `);
-
+    
     if (error) {
-      console.error('[FINANCE ERROR] Supabase error fetching commission payments:', error);
-      console.error('[FINANCE ERROR] Error details:', JSON.stringify(error));
+      debugLog('FINANCE HOOK', 'Error fetching commission payments:', DebugLevel.ERROR, error);
       throw error;
     }
-
-    console.log('[FINANCE DEBUG] Raw commission data returned:', data ? data.length : 'none');
     
-    const processedData = (data || []).map(payment => {
-      let managerName = 'Unknown';
-      let managerEmail: string | undefined = undefined;
-      
-      if (payment.manager && typeof payment.manager === 'object') {
-        const manager = payment.manager as any;
-        managerName = manager && 'username' in manager ? 
-                     (manager.username as string || 'Unknown') : 'Unknown';
-        managerEmail = manager && 'email' in manager ? 
-                      (manager.email as string) : undefined;
-      }
-
-      return {
-        ...payment,
-        manager_name: managerName,
-        manager_email: managerEmail,
-        category_name: payment.categories?.name || 'Unknown',
-        payment_status: payment.payment_status as PaymentStatus
-      };
-    });
+    // Process data if available
+    if (data && Array.isArray(data)) {
+      debugLog('FINANCE HOOK', `Fetched ${data.length} commission payment records`, DebugLevel.INFO);
+      safeResult = data.map(item => {
+        // Extract name and email from nested manager data
+        const managerName = item.manager?.profiles?.username || 'Unknown';
+        const managerEmail = item.manager?.profiles?.email || 'unknown@example.com';
+        
+        return {
+          ...item,
+          // Ensure expected property values exist even if DB returns null
+          gross_income: item.gross_income || 0,
+          net_income: item.net_income || 0,
+          commission_amount: item.commission_amount || 0,
+          payment_status: item.payment_status || 'pending' as PaymentStatus,
+          manager_name: managerName,
+          manager_email: managerEmail,
+          category_name: item.categories?.name || 'Unknown',
+          is_overdue: item.is_overdue || false
+        };
+      });
+    } else {
+      debugLog('FINANCE HOOK', 'No commission payment data found or invalid response format', DebugLevel.WARN);
+    }
     
-    console.log('[FINANCE DEBUG] Processed commission payments count:', processedData.length);
-    return processedData;
+    return safeResult;
   } catch (err) {
-    console.error('[FINANCE ERROR] Error fetching commission payments:', err);
-    console.error('[FINANCE ERROR] Stack trace:', err instanceof Error ? err.stack : 'No stack trace');
-    return [];
+    debugLog('FINANCE HOOK', 'Exception in fetchCommissionPayments:', DebugLevel.ERROR, err);
+    throw err;
   }
 }

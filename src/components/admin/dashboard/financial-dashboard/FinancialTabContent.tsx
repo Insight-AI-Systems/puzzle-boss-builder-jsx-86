@@ -15,6 +15,8 @@ export const FinancialTabContent: React.FC<FinancialTabContentProps> = ({
   financialData,
   selectedMonth,
 }) => {
+  console.log('FinancialTabContent rendering with data:', financialData);
+  
   return (
     <>
       <TabsContent value="overview" className="space-y-4">

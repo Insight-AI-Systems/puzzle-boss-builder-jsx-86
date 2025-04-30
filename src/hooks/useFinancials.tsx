@@ -6,6 +6,7 @@ import { fetchSiteIncomes } from './finance/queries/fetchIncomeData';
 import { fetchSiteExpenses } from './finance/queries/fetchExpenseData';
 import { fetchCategoryManagers } from './finance/queries/fetchManagerData';
 import { fetchCommissionPayments } from './finance/queries/fetchCommissionData';
+import { debugLog, DebugLevel } from '@/utils/debug';
 
 /**
  * Hook providing access to financial data and operations
@@ -15,7 +16,7 @@ export function useFinancials(): FinancialsHookReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  console.log('[FINANCE HOOK] useFinancials hook initialized');
+  debugLog('FINANCE HOOK', 'useFinancials hook initialized', DebugLevel.INFO);
 
   /**
    * Wraps API operations with loading state and error handling
@@ -28,26 +29,26 @@ export function useFinancials(): FinancialsHookReturn {
     operationName: string,
     errorMessage: string
   ): Promise<T> => {
-    console.log(`[FINANCE HOOK] Starting operation: ${operationName}`);
+    debugLog('FINANCE HOOK', `Starting operation: ${operationName}`, DebugLevel.INFO);
     setIsLoading(true);
     setError(null);
     
     try {
       // Execute the operation
-      console.log(`[FINANCE HOOK] Executing operation function: ${operationName}`);
+      debugLog('FINANCE HOOK', `Executing operation function: ${operationName}`, DebugLevel.INFO);
       const result = await operation();
-      console.log(`[FINANCE HOOK] Operation successful: ${operationName}`, result);
+      debugLog('FINANCE HOOK', `Operation successful: ${operationName}`, DebugLevel.INFO, result);
       return result;
     } catch (err) {
       // Handle error
-      console.error(`[FINANCE HOOK] Operation failed: ${operationName}`, err);
+      debugLog('FINANCE HOOK', `Operation failed: ${operationName}`, DebugLevel.ERROR, err);
       const actualError = err instanceof Error ? err : new Error(errorMessage);
-      console.error(`[FINANCE HOOK] Error details: ${actualError.message}`);
+      debugLog('FINANCE HOOK', `Error details: ${actualError.message}`, DebugLevel.ERROR);
       setError(actualError);
       throw actualError;
     } finally {
       // Always reset loading state
-      console.log(`[FINANCE HOOK] Finishing operation: ${operationName}, resetting loading state`);
+      debugLog('FINANCE HOOK', `Finishing operation: ${operationName}, resetting loading state`, DebugLevel.INFO);
       setIsLoading(false);
     }
   };

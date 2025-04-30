@@ -1,50 +1,59 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { SiteExpense, ExpenseType } from '@/types/financeTypes';
+import { supabase } from '@/integrations/supabase/client';
+import { SiteExpense } from '@/types/financeTypes';
+import { debugLog, DebugLevel } from '@/utils/debug';
 
-/**
- * Fetches expense data for a specified month
- * @param month - Month in YYYY-MM format
- * @returns Promise resolving to an array of expense records
- */
 export async function fetchSiteExpenses(month: string): Promise<SiteExpense[]> {
-  console.log('[FINANCE DEBUG] fetchSiteExpenses called with month:', month);
+  debugLog('FINANCE HOOK', `fetchSiteExpenses called for month: ${month}`, DebugLevel.INFO);
   
-  if (!month || typeof month !== 'string') {
-    console.error('[FINANCE ERROR] Invalid month parameter in fetchSiteExpenses:', month);
-    return [];
-  }
-
   try {
-    console.log('[FINANCE DEBUG] Executing Supabase query for expenses in month:', month);
+    // Calculate date range based on month (YYYY-MM format)
+    const startDate = `${month}-01`;
+    const year = parseInt(month.substring(0, 4));
+    const monthNum = parseInt(month.substring(5, 7));
+    const lastDay = new Date(year, monthNum, 0).getDate();
+    const endDate = `${month}-${lastDay}`;
     
+    debugLog('FINANCE HOOK', `Date range calculated: ${startDate} to ${endDate}`, DebugLevel.INFO);
+    
+    // Empty array fallback - prevents UI errors with null data
+    let safeResult: SiteExpense[] = [];
+    
+    // Make DB query with relationships
     const { data, error } = await supabase
       .from('site_expenses')
       .select(`
         *,
-        categories:category_id(name)
+        categories:category_id (name)
       `)
-      .like('date', `${month}%`);
-
+      .gte('date', startDate)
+      .lte('date', endDate);
+    
     if (error) {
-      console.error('[FINANCE ERROR] Supabase error fetching site expenses:', error);
-      console.error('[FINANCE ERROR] Error details:', JSON.stringify(error));
+      debugLog('FINANCE HOOK', 'Error fetching site expenses:', DebugLevel.ERROR, error);
       throw error;
     }
     
-    console.log('[FINANCE DEBUG] Raw expenses data returned:', data ? data.length : 'none');
+    // Process data if available
+    if (data && Array.isArray(data)) {
+      debugLog('FINANCE HOOK', `Fetched ${data.length} expense records`, DebugLevel.INFO);
+      safeResult = data.map(item => ({
+        ...item,
+        // Ensure expected property values exist even if DB returns null
+        amount: item.amount || 0,
+        expense_type: item.expense_type || 'other',
+        payee: item.payee || 'Unknown',
+        date: item.date,
+        id: item.id,
+        categories: item.categories || { name: 'Unknown' }
+      }));
+    } else {
+      debugLog('FINANCE HOOK', 'No expense data found or invalid response format', DebugLevel.WARN);
+    }
     
-    const processedData = (data || []).map(item => ({
-      ...item,
-      expense_type: item.expense_type as ExpenseType,
-      categories: { name: item.categories?.name || 'Unknown' }
-    }));
-    
-    console.log('[FINANCE DEBUG] Processed expenses count:', processedData.length);
-    return processedData;
+    return safeResult;
   } catch (err) {
-    console.error('[FINANCE ERROR] Error fetching site expenses:', err);
-    console.error('[FINANCE ERROR] Stack trace:', err instanceof Error ? err.stack : 'No stack trace');
-    return [];
+    debugLog('FINANCE HOOK', 'Exception in fetchSiteExpenses:', DebugLevel.ERROR, err);
+    throw err;
   }
 }

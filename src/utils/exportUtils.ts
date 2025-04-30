@@ -1,134 +1,104 @@
 
-import JSZip from 'jszip';
+import { SiteIncome, SiteExpense, CommissionPayment } from '@/types/financeTypes';
 
-type ExportFormat = 'csv' | 'excel';
-
-export const exportTableData = <T extends Record<string, any>>(
-  data: T[],
-  filename: string,
-  format: ExportFormat = 'csv'
-) => {
-  if (!data.length) return;
-
+export async function exportFinancialData(
+  incomeData: SiteIncome[],
+  expenseData: SiteExpense[],
+  commissionData: CommissionPayment[],
+  month: string
+) {
+  console.log('Preparing financial export data for:', month);
+  
   try {
-    // Prepare the data - handle objects and nulls properly
-    const headers = Object.keys(data[0]);
-    const csvData = data.map(row => 
-      headers.map(header => {
-        const value = row[header];
-        
-        // Handle different value types
-        if (value === null || value === undefined) {
-          return '';
-        } else if (typeof value === 'object') {
-          return JSON.stringify(value).replace(/"/g, '""');
-        } else if (typeof value === 'string') {
-          return `"${value.replace(/"/g, '""')}"`;
-        }
-        
-        return value;
-      }).join(',')
-    );
+    // Create object URLs for each data set
+    const exportFiles = [
+      { 
+        name: `income-${month}.csv`, 
+        data: convertToCSV(incomeData),
+        type: 'text/csv'
+      },
+      { 
+        name: `expenses-${month}.csv`, 
+        data: convertToCSV(expenseData),
+        type: 'text/csv'
+      },
+      { 
+        name: `commissions-${month}.csv`, 
+        data: convertToCSV(commissionData),
+        type: 'text/csv'
+      }
+    ];
     
-    const csv = [headers.join(','), ...csvData].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    
-    if (format === 'excel') {
-      link.href = `data:application/vnd.ms-excel,${encodeURIComponent(csv)}`;
-      link.download = `${filename}.xls`;
+    // Create a ZIP file if JSZip is available, otherwise download individual files
+    if (exportFiles.length === 1) {
+      // If there's only one file, just download it directly
+      downloadFile(
+        exportFiles[0].data, 
+        exportFiles[0].name, 
+        exportFiles[0].type
+      );
     } else {
-      link.href = URL.createObjectURL(blob);
-      link.download = `${filename}.csv`;
+      // For multiple files, download them one by one with a slight delay
+      for (let i = 0; i < exportFiles.length; i++) {
+        const file = exportFiles[i];
+        if (file.data) {
+          setTimeout(() => {
+            downloadFile(file.data, file.name, file.type);
+          }, i * 500); // Stagger downloads by 500ms
+        }
+      }
     }
     
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    console.log(`Successfully exported ${data.length} records to ${filename}`);
-  } catch (error) {
-    console.error("Export error:", error);
-    throw new Error(`Failed to export data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.log('Financial export completed successfully');
+    return true;
+  } catch (err) {
+    console.error('Error during financial export:', err);
+    throw new Error('Failed to export financial data');
   }
-};
+}
 
-export const exportFinancialData = async (
-  incomeData: any[],
-  expenseData: any[],
-  commissionData: any[],
-  period: string,
-  format: ExportFormat = 'csv'
-) => {
-  console.log('Starting financial data export');
-  
-  if (!incomeData.length && !expenseData.length && !commissionData.length) {
-    console.warn('No data available to export');
-    throw new Error('No financial data available to export');
+function convertToCSV(data: any[]): string {
+  if (!data || !data.length) {
+    return '';
   }
   
-  try {
-    const zip = new JSZip();
-    
-    const datasets = [
-      { data: incomeData, name: 'income' },
-      { data: expenseData, name: 'expenses' },
-      { data: commissionData, name: 'commissions' }
-    ];
+  // Extract headers (using all keys from the first object)
+  const headers = Object.keys(data[0])
+    .filter(key => typeof data[0][key] !== 'object' || data[0][key] === null)
+    .join(',');
+  
+  // Create rows - handle objects and null values
+  const rows = data.map(row => {
+    return Object.keys(row)
+      .filter(key => typeof row[key] !== 'object' || row[key] === null)
+      .map(key => {
+        // Handle different value types
+        const value = row[key];
+        if (value === null || value === undefined) {
+          return ''; // Empty string for null values
+        } else if (typeof value === 'string') {
+          // Escape quotes and wrap in quotes
+          return `"${value.replace(/"/g, '""')}"`;
+        } else {
+          return value; // Numbers and booleans as-is
+        }
+      })
+      .join(',');
+  }).join('\n');
+  
+  return `${headers}\n${rows}`;
+}
 
-    console.log(`Preparing export: ${incomeData.length} income records, ${expenseData.length} expense records, ${commissionData.length} commission records`);
-
-    datasets.forEach(({ data, name }) => {
-      if (!data.length) return;
-
-      // Clean the data for export
-      const cleanData = data.map(row => {
-        const cleanRow = { ...row };
-        Object.keys(cleanRow).forEach(key => {
-          const value = cleanRow[key as keyof typeof cleanRow];
-          if (typeof value === 'object' && value !== null) {
-            // @ts-ignore - we know this is safe
-            cleanRow[key] = JSON.stringify(value);
-          }
-        });
-        return cleanRow;
-      });
-
-      const headers = Object.keys(cleanData[0]);
-      
-      const csvData = cleanData.map(row => 
-        headers.map(header => {
-          const value = row[header as keyof typeof row];
-          
-          if (value === null || value === undefined) {
-            return '';
-          } else if (typeof value === 'string') {
-            return `"${value.replace(/"/g, '""')}"`;
-          }
-          
-          return value;
-        }).join(',')
-      );
-      
-      const fileContent = [headers.join(','), ...csvData].join('\n');
-      const extension = format === 'excel' ? 'xls' : 'csv';
-      
-      zip.file(`${name}-${period}.${extension}`, fileContent);
-    });
-
-    // Generate and download the zip file
-    console.log('Generating zip file...');
-    const content = await zip.generateAsync({ type: 'blob' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(content);
-    link.download = `financial-data-${period}.zip`;
-    document.body.appendChild(link);
-    link.click();
+function downloadFile(data: string, fileName: string, type: string): void {
+  const blob = new Blob([data], { type });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  setTimeout(() => {
     document.body.removeChild(link);
-    
-    console.log('Financial data export complete');
-  } catch (error) {
-    console.error("Export error:", error);
-    throw new Error(`Failed to export financial data: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-};
+    window.URL.revokeObjectURL(url);
+  }, 100);
+}
