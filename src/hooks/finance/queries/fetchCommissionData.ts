@@ -28,6 +28,15 @@ export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
     if (data && Array.isArray(data)) {
       debugLog('FINANCE HOOK', `Fetched ${data.length} commission payment records`, DebugLevel.INFO);
       safeResult = data.map(item => {
+        // Handle potentially null profile data
+        const profileData = item.profiles || {};
+        const username = typeof profileData === 'object' && 'username' in profileData 
+          ? profileData.username 
+          : 'Unknown';
+        const email = typeof profileData === 'object' && 'email' in profileData
+          ? profileData.email
+          : 'unknown@example.com';
+          
         return {
           ...item,
           // Ensure expected property values exist even if DB returns null
@@ -35,8 +44,8 @@ export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
           net_income: item.net_income || 0,
           commission_amount: item.commission_amount || 0,
           payment_status: (item.payment_status as PaymentStatus) || PaymentStatus.PENDING,
-          manager_name: item.profiles?.username || 'Unknown',
-          manager_email: item.profiles?.email || 'unknown@example.com',
+          manager_name: username,
+          manager_email: email,
           category_name: item.categories?.name || 'Unknown',
           is_overdue: false // Default value since property doesn't exist in DB
         } as CommissionPayment;
@@ -52,7 +61,7 @@ export async function fetchCommissionPayments(): Promise<CommissionPayment[]> {
   }
 }
 
-// Add the missing updateCommissionStatus function
+// Add the updateCommissionStatus function
 export async function updateCommissionStatus(paymentId: string, status: PaymentStatus): Promise<void> {
   debugLog('FINANCE HOOK', `updateCommissionStatus called for ID: ${paymentId} with status: ${status}`, DebugLevel.INFO);
   

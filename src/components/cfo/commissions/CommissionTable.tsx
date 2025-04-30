@@ -3,7 +3,7 @@ import React from 'react';
 import { Table, TableBody } from "@/components/ui/table";
 import { CommissionPayment, PaymentStatus } from '@/types/financeTypes';
 import { CommissionTableHeader } from './CommissionTableHeader';
-import { CommissionTableRow } from './CommissionTableRow';
+import CommissionTableRow from './CommissionTableRow';
 
 interface CommissionTableProps {
   payments: CommissionPayment[];
