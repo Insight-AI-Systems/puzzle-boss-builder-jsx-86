@@ -1,3 +1,4 @@
+
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import CFODashboard from "@/pages/CFODashboard";
@@ -14,20 +15,20 @@ import { Suspense, lazy } from "react";
 import { Loader2 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
-// Lazy-loaded components
-const Home = lazy(() => import("@/pages/Home"));
-const Dashboard = lazy(() => import("@/pages/Dashboard"));
+// Lazy-loaded components - using existing pages from the index file
+const Home = lazy(() => import("@/pages/Index"));
+const Dashboard = lazy(() => import("@/pages/AccountDashboard"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const PuzzlePlay = lazy(() => import("@/pages/PuzzlePlay"));
-const PuzzleCreate = lazy(() => import("@/pages/PuzzleCreate"));
-const PuzzleEdit = lazy(() => import("@/pages/PuzzleEdit"));
-const PuzzleList = lazy(() => import("@/pages/PuzzleList"));
-const CategoryManagement = lazy(() => import("@/pages/CategoryManagement"));
+const PuzzleCreate = lazy(() => import("@/pages/Puzzles")); // Fallback to existing page
+const PuzzleEdit = lazy(() => import("@/pages/Puzzles")); // Fallback to existing page
+const PuzzleList = lazy(() => import("@/pages/Puzzles")); // Fallback to existing page
+const CategoryManagement = lazy(() => import("@/pages/AdminDashboard")); // Fallback to admin dashboard
 const Unauthorized = lazy(() => import("@/pages/Unauthorized"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const SupportAdmin = lazy(() => import("@/pages/SupportAdmin"));
-const PrivacyPolicy = lazy(() => import("@/pages/legal/PrivacyPolicy"));
-const TermsOfService = lazy(() => import("@/pages/legal/TermsOfService"));
+const PrivacyPolicy = lazy(() => import("@/pages/legal/Privacy"));
+const TermsOfService = lazy(() => import("@/pages/legal/Terms"));
 
 // Create a client
 const queryClient = new QueryClient({

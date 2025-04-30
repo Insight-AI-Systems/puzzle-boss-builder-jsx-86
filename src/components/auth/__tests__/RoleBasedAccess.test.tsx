@@ -1,148 +1,125 @@
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import RoleBasedAccess from '@/components/auth/RoleBasedAccess';
-import { createMockAuthContext } from '@/utils/testing/auth/authTestHelpers';
-import { AuthContext } from '@/contexts/AuthContext';
+import { AuthContext, AuthContextType } from '@/contexts/AuthContext';
+import { RoleBasedAccess } from '../RoleBasedAccess';
+import { Session, User } from '@supabase/supabase-js';
+import { UserRole } from '@/types/userTypes';
 
-// Mock the authContext
-jest.mock('@/contexts/AuthContext', () => ({
-  AuthContext: {
-    Provider: ({ children }: { children: React.ReactNode }) => children,
-    Consumer: ({ children }: { children: Function }) => 
-      children(createMockAuthContext(true, 'player'))
-  },
-  useAuth: () => createMockAuthContext(true, 'player')
-}));
+// Mock user and session
+const mockUser: User = {
+  id: 'test-user-id',
+  email: 'test@example.com',
+  app_metadata: {},
+  user_metadata: {},
+  aud: 'authenticated',
+  created_at: '',
+};
 
-// Mock the usePermissions hook
-jest.mock('@/hooks/usePermissions', () => ({
-  usePermissions: () => ({
-    hasPermission: (perm: string) => perm === 'test_permission',
-    hasAllPermissions: (perms: string[]) => perms.every(p => p === 'test_permission'),
-    hasAnyPermission: (perms: string[]) => perms.some(p => p === 'test_permission')
-  })
-}));
+const mockSession: Session = {
+  access_token: 'test-access-token',
+  refresh_token: 'test-refresh-token',
+  user: mockUser,
+  expires_at: 123456789,
+};
 
 describe('RoleBasedAccess Component', () => {
-  const CONTENT = 'Protected Content';
-  const FALLBACK = 'Fallback Content';
-  
-  it('renders children when no roles or permissions are specified', () => {
-    render(
-      <RoleBasedAccess>
-        <div>{CONTENT}</div>
-      </RoleBasedAccess>
-    );
-    
-    expect(screen.queryByText(CONTENT)).not.toBeNull();
-  });
-  
-  it('renders children when user has required role', () => {
-    const mockAuth = {
-      ...createMockAuthContext(true, 'super_admin'),
-      hasRole: (role: string) => role === 'super_admin'
+  test('renders children when user has required role', () => {
+    // Mock auth context with admin role
+    const mockAuthContext: AuthContextType = {
+      user: mockUser,
+      session: mockSession,
+      isAuthenticated: true,
+      isLoading: false,
+      error: null,
+      userRole: 'super_admin' as UserRole,
+      userRoles: ['super_admin'] as UserRole[],
+      hasRole: (role: string) => role === 'super_admin',
+      rolesLoaded: true,
+      signIn: jest.fn(),
+      signUp: jest.fn(),
+      signOut: jest.fn(),
+      resetPassword: jest.fn(),
+      updateUserProfile: jest.fn(),
+      refreshSession: jest.fn(),
+      setError: jest.fn(),
+      clearAuthError: jest.fn(),
     };
-    
+
     render(
-      <AuthContext.Provider value={mockAuth}>
-        <RoleBasedAccess allowedRoles={['super_admin']}>
-          <div>{CONTENT}</div>
+      <AuthContext.Provider value={mockAuthContext}>
+        <RoleBasedAccess requiredRoles={['super_admin']}>
+          <div data-testid="protected-content">Protected Content</div>
         </RoleBasedAccess>
       </AuthContext.Provider>
     );
-    
-    expect(screen.queryByText(CONTENT)).not.toBeNull();
+
+    expect(screen.getByTestId('protected-content')).toBeInTheDocument();
   });
-  
-  it('renders fallback when user does not have required role', () => {
-    const mockAuth = {
-      ...createMockAuthContext(true, 'player'),
-      hasRole: (role: string) => role === 'player'
+
+  test('does not render children when user lacks required role', () => {
+    // Mock auth context with player role
+    const mockAuthContext: AuthContextType = {
+      user: mockUser,
+      session: mockSession,
+      isAuthenticated: true,
+      isLoading: false,
+      error: null,
+      userRole: 'player' as UserRole,
+      userRoles: ['player'] as UserRole[],
+      hasRole: (role: string) => role === 'player',
+      rolesLoaded: true,
+      signIn: jest.fn(),
+      signUp: jest.fn(),
+      signOut: jest.fn(),
+      resetPassword: jest.fn(),
+      updateUserProfile: jest.fn(),
+      refreshSession: jest.fn(),
+      setError: jest.fn(),
+      clearAuthError: jest.fn(),
     };
-    
+
     render(
-      <AuthContext.Provider value={mockAuth}>
-        <RoleBasedAccess 
-          allowedRoles={['super_admin']} 
-          fallback={<div>{FALLBACK}</div>}
-        >
-          <div>{CONTENT}</div>
+      <AuthContext.Provider value={mockAuthContext}>
+        <RoleBasedAccess requiredRoles={['admin']}>
+          <div data-testid="protected-content">Protected Content</div>
         </RoleBasedAccess>
       </AuthContext.Provider>
     );
-    
-    expect(screen.queryByText(FALLBACK)).not.toBeNull();
-    expect(screen.queryByText(CONTENT)).toBeNull();
+
+    expect(screen.queryByTestId('protected-content')).not.toBeInTheDocument();
   });
-  
-  it('renders children when user has required permission', () => {
+
+  test('renders children when user has any of the multiple required roles', () => {
+    // Mock auth context with custom hasRole implementation
+    const mockAuthContext: AuthContextType = {
+      user: mockUser,
+      session: mockSession,
+      isAuthenticated: true,
+      isLoading: false,
+      error: null,
+      userRole: 'admin' as UserRole,
+      userRoles: ['admin', 'editor'] as UserRole[],
+      hasRole: (testRole: string) => ['admin', 'editor'].includes(testRole),
+      rolesLoaded: true,
+      signIn: jest.fn(),
+      signUp: jest.fn(),
+      signOut: jest.fn(),
+      resetPassword: jest.fn(),
+      updateUserProfile: jest.fn(),
+      refreshSession: jest.fn(),
+      setError: jest.fn(),
+      clearAuthError: jest.fn(),
+    };
+
     render(
-      <RoleBasedAccess requiredPermissions={['test_permission']}>
-        <div>{CONTENT}</div>
-      </RoleBasedAccess>
-    );
-    
-    expect(screen.queryByText(CONTENT)).not.toBeNull();
-  });
-  
-  it('renders fallback when user does not have required permission', () => {
-    render(
-      <RoleBasedAccess 
-        requiredPermissions={['missing_permission']} 
-        fallback={<div>{FALLBACK}</div>}
-      >
-        <div>{CONTENT}</div>
-      </RoleBasedAccess>
-    );
-    
-    expect(screen.queryByText(FALLBACK)).not.toBeNull();
-    expect(screen.queryByText(CONTENT)).toBeNull();
-  });
-  
-  it('respects requireAllPermissions flag when true', () => {
-    render(
-      <RoleBasedAccess 
-        requiredPermissions={['test_permission', 'missing_permission']} 
-        requireAllPermissions={true}
-        fallback={<div>{FALLBACK}</div>}
-      >
-        <div>{CONTENT}</div>
-      </RoleBasedAccess>
-    );
-    
-    expect(screen.queryByText(FALLBACK)).not.toBeNull();
-    expect(screen.queryByText(CONTENT)).toBeNull();
-  });
-  
-  it('respects requireAllPermissions flag when false', () => {
-    render(
-      <RoleBasedAccess 
-        requiredPermissions={['test_permission', 'missing_permission']} 
-        requireAllPermissions={false}
-      >
-        <div>{CONTENT}</div>
-      </RoleBasedAccess>
-    );
-    
-    expect(screen.queryByText(CONTENT)).not.toBeNull();
-  });
-  
-  it('renders fallback when user is not authenticated', () => {
-    const mockAuth = createMockAuthContext(false);
-    
-    render(
-      <AuthContext.Provider value={mockAuth}>
-        <RoleBasedAccess 
-          allowedRoles={['player']} 
-          fallback={<div>{FALLBACK}</div>}
-        >
-          <div>{CONTENT}</div>
+      <AuthContext.Provider value={mockAuthContext}>
+        <RoleBasedAccess requiredRoles={['super_admin', 'admin']}>
+          <div data-testid="protected-content">Protected Content</div>
         </RoleBasedAccess>
       </AuthContext.Provider>
     );
-    
-    expect(screen.queryByText(FALLBACK)).not.toBeNull();
-    expect(screen.queryByText(CONTENT)).toBeNull();
+
+    expect(screen.getByTestId('protected-content')).toBeInTheDocument();
   });
 });

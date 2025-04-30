@@ -23,6 +23,7 @@ const CFODashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [timeframe, setTimeframe] = useState<TimeFrame>('monthly');
+  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [isAccessChecking, setIsAccessChecking] = useState(true);
   const isMounted = useRef(true);
   
@@ -109,10 +110,10 @@ const CFODashboard = () => {
           <main className="flex-1 p-6 overflow-auto">
             <Routes>
               <Route index element={<FinancialOverview timeframe={timeframe} />} />
-              <Route path="income" element={<IncomeStreams />} />
-              <Route path="expenses" element={<CostStreams />} />
-              <Route path="memberships" element={<MembershipSummary />} />
-              <Route path="commissions" element={<CommissionsManagement />} />
+              <Route path="income" element={<IncomeStreams selectedMonth={selectedMonth} />} />
+              <Route path="expenses" element={<CostStreams selectedMonth={selectedMonth} />} />
+              <Route path="memberships" element={<MembershipSummary selectedMonth={selectedMonth} />} />
+              <Route path="commissions" element={<CommissionsManagement selectedMonth={selectedMonth} />} />
             </Routes>
           </main>
         </div>
