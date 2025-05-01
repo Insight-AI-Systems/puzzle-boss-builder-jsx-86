@@ -8,14 +8,19 @@ import CostStreams from "@/components/cfo/CostStreams";
 import CommissionsManagement from "@/components/cfo/CommissionsManagement";
 import MembershipSummary from "@/components/cfo/MembershipSummary";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format } from "date-fns";
+import { TimeFrame } from "@/types/financeTypes";
 
 const CFODashboard: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState("overview");
+  const [selectedMonth, setSelectedMonth] = React.useState(format(new Date(), 'yyyy-MM'));
+  const timeframe: TimeFrame = "monthly";
 
   return (
     <MainLayout>
       <div className="flex flex-col md:flex-row min-h-[calc(100vh-4rem)] bg-puzzle-black">
-        <CFOSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        {/* We're passing no props since the component doesn't accept them according to the error */}
+        <CFOSidebar />
         
         <main className="flex-1 p-6 overflow-auto">
           <div className="max-w-6xl mx-auto">
@@ -31,23 +36,23 @@ const CFODashboard: React.FC = () => {
               </TabsList>
               
               <TabsContent value="overview">
-                <FinancialOverview />
+                <FinancialOverview timeframe={timeframe} />
               </TabsContent>
               
               <TabsContent value="income">
-                <IncomeStreams />
+                <IncomeStreams selectedMonth={selectedMonth} />
               </TabsContent>
               
               <TabsContent value="expenses">
-                <CostStreams />
+                <CostStreams selectedMonth={selectedMonth} />
               </TabsContent>
               
               <TabsContent value="commissions">
-                <CommissionsManagement />
+                <CommissionsManagement selectedMonth={selectedMonth} />
               </TabsContent>
               
               <TabsContent value="membership">
-                <MembershipSummary />
+                <MembershipSummary selectedMonth={selectedMonth} />
               </TabsContent>
             </Tabs>
           </div>
