@@ -1,5 +1,4 @@
-
-export { default as Index } from './Index';
+import { default as Index } from './Index';
 export { default as Puzzles } from './Puzzles';
 export { default as Prizes } from './Prizes';
 export { default as HowItWorks } from './HowItWorks';
@@ -34,3 +33,5 @@ export { default as Auth } from './Auth';
 export { default as Unauthorized } from './Unauthorized';
 export { default as BetaNotes } from './BetaNotes';
 export { default as SupportAdmin } from './SupportAdmin';
+
+export { default as HomePage } from './HomePage';
