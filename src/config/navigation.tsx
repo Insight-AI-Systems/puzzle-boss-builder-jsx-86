@@ -30,12 +30,12 @@ export const mainNavItems: NavItem[] = [
   {
     title: "Puzzles",
     icon: Puzzle,
-    href: "/puzzles",
+    href: "/puzzle",
   },
   {
     title: "Prizes",
     icon: Trophy,
-    href: "/prizes",
+    href: "/prizes-won",
   },
   {
     title: "How It Works",
