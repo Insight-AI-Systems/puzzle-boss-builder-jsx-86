@@ -4,6 +4,10 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { AuthProvider } from './contexts/AuthContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Create a new QueryClient instance
+const queryClient = new QueryClient();
 
 // Enhanced error handling
 window.addEventListener('error', (event) => {
@@ -101,7 +105,9 @@ root.render(
   <React.StrictMode>
     <ErrorFallback>
       <AuthProvider>
-        <App />
+        <QueryClientProvider client={queryClient}>
+          <App />
+        </QueryClientProvider>
       </AuthProvider>
     </ErrorFallback>
   </React.StrictMode>
