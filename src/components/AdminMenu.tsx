@@ -12,7 +12,7 @@ const AdminMenu = () => {
           <LayoutDashboard size={20} />
           <span>Dashboard</span>
         </Link>
-        <Link to="/admin-dashboard/users" className="flex items-center space-x-2 p-2 hover:bg-puzzle-aqua/10 rounded-md text-puzzle-white hover:text-puzzle-aqua transition-colors">
+        <Link to="/admin-dashboard?tab=users" className="flex items-center space-x-2 p-2 hover:bg-puzzle-aqua/10 rounded-md text-puzzle-white hover:text-puzzle-aqua transition-colors">
           <User size={20} />
           <span>User Management</span>
         </Link>
