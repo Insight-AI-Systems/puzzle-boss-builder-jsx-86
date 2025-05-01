@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
@@ -6,11 +7,11 @@ import HomePage from './pages/HomePage';
 import PuzzlePage from './pages/PuzzlePage';
 
 // Admin Pages
-import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminDashboardPage from './pages/AdminDashboard';
 import AdminCFOPage from './pages/AdminCFOPage';
 
 // Layouts
-import MainLayout from './components/MainLayout';
+import { MainLayout } from './components/MainLayout';
 import AdminLayout from './components/AdminLayout';
 
 function App() {
