@@ -1,7 +1,7 @@
 
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import CFODashboard from "@/pages/CFODashboard";
+import AdminCFOPage from "@/pages/AdminCFOPage";
 import AdminDashboard from "@/pages/AdminDashboard";
 import Auth from "@/pages/Auth";
 import FinancialErrorBoundary from "@/components/finance/FinancialErrorBoundary";
@@ -126,7 +126,7 @@ function App() {
                     element={
                       <ProtectedRoute requiredRoles={["super_admin", "cfo"]}>
                         <FinancialErrorBoundary>
-                          <CFODashboard />
+                          <AdminCFOPage />
                         </FinancialErrorBoundary>
                       </ProtectedRoute>
                     } 

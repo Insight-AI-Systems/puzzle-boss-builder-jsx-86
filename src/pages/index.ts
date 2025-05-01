@@ -1,5 +1,4 @@
 
-
 export { default as Index } from './Index';
 export { default as Puzzles } from './Puzzles';
 export { default as Prizes } from './Prizes';
@@ -15,6 +14,7 @@ export { default as Settings } from './Settings';
 export { default as AccountDashboard } from './AccountDashboard';
 export { default as Progress } from './Progress';
 export { default as AdminDashboard } from './AdminDashboard';
+export { default as AdminCFOPage } from './AdminCFOPage';
 export { default as DevDashboard } from './DevDashboard';
 export { default as PuzzleTests } from './PuzzleTests';
 export { default as PuzzleTestPlayground } from './PuzzleTestPlayground';
@@ -34,4 +34,3 @@ export { default as Auth } from './Auth';
 export { default as Unauthorized } from './Unauthorized';
 export { default as BetaNotes } from './BetaNotes';
 export { default as SupportAdmin } from './SupportAdmin';
-
