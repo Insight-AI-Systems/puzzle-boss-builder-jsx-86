@@ -1,157 +1,65 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import AdminCFOPage from "@/pages/AdminCFOPage";
-import AdminDashboard from "@/pages/AdminDashboard";
-import Auth from "@/pages/Auth";
-import FinancialErrorBoundary from "@/components/finance/FinancialErrorBoundary";
-import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "@/components/theme-provider";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { SecurityProvider } from "@/hooks/useSecurityContext";
-import { Suspense, lazy } from "react";
-import { Loader2 } from "lucide-react";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+// Public Pages
+import HomePage from './pages/HomePage';
+import PuzzlePage from './pages/PuzzlePage';
 
-// Lazy-loaded components
-const Home = lazy(() => import("@/pages/Index"));
-const Dashboard = lazy(() => import("@/pages/AccountDashboard"));
-const Profile = lazy(() => import("@/pages/Profile"));
-const PuzzlePlay = lazy(() => import("@/pages/PuzzlePlay"));
-const PuzzleCreate = lazy(() => import("@/pages/Puzzles")); // Using existing page
-const PuzzleEdit = lazy(() => import("@/pages/Puzzles")); // Using existing page
-const PuzzleList = lazy(() => import("@/pages/Puzzles")); // Using existing page
-const CategoryManagement = lazy(() => import("@/pages/AdminDashboard")); // Fallback to admin dashboard
-const Unauthorized = lazy(() => import("@/pages/Unauthorized"));
-const NotFound = lazy(() => import("@/pages/NotFound"));
-const SupportAdmin = lazy(() => import("@/pages/SupportAdmin"));
-const PrivacyPolicy = lazy(() => import("@/pages/legal/Privacy"));
-const TermsOfService = lazy(() => import("@/pages/legal/Terms"));
+// Admin Pages
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminCFOPage from './pages/AdminCFOPage';
 
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
-    },
-  },
-});
+// Layouts
+import MainLayout from './components/MainLayout';
+import AdminLayout from './components/AdminLayout';
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" storageKey="puzzle-boss-theme">
-        <Router>
-          <AuthProvider>
-            <SecurityProvider>
-              <Suspense
-                fallback={
-                  <div className="flex h-screen w-full items-center justify-center">
-                    <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
-                  </div>
-                }
-              >
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/profile"
-                    element={
-                      <ProtectedRoute>
-                        <Profile />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/puzzles"
-                    element={
-                      <ProtectedRoute>
-                        <PuzzleList />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/puzzles/play/:id"
-                    element={
-                      <ProtectedRoute>
-                        <PuzzlePlay />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/puzzles/create"
-                    element={
-                      <ProtectedRoute requiredRoles={["category_manager", "admin"]}>
-                        <PuzzleCreate />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/puzzles/edit/:id"
-                    element={
-                      <ProtectedRoute requiredRoles={["category_manager", "admin"]}>
-                        <PuzzleEdit />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/categories"
-                    element={
-                      <ProtectedRoute requiredRoles={["category_manager", "admin"]}>
-                        <CategoryManagement />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/admin-dashboard/*"
-                    element={
-                      <ProtectedRoute requiredRoles={["super_admin", "admin", "category_manager", "social_media_manager", "partner_manager", "cfo"]}>
-                        <AdminDashboard />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route 
-                    path="/cfo-dashboard/*" 
-                    element={
-                      <ProtectedRoute requiredRoles={["super_admin", "cfo"]}>
-                        <FinancialErrorBoundary>
-                          <AdminCFOPage />
-                        </FinancialErrorBoundary>
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route
-                    path="/support-admin/*"
-                    element={
-                      <ProtectedRoute requiredRoles={["super_admin", "admin"]}>
-                        <SupportAdmin />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route path="/unauthorized" element={<Unauthorized />} />
-                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                  <Route path="/terms-of-service" element={<TermsOfService />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-              <Toaster />
-            </SecurityProvider>
-          </AuthProvider>
-        </Router>
-      </ThemeProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    <Router>
+      <Routes>
+
+        {/* Public Pages → Always use MainLayout for Navbar + Footer */}
+        <Route
+          path="/"
+          element={
+            <MainLayout>
+              <HomePage />
+            </MainLayout>
+          }
+        />
+
+        <Route
+          path="/puzzle"
+          element={
+            <MainLayout>
+              <PuzzlePage />
+            </MainLayout>
+          }
+        />
+
+        {/* Admin Pages → Use AdminLayout which includes MainLayout */}
+        <Route
+          path="/admin-dashboard"
+          element={
+            <AdminLayout>
+              <AdminDashboardPage />
+            </AdminLayout>
+          }
+        />
+
+        <Route
+          path="/cfo-dashboard"
+          element={
+            <AdminLayout>
+              <AdminCFOPage />
+            </AdminLayout>
+          }
+        />
+
+        {/* You can add more routes here */}
+
+      </Routes>
+    </Router>
   );
 }
 
