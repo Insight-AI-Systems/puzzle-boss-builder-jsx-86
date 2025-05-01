@@ -2,9 +2,10 @@
 import React from 'react';
 import { MainLayout } from './MainLayout';
 import AdminMenu from './AdminMenu';
+import { Outlet } from 'react-router-dom';
 
 interface AdminLayoutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
@@ -14,7 +15,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         <AdminMenu />
         <main className="flex-1 overflow-auto p-6">
           <div className="max-w-6xl mx-auto">
-            {children}
+            {children || <Outlet />}
           </div>
         </main>
       </div>

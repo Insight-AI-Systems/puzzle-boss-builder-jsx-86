@@ -21,74 +21,22 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Public Pages using MainLayout with Outlet */}
+        <Route path="/" element={<MainLayout />}>
+          <Route index element={<HomePage />} />
+          <Route path="/puzzle" element={<PuzzlePage />} />
+          <Route path="/prizes-won" element={<PrizesWonPage />} />
+          <Route path="/support" element={<SupportPage />} />
+          <Route path="/how-it-works" element={<HowItWorksPage />} />
+        </Route>
 
-        {/* Public Pages → Always use MainLayout for Navbar + Footer */}
-        <Route
-          path="/"
-          element={
-            <MainLayout>
-              <HomePage />
-            </MainLayout>
-          }
-        />
-
-        <Route
-          path="/puzzle"
-          element={
-            <MainLayout>
-              <PuzzlePage />
-            </MainLayout>
-          }
-        />
-
-        <Route
-          path="/prizes-won"
-          element={
-            <MainLayout>
-              <PrizesWonPage />
-            </MainLayout>
-          }
-        />
-
-        <Route
-          path="/support"
-          element={
-            <MainLayout>
-              <SupportPage />
-            </MainLayout>
-          }
-        />
-
-        <Route
-          path="/how-it-works"
-          element={
-            <MainLayout>
-              <HowItWorksPage />
-            </MainLayout>
-          }
-        />
-
-        {/* Admin Pages → Use AdminLayout which includes MainLayout */}
-        <Route
-          path="/admin-dashboard"
-          element={
-            <AdminLayout>
-              <AdminDashboardPage />
-            </AdminLayout>
-          }
-        />
-
-        <Route
-          path="/cfo-dashboard"
-          element={
-            <AdminLayout>
-              <AdminCFOPage />
-            </AdminLayout>
-          }
-        />
+        {/* Admin Pages using AdminLayout with Outlet */}
+        <Route path="/" element={<AdminLayout />}>
+          <Route path="/admin-dashboard" element={<AdminDashboardPage />} />
+          <Route path="/cfo-dashboard" element={<AdminCFOPage />} />
+        </Route>
 
         {/* You can add more routes here */}
-
       </Routes>
     </Router>
   );
