@@ -5,6 +5,9 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // Public Pages
 import HomePage from './pages/HomePage';
 import PuzzlePage from './pages/PuzzlePage';
+import PrizesWonPage from './pages/PrizesWonPage';
+import SupportPage from './pages/SupportPage';
+import HowItWorksPage from './pages/HowItWorksPage';
 
 // Admin Pages
 import AdminDashboardPage from './pages/AdminDashboard';
@@ -34,6 +37,33 @@ function App() {
           element={
             <MainLayout>
               <PuzzlePage />
+            </MainLayout>
+          }
+        />
+
+        <Route
+          path="/prizes-won"
+          element={
+            <MainLayout>
+              <PrizesWonPage />
+            </MainLayout>
+          }
+        />
+
+        <Route
+          path="/support"
+          element={
+            <MainLayout>
+              <SupportPage />
+            </MainLayout>
+          }
+        />
+
+        <Route
+          path="/how-it-works"
+          element={
+            <MainLayout>
+              <HowItWorksPage />
             </MainLayout>
           }
         />

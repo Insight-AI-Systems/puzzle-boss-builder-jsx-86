@@ -3,9 +3,9 @@ import React from 'react';
 
 const PuzzlePage = () => {
   return (
-    <div>
-      <h1>Puzzle Game</h1>
-      <p>This is where the puzzle game will go!</p>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-4">Play a Puzzle</h1>
+      <p className="text-xl">This is where puzzles will appear.</p>
     </div>
   );
 };
