@@ -8,6 +8,7 @@ import PuzzlePage from './pages/PuzzlePage';
 import PrizesWonPage from './pages/PrizesWonPage';
 import SupportPage from './pages/SupportPage';
 import HowItWorksPage from './pages/HowItWorksPage';
+import Contact from './pages/Contact';
 
 // Admin Pages
 import AdminDashboardPage from './pages/AdminDashboard';
@@ -22,21 +23,20 @@ function App() {
     <Router>
       <Routes>
         {/* Public Pages using MainLayout with Outlet */}
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<HomePage />} />
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<HomePage />} />
           <Route path="/puzzle" element={<PuzzlePage />} />
           <Route path="/prizes-won" element={<PrizesWonPage />} />
           <Route path="/support" element={<SupportPage />} />
           <Route path="/how-it-works" element={<HowItWorksPage />} />
+          <Route path="/contact" element={<Contact />} />
         </Route>
 
         {/* Admin Pages using AdminLayout with Outlet */}
-        <Route path="/" element={<AdminLayout />}>
+        <Route element={<AdminLayout />}>
           <Route path="/admin-dashboard" element={<AdminDashboardPage />} />
           <Route path="/cfo-dashboard" element={<AdminCFOPage />} />
         </Route>
-
-        {/* You can add more routes here */}
       </Routes>
     </Router>
   );
