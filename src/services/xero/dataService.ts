@@ -146,7 +146,13 @@ export class XeroDataService {
       
       if (error) throw error;
       
-      return data || [];
+      // Cast the direction field to ensure TypeScript compatibility
+      const typedData = data?.map(item => ({
+        ...item,
+        direction: item.direction as "inbound" | "outbound"
+      })) || [];
+      
+      return typedData;
     } catch (error) {
       console.error('[XERO DATA] Error fetching sync logs:', error);
       toast({

@@ -8,7 +8,9 @@ export type {
   XeroOAuthToken,
   SyncResult,
   XeroAuthStatus,
-  SyncLog
+  SyncLog,
+  IntegrationWebhook,
+  WebhookLog
 } from '@/types/integration';
 
 // Types specific to the Xero service implementation
