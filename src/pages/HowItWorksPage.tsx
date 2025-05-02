@@ -1,12 +1,16 @@
 
 import React from 'react';
+import HowItWorks from '@/components/HowItWorks';
+import PageLayout from '@/components/layouts/PageLayout';
 
 const HowItWorksPage = () => {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-4">How It Works</h1>
-      <p className="text-xl">Explanation of how to play and win puzzles.</p>
-    </div>
+    <PageLayout 
+      title="How It Works" 
+      subtitle="Learn how to play and win premium prizes on The Puzzle Boss"
+    >
+      <HowItWorks />
+    </PageLayout>
   );
 };
 
