@@ -2,7 +2,7 @@
 import React from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { FinanceStats } from '@/components/finance/FinanceStats';
-import { XeroWebhookManager } from '@/components/finance/XeroWebhookManager';
+import XeroWebhookManager from '@/components/finance/XeroWebhookManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
