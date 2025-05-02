@@ -1,10 +1,10 @@
 
 import React from 'react';
+import { DateRange } from "react-day-picker";
 import { CalendarDateRangePicker } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { ROLE_DEFINITIONS, UserRole } from '@/types/userTypes';
-import { DateRange } from 'react-day-picker';
 import { 
   Collapsible,
   CollapsibleContent,

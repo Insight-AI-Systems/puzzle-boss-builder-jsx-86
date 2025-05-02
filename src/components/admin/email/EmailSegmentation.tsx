@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,6 +72,13 @@ export const EmailSegmentation: React.FC = () => {
 
   const handleSendToSegment = () => {
     sendToSegment();
+  };
+
+  // Function to handle Slider value changes properly
+  const handleAgeFilterChange = (value: number[]) => {
+    if (value.length === 2) {
+      updateAgeFilter([value[0], value[1]] as [number, number]);
+    }
   };
 
   return (
@@ -179,7 +185,7 @@ export const EmailSegmentation: React.FC = () => {
                   max={100} 
                   min={13} 
                   step={1}
-                  onValueChange={updateAgeFilter}
+                  onValueChange={handleAgeFilterChange}
                 />
               </div>
             </div>

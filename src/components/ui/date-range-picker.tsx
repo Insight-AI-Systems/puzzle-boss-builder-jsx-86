@@ -68,3 +68,24 @@ export function DateRangePicker({
     </div>
   )
 }
+
+// Add the CalendarDateRangePicker component that other files are trying to use
+interface CalendarDateRangePickerProps {
+  date: DateRange | undefined;
+  onDateChange: (date: DateRange | undefined) => void;
+  className?: string;
+}
+
+export function CalendarDateRangePicker({
+  date,
+  onDateChange,
+  className,
+}: CalendarDateRangePickerProps) {
+  return (
+    <DateRangePicker
+      value={date}
+      onChange={onDateChange}
+      className={className}
+    />
+  );
+}

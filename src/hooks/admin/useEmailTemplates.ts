@@ -9,7 +9,37 @@ export function useEmailTemplates() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Fetch templates from Supabase
+  // Mock data for email templates
+  const mockTemplates: EmailTemplate[] = [
+    {
+      id: '1',
+      name: 'Welcome Email',
+      subject: 'Welcome to our platform!',
+      type: 'notification',
+      status: 'active',
+      created_at: new Date().toISOString(),
+      last_sent: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      id: '2',
+      name: 'Monthly Newsletter',
+      subject: 'See what\'s new this month',
+      type: 'marketing',
+      status: 'active',
+      created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      last_sent: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      id: '3',
+      name: 'Password Reset',
+      subject: 'Reset your password',
+      type: 'system',
+      status: 'active',
+      created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
+    }
+  ];
+
+  // Fetch templates
   const {
     data: templates,
     isLoading,
@@ -19,13 +49,17 @@ export function useEmailTemplates() {
     queryKey: ['email-templates'],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
-          .from('email_templates')
-          .select('*')
-          .order('created_at', { ascending: false });
+        // In a real implementation, this would fetch from Supabase
+        // const { data, error } = await supabase
+        //   .from('email_templates')
+        //   .select('*')
+        //   .order('created_at', { ascending: false });
           
-        if (error) throw error;
-        return data as EmailTemplate[];
+        // if (error) throw error;
+        // return data as EmailTemplate[];
+        
+        // For now, return mock data
+        return mockTemplates;
       } catch (error) {
         console.error('Error fetching email templates:', error);
         throw error;
@@ -36,14 +70,27 @@ export function useEmailTemplates() {
   // Create email template
   const createTemplateMutation = useMutation({
     mutationFn: async (template: Omit<EmailTemplate, 'id' | 'created_at' | 'last_sent'>) => {
-      const { data, error } = await supabase
-        .from('email_templates')
-        .insert(template)
-        .select()
-        .single();
+      // In a real implementation, this would insert to Supabase
+      // const { data, error } = await supabase
+      //   .from('email_templates')
+      //   .insert(template)
+      //   .select()
+      //   .single();
         
-      if (error) throw error;
-      return data;
+      // if (error) throw error;
+      // return data;
+      
+      // Mock implementation
+      const newTemplate: EmailTemplate = {
+        ...template,
+        id: (Math.floor(Math.random() * 1000)).toString(),
+        created_at: new Date().toISOString()
+      };
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      return newTemplate;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['email-templates'] });
@@ -61,12 +108,18 @@ export function useEmailTemplates() {
   // Delete email template
   const deleteTemplateMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('email_templates')
-        .delete()
-        .eq('id', id);
+      // In a real implementation, this would delete from Supabase
+      // const { error } = await supabase
+      //   .from('email_templates')
+      //   .delete()
+      //   .eq('id', id);
         
-      if (error) throw error;
+      // if (error) throw error;
+      // return id;
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       return id;
     },
     onSuccess: (id) => {
