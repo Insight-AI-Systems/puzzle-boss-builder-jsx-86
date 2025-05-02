@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -108,7 +107,7 @@ export const CampaignDialog: React.FC<CampaignDialogProps> = ({
                     <SelectContent>
                       <SelectItem value="all_users">All Users</SelectItem>
                       <SelectItem value="active_users">Active Users</SelectItem>
-                      {savedSegments.map(segment => (
+                      {savedSegments && savedSegments.map(segment => (
                         <SelectItem key={segment.id} value={segment.id}>
                           {segment.name} ({segment.count} users)
                         </SelectItem>

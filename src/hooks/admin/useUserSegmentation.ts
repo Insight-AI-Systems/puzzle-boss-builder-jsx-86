@@ -3,6 +3,19 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface UserSegment {
+  id: string;
+  name: string;
+  count: number;
+  filters: {
+    country: string;
+    age: [number, number];
+    gender: string[];
+    category: string;
+    prize: string;
+  };
+}
+
 export function useUserSegmentation() {
   const { toast } = useToast();
   const [countryFilter, setCountryFilter] = useState<string>('all');
@@ -13,6 +26,44 @@ export function useUserSegmentation() {
   const [userCount, setUserCount] = useState<number>(0);
   const [loadingUserCount, setLoadingUserCount] = useState<boolean>(false);
   const [isLoadingOperation, setIsLoadingOperation] = useState<boolean>(false);
+  const [savedSegments, setSavedSegments] = useState<UserSegment[]>([
+    { 
+      id: 'segment1', 
+      name: 'Active Users', 
+      count: 450,
+      filters: {
+        country: 'us',
+        age: [25, 45],
+        gender: ['male', 'female'],
+        category: 'all',
+        prize: 'all'
+      }
+    },
+    { 
+      id: 'segment2', 
+      name: 'New Subscribers', 
+      count: 186,
+      filters: {
+        country: 'all',
+        age: [18, 35],
+        gender: ['male', 'female', 'other'],
+        category: 'all',
+        prize: 'all'
+      }
+    },
+    { 
+      id: 'segment3', 
+      name: 'Premium Members', 
+      count: 72,
+      filters: {
+        country: 'all',
+        age: [25, 65],
+        gender: ['male', 'female'],
+        category: 'all',
+        prize: 'all'
+      }
+    }
+  ]);
 
   // Update user count based on current filters
   useEffect(() => {
@@ -105,6 +156,22 @@ export function useUserSegmentation() {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 800));
       
+      // Add the new segment to our local state
+      const newSegment: UserSegment = {
+        id: `segment${savedSegments.length + 1}`,
+        name,
+        count: userCount,
+        filters: {
+          country: countryFilter,
+          age: ageFilter,
+          gender: genderFilter,
+          category: categoryFilter,
+          prize: prizeFilter
+        }
+      };
+      
+      setSavedSegments([...savedSegments, newSegment]);
+      
       toast({
         title: "Segment saved",
         description: `Segment "${name}" has been saved with ${userCount} users.`
@@ -162,6 +229,7 @@ export function useUserSegmentation() {
     userCount,
     loadingUserCount,
     isLoadingOperation,
+    savedSegments,
     updateCountryFilter,
     updateAgeFilter,
     updateGenderFilter,
