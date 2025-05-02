@@ -2243,15 +2243,7 @@ export type Database = {
           user_id: string | null
           username: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "puzzle_completions_puzzle_id_fkey"
-            columns: ["puzzle_id"]
-            isOneToOne: false
-            referencedRelation: "puzzles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Functions: {

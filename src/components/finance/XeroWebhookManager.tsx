@@ -1,34 +1,50 @@
 
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/hooks/use-toast";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { XeroService } from "@/services/xero";
-import { AlertCircle, Plus, RefreshCw, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { XeroService } from '@/services/xero';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { toast } from '@/hooks/use-toast';
+import { RefreshCw, Trash2, Bell, AlertCircle, CheckCircle } from 'lucide-react';
+import { IntegrationWebhook, WebhookLog } from '@/types/integration';
 
 const WEBHOOK_EVENT_TYPES = [
-  { value: "invoices.create", label: "Invoice Created" },
-  { value: "invoices.update", label: "Invoice Updated" },
-  { value: "contacts.create", label: "Contact Created" },
-  { value: "contacts.update", label: "Contact Updated" },
-  { value: "bills.create", label: "Bill Created" },
-  { value: "bills.update", label: "Bill Updated" },
-  { value: "banktransactions.create", label: "Transaction Created" },
+  { value: 'INVOICE', label: 'Invoices' },
+  { value: 'CONTACT', label: 'Contacts' },
+  { value: 'BILL', label: 'Bills' },
+  { value: 'BANKTRANSACTION', label: 'Bank Transactions' }
 ];
 
 const XeroWebhookManager: React.FC = () => {
-  const [isCreatingWebhook, setIsCreatingWebhook] = useState(false);
-  const [selectedEventType, setSelectedEventType] = useState<string>(WEBHOOK_EVENT_TYPES[0].value);
-  const queryClient = useQueryClient();
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState('INVOICE');
 
-  // Get active webhooks
+  // Fetch active webhooks
   const {
     data: webhooks = [],
     isLoading: isLoadingWebhooks,
@@ -38,9 +54,9 @@ const XeroWebhookManager: React.FC = () => {
     queryFn: () => XeroService.getActiveWebhooks(),
   });
 
-  // Get webhook logs
+  // Fetch webhook logs
   const {
-    data: webhookLogs = [],
+    data: logs = [],
     isLoading: isLoadingLogs,
     refetch: refetchLogs
   } = useQuery({
@@ -48,19 +64,26 @@ const XeroWebhookManager: React.FC = () => {
     queryFn: () => XeroService.getWebhookLogs(),
   });
 
-  // Connection status query
-  const { 
-    data: connectionStatus,
-    isLoading: isLoadingStatus,
-  } = useQuery({
-    queryKey: ['xero', 'connection-status'],
-    queryFn: () => XeroService.getConnectionStatus(),
-  });
-
+  // Register a webhook handler
   const handleRegisterWebhook = async () => {
     try {
-      setIsCreatingWebhook(true);
-      const result = await XeroService.registerWebhook(selectedEventType);
+      setIsRegistering(true);
+      
+      // Check if webhook already exists for this event
+      const existingWebhook = webhooks.find(
+        (webhook: IntegrationWebhook) => webhook.type === selectedEvent
+      );
+      
+      if (existingWebhook) {
+        toast({
+          title: "Webhook already exists",
+          description: `A webhook for ${selectedEvent} events already exists.`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const result = await XeroService.registerWebhook(selectedEvent);
       
       if (result.success) {
         toast({
@@ -72,23 +95,26 @@ const XeroWebhookManager: React.FC = () => {
         toast({
           title: "Registration Failed",
           description: result.message,
-          variant: "destructive",
+          variant: "destructive"
         });
       }
     } catch (error) {
-      console.error("Failed to register webhook:", error);
+      console.error('Error registering webhook:', error);
       toast({
         title: "Registration Error",
         description: error instanceof Error ? error.message : "Failed to register webhook",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
-      setIsCreatingWebhook(false);
+      setIsRegistering(false);
     }
   };
-
+  
+  // Delete a webhook handler
   const handleDeleteWebhook = async (webhookId: string) => {
     try {
+      setIsDeleting(webhookId);
+      
       const result = await XeroService.deleteWebhook(webhookId);
       
       if (result.success) {
@@ -101,186 +127,194 @@ const XeroWebhookManager: React.FC = () => {
         toast({
           title: "Deletion Failed",
           description: result.message,
-          variant: "destructive",
+          variant: "destructive"
         });
       }
     } catch (error) {
-      console.error("Failed to delete webhook:", error);
+      console.error('Error deleting webhook:', error);
       toast({
         title: "Deletion Error",
         description: error instanceof Error ? error.message : "Failed to delete webhook",
-        variant: "destructive",
+        variant: "destructive"
       });
+    } finally {
+      setIsDeleting(null);
     }
   };
-
+  
+  // Format date for display
   const formatDate = (dateString: string) => {
     try {
-      return format(new Date(dateString), 'MMM dd, yyyy HH:mm:ss');
+      const date = new Date(dateString);
+      return date.toLocaleString();
     } catch (e) {
       return dateString;
     }
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Xero Webhooks</CardTitle>
-        <CardDescription>
-          Manage real-time data synchronization with Xero
-        </CardDescription>
-        
-        {!connectionStatus?.connected && (
-          <Alert variant="destructive" className="mt-2">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Connection Required</AlertTitle>
-            <AlertDescription>
-              You must connect to Xero before managing webhooks.
-            </AlertDescription>
-          </Alert>
-        )}
-      </CardHeader>
-      
-      <CardContent className="space-y-6">
-        {connectionStatus?.connected && (
-          <>
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-end">
-              <div className="flex-1">
-                <label className="text-sm font-medium mb-1 block">Event Type</label>
-                <Select 
-                  value={selectedEventType} 
-                  onValueChange={setSelectedEventType}
-                  disabled={isCreatingWebhook}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select event type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {WEBHOOK_EVENT_TYPES.map((eventType) => (
-                      <SelectItem key={eventType.value} value={eventType.value}>
-                        {eventType.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Button 
-                onClick={handleRegisterWebhook}
-                disabled={isCreatingWebhook || !selectedEventType}
-              >
-                {isCreatingWebhook ? (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-medium">Xero Webhooks</CardTitle>
+          <CardDescription>
+            Register webhooks to automatically sync data when changes occur in Xero
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-end gap-4 mb-6">
+            <div className="space-y-2 flex-1">
+              <label className="text-sm font-medium">Event Type</label>
+              <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select event type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {WEBHOOK_EVENT_TYPES.map((event) => (
+                    <SelectItem key={event.value} value={event.value}>
+                      {event.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button 
+              onClick={handleRegisterWebhook} 
+              disabled={isRegistering || !selectedEvent}
+              className="mb-1"
+            >
+              {isRegistering ? (
+                <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="mr-2 h-4 w-4" />
-                )}
-                Register Webhook
-              </Button>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-medium mb-2">Active Webhooks</h3>
-              
-              {isLoadingWebhooks ? (
-                <div className="animate-pulse space-y-2">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-10 bg-gray-100 rounded"></div>
-                  ))}
-                </div>
-              ) : webhooks.length > 0 ? (
-                <ScrollArea className="h-[200px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Event Type</TableHead>
-                        <TableHead>URL</TableHead>
-                        <TableHead>Created At</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {webhooks.map((webhook) => (
-                        <TableRow key={webhook.id}>
-                          <TableCell>
-                            <Badge>{webhook.type}</Badge>
-                          </TableCell>
-                          <TableCell className="font-mono text-xs truncate max-w-[200px]">
-                            {webhook.url}
-                          </TableCell>
-                          <TableCell>
-                            {formatDate(webhook.created_at)}
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeleteWebhook(webhook.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
+                  Registering...
+                </>
               ) : (
-                <div className="text-center py-6 text-gray-500">
-                  No active webhooks. Register your first webhook to receive real-time updates from Xero.
-                </div>
+                <>
+                  <Bell className="mr-2 h-4 w-4" />
+                  Register Webhook
+                </>
               )}
-            </div>
-            
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-lg font-medium">Recent Webhook Events</h3>
-                <Button variant="outline" size="sm" onClick={() => refetchLogs()}>
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Refresh
-                </Button>
+            </Button>
+          </div>
+          
+          <h3 className="text-sm font-medium mb-2">Active Webhooks</h3>
+          <ScrollArea className="h-[200px] border rounded-md">
+            {isLoadingWebhooks ? (
+              <div className="flex items-center justify-center h-[200px]">
+                <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-              
-              {isLoadingLogs ? (
-                <div className="animate-pulse space-y-2">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-10 bg-gray-100 rounded"></div>
+            ) : webhooks.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Event Type</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {webhooks.map((webhook: IntegrationWebhook) => (
+                    <TableRow key={webhook.id}>
+                      <TableCell>{webhook.type}</TableCell>
+                      <TableCell>{formatDate(webhook.created_at)}</TableCell>
+                      <TableCell>
+                        <Badge variant={webhook.is_active ? "default" : "outline"}>
+                          {webhook.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteWebhook(webhook.id)}
+                          disabled={isDeleting === webhook.id}
+                        >
+                          {isDeleting === webhook.id ? (
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </div>
-              ) : webhookLogs.length > 0 ? (
-                <ScrollArea className="h-[300px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Event Type</TableHead>
-                        <TableHead>Timestamp</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {webhookLogs.map((log) => (
-                        <TableRow key={log.id}>
-                          <TableCell>{log.event_type}</TableCell>
-                          <TableCell>{formatDate(log.created_at)}</TableCell>
-                          <TableCell>
-                            <Badge variant={log.processed ? "default" : "outline"}>
-                              {log.processed ? "Processed" : "Pending"}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
-              ) : (
-                <div className="text-center py-6 text-gray-500">
-                  No webhook events received yet.
-                </div>
-              )}
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground">
+                <Bell className="h-8 w-8 mb-2 opacity-50" />
+                <p>No webhooks registered</p>
+              </div>
+            )}
+          </ScrollArea>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-medium">Recent Webhook Events</CardTitle>
+          <CardDescription>
+            History of recent events received from Xero
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[300px] border rounded-md">
+            {isLoadingLogs ? (
+              <div className="flex items-center justify-center h-[300px]">
+                <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : logs.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Event Type</TableHead>
+                    <TableHead>Received</TableHead>
+                    <TableHead>Processed</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {logs.map((log: WebhookLog) => (
+                    <TableRow key={log.id}>
+                      <TableCell>{log.event_type}</TableCell>
+                      <TableCell>{formatDate(log.created_at)}</TableCell>
+                      <TableCell>
+                        {log.processed ? (
+                          <div className="flex items-center">
+                            <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
+                            <span>Processed</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center">
+                            <AlertCircle className="h-4 w-4 text-amber-500 mr-1" />
+                            <span>Pending</span>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
+                <Bell className="h-8 w-8 mb-2 opacity-50" />
+                <p>No webhook events received</p>
+              </div>
+            )}
+          </ScrollArea>
+          <div className="flex justify-end mt-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => refetchLogs()}
+            >
+              <RefreshCw className="mr-2 h-3 w-3" />
+              Refresh
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

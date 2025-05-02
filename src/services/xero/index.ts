@@ -35,8 +35,8 @@ export class XeroService {
    * Webhook related methods
    */
   static registerWebhook = XeroWebhookService.registerWebhook;
-  static getActiveWebhooks = XeroWebhookService.getActiveWebhooks;
-  static getWebhookLogs = XeroWebhookService.getWebhookLogs;
+  static getActiveWebhooks = XeroDataService.getActiveWebhooks;
+  static getWebhookLogs = XeroDataService.getWebhookLogs;
   static deleteWebhook = XeroWebhookService.deleteWebhook;
 }
 
