@@ -4,6 +4,7 @@ import { TabsContent } from '@/components/ui/tabs';
 import { TabDefinition } from './TabDefinitions';
 import { NoAccessMessage } from '@/components/auth/NoAccessMessage';
 import { UserProfile } from '@/types/userTypes';
+import { GameManagement } from "@/components/admin/GameManagement";
 
 // Import the components needed for each tab
 import { UserManagement } from "@/components/admin/UserManagement";
@@ -60,7 +61,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
       {/* Puzzles Tab */}
       <TabsContent value="puzzles" className="space-y-4">
         {isTabAccessible('puzzles') ? (
-          <PuzzleManagement />
+          <GameManagement />
         ) : (
           <NoAccessMessage resourceName="Puzzle Management" />
         )}
