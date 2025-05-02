@@ -11,14 +11,14 @@ interface DeliveryStats {
   delivered: number;
   opened: number;
   clicked: number;
-  delivery_rate: number;  // Changed from deliveryRate to match DB
-  open_rate: number;      // Changed from openRate to match DB
-  click_rate: number;     // Changed from clickRate to match DB
-  bounce_rate: number;    // Changed from bounceRate to match DB
-  mobile_pct: number;     // Changed from mobilePct to match DB
-  desktop_pct: number;    // Changed from desktopPct to match DB
-  webmail_pct: number;    // Changed from webmailPct to match DB
-  other_pct: number;      // Changed from otherPct to match DB
+  delivery_rate: number;  
+  open_rate: number;      
+  click_rate: number;     
+  bounce_rate: number;    
+  mobile_pct: number;     
+  desktop_pct: number;    
+  webmail_pct: number;    
+  other_pct: number;      
 }
 
 interface Campaign {
@@ -58,7 +58,7 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
         const endDate = dateRange?.to || new Date();
         
         // Get delivery stats using the database function
-        // Fix: Using a single object parameter with named fields as expected by the RPC function
+        // Fixed: Using a single object parameter as expected by the RPC function
         const { data: statsData, error: statsError } = await supabase.rpc(
           'get_email_analytics',
           { 
