@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { subDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
+import { debugLog, DebugLevel } from '@/utils/debug';
 
 interface DeliveryStats {
   sent: number;
@@ -58,7 +59,9 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
         const endDate = dateRange?.to || new Date();
         
         // Get delivery stats using the database function
-        const { data: statsData, error: statsError } = await supabase.rpc(
+        // TypeScript expects 2 arguments but Supabase RPC actually takes params as a single object
+        // Using type assertion to work around the TypeScript error
+        const { data: statsData, error: statsError } = await (supabase.rpc as any)(
           'get_email_analytics', 
           {
             start_date: startDate.toISOString().split('T')[0],
@@ -67,7 +70,10 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
           }
         );
         
-        if (statsError) throw statsError;
+        if (statsError) {
+          debugLog('EmailAnalytics', `Error fetching email analytics stats: ${statsError.message}`, DebugLevel.ERROR);
+          throw statsError;
+        }
         
         // Get engagement data over time
         const { data: engagementData, error: engagementError } = await supabase
@@ -77,7 +83,10 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
           .lte('date', endDate.toISOString().split('T')[0])
           .order('date', { ascending: true });
           
-        if (engagementError) throw engagementError;
+        if (engagementError) {
+          debugLog('EmailAnalytics', `Error fetching engagement data: ${engagementError.message}`, DebugLevel.ERROR);
+          throw engagementError;
+        }
         
         // Get link click data
         const { data: clicksData, error: clicksError } = await supabase
@@ -87,7 +96,10 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
           .order('clicks', { ascending: false })
           .limit(10);
           
-        if (clicksError) throw clicksError;
+        if (clicksError) {
+          debugLog('EmailAnalytics', `Error fetching clicks data: ${clicksError.message}`, DebugLevel.ERROR);
+          throw clicksError;
+        }
         
         // Get campaigns list
         const { data: campaignsList, error: campaignsError } = await supabase
@@ -95,7 +107,12 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
           .select('id, name')
           .order('created_at', { ascending: false });
           
-        if (campaignsError) throw campaignsError;
+        if (campaignsError) {
+          debugLog('EmailAnalytics', `Error fetching campaigns list: ${campaignsError.message}`, DebugLevel.ERROR);
+          throw campaignsError;
+        }
+        
+        debugLog('EmailAnalytics', `Successfully retrieved all email analytics data`, DebugLevel.INFO);
         
         // Process and return all the analytics data
         return {
