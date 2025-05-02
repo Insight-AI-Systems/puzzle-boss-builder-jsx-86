@@ -13,6 +13,12 @@ import { NotificationsDashboard } from "./NotificationsDashboard";
 import { MonitoringDashboard } from "./MonitoringDashboard";
 import { FinancialDashboard } from "./financial-dashboard/FinancialDashboard";
 import { CategoryManagement } from "./CategoryManagement";
+import { PartnersDashboard } from "./partners/PartnersDashboard";
+import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
+import { ContentManagement } from "@/components/admin/ContentManagement";
+import { EmailManagement } from "@/components/admin/EmailManagement";
+import { AnalyticsDashboard } from "@/components/admin/analytics/AnalyticsDashboard";
+import TicketManagement from "./TicketManagement";
 
 interface DashboardContentProps {
   accessibleTabs: TabDefinition[];
@@ -33,7 +39,14 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
 
   return (
     <div>
-      {/* Overview tab has been removed */}
+      {/* Analytics Tab */}
+      <TabsContent value="analytics" className="space-y-4">
+        {isTabAccessible('analytics') ? (
+          <AnalyticsDashboard />
+        ) : (
+          <NoAccessMessage resourceName="Analytics Dashboard" />
+        )}
+      </TabsContent>
 
       {/* Users Tab */}
       <TabsContent value="users" className="space-y-4">
@@ -62,6 +75,15 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
         )}
       </TabsContent>
 
+      {/* Content Tab */}
+      <TabsContent value="content" className="space-y-4">
+        {isTabAccessible('content') ? (
+          <ContentManagement />
+        ) : (
+          <NoAccessMessage resourceName="Content Management" />
+        )}
+      </TabsContent>
+
       {/* Marketing Tab */}
       <TabsContent value="marketing" className="space-y-4">
         {isTabAccessible('marketing') ? (
@@ -71,30 +93,66 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
         )}
       </TabsContent>
 
+      {/* Partners Tab */}
+      <TabsContent value="partners" className="space-y-4">
+        {isTabAccessible('partners') ? (
+          <PartnersDashboard />
+        ) : (
+          <NoAccessMessage resourceName="Partner Management" />
+        )}
+      </TabsContent>
+
+      {/* Security Tab */}
+      <TabsContent value="security" className="space-y-4">
+        {isTabAccessible('security') ? (
+          <SecurityDashboard />
+        ) : (
+          <NoAccessMessage resourceName="Security Dashboard" />
+        )}
+      </TabsContent>
+
+      {/* Email Tab */}
+      <TabsContent value="email" className="space-y-4">
+        {isTabAccessible('email') ? (
+          <EmailManagement />
+        ) : (
+          <NoAccessMessage resourceName="Email Management" />
+        )}
+      </TabsContent>
+
+      {/* Notifications Tab */}
+      <TabsContent value="notifications" className="space-y-4">
+        {isTabAccessible('notifications') ? (
+          <NotificationsDashboard />
+        ) : (
+          <NoAccessMessage resourceName="Notifications Dashboard" />
+        )}
+      </TabsContent>
+
+      {/* Tickets Tab */}
+      <TabsContent value="tickets" className="space-y-4">
+        {isTabAccessible('tickets') ? (
+          <TicketManagement />
+        ) : (
+          <NoAccessMessage resourceName="Support Tickets" />
+        )}
+      </TabsContent>
+
+      {/* Monitoring Tab */}
+      <TabsContent value="monitoring" className="space-y-4">
+        {isTabAccessible('monitoring') ? (
+          <MonitoringDashboard />
+        ) : (
+          <NoAccessMessage resourceName="Monitoring Dashboard" />
+        )}
+      </TabsContent>
+
       {/* Finance Tab */}
       <TabsContent value="finance" className="space-y-4">
         {isTabAccessible('finance') ? (
           <FinancialDashboard />
         ) : (
           <NoAccessMessage resourceName="Financial Dashboard" />
-        )}
-      </TabsContent>
-
-      {/* Scheduling Tab */}
-      <TabsContent value="scheduling" className="space-y-4">
-        {isTabAccessible('scheduling') ? (
-          <NotificationsDashboard />
-        ) : (
-          <NoAccessMessage resourceName="Content Schedule" />
-        )}
-      </TabsContent>
-
-      {/* Settings Tab */}
-      <TabsContent value="settings" className="space-y-4">
-        {isTabAccessible('settings') ? (
-          <MonitoringDashboard />
-        ) : (
-          <NoAccessMessage resourceName="Dashboard Settings" />
         )}
       </TabsContent>
     </div>
