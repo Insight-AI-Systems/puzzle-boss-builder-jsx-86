@@ -208,6 +208,209 @@ export type Database = {
           },
         ]
       }
+      email_analytics: {
+        Row: {
+          campaign_id: string | null
+          clicked: number
+          created_at: string | null
+          date: string
+          delivered: number
+          desktop_pct: number | null
+          id: string
+          mobile_pct: number | null
+          opened: number
+          other_pct: number | null
+          sent: number
+          webmail_pct: number | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          clicked?: number
+          created_at?: string | null
+          date?: string
+          delivered?: number
+          desktop_pct?: number | null
+          id?: string
+          mobile_pct?: number | null
+          opened?: number
+          other_pct?: number | null
+          sent?: number
+          webmail_pct?: number | null
+        }
+        Update: {
+          campaign_id?: string | null
+          clicked?: number
+          created_at?: string | null
+          date?: string
+          delivered?: number
+          desktop_pct?: number | null
+          id?: string
+          mobile_pct?: number | null
+          opened?: number
+          other_pct?: number | null
+          sent?: number
+          webmail_pct?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_analytics_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_campaigns: {
+        Row: {
+          audience: string
+          created_at: string | null
+          id: string
+          name: string
+          opened: number
+          recipients: number
+          scheduled_for: string | null
+          sent: number
+          status: string
+          template_id: string | null
+        }
+        Insert: {
+          audience: string
+          created_at?: string | null
+          id?: string
+          name: string
+          opened?: number
+          recipients?: number
+          scheduled_for?: string | null
+          sent?: number
+          status: string
+          template_id?: string | null
+        }
+        Update: {
+          audience?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          opened?: number
+          recipients?: number
+          scheduled_for?: string | null
+          sent?: number
+          status?: string
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_engagement: {
+        Row: {
+          campaign_id: string | null
+          clicked: number
+          created_at: string | null
+          date: string
+          id: string
+          opened: number
+          sent: number
+        }
+        Insert: {
+          campaign_id?: string | null
+          clicked?: number
+          created_at?: string | null
+          date: string
+          id?: string
+          opened?: number
+          sent?: number
+        }
+        Update: {
+          campaign_id?: string | null
+          clicked?: number
+          created_at?: string | null
+          date?: string
+          id?: string
+          opened?: number
+          sent?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_engagement_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_link_clicks: {
+        Row: {
+          campaign_id: string | null
+          clicks: number
+          created_at: string | null
+          id: string
+          link: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          clicks?: number
+          created_at?: string | null
+          id?: string
+          link: string
+        }
+        Update: {
+          campaign_id?: string | null
+          clicks?: number
+          created_at?: string | null
+          id?: string
+          link?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_link_clicks_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_templates: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          last_sent: string | null
+          name: string
+          status: string
+          subject: string
+          type: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          last_sent?: string | null
+          name: string
+          status?: string
+          subject: string
+          type: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          last_sent?: string | null
+          name?: string
+          status?: string
+          subject?: string
+          type?: string
+        }
+        Relationships: []
+      }
       feedback: {
         Row: {
           browser_info: string | null
@@ -1528,6 +1731,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_segments: {
+        Row: {
+          count: number
+          created_at: string | null
+          created_by: string | null
+          filters: Json
+          id: string
+          name: string
+        }
+        Insert: {
+          count?: number
+          created_at?: string | null
+          created_by?: string | null
+          filters?: Json
+          id?: string
+          name: string
+        }
+        Update: {
+          count?: number
+          created_at?: string | null
+          created_by?: string | null
+          filters?: Json
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       user_sessions: {
         Row: {
           created_at: string | null
@@ -1634,6 +1864,27 @@ export type Database = {
           prize_value: number
           winner_country: string
           created_at: string
+        }[]
+      }
+      get_email_analytics: {
+        Args: {
+          start_date: string
+          end_date: string
+          campaign_id_param?: string
+        }
+        Returns: {
+          sent: number
+          delivered: number
+          opened: number
+          clicked: number
+          delivery_rate: number
+          open_rate: number
+          click_rate: number
+          bounce_rate: number
+          mobile_pct: number
+          desktop_pct: number
+          webmail_pct: number
+          other_pct: number
         }[]
       }
       get_membership_stats: {

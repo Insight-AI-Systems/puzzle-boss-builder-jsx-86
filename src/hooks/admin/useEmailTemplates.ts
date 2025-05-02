@@ -1,5 +1,4 @@
 
-import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -9,37 +8,7 @@ export function useEmailTemplates() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Mock data for email templates
-  const mockTemplates: EmailTemplate[] = [
-    {
-      id: '1',
-      name: 'Welcome Email',
-      subject: 'Welcome to our platform!',
-      type: 'notification',
-      status: 'active',
-      created_at: new Date().toISOString(),
-      last_sent: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-    },
-    {
-      id: '2',
-      name: 'Monthly Newsletter',
-      subject: 'See what\'s new this month',
-      type: 'marketing',
-      status: 'active',
-      created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      last_sent: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-    },
-    {
-      id: '3',
-      name: 'Password Reset',
-      subject: 'Reset your password',
-      type: 'system',
-      status: 'active',
-      created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
-    }
-  ];
-
-  // Fetch templates
+  // Fetch templates from the database
   const {
     data: templates,
     isLoading,
@@ -49,17 +18,13 @@ export function useEmailTemplates() {
     queryKey: ['email-templates'],
     queryFn: async () => {
       try {
-        // In a real implementation, this would fetch from Supabase
-        // const { data, error } = await supabase
-        //   .from('email_templates')
-        //   .select('*')
-        //   .order('created_at', { ascending: false });
+        const { data, error } = await supabase
+          .from('email_templates')
+          .select('*')
+          .order('created_at', { ascending: false });
           
-        // if (error) throw error;
-        // return data as EmailTemplate[];
-        
-        // For now, return mock data
-        return mockTemplates;
+        if (error) throw error;
+        return data as EmailTemplate[];
       } catch (error) {
         console.error('Error fetching email templates:', error);
         throw error;
@@ -67,30 +32,17 @@ export function useEmailTemplates() {
     }
   });
 
-  // Create email template
+  // Create email template mutation
   const createTemplateMutation = useMutation({
     mutationFn: async (template: Omit<EmailTemplate, 'id' | 'created_at' | 'last_sent'>) => {
-      // In a real implementation, this would insert to Supabase
-      // const { data, error } = await supabase
-      //   .from('email_templates')
-      //   .insert(template)
-      //   .select()
-      //   .single();
+      const { data, error } = await supabase
+        .from('email_templates')
+        .insert(template)
+        .select()
+        .single();
         
-      // if (error) throw error;
-      // return data;
-      
-      // Mock implementation
-      const newTemplate: EmailTemplate = {
-        ...template,
-        id: (Math.floor(Math.random() * 1000)).toString(),
-        created_at: new Date().toISOString()
-      };
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      return newTemplate;
+      if (error) throw error;
+      return data as EmailTemplate;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['email-templates'] });
@@ -108,21 +60,15 @@ export function useEmailTemplates() {
   // Delete email template
   const deleteTemplateMutation = useMutation({
     mutationFn: async (id: string) => {
-      // In a real implementation, this would delete from Supabase
-      // const { error } = await supabase
-      //   .from('email_templates')
-      //   .delete()
-      //   .eq('id', id);
+      const { error } = await supabase
+        .from('email_templates')
+        .delete()
+        .eq('id', id);
         
-      // if (error) throw error;
-      // return id;
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      if (error) throw error;
       return id;
     },
-    onSuccess: (id) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['email-templates'] });
     },
     onError: (error) => {

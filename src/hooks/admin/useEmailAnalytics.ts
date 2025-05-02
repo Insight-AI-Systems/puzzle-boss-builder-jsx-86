@@ -1,9 +1,9 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { format, subDays } from 'date-fns';
+import { subDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
 interface DeliveryStats {
@@ -29,20 +29,20 @@ interface Campaign {
 export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'all') {
   const { toast } = useToast();
   
-  // Mock data for demonstration
+  // Default values for when data is loading or not available
   const defaultDeliveryStats: DeliveryStats = {
-    sent: 1000,
-    delivered: 950,
-    opened: 570,
-    clicked: 285,
-    deliveryRate: 95,
-    openRate: 60,
-    clickRate: 30,
-    bounceRate: 5,
-    mobilePct: 60,
-    desktopPct: 25,
-    webmailPct: 10,
-    otherPct: 5
+    sent: 0,
+    delivered: 0,
+    opened: 0,
+    clicked: 0,
+    deliveryRate: 0,
+    openRate: 0,
+    clickRate: 0,
+    bounceRate: 0,
+    mobilePct: 0,
+    desktopPct: 0,
+    webmailPct: 0,
+    otherPct: 0
   };
 
   // Query for analytics data
@@ -54,51 +54,55 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
     queryKey: ['email-analytics', dateRange, campaignId],
     queryFn: async () => {
       try {
-        // In a real application, this would fetch data from SendGrid API via your edge function
-        // For now, we'll return mock data
-        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
-        
-        // Generate mock engagement data over the date range
-        const engagementData = [];
-        let currentDate = dateRange?.from || subDays(new Date(), 30);
+        const startDate = dateRange?.from || subDays(new Date(), 30);
         const endDate = dateRange?.to || new Date();
         
-        while (currentDate <= endDate) {
-          const dateStr = format(currentDate, 'yyyy-MM-dd');
-          const dayMult = 1 - Math.random() * 0.3; // Random multiplier for variation
+        // Get delivery stats using the database function
+        const { data: statsData, error: statsError } = await supabase.rpc(
+          'get_email_analytics',
+          { 
+            start_date: startDate.toISOString().split('T')[0],
+            end_date: endDate.toISOString().split('T')[0],
+            campaign_id_param: campaignId === 'all' ? null : campaignId
+          }
+        );
+        
+        if (statsError) throw statsError;
+        
+        // Get engagement data over time
+        const { data: engagementData, error: engagementError } = await supabase
+          .from('email_engagement')
+          .select('date, sent, opened, clicked')
+          .gte('date', startDate.toISOString().split('T')[0])
+          .lte('date', endDate.toISOString().split('T')[0])
+          .order('date', { ascending: true });
           
-          engagementData.push({
-            date: dateStr,
-            sent: Math.round(100 * dayMult),
-            opened: Math.round(60 * dayMult),
-            clicked: Math.round(30 * dayMult),
-          });
+        if (engagementError) throw engagementError;
+        
+        // Get link click data
+        const { data: clicksData, error: clicksError } = await supabase
+          .from('email_link_clicks')
+          .select('link, clicks')
+          .eq(campaignId !== 'all', 'campaign_id', campaignId)
+          .order('clicks', { ascending: false })
+          .limit(10);
           
-          currentDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
-        }
+        if (clicksError) throw clicksError;
         
-        // Mock click data
-        const clicksData = [
-          { link: 'Homepage', clicks: 145 },
-          { link: 'Product Page', clicks: 98 },
-          { link: 'Pricing', clicks: 64 },
-          { link: 'Account Settings', clicks: 42 },
-          { link: 'Support', clicks: 36 }
-        ];
+        // Get campaigns list
+        const { data: campaignsList, error: campaignsError } = await supabase
+          .from('email_campaigns')
+          .select('id, name')
+          .order('created_at', { ascending: false });
+          
+        if (campaignsError) throw campaignsError;
         
-        // Mock campaigns list
-        const campaignsList = [
-          { id: 'c1', name: 'Welcome Series' },
-          { id: 'c2', name: 'Monthly Newsletter' },
-          { id: 'c3', name: 'Product Announcement' },
-          { id: 'c4', name: 'Spring Promotion' }
-        ];
-        
+        // Process and return all the analytics data
         return {
-          deliveryStats: defaultDeliveryStats,
-          engagementData,
-          clicksData,
-          campaignsList
+          deliveryStats: statsData && statsData.length > 0 ? statsData[0] : defaultDeliveryStats,
+          engagementData: engagementData || [],
+          clicksData: clicksData || [],
+          campaignsList: campaignsList || []
         };
       } catch (error) {
         console.error('Error fetching email analytics:', error);
@@ -108,20 +112,44 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
     refetchOnWindowFocus: false
   });
 
-  // Export data function
-  const exportData = () => {
-    // In a real app, this would generate and download a CSV file
-    toast({
-      title: "Export started",
-      description: "Your data export is being prepared and will download shortly.",
-    });
-    
-    setTimeout(() => {
+  // Export data function - in a real app, this would generate and download data
+  const exportData = async () => {
+    try {
+      toast({
+        title: "Export started",
+        description: "Your data export is being prepared and will download shortly.",
+      });
+      
+      // In a real implementation, this would create a CSV file from the data
+      // We'll just simulate a successful export for now
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const csvContent = "data:text/csv;charset=utf-8," + 
+        "Date,Sent,Delivered,Opened,Clicked\n" +
+        (data?.engagementData || []).map(row => 
+          `${row.date},${row.sent},${row.opened},${row.clicked}`
+        ).join("\n");
+        
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `email-analytics-${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
       toast({
         title: "Export complete",
         description: "Your data has been exported successfully.",
       });
-    }, 2000);
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      toast({
+        title: "Export failed",
+        description: "There was an error exporting your data.",
+        variant: "destructive"
+      });
+    }
   };
 
   return {

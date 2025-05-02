@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export interface UserSegment {
   id: string;
@@ -18,52 +19,69 @@ export interface UserSegment {
 
 export function useUserSegmentation() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // Filter states
   const [countryFilter, setCountryFilter] = useState<string>('all');
   const [ageFilter, setAgeFilter] = useState<[number, number]>([18, 65]);
   const [genderFilter, setGenderFilter] = useState<string[]>(['male', 'female']);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [prizeFilter, setPrizeFilter] = useState<string>('all');
+  
+  // User count state
   const [userCount, setUserCount] = useState<number>(0);
   const [loadingUserCount, setLoadingUserCount] = useState<boolean>(false);
   const [isLoadingOperation, setIsLoadingOperation] = useState<boolean>(false);
-  const [savedSegments, setSavedSegments] = useState<UserSegment[]>([
-    { 
-      id: 'segment1', 
-      name: 'Active Users', 
-      count: 450,
-      filters: {
-        country: 'us',
-        age: [25, 45],
-        gender: ['male', 'female'],
-        category: 'all',
-        prize: 'all'
-      }
-    },
-    { 
-      id: 'segment2', 
-      name: 'New Subscribers', 
-      count: 186,
-      filters: {
-        country: 'all',
-        age: [18, 35],
-        gender: ['male', 'female', 'other'],
-        category: 'all',
-        prize: 'all'
-      }
-    },
-    { 
-      id: 'segment3', 
-      name: 'Premium Members', 
-      count: 72,
-      filters: {
-        country: 'all',
-        age: [25, 65],
-        gender: ['male', 'female'],
-        category: 'all',
-        prize: 'all'
+
+  // Fetch saved segments from the database
+  const { 
+    data: savedSegments, 
+    isLoading: isLoadingSegments 
+  } = useQuery({
+    queryKey: ['user-segments'],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('user_segments')
+          .select('*')
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        
+        return data.map(segment => ({
+          id: segment.id,
+          name: segment.name,
+          count: segment.count,
+          filters: segment.filters as UserSegment['filters']
+        }));
+      } catch (error) {
+        console.error('Error fetching user segments:', error);
+        throw error;
       }
     }
-  ]);
+  });
+
+  // Save segment mutation
+  const saveSegmentMutation = useMutation({
+    mutationFn: async ({ name, filters, count }: { name: string; filters: UserSegment['filters']; count: number }) => {
+      const { data, error } = await supabase
+        .from('user_segments')
+        .insert({
+          name,
+          count,
+          filters,
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-segments'] });
+    }
+  });
 
   // Update user count based on current filters
   useEffect(() => {
@@ -71,7 +89,7 @@ export function useUserSegmentation() {
       setLoadingUserCount(true);
       try {
         // In a real implementation, this would count users that match all filters
-        // For now, just simulate with random numbers
+        // For now, just simulate with random numbers until we have a proper backend endpoint
         const baseCount = Math.floor(Math.random() * 1000) + 100;
         
         // Apply fake filtering logic to simulate count changes
@@ -136,29 +154,7 @@ export function useUserSegmentation() {
   const saveSegment = async (name: string) => {
     setIsLoadingOperation(true);
     try {
-      // In a real implementation, this would save to Supabase
-      // const { error } = await supabase
-      //   .from('user_segments')
-      //   .insert({
-      //     name,
-      //     count: userCount,
-      //     filters: {
-      //       country: countryFilter,
-      //       age: ageFilter,
-      //       gender: genderFilter,
-      //       category: categoryFilter,
-      //       prize: prizeFilter
-      //     }
-      //   });
-      
-      // if (error) throw error;
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Add the new segment to our local state
-      const newSegment: UserSegment = {
-        id: `segment${savedSegments.length + 1}`,
+      await saveSegmentMutation.mutateAsync({
         name,
         count: userCount,
         filters: {
@@ -168,9 +164,7 @@ export function useUserSegmentation() {
           category: categoryFilter,
           prize: prizeFilter
         }
-      };
-      
-      setSavedSegments([...savedSegments, newSegment]);
+      });
       
       toast({
         title: "Segment saved",
@@ -229,7 +223,7 @@ export function useUserSegmentation() {
     userCount,
     loadingUserCount,
     isLoadingOperation,
-    savedSegments,
+    savedSegments: savedSegments || [],
     updateCountryFilter,
     updateAgeFilter,
     updateGenderFilter,

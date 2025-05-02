@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { CalendarIcon, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { useEmailAnalytics } from "@/hooks/admin/useEmailAnalytics";
-import { format } from "date-fns";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 export const EmailAnalytics: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -33,6 +34,60 @@ export const EmailAnalytics: React.FC = () => {
     exportData();
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+          <div>
+            <h3 className="text-lg font-medium">Email Analytics</h3>
+            <p className="text-sm text-muted-foreground">
+              Loading analytics data...
+            </p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-4 w-[100px]" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-[60px] mb-2" />
+                <Skeleton className="h-4 w-[120px]" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-[150px]" />
+          </CardHeader>
+          <CardContent className="h-[300px] flex items-center justify-center">
+            <Skeleton className="h-full w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  // Error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error loading email analytics</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : "An unknown error occurred while loading analytics data"}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
@@ -54,9 +109,13 @@ export const EmailAnalytics: React.FC = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Campaigns</SelectItem>
-              {campaignsList.map(c => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-              ))}
+              {campaignsList && campaignsList.length > 0 ? (
+                campaignsList.map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))
+              ) : (
+                <SelectItem value="none" disabled>No campaigns available</SelectItem>
+              )}
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={handleExportData}>
@@ -66,110 +125,129 @@ export const EmailAnalytics: React.FC = () => {
         </div>
       </div>
       
-      {error ? (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md">
-          {error instanceof Error ? error.message : "An error occurred while loading analytics"}
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Delivery Rate</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{deliveryStats.deliveryRate}%</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {deliveryStats.delivered} delivered out of {deliveryStats.sent} sent
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Open Rate</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{deliveryStats.openRate}%</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {deliveryStats.opened} opened out of {deliveryStats.delivered} delivered
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Click Rate</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{deliveryStats.clickRate}%</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {deliveryStats.clicked} clicks out of {deliveryStats.opened} opened
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Delivery Rate</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{deliveryStats.deliveryRate.toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {deliveryStats.delivered} delivered out of {deliveryStats.sent} sent
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Open Rate</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{deliveryStats.openRate.toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {deliveryStats.opened} opened out of {deliveryStats.delivered} delivered
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Click Rate</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{deliveryStats.clickRate.toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {deliveryStats.clicked} clicks out of {deliveryStats.opened} opened
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-          <Tabs defaultValue="engagement" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="engagement">Engagement</TabsTrigger>
-              <TabsTrigger value="clicks">Click Analytics</TabsTrigger>
-              <TabsTrigger value="devices">Devices & Platforms</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="engagement">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Email Engagement Over Time</CardTitle>
-                </CardHeader>
-                <CardContent className="pl-2">
-                  <LineChart
-                    data={engagementStats}
-                    xAxis="date"
-                    series={['sent', 'opened', 'clicked']}
-                    colors={['#94a3b8', '#0ea5e9', '#10b981']}
-                    height={300}
+      <Tabs defaultValue="engagement" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="engagement">Engagement</TabsTrigger>
+          <TabsTrigger value="clicks">Click Analytics</TabsTrigger>
+          <TabsTrigger value="devices">Devices & Platforms</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="engagement">
+          <Card>
+            <CardHeader>
+              <CardTitle>Email Engagement Over Time</CardTitle>
+            </CardHeader>
+            <CardContent className="pl-2">
+              {engagementStats && engagementStats.length > 0 ? (
+                <LineChart
+                  data={engagementStats}
+                  xAxis="date"
+                  series={['sent', 'opened', 'clicked']}
+                  colors={['#94a3b8', '#0ea5e9', '#10b981']}
+                  height={300}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[300px] text-center">
+                  <p className="text-muted-foreground mb-2">No engagement data available for this period</p>
+                  <p className="text-sm text-muted-foreground">
+                    Try selecting a different date range or campaign
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="clicks">
+          <Card>
+            <CardHeader>
+              <CardTitle>Link Click Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {clickRates && clickRates.length > 0 ? (
+                <BarChart
+                  data={clickRates}
+                  xAxis="link"
+                  yAxis="clicks"
+                  height={300}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[300px] text-center">
+                  <p className="text-muted-foreground mb-2">No click data available for this period</p>
+                  <p className="text-sm text-muted-foreground">
+                    Try selecting a different date range or campaign
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="devices">
+          <Card>
+            <CardHeader>
+              <CardTitle>Email Client Distribution</CardTitle>
+            </CardHeader>
+            <CardContent className="flex justify-center">
+              <div className="w-[300px] h-[300px]">
+                {deliveryStats.mobilePct > 0 || deliveryStats.desktopPct > 0 ? (
+                  <PieChart 
+                    data={[
+                      { name: "Mobile", value: deliveryStats.mobilePct },
+                      { name: "Desktop", value: deliveryStats.desktopPct },
+                      { name: "Webmail", value: deliveryStats.webmailPct },
+                      { name: "Other", value: deliveryStats.otherPct }
+                    ]}
                   />
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="clicks">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Link Click Distribution</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <BarChart
-                    data={clickRates}
-                    xAxis="link"
-                    yAxis="clicks"
-                    height={300}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="devices">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Email Client Distribution</CardTitle>
-                </CardHeader>
-                <CardContent className="flex justify-center">
-                  <div className="w-[300px] h-[300px]">
-                    <PieChart 
-                      data={[
-                        { name: "Mobile", value: deliveryStats.mobilePct },
-                        { name: "Desktop", value: deliveryStats.desktopPct },
-                        { name: "Webmail", value: deliveryStats.webmailPct },
-                        { name: "Other", value: deliveryStats.otherPct }
-                      ]}
-                    />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center">
+                    <p className="text-muted-foreground mb-2">No device data available</p>
+                    <p className="text-sm text-muted-foreground">
+                      Device information will appear here once emails are sent and tracked
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </>
-      )}
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
