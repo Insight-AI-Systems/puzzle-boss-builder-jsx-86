@@ -1,5 +1,11 @@
 
 import React from 'react';
+import { 
+  BarChart, Users, Puzzle, FolderKanban, FileText, 
+  Megaphone, Handshake, DollarSign, Shield, Mail, Bell, 
+  Activity, TicketCheck, Info 
+} from 'lucide-react';
+import { LucideIcon } from 'lucide-react';
 import { CategoryManagement } from "./CategoryManagement";
 import { PartnersDashboard } from "./partners/PartnersDashboard";
 import { NotificationsDashboard } from "./NotificationsDashboard";
@@ -17,7 +23,7 @@ import { FinancialDashboard } from "./financial-dashboard/FinancialDashboard";
 export interface TabDefinition {
   id: string;
   name: string;
-  icon: string;
+  icon: LucideIcon;
   component: React.ComponentType<any>;
   roles: string[];
 }
@@ -27,91 +33,91 @@ export function getTabDefinitions(): TabDefinition[] {
     {
       id: "analytics",
       name: "Analytics",
-      icon: "BarChart",
+      icon: BarChart,
       component: AnalyticsDashboard,
       roles: ["super_admin", "admin", "cfo", "category_manager"]
     },
     {
       id: "users",
       name: "Users",
-      icon: "Users",
+      icon: Users,
       component: UserManagement,
       roles: ["super_admin", "admin"]
     },
     {
       id: "puzzles",
       name: "Puzzles",
-      icon: "Puzzle",
+      icon: Puzzle,
       component: PuzzleManagement,
       roles: ["super_admin", "admin", "category_manager"]
     },
     {
       id: "categories",
       name: "Categories",
-      icon: "FolderKanban",
+      icon: FolderKanban,
       component: CategoryManagement,
       roles: ["super_admin", "admin", "category_manager"]
     },
     {
       id: "content",
       name: "Content",
-      icon: "FileText",
+      icon: FileText,
       component: ContentManagement,
       roles: ["super_admin", "social_media_manager"]
     },
     {
       id: "marketing",
       name: "Marketing",
-      icon: "Megaphone",
+      icon: Megaphone,
       component: MarketingDashboard,
       roles: ["super_admin", "admin", "social_media_manager"]
     },
     {
       id: "partners",
       name: "Partners",
-      icon: "Handshake",
+      icon: Handshake,
       component: PartnersDashboard,
       roles: ["super_admin", "admin", "partner_manager"]
     },
     {
       id: "security",
       name: "Security",
-      icon: "Shield",
+      icon: Shield,
       component: SecurityDashboard,
       roles: ["super_admin", "admin"]
     },
     {
       id: "email",
       name: "Email",
-      icon: "Mail",
+      icon: Mail,
       component: EmailManagement,
       roles: ["super_admin"]
     },
     {
       id: "notifications",
       name: "Notifications",
-      icon: "Bell",
+      icon: Bell,
       component: NotificationsDashboard,
       roles: ["super_admin", "admin"]
     },
     {
       id: "tickets",
       name: "Support Tickets",
-      icon: "TicketCheck",
+      icon: TicketCheck,
       component: TicketManagement,
       roles: ["super_admin", "admin"]
     },
     {
       id: "monitoring",
       name: "Monitoring",
-      icon: "Activity",
+      icon: Activity,
       component: MonitoringDashboard,
       roles: ["super_admin", "admin"]
     },
     {
       id: "finance",
       name: "Finance",
-      icon: "DollarSign",
+      icon: DollarSign,
       component: FinancialDashboard,
       roles: ["super_admin", "admin", "cfo"]
     }

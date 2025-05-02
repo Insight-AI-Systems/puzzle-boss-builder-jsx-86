@@ -16,7 +16,7 @@ export function testTabDefinitions() {
     
     // Check that all tabs have required properties
     const invalidTabs = tabs.filter(tab => {
-      return !tab.id || !tab.name || !tab.icon || !Array.isArray(tab.roles);
+      return !tab.id || !tab.name || !tab.icon || !Array.isArray(tab.roles) || !tab.component;
     });
     
     if (invalidTabs.length > 0) {
