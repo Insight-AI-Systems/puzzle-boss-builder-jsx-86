@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Hero from '@/components/Hero';
+import { Hero } from '@/components/Hero';
 import HowItWorks from '@/components/HowItWorks';
 import FeaturedPuzzles from '@/components/FeaturedPuzzles';
 import Categories from '@/components/Categories';
