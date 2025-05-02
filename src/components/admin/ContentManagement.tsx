@@ -18,15 +18,15 @@ export const ContentManagement: React.FC = () => {
   
   // Determine active tab based on URL path
   const getActiveTab = () => {
-    if (location.pathname.includes('/edit-page')) {
+    if (location.pathname.includes('/content/edit-page')) {
       return 'page-content';
     }
     
-    if (location.pathname.includes('/hero-content')) {
+    if (location.pathname.includes('/content/hero-content')) {
       return 'hero-content';
     }
     
-    if (location.pathname.includes('/footer-content')) {
+    if (location.pathname.includes('/content/footer-content')) {
       return 'footer-content';
     }
     
@@ -93,6 +93,27 @@ export const ContentManagement: React.FC = () => {
     );
   }
 
+  // Render appropriate content based on the current path
+  const renderTabContent = () => {
+    if (location.pathname.includes('/content/edit-page/')) {
+      return <PageContentEditor />;
+    }
+
+    // Standard tab content rendering
+    switch (activeTab) {
+      case 'site-settings':
+        return <SiteSettingsEditor />;
+      case 'hero-content':
+        return <HeroContentEditor />;
+      case 'page-content':
+        return <PageContentEditor />;
+      case 'footer-content':
+        return <FooterContentEditor />;
+      default:
+        return <SiteSettingsEditor />;
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -108,28 +129,7 @@ export const ContentManagement: React.FC = () => {
             <TabsTrigger value="footer-content">Footer</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="site-settings" className="space-y-4">
-            <SiteSettingsEditor />
-          </TabsContent>
-          
-          <TabsContent value="hero-content" className="space-y-4">
-            <HeroContentEditor />
-          </TabsContent>
-          
-          <TabsContent value="page-content" className="space-y-4">
-            <PageContentEditor />
-          </TabsContent>
-          
-          <TabsContent value="footer-content" className="space-y-4">
-            <FooterContentEditor />
-          </TabsContent>
-          
-          {/* Edit page route */}
-          {location.pathname.includes('/edit-page/') && (
-            <TabsContent value="page-content" className="space-y-4">
-              <PageContentEditor />
-            </TabsContent>
-          )}
+          {renderTabContent()}
         </Tabs>
       </CardContent>
     </Card>

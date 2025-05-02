@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useContentManagement } from '@/hooks/admin/useContentManagement';
 import { ContentEditor } from './ContentEditor';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 
 type PageTab = {
   id: string;
@@ -15,10 +15,22 @@ type PageTab = {
 };
 
 export const PageContentEditor: React.FC = () => {
-  const { pageId } = useParams<{ pageId?: string }>();
+  const { pageId } = useParams<{ pageId: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const { content, updateContent, isLoading } = useContentManagement();
-  const [activeTab, setActiveTab] = useState(pageId || 'about');
+  
+  // Extract pageId from URL if not provided via params
+  const getPageIdFromURL = () => {
+    const path = location.pathname;
+    if (path.includes('/edit-page/')) {
+      return path.split('/edit-page/')[1];
+    }
+    return null;
+  };
+  
+  const currentPageId = pageId || getPageIdFromURL() || 'about';
+  const [activeTab, setActiveTab] = useState(currentPageId);
   const [pageContent, setPageContent] = useState('');
   const [pageTitle, setPageTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -32,14 +44,11 @@ export const PageContentEditor: React.FC = () => {
   ];
 
   useEffect(() => {
-    if (pageId) {
-      setActiveTab(pageId);
+    if (currentPageId) {
+      setActiveTab(currentPageId);
+      loadPageContent(currentPageId);
     }
-  }, [pageId]);
-
-  useEffect(() => {
-    loadPageContent(activeTab);
-  }, [activeTab, content]);
+  }, [currentPageId, content]);
 
   const loadPageContent = (pageId: string) => {
     const pageData = content.find(item => 
