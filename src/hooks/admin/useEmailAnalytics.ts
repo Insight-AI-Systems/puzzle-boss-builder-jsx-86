@@ -85,17 +85,12 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
           throw engagementError;
         }
         
-        // Get link click data
-        const { data: clicksData, error: clicksError } = await supabase
-          .from('email_link_clicks')
-          .select('link, clicks');
-        
-        // Apply campaign filter conditionally
+        // Get link click data with conditional filtering
         const clicksQuery = supabase
           .from('email_link_clicks')
           .select('link, clicks');
           
-        // Only apply the filter if not showing all campaigns
+        // Only apply the campaign filter if not showing all campaigns
         if (campaignId !== 'all') {
           clicksQuery.eq('campaign_id', campaignId);
         }
@@ -151,7 +146,7 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const csvContent = "data:text/csv;charset=utf-8," + 
-        "Date,Sent,Delivered,Opened,Clicked\n" +
+        "Date,Sent,Delivered,Opened,Clicked\n" + 
         (data?.engagementData || []).map(row => 
           `${row.date},${row.sent},${row.opened},${row.clicked}`
         ).join("\n");
