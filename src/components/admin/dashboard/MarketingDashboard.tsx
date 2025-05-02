@@ -1,15 +1,18 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { MarketingTabs } from './marketing/MarketingTabs';
 
 export const MarketingDashboard: React.FC = () => (
   <Card>
     <CardHeader>
       <CardTitle>Marketing Dashboard</CardTitle>
-      <CardDescription>Social media and promotion management</CardDescription>
+      <CardDescription>Manage your marketing campaigns, SEO, social media and brand monitoring</CardDescription>
     </CardHeader>
     <CardContent>
-      <p className="text-muted-foreground">This section allows social media managers to schedule promotions and track marketing metrics.</p>
+      <MarketingTabs />
     </CardContent>
   </Card>
 );
+
+export default MarketingDashboard;
