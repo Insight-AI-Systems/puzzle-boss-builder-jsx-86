@@ -1,6 +1,6 @@
 
 // Re-export types from the main types file for convenience
-export {
+export type { 
   XeroInvoice,
   XeroBill,
   XeroTransaction,
