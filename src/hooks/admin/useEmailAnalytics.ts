@@ -59,16 +59,13 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
         const endDate = dateRange?.to || new Date();
         
         // Get delivery stats using the database function
-        // TypeScript expects 2 arguments but Supabase RPC actually takes params as a single object
-        // Using type assertion to work around the TypeScript error
-        const { data: statsData, error: statsError } = await (supabase.rpc as any)(
-          'get_email_analytics', 
-          {
+        // Using standard RPC call pattern that works with TypeScript
+        const { data: statsData, error: statsError } = await supabase
+          .rpc('get_email_analytics', {
             start_date: startDate.toISOString().split('T')[0],
             end_date: endDate.toISOString().split('T')[0],
             campaign_id_param: campaignId === 'all' ? null : campaignId
-          }
-        );
+          });
         
         if (statsError) {
           debugLog('EmailAnalytics', `Error fetching email analytics stats: ${statsError.message}`, DebugLevel.ERROR);
@@ -91,8 +88,20 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
         // Get link click data
         const { data: clicksData, error: clicksError } = await supabase
           .from('email_link_clicks')
-          .select('link, clicks')
-          .eq(campaignId !== 'all', 'campaign_id', campaignId)
+          .select('link, clicks');
+        
+        // Apply campaign filter conditionally
+        const clicksQuery = supabase
+          .from('email_link_clicks')
+          .select('link, clicks');
+          
+        // Only apply the filter if not showing all campaigns
+        if (campaignId !== 'all') {
+          clicksQuery.eq('campaign_id', campaignId);
+        }
+        
+        // Complete the query with ordering and limit
+        const { data: clicksData, error: clicksError } = await clicksQuery
           .order('clicks', { ascending: false })
           .limit(10);
           
