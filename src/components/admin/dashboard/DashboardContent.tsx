@@ -6,7 +6,6 @@ import { NoAccessMessage } from '@/components/auth/NoAccessMessage';
 import { UserProfile } from '@/types/userTypes';
 
 // Import the components needed for each tab
-import { OverviewDashboard } from "./OverviewDashboard";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { PuzzleManagement } from "@/components/admin/PuzzleManagement";
 import { MarketingDashboard } from "./MarketingDashboard";
@@ -34,14 +33,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
 
   return (
     <div>
-      {/* Overview Tab */}
-      <TabsContent value="overview" className="space-y-4">
-        {isTabAccessible('overview') ? (
-          <OverviewDashboard profile={profile} />
-        ) : (
-          <NoAccessMessage resourceName="Dashboard Overview" />
-        )}
-      </TabsContent>
+      {/* Overview tab has been removed */}
 
       {/* Users Tab */}
       <TabsContent value="users" className="space-y-4">

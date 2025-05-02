@@ -1,5 +1,4 @@
 import React from 'react';
-import { OverviewDashboard } from "./OverviewDashboard";
 import { CategoryManagement } from "./CategoryManagement";
 import { PartnersDashboard } from "./partners/PartnersDashboard";
 import { NotificationsDashboard } from "./NotificationsDashboard";
@@ -24,13 +23,6 @@ export interface TabDefinition {
 
 export function getTabDefinitions(): TabDefinition[] {
   return [
-    {
-      id: "overview",
-      name: "Overview",
-      icon: "LayoutDashboard",
-      component: OverviewDashboard,
-      roles: ["super_admin", "admin", "category_manager", "partner_manager", "cfo", "social_media_manager"]
-    },
     {
       id: "analytics",
       name: "Analytics",
