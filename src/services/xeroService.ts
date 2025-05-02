@@ -262,7 +262,11 @@ export class XeroService {
         
       if (error) throw error;
       
-      return data;
+      // Add type casting to ensure the direction field is properly typed
+      return data.map(log => ({
+        ...log,
+        direction: log.direction as 'inbound' | 'outbound'
+      }));
     } catch (error) {
       console.error('[XERO SERVICE] Error fetching sync logs:', error);
       throw error;
