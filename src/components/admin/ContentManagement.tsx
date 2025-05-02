@@ -8,11 +8,54 @@ import { HeroContentEditor } from './content/HeroContentEditor';
 import { PageContentEditor } from './content/PageContentEditor';
 import { FooterContentEditor } from './content/FooterContentEditor';
 import { useContentManagement } from '@/hooks/admin/useContentManagement';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 
 export const ContentManagement: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('site-settings');
+  const location = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { isLoading, error } = useContentManagement();
+  
+  // Determine active tab based on URL path
+  const getActiveTab = () => {
+    if (location.pathname.includes('/edit-page')) {
+      return 'page-content';
+    }
+    
+    if (location.pathname.includes('/hero-content')) {
+      return 'hero-content';
+    }
+    
+    if (location.pathname.includes('/footer-content')) {
+      return 'footer-content';
+    }
+    
+    return 'site-settings';
+  };
+  
+  const [activeTab, setActiveTab] = useState(getActiveTab());
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    
+    // Update URL when tab changes
+    switch (value) {
+      case 'site-settings':
+        navigate('/admin-dashboard/content');
+        break;
+      case 'hero-content':
+        navigate('/admin-dashboard/content/hero-content');
+        break;
+      case 'page-content':
+        navigate('/admin-dashboard/content/page-content');
+        break;
+      case 'footer-content':
+        navigate('/admin-dashboard/content/footer-content');
+        break;
+      default:
+        navigate('/admin-dashboard/content');
+    }
+  };
 
   if (error) {
     return (
@@ -51,25 +94,41 @@ export const ContentManagement: React.FC = () => {
         <CardDescription>Manage website content and appearance</CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid grid-cols-4 mb-6">
             <TabsTrigger value="site-settings">Site Settings</TabsTrigger>
             <TabsTrigger value="hero-content">Hero Section</TabsTrigger>
             <TabsTrigger value="page-content">Page Content</TabsTrigger>
             <TabsTrigger value="footer-content">Footer</TabsTrigger>
           </TabsList>
-          <TabsContent value="site-settings" className="space-y-4">
-            <SiteSettingsEditor />
-          </TabsContent>
-          <TabsContent value="hero-content" className="space-y-4">
-            <HeroContentEditor />
-          </TabsContent>
-          <TabsContent value="page-content" className="space-y-4">
-            <PageContentEditor />
-          </TabsContent>
-          <TabsContent value="footer-content" className="space-y-4">
-            <FooterContentEditor />
-          </TabsContent>
+          
+          <Routes>
+            <Route path="/" element={
+              <TabsContent value="site-settings" className="space-y-4">
+                <SiteSettingsEditor />
+              </TabsContent>
+            } />
+            <Route path="/hero-content" element={
+              <TabsContent value="hero-content" className="space-y-4">
+                <HeroContentEditor />
+              </TabsContent>
+            } />
+            <Route path="/page-content" element={
+              <TabsContent value="page-content" className="space-y-4">
+                <PageContentEditor />
+              </TabsContent>
+            } />
+            <Route path="/edit-page/:pageId" element={
+              <TabsContent value="page-content" className="space-y-4">
+                <PageContentEditor />
+              </TabsContent>
+            } />
+            <Route path="/footer-content" element={
+              <TabsContent value="footer-content" className="space-y-4">
+                <FooterContentEditor />
+              </TabsContent>
+            } />
+          </Routes>
         </Tabs>
       </CardContent>
     </Card>

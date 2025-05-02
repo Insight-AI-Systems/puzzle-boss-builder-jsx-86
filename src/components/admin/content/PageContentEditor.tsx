@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useContentManagement } from '@/hooks/admin/useContentManagement';
 import { ContentEditor } from './ContentEditor';
+import { useParams } from 'react-router-dom';
 
 type PageTab = {
   id: string;
@@ -14,8 +15,9 @@ type PageTab = {
 };
 
 export const PageContentEditor: React.FC = () => {
+  const { pageId } = useParams<{ pageId?: string }>();
   const { content, updateContent, isLoading } = useContentManagement();
-  const [activeTab, setActiveTab] = useState('about');
+  const [activeTab, setActiveTab] = useState(pageId || 'about');
   const [pageContent, setPageContent] = useState('');
   const [pageTitle, setPageTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -25,7 +27,14 @@ export const PageContentEditor: React.FC = () => {
     { id: 'terms', name: 'Terms & Conditions' },
     { id: 'privacy', name: 'Privacy Policy' },
     { id: 'faq', name: 'FAQ' },
+    { id: 'cookie-policy', name: 'Cookie Policy' },
   ];
+
+  useEffect(() => {
+    if (pageId) {
+      setActiveTab(pageId);
+    }
+  }, [pageId]);
 
   useEffect(() => {
     loadPageContent(activeTab);
@@ -75,7 +84,7 @@ export const PageContentEditor: React.FC = () => {
       </p>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 mb-6">
+        <TabsList className="grid grid-cols-5 mb-6">
           {pageTabs.map(tab => (
             <TabsTrigger key={tab.id} value={tab.id}>{tab.name}</TabsTrigger>
           ))}
@@ -121,3 +130,4 @@ export const PageContentEditor: React.FC = () => {
     </div>
   );
 };
+
