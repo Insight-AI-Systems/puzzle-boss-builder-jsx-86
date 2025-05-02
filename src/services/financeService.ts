@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   SiteIncome, 
@@ -170,8 +169,7 @@ export class FinanceService {
         .from('commission_payments')
         .select(`
           *,
-          categories:category_id (name),
-          profiles:manager_id (username, email)
+          categories:category_id (name)
         `);
       
       if (period) {
@@ -187,14 +185,24 @@ export class FinanceService {
       
       console.log(`[FINANCE SERVICE] Retrieved ${data?.length || 0} commission payment records`);
       
-      return data?.map(item => {
-        const profileData = item.profiles || {};
-        const username = typeof profileData === 'object' && 'username' in profileData 
-          ? profileData.username 
-          : 'Unknown';
-        const email = typeof profileData === 'object' && 'email' in profileData
-          ? profileData.email
-          : 'unknown@example.com';
+      // Get manager details in a separate query since the join seems problematic
+      const result: CommissionPayment[] = await Promise.all((data || []).map(async (item) => {
+        // Get manager profile if available
+        let managerName = 'Unknown';
+        let managerEmail = 'unknown@example.com';
+        
+        if (item.manager_id) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('username, email')
+            .eq('id', item.manager_id)
+            .single();
+            
+          if (profileData) {
+            managerName = profileData.username || 'Unknown';
+            managerEmail = profileData.email || 'unknown@example.com';
+          }
+        }
           
         return {
           ...item,
@@ -202,12 +210,14 @@ export class FinanceService {
           net_income: item.net_income || 0,
           commission_amount: item.commission_amount || 0,
           payment_status: item.payment_status || 'pending',
-          manager_name: username,
-          manager_email: email,
+          manager_name: managerName,
+          manager_email: managerEmail,
           category_name: item.categories?.name || 'Unknown',
           is_overdue: false
-        };
-      }) || [];
+        } as CommissionPayment;
+      }));
+      
+      return result;
     } catch (error) {
       console.error('[FINANCE SERVICE] Exception in getCommissionPayments:', error);
       throw error;
@@ -225,8 +235,7 @@ export class FinanceService {
         .from('category_managers')
         .select(`
           *,
-          categories:category_id (name),
-          profiles:user_id (username, email)
+          categories:category_id (name)
         `);
       
       if (error) {
@@ -236,20 +245,41 @@ export class FinanceService {
       
       console.log(`[FINANCE SERVICE] Retrieved ${data?.length || 0} category manager records`);
       
-      return data?.map(item => ({
-        ...item,
-        commission_percent: item.commission_percent || 0,
-        active: item.active !== false,
-        username: item.profiles?.username || 'Unknown',
-        category_name: item.categories?.name || 'Unknown',
-        profiles: {
-          username: item.profiles?.username || 'Unknown',
-          email: item.profiles?.email || 'unknown@example.com'
-        },
-        categories: {
-          name: item.categories?.name || 'Unknown'
+      // Get user profile data in a separate query
+      const result: CategoryManager[] = await Promise.all((data || []).map(async (item) => {
+        let username = 'Unknown';
+        let email = 'unknown@example.com';
+        
+        if (item.user_id) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('username, email')
+            .eq('id', item.user_id)
+            .single();
+            
+          if (profileData) {
+            username = profileData.username || 'Unknown';
+            email = profileData.email || 'unknown@example.com';
+          }
         }
-      })) || [];
+        
+        return {
+          ...item,
+          commission_percent: item.commission_percent || 0,
+          active: item.active !== false,
+          username,
+          category_name: item.categories?.name || 'Unknown',
+          profiles: {
+            username,
+            email
+          },
+          categories: {
+            name: item.categories?.name || 'Unknown'
+          }
+        } as CategoryManager;
+      }));
+      
+      return result;
     } catch (error) {
       console.error('[FINANCE SERVICE] Exception in getCategoryManagers:', error);
       throw error;
