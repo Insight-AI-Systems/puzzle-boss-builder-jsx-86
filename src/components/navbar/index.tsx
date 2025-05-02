@@ -69,13 +69,6 @@ const Navbar: React.FC = () => {
                   <LayoutDashboard className="h-5 w-5 mr-2" />
                   Admin
                 </Link>
-                <Link 
-                  to="/support-admin"
-                  className="flex items-center px-3 py-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
-                >
-                  <TicketIcon className="h-5 w-5 mr-2" />
-                  Support
-                </Link>
               </>
             )}
             {!loading && userProfile ? (
@@ -96,12 +89,6 @@ const Navbar: React.FC = () => {
                       className="flex items-center px-3 py-2 mr-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
                     >
                       <LayoutDashboard className="h-5 w-5" />
-                    </Link>
-                    <Link 
-                      to="/support-admin"
-                      className="flex items-center px-3 py-2 mr-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
-                    >
-                      <TicketIcon className="h-5 w-5" />
                     </Link>
                   </>
                 )}
