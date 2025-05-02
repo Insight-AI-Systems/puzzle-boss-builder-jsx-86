@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Menu, X, LayoutDashboard, TicketIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -13,16 +13,31 @@ import UserMenu from './UserMenu';
 import AuthButtons from './AuthButtons';
 import MobileMenu from './MobileMenu';
 import { mainNavItems } from './NavbarData';
-import { adminNavItems } from '@/config/navigation'; // Fixed import path for adminNavItems
 
 // Special admin email that should always have access
 const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 const Navbar: React.FC = () => {
-  const { profile, isLoading } = useUserProfile();
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const { user, hasRole } = useAuth();
   const isMobile = useIsMobile();
   const { isMenuOpen, toggleMenu, closeMenu } = useMobileMenu();
+  
+  // Try to use the hook but handle potential errors
+  let profileData = { profile: null, isLoading: true };
+  try {
+    profileData = useUserProfile();
+  } catch (error) {
+    console.error('Error using useUserProfile in Navbar:', error);
+  }
+  
+  useEffect(() => {
+    if (!profileData.isLoading) {
+      setUserProfile(profileData.profile);
+      setLoading(false);
+    }
+  }, [profileData.isLoading, profileData.profile]);
   
   // Enhanced admin check
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
@@ -37,9 +52,9 @@ const Navbar: React.FC = () => {
       hasAdminRole: hasRole('admin'),
       hasSuperAdminRole: hasRole('super_admin'),
       isAdminUser,
-      profileRole: profile?.role
+      profileRole: userProfile?.role
     });
-  }, [user, profile, isProtectedAdmin, hasRole, isAdminUser]);
+  }, [user, userProfile, isProtectedAdmin, hasRole, isAdminUser]);
   
   return (
     <nav className="bg-puzzle-black border-b border-puzzle-aqua/20">
@@ -58,7 +73,7 @@ const Navbar: React.FC = () => {
           
           {/* User Menu / Auth Buttons */}
           <div className="hidden md:flex items-center space-x-2">
-            {!isLoading && profile && isAdminUser && (
+            {!loading && userProfile && isAdminUser && (
               <>
                 <Link 
                   to="/admin-dashboard"
@@ -76,8 +91,8 @@ const Navbar: React.FC = () => {
                 </Link>
               </>
             )}
-            {!isLoading && profile ? (
-              <UserMenu profile={profile} />
+            {!loading && userProfile ? (
+              <UserMenu profile={userProfile} />
             ) : (
               <AuthButtons />
             )}
@@ -85,7 +100,7 @@ const Navbar: React.FC = () => {
           
           {/* Mobile Navigation Toggle */}
           <div className="md:hidden flex items-center">
-            {!isLoading && profile ? (
+            {!loading && userProfile ? (
               <>
                 {isAdminUser && (
                   <>
@@ -103,7 +118,7 @@ const Navbar: React.FC = () => {
                     </Link>
                   </>
                 )}
-                <UserMenu profile={profile} isMobile={true} />
+                <UserMenu profile={userProfile} isMobile={true} />
               </>
             ) : (
               <AuthButtons isMobile={true} />
@@ -123,7 +138,7 @@ const Navbar: React.FC = () => {
       <MobileMenu 
         isOpen={isMenuOpen} 
         navItems={mainNavItems} 
-        isLoggedIn={!!profile} 
+        isLoggedIn={!!userProfile} 
         onClose={closeMenu} 
       />
     </nav>

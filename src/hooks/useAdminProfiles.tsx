@@ -123,19 +123,59 @@ export function useAdminProfiles(
       .sort((a, b) => a.month.localeCompare(b.month));
   };
 
-  const usersQuery = useQuery({
-    queryKey: ['all-users', page, pageSize, options, lastLoginSortDirection],
-    queryFn: fetchUsers,
-    enabled: !!currentUserId && isAdmin,
-  });
+  // Use try-catch to handle potential React Query context errors
+  let usersQuery;
+  try {
+    usersQuery = useQuery({
+      queryKey: ['all-users', page, pageSize, options, lastLoginSortDirection],
+      queryFn: fetchUsers,
+      enabled: !!currentUserId && isAdmin,
+    });
+  } catch (error) {
+    console.error('React Query error in useAdminProfiles:', error);
+    // Provide a fallback empty result if useQuery fails
+    usersQuery = {
+      data: { 
+        data: [], 
+        count: 0, 
+        countries: [], 
+        categories: [],
+        genders: [],
+        signup_stats: [] 
+      },
+      isLoading: false,
+      error: error,
+      refetch: () => Promise.resolve()
+    };
+  }
 
-  const { updateUserRole, bulkUpdateRoles } = useRoleManagement();
-  const { sendBulkEmail } = useEmailManagement();
+  // Get role management functions safely
+  let roleManagementFns;
+  try {
+    roleManagementFns = useRoleManagement();
+  } catch (error) {
+    console.error('React Query error in useRoleManagement:', error);
+    roleManagementFns = {
+      updateUserRole: null,
+      bulkUpdateRoles: null
+    };
+  }
+
+  // Get email management functions safely
+  let emailManagementFns;
+  try {
+    emailManagementFns = useEmailManagement();
+  } catch (error) {
+    console.error('React Query error in useEmailManagement:', error);
+    emailManagementFns = {
+      sendBulkEmail: null
+    };
+  }
 
   return {
     ...usersQuery,
-    updateUserRole,
-    bulkUpdateRoles,
-    sendBulkEmail
+    updateUserRole: roleManagementFns?.updateUserRole,
+    bulkUpdateRoles: roleManagementFns?.bulkUpdateRoles,
+    sendBulkEmail: emailManagementFns?.sendBulkEmail
   };
 }
