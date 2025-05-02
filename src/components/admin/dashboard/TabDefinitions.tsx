@@ -1,5 +1,5 @@
 
-import { MailsIcon, BarChart, Users, ShoppingCart, Settings, Calendar } from 'lucide-react';
+import { MailsIcon, BarChart, Users, ShoppingCart, Settings, Calendar, FolderKanban } from 'lucide-react';
 
 export interface TabDefinition {
   id: string;
@@ -26,6 +26,12 @@ export function getTabDefinitions(): TabDefinition[] {
       id: "puzzles",
       label: "Puzzle Management",
       icon: <ShoppingCart className="h-4 w-4" />,
+      roles: ["super_admin", "admin", "category_manager"]
+    },
+    {
+      id: "categories",
+      label: "Category Management",
+      icon: <FolderKanban className="h-4 w-4" />,
       roles: ["super_admin", "admin", "category_manager"]
     },
     {
