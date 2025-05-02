@@ -539,6 +539,36 @@ export type Database = {
           },
         ]
       }
+      integration_webhooks: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          provider: string
+          type: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          provider: string
+          type: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          provider?: string
+          type?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       invoice_templates: {
         Row: {
           content: string
@@ -1611,6 +1641,81 @@ export type Database = {
         }
         Relationships: []
       }
+      subscribers: {
+        Row: {
+          created_at: string
+          credits: number | null
+          email: string
+          id: string
+          stripe_customer_id: string | null
+          subscribed: boolean
+          subscription_end: string | null
+          subscription_tier: string | null
+          updated_at: string
+          user_id: string
+          xero_customer_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          credits?: number | null
+          email: string
+          id?: string
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id: string
+          xero_customer_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          credits?: number | null
+          email?: string
+          id?: string
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id?: string
+          xero_customer_id?: string | null
+        }
+        Relationships: []
+      }
+      sync_logs: {
+        Row: {
+          created_at: string
+          direction: string
+          error_message: string | null
+          id: string
+          integration: string
+          record_id: string
+          record_type: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          direction: string
+          error_message?: string | null
+          id?: string
+          integration: string
+          record_id: string
+          record_type: string
+          status: string
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          error_message?: string | null
+          id?: string
+          integration?: string
+          record_id?: string
+          record_type?: string
+          status?: string
+        }
+        Relationships: []
+      }
       tickets: {
         Row: {
           assigned_to: string | null
@@ -1794,6 +1899,327 @@ export type Database = {
           session_token?: string
           user_agent?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      webhook_logs: {
+        Row: {
+          created_at: string
+          event_type: string | null
+          id: string
+          processed: boolean | null
+          provider: string
+          raw_data: Json | null
+        }
+        Insert: {
+          created_at?: string
+          event_type?: string | null
+          id?: string
+          processed?: boolean | null
+          provider: string
+          raw_data?: Json | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string | null
+          id?: string
+          processed?: boolean | null
+          provider?: string
+          raw_data?: Json | null
+        }
+        Relationships: []
+      }
+      xero_account_link: {
+        Row: {
+          created_at: string
+          id: string
+          last_synced: string | null
+          status: string | null
+          sync_status: string | null
+          user_id: string
+          xero_account_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_synced?: string | null
+          status?: string | null
+          sync_status?: string | null
+          user_id: string
+          xero_account_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_synced?: string | null
+          status?: string | null
+          sync_status?: string | null
+          user_id?: string
+          xero_account_id?: string
+        }
+        Relationships: []
+      }
+      xero_accounts: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          last_synced: string
+          name: string
+          raw_data: Json | null
+          status: string
+          type: string
+          xero_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          last_synced?: string
+          name: string
+          raw_data?: Json | null
+          status: string
+          type: string
+          xero_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          last_synced?: string
+          name?: string
+          raw_data?: Json | null
+          status?: string
+          type?: string
+          xero_id?: string
+        }
+        Relationships: []
+      }
+      xero_bills: {
+        Row: {
+          bill_number: string
+          created_at: string
+          date: string
+          due_date: string | null
+          id: string
+          last_synced: string
+          raw_data: Json | null
+          status: string
+          total: number
+          vendor_name: string | null
+          xero_id: string
+        }
+        Insert: {
+          bill_number: string
+          created_at?: string
+          date: string
+          due_date?: string | null
+          id?: string
+          last_synced?: string
+          raw_data?: Json | null
+          status: string
+          total: number
+          vendor_name?: string | null
+          xero_id: string
+        }
+        Update: {
+          bill_number?: string
+          created_at?: string
+          date?: string
+          due_date?: string | null
+          id?: string
+          last_synced?: string
+          raw_data?: Json | null
+          status?: string
+          total?: number
+          vendor_name?: string | null
+          xero_id?: string
+        }
+        Relationships: []
+      }
+      xero_contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_customer: boolean | null
+          is_supplier: boolean | null
+          last_synced: string
+          name: string
+          phone: string | null
+          raw_data: Json | null
+          status: string | null
+          xero_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_customer?: boolean | null
+          is_supplier?: boolean | null
+          last_synced?: string
+          name: string
+          phone?: string | null
+          raw_data?: Json | null
+          status?: string | null
+          xero_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_customer?: boolean | null
+          is_supplier?: boolean | null
+          last_synced?: string
+          name?: string
+          phone?: string | null
+          raw_data?: Json | null
+          status?: string | null
+          xero_id?: string
+        }
+        Relationships: []
+      }
+      xero_integration_settings: {
+        Row: {
+          created_at: string
+          id: string
+          setting_key: string
+          setting_value: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          setting_key: string
+          setting_value?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          setting_key?: string
+          setting_value?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      xero_invoices: {
+        Row: {
+          contact_name: string | null
+          created_at: string
+          date: string
+          due_date: string | null
+          id: string
+          invoice_number: string
+          last_synced: string
+          raw_data: Json | null
+          status: string
+          total: number
+          xero_id: string
+        }
+        Insert: {
+          contact_name?: string | null
+          created_at?: string
+          date: string
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          last_synced?: string
+          raw_data?: Json | null
+          status: string
+          total: number
+          xero_id: string
+        }
+        Update: {
+          contact_name?: string | null
+          created_at?: string
+          date?: string
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          last_synced?: string
+          raw_data?: Json | null
+          status?: string
+          total?: number
+          xero_id?: string
+        }
+        Relationships: []
+      }
+      xero_oauth_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string
+          id: string
+          refresh_token: string
+          scope: string | null
+          tenant_id: string
+          token_type: string
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          refresh_token: string
+          scope?: string | null
+          tenant_id: string
+          token_type?: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          refresh_token?: string
+          scope?: string | null
+          tenant_id?: string
+          token_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      xero_transactions: {
+        Row: {
+          account_code: string | null
+          amount: number
+          contact_name: string | null
+          created_at: string
+          date: string
+          description: string | null
+          id: string
+          last_synced: string
+          raw_data: Json | null
+          type: string
+          xero_id: string
+        }
+        Insert: {
+          account_code?: string | null
+          amount: number
+          contact_name?: string | null
+          created_at?: string
+          date: string
+          description?: string | null
+          id?: string
+          last_synced?: string
+          raw_data?: Json | null
+          type: string
+          xero_id: string
+        }
+        Update: {
+          account_code?: string | null
+          amount?: number
+          contact_name?: string | null
+          created_at?: string
+          date?: string
+          description?: string | null
+          id?: string
+          last_synced?: string
+          raw_data?: Json | null
+          type?: string
+          xero_id?: string
         }
         Relationships: []
       }

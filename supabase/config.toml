@@ -38,3 +38,15 @@ enable_signup = true
 [functions]
 [functions.xero-webhook]
 verify_jwt = false
+
+[functions.xero-auth]
+verify_jwt = false
+
+[functions.xero-callback]
+verify_jwt = false
+
+[functions.xero-refresh-token]
+verify_jwt = false
+
+[functions.xero-sync]
+verify_jwt = false

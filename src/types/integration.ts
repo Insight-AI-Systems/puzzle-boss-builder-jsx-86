@@ -60,6 +60,44 @@ export interface XeroTransaction {
   created_at: string;
 }
 
+export interface XeroContact {
+  id: string;
+  xero_id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  status?: string;
+  is_customer: boolean;
+  is_supplier: boolean;
+  raw_data: any;
+  last_synced: string;
+  created_at: string;
+}
+
+export interface XeroAccount {
+  id: string;
+  xero_id: string;
+  code: string;
+  name: string;
+  type: string;
+  status: string;
+  raw_data: any;
+  last_synced: string;
+  created_at: string;
+}
+
+export interface XeroOAuthToken {
+  id: string;
+  tenant_id: string;
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_at: string;
+  scope?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface SyncResult {
   success: boolean;
   message: string;
@@ -75,4 +113,10 @@ export interface SyncLog {
   status: 'success' | 'failed';
   error_message?: string;
   created_at: string;
+}
+
+export interface XeroAuthStatus {
+  connected: boolean;
+  expiresAt?: string | null;
+  tenantId?: string | null;
 }
