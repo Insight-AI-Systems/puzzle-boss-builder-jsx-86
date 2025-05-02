@@ -58,10 +58,27 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
               : 'text-muted-foreground hover:text-puzzle-white hover:bg-white/10'
           }`}
           onClick={onClick}
+          data-testid={`nav-link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
         >
           {item.name}
         </Link>
       ))}
+
+      {/* Direct link to CFO Dashboard for easy access */}
+      {(isAdmin || hasRole('cfo') || hasRole('super_admin')) && (
+        <Link
+          to="/cfo-dashboard"
+          className={`${className} ${
+            isLinkActive('/cfo-dashboard')
+              ? 'text-puzzle-aqua bg-puzzle-aqua/10'
+              : 'text-muted-foreground hover:text-puzzle-white hover:bg-white/10'
+          }`}
+          onClick={onClick}
+          data-testid="nav-link-cfo-dashboard"
+        >
+          CFO Dashboard
+        </Link>
+      )}
     </>
   );
 };

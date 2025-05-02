@@ -1,58 +1,80 @@
-
 import React from 'react';
+import { SparklesIcon } from '@heroicons/react/20/solid'
+import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { Button } from './ui/button';
-import { ArrowRight } from 'lucide-react';
-import { useHeroPuzzle } from '@/hooks/useHeroPuzzle';
-import PuzzleEnginePlayground from './puzzles/playground/PuzzleEnginePlayground';
 
-const Hero: React.FC = () => {
-  const { puzzleConfig } = useHeroPuzzle();
-
+export const Hero = () => {
+  const { hasRole, isAuthenticated } = useAuth();
+  const showCFOLink = isAuthenticated && (hasRole('super_admin') || hasRole('admin') || hasRole('cfo'));
+  
   return (
-    <section className="py-12 md:py-20">
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row items-center gap-10">
-          <div className="w-full md:w-1/2 text-center md:text-left">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-              <span className="text-puzzle-white">Race to solve.</span>
-              <br />
-              <span className="text-puzzle-aqua">Win amazing</span>
-              <br />
-              <span className="text-puzzle-gold">prizes.</span>
-            </h1>
+    <div className="relative bg-black overflow-hidden">
+      <div className="mx-auto max-w-7xl">
+        <div className="relative z-10 bg-black pb-8 sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
+          <svg
+            className="absolute inset-y-0 right-0 hidden h-full w-48 translate-x-1/2 transform text-black lg:block"
+            fill="currentColor"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <polygon points="50,0 100,0 50,100 0,100" />
+          </svg>
 
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-md mx-auto md:mx-0">
-              Join thousands of puzzle enthusiasts competing to win premium brand-name prizes through skill-based challenges.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-              <Button className="bg-puzzle-aqua text-puzzle-black hover:bg-puzzle-aqua/90 text-lg px-6 py-3 h-auto" asChild>
-                <Link to="/auth?signup=true">Join Now</Link>
-              </Button>
-              <Button variant="outline" className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold/10 text-lg px-6 py-3 h-auto" asChild>
-                <Link to="/about">
-                  Learn More <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+          <div className="relative pt-6 px-4 sm:px-6 lg:px-8">
+            {/* Leave Navbar Here - Important for Layout */}
+          </div>
+
+          <main className="mx-auto mt-10 max-w-screen-xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
+            <div className="sm:text-center lg:text-left">
+              <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl">
+                <span className="block xl:inline font-game">Unleash Your Inner</span>
+                <span className="block text-puzzle-gold xl:inline font-game">Puzzle Master</span>
+              </h1>
+              <p className="mt-3 text-base text-gray-300 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                Dive into a world of brain-teasing challenges and unlock amazing prizes.
+                Solve puzzles, earn rewards, and join a community of puzzle enthusiasts.
+              </p>
+              <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
+                <div className="rounded-md shadow">
+                  <Link
+                    to="/puzzles"
+                    className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-black bg-puzzle-gold hover:bg-puzzle-gold/80 md:py-4 md:text-lg md:px-10"
+                  >
+                    Explore Puzzles
+                  </Link>
+                </div>
+                <div className="mt-3 sm:mt-0 sm:ml-3">
+                  <Link
+                    to="/how-it-works"
+                    className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-puzzle-aqua hover:bg-puzzle-aqua/80 md:py-4 md:text-lg md:px-10"
+                  >
+                    How It Works
+                  </Link>
+                </div>
+              </div>
             </div>
-          </div>
-          
-          <div className="w-full md:w-1/2">
-            <PuzzleEnginePlayground 
-              heroMode={true} 
-              isCondensed={true}
-              selectedImage={puzzleConfig?.image_url || "mountain"}
-              difficulty={puzzleConfig?.difficulty || "easy"}
-              miniRows={puzzleConfig?.difficulty === 'easy' ? 3 : puzzleConfig?.difficulty === 'hard' ? 5 : 4}
-              miniColumns={puzzleConfig?.difficulty === 'easy' ? 3 : puzzleConfig?.difficulty === 'hard' ? 5 : 4}
-              showNumbersToggle={true}
-            />
-          </div>
+          </main>
         </div>
       </div>
-    </section>
+      <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
+        <img
+          className="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full"
+          src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2850&q=80"
+          alt=""
+        />
+      </div>
+      
+      {showCFOLink && (
+        <div className="absolute top-4 right-4 z-10">
+          <Link 
+            to="/cfo-dashboard"
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-puzzle-gold hover:bg-puzzle-gold/80"
+          >
+            Access CFO Dashboard
+          </Link>
+        </div>
+      )}
+    </div>
   );
 };
-
-export default Hero;
