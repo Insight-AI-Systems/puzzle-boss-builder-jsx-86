@@ -1,1 +1,11 @@
+
 project_id = "vcacfysfjgoahledqdwa"
+
+[functions.send-email]
+verify_jwt = true
+
+[functions.count-segmented-users]
+verify_jwt = true
+
+[functions.schedule-email-campaign]
+verify_jwt = true
