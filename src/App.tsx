@@ -24,6 +24,7 @@ import Auth from './pages/Auth'; // Added Auth import
 // Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
 import AdminCFOPage from './pages/AdminCFOPage';
+import SupportAdmin from './pages/SupportAdmin';
 
 // Layouts
 import { MainLayout } from './components/MainLayout';
@@ -60,6 +61,7 @@ function App() {
         <Route element={<AdminLayout />}>
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/cfo-dashboard" element={<AdminCFOPage />} />
+          <Route path="/support-admin" element={<SupportAdmin />} />
         </Route>
       </Routes>
     </Router>

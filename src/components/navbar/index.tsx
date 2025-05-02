@@ -24,7 +24,7 @@ const Navbar: React.FC = () => {
   const isMobile = useIsMobile();
   const { isMenuOpen, toggleMenu, closeMenu } = useMobileMenu();
   
-  // Try to use the hook but handle potential errors
+  // Handle potential errors from useUserProfile
   let profileData = { profile: null, isLoading: true };
   try {
     profileData = useUserProfile();
@@ -42,19 +42,6 @@ const Navbar: React.FC = () => {
   // Enhanced admin check
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
   const isAdminUser = isProtectedAdmin || hasRole('admin') || hasRole('super_admin');
-  
-  // Add debug logging to help troubleshoot
-  useEffect(() => {
-    console.log('Navbar Auth Status:', {
-      isAuthenticated: !!user,
-      userEmail: user?.email,
-      isProtectedAdmin,
-      hasAdminRole: hasRole('admin'),
-      hasSuperAdminRole: hasRole('super_admin'),
-      isAdminUser,
-      profileRole: userProfile?.role
-    });
-  }, [user, userProfile, isProtectedAdmin, hasRole, isAdminUser]);
   
   return (
     <nav className="bg-puzzle-black border-b border-puzzle-aqua/20">

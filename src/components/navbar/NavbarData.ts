@@ -20,6 +20,11 @@ export const mainNavItems: MainNavItem[] = [
   { name: 'How It Works', path: '/how-it-works' },
   { name: 'Contact', path: '/contact' },
   {
+    name: 'Admin Dashboard',
+    path: '/admin-dashboard',
+    roles: ['super_admin', 'admin']
+  },
+  {
     name: 'CFO Portal',
     path: '/cfo-dashboard',
     roles: ['cfo', 'super_admin', 'admin']

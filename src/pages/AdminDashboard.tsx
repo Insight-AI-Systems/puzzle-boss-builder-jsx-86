@@ -8,7 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminAccessCheck } from '@/components/admin/dashboard/AdminAccessCheck';
 import { AdminToolbar } from '@/components/admin/dashboard/AdminToolbar';
-import { MainLayout } from '@/components/MainLayout';
 
 // Special admin email that should always have access
 const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
@@ -72,11 +71,9 @@ const AdminDashboard = () => {
 
   if (isLoading) {
     return (
-      <MainLayout>
-        <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
-        </div>
-      </MainLayout>
+      <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+      </div>
     );
   }
 
@@ -87,14 +84,12 @@ const AdminDashboard = () => {
       !hasRole('cfo') && 
       !isLoading) {
     return (
-      <MainLayout>
-        <AdminAccessCheck 
-          user={user}
-          userRole={userRole}
-          hasRole={hasRole}
-          profile={profile}
-        />
-      </MainLayout>
+      <AdminAccessCheck 
+        user={user}
+        userRole={userRole}
+        hasRole={hasRole}
+        profile={profile}
+      />
     );
   }
 
@@ -104,25 +99,23 @@ const AdminDashboard = () => {
       hasRole('partner_manager') || 
       hasRole('cfo')) {
     return (
-      <MainLayout>
-        <div className="min-h-screen bg-puzzle-black p-6">
-          <div className="max-w-6xl mx-auto space-y-8">
-            <h1 className="text-3xl font-game text-puzzle-aqua">
-              {isProtectedAdmin || isSuperAdmin ? 'Admin Dashboard' : `${profile?.role?.replace('_', ' ')} Dashboard`}
-            </h1>
+      <div className="min-h-screen bg-puzzle-black p-6">
+        <div className="max-w-6xl mx-auto space-y-8">
+          <h1 className="text-3xl font-game text-puzzle-aqua">
+            {isProtectedAdmin || isSuperAdmin ? 'Admin Dashboard' : `${profile?.role?.replace('_', ' ')} Dashboard`}
+          </h1>
 
-            <AdminToolbar showDebugInfo={showDebugInfo} />
-            
-            {debugInfo && (
-              <pre className="mt-4 p-4 bg-black/30 text-white rounded-md overflow-x-auto text-xs">
-                {debugInfo}
-              </pre>
-            )}
+          <AdminToolbar showDebugInfo={showDebugInfo} />
+          
+          {debugInfo && (
+            <pre className="mt-4 p-4 bg-black/30 text-white rounded-md overflow-x-auto text-xs">
+              {debugInfo}
+            </pre>
+          )}
 
-            <RoleBasedDashboard />
-          </div>
+          <RoleBasedDashboard />
         </div>
-      </MainLayout>
+      </div>
     );
   }
 
