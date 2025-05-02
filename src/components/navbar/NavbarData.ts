@@ -18,7 +18,7 @@ export const mainNavItems: MainNavItem[] = [
   { name: 'Prizes Won', path: '/prizes-won' },
   { name: 'Support', path: '/support' },
   { name: 'How It Works', path: '/how-it-works' },
-  { name: 'Puzzle Demo', path: '/puzzle-demo' },
+  { name: 'Contact', path: '/contact' },
   {
     name: 'CFO Portal',
     path: '/cfo-dashboard',
