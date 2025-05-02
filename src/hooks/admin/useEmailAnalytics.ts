@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,7 +60,7 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
         // Get delivery stats using the database function
         // Fixed: Using a single object parameter as expected by the RPC function
         const { data: statsData, error: statsError } = await supabase.rpc(
-          'get_email_analytics',
+          'get_email_analytics', 
           { 
             start_date: startDate.toISOString().split('T')[0],
             end_date: endDate.toISOString().split('T')[0],
