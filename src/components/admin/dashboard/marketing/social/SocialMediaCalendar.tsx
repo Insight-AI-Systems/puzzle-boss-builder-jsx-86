@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,7 @@ export const SocialMediaCalendar: React.FC = () => {
     {
       id: '1',
       title: 'New Puzzle Launch',
-      content: 'We're excited to launch our new puzzle collection! Check it out now.',
+      content: "We're excited to launch our new puzzle collection! Check it out now.",
       platform: 'instagram',
       date: new Date(),
       time: '10:00',
