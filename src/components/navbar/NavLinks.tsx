@@ -18,7 +18,7 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
   
   const isLinkActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
-    return location.pathname === path;
+    return location.pathname.startsWith(path);
   };
 
   const shouldShowLink = (item: MainNavItem) => {

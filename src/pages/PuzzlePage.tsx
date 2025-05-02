@@ -1,13 +1,10 @@
 
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 
+// This component is now deprecated, redirecting to the Puzzles page
 const PuzzlePage = () => {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <h1 className="text-3xl font-bold mb-4">Puzzle Game Area</h1>
-      <p className="text-gray-600">Puzzle game will be implemented here.</p>
-    </div>
-  );
+  return <Navigate to="/puzzles" replace />;
 };
 
 export default PuzzlePage;
