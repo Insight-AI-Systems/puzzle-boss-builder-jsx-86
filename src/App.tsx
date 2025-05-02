@@ -20,6 +20,7 @@ import Careers from './pages/Careers';
 import Press from './pages/Press';
 import PuzzlePage from './pages/PuzzlePage'; // Keep for backward compatibility
 import Auth from './pages/Auth'; // Added Auth import
+import Categories from './components/Categories'; // Import the existing Categories component
 
 // Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
@@ -42,6 +43,7 @@ function App() {
           <Route path="/prizes-won" element={<PrizesWonPage />} />
           <Route path="/support" element={<SupportPage />} />
           <Route path="/how-it-works" element={<HowItWorksPage />} />
+          <Route path="/categories" element={<Categories />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<About />} />
           <Route path="/faq" element={<FAQ />} />
