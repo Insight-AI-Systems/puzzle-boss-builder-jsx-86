@@ -8,7 +8,8 @@ import {
   XeroContact,
   XeroOAuthToken,
   SyncResult,
-  XeroAuthStatus
+  XeroAuthStatus,
+  SyncLog
 } from '@/types/integration';
 
 /**
@@ -29,7 +30,8 @@ export class XeroService {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.session()?.access_token}`
+          // Fixed session() access by using getSession() which is available
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         },
       });
       

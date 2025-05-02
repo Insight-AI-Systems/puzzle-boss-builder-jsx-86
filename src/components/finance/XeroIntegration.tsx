@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -466,4 +465,5 @@ const XeroIntegration: React.FC = () => {
   );
 };
 
+// Changed to default export to fix the import error in CFODashboard.tsx
 export default XeroIntegration;

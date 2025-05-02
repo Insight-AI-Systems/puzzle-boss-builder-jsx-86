@@ -4,7 +4,8 @@ import { MainLayout } from "@/components/MainLayout";
 import { FinanceDashboard } from "@/components/finance/FinanceDashboard";
 import { FinanceProvider } from "@/contexts/FinanceContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { XeroIntegration } from "@/components/finance/XeroIntegration";
+// Fixed import to use default export instead of named export
+import XeroIntegration from "@/components/finance/XeroIntegration";
 
 const CFODashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
