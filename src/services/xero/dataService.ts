@@ -146,10 +146,11 @@ export class XeroDataService {
       
       if (error) throw error;
       
-      // Cast the direction field to ensure TypeScript compatibility
+      // Cast both direction and status fields to ensure TypeScript compatibility
       const typedData = data?.map(item => ({
         ...item,
-        direction: item.direction as "inbound" | "outbound"
+        direction: item.direction as "inbound" | "outbound",
+        status: item.status as "success" | "failed"
       })) || [];
       
       return typedData;
