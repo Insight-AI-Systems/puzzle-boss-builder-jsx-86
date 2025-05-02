@@ -11,14 +11,14 @@ interface DeliveryStats {
   delivered: number;
   opened: number;
   clicked: number;
-  deliveryRate: number;
-  openRate: number;
-  clickRate: number;
-  bounceRate: number;
-  mobilePct: number;
-  desktopPct: number;
-  webmailPct: number;
-  otherPct: number;
+  delivery_rate: number;  // Changed from deliveryRate to match DB
+  open_rate: number;      // Changed from openRate to match DB
+  click_rate: number;     // Changed from clickRate to match DB
+  bounce_rate: number;    // Changed from bounceRate to match DB
+  mobile_pct: number;     // Changed from mobilePct to match DB
+  desktop_pct: number;    // Changed from desktopPct to match DB
+  webmail_pct: number;    // Changed from webmailPct to match DB
+  other_pct: number;      // Changed from otherPct to match DB
 }
 
 interface Campaign {
@@ -35,14 +35,14 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
     delivered: 0,
     opened: 0,
     clicked: 0,
-    deliveryRate: 0,
-    openRate: 0,
-    clickRate: 0,
-    bounceRate: 0,
-    mobilePct: 0,
-    desktopPct: 0,
-    webmailPct: 0,
-    otherPct: 0
+    delivery_rate: 0,
+    open_rate: 0,
+    click_rate: 0,
+    bounce_rate: 0,
+    mobile_pct: 0,
+    desktop_pct: 0,
+    webmail_pct: 0,
+    other_pct: 0
   };
 
   // Query for analytics data

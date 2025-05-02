@@ -131,7 +131,7 @@ export const EmailAnalytics: React.FC = () => {
             <CardTitle className="text-sm font-medium">Delivery Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{deliveryStats.deliveryRate.toFixed(1)}%</div>
+            <div className="text-3xl font-bold">{deliveryStats.delivery_rate.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground mt-1">
               {deliveryStats.delivered} delivered out of {deliveryStats.sent} sent
             </p>
@@ -142,7 +142,7 @@ export const EmailAnalytics: React.FC = () => {
             <CardTitle className="text-sm font-medium">Open Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{deliveryStats.openRate.toFixed(1)}%</div>
+            <div className="text-3xl font-bold">{deliveryStats.open_rate.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground mt-1">
               {deliveryStats.opened} opened out of {deliveryStats.delivered} delivered
             </p>
@@ -153,7 +153,7 @@ export const EmailAnalytics: React.FC = () => {
             <CardTitle className="text-sm font-medium">Click Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{deliveryStats.clickRate.toFixed(1)}%</div>
+            <div className="text-3xl font-bold">{deliveryStats.click_rate.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground mt-1">
               {deliveryStats.clicked} clicks out of {deliveryStats.opened} opened
             </p>
@@ -226,13 +226,13 @@ export const EmailAnalytics: React.FC = () => {
             </CardHeader>
             <CardContent className="flex justify-center">
               <div className="w-[300px] h-[300px]">
-                {deliveryStats.mobilePct > 0 || deliveryStats.desktopPct > 0 ? (
+                {deliveryStats.mobile_pct > 0 || deliveryStats.desktop_pct > 0 ? (
                   <PieChart 
                     data={[
-                      { name: "Mobile", value: deliveryStats.mobilePct },
-                      { name: "Desktop", value: deliveryStats.desktopPct },
-                      { name: "Webmail", value: deliveryStats.webmailPct },
-                      { name: "Other", value: deliveryStats.otherPct }
+                      { name: "Mobile", value: deliveryStats.mobile_pct },
+                      { name: "Desktop", value: deliveryStats.desktop_pct },
+                      { name: "Webmail", value: deliveryStats.webmail_pct },
+                      { name: "Other", value: deliveryStats.other_pct }
                     ]}
                   />
                 ) : (

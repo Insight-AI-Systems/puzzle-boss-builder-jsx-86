@@ -3,6 +3,7 @@ export type EmailTemplate = {
   id: string;
   name: string;
   subject: string;
+  content: string; // Added missing content property
   type: 'verification' | 'notification' | 'marketing' | 'system' | 'membership';
   status: 'active' | 'draft' | 'archived';
   created_at: string;
