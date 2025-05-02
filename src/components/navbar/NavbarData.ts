@@ -14,7 +14,7 @@ export interface MainNavItem extends NavItem {
 
 export const mainNavItems: MainNavItem[] = [
   { name: 'Home', path: '/' },
-  { name: 'Puzzles', path: '/puzzles' },  // Updated to match route path in Puzzles.tsx
+  { name: 'Puzzles', path: '/puzzles' },
   { name: 'Prizes Won', path: '/prizes-won' },
   { name: 'Support', path: '/support' },
   { name: 'How It Works', path: '/how-it-works' },

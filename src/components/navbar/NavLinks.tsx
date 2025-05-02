@@ -17,7 +17,11 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
   const { hasRole, isAdmin } = useAuth();
   
   const isLinkActive = (path: string) => {
+    // Special case for home path
     if (path === '/') return location.pathname === '/';
+    
+    // For other paths, check if the current path starts with the link path
+    // This handles nested routes while still highlighting the parent nav item
     return location.pathname.startsWith(path);
   };
 
@@ -25,12 +29,14 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
     if (!item.roles) return true;
     if (!profile) return false;
     
-    // Add debug logging to help troubleshoot role issues
+    // For debugging
     console.log('NavLink check:', {
       linkTitle: item.name,
       linkPath: item.path,
       requiredRoles: item.roles,
       userRole: profile.role,
+      currentPath: location.pathname,
+      isMatch: isLinkActive(item.path),
       isAdmin,
       hasAdminRole: hasRole('admin'),
       hasSuperAdminRole: hasRole('super_admin')

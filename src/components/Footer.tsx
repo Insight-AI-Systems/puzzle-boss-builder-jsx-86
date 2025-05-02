@@ -10,7 +10,9 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
             <h3 className="font-game text-xl mb-4 text-puzzle-white">
-              <span className="text-puzzle-aqua">The</span> Puzzle <span className="text-puzzle-gold">Boss</span>
+              <span className="text-puzzle-aqua">The</span>{' '}
+              <span className="text-puzzle-white">Puzzle</span>{' '}
+              <span className="text-puzzle-gold">Boss</span>
             </h3>
             <p className="text-muted-foreground mb-4">
               The premier platform for puzzle competitions with premium brand-name prizes.

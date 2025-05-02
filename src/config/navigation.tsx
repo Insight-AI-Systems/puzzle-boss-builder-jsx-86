@@ -30,12 +30,12 @@ export const mainNavItems: NavItem[] = [
   {
     title: "Puzzles",
     icon: Puzzle,
-    href: "/puzzle",
+    href: "/puzzles", // Updated to match route in App.tsx
   },
   {
     title: "Prizes",
     icon: Trophy,
-    href: "/prizes-won",
+    href: "/prizes-won", // Updated to match route in App.tsx
   },
   {
     title: "How It Works",
