@@ -75,7 +75,7 @@ const Auth = () => {
                 : 'Sign in to continue to your account'}
           </p>
         </div>
-        <AuthForm initialView={isInVerificationFlow ? 'signin' : undefined} />
+        <AuthForm initialView={defaultView as any} />
       </div>
     </div>
   );

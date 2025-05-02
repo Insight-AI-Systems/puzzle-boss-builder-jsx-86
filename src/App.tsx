@@ -19,6 +19,7 @@ import Partnerships from './pages/Partnerships';
 import Careers from './pages/Careers';
 import Press from './pages/Press';
 import PuzzlePage from './pages/PuzzlePage'; // Keep for backward compatibility
+import Auth from './pages/Auth'; // Added Auth import
 
 // Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
@@ -51,6 +52,9 @@ function App() {
           <Route path="/careers" element={<Careers />} />
           <Route path="/press" element={<Press />} />
         </Route>
+
+        {/* Auth page with no layout */}
+        <Route path="/auth" element={<Auth />} />
 
         {/* Admin Pages using AdminLayout with Outlet */}
         <Route element={<AdminLayout />}>

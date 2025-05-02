@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AuthView } from '@/types/auth';
 
-export function useAuthView() {
+export function useAuthView(initialView?: AuthView) {
   const [searchParams] = useSearchParams();
-  const [currentView, setCurrentView] = useState<AuthView>('signin');
+  const [currentView, setCurrentView] = useState<AuthView>(initialView || 'signin');
   const [lastEnteredEmail, setLastEnteredEmail] = useState<string>('');
 
   // Check for verification success
@@ -29,11 +29,12 @@ export function useAuthView() {
     }
     
     // Check for signup parameter
-    if (searchParams.get('signup') === 'true') {
+    if (initialView) {
+      setCurrentView(initialView);
+    } else if (searchParams.get('signup') === 'true') {
       setCurrentView('signup');
-      return;
     }
-  }, [searchParams]);
+  }, [searchParams, initialView]);
 
   return {
     currentView,

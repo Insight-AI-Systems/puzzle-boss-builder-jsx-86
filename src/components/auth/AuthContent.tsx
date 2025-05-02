@@ -5,7 +5,7 @@ import { ResetPasswordRequestView } from './views/ResetPasswordRequestView';
 import { ResetPasswordConfirmView } from './views/ResetPasswordConfirmView';
 import { ResetPasswordSuccessView } from './views/ResetPasswordSuccessView';
 import { VerificationPendingView } from './views/VerificationPendingView';
-import { useAuth } from '@/hooks/auth/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { AuthView } from '@/types/auth';
 
 interface AuthContentProps {
@@ -20,16 +20,6 @@ export const AuthContent: React.FC<AuthContentProps> = ({
   lastEnteredEmail
 }) => {
   const auth = useAuth();
-  
-  // Use the auth hook from contexts/AuthContext.tsx
-  // We'll create a compatibility layer here
-  const {
-    signIn,
-    signUp,
-    resetPassword,
-    updatePassword,
-    error
-  } = auth;
   
   // Local state for form handling
   const [email, setEmail] = React.useState('');
@@ -49,18 +39,19 @@ export const AuthContent: React.FC<AuthContentProps> = ({
     setErrorMessage('');
     setResetErrorMessage('');
     
-    if (error) {
-      setErrorMessage(error.message || 'Authentication error');
+    if (auth.error) {
+      setErrorMessage(auth.error.message || 'Authentication error');
     }
-  }, [currentView, error]);
+  }, [currentView, auth.error]);
 
   // Helper functions for auth operations
   const handleEmailAuth = async (isSignUp: boolean) => {
     try {
       if (isSignUp) {
-        await signUp(email, password, { username, acceptTerms });
+        await auth.signUp(email, password, { username, acceptTerms });
+        setCurrentView('verification-pending');
       } else {
-        await signIn(email, password, { rememberMe });
+        await auth.signIn(email, password, { rememberMe });
       }
     } catch (err) {
       const error = err as Error;
@@ -75,7 +66,7 @@ export const AuthContent: React.FC<AuthContentProps> = ({
   
   const handlePasswordResetRequest = async () => {
     try {
-      await resetPassword(email);
+      await auth.resetPassword(email);
       setResetSuccessMessage('Password reset link has been sent to your email');
     } catch (err) {
       const error = err as Error;
@@ -85,7 +76,7 @@ export const AuthContent: React.FC<AuthContentProps> = ({
   
   const handlePasswordReset = async () => {
     try {
-      await updatePassword(resetPasswordVal);
+      await auth.updatePassword(resetPasswordVal);
       setCurrentView('reset-success');
     } catch (err) {
       const error = err as Error;
@@ -105,9 +96,13 @@ export const AuthContent: React.FC<AuthContentProps> = ({
 
   const handleVerificationResend = async () => {
     console.log('Attempting to resend verification email to:', lastEnteredEmail);
-    // Implement verification resend logic
     setEmail(lastEnteredEmail);
-    await handleEmailAuth(true);
+    try {
+      await auth.signUp(lastEnteredEmail, password, { username, acceptTerms });
+    } catch (err) {
+      // Silently fail as the user might already exist
+      console.log('Resend verification error (expected):', err);
+    }
   };
 
   const renderAuthView = () => {
@@ -181,7 +176,7 @@ export const AuthContent: React.FC<AuthContentProps> = ({
       case 'verification-pending':
         return (
           <VerificationPendingView 
-            email={lastEnteredEmail}
+            email={lastEnteredEmail || email}
             goToSignIn={() => {
               resetForm();
               setCurrentView('signin');

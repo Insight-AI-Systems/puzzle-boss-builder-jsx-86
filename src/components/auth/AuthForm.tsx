@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AuthContent } from './AuthContent';
-import { useAuthView } from '@/hooks/auth/useAuthView';
+import { useSearchParams } from 'react-router-dom';
 import { AuthView } from '@/types/auth';
 
 interface AuthFormProps {
@@ -9,15 +9,46 @@ interface AuthFormProps {
 }
 
 export const AuthForm: React.FC<AuthFormProps> = ({ initialView }) => {
-  const { currentView, setCurrentView, lastEnteredEmail, setLastEnteredEmail } = useAuthView(initialView);
+  const [searchParams] = useSearchParams();
+  const [currentView, setCurrentView] = useState<AuthView>(initialView || 'signin');
+  const [lastEnteredEmail, setLastEnteredEmail] = useState('');
+  
+  // Update view based on URL parameters
+  useEffect(() => {
+    // Check for verification success
+    if (searchParams.get('verificationSuccess') === 'true') {
+      setCurrentView('verification-success');
+      return;
+    }
+    
+    // Check for verification pending
+    if (searchParams.get('view') === 'verification-pending') {
+      setCurrentView('verification-pending');
+      return;
+    }
+    
+    // Check for password reset
+    const type = searchParams.get('type');
+    if (type === 'recovery') {
+      setCurrentView('reset-confirm');
+      return;
+    }
+    
+    // Check for signup parameter
+    if (initialView) {
+      setCurrentView(initialView);
+    } else if (searchParams.get('signup') === 'true') {
+      setCurrentView('signup');
+    }
+  }, [searchParams, initialView]);
   
   // Update lastEnteredEmail when email changes
-  React.useEffect(() => {
+  useEffect(() => {
     const email = document.querySelector<HTMLInputElement>('input[type="email"]')?.value;
     if (email) {
       setLastEnteredEmail(email);
     }
-  }, [setLastEnteredEmail]);
+  }, [currentView]);
 
   return (
     <AuthContent
