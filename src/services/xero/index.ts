@@ -2,6 +2,7 @@
 import { XeroAuthService } from './authService';
 import { XeroDataService } from './dataService';
 import { XeroSyncService } from './syncService';
+import { XeroWebhookService } from './webhookService';
 import { XeroRecordType } from './types';
 
 /**
@@ -29,6 +30,14 @@ export class XeroService {
   static getTransactions = XeroDataService.getTransactions;
   static getContacts = XeroDataService.getContacts;
   static getSyncLogs = XeroDataService.getSyncLogs;
+  
+  /**
+   * Webhook related methods
+   */
+  static registerWebhook = XeroWebhookService.registerWebhook;
+  static getActiveWebhooks = XeroWebhookService.getActiveWebhooks;
+  static getWebhookLogs = XeroWebhookService.getWebhookLogs;
+  static deleteWebhook = XeroWebhookService.deleteWebhook;
 }
 
 // Re-export types for convenience

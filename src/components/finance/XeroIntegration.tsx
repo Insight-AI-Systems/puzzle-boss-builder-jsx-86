@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, CheckCircle, RefreshCw, Link as LinkIcon } from "lucide-react";
 import { XeroInvoice, XeroBill, XeroTransaction, XeroContact } from "@/types/integration";
 import { format } from "date-fns";
+import XeroWebhookManager from "./XeroWebhookManager";
 
 const XeroIntegration: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -227,11 +227,12 @@ const XeroIntegration: React.FC = () => {
       <CardContent>
         {connectionStatus?.connected && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-4">
+            <TabsList className="grid grid-cols-5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="invoices">Invoices</TabsTrigger>
               <TabsTrigger value="bills">Bills</TabsTrigger>
               <TabsTrigger value="contacts">Contacts</TabsTrigger>
+              <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
             </TabsList>
             
             {/* Overview Tab */}
@@ -451,6 +452,11 @@ const XeroIntegration: React.FC = () => {
                   </div>
                 )}
               </ScrollArea>
+            </TabsContent>
+            
+            {/* Webhooks Tab */}
+            <TabsContent value="webhooks">
+              <XeroWebhookManager />
             </TabsContent>
           </Tabs>
         )}
