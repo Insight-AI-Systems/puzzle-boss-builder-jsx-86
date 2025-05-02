@@ -1,6 +1,6 @@
 
 import React from "react";
-import { MainLayout } from "@/components/layouts/MainLayout";
+import { MainLayout } from "@/components/MainLayout";
 import CFOSidebar from "@/components/cfo/CFOSidebar";
 import FinancialOverview from "@/components/cfo/FinancialOverview";
 import IncomeStreams from "@/components/cfo/IncomeStreams";
