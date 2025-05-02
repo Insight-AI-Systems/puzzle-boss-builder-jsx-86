@@ -1245,6 +1245,48 @@ export type Database = {
           },
         ]
       }
+      site_content: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          page_id: string
+          published_at: string | null
+          section_id: string
+          status: Database["public"]["Enums"]["content_status"] | null
+          title: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          page_id: string
+          published_at?: string | null
+          section_id: string
+          status?: Database["public"]["Enums"]["content_status"] | null
+          title?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          page_id?: string
+          published_at?: string | null
+          section_id?: string
+          status?: Database["public"]["Enums"]["content_status"] | null
+          title?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       site_expenses: {
         Row: {
           amount: number
@@ -1335,6 +1377,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      site_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          setting_key: string
+          setting_type: string
+          setting_value: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          setting_key: string
+          setting_type?: string
+          setting_value?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          setting_key?: string
+          setting_type?: string
+          setting_value?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       tickets: {
         Row: {
@@ -1679,6 +1751,7 @@ export type Database = {
     Enums: {
       age_group: "13-17" | "18-24" | "25-34" | "35-44" | "45-60" | "60+"
       communication_type: "email" | "call" | "meeting" | "note"
+      content_status: "draft" | "published"
       feedback_type: "bug" | "suggestion" | "question" | "other"
       issue_status: "wip" | "completed" | "deferred"
       note_status: "wip" | "completed"
@@ -1823,6 +1896,7 @@ export const Constants = {
     Enums: {
       age_group: ["13-17", "18-24", "25-34", "35-44", "45-60", "60+"],
       communication_type: ["email", "call", "meeting", "note"],
+      content_status: ["draft", "published"],
       feedback_type: ["bug", "suggestion", "question", "other"],
       issue_status: ["wip", "completed", "deferred"],
       note_status: ["wip", "completed"],
