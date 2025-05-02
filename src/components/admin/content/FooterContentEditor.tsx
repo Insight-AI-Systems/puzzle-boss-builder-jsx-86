@@ -14,11 +14,11 @@ export const FooterContentEditor: React.FC = () => {
 
   // Footer pages that can be edited
   const footerPages = [
-    { id: 'about', name: 'About Us', route: '/legal/about' },
-    { id: 'terms', name: 'Terms & Conditions', route: '/legal/terms' },
-    { id: 'privacy', name: 'Privacy Policy', route: '/legal/privacy' },
-    { id: 'cookie-policy', name: 'Cookie Policy', route: '/legal/cookie-policy' },
-    { id: 'faq', name: 'FAQ', route: '/faq' },
+    { id: 'about', name: 'About Us', route: '/admin-dashboard/content/edit-page/about' },
+    { id: 'terms', name: 'Terms & Conditions', route: '/admin-dashboard/content/edit-page/terms' },
+    { id: 'privacy', name: 'Privacy Policy', route: '/admin-dashboard/content/edit-page/privacy' },
+    { id: 'cookie-policy', name: 'Cookie Policy', route: '/admin-dashboard/content/edit-page/cookie-policy' },
+    { id: 'faq', name: 'FAQ', route: '/admin-dashboard/content/edit-page/faq' },
   ];
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export const FooterContentEditor: React.FC = () => {
                   asChild
                   variant="outline"
                 >
-                  <Link to={`/admin-dashboard/content/edit-page/${page.id}`}>
+                  <Link to={page.route}>
                     Edit Page
                   </Link>
                 </Button>
@@ -115,4 +115,3 @@ export const FooterContentEditor: React.FC = () => {
     </div>
   );
 };
-

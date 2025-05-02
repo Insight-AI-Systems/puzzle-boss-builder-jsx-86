@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
@@ -33,7 +33,13 @@ export const ContentManagement: React.FC = () => {
     return 'site-settings';
   };
   
+  // Set initial active tab based on URL
   const [activeTab, setActiveTab] = useState(getActiveTab());
+  
+  // Update active tab when URL changes
+  useEffect(() => {
+    setActiveTab(getActiveTab());
+  }, [location.pathname]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -102,33 +108,28 @@ export const ContentManagement: React.FC = () => {
             <TabsTrigger value="footer-content">Footer</TabsTrigger>
           </TabsList>
           
-          <Routes>
-            <Route path="/" element={
-              <TabsContent value="site-settings" className="space-y-4">
-                <SiteSettingsEditor />
-              </TabsContent>
-            } />
-            <Route path="/hero-content" element={
-              <TabsContent value="hero-content" className="space-y-4">
-                <HeroContentEditor />
-              </TabsContent>
-            } />
-            <Route path="/page-content" element={
-              <TabsContent value="page-content" className="space-y-4">
-                <PageContentEditor />
-              </TabsContent>
-            } />
-            <Route path="/edit-page/:pageId" element={
-              <TabsContent value="page-content" className="space-y-4">
-                <PageContentEditor />
-              </TabsContent>
-            } />
-            <Route path="/footer-content" element={
-              <TabsContent value="footer-content" className="space-y-4">
-                <FooterContentEditor />
-              </TabsContent>
-            } />
-          </Routes>
+          <TabsContent value="site-settings" className="space-y-4">
+            <SiteSettingsEditor />
+          </TabsContent>
+          
+          <TabsContent value="hero-content" className="space-y-4">
+            <HeroContentEditor />
+          </TabsContent>
+          
+          <TabsContent value="page-content" className="space-y-4">
+            <PageContentEditor />
+          </TabsContent>
+          
+          <TabsContent value="footer-content" className="space-y-4">
+            <FooterContentEditor />
+          </TabsContent>
+          
+          {/* Edit page route */}
+          {location.pathname.includes('/edit-page/') && (
+            <TabsContent value="page-content" className="space-y-4">
+              <PageContentEditor />
+            </TabsContent>
+          )}
         </Tabs>
       </CardContent>
     </Card>

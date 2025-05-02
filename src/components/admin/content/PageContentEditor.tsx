@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useContentManagement } from '@/hooks/admin/useContentManagement';
 import { ContentEditor } from './ContentEditor';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 type PageTab = {
   id: string;
@@ -16,6 +16,7 @@ type PageTab = {
 
 export const PageContentEditor: React.FC = () => {
   const { pageId } = useParams<{ pageId?: string }>();
+  const navigate = useNavigate();
   const { content, updateContent, isLoading } = useContentManagement();
   const [activeTab, setActiveTab] = useState(pageId || 'about');
   const [pageContent, setPageContent] = useState('');
@@ -72,6 +73,11 @@ export const PageContentEditor: React.FC = () => {
     }
   };
 
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    navigate(`/admin-dashboard/content/edit-page/${tabId}`);
+  };
+
   if (isLoading) {
     return <div>Loading page content...</div>;
   }
@@ -83,7 +89,7 @@ export const PageContentEditor: React.FC = () => {
         Edit the content of different pages on your site.
       </p>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid grid-cols-5 mb-6">
           {pageTabs.map(tab => (
             <TabsTrigger key={tab.id} value={tab.id}>{tab.name}</TabsTrigger>
@@ -130,4 +136,3 @@ export const PageContentEditor: React.FC = () => {
     </div>
   );
 };
-
