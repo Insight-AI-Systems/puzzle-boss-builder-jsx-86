@@ -61,7 +61,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
       {/* Puzzles Tab */}
       <TabsContent value="puzzles" className="space-y-4">
         {isTabAccessible('puzzles') ? (
-          <GameManagement />
+          <PuzzleManagement />
         ) : (
           <NoAccessMessage resourceName="Puzzle Management" />
         )}
