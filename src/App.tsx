@@ -24,6 +24,7 @@ import Categories from './components/Categories'; // Import the existing Categor
 
 // Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
+import CFODashboard from './pages/CFODashboard';
 import AdminCFOPage from './pages/AdminCFOPage';
 import SupportAdmin from './pages/SupportAdmin';
 
@@ -62,7 +63,8 @@ function App() {
         {/* Admin Pages using AdminLayout with Outlet */}
         <Route element={<AdminLayout />}>
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route path="/cfo-dashboard" element={<AdminCFOPage />} />
+          <Route path="/cfo-dashboard" element={<CFODashboard />} />
+          <Route path="/admin-cfo" element={<AdminCFOPage />} />
           <Route path="/support-admin" element={<SupportAdmin />} />
         </Route>
       </Routes>
