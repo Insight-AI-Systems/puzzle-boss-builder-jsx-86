@@ -58,10 +58,9 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
         const endDate = dateRange?.to || new Date();
         
         // Get delivery stats using the database function
-        // Fix: Using parameter object with correct parameter names as expected by the RPC function
         const { data: statsData, error: statsError } = await supabase.rpc(
           'get_email_analytics', 
-          { 
+          {
             start_date: startDate.toISOString().split('T')[0],
             end_date: endDate.toISOString().split('T')[0],
             campaign_id_param: campaignId === 'all' ? null : campaignId
