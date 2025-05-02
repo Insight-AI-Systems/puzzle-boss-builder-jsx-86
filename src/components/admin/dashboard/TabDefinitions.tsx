@@ -11,12 +11,6 @@ export interface TabDefinition {
 export function getTabDefinitions(): TabDefinition[] {
   return [
     {
-      id: "overview",
-      label: "Dashboard Overview",
-      icon: <BarChart className="h-4 w-4" />,
-      roles: ["super_admin", "admin", "category_manager", "social_media_manager", "partner_manager", "cfo"]
-    },
-    {
       id: "users",
       label: "User Management",
       icon: <Users className="h-4 w-4" />,

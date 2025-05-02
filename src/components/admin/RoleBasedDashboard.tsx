@@ -22,13 +22,14 @@ export const RoleBasedDashboard: React.FC = () => {
     tab.roles.some(role => hasRole(role))
   );
   
-  // Set initial active tab from URL or default to "overview"
+  // Set initial active tab from URL or default to first accessible tab
   const [activeTab, setActiveTab] = React.useState(() => {
     // Check if the tab from URL is accessible to the user
     if (tabParam && accessibleTabs.some(tab => tab.id === tabParam)) {
       return tabParam;
     }
-    return "overview";
+    // Default to the first accessible tab instead of "overview"
+    return accessibleTabs.length > 0 ? accessibleTabs[0].id : "users";
   });
   
   // Update URL when tab changes
