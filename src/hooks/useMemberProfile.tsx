@@ -94,6 +94,7 @@ export function useMemberProfile(userId?: string) {
 
         const memberProfile: MemberDetailedProfile = {
           ...profileData,
+          display_name: profileData.username || profileData.full_name || 'Member',
           addresses,
           xero_mapping: xeroMapping,
           membership_details: membershipDetails,
