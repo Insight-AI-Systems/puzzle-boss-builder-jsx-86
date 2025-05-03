@@ -17,12 +17,35 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
   const { hasRole, isAdmin } = useAuth();
   
   const isLinkActive = (path: string) => {
+    // Extract the base path without query parameters
+    const currentPath = location.pathname;
+    
     // Special case for home path
-    if (path === '/') return location.pathname === '/';
+    if (path === '/') return currentPath === '/';
+    
+    // Split query parameters from path
+    const basePath = path.split('?')[0];
+    
+    // Special case for paths with query params like /admin-dashboard?tab=finance
+    if (path.includes('?')) {
+      const searchParams = new URLSearchParams(path.split('?')[1]);
+      const currentParams = new URLSearchParams(location.search);
+      
+      // Check if base path matches and required query parameters are present
+      if (currentPath === basePath) {
+        for (const [key, value] of searchParams.entries()) {
+          if (currentParams.get(key) !== value) {
+            return false;
+          }
+        }
+        return true;
+      }
+      return false;
+    }
     
     // For other paths, check if the current path starts with the link path
     // This handles nested routes while still highlighting the parent nav item
-    return location.pathname.startsWith(path);
+    return currentPath.startsWith(basePath);
   };
 
   const shouldShowLink = (item: MainNavItem) => {

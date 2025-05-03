@@ -23,5 +23,5 @@ export const mainNavItems: MainNavItem[] = [
 // Admin navigation items
 export const adminNavItems: MainNavItem[] = [
   { name: 'Admin Dashboard', path: '/admin-dashboard', roles: ["super_admin", "admin", "category_manager", "partner_manager", "cfo"] },
-  { name: 'CFO Dashboard', path: '/cfo-dashboard', roles: ["super_admin", "cfo", "admin"] }
+  { name: 'Financial Dashboard', path: '/admin-dashboard?tab=finance', roles: ["super_admin", "cfo", "admin"] }
 ];

@@ -12,6 +12,15 @@ import { Button } from "@/components/ui/button";
 import { exportFinancialData } from '@/utils/exportUtils';
 import { ErrorDisplay } from '@/components/dashboard/ErrorDisplay';
 import { MonthlyFinancialSummary } from '@/types/financeTypes';
+import XeroIntegration from '@/components/finance/XeroIntegration';
+import XeroWebhookManager from '@/components/finance/XeroWebhookManager';
+import { XeroService } from '@/services/xero';
+import { FinanceStats } from '@/components/finance/FinanceStats';
+import { TimeFrame } from '@/types/financeTypes';
+import IncomeStreams from '@/components/cfo/IncomeStreams';
+import CostStreams from '@/components/cfo/CostStreams';
+import CommissionsManagement from '@/components/cfo/CommissionsManagement';
+import MembershipSummary from '@/components/cfo/MembershipSummary';
 
 export const FinancialDashboard: React.FC = () => {
   console.log('[FINANCE UI] FinancialDashboard component rendering');
@@ -22,9 +31,42 @@ export const FinancialDashboard: React.FC = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [loadError, setLoadError] = useState<Error | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [isConnecting, setIsConnecting] = useState(false);
+  const timeframe: TimeFrame = "monthly";
   
   const { fetchMonthlyFinancialSummary, fetchSiteIncomes, fetchSiteExpenses, fetchCommissionPayments } = useFinancials();
   const { toast } = useToast();
+
+  // Check for Xero connection success/error from URL parameters
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const xeroConnected = url.searchParams.get('xero_connected');
+    const xeroError = url.searchParams.get('xero_error');
+    
+    if (xeroConnected === 'true') {
+      toast({
+        title: "Xero Connected",
+        description: "Successfully connected to Xero",
+        variant: "default",
+      });
+      
+      // Remove the parameter from URL to prevent showing the toast again on refresh
+      url.searchParams.delete('xero_connected');
+      window.history.replaceState({}, '', url.toString());
+    }
+    
+    if (xeroError) {
+      toast({
+        title: "Xero Connection Error",
+        description: decodeURIComponent(xeroError),
+        variant: "destructive",
+      });
+      
+      // Remove the parameter from URL
+      url.searchParams.delete('xero_error');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [toast]);
 
   // Create default summary object to prevent null values
   const createDefaultSummary = useCallback((period: string): MonthlyFinancialSummary => {
@@ -144,77 +186,38 @@ export const FinancialDashboard: React.FC = () => {
     loadFinancialData();
   };
 
-  console.log('[FINANCE UI] FinancialDashboard render state:', { 
-    isLoading, 
-    hasError: !!loadError, 
-    hasFinancialData: !!financialData,
-    selectedMonth
-  });
-
-  // Simple placeholder for tab content
-  const renderTabContent = () => {
-    if (activeTab === 'overview') {
-      return (
-        <div className="grid gap-4 mt-4">
-          <div className="p-4 rounded-lg bg-card">
-            <h3 className="text-lg font-medium">Financial Overview</h3>
-            <p className="text-muted-foreground">Financial summary for {selectedMonth}</p>
-          </div>
-        </div>
-      );
-    } else if (activeTab === 'commissions') {
-      return (
-        <div className="grid gap-4 mt-4">
-          <div className="p-4 rounded-lg bg-card">
-            <h3 className="text-lg font-medium">Commission Management</h3>
-            <p className="text-muted-foreground">Manage category manager commissions</p>
-          </div>
-        </div>
-      );
-    } else if (activeTab === 'expenses') {
-      return (
-        <div className="grid gap-4 mt-4">
-          <div className="p-4 rounded-lg bg-card">
-            <h3 className="text-lg font-medium">Expense Tracking</h3>
-            <p className="text-muted-foreground">Track and manage expenses</p>
-          </div>
-        </div>
-      );
+  const handleConnectToXero = async () => {
+    try {
+      setIsConnecting(true);
+      toast({
+        title: "Connecting to Xero",
+        description: "Initiating connection to Xero...",
+      });
+      
+      const authUrl = await XeroService.initiateAuth();
+      window.location.href = authUrl;
+    } catch (error) {
+      console.error("Failed to connect to Xero:", error);
+      toast({
+        title: "Connection Error",
+        description: error instanceof Error ? error.message : "Failed to connect to Xero",
+        variant: "destructive",
+      });
+      setIsConnecting(false);
     }
-    return null;
   };
 
-  // Always render a Card to prevent UI flashing
   return (
     <Card className="w-full">
-      <div className="p-6 border-b flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Financial Dashboard</h2>
-          <p className="text-muted-foreground">Manage financial data and reporting</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <select 
-            className="px-3 py-2 rounded border"
-            value={selectedMonth}
-            onChange={handleMonthChange}
-          >
-            <option value="2024-01">January 2024</option>
-            <option value="2024-02">February 2024</option>
-            <option value="2024-03">March 2024</option>
-            <option value="2024-04">April 2024</option>
-            <option value="2024-05">May 2024</option>
-          </select>
-          <Button 
-            variant="outline" 
-            onClick={handleExport}
-            disabled={exportLoading}
-          >
-            {exportLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Export
-          </Button>
-        </div>
-      </div>
-      <CardContent className="pt-6">
+      <FinancialDashboardHeader
+        selectedMonth={selectedMonth}
+        onMonthChange={handleMonthChange}
+        onExport={handleExport}
+        isExporting={exportLoading}
+        onConnectToXero={handleConnectToXero}
+        isConnectingXero={isConnecting}
+      />
+      <CardContent>
         {isLoading ? (
           <div className="flex justify-center items-center p-8">
             <div className="flex flex-col items-center">
@@ -242,30 +245,49 @@ export const FinancialDashboard: React.FC = () => {
             {/* Always render financial data UI with guaranteed valid data */}
             {financialData && (
               <>
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-6">
-                  <div className="p-4 rounded-lg bg-card border">
-                    <div className="text-sm font-medium text-muted-foreground">Total Revenue</div>
-                    <div className="text-2xl font-bold">${financialData.total_income.toFixed(2)}</div>
-                  </div>
-                  <div className="p-4 rounded-lg bg-card border">
-                    <div className="text-sm font-medium text-muted-foreground">Total Expenses</div>
-                    <div className="text-2xl font-bold">${financialData.total_expenses.toFixed(2)}</div>
-                  </div>
-                  <div className="p-4 rounded-lg bg-card border">
-                    <div className="text-sm font-medium text-muted-foreground">Net Profit</div>
-                    <div className="text-2xl font-bold">${financialData.net_profit.toFixed(2)}</div>
-                  </div>
-                </div>
+                <FinancialSummaryCards financialData={financialData} />
                 
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
                   <TabsList className="mb-4">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="commissions">Commissions</TabsTrigger>
+                    <TabsTrigger value="income">Income</TabsTrigger>
                     <TabsTrigger value="expenses">Expenses</TabsTrigger>
+                    <TabsTrigger value="commissions">Commissions</TabsTrigger>
+                    <TabsTrigger value="membership">Membership</TabsTrigger>
+                    <TabsTrigger value="xero">Xero Integration</TabsTrigger>
+                    <TabsTrigger value="webhooks">Xero Webhooks</TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value={activeTab}>
-                    {renderTabContent()}
+                  <TabsContent value="overview">
+                    <Card>
+                      <CardContent className="pt-6">
+                        <FinanceStats />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                  
+                  <TabsContent value="income">
+                    <IncomeStreams selectedMonth={selectedMonth} />
+                  </TabsContent>
+                  
+                  <TabsContent value="expenses">
+                    <CostStreams selectedMonth={selectedMonth} />
+                  </TabsContent>
+                  
+                  <TabsContent value="commissions">
+                    <CommissionsManagement selectedMonth={selectedMonth} />
+                  </TabsContent>
+                  
+                  <TabsContent value="membership">
+                    <MembershipSummary selectedMonth={selectedMonth} />
+                  </TabsContent>
+                  
+                  <TabsContent value="xero">
+                    <XeroIntegration />
+                  </TabsContent>
+                  
+                  <TabsContent value="webhooks">
+                    <XeroWebhookManager />
                   </TabsContent>
                 </Tabs>
               </>

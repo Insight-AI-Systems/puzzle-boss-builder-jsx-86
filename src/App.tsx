@@ -60,14 +60,13 @@ function App() {
         {/* Auth page with no layout */}
         <Route path="/auth" element={<Auth />} />
 
-        {/* Admin Pages (now CFO Dashboard uses its own Navbar, others use AdminLayout) */}
-        <Route path="/cfo-dashboard" element={<CFODashboard />} />
-        
-        {/* Normal admin pages use AdminLayout */}
+        {/* Admin Pages Use AdminLayout */}
         <Route element={<AdminLayout />}>
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin-cfo" element={<AdminCFOPage />} />
           <Route path="/support-admin" element={<SupportAdmin />} />
+          {/* CFO dashboard now redirects to admin-dashboard?tab=finance */}
+          <Route path="/cfo-dashboard" element={<CFODashboard />} />
         </Route>
       </Routes>
     </Router>

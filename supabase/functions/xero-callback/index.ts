@@ -122,8 +122,9 @@ serve(async (req) => {
       onConflict: "tenant_id"
     });
     
-    // Redirect back to frontend with success parameter
-    const redirectUrl = new URL(`${FRONTEND_URL}/cfo-dashboard`);
+    // Redirect back to frontend with success parameter - updated to point to the new location
+    const redirectUrl = new URL(`${FRONTEND_URL}/admin-dashboard`);
+    redirectUrl.searchParams.append("tab", "finance");
     redirectUrl.searchParams.append("xero_connected", "true");
     
     return new Response(null, {
@@ -136,8 +137,9 @@ serve(async (req) => {
   } catch (error) {
     console.error("Xero callback error:", error);
     
-    // Redirect back to frontend with error parameter
-    const redirectUrl = new URL(`${FRONTEND_URL}/cfo-dashboard`);
+    // Redirect back to frontend with error parameter - updated to point to the new location
+    const redirectUrl = new URL(`${FRONTEND_URL}/admin-dashboard`);
+    redirectUrl.searchParams.append("tab", "finance");
     redirectUrl.searchParams.append("xero_error", encodeURIComponent(error.message || "Unknown error"));
     
     return new Response(null, {
