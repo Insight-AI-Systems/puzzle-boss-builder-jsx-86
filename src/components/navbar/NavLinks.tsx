@@ -31,6 +31,11 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
       const searchParams = new URLSearchParams(path.split('?')[1]);
       const currentParams = new URLSearchParams(location.search);
       
+      // For finance tab specifically, add a stricter check
+      if (path.includes('tab=finance') && currentPath === '/admin-dashboard') {
+        return currentParams.get('tab') === 'finance';
+      }
+      
       // Check if base path matches and required query parameters are present
       if (currentPath === basePath) {
         for (const [key, value] of searchParams.entries()) {
@@ -43,9 +48,15 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
       return false;
     }
     
+    // For admin dashboard without params, make sure we're not on a tab
+    if (path === '/admin-dashboard' && currentPath === '/admin-dashboard') {
+      const currentParams = new URLSearchParams(location.search);
+      return !currentParams.has('tab');
+    }
+    
     // For other paths, check if the current path starts with the link path
     // This handles nested routes while still highlighting the parent nav item
-    return currentPath.startsWith(basePath);
+    return currentPath === basePath;
   };
 
   const shouldShowLink = (item: MainNavItem) => {

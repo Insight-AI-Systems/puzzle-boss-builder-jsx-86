@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -23,8 +23,7 @@ import CommissionsManagement from '@/components/cfo/CommissionsManagement';
 import MembershipSummary from '@/components/cfo/MembershipSummary';
 
 export const FinancialDashboard: React.FC = () => {
-  console.log('[FINANCE UI] FinancialDashboard component rendering');
-  
+  const isInitialRender = useRef(true);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [financialData, setFinancialData] = useState<MonthlyFinancialSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +36,7 @@ export const FinancialDashboard: React.FC = () => {
   const { fetchMonthlyFinancialSummary, fetchSiteIncomes, fetchSiteExpenses, fetchCommissionPayments } = useFinancials();
   const { toast } = useToast();
 
-  // Check for Xero connection success/error from URL parameters
+  // Check for Xero connection success/error from URL parameters only once
   useEffect(() => {
     const url = new URL(window.location.href);
     const xeroConnected = url.searchParams.get('xero_connected');
@@ -66,11 +65,10 @@ export const FinancialDashboard: React.FC = () => {
       url.searchParams.delete('xero_error');
       window.history.replaceState({}, '', url.toString());
     }
-  }, [toast]);
+  }, []); // Empty dependency array ensures this runs only once
 
   // Create default summary object to prevent null values
   const createDefaultSummary = useCallback((period: string): MonthlyFinancialSummary => {
-    console.log('[FINANCE UI] Creating default summary for period:', period);
     return {
       period,
       total_income: 0,
@@ -82,33 +80,31 @@ export const FinancialDashboard: React.FC = () => {
   }, []);
 
   const loadFinancialData = useCallback(async () => {
-    console.log('[FINANCE UI] loadFinancialData called for month:', selectedMonth);
+    // Skip if we've already loaded data
+    if (financialData?.period === selectedMonth && !isInitialRender.current) {
+      return;
+    }
+    
     setIsLoading(true);
     setLoadError(null);
     
     try {
-      console.log('[FINANCE UI] Attempting to fetch financial summary');
       let summary: MonthlyFinancialSummary | null = null;
       
       try {
-        console.log('[FINANCE UI] Calling fetchMonthlyFinancialSummary');
         summary = await fetchMonthlyFinancialSummary(selectedMonth);
-        console.log('[FINANCE UI] fetchMonthlyFinancialSummary returned:', summary);
       } catch (fetchError) {
-        console.error('[FINANCE UI] Error in fetchMonthlyFinancialSummary:', fetchError);
-        // Even if the fetch fails, we'll still set default data below
+        console.error('Error in fetchMonthlyFinancialSummary:', fetchError);
       }
       
       // Always set valid data to prevent rendering issues
       const finalData = summary || createDefaultSummary(selectedMonth);
-      console.log('[FINANCE UI] Setting financial data state to:', finalData);
       setFinancialData(finalData);
       
     } catch (err) {
-      console.error('[FINANCE UI] Error loading financial data:', err);
+      console.error('Error loading financial data:', err);
       setLoadError(err instanceof Error ? err : new Error('Unknown error occurred'));
       // Set fallback data even on error
-      console.log('[FINANCE UI] Setting fallback data after error');
       setFinancialData(createDefaultSummary(selectedMonth));
       
       toast({
@@ -117,25 +113,23 @@ export const FinancialDashboard: React.FC = () => {
         variant: "destructive",
       });
     } finally {
-      console.log('[FINANCE UI] Finished loading data, setting isLoading = false');
       setIsLoading(false);
+      isInitialRender.current = false;
     }
-  }, [selectedMonth, fetchMonthlyFinancialSummary, createDefaultSummary, toast]);
+  }, [selectedMonth, fetchMonthlyFinancialSummary, createDefaultSummary, toast, financialData]);
   
+  // Use a more controlled approach for loading data
   useEffect(() => {
-    console.log('[FINANCE UI] useEffect - loadFinancialData dependency changed');
     loadFinancialData();
-  }, [loadFinancialData]);
+  }, [loadFinancialData, selectedMonth]);
 
   const handleMonthChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newMonth = event.target.value;
-    console.log('[FINANCE UI] Month changed to:', newMonth);
     setSelectedMonth(newMonth);
   };
 
   const handleExport = async () => {
     try {
-      console.log('[FINANCE UI] Export initiated');
       setExportLoading(true);
       toast({
         title: "Export initiated",
@@ -148,7 +142,6 @@ export const FinancialDashboard: React.FC = () => {
       const endDate = `${selectedMonth}-${lastDay}`;
       
       try {
-        console.log('[FINANCE UI] Fetching export data');
         // Fetch all required data
         const [incomeData, expenseData, commissionData] = await Promise.all([
           fetchSiteIncomes(startDate, endDate),
@@ -160,7 +153,6 @@ export const FinancialDashboard: React.FC = () => {
         const filteredCommissions = commissionData.filter(c => c.period === selectedMonth);
         
         // Export the data
-        console.log('[FINANCE UI] Calling exportFinancialData function');
         await exportFinancialData(incomeData, expenseData, filteredCommissions, selectedMonth);
         
         toast({
@@ -168,7 +160,7 @@ export const FinancialDashboard: React.FC = () => {
           description: `Financial data has been exported successfully`,
         });
       } catch (exportErr) {
-        console.error('[FINANCE UI] Error during export:', exportErr);
+        console.error('Error during export:', exportErr);
         toast({
           title: "Export failed",
           description: exportErr instanceof Error ? exportErr.message : "An unknown error occurred during export",
@@ -176,13 +168,11 @@ export const FinancialDashboard: React.FC = () => {
         });
       }
     } finally {
-      console.log('[FINANCE UI] Export completed, resetting export loading state');
       setExportLoading(false);
     }
   };
 
   const handleRetry = () => {
-    console.log('[FINANCE UI] Retry button clicked');
     loadFinancialData();
   };
 
@@ -194,7 +184,12 @@ export const FinancialDashboard: React.FC = () => {
         description: "Initiating connection to Xero...",
       });
       
-      const authUrl = await XeroService.initiateAuth();
+      // Set redirectUrl to the current location (admin-dashboard with finance tab)
+      const currentUrl = new URL(window.location.href);
+      const baseUrl = `${currentUrl.protocol}//${currentUrl.host}`;
+      const redirectUrl = `${baseUrl}/admin-dashboard?tab=finance`;
+      
+      const authUrl = await XeroService.initiateAuth(redirectUrl);
       window.location.href = authUrl;
     } catch (error) {
       console.error("Failed to connect to Xero:", error);
