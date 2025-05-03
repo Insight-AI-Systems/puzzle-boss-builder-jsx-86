@@ -17,13 +17,24 @@ export const useDailyMetrics = (selectedDate: Date) => {
         return data[0] as DailyMetrics;
       } 
       
+      // Get total users count directly if the function doesn't return it
+      let totalUsers = 0;
+      try {
+        const { count, error: countError } = await supabase.rpc('count_total_users');
+        if (!countError && count !== null) {
+          totalUsers = count;
+        }
+      } catch (countErr) {
+        console.error("Failed to get total users count:", countErr);
+      }
+      
       // Provide consistent default values to prevent mismatch in counts
       return { 
         active_users: 0, 
         new_signups: 0, 
         puzzles_completed: 0, 
         revenue: 0,
-        total_users: 0 // Add total_users field to ensure consistency
+        total_users: totalUsers
       };
     }
   });

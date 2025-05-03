@@ -28,10 +28,13 @@ export const OverviewTab: React.FC = () => {
     getUserTrend,
     getSignupTrend,
     getPuzzlesTrend,
-    getRevenueTrend
+    getRevenueTrend,
+    userDemographics,
+    isLoadingUserDemographics
   } = useAnalytics();
   
-  const isLoading = isLoadingDailyMetrics || isLoadingMonthlyTrends || isLoadingCategoryRevenue;
+  const isLoading = isLoadingDailyMetrics || isLoadingMonthlyTrends || 
+                    isLoadingCategoryRevenue || isLoadingUserDemographics;
 
   // Create a handler that conforms to the expected type
   const handleDateRangeChange = (range: DateRange) => {
@@ -56,6 +59,9 @@ export const OverviewTab: React.FC = () => {
     };
   };
 
+  // Ensure we're using the correct total users count from userDemographics as source of truth
+  const totalUsers = userDemographics?.total_users || dailyMetrics?.total_users || 0;
+
   return (
     <TabsContent value="overview" className="space-y-6">
       <DateRangeSelector 
@@ -68,7 +74,7 @@ export const OverviewTab: React.FC = () => {
           title="Active Users" 
           value={dailyMetrics?.active_users || 0}
           trend={formatTrend(getUserTrend())}
-          subtext="vs. last month"
+          subtext={`of ${totalUsers} total users`}
         />
         <StatCard 
           title="New Signups" 

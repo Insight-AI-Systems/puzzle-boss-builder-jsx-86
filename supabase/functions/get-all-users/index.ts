@@ -67,15 +67,42 @@ serve(async (req) => {
       );
     }
 
+    // Check if the profiles table has gender and age_group columns
+    let hasGenderColumn = true;
+    let hasAgeGroupColumn = true;
+    
+    try {
+      // Test query to see if columns exist
+      await supabaseAdmin
+        .from("profiles")
+        .select("gender, age_group")
+        .limit(1);
+    } catch (columnError) {
+      console.log("Column check error:", columnError);
+      // If error contains message about missing column
+      const errorMsg = columnError.toString();
+      if (errorMsg.includes("column profiles.gender does not exist")) {
+        hasGenderColumn = false;
+      }
+      if (errorMsg.includes("column profiles.age_group does not exist")) {
+        hasAgeGroupColumn = false;
+      }
+    }
+
+    // Dynamically build the select query based on available columns
+    let selectQuery = "id, role, username, country, last_sign_in";
+    if (hasGenderColumn) selectQuery += ", gender";
+    if (hasAgeGroupColumn) selectQuery += ", age_group";
+    
     // Fetch all profiles
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from("profiles")
-      .select("id, role, username, country, last_sign_in, gender, age_group");
+      .select(selectQuery);
     
     if (profilesError) {
       console.error("Error fetching profiles:", profilesError);
       return new Response(
-        JSON.stringify({ error: "Error fetching profiles" }),
+        JSON.stringify({ error: "Error fetching profiles", details: profilesError }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -100,8 +127,8 @@ serve(async (req) => {
         display_name: profile.username || user.email?.split('@')[0] || 'N/A',
         role: profile.role || 'player',
         country: profile.country || null,
-        gender: profile.gender || null,
-        age_group: profile.age_group || null,
+        gender: hasGenderColumn ? profile.gender || null : null,
+        age_group: hasAgeGroupColumn ? profile.age_group || null : null,
         last_sign_in: lastSignIn
       };
     });

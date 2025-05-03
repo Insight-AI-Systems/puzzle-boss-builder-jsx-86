@@ -34,7 +34,10 @@ export const useAnalytics = () => {
   const { data: userDemographics, isLoading: isLoadingUserDemographics } = useUserDemographics();
   
   // Get monthly trends for comparison
-  const { data: monthlyTrends, isLoading: isLoadingMonthlyTrends } = useMonthlyTrends();
+  const { data: monthlyTrends, isLoading: isLoadingMonthlyTrends } = useMonthlyTrends(
+    dateRange.from.toISOString().split('T')[0],
+    dateRange.to.toISOString().split('T')[0]
+  );
   
   // Get category revenue data
   const { data: categoryRevenue, isLoading: isLoadingCategoryRevenue } = useCategoryRevenue(selectedDate);
@@ -89,15 +92,27 @@ export const useAnalytics = () => {
   
   // Helper function to format time in MM:SS format
   const formatTime = (seconds: number): string => {
-    // Looking at the implementation in puzzleUtils.ts, formatTimeUtil only needs one parameter
     return formatTimeUtil(seconds);
   };
   
   // Make sure we synchronize total_users between the two data sources to avoid discrepancies
-  if (dailyMetrics && userDemographics && userDemographics.total_users !== undefined) {
-    // Force TS to recognize the type
-    const metrics = dailyMetrics as any;
-    metrics.total_users = userDemographics.total_users;
+  if (dailyMetrics && userDemographics) {
+    // Ensure we have consistent total users count
+    // Trust the userDemographics.total_users value as the source of truth
+    if (userDemographics.total_users !== undefined && 
+        (dailyMetrics.total_users === undefined || 
+         dailyMetrics.total_users === 0 ||
+         dailyMetrics.total_users !== userDemographics.total_users)) {
+      
+      console.log("Synchronizing total users count:", {
+        dailyMetricsBefore: dailyMetrics.total_users,
+        userDemographicsValue: userDemographics.total_users
+      });
+      
+      // Force TS to recognize the type
+      const metrics = dailyMetrics as any;
+      metrics.total_users = userDemographics.total_users;
+    }
   }
   
   return {

@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { TabsContent } from "@/components/ui/tabs";
 import { StatCard } from '../StatCard';
 import { ChartPlaceholder } from '../ChartPlaceholder';
 import { useAnalytics } from '@/hooks/admin/useAnalytics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Users } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { ChartContainer } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
@@ -13,9 +14,10 @@ export const UsersTab: React.FC = () => {
     userDemographics, 
     isLoadingUserDemographics,
     dailyMetrics,
+    isLoadingDailyMetrics
   } = useAnalytics();
 
-  if (isLoadingUserDemographics) {
+  if (isLoadingUserDemographics || isLoadingDailyMetrics) {
     return (
       <TabsContent value="users" className="space-y-6">
         <div className="flex justify-center items-center h-40">
@@ -27,23 +29,59 @@ export const UsersTab: React.FC = () => {
 
   // Transform gender data for chart
   const genderData = userDemographics?.gender_distribution
-    ? Object.entries(userDemographics.gender_distribution).map(([name, value]) => ({
-        name,
-        value
-      }))
+    ? Object.entries(userDemographics.gender_distribution)
+        .filter(([name]) => name !== 'null' && name !== 'Not Specified')
+        .map(([name, value]) => ({
+          name: name === 'null' ? 'Not Specified' : name,
+          value
+        }))
     : [];
+
+  // Add a "Not Specified" entry if relevant
+  const notSpecifiedCount = 
+    (userDemographics?.gender_distribution?.['null'] || 0) + 
+    (userDemographics?.gender_distribution?.['Not Specified'] || 0);
+  
+  if (notSpecifiedCount > 0 && genderData.length > 0) {
+    genderData.push({
+      name: 'Not Specified',
+      value: notSpecifiedCount
+    });
+  }
 
   // Transform age data for chart
   const ageData = userDemographics?.age_distribution
-    ? Object.entries(userDemographics.age_distribution).map(([name, value]) => ({
-        name,
-        value
-      }))
+    ? Object.entries(userDemographics.age_distribution)
+        .filter(([name]) => name !== 'null' && name !== 'Not Specified')
+        .map(([name, value]) => ({
+          name,
+          value
+        }))
     : [];
+  
+  // Add a "Not Specified" entry for age if relevant
+  const notSpecifiedAgeCount = 
+    (userDemographics?.age_distribution?.['null'] || 0) + 
+    (userDemographics?.age_distribution?.['Not Specified'] || 0);
+  
+  if (notSpecifiedAgeCount > 0 && ageData.length > 0) {
+    ageData.push({
+      name: 'Not Specified',
+      value: notSpecifiedAgeCount
+    });
+  }
 
-  // Calculate totals for metrics
-  const totalUsers = userDemographics?.total_users || 0;
+  // Calculate totals for metrics, preferring userDemographics for total_users
+  // This ensures we have a consistent source of truth
+  const totalUsers = userDemographics?.total_users || dailyMetrics?.total_users || 0;
   const activePlayers = dailyMetrics?.active_users || 0;
+  
+  console.log("User metrics:", {
+    totalUsers,
+    activePlayers,
+    fromUserDemographics: userDemographics?.total_users,
+    fromDailyMetrics: dailyMetrics?.total_users
+  });
   
   // Ensure conversion rate calculation uses the correct denominator
   const conversionRate = totalUsers > 0 

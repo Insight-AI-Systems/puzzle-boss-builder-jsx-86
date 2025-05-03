@@ -4,7 +4,7 @@ export interface DailyMetrics {
   new_signups: number;
   puzzles_completed: number;
   revenue: number;
-  total_users?: number; // Add total_users property
+  total_users: number; // Add total_users property
 }
 
 export interface MonthlyTrend {
@@ -13,6 +13,7 @@ export interface MonthlyTrend {
   new_signups: number;
   puzzles_completed: number;
   revenue: number;
+  total_users: number; // Add total_users property
 }
 
 export interface CategoryRevenue {
