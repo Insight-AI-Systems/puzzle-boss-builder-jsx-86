@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,14 +12,10 @@ import { Button } from "@/components/ui/button";
 import { exportFinancialData } from '@/utils/exportUtils';
 import { ErrorDisplay } from '@/components/dashboard/ErrorDisplay';
 import { MonthlyFinancialSummary } from '@/types/financeTypes';
-import XeroIntegration from '@/components/finance/XeroIntegration';
-import XeroWebhookManager from '@/components/finance/XeroWebhookManager';
+import { FinanceTabContent } from './financial-dashboard/FinanceTabContent';
+import { XeroTabContent } from './financial-dashboard/XeroTabContent';
+import { WebhookTabContent } from './financial-dashboard/WebhookTabContent';
 import { XeroService } from '@/services/xero';
-import { FinanceStats } from '@/components/finance/FinanceStats';
-import IncomeStreams from '@/components/cfo/IncomeStreams';
-import CostStreams from '@/components/cfo/CostStreams';
-import CommissionsManagement from '@/components/cfo/CommissionsManagement';
-import MembershipSummary from '@/components/cfo/MembershipSummary';
 
 export const FinancialDashboard: React.FC = () => {
   const isInitialRender = useRef(true);
@@ -211,27 +208,11 @@ export const FinancialDashboard: React.FC = () => {
       />
       <CardContent>
         {isLoading ? (
-          <div className="flex justify-center items-center p-8">
-            <div className="flex flex-col items-center">
-              <Loader2 className="h-8 w-8 animate-spin text-puzzle-aqua" />
-              <p className="mt-2 text-sm text-muted-foreground">Loading financial data...</p>
-            </div>
-          </div>
+          <LoadingState />
         ) : (
           <>
             {loadError && (
-              <div className="mb-4">
-                <ErrorDisplay error={loadError.message} />
-                <div className="flex justify-center mt-2">
-                  <Button 
-                    onClick={handleRetry}
-                    variant="outline" 
-                    size="sm"
-                  >
-                    Retry Loading Data
-                  </Button>
-                </div>
-              </div>
+              <ErrorState error={loadError} onRetry={handleRetry} />
             )}
             
             {/* Always render financial data UI with guaranteed valid data */}
@@ -250,37 +231,14 @@ export const FinancialDashboard: React.FC = () => {
                     <TabsTrigger value="webhooks">Xero Webhooks</TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="overview">
-                    <Card>
-                      <CardContent className="pt-6">
-                        <FinanceStats />
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
+                  <FinanceTabContent 
+                    activeTab={activeTab} 
+                    selectedMonth={selectedMonth} 
+                  />
                   
-                  <TabsContent value="income">
-                    <IncomeStreams selectedMonth={selectedMonth} />
-                  </TabsContent>
+                  <XeroTabContent activeTab={activeTab} />
                   
-                  <TabsContent value="expenses">
-                    <CostStreams selectedMonth={selectedMonth} />
-                  </TabsContent>
-                  
-                  <TabsContent value="commissions">
-                    <CommissionsManagement selectedMonth={selectedMonth} />
-                  </TabsContent>
-                  
-                  <TabsContent value="membership">
-                    <MembershipSummary selectedMonth={selectedMonth} />
-                  </TabsContent>
-                  
-                  <TabsContent value="xero">
-                    <XeroIntegration />
-                  </TabsContent>
-                  
-                  <TabsContent value="webhooks">
-                    <XeroWebhookManager />
-                  </TabsContent>
+                  <WebhookTabContent activeTab={activeTab} />
                 </Tabs>
               </>
             )}
@@ -290,3 +248,29 @@ export const FinancialDashboard: React.FC = () => {
     </Card>
   );
 };
+
+// Extract loading state to a separate component
+const LoadingState: React.FC = () => (
+  <div className="flex justify-center items-center p-8">
+    <div className="flex flex-col items-center">
+      <Loader2 className="h-8 w-8 animate-spin text-puzzle-aqua" />
+      <p className="mt-2 text-sm text-muted-foreground">Loading financial data...</p>
+    </div>
+  </div>
+);
+
+// Extract error state to a separate component
+const ErrorState: React.FC<{ error: Error; onRetry: () => void }> = ({ error, onRetry }) => (
+  <div className="mb-4">
+    <ErrorDisplay error={error.message} />
+    <div className="flex justify-center mt-2">
+      <Button 
+        onClick={onRetry}
+        variant="outline" 
+        size="sm"
+      >
+        Retry Loading Data
+      </Button>
+    </div>
+  </div>
+);
