@@ -12,9 +12,9 @@ import { Button } from "@/components/ui/button";
 import { exportFinancialData } from '@/utils/exportUtils';
 import { ErrorDisplay } from '@/components/dashboard/ErrorDisplay';
 import { MonthlyFinancialSummary } from '@/types/financeTypes';
-import { FinanceTabContent } from './financial-dashboard/FinanceTabContent';
-import { XeroTabContent } from './financial-dashboard/XeroTabContent';
-import { WebhookTabContent } from './financial-dashboard/WebhookTabContent';
+import { FinanceTabContent } from './FinanceTabContent';
+import { XeroTabContent } from './XeroTabContent';
+import { WebhookTabContent } from './WebhookTabContent';
 import { XeroService } from '@/services/xero';
 
 export const FinancialDashboard: React.FC = () => {
