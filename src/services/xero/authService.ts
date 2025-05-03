@@ -17,14 +17,20 @@ export class XeroAuthService {
     try {
       console.log('[XERO AUTH] Initiating OAuth flow');
       
-      const response = await fetch(`${XERO_CONFIG.FUNCTION_BASE_URL}/xero-auth?action=authorize`, {
-        method: 'GET',
+      const requestOptions: RequestInit = {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        },
-        ...(redirectUrl ? { body: JSON.stringify({ redirectUrl }) } : {})
-      });
+        }
+      };
+      
+      // Add redirectUrl to request body if provided
+      if (redirectUrl) {
+        requestOptions.body = JSON.stringify({ redirectUrl });
+      }
+      
+      const response = await fetch(`${XERO_CONFIG.FUNCTION_BASE_URL}/xero-auth?action=authorize`, requestOptions);
       
       if (!response.ok) {
         const error = await response.text();

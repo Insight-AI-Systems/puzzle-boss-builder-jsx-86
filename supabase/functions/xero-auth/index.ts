@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -29,7 +28,7 @@ serve(async (req) => {
 
   try {
     console.log("[XERO AUTH] Function called with method:", req.method);
-
+    
     // Create Supabase client with service role key
     const supabaseAdmin = createClient(
       SUPABASE_URL!,
@@ -46,8 +45,7 @@ serve(async (req) => {
     let requestBody = {};
     let redirectUri = DEFAULT_REDIRECT_URI;
     
-    if (req.method === "POST" || 
-       (req.headers.get("content-type")?.includes("application/json") && req.bodyUsed === false)) {
+    if (req.method === "POST" && req.body) {
       try {
         requestBody = await req.json();
         if (requestBody && requestBody.redirectUrl) {
@@ -55,8 +53,8 @@ serve(async (req) => {
           console.log("[XERO AUTH] Using custom redirect URL:", redirectUri);
         }
       } catch (e) {
-        // No body or invalid JSON, use default redirect URI
-        console.log("[XERO AUTH] No valid request body, using default redirect URI");
+        // No valid JSON body or no redirect URL specified, use default
+        console.log("[XERO AUTH] No valid request body or redirectUrl, using default");
       }
     }
 
