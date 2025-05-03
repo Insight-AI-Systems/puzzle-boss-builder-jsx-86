@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent } from "@/components/ui/card";
@@ -236,9 +235,9 @@ export const FinancialDashboard: React.FC = () => {
                     selectedMonth={selectedMonth} 
                   />
                   
-                  <XeroTabContent activeTab={activeTab} />
+                  <XeroTabContent />
                   
-                  <WebhookTabContent activeTab={activeTab} />
+                  <WebhookTabContent />
                 </Tabs>
               </>
             )}
