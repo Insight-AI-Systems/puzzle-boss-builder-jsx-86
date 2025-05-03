@@ -10,8 +10,6 @@ interface FinancialDashboardHeaderProps {
   onMonthChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   onExport: () => void;
   isExporting?: boolean;
-  onConnectToXero?: () => void;
-  isConnectingXero?: boolean;
 }
 
 export const FinancialDashboardHeader: React.FC<FinancialDashboardHeaderProps> = ({
@@ -19,8 +17,6 @@ export const FinancialDashboardHeader: React.FC<FinancialDashboardHeaderProps> =
   onMonthChange,
   onExport,
   isExporting = false,
-  onConnectToXero,
-  isConnectingXero = false
 }) => {
   const months = [];
   const currentDate = new Date();
@@ -49,24 +45,6 @@ export const FinancialDashboardHeader: React.FC<FinancialDashboardHeaderProps> =
             </option>
           ))}
         </select>
-        
-        {onConnectToXero && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onConnectToXero} 
-            disabled={isConnectingXero}
-            className="bg-green-600 text-white hover:bg-green-700"
-          >
-            {isConnectingXero ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Connecting...
-              </>
-            ) : (
-              <>Connect to Xero</>
-            )}
-          </Button>
-        )}
         
         <Button 
           variant="outline" 

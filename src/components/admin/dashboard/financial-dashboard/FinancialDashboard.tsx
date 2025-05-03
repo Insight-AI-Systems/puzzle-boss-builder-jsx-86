@@ -15,7 +15,6 @@ import { XeroService } from '@/services/xero';
 import { LoadingState } from './LoadingState';
 import { ErrorState } from './ErrorState';
 import { DashboardTabs } from './DashboardTabs';
-import { useXeroConnection } from './hooks/useXeroConnection';
 import { useFinancialDataLoader } from './hooks/useFinancialDataLoader';
 
 export const FinancialDashboard: React.FC = () => {
@@ -24,7 +23,6 @@ export const FinancialDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   
   const { toast } = useToast();
-  const { isConnecting, handleConnectToXero } = useXeroConnection(toast);
   const { 
     financialData, 
     isLoading, 
@@ -122,8 +120,6 @@ export const FinancialDashboard: React.FC = () => {
         onMonthChange={handleMonthChange}
         onExport={handleExport}
         isExporting={exportLoading}
-        onConnectToXero={handleConnectToXero}
-        isConnectingXero={isConnecting}
       />
       <CardContent>
         {isLoading ? (

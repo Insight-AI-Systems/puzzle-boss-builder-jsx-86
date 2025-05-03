@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -6,10 +7,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { XeroService } from "@/services/xero"; // Updated import path
+import { XeroService } from "@/services/xero"; 
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, CheckCircle, RefreshCw, Link as LinkIcon } from "lucide-react";
+import { AlertCircle, CheckCircle, RefreshCw, Link as LinkIcon, Link } from "lucide-react";
 import { XeroInvoice, XeroBill, XeroTransaction, XeroContact } from "@/types/integration";
 import { format } from "date-fns";
 import XeroWebhookManager from "./XeroWebhookManager";
@@ -17,6 +18,7 @@ import XeroWebhookManager from "./XeroWebhookManager";
 const XeroIntegration: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
 
   // Connection status query
   const { 
@@ -104,7 +106,20 @@ const XeroIntegration: React.FC = () => {
   // Connect to Xero handler
   const handleConnectXero = async () => {
     try {
-      const authUrl = await XeroService.initiateAuth();
+      setIsConnecting(true);
+      
+      // Use the window.location.origin to ensure we have a proper absolute URL
+      const redirectUrl = window.location.origin + '/admin-dashboard';
+      console.log('[XERO CONNECT] Using redirect URL:', redirectUrl);
+      
+      const authUrl = await XeroService.initiateAuth(redirectUrl);
+      console.log('[XERO CONNECT] Received auth URL:', authUrl);
+      
+      if (!authUrl || !authUrl.includes('login.xero.com')) {
+        throw new Error('Invalid authorization URL received from Xero');
+      }
+      
+      // Navigate to the authorization URL
       window.location.href = authUrl;
     } catch (error) {
       console.error("Failed to connect to Xero:", error);
@@ -113,6 +128,8 @@ const XeroIntegration: React.FC = () => {
         description: error instanceof Error ? error.message : "Failed to connect to Xero",
         variant: "destructive",
       });
+    } finally {
+      setIsConnecting(false);
     }
   };
   
@@ -203,24 +220,42 @@ const XeroIntegration: React.FC = () => {
           <Alert className="bg-green-50 border-green-200">
             <CheckCircle className="h-4 w-4 text-green-600" />
             <AlertTitle className="text-green-800">Connected to Xero</AlertTitle>
-            <AlertDescription className="text-green-700">
-              Token expires at {formatDate(connectionStatus.expiresAt || '')}
-              <Button variant="outline" size="sm" className="ml-4" onClick={handleDisconnect}>
+            <AlertDescription className="text-green-700 flex items-center justify-between">
+              <span>Token expires at {formatDate(connectionStatus.expiresAt || '')}</span>
+              <Button variant="outline" size="sm" onClick={handleDisconnect} className="ml-4">
                 Disconnect
               </Button>
             </AlertDescription>
           </Alert>
         ) : (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Not connected to Xero</AlertTitle>
-            <AlertDescription>
-              Connect your Xero account to enable data synchronization.
-              <Button variant="outline" size="sm" className="ml-4" onClick={handleConnectXero}>
-                Connect to Xero
+          <div className="space-y-4">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Not connected to Xero</AlertTitle>
+              <AlertDescription>
+                Connect your Xero account to enable data synchronization.
+              </AlertDescription>
+            </Alert>
+            
+            <div className="flex justify-center">
+              <Button 
+                onClick={handleConnectXero} 
+                disabled={isConnecting}
+                className="bg-green-600 hover:bg-green-700 text-white"
+                size="lg"
+              >
+                {isConnecting ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Connecting to Xero...
+                  </>
+                ) : (
+                  <>
+                    <Link className="mr-2 h-4 w-4" /> Connect to Xero
+                  </>
+                )}
               </Button>
-            </AlertDescription>
-          </Alert>
+            </div>
+          </div>
         )}
       </CardHeader>
 
