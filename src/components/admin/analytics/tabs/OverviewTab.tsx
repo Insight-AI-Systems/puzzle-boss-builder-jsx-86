@@ -4,7 +4,6 @@ import { TabsContent } from "@/components/ui/tabs";
 import { StatCard } from '../StatCard';
 import { ChartPlaceholder } from '../ChartPlaceholder';
 import { DateRangeSelector } from '../DateRangeSelector';
-import { ActivityBreakdownCard } from '../ActivityBreakdownCard';
 import { useAnalytics, DateRange } from '@/hooks/admin/useAnalytics';
 import {
   Card,
@@ -21,7 +20,6 @@ export const OverviewTab: React.FC = () => {
     dailyMetrics, 
     monthlyTrends, 
     categoryRevenue, 
-    activityBreakdown,
     isLoadingDailyMetrics,
     isLoadingMonthlyTrends,
     isLoadingCategoryRevenue,
@@ -65,8 +63,6 @@ export const OverviewTab: React.FC = () => {
         onDateChange={handleDateRangeChange}
       />
       
-      <ActivityBreakdownCard data={activityBreakdown} />
-
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <StatCard 
           title="Active Users" 
@@ -100,7 +96,7 @@ export const OverviewTab: React.FC = () => {
             <CardTitle>Revenue by Category</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
+            <div className="h-96">
               {categoryRevenue && categoryRevenue.length > 0 ? (
                 <ChartContainer config={{}}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -131,7 +127,7 @@ export const OverviewTab: React.FC = () => {
             <CardTitle>Monthly Trends</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
+            <div className="h-96">
               {monthlyTrends && monthlyTrends.length > 0 ? (
                 <ChartContainer config={{}}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -143,6 +139,7 @@ export const OverviewTab: React.FC = () => {
                       <Legend />
                       <Bar dataKey="active_users" fill="#0077B6" name="Active Users" />
                       <Bar dataKey="new_signups" fill="#00B4D8" name="New Signups" />
+                      <Bar dataKey="puzzles_completed" fill="#90E0EF" name="Puzzles Completed" />
                     </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>
