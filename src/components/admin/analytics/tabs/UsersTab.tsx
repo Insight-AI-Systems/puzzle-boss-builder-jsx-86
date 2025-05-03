@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TabsContent } from "@/components/ui/tabs";
 import { StatCard } from '../StatCard';
@@ -43,7 +42,6 @@ export const UsersTab: React.FC = () => {
     : [];
 
   // Calculate totals for metrics
-  // Fix: Make sure we're using the actual total users count from userDemographics
   const totalUsers = userDemographics?.total_users || 0;
   const activePlayers = dailyMetrics?.active_users || 0;
   

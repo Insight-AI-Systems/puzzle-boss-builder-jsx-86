@@ -4,6 +4,7 @@ export interface DailyMetrics {
   new_signups: number;
   puzzles_completed: number;
   revenue: number;
+  total_users?: number; // Add total_users property
 }
 
 export interface MonthlyTrend {
@@ -23,6 +24,7 @@ export interface UserDemographics {
   gender_distribution: Record<string, number>;
   age_distribution: Record<string, number>;
   country_distribution: Record<string, number>;
+  total_users: number; // Add total_users property
 }
 
 export interface PuzzleMetrics {
@@ -47,7 +49,6 @@ export interface ActivityBreakdown {
 }
 
 export interface TrendValue {
-  value: string;
+  value: string | number;
   direction: "up" | "down";
 }
-

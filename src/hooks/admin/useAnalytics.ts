@@ -4,10 +4,25 @@ import { useDailyMetrics } from './analytics/useDailyMetrics';
 import { useUserDemographics } from './analytics/useUserDemographics';
 import { useMonthlyTrends } from './analytics/useMonthlyTrends';
 import { useCategoryRevenue } from './analytics/useCategoryRevenue';
+import { usePuzzleMetrics } from './analytics/usePuzzleMetrics';
+import { useRevenueMetrics } from './analytics/useRevenueMetrics';
+import { formatTime as formatTimeUtil } from '@/utils/puzzleUtils';
+
+// Define the ActivityBreakdown type
+export interface ActivityBreakdown {
+  name: string;
+  value: number;
+}
+
+// Define DateRange type
+export interface DateRange {
+  from: Date;
+  to: Date;
+}
 
 export const useAnalytics = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [dateRange, setDateRange] = useState({
+  const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
     to: new Date()
   });
@@ -24,8 +39,14 @@ export const useAnalytics = () => {
   // Get category revenue data
   const { data: categoryRevenue, isLoading: isLoadingCategoryRevenue } = useCategoryRevenue(selectedDate);
   
+  // Get puzzle metrics
+  const { data: puzzleMetrics, isLoading: isLoadingPuzzleMetrics } = usePuzzleMetrics();
+  
+  // Get revenue metrics
+  const { data: revenueMetrics, isLoading: isLoadingRevenueMetrics, error } = useRevenueMetrics();
+  
   // Calculate activity breakdown
-  const activityBreakdown = [
+  const activityBreakdown: ActivityBreakdown[] = [
     { name: 'Puzzles', value: dailyMetrics?.puzzles_completed || 0 },
     { name: 'Purchases', value: (dailyMetrics?.revenue || 0) > 0 ? Math.floor((dailyMetrics?.revenue || 0) / 10) : 0 },
     { name: 'Signups', value: dailyMetrics?.new_signups || 0 }
@@ -66,9 +87,16 @@ export const useAnalytics = () => {
     return Math.round(((current - previous) / previous) * 100);
   };
   
+  // Helper function to format time in MM:SS format
+  const formatTime = (seconds: number): string => {
+    return formatTimeUtil(seconds);
+  };
+  
   // Make sure we synchronize total_users between the two data sources to avoid discrepancies
   if (dailyMetrics && userDemographics && userDemographics.total_users !== undefined) {
-    dailyMetrics.total_users = userDemographics.total_users;
+    // Force TS to recognize the type
+    const metrics = dailyMetrics as any;
+    metrics.total_users = userDemographics.total_users;
   }
   
   return {
@@ -81,13 +109,19 @@ export const useAnalytics = () => {
     monthlyTrends,
     categoryRevenue,
     activityBreakdown,
+    puzzleMetrics,
+    revenueMetrics,
+    error,
     isLoadingDailyMetrics,
     isLoadingUserDemographics,
     isLoadingMonthlyTrends,
     isLoadingCategoryRevenue,
+    isLoadingPuzzleMetrics,
+    isLoadingRevenueMetrics,
     getUserTrend,
     getSignupTrend,
     getPuzzlesTrend,
-    getRevenueTrend
+    getRevenueTrend,
+    formatTime
   };
 };

@@ -5,7 +5,7 @@ import { StatCard } from '../StatCard';
 import { ChartPlaceholder } from '../ChartPlaceholder';
 import { DateRangeSelector } from '../DateRangeSelector';
 import { ActivityBreakdownCard } from '../ActivityBreakdownCard';
-import { useAnalytics } from '@/hooks/admin/useAnalytics';
+import { useAnalytics, DateRange } from '@/hooks/admin/useAnalytics';
 import {
   Card,
   CardHeader,
@@ -35,6 +35,11 @@ export const OverviewTab: React.FC = () => {
   
   const isLoading = isLoadingDailyMetrics || isLoadingMonthlyTrends || isLoadingCategoryRevenue;
 
+  // Create a handler that conforms to the expected type
+  const handleDateRangeChange = (range: DateRange) => {
+    setDateRange(range);
+  };
+
   if (isLoading) {
     return (
       <TabsContent value="overview" className="space-y-6">
@@ -45,11 +50,19 @@ export const OverviewTab: React.FC = () => {
     );
   }
 
+  // Convert trend values to the required format
+  const formatTrend = (value: number) => {
+    return {
+      value: value,
+      direction: value >= 0 ? "up" as const : "down" as const
+    };
+  };
+
   return (
     <TabsContent value="overview" className="space-y-6">
       <DateRangeSelector 
         dateRange={dateRange}
-        onDateChange={setDateRange}
+        onDateChange={handleDateRangeChange}
       />
       
       <ActivityBreakdownCard data={activityBreakdown} />
@@ -58,25 +71,25 @@ export const OverviewTab: React.FC = () => {
         <StatCard 
           title="Active Users" 
           value={dailyMetrics?.active_users || 0}
-          trend={getUserTrend()}
+          trend={formatTrend(getUserTrend())}
           subtext="vs. last month"
         />
         <StatCard 
           title="New Signups" 
           value={dailyMetrics?.new_signups || 0}
-          trend={getSignupTrend()}
+          trend={formatTrend(getSignupTrend())}
           subtext="vs. last month"
         />
         <StatCard 
           title="Puzzles Completed" 
           value={dailyMetrics?.puzzles_completed || 0}
-          trend={getPuzzlesTrend()}
+          trend={formatTrend(getPuzzlesTrend())}
           subtext="vs. last month"
         />
         <StatCard 
           title="Revenue" 
           value={`$${dailyMetrics?.revenue || 0}`}
-          trend={getRevenueTrend()}
+          trend={formatTrend(getRevenueTrend())}
           subtext="vs. last month"
         />
       </div>

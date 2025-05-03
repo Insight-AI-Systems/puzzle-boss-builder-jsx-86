@@ -8,74 +8,45 @@ export const useUserDemographics = () => {
     queryKey: ['userDemographics'],
     queryFn: async () => {
       try {
-        // First, let's check what columns are actually available in the profiles table
-        const { data: profileColumns, error: columnsError } = await supabase
-          .from('profiles')
-          .select('*')
-          .limit(1);
-
-        if (columnsError) {
-          console.error('Error fetching profile columns:', columnsError);
-          throw columnsError;
-        }
-
-        // Build the query based on available columns
-        let query = supabase.from('profiles').select();
-
-        // Fetch profiles data
-        const { data: users, error } = await query;
-
-        if (error) {
-          console.error('Error fetching user demographics:', error);
-          throw error;
-        }
-
-        const genderCounts: Record<string, number> = { 'not_specified': 0 };
-        const ageCounts: Record<string, number> = { 'not_specified': 0 };
-        const countryCounts: Record<string, number> = { 'not_specified': 0 };
-
-        if (users) {
-          users.forEach((profile: any) => {
-            if (profile) {
-              // Process gender - check if the column exists in the profile data
-              if ('gender' in profile) {
-                const gender = profile.gender || 'not_specified';
-                genderCounts[gender] = (genderCounts[gender] || 0) + 1;
-              } else {
-                genderCounts['not_specified'] = (genderCounts['not_specified'] || 0) + 1;
-              }
-
-              // Process age group - check if the column exists in the profile data
-              if ('age_group' in profile) {
-                const ageGroup = profile.age_group || 'not_specified';
-                ageCounts[ageGroup] = (ageCounts[ageGroup] || 0) + 1;
-              } else {
-                ageCounts['not_specified'] = (ageCounts['not_specified'] || 0) + 1;
-              }
-
-              // Process country - check if the column exists in the profile data
-              if ('country' in profile) {
-                const country = profile.country || 'not_specified';
-                countryCounts[country] = (countryCounts[country] || 0) + 1;
-              } else {
-                countryCounts['not_specified'] = (countryCounts['not_specified'] || 0) + 1;
-              }
-            }
-          });
-        }
-
+        // Get all users from the edge function
+        const { data: allUsers, error: usersError } = await supabase
+          .functions
+          .invoke('get-all-users');
+        
+        if (usersError) throw usersError;
+        
+        const userCount = allUsers.length;
+        
+        // Gender distribution
+        const genderDistribution: Record<string, number> = {};
+        allUsers.forEach((user: any) => {
+          const gender = user.gender || 'Not Specified';
+          genderDistribution[gender] = (genderDistribution[gender] || 0) + 1;
+        });
+        
+        // Age distribution
+        const ageDistribution: Record<string, number> = {};
+        allUsers.forEach((user: any) => {
+          const ageGroup = user.age_group || 'Not Specified';
+          ageDistribution[ageGroup] = (ageDistribution[ageGroup] || 0) + 1;
+        });
+        
+        // Country distribution
+        const countryDistribution: Record<string, number> = {};
+        allUsers.forEach((user: any) => {
+          const country = user.country || 'Not Specified';
+          countryDistribution[country] = (countryDistribution[country] || 0) + 1;
+        });
+        
         return {
-          gender_distribution: genderCounts,
-          age_distribution: ageCounts,
-          country_distribution: countryCounts
+          gender_distribution: genderDistribution,
+          age_distribution: ageDistribution,
+          country_distribution: countryDistribution,
+          total_users: userCount
         } as UserDemographics;
-      } catch (err) {
-        console.error('Error in user demographics query:', err);
-        return {
-          gender_distribution: { 'not_specified': 0 },
-          age_distribution: { 'not_specified': 0 },
-          country_distribution: { 'not_specified': 0 }
-        };
+      } catch (error) {
+        console.error('Error fetching user demographics:', error);
+        throw error;
       }
     }
   });
