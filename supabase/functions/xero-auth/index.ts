@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -10,7 +11,7 @@ const corsHeaders = {
 // Xero OAuth configuration
 const XERO_CLIENT_ID = Deno.env.get("XERO_CLIENT_ID") || "E9A32798D8EB477995DEEC32917F3C12";
 const XERO_CLIENT_SECRET = Deno.env.get("XERO_CLIENT_SECRET") || "xjG9CiByuoLkJCflCYWAvCEab5WGMoutaLWhroOJvy_OIM3v";
-const DEFAULT_REDIRECT_URI = "https://www.insight-ai-systems.com/admin-dashboard?tab=finance";
+const DEFAULT_REDIRECT_URI = "https://thepuzzleboss.com/admin-dashboard?tab=finance";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -75,14 +76,21 @@ serve(async (req) => {
         // Generate state parameter for security
         const state = crypto.randomUUID();
         
-        // Store state in DB for verification during callback
+        // Store state and redirect URI in DB for verification during callback
         await supabaseAdmin
           .from("xero_integration_settings")
-          .upsert({ 
-            setting_key: "oauth_state", 
-            setting_value: state,
-            updated_at: new Date().toISOString()
-          });
+          .upsert([
+            { 
+              setting_key: "oauth_state", 
+              setting_value: state,
+              updated_at: new Date().toISOString()
+            },
+            {
+              setting_key: "oauth_redirect_uri",
+              setting_value: redirectUri,
+              updated_at: new Date().toISOString()
+            }
+          ]);
 
         // Construct the authorization URL
         const authUrl = new URL(XERO_AUTH_URL);

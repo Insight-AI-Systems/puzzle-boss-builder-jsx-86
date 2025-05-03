@@ -11,8 +11,8 @@ const corsHeaders = {
 // Xero OAuth configuration
 const XERO_CLIENT_ID = Deno.env.get("XERO_CLIENT_ID") || "E9A32798D8EB477995DEEC32917F3C12";
 const XERO_CLIENT_SECRET = Deno.env.get("XERO_CLIENT_SECRET") || "xjG9CiByuoLkJCflCYWAvCEab5WGMoutaLWhroOJvy_OIM3v";
-const XERO_REDIRECT_URI = Deno.env.get("XERO_REDIRECT_URI") || "https://www.insight-ai-systems.com/admin-dashboard?tab=finance";
-const FRONTEND_URL = Deno.env.get("FRONTEND_URL") || "https://www.insight-ai-systems.com";
+const DEFAULT_REDIRECT_URI = "https://thepuzzleboss.com/admin-dashboard?tab=finance";
+const FRONTEND_URL = Deno.env.get("FRONTEND_URL") || "https://thepuzzleboss.com";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -72,6 +72,22 @@ serve(async (req) => {
       throw new Error("Invalid state parameter");
     }
 
+    // Retrieve the stored redirect URI
+    const { data: redirectUriData, error: redirectUriError } = await supabaseAdmin
+      .from("xero_integration_settings")
+      .select("setting_value")
+      .eq("setting_key", "oauth_redirect_uri")
+      .single();
+
+    if (redirectUriError || !redirectUriData) {
+      console.warn("[XERO CALLBACK] Failed to retrieve redirect URI from settings, using default");
+    }
+
+    // Use the stored redirect URI if available, otherwise use default
+    const redirectUri = redirectUriData?.setting_value || DEFAULT_REDIRECT_URI;
+    
+    console.log("[XERO CALLBACK] Using redirect URI for token exchange:", redirectUri);
+
     console.log("[XERO CALLBACK] State validated, exchanging code for token");
     
     // Exchange authorization code for tokens
@@ -84,13 +100,14 @@ serve(async (req) => {
       body: new URLSearchParams({
         grant_type: "authorization_code",
         code,
-        redirect_uri: XERO_REDIRECT_URI
+        redirect_uri: redirectUri
       })
     });
     
     if (!tokenResponse.ok) {
-      const error = await tokenResponse.text();
-      throw new Error(`Failed to exchange code for token: ${error}`);
+      const errorText = await tokenResponse.text();
+      console.error("[XERO CALLBACK] Token exchange failed:", errorText);
+      throw new Error(`Failed to exchange code for token: ${errorText}`);
     }
     
     const tokenData = await tokenResponse.json();
@@ -105,6 +122,8 @@ serve(async (req) => {
     });
     
     if (!connectionsResponse.ok) {
+      const errorText = await connectionsResponse.text();
+      console.error("[XERO CALLBACK] Failed to retrieve connections:", errorText);
       throw new Error("Failed to retrieve Xero connections");
     }
     
@@ -137,23 +156,40 @@ serve(async (req) => {
     
     console.log("[XERO CALLBACK] Tokens stored, redirecting back to frontend");
     
-    // Redirect back to frontend with success parameter
-    const redirectUrl = new URL(`${FRONTEND_URL}/admin-dashboard`);
-    redirectUrl.searchParams.append("tab", "finance");
-    redirectUrl.searchParams.append("xero_connected", "true");
+    // Extract the base URL from the redirect URI for the final redirect
+    let redirectBackUrl;
+    try {
+      const parsedUrl = new URL(redirectUri);
+      // Use the origin and pathname from the original redirect URI
+      redirectBackUrl = new URL(parsedUrl.pathname, parsedUrl.origin);
+      // Add tab=finance query parameter if not already present
+      if (!redirectBackUrl.searchParams.has("tab")) {
+        redirectBackUrl.searchParams.append("tab", "finance");
+      }
+      redirectBackUrl.searchParams.append("xero_connected", "true");
+    } catch (e) {
+      console.warn("[XERO CALLBACK] Failed to parse redirect URI, using default frontend URL");
+      redirectBackUrl = new URL(FRONTEND_URL);
+      redirectBackUrl.pathname = "/admin-dashboard";
+      redirectBackUrl.searchParams.append("tab", "finance");
+      redirectBackUrl.searchParams.append("xero_connected", "true");
+    }
+    
+    console.log("[XERO CALLBACK] Redirecting to:", redirectBackUrl.toString());
     
     return new Response(null, {
       status: 302,
       headers: {
         ...corsHeaders,
-        "Location": redirectUrl.toString()
+        "Location": redirectBackUrl.toString()
       }
     });
   } catch (error) {
     console.error("Xero callback error:", error);
     
     // Redirect back to frontend with error parameter
-    const redirectUrl = new URL(`${FRONTEND_URL}/admin-dashboard`);
+    const redirectUrl = new URL(FRONTEND_URL);
+    redirectUrl.pathname = "/admin-dashboard";
     redirectUrl.searchParams.append("tab", "finance");
     redirectUrl.searchParams.append("xero_error", encodeURIComponent(error.message || "Unknown error"));
     
