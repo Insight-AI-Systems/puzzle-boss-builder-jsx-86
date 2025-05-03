@@ -2,13 +2,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFinancials } from '@/hooks/useFinancials';
 import { useToast } from '@/hooks/use-toast';
 import { FinancialDashboardHeader } from './FinancialDashboardHeader';
 import { FinancialSummaryCards } from './FinancialSummaryCards';
-import { Button } from "@/components/ui/button";
-import { exportFinancialData } from '@/utils/exportUtils';
 import { MonthlyFinancialSummary } from '@/types/financeTypes';
 import { FinanceTabContent } from './FinanceTabContent';
 import { XeroTabContent } from './XeroTabContent';
@@ -16,19 +14,26 @@ import { WebhookTabContent } from './WebhookTabContent';
 import { XeroService } from '@/services/xero';
 import { LoadingState } from './LoadingState';
 import { ErrorState } from './ErrorState';
+import { DashboardTabs } from './DashboardTabs';
+import { useXeroConnection } from './hooks/useXeroConnection';
+import { useFinancialDataLoader } from './hooks/useFinancialDataLoader';
 
 export const FinancialDashboard: React.FC = () => {
-  const isInitialRender = useRef(true);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
-  const [financialData, setFinancialData] = useState<MonthlyFinancialSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [exportLoading, setExportLoading] = useState(false);
-  const [loadError, setLoadError] = useState<Error | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
-  const [isConnecting, setIsConnecting] = useState(false);
   
-  const { fetchMonthlyFinancialSummary, fetchSiteIncomes, fetchSiteExpenses, fetchCommissionPayments } = useFinancials();
   const { toast } = useToast();
+  const { isConnecting, handleConnectToXero } = useXeroConnection(toast);
+  const { 
+    financialData, 
+    isLoading, 
+    loadError,
+    handleRetry,
+    fetchSiteIncomes,
+    fetchSiteExpenses,
+    fetchCommissionPayments
+  } = useFinancialDataLoader(selectedMonth);
 
   // Check for Xero connection success/error from URL parameters only once
   useEffect(() => {
@@ -59,63 +64,7 @@ export const FinancialDashboard: React.FC = () => {
       url.searchParams.delete('xero_error');
       window.history.replaceState({}, '', url.toString());
     }
-  }, []); // Empty dependency array ensures this runs only once
-
-  // Create default summary object to prevent null values
-  const createDefaultSummary = useCallback((period: string): MonthlyFinancialSummary => {
-    return {
-      period,
-      total_income: 0,
-      total_expenses: 0,
-      net_profit: 0,
-      commissions_paid: 0,
-      prize_expenses: 0
-    };
-  }, []);
-
-  const loadFinancialData = useCallback(async () => {
-    // Skip if we've already loaded data
-    if (financialData?.period === selectedMonth && !isInitialRender.current) {
-      return;
-    }
-    
-    setIsLoading(true);
-    setLoadError(null);
-    
-    try {
-      let summary: MonthlyFinancialSummary | null = null;
-      
-      try {
-        summary = await fetchMonthlyFinancialSummary(selectedMonth);
-      } catch (fetchError) {
-        console.error('Error in fetchMonthlyFinancialSummary:', fetchError);
-      }
-      
-      // Always set valid data to prevent rendering issues
-      const finalData = summary || createDefaultSummary(selectedMonth);
-      setFinancialData(finalData);
-      
-    } catch (err) {
-      console.error('Error loading financial data:', err);
-      setLoadError(err instanceof Error ? err : new Error('Unknown error occurred'));
-      // Set fallback data even on error
-      setFinancialData(createDefaultSummary(selectedMonth));
-      
-      toast({
-        title: "Error loading financial data",
-        description: err instanceof Error ? err.message : "An unknown error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-      isInitialRender.current = false;
-    }
-  }, [selectedMonth, fetchMonthlyFinancialSummary, createDefaultSummary, toast, financialData]);
-  
-  // Use a more controlled approach for loading data
-  useEffect(() => {
-    loadFinancialData();
-  }, [loadFinancialData, selectedMonth]);
+  }, [toast]);
 
   const handleMonthChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newMonth = event.target.value;
@@ -166,36 +115,6 @@ export const FinancialDashboard: React.FC = () => {
     }
   };
 
-  const handleRetry = () => {
-    loadFinancialData();
-  };
-
-  const handleConnectToXero = async () => {
-    try {
-      setIsConnecting(true);
-      toast({
-        title: "Connecting to Xero",
-        description: "Initiating connection to Xero...",
-      });
-      
-      // Set redirectUrl to the current location (admin-dashboard with finance tab)
-      const currentUrl = new URL(window.location.href);
-      const baseUrl = `${currentUrl.protocol}//${currentUrl.host}`;
-      const redirectUrl = `${baseUrl}/admin-dashboard?tab=finance`;
-      
-      const authUrl = await XeroService.initiateAuth(redirectUrl);
-      window.location.href = authUrl;
-    } catch (error) {
-      console.error("Failed to connect to Xero:", error);
-      toast({
-        title: "Connection Error",
-        description: error instanceof Error ? error.message : "Failed to connect to Xero",
-        variant: "destructive",
-      });
-      setIsConnecting(false);
-    }
-  };
-
   return (
     <Card className="w-full">
       <FinancialDashboardHeader
@@ -211,35 +130,18 @@ export const FinancialDashboard: React.FC = () => {
           <LoadingState />
         ) : (
           <>
-            {loadError && (
-              <ErrorState error={loadError} onRetry={handleRetry} />
-            )}
+            {loadError && <ErrorState error={loadError} onRetry={handleRetry} />}
             
             {/* Always render financial data UI with guaranteed valid data */}
             {financialData && (
               <>
                 <FinancialSummaryCards financialData={financialData} />
                 
-                <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
-                  <TabsList className="mb-4">
-                    <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="income">Income</TabsTrigger>
-                    <TabsTrigger value="expenses">Expenses</TabsTrigger>
-                    <TabsTrigger value="commissions">Commissions</TabsTrigger>
-                    <TabsTrigger value="membership">Membership</TabsTrigger>
-                    <TabsTrigger value="xero">Xero Integration</TabsTrigger>
-                    <TabsTrigger value="webhooks">Xero Webhooks</TabsTrigger>
-                  </TabsList>
-                  
-                  <FinanceTabContent 
-                    activeTab={activeTab}
-                    selectedMonth={selectedMonth} 
-                  />
-                  
-                  <XeroTabContent />
-                  
-                  <WebhookTabContent />
-                </Tabs>
+                <DashboardTabs 
+                  activeTab={activeTab} 
+                  setActiveTab={setActiveTab} 
+                  selectedMonth={selectedMonth}
+                />
               </>
             )}
           </>
@@ -247,4 +149,9 @@ export const FinancialDashboard: React.FC = () => {
       </CardContent>
     </Card>
   );
+};
+
+const exportFinancialData = async (incomeData: any[], expenseData: any[], commissionData: any[], month: string) => {
+  const { exportFinancialData: exportData } = await import('@/utils/exportUtils');
+  return exportData(incomeData, expenseData, commissionData, month);
 };
