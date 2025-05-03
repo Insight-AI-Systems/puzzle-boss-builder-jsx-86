@@ -10,9 +10,10 @@ import { XERO_CONFIG } from './config';
 export class XeroAuthService {
   /**
    * Initiates the Xero OAuth authorization flow
+   * @param redirectUrl Optional custom redirect URL
    * @returns Promise resolving to the authorization URL
    */
-  static async initiateAuth(): Promise<string> {
+  static async initiateAuth(redirectUrl?: string): Promise<string> {
     try {
       console.log('[XERO AUTH] Initiating OAuth flow');
       
@@ -22,6 +23,7 @@ export class XeroAuthService {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         },
+        ...(redirectUrl ? { body: JSON.stringify({ redirectUrl }) } : {})
       });
       
       if (!response.ok) {

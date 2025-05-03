@@ -9,7 +9,7 @@ const corsHeaders = {
 };
 
 // Xero API configuration
-const XERO_CLIENT_ID = Deno.env.get("XERO_CLIENT_ID");
+const XERO_CLIENT_ID = Deno.env.get("XERO_CLIENT_ID") || "E9A32798D8EB477995DEEC32917F3C12";
 const XERO_CLIENT_SECRET = Deno.env.get("XERO_CLIENT_SECRET");
 const XERO_TOKEN_URL = "https://identity.xero.com/connect/token";
 
@@ -27,6 +27,13 @@ serve(async (req) => {
   }
 
   try {
+    console.log("[XERO REFRESH] Function called");
+
+    // Check if we have required credentials
+    if (!XERO_CLIENT_ID || !XERO_CLIENT_SECRET) {
+      throw new Error("Missing required Xero OAuth configuration");
+    }
+
     // Create Supabase client with service role key
     const supabaseAdmin = createClient(
       SUPABASE_URL!,
@@ -70,6 +77,8 @@ serve(async (req) => {
       );
     }
     
+    console.log("[XERO REFRESH] Token expired or about to expire, refreshing");
+    
     // Token is expired or about to expire, refresh it
     const refreshResponse = await fetch(XERO_TOKEN_URL, {
       method: "POST",
@@ -89,6 +98,7 @@ serve(async (req) => {
     }
     
     const refreshData = await refreshResponse.json();
+    console.log("[XERO REFRESH] Successfully refreshed token");
     
     // Calculate new expiry time
     const newExpiresAt = new Date();

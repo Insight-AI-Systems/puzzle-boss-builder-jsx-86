@@ -18,6 +18,7 @@ export const useXeroConnection = (toast: any) => {
       const baseUrl = `${currentUrl.protocol}//${currentUrl.host}`;
       const redirectUrl = `${baseUrl}/admin-dashboard?tab=finance`;
       
+      // Passing redirectUrl to the initiateAuth method
       const authUrl = await XeroService.initiateAuth(redirectUrl);
       window.location.href = authUrl;
     } catch (error) {

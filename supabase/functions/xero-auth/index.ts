@@ -9,9 +9,9 @@ const corsHeaders = {
 };
 
 // Xero OAuth configuration
-const XERO_CLIENT_ID = Deno.env.get("XERO_CLIENT_ID");
+const XERO_CLIENT_ID = Deno.env.get("XERO_CLIENT_ID") || "E9A32798D8EB477995DEEC32917F3C12";
 const XERO_CLIENT_SECRET = Deno.env.get("XERO_CLIENT_SECRET");
-const XERO_REDIRECT_URI = Deno.env.get("XERO_REDIRECT_URI");
+const DEFAULT_REDIRECT_URI = "https://www.insight-ai-systems.com/admin-dashboard?tab=finance";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -28,6 +28,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log("[XERO AUTH] Function called with method:", req.method);
+
     // Create Supabase client with service role key
     const supabaseAdmin = createClient(
       SUPABASE_URL!,
@@ -35,13 +37,34 @@ serve(async (req) => {
     );
 
     // Check required environment variables
-    if (!XERO_CLIENT_ID || !XERO_CLIENT_SECRET || !XERO_REDIRECT_URI) {
+    if (!XERO_CLIENT_ID || !XERO_CLIENT_SECRET) {
+      console.error("[XERO AUTH] Missing required Xero OAuth configuration");
       throw new Error("Missing required Xero OAuth configuration");
+    }
+
+    // Parse request body for custom redirect URL if provided
+    let requestBody = {};
+    let redirectUri = DEFAULT_REDIRECT_URI;
+    
+    if (req.method === "POST" || 
+       (req.headers.get("content-type")?.includes("application/json") && req.bodyUsed === false)) {
+      try {
+        requestBody = await req.json();
+        if (requestBody && requestBody.redirectUrl) {
+          redirectUri = requestBody.redirectUrl;
+          console.log("[XERO AUTH] Using custom redirect URL:", redirectUri);
+        }
+      } catch (e) {
+        // No body or invalid JSON, use default redirect URI
+        console.log("[XERO AUTH] No valid request body, using default redirect URI");
+      }
     }
 
     // Handle different actions based on URL parameters
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
+
+    console.log("[XERO AUTH] Action requested:", action);
 
     switch (action) {
       case "authorize":
@@ -61,9 +84,11 @@ serve(async (req) => {
         const authUrl = new URL(XERO_AUTH_URL);
         authUrl.searchParams.append("response_type", "code");
         authUrl.searchParams.append("client_id", XERO_CLIENT_ID);
-        authUrl.searchParams.append("redirect_uri", XERO_REDIRECT_URI);
+        authUrl.searchParams.append("redirect_uri", redirectUri);
         authUrl.searchParams.append("scope", "offline_access accounting.transactions accounting.contacts");
         authUrl.searchParams.append("state", state);
+        
+        console.log("[XERO AUTH] Generated auth URL with redirect URI:", redirectUri);
         
         return new Response(
           JSON.stringify({ url: authUrl.toString() }),

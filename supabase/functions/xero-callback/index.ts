@@ -9,10 +9,10 @@ const corsHeaders = {
 };
 
 // Xero OAuth configuration
-const XERO_CLIENT_ID = Deno.env.get("XERO_CLIENT_ID");
+const XERO_CLIENT_ID = Deno.env.get("XERO_CLIENT_ID") || "E9A32798D8EB477995DEEC32917F3C12";
 const XERO_CLIENT_SECRET = Deno.env.get("XERO_CLIENT_SECRET");
-const XERO_REDIRECT_URI = Deno.env.get("XERO_REDIRECT_URI");
-const FRONTEND_URL = Deno.env.get("FRONTEND_URL") || "http://localhost:5173";
+const XERO_REDIRECT_URI = Deno.env.get("XERO_REDIRECT_URI") || "https://www.insight-ai-systems.com/admin-dashboard?tab=finance";
+const FRONTEND_URL = Deno.env.get("FRONTEND_URL") || "https://www.insight-ai-systems.com";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -30,6 +30,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log("[XERO CALLBACK] Function called");
+
     // Create Supabase client with service role key
     const supabaseAdmin = createClient(
       SUPABASE_URL!,
@@ -42,6 +44,8 @@ serve(async (req) => {
     const state = url.searchParams.get("state");
     const error = url.searchParams.get("error");
     
+    console.log("[XERO CALLBACK] Received parameters:", { code: code?.slice(0, 5) + "...", state: state?.slice(0, 5) + "...", error });
+    
     // Check for error in callback
     if (error) {
       throw new Error(`OAuth error: ${error}`);
@@ -50,6 +54,11 @@ serve(async (req) => {
     // Validate required parameters
     if (!code || !state) {
       throw new Error("Missing required OAuth callback parameters");
+    }
+
+    // Check if we have required credentials
+    if (!XERO_CLIENT_ID || !XERO_CLIENT_SECRET) {
+      throw new Error("Missing required Xero OAuth configuration");
     }
     
     // Verify state parameter to prevent CSRF
@@ -62,6 +71,8 @@ serve(async (req) => {
     if (!stateData || stateData.setting_value !== state) {
       throw new Error("Invalid state parameter");
     }
+
+    console.log("[XERO CALLBACK] State validated, exchanging code for token");
     
     // Exchange authorization code for tokens
     const tokenResponse = await fetch(XERO_TOKEN_URL, {
@@ -73,7 +84,7 @@ serve(async (req) => {
       body: new URLSearchParams({
         grant_type: "authorization_code",
         code,
-        redirect_uri: XERO_REDIRECT_URI!
+        redirect_uri: XERO_REDIRECT_URI
       })
     });
     
@@ -83,6 +94,7 @@ serve(async (req) => {
     }
     
     const tokenData = await tokenResponse.json();
+    console.log("[XERO CALLBACK] Successfully received token");
     
     // Get Xero tenant connections
     const connectionsResponse = await fetch(XERO_CONNECTIONS_URL, {
@@ -104,6 +116,7 @@ serve(async (req) => {
     
     // Use the first tenant/organization
     const tenantId = connections[0].tenantId;
+    console.log("[XERO CALLBACK] Retrieved tenant ID:", tenantId);
     
     // Calculate token expiry time
     const expiresAt = new Date();
@@ -122,7 +135,9 @@ serve(async (req) => {
       onConflict: "tenant_id"
     });
     
-    // Redirect back to frontend with success parameter - updated to point to the new location
+    console.log("[XERO CALLBACK] Tokens stored, redirecting back to frontend");
+    
+    // Redirect back to frontend with success parameter
     const redirectUrl = new URL(`${FRONTEND_URL}/admin-dashboard`);
     redirectUrl.searchParams.append("tab", "finance");
     redirectUrl.searchParams.append("xero_connected", "true");
@@ -137,7 +152,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Xero callback error:", error);
     
-    // Redirect back to frontend with error parameter - updated to point to the new location
+    // Redirect back to frontend with error parameter
     const redirectUrl = new URL(`${FRONTEND_URL}/admin-dashboard`);
     redirectUrl.searchParams.append("tab", "finance");
     redirectUrl.searchParams.append("xero_error", encodeURIComponent(error.message || "Unknown error"));
