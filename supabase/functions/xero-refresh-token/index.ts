@@ -10,7 +10,7 @@ const corsHeaders = {
 
 // Xero API configuration
 const XERO_CLIENT_ID = Deno.env.get("XERO_CLIENT_ID") || "E9A32798D8EB477995DEEC32917F3C12";
-const XERO_CLIENT_SECRET = Deno.env.get("XERO_CLIENT_SECRET");
+const XERO_CLIENT_SECRET = Deno.env.get("XERO_CLIENT_SECRET") || "xjG9CiByuoLkJCflCYWAvCEab5WGMoutaLWhroOJvy_OIM3v";
 const XERO_TOKEN_URL = "https://identity.xero.com/connect/token";
 
 // Supabase configuration
