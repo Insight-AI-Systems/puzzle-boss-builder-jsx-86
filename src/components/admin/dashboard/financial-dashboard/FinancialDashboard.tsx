@@ -1,20 +1,21 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useFinancials } from '@/hooks/useFinancials';
-import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FinancialDashboardHeader } from './FinancialDashboardHeader';
 import { FinancialSummaryCards } from './FinancialSummaryCards';
 import { Button } from "@/components/ui/button";
 import { exportFinancialData } from '@/utils/exportUtils';
-import { ErrorDisplay } from '@/components/dashboard/ErrorDisplay';
 import { MonthlyFinancialSummary } from '@/types/financeTypes';
 import { FinanceTabContent } from './FinanceTabContent';
 import { XeroTabContent } from './XeroTabContent';
 import { WebhookTabContent } from './WebhookTabContent';
 import { XeroService } from '@/services/xero';
+import { LoadingState } from './LoadingState';
+import { ErrorState } from './ErrorState';
 
 export const FinancialDashboard: React.FC = () => {
   const isInitialRender = useRef(true);
@@ -247,29 +248,3 @@ export const FinancialDashboard: React.FC = () => {
     </Card>
   );
 };
-
-// Extract loading state to a separate component
-const LoadingState: React.FC = () => (
-  <div className="flex justify-center items-center p-8">
-    <div className="flex flex-col items-center">
-      <Loader2 className="h-8 w-8 animate-spin text-puzzle-aqua" />
-      <p className="mt-2 text-sm text-muted-foreground">Loading financial data...</p>
-    </div>
-  </div>
-);
-
-// Extract error state to a separate component
-const ErrorState: React.FC<{ error: Error; onRetry: () => void }> = ({ error, onRetry }) => (
-  <div className="mb-4">
-    <ErrorDisplay error={error.message} />
-    <div className="flex justify-center mt-2">
-      <Button 
-        onClick={onRetry}
-        variant="outline" 
-        size="sm"
-      >
-        Retry Loading Data
-      </Button>
-    </div>
-  </div>
-);
