@@ -1,4 +1,3 @@
-
 import { XeroAuthService } from './authService';
 import { XeroWebhookService } from './webhookService';
 import { XeroSyncService } from './syncService';
@@ -11,10 +10,11 @@ import { XERO_CONFIG } from './config';
 export class XeroService {
   /**
    * Initiates the Xero OAuth authorization flow
+   * @param redirectUrl Optional custom redirect URL
    * @returns Promise resolving to the authorization URL
    */
-  static async initiateAuth(): Promise<string> {
-    return XeroAuthService.initiateAuth();
+  static async initiateAuth(redirectUrl?: string): Promise<string> {
+    return XeroAuthService.initiateAuth(redirectUrl);
   }
   
   /**
