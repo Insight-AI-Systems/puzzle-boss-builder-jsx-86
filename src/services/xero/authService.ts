@@ -28,6 +28,7 @@ export class XeroAuthService {
       // Add redirectUrl to request body if provided
       if (redirectUrl) {
         requestOptions.body = JSON.stringify({ redirectUrl });
+        console.log('[XERO AUTH] Using custom redirect URL:', redirectUrl);
       }
       
       const response = await fetch(`${XERO_CONFIG.FUNCTION_BASE_URL}/xero-auth?action=authorize`, requestOptions);
@@ -38,6 +39,7 @@ export class XeroAuthService {
       }
       
       const data = await response.json();
+      console.log('[XERO AUTH] Received auth URL:', data.url);
       return data.url;
     } catch (error) {
       console.error('[XERO AUTH] Error initiating OAuth flow:', error);
