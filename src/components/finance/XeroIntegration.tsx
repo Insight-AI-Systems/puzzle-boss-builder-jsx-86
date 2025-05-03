@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,21 +10,25 @@ import { Badge } from "@/components/ui/badge";
 import { XeroService } from "@/services/xero"; 
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, CheckCircle, RefreshCw, Link as LinkIcon, Link } from "lucide-react";
+import { AlertCircle, CheckCircle, RefreshCw, Link as LinkIcon, Link, Bug } from "lucide-react";
 import { XeroInvoice, XeroBill, XeroTransaction, XeroContact } from "@/types/integration";
 import { format } from "date-fns";
 import XeroWebhookManager from "./XeroWebhookManager";
+import { XERO_CONFIG } from "@/services/xero/config";
 
 const XeroIntegration: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isSyncing, setIsSyncing] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   // Connection status query
   const { 
     data: connectionStatus,
     isLoading: isLoadingStatus,
-    refetch: refetchConnectionStatus
+    refetch: refetchConnectionStatus,
+    error: connectionStatusError
   } = useQuery({
     queryKey: ['xero', 'connection-status'],
     queryFn: () => XeroService.getConnectionStatus(),
@@ -102,17 +107,41 @@ const XeroIntegration: React.FC = () => {
     }
   }, [refetchConnectionStatus]);
 
+  // Effect to handle connection status error
+  useEffect(() => {
+    if (connectionStatusError) {
+      setConnectionError(
+        connectionStatusError instanceof Error 
+          ? connectionStatusError.message 
+          : "Failed to check Xero connection status"
+      );
+    } else {
+      setConnectionError(null);
+    }
+  }, [connectionStatusError]);
+
   // Connect to Xero handler
   const handleConnectXero = async () => {
+    setDebugInfo(null);
+    setConnectionError(null);
     try {
       setIsConnecting(true);
       
-      // Use the window.location.origin to ensure we have a proper absolute URL
-      const redirectUrl = window.location.origin + '/admin-dashboard';
+      // Get the full origin including protocol
+      const origin = window.location.origin;
+      // Current pathname to ensure we return to the same page
+      const pathname = window.location.pathname;
+      const redirectUrl = origin + pathname;
+      
+      setDebugInfo(`Using redirect URL: ${redirectUrl}`);
       console.log('[XERO CONNECT] Using redirect URL:', redirectUrl);
       
       const authUrl = await XeroService.initiateAuth(redirectUrl);
-      console.log('[XERO CONNECT] Received auth URL:', authUrl);
+      
+      if (XERO_CONFIG.DEBUG) {
+        console.log('[XERO CONNECT] Received auth URL:', authUrl);
+        setDebugInfo(prev => `${prev}\nXero Auth URL: ${authUrl}`);
+      }
       
       if (!authUrl || !authUrl.includes('login.xero.com')) {
         throw new Error('Invalid authorization URL received from Xero');
@@ -122,9 +151,11 @@ const XeroIntegration: React.FC = () => {
       window.location.href = authUrl;
     } catch (error) {
       console.error("Failed to connect to Xero:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to connect to Xero";
+      setConnectionError(errorMessage);
       toast({
         title: "Connection Error",
-        description: error instanceof Error ? error.message : "Failed to connect to Xero",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -189,6 +220,37 @@ const XeroIntegration: React.FC = () => {
     }
   };
 
+  // Test connection to check for issues
+  const handleTestConnection = async () => {
+    setDebugInfo("Testing connection to Xero...");
+    try {
+      // First refresh connection status
+      await refetchConnectionStatus();
+      
+      if (connectionStatus?.connected) {
+        setDebugInfo(prev => `${prev}\nConnection status: Connected\nToken expires at: ${connectionStatus.expiresAt || 'Unknown'}`);
+        
+        // Try to refresh the token
+        const refreshed = await XeroService.refreshToken();
+        setDebugInfo(prev => `${prev}\nToken refresh attempt: ${refreshed ? 'Successful' : 'Failed'}`);
+        
+        // Re-fetch status after refresh attempt
+        const newStatus = await XeroService.getConnectionStatus();
+        setDebugInfo(prev => `${prev}\nUpdated connection status: ${newStatus.connected ? 'Connected' : 'Not connected'}`);
+      } else {
+        setDebugInfo(prev => `${prev}\nConnection status: Not connected`);
+        
+        // Check if we have any specific error
+        if (connectionError) {
+          setDebugInfo(prev => `${prev}\nConnection error: ${connectionError}`);
+        }
+      }
+    } catch (error) {
+      console.error("Test connection failed:", error);
+      setDebugInfo(prev => `${prev}\nTest connection error: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
   // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -221,9 +283,14 @@ const XeroIntegration: React.FC = () => {
             <AlertTitle className="text-green-800">Connected to Xero</AlertTitle>
             <AlertDescription className="text-green-700 flex items-center justify-between">
               <span>Token expires at {formatDate(connectionStatus.expiresAt || '')}</span>
-              <Button variant="outline" size="sm" onClick={handleDisconnect} className="ml-4">
-                Disconnect
-              </Button>
+              <div className="space-x-2">
+                <Button variant="outline" size="sm" onClick={handleTestConnection}>
+                  <Bug className="mr-1 h-4 w-4" /> Debug
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleDisconnect}>
+                  Disconnect
+                </Button>
+              </div>
             </AlertDescription>
           </Alert>
         ) : (
@@ -232,29 +299,54 @@ const XeroIntegration: React.FC = () => {
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Not connected to Xero</AlertTitle>
               <AlertDescription>
-                Connect your Xero account to enable data synchronization.
+                {connectionError ? connectionError : "Connect your Xero account to enable data synchronization."}
               </AlertDescription>
             </Alert>
             
-            <div className="flex justify-center">
-              <Button 
-                onClick={handleConnectXero} 
-                disabled={isConnecting}
-                className="bg-green-600 hover:bg-green-700 text-white"
-                size="lg"
-              >
-                {isConnecting ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Connecting to Xero...
-                  </>
-                ) : (
-                  <>
-                    <Link className="mr-2 h-4 w-4" /> Connect to Xero
-                  </>
-                )}
-              </Button>
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-center">
+                <Button 
+                  onClick={handleConnectXero} 
+                  disabled={isConnecting}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  size="lg"
+                >
+                  {isConnecting ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Connecting to Xero...
+                    </>
+                  ) : (
+                    <>
+                      <Link className="mr-2 h-4 w-4" /> Connect to Xero
+                    </>
+                  )}
+                </Button>
+              </div>
+              
+              <div className="flex justify-center">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleTestConnection}
+                >
+                  <Bug className="mr-1 h-4 w-4" /> Debug Connection
+                </Button>
+              </div>
             </div>
           </div>
+        )}
+        
+        {/* Debug Information */}
+        {debugInfo && (
+          <Alert className="bg-blue-50 border-blue-200 mt-4">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertTitle className="text-blue-800">Debug Information</AlertTitle>
+            <AlertDescription>
+              <pre className="text-xs text-blue-700 whitespace-pre-wrap bg-blue-50 p-2 rounded">
+                {debugInfo}
+              </pre>
+            </AlertDescription>
+          </Alert>
         )}
       </CardHeader>
 
@@ -506,5 +598,5 @@ const XeroIntegration: React.FC = () => {
   );
 };
 
-// Changed to default export to fix the import error in CFODashboard.tsx
+// Export component
 export default XeroIntegration;
