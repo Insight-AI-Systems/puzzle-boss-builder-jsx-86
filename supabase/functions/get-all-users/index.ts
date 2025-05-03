@@ -48,7 +48,7 @@ serve(async (req) => {
       .eq("id", user.id)
       .single();
 
-    if (profileError || !profile || !["admin", "super_admin"].includes(profile.role)) {
+    if (profileError || !profile || !["admin", "super_admin", "cfo"].includes(profile.role)) {
       console.error("Permissions error:", profileError || "Not an admin");
       return new Response(
         JSON.stringify({ error: "Unauthorized - not an admin" }),
@@ -70,7 +70,7 @@ serve(async (req) => {
     // Fetch all profiles
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from("profiles")
-      .select("id, role, username, country, last_sign_in");
+      .select("id, role, username, country, last_sign_in, gender, age_group");
     
     if (profilesError) {
       console.error("Error fetching profiles:", profilesError);
@@ -100,6 +100,8 @@ serve(async (req) => {
         display_name: profile.username || user.email?.split('@')[0] || 'N/A',
         role: profile.role || 'player',
         country: profile.country || null,
+        gender: profile.gender || null,
+        age_group: profile.age_group || null,
         last_sign_in: lastSignIn
       };
     });

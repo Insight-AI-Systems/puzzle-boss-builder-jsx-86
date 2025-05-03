@@ -43,13 +43,16 @@ export const UsersTab: React.FC = () => {
     : [];
 
   // Calculate totals for metrics
-  const totalUsers = genderData.reduce((sum, item) => sum + item.value, 0);
+  // Fix: Make sure we're using the actual total users count from userDemographics
+  const totalUsers = userDemographics?.total_users || 0;
   const activePlayers = dailyMetrics?.active_users || 0;
+  
+  // Ensure conversion rate calculation uses the correct denominator
   const conversionRate = totalUsers > 0 
     ? (((dailyMetrics?.puzzles_completed || 0) / totalUsers) * 100).toFixed(1) 
     : "0.0";
   
-  // Simple retention rate calculation based on active vs total users
+  // Ensure retention rate is properly calculated with a non-zero denominator
   const retentionRate = totalUsers > 0 
     ? ((activePlayers / totalUsers) * 100).toFixed(1) 
     : "0.0";

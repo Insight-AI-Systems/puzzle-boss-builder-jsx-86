@@ -16,7 +16,15 @@ export const useDailyMetrics = (selectedDate: Date) => {
       if (Array.isArray(data) && data.length > 0) {
         return data[0] as DailyMetrics;
       } 
-      return { active_users: 0, new_signups: 0, puzzles_completed: 0, revenue: 0 };
+      
+      // Provide consistent default values to prevent mismatch in counts
+      return { 
+        active_users: 0, 
+        new_signups: 0, 
+        puzzles_completed: 0, 
+        revenue: 0,
+        total_users: 0 // Add total_users field to ensure consistency
+      };
     }
   });
 };
