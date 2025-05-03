@@ -17,6 +17,12 @@ export class XeroAuthService {
     try {
       console.log('[XERO AUTH] Initiating OAuth flow');
       
+      // Ensure redirectUrl is properly formatted
+      if (redirectUrl && !redirectUrl.startsWith('http')) {
+        console.warn('[XERO AUTH] RedirectUrl does not include protocol, adding https://');
+        redirectUrl = `https://${redirectUrl}`;
+      }
+      
       const requestOptions: RequestInit = {
         method: 'POST',
         headers: {
@@ -31,16 +37,29 @@ export class XeroAuthService {
         console.log('[XERO AUTH] Using custom redirect URL:', redirectUrl);
       }
       
-      const response = await fetch(`${XERO_CONFIG.FUNCTION_BASE_URL}/xero-auth?action=authorize`, requestOptions);
+      // Add timeout to fetch request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      requestOptions.signal = controller.signal;
       
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to initiate auth: ${error}`);
+      try {
+        const response = await fetch(`${XERO_CONFIG.FUNCTION_BASE_URL}/xero-auth?action=authorize`, requestOptions);
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Failed to initiate auth: ${error}`);
+        }
+        
+        const data = await response.json();
+        console.log('[XERO AUTH] Received auth URL:', data.url);
+        return data.url;
+      } catch (fetchError) {
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Connection to Xero authorization service timed out');
+        }
+        throw fetchError;
       }
-      
-      const data = await response.json();
-      console.log('[XERO AUTH] Received auth URL:', data.url);
-      return data.url;
     } catch (error) {
       console.error('[XERO AUTH] Error initiating OAuth flow:', error);
       toast({

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -52,6 +51,12 @@ serve(async (req) => {
         if (requestBody && requestBody.redirectUrl) {
           redirectUri = requestBody.redirectUrl;
           console.log("[XERO AUTH] Using custom redirect URL:", redirectUri);
+          
+          // Ensure the redirect URL includes protocol
+          if (!redirectUri.startsWith('http')) {
+            redirectUri = `https://${redirectUri}`;
+            console.log("[XERO AUTH] Fixed redirect URL:", redirectUri);
+          }
         }
       } catch (e) {
         // No valid JSON body or no redirect URL specified, use default
