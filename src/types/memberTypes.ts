@@ -58,7 +58,23 @@ export interface FinancialTransaction {
   created_at: string;
 }
 
-export interface MemberDetailedProfile extends UserProfile {
+// Modified to not extend UserProfile directly to avoid strict interface requirements
+export interface MemberDetailedProfile {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  bio: string | null;
+  avatar_url?: string | null;
+  role: string;
+  // Make country optional since it's required in UserProfile but optional here
+  country?: string | null;
+  categories_played?: string[];
+  credits: number;
+  achievements?: string[];
+  referral_code?: string | null;
+  created_at: string;
+  updated_at: string;
+  // Additional member fields
   full_name?: string;
   phone?: string;
   address_line1?: string;
@@ -66,7 +82,6 @@ export interface MemberDetailedProfile extends UserProfile {
   city?: string;
   state?: string;
   postal_code?: string;
-  country?: string;
   date_of_birth?: string;
   tax_id?: string;
   terms_accepted: boolean;

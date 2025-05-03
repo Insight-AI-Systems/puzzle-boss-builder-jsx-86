@@ -27,8 +27,11 @@ export const XeroService = {
   
   // Webhook management
   getWebhooks: webhooks.getWebhooks,
+  getActiveWebhooks: webhooks.getActiveWebhooks, // Added missing function
+  getWebhookLogs: webhooks.getWebhookLogs, // Added missing function
   createWebhook: webhooks.createWebhook,
   deleteWebhook: webhooks.deleteWebhook,
+  registerWebhook: webhooks.createWebhook, // Alias for createWebhook for compatibility
   
   // Member sync operations
   syncMember: memberSync.syncMember,

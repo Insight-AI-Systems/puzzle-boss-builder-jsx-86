@@ -5,12 +5,17 @@ import { ProfileInfoTab } from '@/components/profile/tabs/ProfileInfoTab';
 import { MyPuzzlesTab } from '@/components/profile/tabs/MyPuzzlesTab';
 import { AchievementsTab } from '@/components/profile/tabs/AchievementsTab';
 import { SecuritySettings } from '@/components/profile/SecuritySettings';
+import { UserProfileForm } from '@/components/profile/UserProfileForm';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useMemberProfile } from '@/hooks/useMemberProfile';
 import { Loader2, User, Trophy, Settings, Puzzle } from 'lucide-react';
 
 const Profile: React.FC = () => {
-  const { isLoading } = useUserProfile();
+  const { isLoading: isLoadingUserProfile } = useUserProfile();
+  const { profile, isLoading: isLoadingMemberProfile, updateProfile, acceptTerms } = useMemberProfile();
   const [activeTab, setActiveTab] = useState('profile');
+  
+  const isLoading = isLoadingUserProfile || isLoadingMemberProfile;
 
   if (isLoading) {
     return (
@@ -49,7 +54,13 @@ const Profile: React.FC = () => {
             </TabsList>
             
             <TabsContent value="profile" className="pt-4">
-              <ProfileInfoTab />
+              {profile && (
+                <ProfileInfoTab 
+                  profile={profile} 
+                  updateProfile={updateProfile} 
+                  acceptTerms={acceptTerms}
+                />
+              )}
             </TabsContent>
             
             <TabsContent value="puzzles" className="pt-4">

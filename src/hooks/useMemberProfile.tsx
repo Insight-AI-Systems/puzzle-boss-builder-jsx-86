@@ -1,8 +1,9 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { MemberDetailedProfile, UserAddress } from '@/types/memberTypes';
+import { MemberDetailedProfile, UserAddress, AddressType, UserMembershipDetail, XeroUserMapping } from '@/types/memberTypes';
 import { toast } from '@/hooks/use-toast';
 
 export function useMemberProfile(userId?: string) {
@@ -32,7 +33,7 @@ export function useMemberProfile(userId?: string) {
         }
 
         // Fetch addresses
-        const { data: addresses, error: addressError } = await supabase
+        const { data: addressesData, error: addressError } = await supabase
           .from('user_addresses')
           .select('*')
           .eq('user_id', targetUserId);
@@ -42,7 +43,7 @@ export function useMemberProfile(userId?: string) {
         }
 
         // Fetch Xero mapping
-        const { data: xeroMapping, error: xeroError } = await supabase
+        const { data: xeroMappingData, error: xeroError } = await supabase
           .from('xero_user_mappings')
           .select('*')
           .eq('user_id', targetUserId)
@@ -53,7 +54,7 @@ export function useMemberProfile(userId?: string) {
         }
 
         // Fetch membership details
-        const { data: membershipDetails, error: membershipError } = await supabase
+        const { data: membershipDetailsData, error: membershipError } = await supabase
           .from('user_membership_details')
           .select('*')
           .eq('user_id', targetUserId)
@@ -73,12 +74,32 @@ export function useMemberProfile(userId?: string) {
           console.error('Error fetching financial summary:', financialError);
         }
 
+        // Map addresses to correct type
+        const addresses: UserAddress[] = addressesData ? addressesData.map((addr: any) => ({
+          ...addr,
+          address_type: addr.address_type as AddressType
+        })) : [];
+
+        // Map Xero mapping to correct type
+        const xeroMapping: XeroUserMapping | undefined = xeroMappingData ? {
+          ...xeroMappingData,
+          sync_status: xeroMappingData.sync_status as 'active' | 'inactive' | 'error'
+        } : undefined;
+
+        // Map membership details to correct type
+        const membershipDetails: UserMembershipDetail | undefined = membershipDetailsData ? {
+          ...membershipDetailsData,
+          status: membershipDetailsData.status as 'active' | 'expired' | 'canceled' | 'suspended'
+        } : undefined;
+
         const memberProfile: MemberDetailedProfile = {
           ...profileData,
-          addresses: addresses || [],
-          xero_mapping: xeroMapping || undefined,
-          membership_details: membershipDetails || undefined,
+          addresses,
+          xero_mapping: xeroMapping,
+          membership_details: membershipDetails,
           financial_summary: financialSummary?.[0] || undefined,
+          terms_accepted: profileData.terms_accepted || false,
+          marketing_opt_in: profileData.marketing_opt_in || false,
         };
 
         return memberProfile;
