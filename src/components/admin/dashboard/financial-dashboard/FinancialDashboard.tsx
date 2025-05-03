@@ -16,7 +16,6 @@ import XeroIntegration from '@/components/finance/XeroIntegration';
 import XeroWebhookManager from '@/components/finance/XeroWebhookManager';
 import { XeroService } from '@/services/xero';
 import { FinanceStats } from '@/components/finance/FinanceStats';
-import { TimeFrame } from '@/types/financeTypes';
 import IncomeStreams from '@/components/cfo/IncomeStreams';
 import CostStreams from '@/components/cfo/CostStreams';
 import CommissionsManagement from '@/components/cfo/CommissionsManagement';
@@ -31,7 +30,6 @@ export const FinancialDashboard: React.FC = () => {
   const [loadError, setLoadError] = useState<Error | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [isConnecting, setIsConnecting] = useState(false);
-  const timeframe: TimeFrame = "monthly";
   
   const { fetchMonthlyFinancialSummary, fetchSiteIncomes, fetchSiteExpenses, fetchCommissionPayments } = useFinancials();
   const { toast } = useToast();
