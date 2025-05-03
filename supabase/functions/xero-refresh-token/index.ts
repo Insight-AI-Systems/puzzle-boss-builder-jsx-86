@@ -2,20 +2,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// CORS headers
+// CORS headers for browser requests
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Xero API configuration
+// Xero OAuth configuration
 const XERO_CLIENT_ID = Deno.env.get("XERO_CLIENT_ID") || "E9A32798D8EB477995DEEC32917F3C12";
 const XERO_CLIENT_SECRET = Deno.env.get("XERO_CLIENT_SECRET") || "xjG9CiByuoLkJCflCYWAvCEab5WGMoutaLWhroOJvy_OIM3v";
-const XERO_TOKEN_URL = "https://identity.xero.com/connect/token";
-
-// Supabase configuration
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+const XERO_TOKEN_URL = "https://identity.xero.com/connect/token";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -28,10 +27,20 @@ serve(async (req) => {
 
   try {
     console.log("[XERO REFRESH] Function called");
-
-    // Check if we have required credentials
-    if (!XERO_CLIENT_ID || !XERO_CLIENT_SECRET) {
-      throw new Error("Missing required Xero OAuth configuration");
+    
+    // Check authorization header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ 
+          code: 401,
+          message: "Missing authorization header" 
+        }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
     }
 
     // Create Supabase client with service role key
@@ -39,7 +48,7 @@ serve(async (req) => {
       SUPABASE_URL!,
       SUPABASE_SERVICE_ROLE_KEY!
     );
-
+    
     // Get the current token
     const { data: tokens, error: tokenError } = await supabaseAdmin
       .from("xero_oauth_tokens")
@@ -48,39 +57,38 @@ serve(async (req) => {
       .limit(1);
     
     if (tokenError) {
-      throw new Error(`Error retrieving tokens: ${tokenError.message}`);
+      throw new Error(`Error getting token: ${tokenError.message}`);
     }
     
     if (!tokens || tokens.length === 0) {
-      throw new Error("No Xero tokens found");
+      throw new Error("No tokens found to refresh");
     }
     
-    const currentToken = tokens[0];
+    const token = tokens[0];
+    const tenantId = token.tenant_id;
     
-    // Check if token is expired or will expire in the next 5 minutes
-    const expiresAt = new Date(currentToken.expires_at);
+    // Check if token needs refresh (< 60 minutes until expiry)
+    const expiryDate = new Date(token.expires_at);
     const now = new Date();
-    const buffer = 5 * 60 * 1000; // 5 minutes in milliseconds
+    const minutesUntilExpiry = (expiryDate.getTime() - now.getTime()) / (1000 * 60);
     
-    // If token is still valid for more than the buffer period, return it
-    if (expiresAt.getTime() > now.getTime() + buffer) {
+    if (minutesUntilExpiry > 60) {
       return new Response(
-        JSON.stringify({ 
-          message: "Token is still valid",
-          expires_at: currentToken.expires_at,
-          tenant_id: currentToken.tenant_id
+        JSON.stringify({
+          message: "Token does not need refreshing yet",
+          expiresIn: Math.round(minutesUntilExpiry)
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200
+          status: 200,
         }
       );
     }
     
-    console.log("[XERO REFRESH] Token expired or about to expire, refreshing");
+    console.log("[XERO REFRESH] Refreshing token that expires in", Math.round(minutesUntilExpiry), "minutes");
     
-    // Token is expired or about to expire, refresh it
-    const refreshResponse = await fetch(XERO_TOKEN_URL, {
+    // Exchange refresh token for new access token
+    const response = await fetch(XERO_TOKEN_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -88,56 +96,56 @@ serve(async (req) => {
       },
       body: new URLSearchParams({
         grant_type: "refresh_token",
-        refresh_token: currentToken.refresh_token
+        refresh_token: token.refresh_token
       })
     });
     
-    if (!refreshResponse.ok) {
-      const errorText = await refreshResponse.text();
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[XERO REFRESH] Token refresh failed:", errorText);
       throw new Error(`Failed to refresh token: ${errorText}`);
     }
     
-    const refreshData = await refreshResponse.json();
-    console.log("[XERO REFRESH] Successfully refreshed token");
+    const newTokenData = await response.json();
     
     // Calculate new expiry time
     const newExpiresAt = new Date();
-    newExpiresAt.setSeconds(newExpiresAt.getSeconds() + refreshData.expires_in);
+    newExpiresAt.setSeconds(newExpiresAt.getSeconds() + newTokenData.expires_in);
     
     // Store new tokens
     await supabaseAdmin.from("xero_oauth_tokens").upsert({
-      id: currentToken.id,
-      tenant_id: currentToken.tenant_id,
-      access_token: refreshData.access_token,
-      refresh_token: refreshData.refresh_token,
-      token_type: refreshData.token_type,
+      tenant_id: tenantId,
+      access_token: newTokenData.access_token,
+      refresh_token: newTokenData.refresh_token,
+      token_type: newTokenData.token_type,
       expires_at: newExpiresAt.toISOString(),
-      scope: refreshData.scope,
+      scope: newTokenData.scope,
       updated_at: new Date().toISOString()
+    }, {
+      onConflict: "tenant_id"
     });
     
+    console.log("[XERO REFRESH] Token refreshed successfully");
+    
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         message: "Token refreshed successfully",
-        expires_at: newExpiresAt.toISOString(),
-        tenant_id: currentToken.tenant_id
+        expiresAt: newExpiresAt.toISOString()
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200
+        status: 200,
       }
     );
     
   } catch (error) {
-    console.error("Xero token refresh error:", error);
+    console.error("[XERO REFRESH] Error:", error);
     
     return new Response(
-      JSON.stringify({ 
-        error: error.message || "Unknown error occurred during token refresh" 
-      }),
+      JSON.stringify({ error: error.message || "Unknown error occurred" }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500
+        status: 500,
       }
     );
   }

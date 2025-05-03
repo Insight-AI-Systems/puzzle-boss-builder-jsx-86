@@ -16,7 +16,6 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 const XERO_AUTH_URL = "https://login.xero.com/identity/connect/authorize";
-const XERO_TOKEN_URL = "https://identity.xero.com/connect/token";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -36,6 +35,30 @@ serve(async (req) => {
       SUPABASE_SERVICE_ROLE_KEY!
     );
 
+    // Check authentication for status endpoint only (allow authorize without auth)
+    const url = new URL(req.url);
+    const action = url.searchParams.get("action");
+    
+    if (action === "status") {
+      // Extract the JWT token from the Authorization header
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return new Response(
+          JSON.stringify({ 
+            code: 401,
+            message: "Missing authorization header" 
+          }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          }
+        );
+      }
+      
+      // Validate the JWT token (optional - we're just checking it exists right now)
+      // In a real app you might want to verify the token using Supabase methods
+    }
+    
     // Check required environment variables
     if (!XERO_CLIENT_ID || !XERO_CLIENT_SECRET) {
       console.error("[XERO AUTH] Missing required Xero OAuth configuration");
@@ -64,10 +87,6 @@ serve(async (req) => {
         console.log("[XERO AUTH] No valid request body or redirectUrl, using default");
       }
     }
-
-    // Handle different actions based on URL parameters
-    const url = new URL(req.url);
-    const action = url.searchParams.get("action");
 
     console.log("[XERO AUTH] Action requested:", action);
 

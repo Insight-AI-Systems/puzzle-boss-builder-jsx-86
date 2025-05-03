@@ -77,10 +77,19 @@ export class XeroAuthService {
    */
   static async getConnectionStatus(): Promise<XeroAuthStatus> {
     try {
+      // Get the auth session token for authorization
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        throw new Error('No authentication token available');
+      }
+      
       const response = await fetch(`${XERO_CONFIG.FUNCTION_BASE_URL}/xero-auth?action=status`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
         },
       });
       
@@ -102,10 +111,19 @@ export class XeroAuthService {
    */
   static async refreshToken(): Promise<boolean> {
     try {
+      // Get the auth session token for authorization
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        throw new Error('No authentication token available');
+      }
+      
       const response = await fetch(`${XERO_CONFIG.FUNCTION_BASE_URL}/xero-refresh-token`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
         },
       });
       
