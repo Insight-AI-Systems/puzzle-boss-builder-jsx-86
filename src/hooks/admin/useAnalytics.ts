@@ -87,7 +87,7 @@ export const useAnalytics = () => {
     return Math.round(((current - previous) / previous) * 100);
   };
   
-  // Helper function to format time in MM:SS format - Fixed: Added seconds parameter
+  // Helper function to format time in MM:SS format
   const formatTime = (seconds: number): string => {
     return formatTimeUtil(seconds);
   };
