@@ -89,8 +89,8 @@ export const useAnalytics = () => {
   
   // Helper function to format time in MM:SS format
   const formatTime = (seconds: number): string => {
-    // formatTimeUtil requires two parameters - passing the same value for both since we're only using MM:SS format
-    return formatTimeUtil(seconds, 'mm:ss');
+    // Looking at the implementation in puzzleUtils.ts, formatTimeUtil only needs one parameter
+    return formatTimeUtil(seconds);
   };
   
   // Make sure we synchronize total_users between the two data sources to avoid discrepancies
