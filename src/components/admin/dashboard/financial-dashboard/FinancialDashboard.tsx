@@ -232,7 +232,7 @@ export const FinancialDashboard: React.FC = () => {
                   </TabsList>
                   
                   <FinanceTabContent 
-                    activeTab={activeTab} 
+                    activeTab={activeTab}
                     selectedMonth={selectedMonth} 
                   />
                   
