@@ -17,10 +17,21 @@ export const XERO_CONFIG = {
     "CONTACT_UPDATED",
     "BILL_CREATED",
     "BILL_UPDATED"
-  ]
+  ],
+  
+  // Member fields to sync with Xero contacts
+  CONTACT_FIELDS: {
+    REQUIRED: ["full_name", "email"],
+    OPTIONAL: ["phone", "address_line1", "address_line2", "city", "state", "postal_code", "country", "tax_id"]
+  }
 };
 
 /**
  * Types for Xero records
  */
-export type XeroRecordType = 'invoices' | 'bills' | 'contacts' | 'transactions' | 'all';
+export type XeroRecordType = 'invoices' | 'bills' | 'contacts' | 'transactions' | 'all' | 'members';
+
+/**
+ * Member sync direction
+ */
+export type SyncDirection = 'to_xero' | 'from_xero' | 'bidirectional';

@@ -447,6 +447,65 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_transactions: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string
+          currency: string | null
+          description: string | null
+          id: string
+          metadata: Json | null
+          payment_method: string | null
+          status: string
+          transaction_date: string
+          transaction_type: string
+          user_id: string | null
+          xero_invoice_id: string | null
+          xero_transaction_id: string | null
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_method?: string | null
+          status: string
+          transaction_date?: string
+          transaction_type: string
+          user_id?: string | null
+          xero_invoice_id?: string | null
+          xero_transaction_id?: string | null
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_method?: string | null
+          status?: string
+          transaction_date?: string
+          transaction_type?: string
+          user_id?: string | null
+          xero_invoice_id?: string | null
+          xero_transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hero_puzzle_config: {
         Row: {
           active: boolean
@@ -1043,23 +1102,35 @@ export type Database = {
         Row: {
           account_locked: boolean | null
           active_sessions: Json | null
+          address_line1: string | null
+          address_line2: string | null
           age_group: Database["public"]["Enums"]["age_group"] | null
           avatar_url: string | null
           bio: string | null
           categories_played: string[] | null
+          city: string | null
           country: string | null
           created_at: string | null
           credits: number | null
+          date_of_birth: string | null
           email: string | null
           email_change_new_email: string | null
           email_change_token: string | null
           email_change_token_expires_at: string | null
           failed_login_attempts: number | null
+          full_name: string | null
           id: string
           last_password_change: string | null
           last_sign_in: string | null
+          marketing_opt_in: boolean | null
+          phone: string | null
+          postal_code: string | null
           role: string | null
           security_questions: Json | null
+          state: string | null
+          tax_id: string | null
+          terms_accepted: boolean | null
+          terms_accepted_at: string | null
           two_factor_enabled: boolean | null
           updated_at: string | null
           username: string | null
@@ -1067,23 +1138,35 @@ export type Database = {
         Insert: {
           account_locked?: boolean | null
           active_sessions?: Json | null
+          address_line1?: string | null
+          address_line2?: string | null
           age_group?: Database["public"]["Enums"]["age_group"] | null
           avatar_url?: string | null
           bio?: string | null
           categories_played?: string[] | null
+          city?: string | null
           country?: string | null
           created_at?: string | null
           credits?: number | null
+          date_of_birth?: string | null
           email?: string | null
           email_change_new_email?: string | null
           email_change_token?: string | null
           email_change_token_expires_at?: string | null
           failed_login_attempts?: number | null
+          full_name?: string | null
           id: string
           last_password_change?: string | null
           last_sign_in?: string | null
+          marketing_opt_in?: boolean | null
+          phone?: string | null
+          postal_code?: string | null
           role?: string | null
           security_questions?: Json | null
+          state?: string | null
+          tax_id?: string | null
+          terms_accepted?: boolean | null
+          terms_accepted_at?: string | null
           two_factor_enabled?: boolean | null
           updated_at?: string | null
           username?: string | null
@@ -1091,23 +1174,35 @@ export type Database = {
         Update: {
           account_locked?: boolean | null
           active_sessions?: Json | null
+          address_line1?: string | null
+          address_line2?: string | null
           age_group?: Database["public"]["Enums"]["age_group"] | null
           avatar_url?: string | null
           bio?: string | null
           categories_played?: string[] | null
+          city?: string | null
           country?: string | null
           created_at?: string | null
           credits?: number | null
+          date_of_birth?: string | null
           email?: string | null
           email_change_new_email?: string | null
           email_change_token?: string | null
           email_change_token_expires_at?: string | null
           failed_login_attempts?: number | null
+          full_name?: string | null
           id?: string
           last_password_change?: string | null
           last_sign_in?: string | null
+          marketing_opt_in?: boolean | null
+          phone?: string | null
+          postal_code?: string | null
           role?: string | null
           security_questions?: Json | null
+          state?: string | null
+          tax_id?: string | null
+          terms_accepted?: boolean | null
+          terms_accepted_at?: string | null
           two_factor_enabled?: boolean | null
           updated_at?: string | null
           username?: string | null
@@ -1785,6 +1880,98 @@ export type Database = {
         }
         Relationships: []
       }
+      user_addresses: {
+        Row: {
+          address_line1: string
+          address_line2: string | null
+          address_type: string
+          city: string
+          country: string
+          created_at: string
+          id: string
+          is_default: boolean | null
+          postal_code: string
+          state: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address_line1: string
+          address_line2?: string | null
+          address_type: string
+          city: string
+          country: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          postal_code: string
+          state?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address_line1?: string
+          address_line2?: string | null
+          address_type?: string
+          city?: string
+          country?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          postal_code?: string
+          state?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_membership_details: {
+        Row: {
+          auto_renew: boolean | null
+          created_at: string
+          end_date: string | null
+          id: string
+          membership_id: string | null
+          notes: string | null
+          start_date: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_renew?: boolean | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          membership_id?: string | null
+          notes?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_renew?: boolean | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          membership_id?: string | null
+          notes?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_membership_details_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_payment_methods: {
         Row: {
           created_at: string | null
@@ -2223,6 +2410,33 @@ export type Database = {
         }
         Relationships: []
       }
+      xero_user_mappings: {
+        Row: {
+          created_at: string
+          id: string
+          last_synced: string | null
+          sync_status: string | null
+          user_id: string
+          xero_contact_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_synced?: string | null
+          sync_status?: string | null
+          user_id: string
+          xero_contact_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_synced?: string | null
+          sync_status?: string | null
+          user_id?: string
+          xero_contact_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       membership_stats: {
@@ -2303,6 +2517,20 @@ export type Database = {
           desktop_pct: number
           webmail_pct: number
           other_pct: number
+        }[]
+      }
+      get_member_financial_summary: {
+        Args: { user_id_param: string }
+        Returns: {
+          total_spend: number
+          total_prizes: number
+          membership_revenue: number
+          puzzle_revenue: number
+          last_payment_date: string
+          membership_status: string
+          xero_contact_id: string
+          membership_end_date: string
+          lifetime_value: number
         }[]
       }
       get_membership_stats: {

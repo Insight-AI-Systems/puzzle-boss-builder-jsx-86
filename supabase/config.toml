@@ -1,52 +1,14 @@
 
 project_id = "vcacfysfjgoahledqdwa"
 
-[api]
-enabled = true
-port = 54321
-types = "./types.ts"
+[functions."xero-member-sync"]
+verify_jwt = true
 
-[db]
-port = 54322
-shadow_port = 54320
-major_version = 15
+[functions."xero-create-contact"]
+verify_jwt = true
 
-[realtime]
-enabled = true
+[functions."xero-update-contact"]
+verify_jwt = true
 
-[studio]
-enabled = true
-port = 54323
-api_url = "http://127.0.0.1"
-
-[inbucket]
-enabled = true
-port = 54324
-
-[storage]
-enabled = true
-
-[auth]
-enabled = true
-site_url = "http://127.0.0.1:5173"
-additional_redirect_urls = ["https://localhost:5173"]
-enable_confirm_signup = false
-
-[auth.email]
-enable_signup = true
-
-[functions]
-[functions.xero-webhook]
-verify_jwt = false
-
-[functions.xero-auth]
-verify_jwt = false
-
-[functions.xero-callback]
-verify_jwt = false
-
-[functions.xero-refresh-token]
-verify_jwt = false
-
-[functions.xero-sync]
-verify_jwt = false
+[functions."xero-get-syncable-members"]
+verify_jwt = true
