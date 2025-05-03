@@ -1,6 +1,9 @@
 
 import { XeroAuthService } from './authService';
 import { XeroWebhookService } from './webhookService';
+import { XeroSyncService } from './syncService';
+import { XeroDataService } from './dataService';
+import { XERO_CONFIG } from './config';
 
 /**
  * Service for Xero integration
@@ -80,27 +83,7 @@ export class XeroService {
    * @returns Promise resolving to sync result
    */
   static async syncFromXero(recordType: 'invoices' | 'bills' | 'contacts' | 'transactions' | 'all') {
-    try {
-      const response = await fetch(`${XERO_CONFIG.FUNCTION_BASE_URL}/xero-sync?type=${recordType}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-      });
-      
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to sync from Xero: ${error}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error(`[XERO SYNC] Error syncing ${recordType}:`, error);
-      return { 
-        success: false, 
-        message: error instanceof Error ? error.message : `Unknown error syncing ${recordType}`
-      };
-    }
+    return XeroSyncService.syncFromXero(recordType);
   }
   
   /**
@@ -110,24 +93,7 @@ export class XeroService {
    * @returns Promise resolving to invoices
    */
   static async getInvoices(limit = 10, offset = 0) {
-    try {
-      const response = await fetch(`${XERO_CONFIG.FUNCTION_BASE_URL}/xero-data?type=invoices&limit=${limit}&offset=${offset}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch invoices');
-      }
-      
-      const data = await response.json();
-      return data.invoices || [];
-    } catch (error) {
-      console.error('[XERO DATA] Error fetching invoices:', error);
-      return [];
-    }
+    return XeroDataService.getInvoices(limit, offset);
   }
   
   /**
@@ -137,24 +103,7 @@ export class XeroService {
    * @returns Promise resolving to bills
    */
   static async getBills(limit = 10, offset = 0) {
-    try {
-      const response = await fetch(`${XERO_CONFIG.FUNCTION_BASE_URL}/xero-data?type=bills&limit=${limit}&offset=${offset}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch bills');
-      }
-      
-      const data = await response.json();
-      return data.bills || [];
-    } catch (error) {
-      console.error('[XERO DATA] Error fetching bills:', error);
-      return [];
-    }
+    return XeroDataService.getBills(limit, offset);
   }
   
   /**
@@ -164,24 +113,7 @@ export class XeroService {
    * @returns Promise resolving to contacts
    */
   static async getContacts(limit = 10, offset = 0) {
-    try {
-      const response = await fetch(`${XERO_CONFIG.FUNCTION_BASE_URL}/xero-data?type=contacts&limit=${limit}&offset=${offset}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch contacts');
-      }
-      
-      const data = await response.json();
-      return data.contacts || [];
-    } catch (error) {
-      console.error('[XERO DATA] Error fetching contacts:', error);
-      return [];
-    }
+    return XeroDataService.getContacts(limit, offset);
   }
   
   /**
@@ -191,24 +123,7 @@ export class XeroService {
    * @returns Promise resolving to transactions
    */
   static async getTransactions(limit = 10, offset = 0) {
-    try {
-      const response = await fetch(`${XERO_CONFIG.FUNCTION_BASE_URL}/xero-data?type=transactions&limit=${limit}&offset=${offset}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch transactions');
-      }
-      
-      const data = await response.json();
-      return data.transactions || [];
-    } catch (error) {
-      console.error('[XERO DATA] Error fetching transactions:', error);
-      return [];
-    }
+    return XeroDataService.getTransactions(limit, offset);
   }
 
   /**
@@ -239,5 +154,5 @@ export class XeroService {
   }
 }
 
-// Import at the end to avoid circular dependencies
-import { XERO_CONFIG } from './config';
+// Re-export all services for direct access
+export { XeroAuthService, XeroWebhookService, XeroSyncService, XeroDataService, XERO_CONFIG };
