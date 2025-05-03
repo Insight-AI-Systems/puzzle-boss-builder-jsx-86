@@ -61,8 +61,8 @@ export const Hero = () => {
       <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
         <img
           className="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full"
-          src="https://images.unsplash.com/photo-1605870445919-838d190e8e1b?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2850&q=80"
-          alt="Partially assembled jigsaw puzzle"
+          src="/lovable-uploads/882de588-d3e2-4a5a-b0d0-0692fcb71b04.png"
+          alt="Partially assembled jigsaw puzzle with money pieces"
         />
       </div>
       
