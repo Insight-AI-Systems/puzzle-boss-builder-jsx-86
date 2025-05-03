@@ -29,19 +29,6 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
     if (!item.roles) return true;
     if (!profile) return false;
     
-    // For debugging
-    console.log('NavLink check:', {
-      linkTitle: item.name,
-      linkPath: item.path,
-      requiredRoles: item.roles,
-      userRole: profile.role,
-      currentPath: location.pathname,
-      isMatch: isLinkActive(item.path),
-      isAdmin,
-      hasAdminRole: hasRole('admin'),
-      hasSuperAdminRole: hasRole('super_admin')
-    });
-    
     // Show the link if the user has any of the required roles or is admin
     return isAdmin || item.roles.some(role => hasRole(role));
   };
@@ -63,22 +50,6 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
           {item.name}
         </Link>
       ))}
-
-      {/* Direct link to CFO Dashboard for easy access */}
-      {(isAdmin || hasRole('cfo') || hasRole('super_admin')) && (
-        <Link
-          to="/cfo-dashboard"
-          className={`${className} ${
-            isLinkActive('/cfo-dashboard')
-              ? 'text-puzzle-aqua bg-puzzle-aqua/10'
-              : 'text-muted-foreground hover:text-puzzle-white hover:bg-white/10'
-          }`}
-          onClick={onClick}
-          data-testid="nav-link-cfo-dashboard"
-        >
-          CFO Dashboard
-        </Link>
-      )}
     </>
   );
 };

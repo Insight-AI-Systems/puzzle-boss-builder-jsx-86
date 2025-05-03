@@ -16,5 +16,12 @@ export const mainNavItems: MainNavItem[] = [
   { name: 'Home', path: '/' },
   { name: 'Puzzles', path: '/puzzles' },
   { name: 'Prizes Won', path: '/prizes-won' },
+  { name: 'How It Works', path: '/how-it-works' },
   { name: 'Categories', path: '/categories' }
+];
+
+// Admin navigation items
+export const adminNavItems: MainNavItem[] = [
+  { name: 'Admin Dashboard', path: '/admin-dashboard', roles: ["super_admin", "admin", "category_manager", "partner_manager", "cfo"] },
+  { name: 'CFO Dashboard', path: '/cfo-dashboard', roles: ["super_admin", "cfo", "admin"] }
 ];
