@@ -20,15 +20,10 @@ export const useDailyMetrics = (selectedDate: Date) => {
       // Get total users count directly if the function doesn't return it
       let totalUsers = 0;
       try {
-        // Use generic typing approach to bypass TypeScript's type checking
-        const response = await supabase.rpc('count_total_users');
-        const { count, error: countError } = response as unknown as { 
-          count: number | null, 
-          error: any 
-        };
-        
-        if (!countError && count !== null) {
-          totalUsers = count;
+        // Use explicit typing with 'any' to bypass TypeScript's strict checking
+        const countResponse = await supabase.rpc('count_total_users') as any;
+        if (countResponse && !countResponse.error && countResponse.data !== null) {
+          totalUsers = countResponse.data;
         }
       } catch (countErr) {
         console.error("Failed to get total users count:", countErr);

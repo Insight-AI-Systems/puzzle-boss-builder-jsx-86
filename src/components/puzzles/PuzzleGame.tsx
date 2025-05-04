@@ -13,6 +13,10 @@ interface PuzzleGameProps {
   userId?: string;
   isPremium?: boolean;
   onComplete?: (stats: { moves: number, time: number }) => void;
+  // Add the following props to fix the TypeScript errors
+  rows?: number;
+  columns?: number;
+  showNumbers?: boolean;
 }
 
 const PuzzleGame: React.FC<PuzzleGameProps> = ({
@@ -21,13 +25,17 @@ const PuzzleGame: React.FC<PuzzleGameProps> = ({
   puzzleId = 'demo-puzzle',
   userId,
   isPremium = false,
-  onComplete
+  onComplete,
+  // Handle the new props with defaults
+  rows,
+  columns,
+  showNumbers = false
 }) => {
   const { toast } = useToast();
-  const [showNumbers, setShowNumbers] = useState(false);
+  const [showNumbersState, setShowNumbers] = useState(showNumbers);
   const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>(difficultyLevel);
   
-  // Map difficulty level to grid dimensions
+  // Map difficulty level to grid dimensions if rows/columns are not directly provided
   const getDifficultyConfig = (difficulty: DifficultyLevel) => {
     switch (difficulty) {
       case '3x3':
@@ -43,7 +51,11 @@ const PuzzleGame: React.FC<PuzzleGameProps> = ({
     }
   };
   
-  const { rows, columns } = getDifficultyConfig(selectedDifficulty);
+  // Use provided rows/columns or derive from difficulty
+  const gridConfig = {
+    rows: rows || getDifficultyConfig(selectedDifficulty).rows,
+    columns: columns || getDifficultyConfig(selectedDifficulty).columns
+  };
   
   const handlePuzzleComplete = (stats: { moves: number, time: number }) => {
     toast({
@@ -58,7 +70,26 @@ const PuzzleGame: React.FC<PuzzleGameProps> = ({
   };
   
   // Only re-render the puzzle when difficulty or image changes to avoid state loss
-  const puzzleKey = `${imageUrl}-${selectedDifficulty}-${puzzleId}`;
+  const puzzleKey = `${imageUrl}-${selectedDifficulty}-${puzzleId}-${rows}-${columns}`;
+  
+  // If direct rows/columns are provided, skip the tabs UI
+  if (rows && columns) {
+    return (
+      <div className="w-full max-w-5xl mx-auto p-4">
+        <EnhancedJigsawPuzzle
+          key={puzzleKey}
+          imageUrl={imageUrl}
+          rows={gridConfig.rows}
+          columns={gridConfig.columns}
+          puzzleId={puzzleId}
+          userId={userId}
+          showNumbers={showNumbersState}
+          isPremium={isPremium}
+          onComplete={handlePuzzleComplete}
+        />
+      </div>
+    );
+  }
   
   return (
     <div className="w-full max-w-5xl mx-auto p-4">
@@ -79,8 +110,8 @@ const PuzzleGame: React.FC<PuzzleGameProps> = ({
             <label className="flex items-center space-x-2 text-sm">
               <input
                 type="checkbox"
-                checked={showNumbers}
-                onChange={() => setShowNumbers(!showNumbers)}
+                checked={showNumbersState}
+                onChange={() => setShowNumbers(!showNumbersState)}
                 className="rounded border-gray-300 focus:ring-primary"
               />
               <span>Show Numbers</span>
@@ -95,7 +126,7 @@ const PuzzleGame: React.FC<PuzzleGameProps> = ({
               columns={3}
               puzzleId={`${puzzleId}-easy`}
               userId={userId}
-              showNumbers={showNumbers}
+              showNumbers={showNumbersState}
               isPremium={isPremium}
               onComplete={handlePuzzleComplete}
             />
@@ -109,7 +140,7 @@ const PuzzleGame: React.FC<PuzzleGameProps> = ({
               columns={4}
               puzzleId={`${puzzleId}-medium`}
               userId={userId}
-              showNumbers={showNumbers}
+              showNumbers={showNumbersState}
               isPremium={isPremium}
               onComplete={handlePuzzleComplete}
             />
@@ -123,7 +154,7 @@ const PuzzleGame: React.FC<PuzzleGameProps> = ({
               columns={5}
               puzzleId={`${puzzleId}-hard`}
               userId={userId}
-              showNumbers={showNumbers}
+              showNumbers={showNumbersState}
               isPremium={isPremium}
               onComplete={handlePuzzleComplete}
             />
@@ -137,7 +168,7 @@ const PuzzleGame: React.FC<PuzzleGameProps> = ({
               columns={6}
               puzzleId={`${puzzleId}-expert`}
               userId={userId}
-              showNumbers={showNumbers}
+              showNumbers={showNumbersState}
               isPremium={isPremium}
               onComplete={handlePuzzleComplete}
             />

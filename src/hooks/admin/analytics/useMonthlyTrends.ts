@@ -10,19 +10,14 @@ export const useMonthlyTrends = (fromDate?: string, toDate?: string) => {
     queryKey: ['monthlyTrends', fromDate, toDate, months_back],
     queryFn: async () => {
       if (fromDate && toDate) {
-        // Use date range if provided with generic typing approach for TypeScript
+        // Use date range if provided using explicit 'any' typing to bypass TypeScript checking
         const response = await supabase.rpc('get_monthly_trends_range', {
           from_date: fromDate,
           to_date: toDate
-        });
+        } as any) as any;
         
-        const { data, error } = response as unknown as { 
-          data: MonthlyTrend[] | null, 
-          error: any 
-        };
-        
-        if (error) {
-          console.error('Error fetching monthly trends with date range:', error);
+        if (response.error) {
+          console.error('Error fetching monthly trends with date range:', response.error);
           // Fall back to regular function if the range version doesn't exist
           const fallbackResult = await supabase.rpc('get_monthly_trends', {
             months_back: 6
@@ -32,7 +27,7 @@ export const useMonthlyTrends = (fromDate?: string, toDate?: string) => {
           return fallbackResult.data as MonthlyTrend[];
         }
         
-        return data as MonthlyTrend[];
+        return response.data as MonthlyTrend[];
       } else {
         // Use months back as default
         const { data, error } = await supabase.rpc('get_monthly_trends', {
