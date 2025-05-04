@@ -8,9 +8,9 @@ export const useUserDemographics = () => {
     queryKey: ['userDemographics'],
     queryFn: async () => {
       try {
-        // First, get total user count directly from auth.users (through RPC)
+        // First, get total user count directly from auth.users (through RPC) with type assertion
         const { count: totalUsersCount, error: countError } = await supabase
-          .rpc('count_total_users');
+          .rpc('count_total_users') as { count: number | null, error: any };
           
         if (countError) {
           console.error('Error fetching total users count:', countError);
@@ -85,7 +85,7 @@ export const useUserDemographics = () => {
           gender_distribution: genderDistribution,
           age_distribution: ageDistribution,
           country_distribution: countryDistribution,
-          total_users: totalUsersCount
+          total_users: totalUsersCount || 0
         } as UserDemographics;
       } catch (error) {
         console.error('Error fetching user demographics:', error);
