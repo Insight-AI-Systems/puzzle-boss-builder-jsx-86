@@ -8,12 +8,12 @@ export const useUserDemographics = () => {
     queryKey: ['userDemographics'],
     queryFn: async () => {
       try {
-        // First, get total user count directly from auth.users (through RPC) with explicit any typing
-        const countResponse = await supabase.rpc('count_total_users' as any) as any;
+        // Get total user count directly from profiles table instead of RPC
+        const countResponse = await supabase.from('profiles').select('count');
         let totalUsersCount = 0;
         
-        if (countResponse && !countResponse.error && countResponse.data !== null) {
-          totalUsersCount = countResponse.data;
+        if (countResponse && !countResponse.error && countResponse.count !== null) {
+          totalUsersCount = countResponse.count;
         } else if (countResponse.error) {
           console.error('Error fetching total users count:', countResponse.error);
         }

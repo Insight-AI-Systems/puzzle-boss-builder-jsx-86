@@ -20,10 +20,10 @@ export const useDailyMetrics = (selectedDate: Date) => {
       // Get total users count directly if the function doesn't return it
       let totalUsers = 0;
       try {
-        // Use explicit typing with 'any' to bypass TypeScript's strict checking
-        const countResponse = await supabase.rpc('count_total_users') as any;
-        if (countResponse && !countResponse.error && countResponse.data !== null) {
-          totalUsers = countResponse.data;
+        // Use alternate approach to bypass TypeScript's strict checking
+        const countResponse = await supabase.from('profiles').select('count');
+        if (countResponse && !countResponse.error && countResponse.count !== null) {
+          totalUsers = countResponse.count;
         }
       } catch (countErr) {
         console.error("Failed to get total users count:", countErr);
