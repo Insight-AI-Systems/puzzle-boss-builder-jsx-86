@@ -8,9 +8,12 @@ export const useUserDemographics = () => {
     queryKey: ['userDemographics'],
     queryFn: async () => {
       try {
-        // First, get total user count directly from auth.users (through RPC) with type assertion
-        const { count: totalUsersCount, error: countError } = await supabase
-          .rpc('count_total_users') as { count: number | null, error: any };
+        // First, get total user count directly from auth.users (through RPC) with generic typing
+        const countResponse = await supabase.rpc('count_total_users');
+        const { count: totalUsersCount, error: countError } = countResponse as unknown as { 
+          count: number | null, 
+          error: any 
+        };
           
         if (countError) {
           console.error('Error fetching total users count:', countError);
