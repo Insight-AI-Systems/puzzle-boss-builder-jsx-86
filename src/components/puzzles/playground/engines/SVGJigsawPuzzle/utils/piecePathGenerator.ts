@@ -28,11 +28,11 @@ export function generatePiecePath(
   const isLeftEdge = col === 0;
   
   // Size of the tab/slot as a percentage of the piece width/height
-  const tabWidth = width * 0.45; // Wider, more traditional tab
-  const tabHeight = height * 0.45; // Wider, more traditional tab
+  const tabWidth = width * 0.4; // Wider, traditional tab
+  const tabHeight = height * 0.4; // Wider, traditional tab
   
   // Tab depth (how much it protrudes or intrudes)
-  const tabDepth = Math.min(width, height) * 0.25; // More pronounced depth for traditional look
+  const tabDepth = Math.min(width, height) * 0.4; // More pronounced depth for traditional look
   
   // Use pseudo-random but consistent tabs/slots based on position
   // This ensures connected pieces fit together
@@ -54,21 +54,35 @@ export function generatePiecePath(
     
     // Create tab or slot on the top edge with a more traditional rounded shape
     if (hasTopTab) {
-      // Create a protruding tab with classic rounded shape
-      // Starting curve
-      path += `Q ${(width - tabWidth) / 2 + tabWidth * 0.2},${-tabDepth * 0.3} ${(width - tabWidth) / 2 + tabWidth * 0.35},${-tabDepth * 0.6} `;
-      // Main bulging curve of the tab
-      path += `Q ${width / 2},${-tabDepth * 1.3} ${(width + tabWidth) / 2 - tabWidth * 0.35},${-tabDepth * 0.6} `;
-      // Ending curve
-      path += `Q ${(width + tabWidth) / 2 - tabWidth * 0.2},${-tabDepth * 0.3} ${(width + tabWidth) / 2},0 `;
+      // Create a protruding tab with traditional rounded shape using cubic Bezier curves
+      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${-tabDepth * 0.1} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.3},${-tabDepth * 0.3} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.4},${-tabDepth * 0.5} `;
+      
+      // Rounded top of tab
+      path += `C ${width / 2},${-tabDepth * 0.7} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.4},${-tabDepth * 0.5} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.3},${-tabDepth * 0.3} `;
+      
+      // Ending curve back to edge
+      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${-tabDepth * 0.1} `;
+      path += `${(width + tabWidth) / 2},0 `;
+      path += `${(width + tabWidth) / 2},0 `;
     } else {
-      // Create an intruding slot with classic rounded indent shape
-      // Starting curve
-      path += `Q ${(width - tabWidth) / 2 + tabWidth * 0.2},${tabDepth * 0.3} ${(width - tabWidth) / 2 + tabWidth * 0.35},${tabDepth * 0.6} `;
-      // Main bulging curve of the slot
-      path += `Q ${width / 2},${tabDepth * 1.3} ${(width + tabWidth) / 2 - tabWidth * 0.35},${tabDepth * 0.6} `;
-      // Ending curve
-      path += `Q ${(width + tabWidth) / 2 - tabWidth * 0.2},${tabDepth * 0.3} ${(width + tabWidth) / 2},0 `;
+      // Create an intruding slot with traditional rounded shape using cubic Bezier curves
+      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${tabDepth * 0.1} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.3},${tabDepth * 0.3} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.4},${tabDepth * 0.5} `;
+      
+      // Rounded bottom of slot
+      path += `C ${width / 2},${tabDepth * 0.7} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.4},${tabDepth * 0.5} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.3},${tabDepth * 0.3} `;
+      
+      // Ending curve back to edge
+      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${tabDepth * 0.1} `;
+      path += `${(width + tabWidth) / 2},0 `;
+      path += `${(width + tabWidth) / 2},0 `;
     }
     
     // Complete the top edge
@@ -85,21 +99,35 @@ export function generatePiecePath(
     
     // Create tab or slot on the right edge with traditional rounded shape
     if (hasRightTab) {
-      // Create a protruding tab with classic rounded shape
-      // Starting curve
-      path += `Q ${width + tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.2} ${width + tabDepth * 0.6},${(height - tabHeight) / 2 + tabHeight * 0.35} `;
-      // Main bulging curve of the tab
-      path += `Q ${width + tabDepth * 1.3},${height / 2} ${width + tabDepth * 0.6},${(height + tabHeight) / 2 - tabHeight * 0.35} `;
-      // Ending curve
-      path += `Q ${width + tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.2} ${width},${(height + tabHeight) / 2} `;
+      // Create a protruding tab with traditional rounded shape using cubic Bezier curves
+      path += `C ${width + tabDepth * 0.1},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
+      path += `${width + tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
+      path += `${width + tabDepth * 0.5},${(height - tabHeight) / 2 + tabHeight * 0.4} `;
+      
+      // Rounded side of tab
+      path += `C ${width + tabDepth * 0.7},${height / 2} `;
+      path += `${width + tabDepth * 0.5},${(height + tabHeight) / 2 - tabHeight * 0.4} `;
+      path += `${width + tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
+      
+      // Ending curve back to edge
+      path += `C ${width + tabDepth * 0.1},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
+      path += `${width},${(height + tabHeight) / 2} `;
+      path += `${width},${(height + tabHeight) / 2} `;
     } else {
-      // Create an intruding slot with classic rounded indent shape
-      // Starting curve
-      path += `Q ${width - tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.2} ${width - tabDepth * 0.6},${(height - tabHeight) / 2 + tabHeight * 0.35} `;
-      // Main bulging curve of the slot
-      path += `Q ${width - tabDepth * 1.3},${height / 2} ${width - tabDepth * 0.6},${(height + tabHeight) / 2 - tabHeight * 0.35} `;
-      // Ending curve
-      path += `Q ${width - tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.2} ${width},${(height + tabHeight) / 2} `;
+      // Create an intruding slot with traditional rounded shape using cubic Bezier curves
+      path += `C ${width - tabDepth * 0.1},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
+      path += `${width - tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
+      path += `${width - tabDepth * 0.5},${(height - tabHeight) / 2 + tabHeight * 0.4} `;
+      
+      // Rounded indentation of slot
+      path += `C ${width - tabDepth * 0.7},${height / 2} `;
+      path += `${width - tabDepth * 0.5},${(height + tabHeight) / 2 - tabHeight * 0.4} `;
+      path += `${width - tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
+      
+      // Ending curve back to edge
+      path += `C ${width - tabDepth * 0.1},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
+      path += `${width},${(height + tabHeight) / 2} `;
+      path += `${width},${(height + tabHeight) / 2} `;
     }
     
     // Complete the right edge
@@ -116,21 +144,35 @@ export function generatePiecePath(
     
     // Create tab or slot on the bottom edge with traditional rounded shape
     if (hasBottomTab) {
-      // Create a protruding tab with classic rounded shape (inverted)
-      // Starting curve
-      path += `Q ${(width + tabWidth) / 2 - tabWidth * 0.2},${height + tabDepth * 0.3} ${(width + tabWidth) / 2 - tabWidth * 0.35},${height + tabDepth * 0.6} `;
-      // Main bulging curve of the tab
-      path += `Q ${width / 2},${height + tabDepth * 1.3} ${(width - tabWidth) / 2 + tabWidth * 0.35},${height + tabDepth * 0.6} `;
-      // Ending curve
-      path += `Q ${(width - tabWidth) / 2 + tabWidth * 0.2},${height + tabDepth * 0.3} ${(width - tabWidth) / 2},${height} `;
+      // Create a protruding tab with traditional rounded shape (inverted) using cubic Bezier curves
+      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${height + tabDepth * 0.1} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.3},${height + tabDepth * 0.3} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.4},${height + tabDepth * 0.5} `;
+      
+      // Rounded bottom of tab
+      path += `C ${width / 2},${height + tabDepth * 0.7} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.4},${height + tabDepth * 0.5} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.3},${height + tabDepth * 0.3} `;
+      
+      // Ending curve back to edge
+      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${height + tabDepth * 0.1} `;
+      path += `${(width - tabWidth) / 2},${height} `;
+      path += `${(width - tabWidth) / 2},${height} `;
     } else {
-      // Create an intruding slot with classic rounded indent shape (inverted)
-      // Starting curve
-      path += `Q ${(width + tabWidth) / 2 - tabWidth * 0.2},${height - tabDepth * 0.3} ${(width + tabWidth) / 2 - tabWidth * 0.35},${height - tabDepth * 0.6} `;
-      // Main bulging curve of the slot
-      path += `Q ${width / 2},${height - tabDepth * 1.3} ${(width - tabWidth) / 2 + tabWidth * 0.35},${height - tabDepth * 0.6} `;
-      // Ending curve
-      path += `Q ${(width - tabWidth) / 2 + tabWidth * 0.2},${height - tabDepth * 0.3} ${(width - tabWidth) / 2},${height} `;
+      // Create an intruding slot with traditional rounded shape (inverted) using cubic Bezier curves
+      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${height - tabDepth * 0.1} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.3},${height - tabDepth * 0.3} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.4},${height - tabDepth * 0.5} `;
+      
+      // Rounded indentation of slot
+      path += `C ${width / 2},${height - tabDepth * 0.7} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.4},${height - tabDepth * 0.5} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.3},${height - tabDepth * 0.3} `;
+      
+      // Ending curve back to edge
+      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${height - tabDepth * 0.1} `;
+      path += `${(width - tabWidth) / 2},${height} `;
+      path += `${(width - tabWidth) / 2},${height} `;
     }
     
     // Complete the bottom edge
@@ -147,21 +189,35 @@ export function generatePiecePath(
     
     // Create tab or slot on the left edge with traditional rounded shape
     if (hasLeftTab) {
-      // Create a protruding tab with classic rounded shape
-      // Starting curve
-      path += `Q ${-tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.2} ${-tabDepth * 0.6},${(height + tabHeight) / 2 - tabHeight * 0.35} `;
-      // Main bulging curve of the tab
-      path += `Q ${-tabDepth * 1.3},${height / 2} ${-tabDepth * 0.6},${(height - tabHeight) / 2 + tabHeight * 0.35} `;
-      // Ending curve
-      path += `Q ${-tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.2} 0,${(height - tabHeight) / 2} `;
+      // Create a protruding tab with traditional rounded shape using cubic Bezier curves
+      path += `C ${-tabDepth * 0.1},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
+      path += `${-tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
+      path += `${-tabDepth * 0.5},${(height + tabHeight) / 2 - tabHeight * 0.4} `;
+      
+      // Rounded side of tab
+      path += `C ${-tabDepth * 0.7},${height / 2} `;
+      path += `${-tabDepth * 0.5},${(height - tabHeight) / 2 + tabHeight * 0.4} `;
+      path += `${-tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
+      
+      // Ending curve back to edge
+      path += `C ${-tabDepth * 0.1},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
+      path += `0,${(height - tabHeight) / 2} `;
+      path += `0,${(height - tabHeight) / 2} `;
     } else {
-      // Create an intruding slot with classic rounded indent shape
-      // Starting curve
-      path += `Q ${tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.2} ${tabDepth * 0.6},${(height + tabHeight) / 2 - tabHeight * 0.35} `;
-      // Main bulging curve of the slot
-      path += `Q ${tabDepth * 1.3},${height / 2} ${tabDepth * 0.6},${(height - tabHeight) / 2 + tabHeight * 0.35} `;
-      // Ending curve
-      path += `Q ${tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.2} 0,${(height - tabHeight) / 2} `;
+      // Create an intruding slot with traditional rounded shape using cubic Bezier curves
+      path += `C ${tabDepth * 0.1},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
+      path += `${tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
+      path += `${tabDepth * 0.5},${(height + tabHeight) / 2 - tabHeight * 0.4} `;
+      
+      // Rounded indentation of slot
+      path += `C ${tabDepth * 0.7},${height / 2} `;
+      path += `${tabDepth * 0.5},${(height - tabHeight) / 2 + tabHeight * 0.4} `;
+      path += `${tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
+      
+      // Ending curve back to edge
+      path += `C ${tabDepth * 0.1},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
+      path += `0,${(height - tabHeight) / 2} `;
+      path += `0,${(height - tabHeight) / 2} `;
     }
     
     // Complete the left edge

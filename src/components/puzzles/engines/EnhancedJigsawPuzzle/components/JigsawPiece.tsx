@@ -97,17 +97,20 @@ const JigsawPiece: React.FC<JigsawPieceProps> = ({
           </pattern>
           
           {/* Enhanced drop shadow filter for 3D effect */}
-          <filter id={shadowId}>
-            <feDropShadow dx="3" dy="3" stdDeviation="3" floodOpacity="0.4" />
+          <filter id={shadowId} x="-50%" y="-50%" width="200%" height="200%">
+            <feOffset dx="2" dy="4" />
+            <feGaussianBlur stdDeviation="4" />
+            <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0"/>
+            <feBlend in="SourceGraphic" in2="offset-blur" mode="normal" />
           </filter>
           
           {/* Emboss filter to create 3D look */}
           <filter id={embossId}>
             <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
-            <feSpecularLighting in="blur" surfaceScale="2" specularConstant="1" 
+            <feSpecularLighting in="blur" surfaceScale="3" specularConstant="1" 
                                specularExponent="20" lightingColor="white"
                                result="specOut">
-              <fePointLight x="-5000" y="-10000" z="10000"/>
+              <fePointLight x="-5000" y="-10000" z="20000"/>
             </feSpecularLighting>
             <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut"/>
             <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" 
@@ -128,8 +131,8 @@ const JigsawPiece: React.FC<JigsawPieceProps> = ({
           d={piecePath} 
           fill={`url(#${patternId})`}
           stroke={piece.isCorrect ? "rgba(0,200,0,0.7)" : "rgba(255,255,255,0.7)"}
-          strokeWidth="1.5"
-          filter={isDragging ? `url(#${shadowId})` : ''}
+          strokeWidth="2"
+          filter={isDragging ? `url(#${shadowId})` : (piece.isCorrect ? '' : `url(#${embossId})`)}
           style={{
             transformOrigin: 'center',
             transformBox: 'fill-box'

@@ -102,6 +102,7 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
   const clipPathId = `piece-clip-${piece.id}`;
   const shadowId = `drop-shadow-${piece.id}`;
   const patternId = `piece-texture-${piece.id}`;
+  const embossId = `emboss-filter-${piece.id}`;
   
   return (
     <div
@@ -134,9 +135,9 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
           <filter id={shadowId} x="-50%" y="-50%" width="200%" height="200%">
             <feDropShadow 
               dx="3" 
-              dy="4" 
-              stdDeviation="3" 
-              floodColor="rgba(0,0,0,0.6)" 
+              dy="5" 
+              stdDeviation="4" 
+              floodColor="rgba(0,0,0,0.7)" 
               floodOpacity="0.9"
             />
           </filter>
@@ -155,6 +156,19 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
             <path d="M 70,0 L 70,100" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
             <path d="M 90,0 L 90,100" stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
           </pattern>
+          
+          {/* Emboss filter for 3D effect */}
+          <filter id={embossId}>
+            <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+            <feSpecularLighting in="blur" surfaceScale="3" specularConstant="1" 
+                               specularExponent="20" lightingColor="white"
+                               result="specOut">
+              <fePointLight x="-5000" y="-10000" z="10000"/>
+            </feSpecularLighting>
+            <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut"/>
+            <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" 
+                        k1="0" k2="1" k3="1" k4="0" result="embossed"/>
+          </filter>
         </defs>
       </svg>
       
@@ -201,6 +215,7 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
             fill={`url(#${patternId})`}
             fillOpacity="0.15"
             stroke="none"
+            filter={`url(#${embossId})`}
           />
           
           {/* Piece outline - enhanced for traditional jigsaw look */}
