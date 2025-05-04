@@ -45,10 +45,12 @@ const Puzzles = () => {
       
       if (error) throw error;
       
-      // Format data to include category_name
+      // Format data to include category_name and ensure it matches the PuzzleItem type
       return data.map(puzzle => ({
         ...puzzle,
-        category_name: puzzle.categories?.name || 'Uncategorized'
+        category_name: puzzle.categories?.name || 'Uncategorized',
+        total_plays: puzzle.completions || 0,
+        prize_amount: puzzle.prize_value || 0
       })) as PuzzleItem[];
     }
   });

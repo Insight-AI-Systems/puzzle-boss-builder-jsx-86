@@ -12,7 +12,8 @@ const PuzzleGamePage: React.FC = () => {
       <PuzzleGame 
         imageUrl={imageUrl} 
         puzzleId="demo-landscape"
-        difficultyLevel="4x4"
+        rows={4}
+        columns={4}
       />
     </div>
   );
