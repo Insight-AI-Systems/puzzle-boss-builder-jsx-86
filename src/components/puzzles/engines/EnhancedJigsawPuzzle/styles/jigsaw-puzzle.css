@@ -1,0 +1,103 @@
+
+/* Main container */
+.enhanced-jigsaw-puzzle {
+  --puzzle-cell-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Puzzle board */
+.puzzle-board {
+  min-height: 280px;
+  transition: opacity 0.3s ease;
+}
+
+/* Puzzle cell styling */
+.puzzle-cell {
+  border: 1px dashed var(--puzzle-cell-border);
+  transition: all 0.2s ease;
+}
+
+.puzzle-cell.empty-cell {
+  cursor: pointer;
+}
+
+.puzzle-cell-hover {
+  background-color: rgba(99, 102, 241, 0.1);
+  border: 2px dashed rgba(99, 102, 241, 0.4);
+}
+
+/* Puzzle piece styling */
+.puzzle-piece {
+  user-select: none;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.puzzle-piece.correct {
+  filter: drop-shadow(0 2px 4px rgba(0, 128, 0, 0.3));
+}
+
+.puzzle-piece.dragging {
+  cursor: grabbing;
+  z-index: 50;
+}
+
+.puzzle-piece:hover {
+  filter: brightness(1.05);
+}
+
+.puzzle-piece:active {
+  cursor: grabbing;
+}
+
+/* Staging area styling */
+.staging-area {
+  transition: opacity 0.3s ease;
+}
+
+.staging-piece-container {
+  transition: transform 0.2s ease;
+}
+
+.staging-piece-container:hover {
+  transform: translateY(-4px);
+}
+
+/* Dark mode adjustments */
+.dark .enhanced-jigsaw-puzzle {
+  --puzzle-cell-border: rgba(255, 255, 255, 0.05);
+}
+
+.dark .puzzle-cell-hover {
+  background-color: rgba(99, 102, 241, 0.2);
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 1; 
+  }
+  50% { 
+    opacity: 0.8; 
+  }
+}
+
+@keyframes victory-pulse {
+  0%, 100% { 
+    transform: scale(1); 
+  }
+  50% { 
+    transform: scale(1.05); 
+  }
+}
+
+.puzzle-complete {
+  animation: victory-pulse 2s ease-in-out infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .staging-piece-container {
+    width: 45px !important;
+    height: calc(45px * var(--aspect-ratio, 1)) !important;
+  }
+}

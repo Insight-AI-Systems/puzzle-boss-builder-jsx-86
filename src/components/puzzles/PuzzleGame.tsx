@@ -1,86 +1,150 @@
 
-import React, { useEffect, useState } from 'react';
-import { PuzzleProvider, usePuzzleContext } from './PuzzleProvider';
-import CustomPuzzleEngine from './playground/engines/CustomPuzzleEngine';
+import React, { useState, useEffect } from 'react';
+import EnhancedJigsawPuzzle from './engines/EnhancedJigsawPuzzle';
 import { useToast } from '@/hooks/use-toast';
-import { usePuzzleImagePreload } from './playground/engines/hooks/usePuzzleImagePreload';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DifficultyLevel } from './types/puzzle-types';
 
+// Define props interface for PuzzleGame
 interface PuzzleGameProps {
   imageUrl: string;
+  difficultyLevel?: DifficultyLevel;
   puzzleId?: string;
-  rows?: number;
-  columns?: number;
-  showNumbers?: boolean;
+  userId?: string;
+  isPremium?: boolean;
+  onComplete?: (stats: { moves: number, time: number }) => void;
 }
 
-const PuzzleGameInner: React.FC<PuzzleGameProps> = ({
+const PuzzleGame: React.FC<PuzzleGameProps> = ({
   imageUrl,
-  rows = 3,
-  columns = 4,
-  showNumbers = true
+  difficultyLevel = '4x4',
+  puzzleId = 'demo-puzzle',
+  userId,
+  isPremium = false,
+  onComplete
 }) => {
-  const { isAuthenticated, progress } = usePuzzleContext();
   const { toast } = useToast();
-  const [imageError, setImageError] = useState<string | null>(null);
-
-  // Preload the image to ensure it's ready before rendering the puzzle
-  const { isLoaded, error } = usePuzzleImagePreload({
-    imageUrl,
-    onError: (err) => {
-      console.error('Error loading puzzle image:', err);
-      setImageError(err.message);
-      toast({
-        title: "Image Loading Error",
-        description: "There was a problem loading the puzzle image. Please try again.",
-        variant: "destructive",
-      });
+  const [showNumbers, setShowNumbers] = useState(false);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>(difficultyLevel);
+  
+  // Map difficulty level to grid dimensions
+  const getDifficultyConfig = (difficulty: DifficultyLevel) => {
+    switch (difficulty) {
+      case '3x3':
+        return { rows: 3, columns: 3 };
+      case '4x4':
+        return { rows: 4, columns: 4 };
+      case '5x5':
+        return { rows: 5, columns: 5 };
+      case '6x6':
+        return { rows: 6, columns: 6 };
+      default:
+        return { rows: 4, columns: 4 };
     }
-  });
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Not signed in",
-        description: "Sign in to save your puzzle progress",
-        variant: "default",
-      });
+  };
+  
+  const { rows, columns } = getDifficultyConfig(selectedDifficulty);
+  
+  const handlePuzzleComplete = (stats: { moves: number, time: number }) => {
+    toast({
+      title: "Puzzle Completed!",
+      description: `You solved it in ${stats.moves} moves and ${Math.floor(stats.time / 60)}:${(stats.time % 60).toString().padStart(2, '0')}!`,
+      variant: "default",
+    });
+    
+    if (onComplete) {
+      onComplete(stats);
     }
-  }, [isAuthenticated, toast]);
-
-  // Clear any previous errors when the image URL changes
-  useEffect(() => {
-    setImageError(null);
-  }, [imageUrl]);
-
+  };
+  
+  // Only re-render the puzzle when difficulty or image changes to avoid state loss
+  const puzzleKey = `${imageUrl}-${selectedDifficulty}-${puzzleId}`;
+  
   return (
-    <>
-      {imageError ? (
-        <div className="flex flex-col items-center justify-center p-8 text-center">
-          <p className="text-destructive mb-4">Failed to load puzzle image</p>
-          <button 
-            className="bg-puzzle-aqua text-white px-4 py-2 rounded hover:bg-puzzle-aqua/80"
-            onClick={() => window.location.reload()}
-          >
-            Reload Page
-          </button>
-        </div>
-      ) : (
-        <CustomPuzzleEngine
-          imageUrl={imageUrl}
-          rows={rows}
-          columns={columns}
-          showNumbers={showNumbers}
-        />
-      )}
-    </>
-  );
-};
-
-const PuzzleGame: React.FC<PuzzleGameProps> = (props) => {
-  return (
-    <PuzzleProvider puzzleId={props.puzzleId}>
-      <PuzzleGameInner {...props} />
-    </PuzzleProvider>
+    <div className="w-full max-w-5xl mx-auto p-4">
+      <div className="mb-6">
+        <Tabs
+          value={selectedDifficulty}
+          onValueChange={(value) => setSelectedDifficulty(value as DifficultyLevel)}
+          className="w-full"
+        >
+          <div className="flex justify-between items-center mb-4">
+            <TabsList>
+              <TabsTrigger value="3x3">Easy (3×3)</TabsTrigger>
+              <TabsTrigger value="4x4">Medium (4×4)</TabsTrigger>
+              <TabsTrigger value="5x5">Hard (5×5)</TabsTrigger>
+              <TabsTrigger value="6x6">Expert (6×6)</TabsTrigger>
+            </TabsList>
+            
+            <label className="flex items-center space-x-2 text-sm">
+              <input
+                type="checkbox"
+                checked={showNumbers}
+                onChange={() => setShowNumbers(!showNumbers)}
+                className="rounded border-gray-300 focus:ring-primary"
+              />
+              <span>Show Numbers</span>
+            </label>
+          </div>
+          
+          <TabsContent value="3x3" className="mt-0">
+            <EnhancedJigsawPuzzle
+              key={`${puzzleKey}-3x3`}
+              imageUrl={imageUrl}
+              rows={3}
+              columns={3}
+              puzzleId={`${puzzleId}-easy`}
+              userId={userId}
+              showNumbers={showNumbers}
+              isPremium={isPremium}
+              onComplete={handlePuzzleComplete}
+            />
+          </TabsContent>
+          
+          <TabsContent value="4x4" className="mt-0">
+            <EnhancedJigsawPuzzle
+              key={`${puzzleKey}-4x4`}
+              imageUrl={imageUrl}
+              rows={4}
+              columns={4}
+              puzzleId={`${puzzleId}-medium`}
+              userId={userId}
+              showNumbers={showNumbers}
+              isPremium={isPremium}
+              onComplete={handlePuzzleComplete}
+            />
+          </TabsContent>
+          
+          <TabsContent value="5x5" className="mt-0">
+            <EnhancedJigsawPuzzle
+              key={`${puzzleKey}-5x5`}
+              imageUrl={imageUrl}
+              rows={5}
+              columns={5}
+              puzzleId={`${puzzleId}-hard`}
+              userId={userId}
+              showNumbers={showNumbers}
+              isPremium={isPremium}
+              onComplete={handlePuzzleComplete}
+            />
+          </TabsContent>
+          
+          <TabsContent value="6x6" className="mt-0">
+            <EnhancedJigsawPuzzle
+              key={`${puzzleKey}-6x6`}
+              imageUrl={imageUrl}
+              rows={6}
+              columns={6}
+              puzzleId={`${puzzleId}-expert`}
+              userId={userId}
+              showNumbers={showNumbers}
+              isPremium={isPremium}
+              onComplete={handlePuzzleComplete}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
   );
 };
 
