@@ -22,6 +22,7 @@ import PuzzlePage from './pages/PuzzlePage'; // Keep for backward compatibility
 import Auth from './pages/Auth';
 import Categories from './components/Categories';
 import PuzzlePlay from './pages/PuzzlePlay'; // Import the PuzzlePlay component
+import PuzzleTestPlayground from './pages/PuzzleTestPlayground'; // Import the PuzzleTestPlayground component
 
 // Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
@@ -57,6 +58,7 @@ function App() {
           <Route path="/partnerships" element={<Partnerships />} />
           <Route path="/careers" element={<Careers />} />
           <Route path="/press" element={<Press />} />
+          <Route path="/puzzle-test-playground" element={<PuzzleTestPlayground />} /> {/* Add the route for puzzle test playground */}
         </Route>
 
         {/* Auth page with no layout */}

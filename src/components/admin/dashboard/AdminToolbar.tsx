@@ -1,11 +1,14 @@
+
 import React from 'react';
 import { Bug } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';
 import { debugAuthState, forceProtectedAdminAccess } from '@/utils/admin/debugAuth';
+
 interface AdminToolbarProps {
   showDebugInfo: () => void;
 }
+
 export const AdminToolbar: React.FC<AdminToolbarProps> = ({
   showDebugInfo
 }) => <div className="mb-6 space-y-2">
@@ -20,7 +23,7 @@ export const AdminToolbar: React.FC<AdminToolbarProps> = ({
         Show Debug Info
       </Button>
       <Button asChild variant="outline" size="lg">
-        <Link to="/puzzle-playground">
+        <Link to="/puzzle-test-playground">
           Open Puzzle Engine Test Playground
         </Link>
       </Button>
