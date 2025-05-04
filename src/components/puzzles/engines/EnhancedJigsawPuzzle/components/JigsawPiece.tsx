@@ -34,6 +34,7 @@ const JigsawPiece: React.FC<JigsawPieceProps> = ({
   const clipPathId = `puzzle-clip-${piece.id}`;
   const patternId = `piece-pattern-${piece.id}`;
   const shadowId = `piece-shadow-${piece.id}`;
+  const embossId = `piece-emboss-${piece.id}`;
   
   // Generate the SVG path for this puzzle piece
   const piecePath = generatePiecePath(piece.originalPosition, rows, columns, width, height);
@@ -95,14 +96,27 @@ const JigsawPiece: React.FC<JigsawPieceProps> = ({
             />
           </pattern>
           
-          {/* Drop shadow filter */}
+          {/* Enhanced drop shadow filter for 3D effect */}
           <filter id={shadowId}>
-            <feDropShadow dx="2" dy="2" stdDeviation="2" floodOpacity="0.3" />
+            <feDropShadow dx="3" dy="3" stdDeviation="3" floodOpacity="0.4" />
+          </filter>
+          
+          {/* Emboss filter to create 3D look */}
+          <filter id={embossId}>
+            <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+            <feSpecularLighting in="blur" surfaceScale="2" specularConstant="1" 
+                               specularExponent="20" lightingColor="white"
+                               result="specOut">
+              <fePointLight x="-5000" y="-10000" z="10000"/>
+            </feSpecularLighting>
+            <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut"/>
+            <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" 
+                        k1="0" k2="1" k3="1" k4="0" result="embossed"/>
           </filter>
         </defs>
       </svg>
       
-      {/* The puzzle piece shape with image clipping */}
+      {/* The puzzle piece shape with improved styling */}
       <svg
         width="100%"
         height="100%"
@@ -113,20 +127,37 @@ const JigsawPiece: React.FC<JigsawPieceProps> = ({
         <path 
           d={piecePath} 
           fill={`url(#${patternId})`}
-          stroke={piece.isCorrect ? "rgba(0,200,0,0.5)" : "rgba(255,255,255,0.5)"}
-          strokeWidth="1"
+          stroke={piece.isCorrect ? "rgba(0,200,0,0.7)" : "rgba(255,255,255,0.7)"}
+          strokeWidth="1.5"
+          filter={isDragging ? `url(#${shadowId})` : ''}
           style={{
             transformOrigin: 'center',
             transformBox: 'fill-box'
           }}
         />
         
-        {/* Optional outline for emphasis */}
+        {/* Top highlight for 3D effect */}
         <path 
           d={piecePath} 
           fill="none" 
-          stroke={piece.isCorrect ? "rgba(0,200,0,0.8)" : "rgba(255,255,255,0.8)"}
+          stroke={piece.isCorrect ? "rgba(100,255,100,0.9)" : "rgba(255,255,255,0.9)"}
           strokeWidth="2"
+          strokeOpacity="0.6"
+          strokeDasharray="0,4,1,0"
+          style={{
+            transformOrigin: 'center',
+            transformBox: 'fill-box'
+          }}
+        />
+        
+        {/* Bottom shadow for 3D effect */}
+        <path 
+          d={piecePath} 
+          fill="none" 
+          stroke="rgba(0,0,0,0.3)"
+          strokeWidth="1.5"
+          strokeOpacity="0.4"
+          strokeDasharray="0,6,1,0"
           style={{
             transformOrigin: 'center',
             transformBox: 'fill-box'
@@ -140,7 +171,7 @@ const JigsawPiece: React.FC<JigsawPieceProps> = ({
           className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
         >
           <span 
-            className="bg-black bg-opacity-50 text-white px-2 py-1 text-xs font-medium rounded-full"
+            className="bg-black/60 text-white px-2 py-1 text-xs font-medium rounded-full shadow-md"
           >
             {piece.id + 1}
           </span>

@@ -10,8 +10,8 @@ export function generatePiecePath(
   const row = Math.floor(position / columns);
   const col = position % columns;
   
-  // Tab/slot size as a percentage of the piece size
-  const tabSize = Math.min(width, height) * 0.2;
+  // Tab/slot size as a percentage of the piece size - increased for more traditional appearance
+  const tabSize = Math.min(width, height) * 0.25;
   
   // Determine which sides have tabs or slots
   // We'll use a deterministic approach based on position:
@@ -33,17 +33,23 @@ export function generatePiecePath(
     // Straight line for top row
     path += `H ${width} `;
   } else if (hasTopTab) {
-    // Tab on top
+    // Tab on top with more rounded appearance
     path += `H ${width * 0.3} `;
-    path += `Q ${width * 0.35},${-tabSize * 0.2} ${width * 0.4},${-tabSize} `;
-    path += `Q ${width * 0.5},${-tabSize * 1.5} ${width * 0.6},${-tabSize} `;
+    // Start of curve
+    path += `Q ${width * 0.35},${-tabSize * 0.2} ${width * 0.4},${-tabSize * 0.5} `;
+    // Peak of tab, more rounded
+    path += `Q ${width * 0.5},${-tabSize * 1.2} ${width * 0.6},${-tabSize * 0.5} `;
+    // End of curve
     path += `Q ${width * 0.65},${-tabSize * 0.2} ${width * 0.7},0 `;
     path += `H ${width} `;
   } else {
-    // Slot on top
+    // Slot on top with more rounded appearance
     path += `H ${width * 0.3} `;
-    path += `Q ${width * 0.35},${tabSize * 0.2} ${width * 0.4},${tabSize} `;
-    path += `Q ${width * 0.5},${tabSize * 1.5} ${width * 0.6},${tabSize} `;
+    // Start of curve
+    path += `Q ${width * 0.35},${tabSize * 0.2} ${width * 0.4},${tabSize * 0.5} `;
+    // Bottom of slot, more rounded
+    path += `Q ${width * 0.5},${tabSize * 1.2} ${width * 0.6},${tabSize * 0.5} `;
+    // End of curve
     path += `Q ${width * 0.65},${tabSize * 0.2} ${width * 0.7},0 `;
     path += `H ${width} `;
   }
@@ -53,17 +59,23 @@ export function generatePiecePath(
     // Straight line for rightmost column
     path += `V ${height} `;
   } else if (hasRightTab) {
-    // Tab on right
+    // Tab on right with more rounded appearance
     path += `V ${height * 0.3} `;
-    path += `Q ${width + tabSize * 0.2},${height * 0.35} ${width + tabSize},${height * 0.4} `;
-    path += `Q ${width + tabSize * 1.5},${height * 0.5} ${width + tabSize},${height * 0.6} `;
+    // Start of curve
+    path += `Q ${width + tabSize * 0.2},${height * 0.35} ${width + tabSize * 0.5},${height * 0.4} `;
+    // Peak of tab, more rounded
+    path += `Q ${width + tabSize * 1.2},${height * 0.5} ${width + tabSize * 0.5},${height * 0.6} `;
+    // End of curve
     path += `Q ${width + tabSize * 0.2},${height * 0.65} ${width},${height * 0.7} `;
     path += `V ${height} `;
   } else {
-    // Slot on right
+    // Slot on right with more rounded appearance
     path += `V ${height * 0.3} `;
-    path += `Q ${width - tabSize * 0.2},${height * 0.35} ${width - tabSize},${height * 0.4} `;
-    path += `Q ${width - tabSize * 1.5},${height * 0.5} ${width - tabSize},${height * 0.6} `;
+    // Start of curve
+    path += `Q ${width - tabSize * 0.2},${height * 0.35} ${width - tabSize * 0.5},${height * 0.4} `;
+    // Bottom of slot, more rounded
+    path += `Q ${width - tabSize * 1.2},${height * 0.5} ${width - tabSize * 0.5},${height * 0.6} `;
+    // End of curve
     path += `Q ${width - tabSize * 0.2},${height * 0.65} ${width},${height * 0.7} `;
     path += `V ${height} `;
   }
@@ -73,17 +85,23 @@ export function generatePiecePath(
     // Straight line for bottom row
     path += `H 0 `;
   } else if (hasBottomTab) {
-    // Tab on bottom
+    // Tab on bottom with more rounded appearance
     path += `H ${width * 0.7} `;
-    path += `Q ${width * 0.65},${height + tabSize * 0.2} ${width * 0.6},${height + tabSize} `;
-    path += `Q ${width * 0.5},${height + tabSize * 1.5} ${width * 0.4},${height + tabSize} `;
+    // Start of curve
+    path += `Q ${width * 0.65},${height + tabSize * 0.2} ${width * 0.6},${height + tabSize * 0.5} `;
+    // Peak of tab, more rounded
+    path += `Q ${width * 0.5},${height + tabSize * 1.2} ${width * 0.4},${height + tabSize * 0.5} `;
+    // End of curve
     path += `Q ${width * 0.35},${height + tabSize * 0.2} ${width * 0.3},${height} `;
     path += `H 0 `;
   } else {
-    // Slot on bottom
+    // Slot on bottom with more rounded appearance
     path += `H ${width * 0.7} `;
-    path += `Q ${width * 0.65},${height - tabSize * 0.2} ${width * 0.6},${height - tabSize} `;
-    path += `Q ${width * 0.5},${height - tabSize * 1.5} ${width * 0.4},${height - tabSize} `;
+    // Start of curve
+    path += `Q ${width * 0.65},${height - tabSize * 0.2} ${width * 0.6},${height - tabSize * 0.5} `;
+    // Bottom of slot, more rounded
+    path += `Q ${width * 0.5},${height - tabSize * 1.2} ${width * 0.4},${height - tabSize * 0.5} `;
+    // End of curve
     path += `Q ${width * 0.35},${height - tabSize * 0.2} ${width * 0.3},${height} `;
     path += `H 0 `;
   }
@@ -93,17 +111,23 @@ export function generatePiecePath(
     // Straight line for leftmost column
     path += `V 0 `;
   } else if (hasLeftTab) {
-    // Tab on left
+    // Tab on left with more rounded appearance
     path += `V ${height * 0.7} `;
-    path += `Q ${-tabSize * 0.2},${height * 0.65} ${-tabSize},${height * 0.6} `;
-    path += `Q ${-tabSize * 1.5},${height * 0.5} ${-tabSize},${height * 0.4} `;
+    // Start of curve
+    path += `Q ${-tabSize * 0.2},${height * 0.65} ${-tabSize * 0.5},${height * 0.6} `;
+    // Peak of tab, more rounded
+    path += `Q ${-tabSize * 1.2},${height * 0.5} ${-tabSize * 0.5},${height * 0.4} `;
+    // End of curve
     path += `Q ${-tabSize * 0.2},${height * 0.35} 0,${height * 0.3} `;
     path += `V 0 `;
   } else {
-    // Slot on left
+    // Slot on left with more rounded appearance
     path += `V ${height * 0.7} `;
-    path += `Q ${tabSize * 0.2},${height * 0.65} ${tabSize},${height * 0.6} `;
-    path += `Q ${tabSize * 1.5},${height * 0.5} ${tabSize},${height * 0.4} `;
+    // Start of curve
+    path += `Q ${tabSize * 0.2},${height * 0.65} ${tabSize * 0.5},${height * 0.6} `;
+    // Bottom of slot, more rounded
+    path += `Q ${tabSize * 1.2},${height * 0.5} ${tabSize * 0.5},${height * 0.4} `;
+    // End of curve
     path += `Q ${tabSize * 0.2},${height * 0.35} 0,${height * 0.3} `;
     path += `V 0 `;
   }

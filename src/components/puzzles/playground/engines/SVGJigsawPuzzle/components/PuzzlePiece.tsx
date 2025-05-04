@@ -130,18 +130,18 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
             <path d={piecePath} />
           </clipPath>
           
-          {/* Enhanced drop shadow filter for more pronounced 3D effect */}
+          {/* Enhanced drop shadow filter for traditional jigsaw appearance */}
           <filter id={shadowId} x="-50%" y="-50%" width="200%" height="200%">
             <feDropShadow 
               dx="3" 
-              dy="5" 
-              stdDeviation="4" 
-              floodColor="rgba(0,0,0,0.75)" 
-              floodOpacity="0.8"
+              dy="4" 
+              stdDeviation="3" 
+              floodColor="rgba(0,0,0,0.6)" 
+              floodOpacity="0.9"
             />
           </filter>
           
-          {/* Subtle texture pattern for pieces - slightly enhanced */}
+          {/* Subtle texture pattern for pieces - enhanced for traditional look */}
           <pattern id={patternId} patternUnits="userSpaceOnUse" width="100" height="100" patternTransform="scale(0.12)">
             <rect width="100%" height="100%" fill="rgba(255,255,255,0.03)"/>
             <path d="M 0,10 L 100,10" stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
@@ -183,7 +183,7 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
           }}
         />
         
-        {/* SVG outline for the piece shape with more pronounced appearance */}
+        {/* SVG outline for the piece shape with traditional jigsaw appearance */}
         <svg 
           width="100%" 
           height="100%" 
@@ -199,19 +199,31 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
           <path 
             d={piecePath} 
             fill={`url(#${patternId})`}
-            fillOpacity="0.2"
+            fillOpacity="0.15"
             stroke="none"
           />
           
-          {/* Piece outline - enhanced for classic jigsaw look */}
+          {/* Piece outline - enhanced for traditional jigsaw look */}
           <path 
             d={piecePath} 
             fill="none" 
-            stroke={isCorrect ? "rgba(100, 255, 100, 0.9)" : "rgba(255, 255, 255, 0.9)"}
-            strokeWidth={isDragging ? "3.2" : "2.2"}
+            stroke={isCorrect ? "rgba(60, 210, 60, 0.9)" : "rgba(220, 220, 220, 0.85)"}
+            strokeWidth={isDragging ? "3" : "2.5"}
             strokeLinejoin="round"
             strokeLinecap="round"
             filter={isDragging ? `url(#${shadowId})` : ''}
+          />
+          
+          {/* Additional inner highlight for 3D effect */}
+          <path 
+            d={piecePath} 
+            fill="none" 
+            stroke="rgba(255,255,255,0.5)"
+            strokeWidth="1"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            strokeDasharray="2,4"
+            opacity="0.5"
           />
         </svg>
         

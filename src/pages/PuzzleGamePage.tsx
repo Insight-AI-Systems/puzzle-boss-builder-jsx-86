@@ -14,6 +14,8 @@ const PuzzleGamePage: React.FC = () => {
         puzzleId="demo-landscape"
         rows={4}
         columns={4}
+        showNumbers={false}
+        showGuide={true}
       />
     </div>
   );
