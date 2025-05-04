@@ -40,7 +40,6 @@ const PuzzlePlay = () => {
         .from('puzzles')
         .select('*, active_players')
         .eq('id', puzzleId)
-        .eq('status', 'active')
         .maybeSingle();
         
       if (error) throw error;
@@ -98,26 +97,37 @@ const PuzzlePlay = () => {
     };
   }, [puzzleId]);
 
-  if (isLoading) {
+  // If there's no puzzle data yet, show a temp display with sample image
+  if (isLoading || error || !puzzle) {
     return (
-      <PageLayout title="Loading Puzzle" className="max-w-6xl">
-        <div className="flex justify-center items-center py-20">
-          <Loader2 className="h-10 w-10 animate-spin text-puzzle-aqua" />
-        </div>
-      </PageLayout>
-    );
-  }
-
-  if (error || !puzzle) {
-    return (
-      <PageLayout title="Puzzle Not Found" className="max-w-6xl">
-        <div className="text-center py-10">
-          <h2 className="text-2xl font-bold mb-4">Sorry, this puzzle isn't available</h2>
-          <p className="mb-6 text-muted-foreground">The puzzle you're looking for might not exist or isn't currently active.</p>
-          <Button asChild className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
-            <a href="/puzzles">Back to Puzzles</a>
-          </Button>
-        </div>
+      <PageLayout title={isLoading ? "Loading Puzzle" : "Puzzle Demo"} className="max-w-6xl">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="h-10 w-10 animate-spin text-puzzle-aqua" />
+          </div>
+        ) : (
+          <div className="text-center py-10">
+            <h2 className="text-2xl font-bold mb-4">{error ? "Sorry, this puzzle isn't available" : "Demo Puzzle"}</h2>
+            <p className="mb-6 text-muted-foreground">
+              {error 
+                ? "The puzzle you're looking for might not exist or isn't currently active."
+                : "Try out our new puzzle engine with this demo puzzle!"}
+            </p>
+            
+            <div className="bg-card rounded-lg border shadow p-4 max-w-4xl mx-auto">
+              <PuzzleGame 
+                imageUrl="https://images.unsplash.com/photo-1506744038136-46273834b3fb"
+                rows={3}
+                columns={3}
+                showNumbers={false}
+              />
+            </div>
+            
+            <Button asChild className="mt-6 bg-puzzle-aqua hover:bg-puzzle-aqua/80">
+              <a href="/puzzles">Back to Puzzles</a>
+            </Button>
+          </div>
+        )}
       </PageLayout>
     );
   }
@@ -134,15 +144,17 @@ const PuzzlePlay = () => {
         {puzzle.description && (
           <p className="text-muted-foreground mb-4">{puzzle.description}</p>
         )}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <span className="font-medium">Difficulty:</span>
             <span>{(puzzle.difficulty_level || 'Medium').charAt(0).toUpperCase() + (puzzle.difficulty_level || 'Medium').slice(1)}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="font-medium">Time Limit:</span>
-            <span>{Math.floor(puzzle.time_limit / 60)}:{(puzzle.time_limit % 60).toString().padStart(2, '0')}</span>
-          </div>
+          {puzzle.time_limit && (
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Time Limit:</span>
+              <span>{Math.floor(puzzle.time_limit / 60)}:{(puzzle.time_limit % 60).toString().padStart(2, '0')}</span>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-puzzle-aqua" />
             <span className="font-medium">Active Players:</span>

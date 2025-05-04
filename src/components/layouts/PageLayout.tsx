@@ -1,28 +1,28 @@
 
-import React from 'react';
+import React, { ReactNode } from 'react';
 
 interface PageLayoutProps {
   title: string;
-  subtitle?: string;
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
+  maxWidth?: string;
 }
 
-const PageLayout: React.FC<PageLayoutProps> = ({ title, subtitle, children, className }) => {
+const PageLayout: React.FC<PageLayoutProps> = ({ 
+  title, 
+  children, 
+  className = "max-w-6xl",
+  maxWidth
+}) => {
+  // Update the document title
+  React.useEffect(() => {
+    document.title = `${title} | PuzzleBoss`;
+  }, [title]);
+
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-game text-puzzle-aqua mb-4">{title}</h1>
-        {subtitle && (
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            {subtitle}
-          </p>
-        )}
-      </div>
-      <div className={className}>
-        {children}
-      </div>
-    </div>
+    <main className={`container mx-auto px-4 py-8 ${className}`} style={maxWidth ? { maxWidth } : undefined}>
+      {children}
+    </main>
   );
 };
 

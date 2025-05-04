@@ -19,8 +19,9 @@ import Partnerships from './pages/Partnerships';
 import Careers from './pages/Careers';
 import Press from './pages/Press';
 import PuzzlePage from './pages/PuzzlePage'; // Keep for backward compatibility
-import Auth from './pages/Auth'; // Added Auth import
-import Categories from './components/Categories'; // Import the existing Categories component
+import Auth from './pages/Auth';
+import Categories from './components/Categories';
+import PuzzlePlay from './pages/PuzzlePlay'; // Import the PuzzlePlay component
 
 // Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
@@ -40,6 +41,7 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/puzzles" element={<Puzzles />} />
+          <Route path="/puzzle/:puzzleId" element={<PuzzlePlay />} /> {/* Add the proper route for puzzle play */}
           <Route path="/puzzle" element={<PuzzlePage />} /> {/* Redirects to /puzzles */}
           <Route path="/prizes-won" element={<PrizesWonPage />} />
           <Route path="/support" element={<SupportPage />} />

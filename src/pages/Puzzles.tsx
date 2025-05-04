@@ -1,119 +1,164 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2 } from 'lucide-react';
-import { usePuzzles } from '@/hooks/usePuzzles';
+import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import PageLayout from '@/components/layouts/PageLayout';
-import { PuzzleSearch } from '@/components/puzzles/PuzzleSearch';
-import { PuzzleCategories } from '@/components/puzzles/PuzzleCategories';
-import { PuzzleGrid } from '@/components/puzzles/PuzzleGrid';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Loader2 } from 'lucide-react';
+import PuzzleEnginePlayground from '@/components/puzzles/playground/PuzzleEnginePlayground';
+import { PuzzlePreview } from '@/components/puzzles/components/PuzzlePreview';
+
+type PuzzleItem = {
+  id: string;
+  title: string;
+  description: string;
+  image_url: string;
+  difficulty_level: string;
+  status: string;
+  total_plays: number;
+  prize_amount: number;
+  category_id: string;
+  category_name?: string;
+}
 
 const Puzzles = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const { puzzles, isLoading, isError } = usePuzzles();
-  
-  const activePuzzles = puzzles.filter(puzzle => puzzle.status === "active");
-  
-  const filteredPuzzles = activePuzzles.filter(puzzle => 
-    puzzle.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    puzzle.prize?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    puzzle.category?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  if (isLoading) {
-    return (
-      <PageLayout 
-        title="Puzzles" 
-        subtitle="Loading puzzles..."
-        className="max-w-6xl"
-      >
-        <div className="flex justify-center items-center py-20">
-          <Loader2 className="h-10 w-10 animate-spin text-puzzle-aqua" />
-        </div>
-      </PageLayout>
-    );
-  }
+  // Fetch active puzzles
+  const { data: puzzles, isLoading } = useQuery({
+    queryKey: ['puzzles', selectedCategory],
+    queryFn: async () => {
+      let query = supabase
+        .from('puzzles')
+        .select('*, categories(name)')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+        
+      if (selectedCategory) {
+        query = query.eq('category_id', selectedCategory);
+      }
+      
+      const { data, error } = await query.limit(20);
+      
+      if (error) throw error;
+      
+      // Format data to include category_name
+      return data.map(puzzle => ({
+        ...puzzle,
+        category_name: puzzle.categories?.name || 'Uncategorized'
+      })) as PuzzleItem[];
+    }
+  });
 
-  if (isError) {
-    return (
-      <PageLayout 
-        title="Puzzles" 
-        subtitle="Error loading puzzles"
-        className="max-w-6xl"
-      >
-        <div className="text-center py-20">
-          <p className="text-red-500 mb-4">Failed to load puzzles. Please try again later.</p>
-          <Button onClick={() => window.location.reload()}>Retry</Button>
-        </div>
-      </PageLayout>
-    );
-  }
-
-  if (activePuzzles.length === 0) {
-    return (
-      <PageLayout 
-        title="Puzzles" 
-        subtitle="No puzzles available yet"
-        className="max-w-6xl"
-      >
-        <div className="text-center py-20">
-          <p className="text-muted-foreground mb-4">No active puzzles found. Please check back later.</p>
-        </div>
-      </PageLayout>
-    );
-  }
+  // Fetch categories for filter
+  const { data: categories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .order('name');
+        
+      if (error) throw error;
+      return data;
+    }
+  });
 
   return (
-    <PageLayout 
-      title="Puzzles" 
-      subtitle="Compete in skill-based puzzles to win premium prizes"
-      className="max-w-6xl"
-    >
-      <PuzzleSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+    <PageLayout title="Jigsaw Puzzles" className="max-w-7xl">
+      <section className="mb-10 text-center">
+        <h1 className="text-3xl font-bold mb-4">Solve Beautiful Jigsaw Puzzles</h1>
+        <p className="text-muted-foreground max-w-2xl mx-auto">
+          Challenge yourself with our collection of stunning jigsaw puzzles.
+          Compete for prizes or just relax and enjoy the fun of puzzle solving.
+        </p>
+      </section>
 
-      <Tabs defaultValue="all" className="w-full">
-        <div className="flex justify-between items-center mb-4">
-          <TabsList>
-            <TabsTrigger value="all">All Puzzles</TabsTrigger>
-            <TabsTrigger value="popular">Popular</TabsTrigger>
-            <TabsTrigger value="ending">Ending Soon</TabsTrigger>
-            <TabsTrigger value="new">Newest</TabsTrigger>
-          </TabsList>
-          <PuzzleCategories />
+      {/* Showcase our new puzzle engine */}
+      <section className="mb-12 bg-muted/30 p-6 rounded-lg">
+        <h2 className="text-2xl font-bold text-center mb-6">Try Our New Puzzle Engine</h2>
+        <div className="max-w-lg mx-auto">
+          <PuzzleEnginePlayground 
+            difficulty="easy"
+            heroMode={true}
+            showNumbersToggle={true}
+          />
         </div>
-        
-        <TabsContent value="all" className="mt-0">
-          <PuzzleGrid puzzles={filteredPuzzles} />
-        </TabsContent>
-        
-        <TabsContent value="popular" className="mt-0">
-          <PuzzleGrid 
-            puzzles={filteredPuzzles.sort((a, b) => (b.completions || 0) - (a.completions || 0))} 
-          />
-        </TabsContent>
-        
-        <TabsContent value="ending" className="mt-0">
-          <PuzzleGrid 
-            puzzles={filteredPuzzles.sort((a, b) => (a.timeLimit || 0) - (b.timeLimit || 0))} 
-          />
-        </TabsContent>
-        
-        <TabsContent value="new" className="mt-0">
-          <PuzzleGrid 
-            puzzles={filteredPuzzles.sort((a, b) => 
-              new Date(b.created_at || Date.now()).getTime() - 
-              new Date(a.created_at || Date.now()).getTime()
-            )} 
-          />
-        </TabsContent>
-      </Tabs>
-      
-      <div className="flex justify-center mt-10">
-        <Button variant="outline" className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10">
-          Load More Puzzles
-        </Button>
-      </div>
+        <div className="text-center mt-6">
+          <p className="text-sm text-muted-foreground mb-3">Our advanced puzzle engine features smooth dragging, precise snap-to-grid, and progress saving.</p>
+          <Button asChild variant="default" className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
+            <Link to="/how-it-works">Learn More About Our Engine</Link>
+          </Button>
+        </div>
+      </section>
+
+      {/* Category filter */}
+      {categories && categories.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          <Badge 
+            className={`cursor-pointer ${!selectedCategory ? 'bg-primary' : 'bg-secondary hover:bg-primary/80'}`}
+            onClick={() => setSelectedCategory(null)}
+          >
+            All
+          </Badge>
+          {categories.map(category => (
+            <Badge 
+              key={category.id}
+              className={`cursor-pointer ${selectedCategory === category.id ? 'bg-primary' : 'bg-secondary hover:bg-primary/80'}`}
+              onClick={() => setSelectedCategory(category.id)}
+            >
+              {category.name}
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      {/* Puzzle grid */}
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {puzzles && puzzles.map(puzzle => (
+            <Card key={puzzle.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-base font-bold truncate">{puzzle.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="aspect-square relative rounded-md overflow-hidden mb-3">
+                  <PuzzlePreview imageUrl={puzzle.image_url} difficulty={puzzle.difficulty_level} />
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Difficulty: {puzzle.difficulty_level}</span>
+                  <span>{puzzle.total_plays || 0} plays</span>
+                </div>
+              </CardContent>
+              <CardFooter className="p-4 pt-0 flex justify-between">
+                <Badge variant="outline">{puzzle.category_name}</Badge>
+                {puzzle.prize_amount > 0 && (
+                  <Badge className="bg-puzzle-gold">Prize: ${puzzle.prize_amount}</Badge>
+                )}
+              </CardFooter>
+              <Button 
+                asChild
+                className="w-full rounded-t-none bg-puzzle-aqua hover:bg-puzzle-aqua/80"
+              >
+                <Link to={`/puzzle/${puzzle.id}`}>Play Now</Link>
+              </Button>
+            </Card>
+          ))}
+          
+          {puzzles && puzzles.length === 0 && (
+            <div className="col-span-full text-center py-12">
+              <p className="text-muted-foreground">No puzzles found in this category.</p>
+            </div>
+          )}
+        </div>
+      )}
     </PageLayout>
   );
 };
