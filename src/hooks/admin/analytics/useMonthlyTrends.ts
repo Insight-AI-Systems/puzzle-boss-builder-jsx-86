@@ -10,8 +10,9 @@ export const useMonthlyTrends = (fromDate?: string, toDate?: string) => {
     queryKey: ['monthlyTrends', fromDate, toDate, months_back],
     queryFn: async () => {
       if (fromDate && toDate) {
-        // Use the get_monthly_trends_range function but with proper typing
-        const { data, error } = await supabase.rpc(
+        // Use the get_monthly_trends_range function with explicit any typing to bypass TypeScript error
+        // since the function exists in the database but TypeScript doesn't know about it yet
+        const { data, error } = await (supabase.rpc as any)(
           'get_monthly_trends_range', 
           { from_date: fromDate, to_date: toDate }
         );
