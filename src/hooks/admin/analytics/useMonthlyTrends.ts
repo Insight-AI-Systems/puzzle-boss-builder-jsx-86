@@ -10,17 +10,15 @@ export const useMonthlyTrends = (fromDate?: string, toDate?: string) => {
     queryKey: ['monthlyTrends', fromDate, toDate, months_back],
     queryFn: async () => {
       if (fromDate && toDate) {
-        // Use a direct SQL query with parameters instead of RPC for date range
-        const response = await supabase
-          .from('monthly_trends_view')
-          .select('*')
-          .gte('month_date', fromDate)
-          .lte('month_date', toDate)
-          .order('month_date', { ascending: false });
+        // Use the get_monthly_trends_range function but with proper typing
+        const { data, error } = await supabase.rpc(
+          'get_monthly_trends_range', 
+          { from_date: fromDate, to_date: toDate }
+        );
         
-        if (response.error) {
-          console.error('Error fetching monthly trends with date range:', response.error);
-          // Fall back to regular function if the view doesn't exist
+        if (error) {
+          console.error('Error fetching monthly trends with date range:', error);
+          // Fall back to regular function if the range version doesn't exist
           const fallbackResult = await supabase.rpc('get_monthly_trends', {
             months_back: 6
           });
@@ -29,7 +27,7 @@ export const useMonthlyTrends = (fromDate?: string, toDate?: string) => {
           return fallbackResult.data as MonthlyTrend[];
         }
         
-        return response.data as MonthlyTrend[];
+        return data as MonthlyTrend[];
       } else {
         // Use months back as default
         const { data, error } = await supabase.rpc('get_monthly_trends', {
