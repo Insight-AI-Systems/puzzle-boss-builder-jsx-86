@@ -1,6 +1,9 @@
+
 /**
  * Drag event handlers for puzzle pieces
  */
+
+import { PuzzlePiece } from '../types/puzzleTypes';
 
 /**
  * Sets up drag events for a puzzle piece
@@ -12,11 +15,13 @@
  */
 export function setupPieceDragEvents(
   scene: Phaser.Scene, 
-  piece: any,
-  allPieces: any[], 
+  piece: PuzzlePiece,
+  allPieces: PuzzlePiece[], 
   width: number, 
   height: number
 ): void {
+  if (!piece.sprite) return;
+  
   piece.sprite.on('dragstart', function(pointer: Phaser.Input.Pointer) {
     // Post message to start the game if not already started
     window.parent.postMessage({ type: 'PHASER_PUZZLE_START' }, '*');

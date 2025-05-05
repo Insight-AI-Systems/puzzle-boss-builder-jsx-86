@@ -18,8 +18,8 @@ export interface PuzzlePiece {
   width: number;
   height: number;
   isCorrect: boolean;
-  sprite?: any;
-  numberText?: any;
+  sprite?: Phaser.GameObjects.Sprite;
+  numberText?: Phaser.GameObjects.Text;
 }
 
 export interface GameStats {

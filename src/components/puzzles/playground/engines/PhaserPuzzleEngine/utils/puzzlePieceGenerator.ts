@@ -10,7 +10,12 @@ import { setupPieceDragEvents } from './pieceDragHandlers';
  * @param columns Number of columns in the puzzle
  * @returns Array of puzzle piece objects
  */
-export function createPuzzlePieces(scene: Phaser.Scene, texture: Phaser.Textures.Texture, rows: number, columns: number): PuzzlePiece[] {
+export function createPuzzlePieces(
+  scene: Phaser.Scene, 
+  texture: Phaser.Textures.Texture, 
+  rows: number, 
+  columns: number
+): PuzzlePiece[] {
   // Get dimensions
   const width = scene.cameras.main.width;
   const height = scene.cameras.main.height;
@@ -28,7 +33,7 @@ export function createPuzzlePieces(scene: Phaser.Scene, texture: Phaser.Textures
       const correctY = row * pieceHeight + pieceHeight/2;
       
       // Create a text element for piece number if needed
-      let numberText = null;
+      let numberText: Phaser.GameObjects.Text | undefined = undefined;
       // Access config data safely using the game's registry instead of customData
       const showNumbers = scene.registry.get('showNumbers') || false;
       if (showNumbers) {

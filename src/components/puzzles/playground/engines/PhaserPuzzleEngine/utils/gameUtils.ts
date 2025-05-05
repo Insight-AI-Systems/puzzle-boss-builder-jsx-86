@@ -1,4 +1,6 @@
 
+import { PuzzlePiece } from '../types/puzzleTypes';
+
 /**
  * Utility functions for the Phaser puzzle game
  */
@@ -9,14 +11,14 @@
  * @param width Width of the game board
  * @param height Height of the game board
  */
-export function shufflePieces(pieces: any[], width: number, height: number): void {
+export function shufflePieces(pieces: PuzzlePiece[], width: number, height: number): void {
   if (!pieces || pieces.length === 0) return;
   
   for (let i = 0; i < pieces.length; i++) {
     const piece = pieces[i];
     
     // Ensure the piece isn't already in the correct position
-    let randomX, randomY;
+    let randomX: number, randomY: number;
     do {
       // Keep pieces within the game bounds
       randomX = Phaser.Math.Between(piece.width/2, width - piece.width/2);
@@ -26,8 +28,10 @@ export function shufflePieces(pieces: any[], width: number, height: number): voi
       Math.abs(randomY - piece.correctY) < piece.height/4
     );
     
-    piece.sprite.x = randomX;
-    piece.sprite.y = randomY;
+    if (piece.sprite) {
+      piece.sprite.x = randomX;
+      piece.sprite.y = randomY;
+    }
     piece.isCorrect = false;
     
     // Also move number text
@@ -43,12 +47,12 @@ export function shufflePieces(pieces: any[], width: number, height: number): voi
  * @param pieces Array of puzzle pieces
  * @param scene The Phaser scene
  */
-export function showHint(pieces: any[], scene: Phaser.Scene): void {
+export function showHint(pieces: PuzzlePiece[], scene: Phaser.Scene): void {
   // Find the first incorrect piece and flash it
   const incorrectPieces = pieces.filter(p => !p.isCorrect);
   if (incorrectPieces.length > 0) {
     const piece = incorrectPieces[0];
-    const originalAlpha = piece.sprite.alpha;
+    const originalAlpha = piece.sprite?.alpha ?? 1;
     
     // Flash the piece - using individual tweens instead of timeline
     scene.tweens.add({
@@ -68,14 +72,16 @@ export function showHint(pieces: any[], scene: Phaser.Scene): void {
     });
     
     // Move it slightly towards correct position
-    const dx = piece.correctX - piece.sprite.x;
-    const dy = piece.correctY - piece.sprite.y;
-    piece.sprite.x += dx * 0.2;
-    piece.sprite.y += dy * 0.2;
+    if (piece.sprite) {
+      const dx = piece.correctX - piece.sprite.x;
+      const dy = piece.correctY - piece.sprite.y;
+      piece.sprite.x += dx * 0.2;
+      piece.sprite.y += dy * 0.2;
+    }
     
     if (piece.numberText) {
-      piece.numberText.x = piece.sprite.x;
-      piece.numberText.y = piece.sprite.y;
+      piece.numberText.x = piece.sprite?.x ?? piece.numberText.x;
+      piece.numberText.y = piece.sprite?.y ?? piece.numberText.y;
     }
     
     // Count as a move
