@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/auth/useAuth';
-import { usePuzzleTimer } from '../../hooks/usePuzzleTimer';
+import { usePuzzleTimer } from '@/components/puzzles/hooks/usePuzzleTimer';
 import LeaderboardSection from './components/LeaderboardSection';
 import AuthSection from './components/AuthSection';
 import './styles/phaser-puzzle.css';
@@ -84,7 +84,7 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
     
     window.addEventListener('message', handlePhaserMessage);
     return () => {
-      window.addEventListener('message', handlePhaserMessage);
+      window.removeEventListener('message', handlePhaserMessage);
     };
   }, [puzzleId, elapsed, isAuthenticated, startTimer, stopTimer, resetTimer]);
 

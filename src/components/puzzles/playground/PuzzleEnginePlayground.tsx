@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import CustomPuzzleEngine from './engines/CustomPuzzleEngine';
 import SVGJigsawPuzzle from './engines/SVGJigsawPuzzle';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,9 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
   const rows = miniRows || (difficulty === 'easy' ? 3 : difficulty === 'medium' ? 4 : 5);
   const columns = miniColumns || (difficulty === 'easy' ? 3 : difficulty === 'medium' ? 4 : 5);
 
+  // Generate a unique puzzle ID for the Phaser engine
+  const phaserPuzzleId = `phaser-puzzle-${rows}x${columns}-${difficulty}`;
+
   return (
     <div className="puzzle-engine-playground">
       {!isCondensed && (
@@ -79,7 +82,7 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
             rows={rows}
             columns={columns}
             showNumbers={showNumbers}
-            puzzleId={`phaser-demo-${rows}x${columns}`}
+            puzzleId={phaserPuzzleId}
           />
         )}
         
