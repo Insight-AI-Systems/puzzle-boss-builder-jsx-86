@@ -4,12 +4,13 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 export function usePuzzleTimer() {
   const [elapsed, setElapsed] = useState<number>(0);
   const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [startTime, setStartTime] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startTimeRef = useRef<number | null>(null);
 
   const start = useCallback(() => {
     if (!isRunning) {
-      startTimeRef.current = Date.now() - (elapsed * 1000);
+      const now = Date.now();
+      setStartTime(now - (elapsed * 1000));
       setIsRunning(true);
     }
   }, [isRunning, elapsed]);
@@ -27,16 +28,14 @@ export function usePuzzleTimer() {
   const reset = useCallback(() => {
     stop();
     setElapsed(0);
-    startTimeRef.current = null;
+    setStartTime(null);
   }, [stop]);
 
   useEffect(() => {
-    if (isRunning) {
+    if (isRunning && startTime !== null) {
       timerRef.current = setInterval(() => {
-        if (startTimeRef.current) {
-          const newElapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
-          setElapsed(newElapsed);
-        }
+        const newElapsed = Math.floor((Date.now() - startTime) / 1000);
+        setElapsed(newElapsed);
       }, 1000);
     }
 
@@ -45,7 +44,7 @@ export function usePuzzleTimer() {
         clearInterval(timerRef.current);
       }
     };
-  }, [isRunning]);
+  }, [isRunning, startTime]);
 
   // Format time for display
   const formatTime = useCallback((seconds: number): string => {
@@ -63,6 +62,9 @@ export function usePuzzleTimer() {
     start,
     stop,
     reset,
-    formatTime
+    formatTime,
+    startTime,
+    setElapsed,
+    setStartTime
   };
 }
