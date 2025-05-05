@@ -32,7 +32,9 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
   };
   
   // Build URL with query parameters for the iframe
-  const iframeUrl = `https://puzzle-boss-jigsaw.pages.dev?image=${encodeURIComponent(imageUrl)}&difficulty=${getDifficulty()}&pieces=${rows * columns}&showNumbers=${showNumbers}`;
+  // Note: Using a temporary placeholder URL until the actual game is deployed
+  // In a real implementation, we'd use a valid URL like puzzle-boss-jigsaw.pages.dev
+  const iframeUrl = `https://example.com/puzzle-game?image=${encodeURIComponent(imageUrl)}&difficulty=${getDifficulty()}&pieces=${rows * columns}&showNumbers=${showNumbers}`;
   
   useEffect(() => {
     // Simulate loading time for iframe
