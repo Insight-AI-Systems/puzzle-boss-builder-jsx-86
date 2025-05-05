@@ -1,4 +1,3 @@
-
 import * as Phaser from 'phaser';
 
 export interface PuzzleConfig {
@@ -122,7 +121,6 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
         </div>
         
         <script>
-          // Basic implementation for now - in a real app, this would be a more complex Phaser game
           document.addEventListener('DOMContentLoaded', function() {
             try {
               // Tell the parent frame we're starting to load
@@ -150,24 +148,18 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
                 if (!gameStarted) {
                   startGame();
                 }
+                shufflePieces();
                 moves += 5;
                 updateMoveCount();
-                // In a real game, this would shuffle the pieces
               });
               
               document.getElementById('hint-button').addEventListener('click', function() {
                 if (!gameStarted) {
                   startGame();
                 }
+                showHint();
                 moves += 1;
                 updateMoveCount();
-                
-                // Simulate game completion after some moves and a delay
-                if (moves > 10 && !gameCompleted) {
-                  setTimeout(() => {
-                    completeGame();
-                  }, 1500);
-                }
               });
 
               function updateMoveCount() {
@@ -241,7 +233,10 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
                     const pieceWidth = this.cameras.main.width / columns;
                     const pieceHeight = this.cameras.main.height / rows;
                     
-                    // For now, just display the full image
+                    // Create our puzzle container
+                    const puzzleContainer = this.add.container(0, 0);
+                    
+                    // For now, just display the full image temporarily
                     const puzzleImage = this.add.image(
                       this.cameras.main.centerX,
                       this.cameras.main.centerY,
@@ -254,25 +249,90 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
                     const scale = Math.min(scaleX, scaleY);
                     puzzleImage.setScale(scale);
                     
-                    // Create jigsaw pieces with traditional ball and hole shapes
-                    createJigsawPuzzle(this, puzzleImage, rows, columns);
+                    // Hide the original image - we'll use it as reference only
+                    puzzleImage.setVisible(false);
                     
-                    // Add click handler to full image for demo purposes
-                    puzzleImage.setInteractive();
-                    puzzleImage.on('pointerdown', function() {
-                      if (!gameStarted) {
-                        startGame();
+                    // Create jigsaw pieces with traditional ball and hole shapes
+                    const pieces = createJigsawPuzzle(this, puzzleImage, rows, columns);
+                    
+                    // Initialize the puzzle state (shuffled initially)
+                    initializePuzzleState(pieces);
+                    
+                    // Add boundaries for puzzle pieces to stay within assembly area
+                    const bounds = new Phaser.Geom.Rectangle(0, 0, this.cameras.main.width, this.cameras.main.height);
+                    
+                    function initializePuzzleState(pieces) {
+                      // Shuffle pieces for initial state but don't complete the puzzle
+                      shufflePieces();
+                    }
+                    
+                    function shufflePieces() {
+                      pieces.forEach(piece => {
+                        // Make sure no piece is in correct position to start with
+                        let randomX, randomY;
+                        do {
+                          randomX = Phaser.Math.Between(pieceWidth/2, puzzleImage.width * scale - pieceWidth/2);
+                          randomY = Phaser.Math.Between(pieceHeight/2, puzzleImage.height * scale - pieceHeight/2);
+                        } while (
+                          Math.abs(randomX - piece.correctX) < pieceWidth/4 && 
+                          Math.abs(randomY - piece.correctY) < pieceHeight/4
+                        );
+                        
+                        piece.sprite.x = randomX;
+                        piece.sprite.y = randomY;
+                        piece.isCorrect = false;
+                        
+                        // Move up the number text if it exists
+                        if (piece.numberText) {
+                          piece.numberText.x = randomX;
+                          piece.numberText.y = randomY;
+                        }
+                      });
+                    }
+                    
+                    function showHint() {
+                      // Find the first incorrect piece and flash it
+                      const incorrectPieces = pieces.filter(p => !p.isCorrect);
+                      if (incorrectPieces.length > 0) {
+                        const piece = incorrectPieces[0];
+                        const originalAlpha = piece.sprite.alpha;
+                        
+                        // Flash the piece
+                        const timeline = this.scene.tweens.createTimeline();
+                        timeline.add({
+                          targets: piece.sprite,
+                          alpha: 0.3,
+                          duration: 200,
+                          yoyo: true,
+                          repeat: 2
+                        });
+                        timeline.add({
+                          targets: piece.sprite,
+                          alpha: originalAlpha,
+                          duration: 200
+                        });
+                        timeline.play();
+                        
+                        // Move it slightly towards correct position
+                        const dx = piece.correctX - piece.sprite.x;
+                        const dy = piece.correctY - piece.sprite.y;
+                        piece.sprite.x += dx * 0.2;
+                        piece.sprite.y += dy * 0.2;
+                        
+                        if (piece.numberText) {
+                          piece.numberText.x = piece.sprite.x;
+                          piece.numberText.y = piece.sprite.y;
+                        }
                       }
-                      moves++;
-                      updateMoveCount();
-                      
-                      // Simulate game completion after some clicks
-                      if (moves > 5 && !gameCompleted) {
-                        setTimeout(() => {
-                          completeGame();
-                        }, 2000);
+                    }
+                    
+                    // Function to check if puzzle is complete
+                    function checkCompletion() {
+                      const allCorrect = pieces.every(p => p.isCorrect);
+                      if (allCorrect && !gameCompleted) {
+                        completeGame();
                       }
-                    });
+                    }
                   } catch (error) {
                     console.error('Error in create:', error);
                     loadMessage.textContent = 'Error creating puzzle game';
@@ -285,34 +345,31 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
                 }
                 
                 function createJigsawPuzzle(scene, puzzleImage, rows, columns) {
-                  // Hide the original image - we'll show pieces instead
-                  puzzleImage.setVisible(false);
-                  
                   // Get dimensions
                   const width = scene.cameras.main.width;
                   const height = scene.cameras.main.height;
                   const pieceWidth = width / columns;
                   const pieceHeight = height / rows;
                   
-                  // Create a texture for the original image
-                  const originalTexture = scene.textures.get('puzzleImage');
-                  
                   // Create an array for the pieces
                   const pieces = [];
+                  
+                  // Create a group to manage depth
+                  const piecesGroup = scene.add.group();
                   
                   // Create each piece
                   for (let row = 0; row < rows; row++) {
                     for (let col = 0; col < columns; col++) {
-                      // Get original position
-                      const originalX = col * pieceWidth;
-                      const originalY = row * pieceHeight;
+                      // Calculate correct position for this piece
+                      const correctX = col * pieceWidth + pieceWidth/2;
+                      const correctY = row * pieceHeight + pieceHeight/2;
                       
                       // Create a text element for piece number if needed
                       let numberText = null;
                       if (config.showNumbers) {
                         numberText = scene.add.text(
-                          originalX + pieceWidth/2, 
-                          originalY + pieceHeight/2,
+                          correctX, 
+                          correctY,
                           \`\${row * columns + col + 1}\`,
                           {
                             fontFamily: 'Arial',
@@ -324,83 +381,113 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
                         ).setOrigin(0.5);
                       }
                       
+                      // Extract the piece from the original image
+                      const pieceName = \`piece_\${row}_\${col}\`;
+                      
+                      // Create the piece texture
+                      const pieceTexture = createPieceTexture(
+                        scene, 
+                        'puzzleImage', 
+                        col * pieceWidth, 
+                        row * pieceHeight, 
+                        pieceWidth, 
+                        pieceHeight,
+                        pieceName
+                      );
+                      
+                      // Create sprite for the piece
+                      const pieceSprite = scene.add.image(
+                        correctX, 
+                        correctY,
+                        pieceName
+                      ).setOrigin(0.5);
+                      
+                      // Make pieces interactive
+                      pieceSprite.setInteractive();
+                      scene.input.setDraggable(pieceSprite);
+                      
+                      // Add to group for depth management
+                      piecesGroup.add(pieceSprite);
+                      
                       // Create a piece object
                       const piece = {
                         id: row * columns + col,
                         row,
                         col,
-                        x: originalX,
-                        y: originalY,
+                        correctX,
+                        correctY,
                         width: pieceWidth,
                         height: pieceHeight,
                         isCorrect: false,
-                        canvasTexture: createPieceTexture(
-                          scene,
-                          originalTexture,
-                          originalX,
-                          originalY,
-                          pieceWidth,
-                          pieceHeight,
-                          row,
-                          col,
-                          rows,
-                          columns
-                        ),
-                        sprite: null,
+                        sprite: pieceSprite,
                         numberText
                       };
                       
-                      // Create sprite for the piece
-                      const pieceName = \`piece_\${row}_\${col}\`;
-                      piece.sprite = scene.add.image(
-                        originalX + pieceWidth/2,
-                        originalY + pieceHeight/2,
-                        pieceName
-                      );
-                      
-                      // Make pieces interactive
-                      piece.sprite.setInteractive();
-                      scene.input.setDraggable(piece.sprite);
-                      
                       // Handle drag events
-                      piece.sprite.on('dragstart', function(pointer) {
+                      pieceSprite.on('dragstart', function(pointer, dragX, dragY) {
                         if (!gameStarted) {
                           startGame();
                         }
+                        // Bring this piece to top
                         this.setDepth(1000);
+                        if (piece.numberText) {
+                          piece.numberText.setDepth(1001);
+                        }
+                        
+                        // Count as a move
                         moves++;
                         updateMoveCount();
+                        
+                        // If piece was in correct position, it's not anymore
+                        if (piece.isCorrect) {
+                          piece.isCorrect = false;
+                        }
                       });
                       
-                      piece.sprite.on('drag', function(pointer, dragX, dragY) {
-                        this.x = dragX;
-                        this.y = dragY;
+                      pieceSprite.on('drag', function(pointer, dragX, dragY) {
+                        // Keep the piece within bounds of the game
+                        const x = Phaser.Math.Clamp(dragX, pieceWidth/2, width - pieceWidth/2);
+                        const y = Phaser.Math.Clamp(dragY, pieceHeight/2, height - pieceHeight/2);
+                        
+                        this.x = x;
+                        this.y = y;
+                        
+                        // Update number text position if it exists
+                        if (piece.numberText) {
+                          piece.numberText.x = x;
+                          piece.numberText.y = y;
+                        }
                       });
                       
-                      piece.sprite.on('dragend', function(pointer) {
+                      pieceSprite.on('dragend', function(pointer) {
+                        // Reset depth
                         this.setDepth(0);
+                        if (piece.numberText) {
+                          piece.numberText.setDepth(1);
+                        }
                         
                         // Check if piece is near its correct position
-                        const correctX = piece.x + pieceWidth/2;
-                        const correctY = piece.y + pieceHeight/2;
                         const distance = Phaser.Math.Distance.Between(
-                          this.x, this.y, correctX, correctY
+                          this.x, this.y, piece.correctX, piece.correctY
                         );
                         
                         // If close enough, snap to correct position
                         if (distance < 30) {
-                          this.x = correctX;
-                          this.y = correctY;
+                          this.x = piece.correctX;
+                          this.y = piece.correctY;
                           piece.isCorrect = true;
                           
                           // Update number text position if it exists
                           if (piece.numberText) {
-                            piece.numberText.x = correctX;
-                            piece.numberText.y = correctY;
+                            piece.numberText.x = piece.correctX;
+                            piece.numberText.y = piece.correctY;
                           }
                           
                           // Check if all pieces are correct
-                          checkCompletion();
+                          const allCorrect = pieces.every(p => p.isCorrect);
+                          if (allCorrect && !gameCompleted) {
+                            completeGame();
+                          }
                         }
                       });
                       
@@ -408,39 +495,26 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
                     }
                   }
                   
-                  // Function to check if puzzle is complete
-                  function checkCompletion() {
-                    const allCorrect = pieces.every(p => p.isCorrect);
-                    if (allCorrect && !gameCompleted) {
-                      completeGame();
-                    }
-                  }
+                  return pieces;
                 }
                 
-                function createPieceTexture(scene, originalTexture, x, y, width, height, row, col, rows, columns) {
-                  // Create a unique texture name for this piece
-                  const textureName = \`piece_\${row}_\${col}\`;
+                function createPieceTexture(scene, sourceName, x, y, width, height, targetName) {
+                  // Get the source texture
+                  const sourceTexture = scene.textures.get(sourceName);
                   
-                  // Create a canvas to draw the piece
-                  const canvas = document.createElement('canvas');
-                  canvas.width = width;
-                  canvas.height = height;
-                  const ctx = canvas.getContext('2d');
+                  // Create a render texture
+                  const rt = scene.add.renderTexture(0, 0, width, height);
                   
-                  // Extract the piece from the original image
-                  ctx.drawImage(
-                    originalTexture.getSourceImage(),
-                    x, y, width, height,
-                    0, 0, width, height
-                  );
+                  // Draw the portion of the source texture to the render texture
+                  rt.draw(sourceTexture, x * -1, y * -1);
                   
-                  // Create the texture from the canvas
-                  scene.textures.addCanvas(textureName, canvas);
+                  // Generate a texture from the render texture
+                  const generatedTexture = rt.saveTexture(targetName);
                   
-                  return { 
-                    name: textureName,
-                    canvas
-                  };
+                  // Hide the render texture
+                  rt.setVisible(false);
+                  
+                  return generatedTexture;
                 }
               }
               
@@ -517,6 +591,7 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
                 timerEl.textContent = '00:00';
                 
                 // In a real implementation, this would reset the puzzle pieces
+                window.location.reload();
                 
                 // Remove any completion message if present
                 const completionMsg = document.querySelector('#game-container > div:last-child');
