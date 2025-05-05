@@ -1,3 +1,4 @@
+
 /**
  * Utility functions for the Phaser puzzle game
  */
@@ -49,21 +50,22 @@ export function showHint(pieces: any[], scene: Phaser.Scene): void {
     const piece = incorrectPieces[0];
     const originalAlpha = piece.sprite.alpha;
     
-    // Flash the piece
-    const timeline = scene.tweens.createTimeline();
-    timeline.add({
+    // Flash the piece - using individual tweens instead of timeline
+    scene.tweens.add({
       targets: piece.sprite,
       alpha: 0.3,
       duration: 200,
       yoyo: true,
-      repeat: 2
+      repeat: 2,
+      onComplete: () => {
+        // Reset alpha back to original after flashing
+        scene.tweens.add({
+          targets: piece.sprite,
+          alpha: originalAlpha,
+          duration: 200
+        });
+      }
     });
-    timeline.add({
-      targets: piece.sprite,
-      alpha: originalAlpha,
-      duration: 200
-    });
-    timeline.play();
     
     // Move it slightly towards correct position
     const dx = piece.correctX - piece.sprite.x;

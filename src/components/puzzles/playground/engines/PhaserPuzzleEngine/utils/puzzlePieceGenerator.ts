@@ -1,3 +1,4 @@
+
 import { PuzzlePiece } from '../types/puzzleTypes';
 
 /**
@@ -27,7 +28,9 @@ export function createPuzzlePieces(scene: Phaser.Scene, texture: Phaser.Textures
       
       // Create a text element for piece number if needed
       let numberText = null;
-      if (scene.game.config.customData?.showNumbers) {
+      // Access config data safely using the game's registry instead of customData
+      const showNumbers = scene.registry.get('showNumbers') || false;
+      if (showNumbers) {
         numberText = scene.add.text(
           correctX, 
           correctY,
@@ -67,8 +70,19 @@ export function createPuzzlePieces(scene: Phaser.Scene, texture: Phaser.Textures
       pieceSprite.setInteractive();
       scene.input.setDraggable(pieceSprite);
       
-      // Add a border to make pieces visible
-      pieceSprite.setStrokeStyle(1, 0x333333);
+      // Add a border using graphics object instead of setStrokeStyle
+      const border = scene.add.graphics();
+      border.lineStyle(1, 0x333333);
+      border.strokeRect(
+        -pieceWidth/2, 
+        -pieceHeight/2, 
+        pieceWidth, 
+        pieceHeight
+      );
+      
+      // Create a container to hold both sprite and border
+      const container = scene.add.container(correctX, correctY, [pieceSprite]);
+      container.add(border);
       
       // Create a piece object
       const piece: PuzzlePiece = {

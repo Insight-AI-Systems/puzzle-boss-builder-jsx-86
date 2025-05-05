@@ -13,10 +13,10 @@ export function generateGameScene(): string {
         parent: 'phaser-game',
         backgroundColor: '#0f172a',
         scene: {
+          init: init,
           preload: preload,
           create: create
-        },
-        customData: config
+        }
       };
       
       try {
@@ -29,6 +29,15 @@ export function generateGameScene(): string {
           type: 'PHASER_PUZZLE_ERROR',
           error: 'Failed to initialize Phaser game: ' + error.message
         }, '*');
+      }
+      
+      function init() {
+        // Store configuration in the registry so it can be accessed by other functions
+        this.registry.set('rows', config.rows);
+        this.registry.set('columns', config.columns);
+        this.registry.set('showNumbers', config.showNumbers || false);
+        this.registry.set('puzzleId', config.puzzleId || 'default');
+        this.registry.set('gameMode', config.gameMode || 'standard');
       }
       
       function preload() {
@@ -50,7 +59,8 @@ export function generateGameScene(): string {
       
       function create() {
         try {
-          const { rows, columns } = config;
+          const rows = this.registry.get('rows');
+          const columns = this.registry.get('columns');
           const pieceWidth = this.cameras.main.width / columns;
           const pieceHeight = this.cameras.main.height / rows;
           
