@@ -13,6 +13,7 @@ export function generateHtmlTemplate(puzzleConfig: PuzzleConfig): string {
     <html>
       <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>PuzzleBoss Phaser Game</title>
         <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
         <style>
@@ -112,6 +113,14 @@ export function generateHtmlTemplate(puzzleConfig: PuzzleConfig): string {
             <button class="btn primary" id="hint-button">Hint</button>
           </div>
           <div class="timer" id="timer">00:00</div>
+          <script>
+            // Send loaded message to parent as soon as DOM is ready
+            document.addEventListener('DOMContentLoaded', function() {
+              setTimeout(function() {
+                window.parent.postMessage({ type: 'PHASER_PUZZLE_LOADING' }, '*');
+              }, 100);
+            });
+          </script>
         </div>
       </body>
     </html>

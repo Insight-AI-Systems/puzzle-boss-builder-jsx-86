@@ -113,7 +113,7 @@ export function usePhaserMessaging({
         console.warn('Phaser puzzle loading timeout');
         setLoadError('Loading timeout. Please try again.');
       }
-    }, 10000);
+    }, 15000); // Extended from 10 to 15 seconds for slower connections
     
     return () => {
       window.removeEventListener('message', handlePhaserMessage);
