@@ -4,10 +4,11 @@ import CustomPuzzleEngine from './engines/CustomPuzzleEngine';
 import SVGJigsawPuzzle from './engines/SVGJigsawPuzzle';
 import { Button } from '@/components/ui/button';
 import { DEFAULT_IMAGES } from '@/components/puzzles/types/puzzle-types';
+import EnhancedJigsawPuzzle from '@/components/puzzles/engines/EnhancedJigsawPuzzle';
 
 export interface PuzzleEnginePlaygroundProps {
   isCondensed?: boolean;
-  heroMode?: boolean;  // Add this prop to the interface
+  heroMode?: boolean;
   selectedImage?: string;
   difficulty?: 'easy' | 'medium' | 'hard';
   miniRows?: number;
@@ -17,14 +18,14 @@ export interface PuzzleEnginePlaygroundProps {
 
 const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
   isCondensed = false,
-  heroMode = false, // Default value for heroMode
+  heroMode = false,
   selectedImage = DEFAULT_IMAGES[0],
   difficulty = 'easy',
   miniRows,
   miniColumns,
   showNumbersToggle = false
 }) => {
-  const [engine, setEngine] = useState<'custom' | 'svg-jigsaw'>('svg-jigsaw');
+  const [engine, setEngine] = useState<'enhanced' | 'custom' | 'svg-jigsaw'>('enhanced');
   const [showNumbers, setShowNumbers] = useState(false);
 
   const toggleNumbers = useCallback(() => {
@@ -32,8 +33,16 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
   }, []);
 
   const toggleEngine = useCallback(() => {
-    setEngine(prev => prev === 'custom' ? 'svg-jigsaw' : 'custom');
+    setEngine(prev => {
+      if (prev === 'enhanced') return 'svg-jigsaw';
+      if (prev === 'svg-jigsaw') return 'custom';
+      return 'enhanced';
+    });
   }, []);
+
+  // Calculate rows and columns based on difficulty
+  const rows = miniRows || (difficulty === 'easy' ? 3 : difficulty === 'medium' ? 4 : 5);
+  const columns = miniColumns || (difficulty === 'easy' ? 3 : difficulty === 'medium' ? 4 : 5);
 
   return (
     <div className="puzzle-engine-playground">
@@ -41,32 +50,46 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Puzzle Engine Playground</h2>
           <Button onClick={toggleEngine} variant="outline">
-            Switch to {engine === 'custom' ? 'SVG Jigsaw' : 'Legacy Jigsaw'}
+            Switch to {engine === 'enhanced' ? 'SVG Jigsaw' : engine === 'svg-jigsaw' ? 'Legacy Jigsaw' : 'Enhanced Jigsaw'}
           </Button>
         </div>
       )}
 
-      {engine === 'custom' ? (
-        <CustomPuzzleEngine 
-          imageUrl={selectedImage}
-          rows={miniRows || (difficulty === 'easy' ? 3 : difficulty === 'medium' ? 4 : 5)}
-          columns={miniColumns || (difficulty === 'easy' ? 3 : difficulty === 'medium' ? 4 : 5)}
-          showNumbers={showNumbers}
-          onComplete={() => {}}
-          onReset={() => {}}
-        />
-      ) : (
-        <SVGJigsawPuzzle 
-          imageUrl={selectedImage}
-          rows={miniRows || (difficulty === 'easy' ? 3 : difficulty === 'medium' ? 4 : 5)}
-          columns={miniColumns || (difficulty === 'easy' ? 3 : difficulty === 'medium' ? 4 : 5)}
-          showNumbers={showNumbers}
-          showGhost={true}
-        />
-      )}
+      <div className="mt-4">
+        {engine === 'enhanced' && (
+          <EnhancedJigsawPuzzle
+            imageUrl={selectedImage}
+            rows={rows} 
+            columns={columns}
+            showNumbers={showNumbers}
+            showGuide={true}
+          />
+        )}
+        
+        {engine === 'custom' && (
+          <CustomPuzzleEngine 
+            imageUrl={selectedImage}
+            rows={rows}
+            columns={columns}
+            showNumbers={showNumbers}
+            onComplete={() => {}}
+            onReset={() => {}}
+          />
+        )}
+        
+        {engine === 'svg-jigsaw' && (
+          <SVGJigsawPuzzle 
+            imageUrl={selectedImage}
+            rows={rows}
+            columns={columns}
+            showNumbers={showNumbers}
+            showGhost={true}
+          />
+        )}
+      </div>
 
       {showNumbersToggle && (
-        <Button onClick={toggleNumbers} variant="outline" size="sm" className="mt-2">
+        <Button onClick={toggleNumbers} variant="outline" size="sm" className="mt-4">
           {showNumbers ? 'Hide Numbers' : 'Show Numbers'}
         </Button>
       )}
