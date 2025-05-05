@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface LeaderboardEntry {
   id: string;
   player_name: string;
   time_seconds: number;
+  player_id?: string;
 }
 
 interface LeaderboardSectionProps {
@@ -14,89 +15,96 @@ interface LeaderboardSectionProps {
 }
 
 const LeaderboardSection: React.FC<LeaderboardSectionProps> = ({ puzzleId }) => {
-  const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    async function fetchLeaderboard() {
+    const fetchLeaderboard = async () => {
       try {
-        setLoading(true);
+        setIsLoading(true);
+        setError(null);
+
+        // For demo puzzles that don't have UUID format, use a fallback query
+        let query;
         
-        // Fetch actual leaderboard data from Supabase
-        const { data, error } = await supabase
-          .from('puzzle_leaderboard')
-          .select('id, player_name, time_seconds, player_id')
-          .eq('puzzle_id', puzzleId)
-          .order('time_seconds', { ascending: true })
-          .limit(10);
-          
-        if (error) {
-          console.error('Error fetching leaderboard:', error);
-          // Use sample data as fallback when there's an error
-          setLeaderboardEntries([
-            { id: '1', player_name: 'PuzzleMaster', time_seconds: 120 },
-            { id: '2', player_name: 'JigsawPro', time_seconds: 145 },
-            { id: '3', player_name: 'PuzzleWiz', time_seconds: 180 }
-          ]);
-        } else if (data && data.length > 0) {
-          // The data from puzzle_leaderboard already matches our LeaderboardEntry format
-          setLeaderboardEntries(data);
+        // Check if puzzleId looks like a UUID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        
+        if (uuidRegex.test(puzzleId)) {
+          // Use direct UUID match
+          query = supabase
+            .from('puzzle_leaderboard')
+            .select('id, player_name, time_seconds, player_id')
+            .eq('puzzle_id', puzzleId)
+            .order('time_seconds', { ascending: true })
+            .limit(10);
         } else {
-          // If no data is found, use the sample entries
-          setLeaderboardEntries([
-            { id: '1', player_name: 'PuzzleMaster', time_seconds: 120 },
-            { id: '2', player_name: 'JigsawPro', time_seconds: 145 },
-            { id: '3', player_name: 'PuzzleWiz', time_seconds: 180 }
-          ]);
+          // For demo puzzles with non-UUID ids, try to find by a text field if your schema supports it
+          // Or just get some sample data for demonstration
+          query = supabase
+            .from('puzzle_leaderboard')
+            .select('id, player_name, time_seconds, player_id')
+            .limit(10)
+            .order('time_seconds', { ascending: true });
         }
-      } catch (error) {
+        
+        const { data, error } = await query;
+
+        if (error) {
+          throw error;
+        }
+
+        setLeaderboard(data || []);
+      } catch (error: any) {
         console.error('Error fetching leaderboard:', error);
-        // Use sample data as fallback
-        setLeaderboardEntries([
-          { id: '1', player_name: 'PuzzleMaster', time_seconds: 120 },
-          { id: '2', player_name: 'JigsawPro', time_seconds: 145 },
-          { id: '3', player_name: 'PuzzleWiz', time_seconds: 180 }
-        ]);
+        setError(`Failed to load leaderboard: ${error.message}`);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
-    }
-    
+    };
+
     fetchLeaderboard();
   }, [puzzleId]);
-  
-  const formatTime = (seconds: number) => {
+
+  const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-  
+
   return (
-    <Card className="border-puzzle-amber border-2">
+    <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Top Solvers</CardTitle>
+        <CardTitle className="text-lg">Leaderboard</CardTitle>
       </CardHeader>
-      <CardContent>
-        {loading ? (
+      <CardContent className="pt-0">
+        {isLoading ? (
           <div className="flex justify-center py-4">
-            <div className="spinner small"></div>
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
           </div>
-        ) : leaderboardEntries.length > 0 ? (
-          <div className="space-y-2">
-            {leaderboardEntries.map((entry, index) => (
-              <div key={entry.id} className="flex justify-between items-center p-2 bg-muted/30 rounded-md">
-                <div className="flex items-center">
-                  <span className="w-6 text-center font-semibold">{index + 1}</span>
-                  <span className="ml-2">{entry.player_name}</span>
+        ) : error ? (
+          <div className="text-sm text-muted-foreground py-4 text-center">
+            {error.includes('invalid input syntax') ? 
+              'Leaderboard will be available when the puzzle is registered.' : 
+              error}
+          </div>
+        ) : leaderboard.length > 0 ? (
+          <div className="space-y-1">
+            {leaderboard.map((entry, index) => (
+              <div key={entry.id} className="flex justify-between items-center text-sm py-1 border-b border-muted last:border-0">
+                <div>
+                  <span className="font-medium mr-2">#{index + 1}</span>
+                  <span>{entry.player_name || 'Anonymous'}</span>
                 </div>
-                <span className="font-mono">{formatTime(entry.time_seconds)}</span>
+                <div className="font-mono">{formatTime(entry.time_seconds)}</div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No records yet. Be the first to solve this puzzle!
-          </p>
+          <div className="text-sm text-muted-foreground py-4 text-center">
+            No entries yet. Be the first to complete this puzzle!
+          </div>
         )}
       </CardContent>
     </Card>

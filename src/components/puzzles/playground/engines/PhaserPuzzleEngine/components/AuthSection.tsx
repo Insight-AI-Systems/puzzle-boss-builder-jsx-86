@@ -2,59 +2,56 @@
 import React from 'react';
 import { useAuth } from '@/hooks/auth/useAuth';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface AuthSectionProps {
   puzzleId: string;
 }
 
 const AuthSection: React.FC<AuthSectionProps> = ({ puzzleId }) => {
-  const { user, isAuthenticated, signOut } = useAuth();
-  const { toast } = useToast();
-  
+  const { isAuthenticated, user, signIn } = useAuth();
+
   const handleSignIn = () => {
-    window.location.href = '/auth?redirect=phaser-puzzle';
+    signIn?.();
   };
-  
-  const handleSaveProgress = () => {
-    toast({
-      title: 'Progress Saved',
-      description: 'Your puzzle progress has been saved successfully.',
-    });
-  };
-  
+
   if (isAuthenticated && user) {
     return (
-      <Card className="border-puzzle-aqua border-2">
+      <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Welcome, {user.email?.split('@')[0] || 'Puzzler'}!</CardTitle>
+          <CardTitle className="text-lg">Track Your Progress</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <p className="text-sm text-muted-foreground mb-4">
-            Your progress is being tracked. You can save your game at any point to resume later.
+            Your completed puzzles and scores are being saved to your account.
           </p>
-          <div className="flex space-x-2">
-            <Button onClick={handleSaveProgress} variant="outline">
-              Save Progress
-            </Button>
+          <div className="bg-muted rounded-md p-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                {user.email?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <div>
+                <p className="font-medium">{user.email?.split('@')[0] || 'User'}</p>
+                <p className="text-xs text-muted-foreground">Signed in</p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
     );
   }
-  
+
   return (
-    <Card className="border-puzzle-aqua border-2 border-dashed">
+    <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Login to track your progress</CardTitle>
+        <CardTitle className="text-lg">Save Your Scores</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         <p className="text-sm text-muted-foreground mb-4">
-          Sign in to save your progress, join the leaderboard, and track your personal records.
+          Sign in to save your progress, track your scores, and compete on the leaderboard.
         </p>
-        <Button onClick={handleSignIn}>
-          Sign In / Register
+        <Button onClick={handleSignIn} className="w-full">
+          Sign In to Save Progress
         </Button>
       </CardContent>
     </Card>

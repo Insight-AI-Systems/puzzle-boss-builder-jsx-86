@@ -47,7 +47,7 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
   const columns = miniColumns || (difficulty === 'easy' ? 3 : difficulty === 'medium' ? 4 : 5);
 
   // Generate a unique puzzle ID for the Phaser engine
-  const phaserPuzzleId = `phaser-puzzle-${rows}x${columns}-${difficulty}`;
+  const phaserPuzzleId = `phaser-${rows}x${columns}-${difficulty}-${Date.now().toString().slice(-6)}`;
 
   return (
     <div className="puzzle-engine-playground">

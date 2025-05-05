@@ -181,6 +181,19 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
               font-size: 18px;
               margin-bottom: 24px;
             }
+            .spinner {
+              border: 4px solid rgba(255, 255, 255, 0.3);
+              border-radius: 50%;
+              border-top: 4px solid #fbbf24;
+              width: 40px;
+              height: 40px;
+              animation: spin 1s linear infinite;
+              margin-bottom: 16px;
+            }
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
           </style>
         </head>
         <body>
@@ -441,7 +454,7 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
   return (
     <div className="phaser-puzzle-container">
       <div className="phaser-puzzle-header">
-        <h2 className="text-2xl font-bold mb-1">Play Puzzle</h2>
+        <h2 className="text-xl font-bold mb-1">Play Puzzle</h2>
         <p className="text-muted-foreground mb-4">
           Race against the clock to solve puzzles and climb the leaderboard!
         </p>
