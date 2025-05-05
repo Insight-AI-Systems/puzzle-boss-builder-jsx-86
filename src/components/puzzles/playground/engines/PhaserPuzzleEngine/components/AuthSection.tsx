@@ -12,7 +12,9 @@ const AuthSection: React.FC<AuthSectionProps> = ({ puzzleId }) => {
   const { isAuthenticated, user, signIn } = useAuth();
 
   const handleSignIn = () => {
-    signIn?.();
+    // The error is here - signIn expects email and password parameters
+    // Since we can't directly call signIn() without parameters, we need to route to the auth page instead
+    window.location.href = '/auth?redirect=/puzzle-test-playground';
   };
 
   if (isAuthenticated && user) {
