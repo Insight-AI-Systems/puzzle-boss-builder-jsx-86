@@ -68,7 +68,6 @@ const JigsawPiece: React.FC<JigsawPieceProps> = ({
         zIndex: isDragging ? 10 : piece.isCorrect ? 1 : 2,
         transform: piece.rotation ? `rotate(${piece.rotation}deg)` : 'none',
         transition: isDragging ? 'none' : 'transform 0.2s, filter 0.2s',
-        filter: isDragging ? 'drop-shadow(0 8px 16px rgba(0,0,0,0.4))' : piece.isCorrect ? 'drop-shadow(0 2px 4px rgba(0,128,0,0.3))' : 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
       }}
       data-piece-id={piece.id}
     >
@@ -124,7 +123,7 @@ const JigsawPiece: React.FC<JigsawPieceProps> = ({
         width="100%"
         height="100%"
         viewBox={`0 0 ${width} ${height}`}
-        className="piece-svg"
+        className="jigsaw-svg-piece"
       >
         {/* Base shape with image fill */}
         <path 

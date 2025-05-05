@@ -11,7 +11,7 @@ export function generatePiecePath(
   const col = position % columns;
   
   // Tab/slot size as a percentage of the piece size - increased for more traditional appearance
-  const tabSize = Math.min(width, height) * 0.4; // Larger tabs for traditional appearance
+  const tabSize = Math.min(width, height) * 0.35; // Larger tabs for traditional appearance
   
   // Determine which sides have tabs or slots
   // We'll use a deterministic approach based on position:
