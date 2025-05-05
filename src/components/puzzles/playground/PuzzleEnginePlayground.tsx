@@ -5,6 +5,7 @@ import SVGJigsawPuzzle from './engines/SVGJigsawPuzzle';
 import { Button } from '@/components/ui/button';
 import { DEFAULT_IMAGES } from '@/components/puzzles/types/puzzle-types';
 import EnhancedJigsawPuzzle from '@/components/puzzles/engines/EnhancedJigsawPuzzle';
+import PhaserPuzzleEngine from './engines/PhaserPuzzleEngine';
 
 export interface PuzzleEnginePlaygroundProps {
   isCondensed?: boolean;
@@ -73,21 +74,12 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
         )}
         
         {engine === 'phaser' && (
-          <div className="bg-muted/30 p-8 rounded-lg border border-dashed border-muted-foreground">
-            <div className="text-center">
-              <h3 className="text-lg font-medium mb-2">Phaser Puzzle Engine</h3>
-              <p className="text-muted-foreground mb-4">
-                The Phaser-based puzzle engine is currently being implemented and will be available soon.
-              </p>
-              <Button 
-                variant="outline" 
-                onClick={toggleEngine}
-                className="mx-auto"
-              >
-                Try another engine
-              </Button>
-            </div>
-          </div>
+          <PhaserPuzzleEngine
+            imageUrl={selectedImage}
+            rows={rows}
+            columns={columns}
+            showNumbers={showNumbers}
+          />
         )}
         
         {engine === 'custom' && (

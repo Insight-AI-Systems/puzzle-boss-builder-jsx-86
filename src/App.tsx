@@ -23,6 +23,7 @@ import Auth from './pages/Auth';
 import Categories from './components/Categories';
 import PuzzlePlay from './pages/PuzzlePlay'; // Import the PuzzlePlay component
 import PuzzleTestPlayground from './pages/PuzzleTestPlayground'; // Import the PuzzleTestPlayground component
+import PhaserPuzzlePage from './pages/PhaserPuzzlePage'; // Import the new Phaser puzzle page
 
 // Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
@@ -59,6 +60,7 @@ function App() {
           <Route path="/careers" element={<Careers />} />
           <Route path="/press" element={<Press />} />
           <Route path="/puzzle-test-playground" element={<PuzzleTestPlayground />} /> {/* Add the route for puzzle test playground */}
+          <Route path="/phaser-puzzle" element={<PhaserPuzzlePage />} /> {/* Add the new route for Phaser puzzle page */}
         </Route>
 
         {/* Auth page with no layout */}
