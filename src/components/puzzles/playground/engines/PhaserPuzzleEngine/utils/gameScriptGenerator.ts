@@ -1,3 +1,4 @@
+
 import { PuzzleConfig } from '../types/puzzleTypes';
 import { generateGameStateManager } from './gameStateManager';
 import { generateEventHandlers } from './gameEventHandlers';
@@ -125,7 +126,10 @@ export function generateGameScript(puzzleConfig: PuzzleConfig): string {
                 scene.input.setDraggable(pieceSprite);
                 
                 // Add a border to make pieces visible
-                pieceSprite.setStrokeStyle(1, 0x333333);
+                const border = scene.add.graphics();
+                border.lineStyle(1, 0x333333);
+                border.strokeRect(-pieceWidth/2, -pieceHeight/2, pieceWidth, pieceHeight);
+                pieceSprite.addChild(border);
                 
                 // Create a piece object
                 const piece = {
@@ -256,21 +260,22 @@ export function generateGameScript(puzzleConfig: PuzzleConfig): string {
               const piece = incorrectPieces[0];
               const originalAlpha = piece.sprite.alpha;
               
-              // Flash the piece
-              const timeline = game.scene.scenes[0].tweens.createTimeline();
-              timeline.add({
+              // Flash the piece - using individual tweens instead of timeline
+              game.scene.scenes[0].tweens.add({
                 targets: piece.sprite,
                 alpha: 0.3,
                 duration: 200,
                 yoyo: true,
-                repeat: 2
+                repeat: 2,
+                onComplete: () => {
+                  // Reset alpha back to original after flashing
+                  game.scene.scenes[0].tweens.add({
+                    targets: piece.sprite,
+                    alpha: originalAlpha,
+                    duration: 200
+                  });
+                }
               });
-              timeline.add({
-                targets: piece.sprite,
-                alpha: originalAlpha,
-                duration: 200
-              });
-              timeline.play();
               
               // Move it slightly towards correct position
               const dx = piece.correctX - piece.sprite.x;
