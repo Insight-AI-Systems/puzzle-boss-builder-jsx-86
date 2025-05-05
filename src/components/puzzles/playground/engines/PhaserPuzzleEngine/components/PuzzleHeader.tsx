@@ -3,10 +3,10 @@ import React from 'react';
 
 const PuzzleHeader: React.FC = () => {
   return (
-    <div className="phaser-puzzle-header">
-      <h2 className="text-xl font-bold mb-1">Play Puzzle</h2>
-      <p className="text-muted-foreground mb-4">
-        Race against the clock to solve puzzles and climb the leaderboard!
+    <div className="phaser-puzzle-header mb-4">
+      <h2 className="text-xl font-semibold">Phaser Jigsaw Puzzle</h2>
+      <p className="text-sm text-muted-foreground">
+        Traditional jigsaw puzzle with interlocking pieces
       </p>
     </div>
   );

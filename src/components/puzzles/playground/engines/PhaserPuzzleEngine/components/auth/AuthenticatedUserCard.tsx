@@ -1,33 +1,33 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { User } from '@/hooks/auth/useAuth';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface AuthenticatedUserCardProps {
-  user: {
-    email?: string | null;
-  };
+  user: User;
 }
 
 const AuthenticatedUserCard: React.FC<AuthenticatedUserCardProps> = ({ user }) => {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Track Your Progress</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">Your Game Progress</CardTitle>
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={user.avatar_url || ''} alt={user.display_name || user.email || 'User'} />
+            <AvatarFallback>{(user.display_name || user.email || 'U').charAt(0)}</AvatarFallback>
+          </Avatar>
+        </div>
+        <CardDescription>{user.display_name || user.email}</CardDescription>
       </CardHeader>
       <CardContent className="pt-0">
-        <p className="text-sm text-muted-foreground mb-4">
-          Your completed puzzles and scores are being saved to your account.
-        </p>
-        <div className="bg-muted rounded-md p-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-              {user.email?.charAt(0).toUpperCase() || 'U'}
-            </div>
-            <div>
-              <p className="font-medium">{user.email?.split('@')[0] || 'User'}</p>
-              <p className="text-xs text-muted-foreground">Signed in</p>
-            </div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-2">
+          <div className="text-sm text-muted-foreground">
+            Your progress will be saved automatically.
           </div>
+          <Button variant="outline" size="sm">View My Puzzles</Button>
         </div>
       </CardContent>
     </Card>

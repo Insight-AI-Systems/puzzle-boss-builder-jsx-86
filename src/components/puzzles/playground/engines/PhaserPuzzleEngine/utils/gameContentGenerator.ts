@@ -1,4 +1,6 @@
 
+import * as Phaser from 'phaser';
+
 export interface PuzzleConfig {
   imageUrl: string;
   rows: number;
@@ -237,48 +239,8 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
                     const scale = Math.min(scaleX, scaleY);
                     puzzleImage.setScale(scale);
                     
-                    // Add a grid overlay to simulate puzzle pieces
-                    for (let r = 0; r < rows; r++) {
-                      for (let c = 0; c < columns; c++) {
-                        const x = c * pieceWidth;
-                        const y = r * pieceHeight;
-                        
-                        const rect = this.add.rectangle(
-                          x + pieceWidth/2, 
-                          y + pieceHeight/2,
-                          pieceWidth - 2,
-                          pieceHeight - 2,
-                          0xffffff,
-                          0.1
-                        );
-                        
-                        rect.setStrokeStyle(1, 0xfbbf24);
-                        
-                        // Add piece number if showNumbers is true
-                        if (config.showNumbers) {
-                          this.add.text(
-                            x + 8, 
-                            y + 8,
-                            \`\${r * columns + c + 1}\`,
-                            {
-                              fontFamily: 'Arial',
-                              fontSize: '16px',
-                              color: '#fbbf24',
-                              stroke: '#0f172a',
-                              strokeThickness: 4
-                            }
-                          );
-                        }
-                        
-                        rect.setInteractive();
-                        rect.on('pointerdown', function() {
-                          if (!gameStarted) {
-                            startGame();
-                          }
-                          moves++;
-                        });
-                      }
-                    }
+                    // Create jigsaw pieces with traditional ball and hole shapes
+                    createJigsawPuzzle(this, puzzleImage, rows, columns);
                     
                     // Add click handler to full image for demo purposes
                     puzzleImage.setInteractive();
@@ -304,6 +266,164 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
                       error: 'Failed to create game scene: ' + error.message
                     }, '*');
                   }
+                }
+                
+                function createJigsawPuzzle(scene, puzzleImage, rows, columns) {
+                  // Hide the original image - we'll show pieces instead
+                  puzzleImage.setVisible(false);
+                  
+                  // Get dimensions
+                  const width = scene.cameras.main.width;
+                  const height = scene.cameras.main.height;
+                  const pieceWidth = width / columns;
+                  const pieceHeight = height / rows;
+                  
+                  // Create a texture for the original image
+                  const originalTexture = scene.textures.get('puzzleImage');
+                  
+                  // Create an array for the pieces
+                  const pieces = [];
+                  
+                  // Create each piece
+                  for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < columns; col++) {
+                      // Get original position
+                      const originalX = col * pieceWidth;
+                      const originalY = row * pieceHeight;
+                      
+                      // Create a text element for piece number if needed
+                      let numberText = null;
+                      if (config.showNumbers) {
+                        numberText = scene.add.text(
+                          originalX + pieceWidth/2, 
+                          originalY + pieceHeight/2,
+                          \`\${row * columns + col + 1}\`,
+                          {
+                            fontFamily: 'Arial',
+                            fontSize: '16px',
+                            color: '#fbbf24',
+                            stroke: '#0f172a',
+                            strokeThickness: 4
+                          }
+                        ).setOrigin(0.5);
+                      }
+                      
+                      // Create a piece object
+                      const piece = {
+                        id: row * columns + col,
+                        row,
+                        col,
+                        x: originalX,
+                        y: originalY,
+                        width: pieceWidth,
+                        height: pieceHeight,
+                        isCorrect: false,
+                        canvasTexture: createPieceTexture(
+                          scene,
+                          originalTexture,
+                          originalX,
+                          originalY,
+                          pieceWidth,
+                          pieceHeight,
+                          row,
+                          col,
+                          rows,
+                          columns
+                        ),
+                        sprite: null,
+                        numberText
+                      };
+                      
+                      // Create sprite for the piece
+                      const pieceName = \`piece_\${row}_\${col}\`;
+                      piece.sprite = scene.add.image(
+                        originalX + pieceWidth/2,
+                        originalY + pieceHeight/2,
+                        pieceName
+                      );
+                      
+                      // Make pieces interactive
+                      piece.sprite.setInteractive();
+                      scene.input.setDraggable(piece.sprite);
+                      
+                      // Handle drag events
+                      piece.sprite.on('dragstart', function(pointer) {
+                        if (!gameStarted) {
+                          startGame();
+                        }
+                        this.setDepth(1000);
+                        moves++;
+                      });
+                      
+                      piece.sprite.on('drag', function(pointer, dragX, dragY) {
+                        this.x = dragX;
+                        this.y = dragY;
+                      });
+                      
+                      piece.sprite.on('dragend', function(pointer) {
+                        this.setDepth(0);
+                        
+                        // Check if piece is near its correct position
+                        const correctX = piece.x + pieceWidth/2;
+                        const correctY = piece.y + pieceHeight/2;
+                        const distance = Phaser.Math.Distance.Between(
+                          this.x, this.y, correctX, correctY
+                        );
+                        
+                        // If close enough, snap to correct position
+                        if (distance < 30) {
+                          this.x = correctX;
+                          this.y = correctY;
+                          piece.isCorrect = true;
+                          
+                          // Update number text position if it exists
+                          if (piece.numberText) {
+                            piece.numberText.x = correctX;
+                            piece.numberText.y = correctY;
+                          }
+                          
+                          // Check if all pieces are correct
+                          checkCompletion();
+                        }
+                      });
+                      
+                      pieces.push(piece);
+                    }
+                  }
+                  
+                  // Function to check if puzzle is complete
+                  function checkCompletion() {
+                    const allCorrect = pieces.every(p => p.isCorrect);
+                    if (allCorrect && !gameCompleted) {
+                      completeGame();
+                    }
+                  }
+                }
+                
+                function createPieceTexture(scene, originalTexture, x, y, width, height, row, col, rows, columns) {
+                  // Create a unique texture name for this piece
+                  const textureName = \`piece_\${row}_\${col}\`;
+                  
+                  // Create a canvas to draw the piece
+                  const canvas = document.createElement('canvas');
+                  canvas.width = width;
+                  canvas.height = height;
+                  const ctx = canvas.getContext('2d');
+                  
+                  // Extract the piece from the original image
+                  ctx.drawImage(
+                    originalTexture.getSourceImage(),
+                    x, y, width, height,
+                    0, 0, width, height
+                  );
+                  
+                  // Create the texture from the canvas
+                  scene.textures.addCanvas(textureName, canvas);
+                  
+                  return { 
+                    name: textureName,
+                    canvas
+                  };
                 }
               }
               

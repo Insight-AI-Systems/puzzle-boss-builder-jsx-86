@@ -1,66 +1,68 @@
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from 'react';
 
-type TimerHook = {
-  elapsed: number;
-  start: () => void;
-  stop: () => void;
-  reset: () => void;
-  isRunning: boolean;
-  startTime: number | null;
-  setElapsed: React.Dispatch<React.SetStateAction<number>>;
-  setStartTime: React.Dispatch<React.SetStateAction<number | null>>;
-};
+export function usePuzzleTimer() {
+  const [elapsed, setElapsed] = useState<number>(0);
+  const [isRunning, setIsRunning] = useState<boolean>(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTimeRef = useRef<number | null>(null);
 
-export function usePuzzleTimer(): TimerHook {
-  const [elapsed, setElapsed] = useState(0);
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const [isRunning, setIsRunning] = useState(false);
-  const timerRef = useRef<number | null>(null);
-
-  const start = () => {
+  const start = useCallback(() => {
     if (!isRunning) {
+      startTimeRef.current = Date.now() - (elapsed * 1000);
       setIsRunning(true);
-      setStartTime(Date.now() - (elapsed * 1000)); // Account for existing elapsed time
     }
-  };
+  }, [isRunning, elapsed]);
 
-  const stop = () => {
-    setIsRunning(false);
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
+  const stop = useCallback(() => {
+    if (isRunning) {
+      setIsRunning(false);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     }
-  };
+  }, [isRunning]);
 
-  const reset = () => {
-    setIsRunning(false);
+  const reset = useCallback(() => {
+    stop();
     setElapsed(0);
-    setStartTime(null);
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-  };
+    startTimeRef.current = null;
+  }, [stop]);
 
   useEffect(() => {
-    if (isRunning && startTime !== null) {
-      timerRef.current = window.setInterval(() => {
-        const currentElapsed = Math.floor((Date.now() - startTime) / 1000);
-        setElapsed(currentElapsed);
-      }, 100); // Update more frequently for better accuracy
+    if (isRunning) {
+      timerRef.current = setInterval(() => {
+        if (startTimeRef.current) {
+          const newElapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+          setElapsed(newElapsed);
+        }
+      }, 1000);
     }
+
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
     };
-  }, [isRunning, startTime]);
+  }, [isRunning]);
+
+  // Format time for display
+  const formatTime = useCallback((seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }, []);
+
+  const displayTime = formatTime(elapsed);
 
   return {
     elapsed,
+    displayTime,
+    isRunning,
     start,
     stop,
     reset,
-    isRunning,
-    startTime,
-    setElapsed,
-    setStartTime
+    formatTime
   };
 }
