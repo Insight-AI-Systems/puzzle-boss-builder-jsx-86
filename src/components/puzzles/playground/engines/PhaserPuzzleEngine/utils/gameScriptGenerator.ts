@@ -1,4 +1,3 @@
-
 import { PuzzleConfig } from '../types/puzzleTypes';
 import { generateGameStateManager } from './gameStateManager';
 import { generateEventHandlers } from './gameEventHandlers';
@@ -34,6 +33,59 @@ export function generateGameScript(puzzleConfig: PuzzleConfig): string {
           let puzzleImage;
           let pieces = [];
           
+          // Initialize the Phaser game
+          function initGame(image) {
+            // Create our game configuration
+            const gameConfig = {
+              type: Phaser.AUTO,
+              width: 600,
+              height: 600,
+              backgroundColor: '#1e293b',
+              parent: 'phaser-game',
+              scene: {
+                create: create
+              }
+            };
+            
+            // Create the game instance
+            game = new Phaser.Game(gameConfig);
+            puzzleImage = image;
+            
+            // Function to set up the game scene
+            function create() {
+              const scene = this;
+              const width = scene.cameras.main.width;
+              const height = scene.cameras.main.height;
+              
+              // Add image as texture
+              const texture = scene.textures.addImage('puzzleImage', puzzleImage);
+              
+              // Create pieces
+              pieces = createPuzzlePieces(scene, texture, config.rows, config.columns);
+              
+              // Shuffle the pieces
+              shufflePieces();
+              
+              // Set up input handling for all pieces
+              scene.input.on('dragstart', function(pointer, gameObject) {
+                gameObject.setDepth(100);
+                scene.children.bringToTop(gameObject);
+              });
+              
+              scene.input.on('drag', function(pointer, gameObject, dragX, dragY) {
+                gameObject.x = dragX;
+                gameObject.y = dragY;
+              });
+              
+              scene.input.on('dragend', function(pointer, gameObject) {
+                gameObject.setDepth(0);
+              });
+              
+              // Tell the parent we're ready
+              window.parent.postMessage({ type: 'PHASER_PUZZLE_LOADED' }, '*');
+            }
+          }
+          
           // Load the puzzle image
           const image = new Image();
           image.crossOrigin = "anonymous";
@@ -59,8 +111,33 @@ export function generateGameScript(puzzleConfig: PuzzleConfig): string {
           };
           
           // Add cache buster to prevent image caching issues
-          const cacheBuster = config.cacheBuster || '?cb=' + Date.now();
-          image.src = config.imageUrl + (config.imageUrl.includes('?') ? '&' : '?') + cacheBuster;
+          const cacheBuster = config.cacheBuster || Date.now();
+          const imageUrl = config.imageUrl + (config.imageUrl.includes('?') ? '&' : '?') + 'cb=' + cacheBuster;
+          console.log("Loading image:", imageUrl);
+          image.src = imageUrl;
+          
+          // Track loading status with timeout
+          let loadingTimeout = setTimeout(function() {
+            if (!image.complete) {
+              console.error("Image loading timeout");
+              window.parent.postMessage({ 
+                type: 'PHASER_PUZZLE_ERROR',
+                error: 'Image loading timeout. Please try again.'
+              }, '*');
+            }
+          }, 10000);
+          
+          // Clear timeout when image loads or errors
+          image.onload = function() {
+            clearTimeout(loadingTimeout);
+            loadMessage.style.display = 'none';
+            spinner.style.display = 'none';
+            
+            // Tell the parent we've loaded
+            window.parent.postMessage({ type: 'PHASER_PUZZLE_LOADED' }, '*');
+            
+            initGame(image);
+          };
           
           // Import the game scene setup
           ${generateGameScene()}

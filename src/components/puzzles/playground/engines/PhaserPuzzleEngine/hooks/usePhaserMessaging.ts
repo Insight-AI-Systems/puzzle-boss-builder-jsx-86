@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/auth/useAuth';
 import { usePuzzleTimer } from '@/components/puzzles/playground/engines/hooks/usePuzzleTimer';
@@ -44,6 +43,8 @@ export function usePhaserMessaging({
   } = usePuzzleTimer();
 
   useEffect(() => {
+    console.log('Setting up Phaser messaging event listeners');
+    
     const handlePhaserMessage = (event: MessageEvent) => {
       try {
         const data = event.data as PhaserMessageData;
@@ -55,6 +56,7 @@ export function usePhaserMessaging({
         switch(data.type) {
           case 'PHASER_PUZZLE_LOADING':
             console.log('Phaser puzzle loading');
+            // Keep the loading state true
             break;
           case 'PHASER_PUZZLE_LOADED':
             console.log('Phaser puzzle loaded');
@@ -113,9 +115,10 @@ export function usePhaserMessaging({
         console.warn('Phaser puzzle loading timeout');
         setLoadError('Loading timeout. Please try again.');
       }
-    }, 15000); // Extended from 10 to 15 seconds for slower connections
+    }, 20000); // Extended to 20 seconds for slower connections
     
     return () => {
+      console.log('Cleaning up Phaser messaging event listeners');
       window.removeEventListener('message', handlePhaserMessage);
       clearTimeout(loadingTimeout);
     };

@@ -13,7 +13,7 @@ export function generateHtmlTemplate(puzzleConfig: PuzzleConfig): string {
     <html>
       <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <title>PuzzleBoss Phaser Game</title>
         <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
         <style>
@@ -114,11 +114,19 @@ export function generateHtmlTemplate(puzzleConfig: PuzzleConfig): string {
           </div>
           <div class="timer" id="timer">00:00</div>
           <script>
-            // Send loaded message to parent as soon as DOM is ready
-            document.addEventListener('DOMContentLoaded', function() {
-              setTimeout(function() {
-                window.parent.postMessage({ type: 'PHASER_PUZZLE_LOADING' }, '*');
-              }, 100);
+            // Send loading message to parent immediately
+            window.parent.postMessage({ type: 'PHASER_PUZZLE_LOADING' }, '*');
+            
+            // Check if Phaser loaded
+            window.addEventListener('load', function() {
+              if (typeof Phaser === 'undefined') {
+                window.parent.postMessage({ 
+                  type: 'PHASER_PUZZLE_ERROR',
+                  error: 'Failed to load Phaser library'
+                }, '*');
+              } else {
+                console.log('Phaser library loaded successfully');
+              }
             });
           </script>
         </div>

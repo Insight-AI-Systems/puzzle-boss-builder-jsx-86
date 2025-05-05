@@ -33,12 +33,16 @@ const PuzzleGameIframe: React.FC<PuzzleGameIframeProps> = ({
       const data = event.data;
       if (!data || typeof data !== 'object') return;
       
+      console.log('Parent received message from iframe:', data.type);
+      
       if (data.type === 'PHASER_PUZZLE_LOADED') {
         console.log('Parent received: Phaser puzzle loaded');
         onLoad();
       } else if (data.type === 'PHASER_PUZZLE_ERROR') {
         console.error('Parent received: Phaser puzzle error', data.error);
         onError(data.error || 'Unknown error loading puzzle');
+      } else if (data.type === 'PHASER_PUZZLE_LOADING') {
+        console.log('Parent received: Phaser puzzle loading started');
       }
     };
     
@@ -48,6 +52,11 @@ const PuzzleGameIframe: React.FC<PuzzleGameIframeProps> = ({
       window.removeEventListener('message', handleMessage);
     };
   }, [onLoad, onError]);
+  
+  // Handle iframe load event
+  const handleIframeLoad = () => {
+    console.log('Iframe HTML document loaded');
+  };
   
   return (
     <iframe 
@@ -60,6 +69,7 @@ const PuzzleGameIframe: React.FC<PuzzleGameIframeProps> = ({
       frameBorder="0"
       allowFullScreen
       sandbox="allow-scripts allow-same-origin"
+      onLoad={handleIframeLoad}
     />
   );
 };
