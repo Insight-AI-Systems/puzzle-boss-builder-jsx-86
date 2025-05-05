@@ -31,10 +31,81 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
     return 'hard';
   };
   
-  // Build URL with query parameters for the iframe
-  // Note: Using a temporary placeholder URL until the actual game is deployed
-  // In a real implementation, we'd use a valid URL like puzzle-boss-jigsaw.pages.dev
-  const iframeUrl = `https://example.com/puzzle-game?image=${encodeURIComponent(imageUrl)}&difficulty=${getDifficulty()}&pieces=${rows * columns}&showNumbers=${showNumbers}`;
+  // Create a placeholder that shows something more meaningful than example.com
+  // This will be replaced with the actual puzzle game URL when available
+  const createPlaceholderContent = () => {
+    const difficulty = getDifficulty();
+    const totalPieces = rows * columns;
+    
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Puzzle Game Placeholder</title>
+          <style>
+            body {
+              font-family: system-ui, sans-serif;
+              background: #0f172a;
+              color: #e2e8f0;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+              margin: 0;
+              padding: 20px;
+              text-align: center;
+            }
+            .puzzle-info {
+              background: rgba(255, 255, 255, 0.1);
+              border-radius: 8px;
+              padding: 20px;
+              max-width: 90%;
+              width: 500px;
+            }
+            .puzzle-image {
+              max-width: 200px;
+              max-height: 200px;
+              margin: 20px auto;
+              border-radius: 4px;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            }
+            .badge {
+              background: #fbbf24;
+              color: #1e293b;
+              font-weight: bold;
+              padding: 4px 8px;
+              border-radius: 4px;
+              display: inline-block;
+              margin: 4px;
+            }
+            .coming-soon {
+              font-size: 1.2em;
+              margin-top: 20px;
+              color: #fbbf24;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="puzzle-info">
+            <h2>Phaser Puzzle Engine</h2>
+            <p>This puzzle will be interactive when the engine is fully implemented.</p>
+            <img src="${imageUrl}" class="puzzle-image" alt="Puzzle Image">
+            <div>
+              <span class="badge">Difficulty: ${difficulty}</span>
+              <span class="badge">Pieces: ${totalPieces}</span>
+              ${showNumbers ? '<span class="badge">Numbered Mode</span>' : ''}
+            </div>
+            <p class="coming-soon">Coming Soon!</p>
+          </div>
+        </body>
+      </html>
+    `;
+  };
+  
+  // Create a data URL from the HTML content
+  const placeholderUrl = `data:text/html;charset=utf-8,${encodeURIComponent(createPlaceholderContent())}`;
   
   useEffect(() => {
     // Simulate loading time for iframe
@@ -63,7 +134,7 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
         )}
         
         <iframe 
-          src={iframeUrl}
+          src={placeholderUrl}
           title="Phaser Jigsaw Puzzle Game"
           className={`phaser-puzzle-iframe ${isLoading ? 'opacity-0' : 'opacity-100'}`}
           width="100%" 

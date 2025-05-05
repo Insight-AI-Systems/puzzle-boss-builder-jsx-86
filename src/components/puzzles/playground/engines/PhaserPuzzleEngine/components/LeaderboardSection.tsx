@@ -24,10 +24,10 @@ const LeaderboardSection: React.FC<LeaderboardSectionProps> = ({ puzzleId }) => 
         
         // Fetch actual leaderboard data from Supabase
         const { data, error } = await supabase
-          .from('puzzle_solvers')
-          .select('id, user_id, completion_time, profiles(username)')
+          .from('puzzle_leaderboard')
+          .select('id, player_name, time_seconds, player_id')
           .eq('puzzle_id', puzzleId)
-          .order('completion_time', { ascending: true })
+          .order('time_seconds', { ascending: true })
           .limit(10);
           
         if (error) {
@@ -39,13 +39,8 @@ const LeaderboardSection: React.FC<LeaderboardSectionProps> = ({ puzzleId }) => 
             { id: '3', player_name: 'PuzzleWiz', time_seconds: 180 }
           ]);
         } else if (data && data.length > 0) {
-          // Map the response data to our leaderboard entry format
-          const formattedEntries = data.map(entry => ({
-            id: entry.id,
-            player_name: entry.profiles?.username || 'Anonymous Player',
-            time_seconds: entry.completion_time
-          }));
-          setLeaderboardEntries(formattedEntries);
+          // The data from puzzle_leaderboard already matches our LeaderboardEntry format
+          setLeaderboardEntries(data);
         } else {
           // If no data is found, use the sample entries
           setLeaderboardEntries([
