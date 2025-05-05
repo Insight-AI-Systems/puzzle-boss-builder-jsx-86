@@ -1,6 +1,7 @@
 
 import React, { useEffect, useRef } from 'react';
-import { createPhaserGameContent, PuzzleConfig } from '../utils/gameContentGenerator';
+import { createPhaserGameContent } from '../utils/gameContentGenerator';
+import { PuzzleConfig } from '../types/puzzleTypes';
 
 interface PuzzleGameIframeProps {
   config: PuzzleConfig;
