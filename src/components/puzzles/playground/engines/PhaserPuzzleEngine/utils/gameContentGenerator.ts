@@ -7,6 +7,7 @@ export interface PuzzleConfig {
   showNumbers: boolean;
   puzzleId: string;
   gameMode?: string;
+  cacheBuster?: number; // Added cacheBuster property as optional
 }
 
 // Create a real implementation that loads a Phaser game
@@ -198,8 +199,8 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
               };
               
               // Add cache buster to prevent image caching issues
-              const cacheBuster = '?cb=' + Date.now();
-              image.src = config.imageUrl + (config.imageUrl.includes('?') ? '&' : '?') + 'cb=' + Date.now();
+              const cacheBuster = config.cacheBuster || '?cb=' + Date.now();
+              image.src = config.imageUrl + (config.imageUrl.includes('?') ? '&' : '?') + cacheBuster;
               
               function initGame(imageElement) {
                 const gameConfig = {
