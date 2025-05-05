@@ -15,8 +15,12 @@ const PuzzleGameIframe: React.FC<PuzzleGameIframeProps> = ({
   onLoad,
   onError
 }) => {
-  // Create a data URL from the HTML content
-  const phaserGameUrl = `data:text/html;charset=utf-8,${encodeURIComponent(createPhaserGameContent(config))}`;
+  // Create a data URL from the HTML content with cache buster
+  const cacheBuster = Date.now();
+  const phaserGameUrl = `data:text/html;charset=utf-8,${encodeURIComponent(createPhaserGameContent({
+    ...config,
+    cacheBuster
+  }))}`;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   
   // Listen for messages from the iframe

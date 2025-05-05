@@ -11,7 +11,7 @@ export function generatePiecePath(
   const col = position % columns;
   
   // Tab/slot size as a percentage of the piece size - increased for more traditional appearance
-  const tabSize = Math.min(width, height) * 0.35; // Larger tabs for traditional appearance
+  const tabSize = Math.min(width, height) * 0.4; // Larger tabs for traditional appearance
   
   // Determine which sides have tabs or slots
   // We'll use a deterministic approach based on position:
@@ -33,24 +33,20 @@ export function generatePiecePath(
     // Straight line for top row
     path += `H ${width} `;
   } else if (hasTopTab) {
-    // Tab on top with traditional rounded appearance
+    // Traditional tab on top with pronounced curves
     path += `H ${width * 0.3} `;
     // First curve into the tab
-    path += `C ${width * 0.35},${-tabSize * 0.1} ${width * 0.4},${-tabSize * 0.3} ${width * 0.45},${-tabSize * 0.5} `;
+    path += `C ${width * 0.35},${-tabSize * 0.2} ${width * 0.4},${-tabSize * 0.5} ${width * 0.5},${-tabSize * 0.6} `;
     // Rounded tab top
-    path += `C ${width * 0.5},${-tabSize * 0.7} ${width * 0.55},${-tabSize * 0.5} ${width * 0.6},${-tabSize * 0.3} `;
-    // Curve back to the edge
-    path += `C ${width * 0.65},${-tabSize * 0.1} ${width * 0.7},0 ${width * 0.7},0 `;
+    path += `C ${width * 0.6},${-tabSize * 0.5} ${width * 0.65},${-tabSize * 0.2} ${width * 0.7},0 `;
     path += `H ${width} `;
   } else {
-    // Slot on top with traditional rounded appearance
+    // Traditional slot on top with pronounced curves
     path += `H ${width * 0.3} `;
     // First curve into the slot
-    path += `C ${width * 0.35},${tabSize * 0.1} ${width * 0.4},${tabSize * 0.3} ${width * 0.45},${tabSize * 0.5} `;
+    path += `C ${width * 0.35},${tabSize * 0.2} ${width * 0.4},${tabSize * 0.5} ${width * 0.5},${tabSize * 0.6} `;
     // Rounded slot bottom
-    path += `C ${width * 0.5},${tabSize * 0.7} ${width * 0.55},${tabSize * 0.5} ${width * 0.6},${tabSize * 0.3} `;
-    // Curve back to the edge
-    path += `C ${width * 0.65},${tabSize * 0.1} ${width * 0.7},0 ${width * 0.7},0 `;
+    path += `C ${width * 0.6},${tabSize * 0.5} ${width * 0.65},${tabSize * 0.2} ${width * 0.7},0 `;
     path += `H ${width} `;
   }
   
@@ -59,24 +55,20 @@ export function generatePiecePath(
     // Straight line for rightmost column
     path += `V ${height} `;
   } else if (hasRightTab) {
-    // Tab on right with traditional rounded appearance
+    // Traditional tab on right with pronounced curves
     path += `V ${height * 0.3} `;
     // First curve into the tab
-    path += `C ${width + tabSize * 0.1},${height * 0.35} ${width + tabSize * 0.3},${height * 0.4} ${width + tabSize * 0.5},${height * 0.45} `;
+    path += `C ${width + tabSize * 0.2},${height * 0.35} ${width + tabSize * 0.5},${height * 0.4} ${width + tabSize * 0.6},${height * 0.5} `;
     // Rounded tab side
-    path += `C ${width + tabSize * 0.7},${height * 0.5} ${width + tabSize * 0.5},${height * 0.55} ${width + tabSize * 0.3},${height * 0.6} `;
-    // Curve back to the edge
-    path += `C ${width + tabSize * 0.1},${height * 0.65} ${width},${height * 0.7} ${width},${height * 0.7} `;
+    path += `C ${width + tabSize * 0.5},${height * 0.6} ${width + tabSize * 0.2},${height * 0.65} ${width},${height * 0.7} `;
     path += `V ${height} `;
   } else {
-    // Slot on right with traditional rounded appearance
+    // Traditional slot on right with pronounced curves
     path += `V ${height * 0.3} `;
     // First curve into the slot
-    path += `C ${width - tabSize * 0.1},${height * 0.35} ${width - tabSize * 0.3},${height * 0.4} ${width - tabSize * 0.5},${height * 0.45} `;
+    path += `C ${width - tabSize * 0.2},${height * 0.35} ${width - tabSize * 0.5},${height * 0.4} ${width - tabSize * 0.6},${height * 0.5} `;
     // Rounded slot side
-    path += `C ${width - tabSize * 0.7},${height * 0.5} ${width - tabSize * 0.5},${height * 0.55} ${width - tabSize * 0.3},${height * 0.6} `;
-    // Curve back to the edge
-    path += `C ${width - tabSize * 0.1},${height * 0.65} ${width},${height * 0.7} ${width},${height * 0.7} `;
+    path += `C ${width - tabSize * 0.5},${height * 0.6} ${width - tabSize * 0.2},${height * 0.65} ${width},${height * 0.7} `;
     path += `V ${height} `;
   }
   
@@ -85,24 +77,20 @@ export function generatePiecePath(
     // Straight line for bottom row
     path += `H 0 `;
   } else if (hasBottomTab) {
-    // Tab on bottom with traditional rounded appearance
+    // Traditional tab on bottom with pronounced curves
     path += `H ${width * 0.7} `;
     // First curve into the tab
-    path += `C ${width * 0.65},${height + tabSize * 0.1} ${width * 0.6},${height + tabSize * 0.3} ${width * 0.55},${height + tabSize * 0.5} `;
+    path += `C ${width * 0.65},${height + tabSize * 0.2} ${width * 0.6},${height + tabSize * 0.5} ${width * 0.5},${height + tabSize * 0.6} `;
     // Rounded tab bottom
-    path += `C ${width * 0.5},${height + tabSize * 0.7} ${width * 0.45},${height + tabSize * 0.5} ${width * 0.4},${height + tabSize * 0.3} `;
-    // Curve back to the edge
-    path += `C ${width * 0.35},${height + tabSize * 0.1} ${width * 0.3},${height} ${width * 0.3},${height} `;
+    path += `C ${width * 0.4},${height + tabSize * 0.5} ${width * 0.35},${height + tabSize * 0.2} ${width * 0.3},${height} `;
     path += `H 0 `;
   } else {
-    // Slot on bottom with traditional rounded appearance
+    // Traditional slot on bottom with pronounced curves
     path += `H ${width * 0.7} `;
     // First curve into the slot
-    path += `C ${width * 0.65},${height - tabSize * 0.1} ${width * 0.6},${height - tabSize * 0.3} ${width * 0.55},${height - tabSize * 0.5} `;
+    path += `C ${width * 0.65},${height - tabSize * 0.2} ${width * 0.6},${height - tabSize * 0.5} ${width * 0.5},${height - tabSize * 0.6} `;
     // Rounded slot top
-    path += `C ${width * 0.5},${height - tabSize * 0.7} ${width * 0.45},${height - tabSize * 0.5} ${width * 0.4},${height - tabSize * 0.3} `;
-    // Curve back to the edge
-    path += `C ${width * 0.35},${height - tabSize * 0.1} ${width * 0.3},${height} ${width * 0.3},${height} `;
+    path += `C ${width * 0.4},${height - tabSize * 0.5} ${width * 0.35},${height - tabSize * 0.2} ${width * 0.3},${height} `;
     path += `H 0 `;
   }
   
@@ -111,24 +99,20 @@ export function generatePiecePath(
     // Straight line for leftmost column
     path += `V 0 `;
   } else if (hasLeftTab) {
-    // Tab on left with traditional rounded appearance
+    // Traditional tab on left with pronounced curves
     path += `V ${height * 0.7} `;
     // First curve into the tab
-    path += `C ${-tabSize * 0.1},${height * 0.65} ${-tabSize * 0.3},${height * 0.6} ${-tabSize * 0.5},${height * 0.55} `;
+    path += `C ${-tabSize * 0.2},${height * 0.65} ${-tabSize * 0.5},${height * 0.6} ${-tabSize * 0.6},${height * 0.5} `;
     // Rounded tab side
-    path += `C ${-tabSize * 0.7},${height * 0.5} ${-tabSize * 0.5},${height * 0.45} ${-tabSize * 0.3},${height * 0.4} `;
-    // Curve back to the edge
-    path += `C ${-tabSize * 0.1},${height * 0.35} 0,${height * 0.3} 0,${height * 0.3} `;
+    path += `C ${-tabSize * 0.5},${height * 0.4} ${-tabSize * 0.2},${height * 0.35} 0,${height * 0.3} `;
     path += `V 0 `;
   } else {
-    // Slot on left with traditional rounded appearance
+    // Traditional slot on left with pronounced curves
     path += `V ${height * 0.7} `;
     // First curve into the slot
-    path += `C ${tabSize * 0.1},${height * 0.65} ${tabSize * 0.3},${height * 0.6} ${tabSize * 0.5},${height * 0.55} `;
+    path += `C ${tabSize * 0.2},${height * 0.65} ${tabSize * 0.5},${height * 0.6} ${tabSize * 0.6},${height * 0.5} `;
     // Rounded slot side
-    path += `C ${tabSize * 0.7},${height * 0.5} ${tabSize * 0.5},${height * 0.45} ${tabSize * 0.3},${height * 0.4} `;
-    // Curve back to the edge
-    path += `C ${tabSize * 0.1},${height * 0.35} 0,${height * 0.3} 0,${height * 0.3} `;
+    path += `C ${tabSize * 0.5},${height * 0.4} ${tabSize * 0.2},${height * 0.35} 0,${height * 0.3} `;
     path += `V 0 `;
   }
   

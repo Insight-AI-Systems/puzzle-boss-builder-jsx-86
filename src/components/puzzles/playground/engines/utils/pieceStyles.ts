@@ -26,9 +26,9 @@ export function getPieceStyle(
     backgroundSize: `${columns * 100}% ${rows * 100}%`,
     backgroundPosition: `${xPercent}% ${yPercent}%`,
     backgroundRepeat: "no-repeat",
-    borderRadius: "0.4rem",
-    border: "1px solid rgba(0,0,0,0.15)",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+    borderRadius: "0", // Remove border radius for traditional puzzle pieces
+    border: "1px solid rgba(0,0,0,0.25)", // Darker border for better visibility
+    boxShadow: "0 2px 6px rgba(0,0,0,0.15)", // More pronounced shadow
     cursor: "grab"
   };
 }
