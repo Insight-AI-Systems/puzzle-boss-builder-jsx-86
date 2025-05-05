@@ -48,6 +48,7 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             max-width: 100%;
             max-height: 100%;
+            margin: 0 auto;
           }
           .controls {
             margin-top: 12px;
@@ -124,8 +125,8 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
           // Basic implementation for now - in a real app, this would be a more complex Phaser game
           document.addEventListener('DOMContentLoaded', function() {
             try {
-              // Let the parent know we've loaded
-              window.parent.postMessage({ type: 'PHASER_PUZZLE_LOADED' }, '*');
+              // Tell the parent frame we're starting to load
+              window.parent.postMessage({ type: 'PHASER_PUZZLE_LOADING' }, '*');
               
               const loadMessage = document.querySelector('.load-message');
               const spinner = document.querySelector('.spinner');
@@ -150,6 +151,7 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
                   startGame();
                 }
                 moves += 5;
+                updateMoveCount();
                 // In a real game, this would shuffle the pieces
               });
               
@@ -158,6 +160,7 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
                   startGame();
                 }
                 moves += 1;
+                updateMoveCount();
                 
                 // Simulate game completion after some moves and a delay
                 if (moves > 10 && !gameCompleted) {
@@ -166,14 +169,26 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
                   }, 1500);
                 }
               });
+
+              function updateMoveCount() {
+                window.parent.postMessage({ 
+                  type: 'PHASER_PUZZLE_MOVE',
+                  stats: { moves }
+                }, '*');
+              }
               
               // Load the puzzle image
               const image = new Image();
               image.onload = function() {
                 loadMessage.style.display = 'none';
                 spinner.style.display = 'none';
+                
+                // Tell the parent we've loaded
+                window.parent.postMessage({ type: 'PHASER_PUZZLE_LOADED' }, '*');
+                
                 initGame(image);
               };
+              
               image.onerror = function(err) {
                 loadMessage.textContent = 'Error loading puzzle image';
                 spinner.style.display = 'none';
@@ -249,6 +264,7 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
                         startGame();
                       }
                       moves++;
+                      updateMoveCount();
                       
                       // Simulate game completion after some clicks
                       if (moves > 5 && !gameCompleted) {
@@ -353,6 +369,7 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
                         }
                         this.setDepth(1000);
                         moves++;
+                        updateMoveCount();
                       });
                       
                       piece.sprite.on('drag', function(pointer, dragX, dragY) {
@@ -495,6 +512,7 @@ export function createPhaserGameContent(puzzleConfig: PuzzleConfig): string {
                 gameStarted = false;
                 gameCompleted = false;
                 moves = 0;
+                updateMoveCount();
                 clearInterval(timerInterval);
                 timerEl.textContent = '00:00';
                 

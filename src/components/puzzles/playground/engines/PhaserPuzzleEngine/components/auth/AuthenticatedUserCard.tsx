@@ -1,9 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { User } from '@supabase/supabase-js';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface AuthenticatedUserCardProps {
   user: User;
@@ -11,23 +9,18 @@ interface AuthenticatedUserCardProps {
 
 const AuthenticatedUserCard: React.FC<AuthenticatedUserCardProps> = ({ user }) => {
   return (
-    <Card>
+    <Card className="mb-4">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Your Game Progress</CardTitle>
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={user.user_metadata?.avatar_url || ''} alt={user.user_metadata?.display_name || user.email || 'User'} />
-            <AvatarFallback>{(user.user_metadata?.display_name || user.email || 'U').charAt(0)}</AvatarFallback>
-          </Avatar>
-        </div>
-        <CardDescription>{user.user_metadata?.display_name || user.email}</CardDescription>
+        <CardTitle className="text-lg">Logged in as</CardTitle>
+        <CardDescription>{user.email}</CardDescription>
       </CardHeader>
-      <CardContent className="pt-0">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-2">
-          <div className="text-sm text-muted-foreground">
-            Your progress will be saved automatically.
+      <CardContent className="pt-2">
+        <div className="text-sm space-y-2">
+          <p>Your game stats will be saved and you can compete on the leaderboard.</p>
+          <div className="mt-4">
+            <h3 className="text-sm font-semibold mb-1">Your Best Time</h3>
+            <p className="text-muted-foreground">No records yet</p>
           </div>
-          <Button variant="outline" size="sm">View My Puzzles</Button>
         </div>
       </CardContent>
     </Card>

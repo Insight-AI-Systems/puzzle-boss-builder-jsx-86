@@ -31,9 +31,22 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [moveCount, setMoveCount] = useState(0);
   const { user, isAuthenticated } = useAuth();
   
   const timer = usePuzzleTimer();
+  
+  const handleIframeLoad = () => {
+    console.log('Iframe loaded successfully');
+    setIsLoading(false);
+    setLoadError(null);
+  };
+  
+  const handleIframeError = (error: string) => {
+    console.error('Iframe error:', error);
+    setIsLoading(false);
+    setLoadError(error);
+  };
   
   const { elapsed, isRunning } = usePhaserMessaging({
     puzzleId,
@@ -41,8 +54,11 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
     setIsLoading,
     setLoadError,
     setHasStarted,
-    setIsComplete
+    setIsComplete,
+    onMoveCount: (count) => setMoveCount(count),
   });
+
+  const handleRetry = () => window.location.reload();
 
   // Build the puzzle config to pass to the iframe
   const puzzleConfig = {
@@ -54,14 +70,12 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
     gameMode: 'standard',
   };
 
-  const handleRetry = () => window.location.reload();
-
   return (
     <div className="phaser-puzzle-container">
       <PuzzleHeader 
         timer={timer.displayTime || '00:00'} 
         isActive={isRunning} 
-        moveCount={0}
+        moveCount={moveCount}
       />
       
       <div className="phaser-puzzle-game-container">
@@ -74,6 +88,8 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
         <PuzzleGameIframe 
           config={puzzleConfig}
           isLoading={isLoading}
+          onLoad={handleIframeLoad}
+          onError={handleIframeError}
         />
       </div>
       

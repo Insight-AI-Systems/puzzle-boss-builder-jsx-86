@@ -10,6 +10,7 @@ interface PhaserMessagingProps {
   setLoadError: (error: string | null) => void;
   setHasStarted: (hasStarted: boolean) => void;
   setIsComplete: (isComplete: boolean) => void;
+  onMoveCount?: (count: number) => void;
 }
 
 interface PhaserMessageData {
@@ -27,9 +28,11 @@ export function usePhaserMessaging({
   setIsLoading,
   setLoadError,
   setHasStarted,
-  setIsComplete
+  setIsComplete,
+  onMoveCount
 }: PhaserMessagingProps) {
   const { isAuthenticated } = useAuth();
+  const [moveCount, setMoveCount] = useState(0);
   
   // Use our puzzle timer hook
   const {
@@ -42,9 +45,6 @@ export function usePhaserMessaging({
 
   useEffect(() => {
     const handlePhaserMessage = (event: MessageEvent) => {
-      // Security check: only accept messages from our own window
-      if (event.origin !== window.location.origin) return;
-      
       try {
         const data = event.data as PhaserMessageData;
         
@@ -68,6 +68,12 @@ export function usePhaserMessaging({
             setHasStarted(true);
             startTimer();
             break;
+          case 'PHASER_PUZZLE_MOVE':
+            if (data.stats && data.stats.moves !== undefined) {
+              setMoveCount(data.stats.moves);
+              onMoveCount?.(data.stats.moves);
+            }
+            break;
           case 'PHASER_PUZZLE_COMPLETE':
             console.log('Phaser puzzle completed', data.stats);
             setIsComplete(true);
@@ -86,6 +92,8 @@ export function usePhaserMessaging({
             console.log('Phaser puzzle reset');
             setHasStarted(false);
             setIsComplete(false);
+            setMoveCount(0);
+            onMoveCount?.(0);
             resetTimer();
             break;
         }
@@ -108,10 +116,11 @@ export function usePhaserMessaging({
       window.removeEventListener('message', handlePhaserMessage);
       clearTimeout(loadingTimeout);
     };
-  }, [puzzleId, elapsed, isAuthenticated, startTimer, stopTimer, resetTimer, isLoading, setIsLoading, setLoadError, setHasStarted, setIsComplete]);
+  }, [puzzleId, elapsed, isAuthenticated, startTimer, stopTimer, resetTimer, isLoading, setIsLoading, setLoadError, setHasStarted, setIsComplete, onMoveCount]);
 
   return {
     elapsed,
     isRunning,
+    moveCount,
   };
 }
