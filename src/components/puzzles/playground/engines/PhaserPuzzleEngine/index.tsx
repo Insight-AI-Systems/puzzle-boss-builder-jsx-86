@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/auth/useAuth';
-import { usePuzzleTimer } from '@/components/puzzles/hooks/usePuzzleTimer';
+import { usePuzzleTimer } from '@/components/puzzles/playground/engines/hooks/usePuzzleTimer';
 import LeaderboardSection from './components/LeaderboardSection';
 import AuthSection from './components/AuthSection';
 import './styles/phaser-puzzle.css';
@@ -23,6 +23,7 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
 }) => {
   const { isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   
@@ -46,10 +47,18 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
         
         if (!data || typeof data !== 'object') return;
         
+        console.log('Received message from Phaser:', data.type);
+        
         switch(data.type) {
           case 'PHASER_PUZZLE_LOADED':
             console.log('Phaser puzzle loaded');
             setIsLoading(false);
+            setLoadError(null);
+            break;
+          case 'PHASER_PUZZLE_ERROR':
+            console.error('Phaser puzzle error:', data.error);
+            setIsLoading(false);
+            setLoadError(data.error || 'Failed to load puzzle');
             break;
           case 'PHASER_PUZZLE_START':
             console.log('Phaser puzzle started');
@@ -83,10 +92,20 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
     };
     
     window.addEventListener('message', handlePhaserMessage);
+    
+    // Set a timeout to check if the iframe has loaded
+    const loadingTimeout = setTimeout(() => {
+      if (isLoading) {
+        console.warn('Phaser puzzle loading timeout');
+        setLoadError('Loading timeout. Please try again.');
+      }
+    }, 10000);
+    
     return () => {
       window.removeEventListener('message', handlePhaserMessage);
+      clearTimeout(loadingTimeout);
     };
-  }, [puzzleId, elapsed, isAuthenticated, startTimer, stopTimer, resetTimer]);
+  }, [puzzleId, elapsed, isAuthenticated, startTimer, stopTimer, resetTimer, isLoading]);
 
   // Build the puzzle config to pass to the iframe
   const puzzleConfig = {
@@ -199,6 +218,7 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
         <body>
           <div id="game-container">
             <div class="load-message">Loading puzzle game...</div>
+            <div class="spinner" style="margin: 0 auto 16px auto;"></div>
             <div id="phaser-game"></div>
             <div class="controls">
               <button class="btn" id="reset-button">Reset</button>
@@ -211,235 +231,277 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
           <script>
             // Basic implementation for now - in a real app, this would be a more complex Phaser game
             document.addEventListener('DOMContentLoaded', function() {
-              // Let the parent know we've loaded
-              window.parent.postMessage({ type: 'PHASER_PUZZLE_LOADED' }, '*');
-              
-              const loadMessage = document.querySelector('.load-message');
-              const timerEl = document.getElementById('timer');
-              let startTime = 0;
-              let timerInterval;
-              let gameStarted = false;
-              let gameCompleted = false;
-              let moves = 0;
-              
-              // Config from parent
-              const config = ${JSON.stringify(puzzleConfig)};
-              
-              // Initialize buttons
-              document.getElementById('reset-button').addEventListener('click', function() {
-                resetGame();
-                window.parent.postMessage({ type: 'PHASER_PUZZLE_RESET' }, '*');
-              });
-              
-              document.getElementById('shuffle-button').addEventListener('click', function() {
-                if (!gameStarted) {
-                  startGame();
-                }
-                moves += 5;
-                // In a real game, this would shuffle the pieces
-              });
-              
-              document.getElementById('hint-button').addEventListener('click', function() {
-                if (!gameStarted) {
-                  startGame();
-                }
-                moves += 1;
+              try {
+                // Let the parent know we've loaded
+                window.parent.postMessage({ type: 'PHASER_PUZZLE_LOADED' }, '*');
                 
-                // Simulate game completion after some moves and a delay
-                if (moves > 10 && !gameCompleted) {
-                  setTimeout(() => {
-                    completeGame();
-                  }, 1500);
-                }
-              });
-              
-              // Load the puzzle image
-              const image = new Image();
-              image.onload = function() {
-                loadMessage.style.display = 'none';
-                initGame(image);
-              };
-              image.onerror = function() {
-                loadMessage.textContent = 'Error loading puzzle image';
-              };
-              image.src = config.imageUrl;
-              
-              function initGame(image) {
-                const gameConfig = {
-                  type: Phaser.AUTO,
-                  width: 500,
-                  height: 500,
-                  parent: 'phaser-game',
-                  backgroundColor: '#0f172a',
-                  scene: {
-                    preload: preload,
-                    create: create
+                const loadMessage = document.querySelector('.load-message');
+                const spinner = document.querySelector('.spinner');
+                const timerEl = document.getElementById('timer');
+                let startTime = 0;
+                let timerInterval;
+                let gameStarted = false;
+                let gameCompleted = false;
+                let moves = 0;
+                
+                // Config from parent
+                const config = ${JSON.stringify(puzzleConfig)};
+                
+                // Initialize buttons
+                document.getElementById('reset-button').addEventListener('click', function() {
+                  resetGame();
+                  window.parent.postMessage({ type: 'PHASER_PUZZLE_RESET' }, '*');
+                });
+                
+                document.getElementById('shuffle-button').addEventListener('click', function() {
+                  if (!gameStarted) {
+                    startGame();
                   }
+                  moves += 5;
+                  // In a real game, this would shuffle the pieces
+                });
+                
+                document.getElementById('hint-button').addEventListener('click', function() {
+                  if (!gameStarted) {
+                    startGame();
+                  }
+                  moves += 1;
+                  
+                  // Simulate game completion after some moves and a delay
+                  if (moves > 10 && !gameCompleted) {
+                    setTimeout(() => {
+                      completeGame();
+                    }, 1500);
+                  }
+                });
+                
+                // Load the puzzle image
+                const image = new Image();
+                image.onload = function() {
+                  loadMessage.style.display = 'none';
+                  spinner.style.display = 'none';
+                  initGame(image);
+                };
+                image.onerror = function(err) {
+                  loadMessage.textContent = 'Error loading puzzle image';
+                  spinner.style.display = 'none';
+                  window.parent.postMessage({ 
+                    type: 'PHASER_PUZZLE_ERROR',
+                    error: 'Failed to load puzzle image'
+                  }, '*');
                 };
                 
-                new Phaser.Game(gameConfig);
+                // Add cache buster to prevent image caching issues
+                const cacheBuster = '?cb=' + Date.now();
+                image.src = config.imageUrl + (config.imageUrl.includes('?') ? '&' : '?') + 'cb=' + Date.now();
                 
-                function preload() {
-                  this.load.image('puzzleImage', config.imageUrl);
-                }
-                
-                function create() {
-                  const { rows, columns } = config;
-                  const pieceWidth = this.cameras.main.width / columns;
-                  const pieceHeight = this.cameras.main.height / rows;
+                function initGame(image) {
+                  const gameConfig = {
+                    type: Phaser.AUTO,
+                    width: 500,
+                    height: 500,
+                    parent: 'phaser-game',
+                    backgroundColor: '#0f172a',
+                    scene: {
+                      preload: preload,
+                      create: create
+                    }
+                  };
                   
-                  // For now, just display the full image
-                  const puzzleImage = this.add.image(
-                    this.cameras.main.centerX,
-                    this.cameras.main.centerY,
-                    'puzzleImage'
-                  ).setOrigin(0.5);
+                  try {
+                    new Phaser.Game(gameConfig);
+                  } catch (error) {
+                    console.error('Phaser game initialization error:', error);
+                    loadMessage.textContent = 'Error initializing puzzle game';
+                    loadMessage.style.display = 'block';
+                    window.parent.postMessage({ 
+                      type: 'PHASER_PUZZLE_ERROR',
+                      error: 'Failed to initialize Phaser game: ' + error.message
+                    }, '*');
+                  }
                   
-                  // Scale to fit
-                  const scaleX = this.cameras.main.width / puzzleImage.width;
-                  const scaleY = this.cameras.main.height / puzzleImage.height;
-                  const scale = Math.min(scaleX, scaleY);
-                  puzzleImage.setScale(scale);
+                  function preload() {
+                    try {
+                      this.load.image('puzzleImage', config.imageUrl + cacheBuster);
+                    } catch (error) {
+                      console.error('Error in preload:', error);
+                    }
+                  }
                   
-                  // Add a grid overlay to simulate puzzle pieces
-                  for (let r = 0; r < rows; r++) {
-                    for (let c = 0; c < columns; c++) {
-                      const x = c * pieceWidth;
-                      const y = r * pieceHeight;
+                  function create() {
+                    try {
+                      const { rows, columns } = config;
+                      const pieceWidth = this.cameras.main.width / columns;
+                      const pieceHeight = this.cameras.main.height / rows;
                       
-                      const rect = this.add.rectangle(
-                        x + pieceWidth/2, 
-                        y + pieceHeight/2,
-                        pieceWidth - 2,
-                        pieceHeight - 2,
-                        0xffffff,
-                        0.1
-                      );
+                      // For now, just display the full image
+                      const puzzleImage = this.add.image(
+                        this.cameras.main.centerX,
+                        this.cameras.main.centerY,
+                        'puzzleImage'
+                      ).setOrigin(0.5);
                       
-                      rect.setStrokeStyle(1, 0xfbbf24);
+                      // Scale to fit
+                      const scaleX = this.cameras.main.width / puzzleImage.width;
+                      const scaleY = this.cameras.main.height / puzzleImage.height;
+                      const scale = Math.min(scaleX, scaleY);
+                      puzzleImage.setScale(scale);
                       
-                      // Add piece number if showNumbers is true
-                      if (config.showNumbers) {
-                        this.add.text(
-                          x + 8, 
-                          y + 8,
-                          \`\${r * columns + c + 1}\`,
-                          {
-                            fontFamily: 'Arial',
-                            fontSize: '16px',
-                            color: '#fbbf24',
-                            stroke: '#0f172a',
-                            strokeThickness: 4
+                      // Add a grid overlay to simulate puzzle pieces
+                      for (let r = 0; r < rows; r++) {
+                        for (let c = 0; c < columns; c++) {
+                          const x = c * pieceWidth;
+                          const y = r * pieceHeight;
+                          
+                          const rect = this.add.rectangle(
+                            x + pieceWidth/2, 
+                            y + pieceHeight/2,
+                            pieceWidth - 2,
+                            pieceHeight - 2,
+                            0xffffff,
+                            0.1
+                          );
+                          
+                          rect.setStrokeStyle(1, 0xfbbf24);
+                          
+                          // Add piece number if showNumbers is true
+                          if (config.showNumbers) {
+                            this.add.text(
+                              x + 8, 
+                              y + 8,
+                              \`\${r * columns + c + 1}\`,
+                              {
+                                fontFamily: 'Arial',
+                                fontSize: '16px',
+                                color: '#fbbf24',
+                                stroke: '#0f172a',
+                                strokeThickness: 4
+                              }
+                            );
                           }
-                        );
+                          
+                          rect.setInteractive();
+                          rect.on('pointerdown', function() {
+                            if (!gameStarted) {
+                              startGame();
+                            }
+                            moves++;
+                          });
+                        }
                       }
                       
-                      rect.setInteractive();
-                      rect.on('pointerdown', function() {
+                      // Add click handler to full image for demo purposes
+                      puzzleImage.setInteractive();
+                      puzzleImage.on('pointerdown', function() {
                         if (!gameStarted) {
                           startGame();
                         }
                         moves++;
+                        
+                        // Simulate game completion after some clicks
+                        if (moves > 5 && !gameCompleted) {
+                          setTimeout(() => {
+                            completeGame();
+                          }, 2000);
+                        }
                       });
+                    } catch (error) {
+                      console.error('Error in create:', error);
+                      loadMessage.textContent = 'Error creating puzzle game';
+                      loadMessage.style.display = 'block';
+                      window.parent.postMessage({ 
+                        type: 'PHASER_PUZZLE_ERROR',
+                        error: 'Failed to create game scene: ' + error.message
+                      }, '*');
                     }
                   }
+                }
+                
+                function startGame() {
+                  if (gameStarted) return;
                   
-                  // Add click handler to full image for demo purposes
-                  puzzleImage.setInteractive();
-                  puzzleImage.on('pointerdown', function() {
-                    if (!gameStarted) {
-                      startGame();
+                  gameStarted = true;
+                  startTime = Date.now();
+                  
+                  timerInterval = setInterval(updateTimer, 1000);
+                  updateTimer();
+                  
+                  window.parent.postMessage({ type: 'PHASER_PUZZLE_START' }, '*');
+                }
+                
+                function updateTimer() {
+                  const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+                  const minutes = Math.floor(elapsedSeconds / 60);
+                  const seconds = elapsedSeconds % 60;
+                  timerEl.textContent = \`\${minutes.toString().padStart(2, '0')}:\${seconds.toString().padStart(2, '0')}\`;
+                }
+                
+                function completeGame() {
+                  if (gameCompleted) return;
+                  
+                  gameCompleted = true;
+                  clearInterval(timerInterval);
+                  
+                  const completionTime = Math.floor((Date.now() - startTime) / 1000);
+                  
+                  window.parent.postMessage({ 
+                    type: 'PHASER_PUZZLE_COMPLETE',
+                    stats: {
+                      time: completionTime,
+                      moves: moves
                     }
-                    moves++;
-                    
-                    // Simulate game completion after some clicks
-                    if (moves > 5 && !gameCompleted) {
-                      setTimeout(() => {
-                        completeGame();
-                      }, 2000);
-                    }
+                  }, '*');
+                  
+                  // Show completion animation
+                  const gameContainer = document.getElementById('game-container');
+                  const completionMsg = document.createElement('div');
+                  completionMsg.style.position = 'absolute';
+                  completionMsg.style.top = '50%';
+                  completionMsg.style.left = '50%';
+                  completionMsg.style.transform = 'translate(-50%, -50%)';
+                  completionMsg.style.background = 'rgba(15, 23, 42, 0.9)';
+                  completionMsg.style.color = '#fbbf24';
+                  completionMsg.style.padding = '24px';
+                  completionMsg.style.borderRadius = '8px';
+                  completionMsg.style.textAlign = 'center';
+                  completionMsg.style.zIndex = '1000';
+                  
+                  completionMsg.innerHTML = \`
+                    <h2 style="margin-top:0">Puzzle Complete!</h2>
+                    <p>Time: \${Math.floor(completionTime / 60)}:\${(completionTime % 60).toString().padStart(2, '0')}</p>
+                    <p>Moves: \${moves}</p>
+                    <button class="btn primary">Play Again</button>
+                  \`;
+                  
+                  gameContainer.appendChild(completionMsg);
+                  
+                  completionMsg.querySelector('button').addEventListener('click', function() {
+                    completionMsg.remove();
+                    resetGame();
                   });
                 }
-              }
-              
-              function startGame() {
-                if (gameStarted) return;
                 
-                gameStarted = true;
-                startTime = Date.now();
-                
-                timerInterval = setInterval(updateTimer, 1000);
-                updateTimer();
-                
-                window.parent.postMessage({ type: 'PHASER_PUZZLE_START' }, '*');
-              }
-              
-              function updateTimer() {
-                const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-                const minutes = Math.floor(elapsedSeconds / 60);
-                const seconds = elapsedSeconds % 60;
-                timerEl.textContent = \`\${minutes.toString().padStart(2, '0')}:\${seconds.toString().padStart(2, '0')}\`;
-              }
-              
-              function completeGame() {
-                if (gameCompleted) return;
-                
-                gameCompleted = true;
-                clearInterval(timerInterval);
-                
-                const completionTime = Math.floor((Date.now() - startTime) / 1000);
-                
-                window.parent.postMessage({ 
-                  type: 'PHASER_PUZZLE_COMPLETE',
-                  stats: {
-                    time: completionTime,
-                    moves: moves
+                function resetGame() {
+                  gameStarted = false;
+                  gameCompleted = false;
+                  moves = 0;
+                  clearInterval(timerInterval);
+                  timerEl.textContent = '00:00';
+                  
+                  // In a real implementation, this would reset the puzzle pieces
+                  
+                  // Remove any completion message if present
+                  const completionMsg = document.querySelector('#game-container > div:last-child');
+                  if (completionMsg && completionMsg.querySelector('h2')) {
+                    completionMsg.remove();
                   }
-                }, '*');
-                
-                // Show completion animation
-                const gameContainer = document.getElementById('game-container');
-                const completionMsg = document.createElement('div');
-                completionMsg.style.position = 'absolute';
-                completionMsg.style.top = '50%';
-                completionMsg.style.left = '50%';
-                completionMsg.style.transform = 'translate(-50%, -50%)';
-                completionMsg.style.background = 'rgba(15, 23, 42, 0.9)';
-                completionMsg.style.color = '#fbbf24';
-                completionMsg.style.padding = '24px';
-                completionMsg.style.borderRadius = '8px';
-                completionMsg.style.textAlign = 'center';
-                completionMsg.style.zIndex = '1000';
-                
-                completionMsg.innerHTML = \`
-                  <h2 style="margin-top:0">Puzzle Complete!</h2>
-                  <p>Time: \${Math.floor(completionTime / 60)}:\${(completionTime % 60).toString().padStart(2, '0')}</p>
-                  <p>Moves: \${moves}</p>
-                  <button class="btn primary">Play Again</button>
-                \`;
-                
-                gameContainer.appendChild(completionMsg);
-                
-                completionMsg.querySelector('button').addEventListener('click', function() {
-                  completionMsg.remove();
-                  resetGame();
-                });
-              }
-              
-              function resetGame() {
-                gameStarted = false;
-                gameCompleted = false;
-                moves = 0;
-                clearInterval(timerInterval);
-                timerEl.textContent = '00:00';
-                
-                // In a real implementation, this would reset the puzzle pieces
-                
-                // Remove any completion message if present
-                const completionMsg = document.querySelector('#game-container > div:last-child');
-                if (completionMsg && completionMsg.querySelector('h2')) {
-                  completionMsg.remove();
                 }
+              } catch (e) {
+                console.error('Critical error in phaser game:', e);
+                window.parent.postMessage({ 
+                  type: 'PHASER_PUZZLE_ERROR',
+                  error: 'Critical error: ' + e.message
+                }, '*');
               }
             });
           </script>
@@ -465,6 +527,18 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
           <div className="phaser-puzzle-loading">
             <div className="spinner"></div>
             <p>Loading puzzle game...</p>
+          </div>
+        )}
+        
+        {loadError && !isLoading && (
+          <div className="phaser-puzzle-error">
+            <p className="text-red-400">{loadError}</p>
+            <button 
+              className="mt-2 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-white text-sm rounded"
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </button>
           </div>
         )}
         
