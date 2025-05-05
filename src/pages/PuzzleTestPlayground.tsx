@@ -8,6 +8,7 @@ import Breadcrumb from '@/components/common/Breadcrumb';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { AlertTriangle } from 'lucide-react';
 
 const SAMPLE_IMAGES = [
   "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=500&h=500&fit=crop",
@@ -37,8 +38,9 @@ const PuzzleTestPlayground: React.FC = () => {
           <CardHeader className="bg-muted/30">
             <div className="flex justify-between items-center">
               <CardTitle className="text-xl">Puzzle Engine Comparison</CardTitle>
-              <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
-                Phaser Engine Coming Soon
+              <Badge variant="outline" className="flex items-center gap-2 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 px-3 py-1.5">
+                <AlertTriangle size={16} />
+                <span>Phaser Engine Coming Soon</span>
               </Badge>
             </div>
           </CardHeader>
