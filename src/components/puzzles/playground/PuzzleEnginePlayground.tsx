@@ -25,7 +25,7 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
   miniColumns,
   showNumbersToggle = false
 }) => {
-  const [engine, setEngine] = useState<'enhanced' | 'custom' | 'svg-jigsaw'>('enhanced');
+  const [engine, setEngine] = useState<'enhanced' | 'custom' | 'svg-jigsaw' | 'phaser'>('enhanced');
   const [showNumbers, setShowNumbers] = useState(false);
 
   const toggleNumbers = useCallback(() => {
@@ -34,7 +34,8 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
 
   const toggleEngine = useCallback(() => {
     setEngine(prev => {
-      if (prev === 'enhanced') return 'svg-jigsaw';
+      if (prev === 'enhanced') return 'phaser';
+      if (prev === 'phaser') return 'svg-jigsaw';
       if (prev === 'svg-jigsaw') return 'custom';
       return 'enhanced';
     });
@@ -50,7 +51,12 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Puzzle Engine Playground</h2>
           <Button onClick={toggleEngine} variant="outline">
-            Switch to {engine === 'enhanced' ? 'SVG Jigsaw' : engine === 'svg-jigsaw' ? 'Legacy Jigsaw' : 'Enhanced Jigsaw'}
+            Switch to {
+              engine === 'enhanced' ? 'Phaser Jigsaw' : 
+              engine === 'phaser' ? 'SVG Jigsaw' : 
+              engine === 'svg-jigsaw' ? 'Legacy Jigsaw' : 
+              'Enhanced Jigsaw'
+            }
           </Button>
         </div>
       )}
@@ -64,6 +70,24 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
             showNumbers={showNumbers}
             showGuide={true}
           />
+        )}
+        
+        {engine === 'phaser' && (
+          <div className="bg-muted/30 p-8 rounded-lg border border-dashed border-muted-foreground">
+            <div className="text-center">
+              <h3 className="text-lg font-medium mb-2">Phaser Puzzle Engine</h3>
+              <p className="text-muted-foreground mb-4">
+                The Phaser-based puzzle engine is currently being implemented and will be available soon.
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={toggleEngine}
+                className="mx-auto"
+              >
+                Try another engine
+              </Button>
+            </div>
+          </div>
         )}
         
         {engine === 'custom' && (

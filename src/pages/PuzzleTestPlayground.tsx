@@ -7,6 +7,7 @@ import PuzzleEnginePlayground from '@/components/puzzles/playground/PuzzleEngine
 import Breadcrumb from '@/components/common/Breadcrumb';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 
 const SAMPLE_IMAGES = [
   "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=500&h=500&fit=crop",
@@ -34,13 +35,18 @@ const PuzzleTestPlayground: React.FC = () => {
       <div className="max-w-6xl mx-auto mt-8">
         <Card className="mb-8">
           <CardHeader className="bg-muted/30">
-            <CardTitle className="text-xl">Puzzle Engine Comparison</CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-xl">Puzzle Engine Comparison</CardTitle>
+              <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                Phaser Engine Coming Soon
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent className="pt-6">
             <p className="mb-4 text-muted-foreground">
               This playground allows you to test and compare different puzzle engine implementations 
-              without affecting the main application. Select different engines, configure settings, 
-              and evaluate which solution works best for our needs.
+              without affecting the main application. Cycle through different engines using the button,
+              configure settings, and evaluate which solution works best for our needs.
             </p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
