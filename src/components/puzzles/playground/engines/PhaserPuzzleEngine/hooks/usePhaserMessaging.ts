@@ -53,6 +53,9 @@ export function usePhaserMessaging({
         console.log('Received message from Phaser:', data.type);
         
         switch(data.type) {
+          case 'PHASER_PUZZLE_LOADING':
+            console.log('Phaser puzzle loading');
+            break;
           case 'PHASER_PUZZLE_LOADED':
             console.log('Phaser puzzle loaded');
             setIsLoading(false);
