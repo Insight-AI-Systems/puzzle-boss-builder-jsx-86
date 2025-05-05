@@ -1,47 +1,41 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface LeaderboardSectionProps {
   puzzleId: string;
 }
 
-interface LeaderboardEntry {
-  username: string;
-  time: number;
-  moves: number;
-}
-
-// Dummy data for the leaderboard
-const SAMPLE_LEADERBOARD: LeaderboardEntry[] = [
-  { username: "PuzzleMaster", time: 45, moves: 23 },
-  { username: "JigsawQueen", time: 58, moves: 31 },
-  { username: "PieceWizard", time: 67, moves: 29 },
-];
-
+// This is a placeholder implementation - in a real app, you would fetch actual leaderboard data
 const LeaderboardSection: React.FC<LeaderboardSectionProps> = ({ puzzleId }) => {
+  const leaderboardEntries = [
+    { name: 'Alice', time: '01:45', moves: 24 },
+    { name: 'Bob', time: '02:12', moves: 28 },
+    { name: 'Charlie', time: '02:30', moves: 32 }
+  ];
+  
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-yellow-500" />
-          <span>Leaderboard</span>
-        </CardTitle>
+        <CardTitle className="text-lg">Leaderboard</CardTitle>
+        <CardDescription>Fastest completion times</CardDescription>
       </CardHeader>
-      <CardContent className="pt-0">
-        <div className="space-y-2">
-          {SAMPLE_LEADERBOARD.map((entry, index) => (
-            <div key={index} className="flex justify-between items-center py-2 border-b last:border-0">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold">{index + 1}.</span>
-                <span>{entry.username}</span>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {Math.floor(entry.time / 60)}:{(entry.time % 60).toString().padStart(2, '0')} ({entry.moves} moves)
-              </div>
+      <CardContent className="pt-2">
+        <div className="text-sm space-y-2">
+          {leaderboardEntries.length > 0 ? (
+            <ul className="space-y-2">
+              {leaderboardEntries.map((entry, index) => (
+                <li key={index} className="flex justify-between items-center border-b pb-1 last:border-0">
+                  <span className="font-medium">{entry.name}</span>
+                  <span className="text-muted-foreground">{entry.time} ({entry.moves} moves)</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-center py-6 text-muted-foreground">
+              No records yet. Be the first!
             </div>
-          ))}
+          )}
         </div>
       </CardContent>
     </Card>

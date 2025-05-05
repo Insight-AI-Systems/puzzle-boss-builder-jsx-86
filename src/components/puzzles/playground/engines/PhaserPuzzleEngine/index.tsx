@@ -1,11 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePhaserMessaging } from './hooks/usePhaserMessaging';
 import LoadingState from './components/LoadingState';
 import ErrorState from './components/ErrorState';
 import PuzzleGameIframe from './components/PuzzleGameIframe';
 import PuzzleHeader from './components/PuzzleHeader';
 import PuzzleFooter from './components/PuzzleFooter';
+import { usePuzzleTimer } from '../hooks/usePuzzleTimer';
+import AuthenticatedUserCard from './components/auth/AuthenticatedUserCard';
+import { useAuth } from '@/hooks/auth/useAuth';
+import LeaderboardSection from './components/LeaderboardSection';
 import './styles/phaser-puzzle.css';
 
 interface PhaserPuzzleEngineProps {
@@ -27,6 +31,9 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const { user, isAuthenticated } = useAuth();
+  
+  const timer = usePuzzleTimer();
   
   const { elapsed, isRunning } = usePhaserMessaging({
     puzzleId,
@@ -51,7 +58,11 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
 
   return (
     <div className="phaser-puzzle-container">
-      <PuzzleHeader />
+      <PuzzleHeader 
+        timer={timer.displayTime || '00:00'} 
+        isActive={isRunning} 
+        moveCount={0}
+      />
       
       <div className="phaser-puzzle-game-container">
         {isLoading && <LoadingState />}
@@ -64,6 +75,16 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
           config={puzzleConfig}
           isLoading={isLoading}
         />
+      </div>
+      
+      <div className="phaser-puzzle-sidebar">
+        {isAuthenticated && user ? (
+          <AuthenticatedUserCard user={user} />
+        ) : (
+          <div className="mt-4">
+            <LeaderboardSection puzzleId={puzzleId} />
+          </div>
+        )}
       </div>
       
       <PuzzleFooter puzzleId={puzzleId} />

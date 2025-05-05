@@ -57,7 +57,12 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
     <div className="puzzle-engine-playground">
       {!isCondensed && (
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Puzzle Engine Playground</h2>
+          <h2 className="text-xl font-semibold">Puzzle Engine: {
+            engine === 'enhanced' ? 'Enhanced Jigsaw' : 
+            engine === 'svg-jigsaw' ? 'SVG Jigsaw' : 
+            engine === 'custom' ? 'Legacy Jigsaw' : 
+            'Phaser Engine'
+          }</h2>
           <div className="flex gap-2">
             <Button onClick={toggleEngine} variant="outline">
               Switch to {
