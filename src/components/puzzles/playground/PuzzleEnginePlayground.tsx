@@ -79,6 +79,7 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
             rows={rows}
             columns={columns}
             showNumbers={showNumbers}
+            puzzleId={`phaser-demo-${rows}x${columns}`}
           />
         )}
         
