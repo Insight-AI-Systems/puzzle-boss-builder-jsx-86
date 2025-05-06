@@ -8,6 +8,7 @@
 .puzzle-board {
   min-height: 280px;
   transition: opacity 0.3s ease;
+  perspective: 1000px; /* Add 3D perspective for better visual effects */
 }
 
 /* Puzzle cell styling */
@@ -21,8 +22,9 @@
 }
 
 .puzzle-cell-hover {
-  background-color: rgba(99, 102, 241, 0.1);
-  border: 2px dashed rgba(99, 102, 241, 0.4);
+  background-color: rgba(99, 102, 241, 0.15);
+  border: 2px dashed rgba(99, 102, 241, 0.5);
+  box-shadow: inset 0 0 10px rgba(99, 102, 241, 0.1);
 }
 
 /* Puzzle piece styling */
@@ -33,19 +35,19 @@
 }
 
 .puzzle-piece.correct {
-  filter: drop-shadow(0 2px 4px rgba(0, 128, 0, 0.3));
+  filter: drop-shadow(0 2px 6px rgba(0, 200, 0, 0.4));
 }
 
 .puzzle-piece.dragging {
   cursor: grabbing;
   z-index: 50 !important;
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5)) !important;
-  transform: scale(1.05);
+  filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.6)) brightness(1.05) !important;
+  transform: scale(1.05) translateZ(20px);
 }
 
 .puzzle-piece:hover {
-  filter: brightness(1.05);
-  transform: scale(1.02);
+  filter: brightness(1.05) contrast(1.02);
+  transform: scale(1.02) translateY(-1px);
 }
 
 .puzzle-piece:active {
@@ -55,99 +57,149 @@
 /* 3D effect for traditional jigsaw pieces */
 .puzzle-piece-3d-effect {
   box-shadow: 
-    inset 2px 2px 6px rgba(255, 255, 255, 0.7),
-    inset -2px -2px 6px rgba(0, 0, 0, 0.3),
-    2px 2px 4px rgba(0, 0, 0, 0.25);
+    inset 2px 2px 8px rgba(255, 255, 255, 0.8),
+    inset -2px -2px 8px rgba(0, 0, 0, 0.4),
+    3px 3px 6px rgba(0, 0, 0, 0.3);
   border-radius: 2px;
 }
 
 /* Staging area styling */
 .staging-area {
   transition: opacity 0.3s ease;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: rgba(0,0,0,0.03);
 }
 
 .staging-piece-container {
-  transition: transform 0.2s ease;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
   border-radius: 3px;
   overflow: hidden;
 }
 
 .staging-piece-container:hover {
-  transform: translateY(-4px) scale(1.03);
-  box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+  transform: translateY(-5px) scale(1.04);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.2), 0 3px 3px rgba(0,0,0,0.1);
 }
 
 /* Dark mode adjustments */
 .dark .enhanced-jigsaw-puzzle {
-  --puzzle-cell-border: rgba(255, 255, 255, 0.05);
+  --puzzle-cell-border: rgba(255, 255, 255, 0.1);
 }
 
 .dark .puzzle-cell-hover {
-  background-color: rgba(99, 102, 241, 0.2);
+  background-color: rgba(99, 102, 241, 0.25);
 }
 
 /* Animations */
 @keyframes pulse {
   0%, 100% { 
     opacity: 1; 
+    transform: scale(1);
   }
   50% { 
-    opacity: 0.8; 
+    opacity: 0.9; 
+    transform: scale(1.01);
   }
 }
 
 @keyframes victory-pulse {
   0%, 100% { 
     transform: scale(1); 
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
   }
   50% { 
     transform: scale(1.05); 
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
   }
 }
 
 .puzzle-complete {
-  animation: victory-pulse 2s ease-in-out infinite;
+  animation: victory-pulse 2.5s ease-in-out infinite;
 }
 
 /* Piece locking animation */
 @keyframes piece-lock {
   0% {
-    transform: scale(1.1);
-    filter: brightness(1.3);
+    transform: scale(1.15) rotate(1deg);
+    filter: brightness(1.4);
   }
   25% {
-    transform: scale(0.95);
+    transform: scale(0.95) rotate(-1deg);
   }
   50% {
-    transform: scale(1.05);
+    transform: scale(1.05) rotate(0.5deg);
+  }
+  75% {
+    transform: scale(0.98) rotate(-0.3deg);
   }
   100% {
-    transform: scale(1);
+    transform: scale(1) rotate(0deg);
   }
 }
 
 .puzzle-piece-locking {
-  animation: piece-lock 0.5s ease-out forwards;
+  animation: piece-lock 0.6s ease-out forwards;
 }
 
-/* Traditional jigsaw SVG styles - enhanced to match Jigidi style */
+/* Traditional jigsaw SVG styles - enhanced to match classic jigsaw puzzles */
 .jigsaw-svg-piece {
-  filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(2px 5px 6px rgba(0, 0, 0, 0.35));
+  transition: all 0.2s ease-out;
 }
 
 .jigsaw-svg-piece:hover {
-  filter: drop-shadow(3px 5px 8px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(3px 6px 9px rgba(0, 0, 0, 0.45));
 }
 
 .jigsaw-svg-piece.dragging {
-  filter: drop-shadow(5px 10px 15px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(6px 12px 18px rgba(0, 0, 0, 0.6));
+}
+
+.jigsaw-svg-piece.correct {
+  filter: drop-shadow(0 4px 6px rgba(0, 200, 0, 0.5));
+}
+
+/* Snap feedback effect */
+@keyframes snap-feedback {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.puzzle-snap-feedback {
+  animation: snap-feedback 0.3s ease-out;
 }
 
 /* Responsive adjustments */
 @media (max-width: 640px) {
   .staging-piece-container {
-    width: 45px !important;
-    height: calc(45px * var(--aspect-ratio, 1)) !important;
+    width: 48px !important;
+    height: calc(48px * var(--aspect-ratio, 1)) !important;
   }
+  
+  .puzzle-board {
+    min-height: 220px;
+  }
+}
+
+/* Success animation when puzzle is complete */
+@keyframes puzzle-complete {
+  0% { 
+    filter: brightness(1);
+    transform: scale(1);
+  }
+  50% { 
+    filter: brightness(1.2);
+    transform: scale(1.03);
+  }
+  100% { 
+    filter: brightness(1);
+    transform: scale(1);
+  }
+}
+
+.puzzle-success {
+  animation: puzzle-complete 1.5s ease infinite;
 }

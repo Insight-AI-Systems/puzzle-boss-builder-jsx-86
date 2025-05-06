@@ -32,7 +32,7 @@ export function generatePiecePath(
   const tabHeight = height * 0.4; // Wider, traditional tab
   
   // Tab depth (how much it protrudes or intrudes)
-  const tabDepth = Math.min(width, height) * 0.4; // More pronounced depth for traditional look
+  const tabDepth = Math.min(width, height) * 0.45; // More pronounced depth for traditional look
   
   // Use pseudo-random but consistent tabs/slots based on position
   // This ensures connected pieces fit together
@@ -54,33 +54,33 @@ export function generatePiecePath(
     
     // Create tab or slot on the top edge with a more traditional rounded shape
     if (hasTopTab) {
-      // Create a protruding tab with traditional rounded shape using cubic Bezier curves
-      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${-tabDepth * 0.1} `;
-      path += `${(width - tabWidth) / 2 + tabWidth * 0.3},${-tabDepth * 0.3} `;
-      path += `${(width - tabWidth) / 2 + tabWidth * 0.4},${-tabDepth * 0.5} `;
+      // Create a more pronounced bulb shape for the tab
+      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${-tabDepth * 0.15} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.3},${-tabDepth * 0.4} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.4},${-tabDepth * 0.7} `;
       
-      // Rounded top of tab
-      path += `C ${width / 2},${-tabDepth * 0.7} `;
-      path += `${(width + tabWidth) / 2 - tabWidth * 0.4},${-tabDepth * 0.5} `;
-      path += `${(width + tabWidth) / 2 - tabWidth * 0.3},${-tabDepth * 0.3} `;
+      // Rounded top of tab with a traditional bulb shape
+      path += `C ${width / 2},${-tabDepth * 0.9} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.4},${-tabDepth * 0.7} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.3},${-tabDepth * 0.4} `;
       
       // Ending curve back to edge
-      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${-tabDepth * 0.1} `;
+      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${-tabDepth * 0.15} `;
       path += `${(width + tabWidth) / 2},0 `;
       path += `${(width + tabWidth) / 2},0 `;
     } else {
-      // Create an intruding slot with traditional rounded shape using cubic Bezier curves
-      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${tabDepth * 0.1} `;
-      path += `${(width - tabWidth) / 2 + tabWidth * 0.3},${tabDepth * 0.3} `;
-      path += `${(width - tabWidth) / 2 + tabWidth * 0.4},${tabDepth * 0.5} `;
+      // Create an intruding slot with traditional rounded shape
+      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${tabDepth * 0.15} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.3},${tabDepth * 0.4} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.4},${tabDepth * 0.7} `;
       
-      // Rounded bottom of slot
-      path += `C ${width / 2},${tabDepth * 0.7} `;
-      path += `${(width + tabWidth) / 2 - tabWidth * 0.4},${tabDepth * 0.5} `;
-      path += `${(width + tabWidth) / 2 - tabWidth * 0.3},${tabDepth * 0.3} `;
+      // Rounded bottom of slot with a traditional socket shape
+      path += `C ${width / 2},${tabDepth * 0.9} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.4},${tabDepth * 0.7} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.3},${tabDepth * 0.4} `;
       
       // Ending curve back to edge
-      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${tabDepth * 0.1} `;
+      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${tabDepth * 0.15} `;
       path += `${(width + tabWidth) / 2},0 `;
       path += `${(width + tabWidth) / 2},0 `;
     }
@@ -99,33 +99,33 @@ export function generatePiecePath(
     
     // Create tab or slot on the right edge with traditional rounded shape
     if (hasRightTab) {
-      // Create a protruding tab with traditional rounded shape using cubic Bezier curves
-      path += `C ${width + tabDepth * 0.1},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
-      path += `${width + tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
-      path += `${width + tabDepth * 0.5},${(height - tabHeight) / 2 + tabHeight * 0.4} `;
+      // Create a more pronounced bulb shape for the tab
+      path += `C ${width + tabDepth * 0.15},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
+      path += `${width + tabDepth * 0.4},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
+      path += `${width + tabDepth * 0.7},${(height - tabHeight) / 2 + tabHeight * 0.4} `;
       
-      // Rounded side of tab
-      path += `C ${width + tabDepth * 0.7},${height / 2} `;
-      path += `${width + tabDepth * 0.5},${(height + tabHeight) / 2 - tabHeight * 0.4} `;
-      path += `${width + tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
+      // Rounded side of tab with a traditional bulb shape
+      path += `C ${width + tabDepth * 0.9},${height / 2} `;
+      path += `${width + tabDepth * 0.7},${(height + tabHeight) / 2 - tabHeight * 0.4} `;
+      path += `${width + tabDepth * 0.4},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
       
       // Ending curve back to edge
-      path += `C ${width + tabDepth * 0.1},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
+      path += `C ${width + tabDepth * 0.15},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
       path += `${width},${(height + tabHeight) / 2} `;
       path += `${width},${(height + tabHeight) / 2} `;
     } else {
-      // Create an intruding slot with traditional rounded shape using cubic Bezier curves
-      path += `C ${width - tabDepth * 0.1},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
-      path += `${width - tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
-      path += `${width - tabDepth * 0.5},${(height - tabHeight) / 2 + tabHeight * 0.4} `;
+      // Create an intruding slot with traditional rounded shape
+      path += `C ${width - tabDepth * 0.15},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
+      path += `${width - tabDepth * 0.4},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
+      path += `${width - tabDepth * 0.7},${(height - tabHeight) / 2 + tabHeight * 0.4} `;
       
-      // Rounded indentation of slot
-      path += `C ${width - tabDepth * 0.7},${height / 2} `;
-      path += `${width - tabDepth * 0.5},${(height + tabHeight) / 2 - tabHeight * 0.4} `;
-      path += `${width - tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
+      // Rounded indentation of slot with a traditional socket shape
+      path += `C ${width - tabDepth * 0.9},${height / 2} `;
+      path += `${width - tabDepth * 0.7},${(height + tabHeight) / 2 - tabHeight * 0.4} `;
+      path += `${width - tabDepth * 0.4},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
       
       // Ending curve back to edge
-      path += `C ${width - tabDepth * 0.1},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
+      path += `C ${width - tabDepth * 0.15},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
       path += `${width},${(height + tabHeight) / 2} `;
       path += `${width},${(height + tabHeight) / 2} `;
     }
@@ -144,33 +144,33 @@ export function generatePiecePath(
     
     // Create tab or slot on the bottom edge with traditional rounded shape
     if (hasBottomTab) {
-      // Create a protruding tab with traditional rounded shape (inverted) using cubic Bezier curves
-      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${height + tabDepth * 0.1} `;
-      path += `${(width + tabWidth) / 2 - tabWidth * 0.3},${height + tabDepth * 0.3} `;
-      path += `${(width + tabWidth) / 2 - tabWidth * 0.4},${height + tabDepth * 0.5} `;
+      // Create a more pronounced bulb shape for the tab
+      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${height + tabDepth * 0.15} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.3},${height + tabDepth * 0.4} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.4},${height + tabDepth * 0.7} `;
       
-      // Rounded bottom of tab
-      path += `C ${width / 2},${height + tabDepth * 0.7} `;
-      path += `${(width - tabWidth) / 2 + tabWidth * 0.4},${height + tabDepth * 0.5} `;
-      path += `${(width - tabWidth) / 2 + tabWidth * 0.3},${height + tabDepth * 0.3} `;
+      // Rounded bottom of tab with a traditional bulb shape
+      path += `C ${width / 2},${height + tabDepth * 0.9} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.4},${height + tabDepth * 0.7} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.3},${height + tabDepth * 0.4} `;
       
       // Ending curve back to edge
-      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${height + tabDepth * 0.1} `;
+      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${height + tabDepth * 0.15} `;
       path += `${(width - tabWidth) / 2},${height} `;
       path += `${(width - tabWidth) / 2},${height} `;
     } else {
-      // Create an intruding slot with traditional rounded shape (inverted) using cubic Bezier curves
-      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${height - tabDepth * 0.1} `;
-      path += `${(width + tabWidth) / 2 - tabWidth * 0.3},${height - tabDepth * 0.3} `;
-      path += `${(width + tabWidth) / 2 - tabWidth * 0.4},${height - tabDepth * 0.5} `;
+      // Create an intruding slot with traditional rounded shape
+      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${height - tabDepth * 0.15} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.3},${height - tabDepth * 0.4} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.4},${height - tabDepth * 0.7} `;
       
-      // Rounded indentation of slot
-      path += `C ${width / 2},${height - tabDepth * 0.7} `;
-      path += `${(width - tabWidth) / 2 + tabWidth * 0.4},${height - tabDepth * 0.5} `;
-      path += `${(width - tabWidth) / 2 + tabWidth * 0.3},${height - tabDepth * 0.3} `;
+      // Rounded indentation of slot with a traditional socket shape
+      path += `C ${width / 2},${height - tabDepth * 0.9} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.4},${height - tabDepth * 0.7} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.3},${height - tabDepth * 0.4} `;
       
       // Ending curve back to edge
-      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${height - tabDepth * 0.1} `;
+      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${height - tabDepth * 0.15} `;
       path += `${(width - tabWidth) / 2},${height} `;
       path += `${(width - tabWidth) / 2},${height} `;
     }
@@ -189,33 +189,33 @@ export function generatePiecePath(
     
     // Create tab or slot on the left edge with traditional rounded shape
     if (hasLeftTab) {
-      // Create a protruding tab with traditional rounded shape using cubic Bezier curves
-      path += `C ${-tabDepth * 0.1},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
-      path += `${-tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
-      path += `${-tabDepth * 0.5},${(height + tabHeight) / 2 - tabHeight * 0.4} `;
+      // Create a more pronounced bulb shape for the tab
+      path += `C ${-tabDepth * 0.15},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
+      path += `${-tabDepth * 0.4},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
+      path += `${-tabDepth * 0.7},${(height + tabHeight) / 2 - tabHeight * 0.4} `;
       
-      // Rounded side of tab
-      path += `C ${-tabDepth * 0.7},${height / 2} `;
-      path += `${-tabDepth * 0.5},${(height - tabHeight) / 2 + tabHeight * 0.4} `;
-      path += `${-tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
+      // Rounded side of tab with a traditional bulb shape
+      path += `C ${-tabDepth * 0.9},${height / 2} `;
+      path += `${-tabDepth * 0.7},${(height - tabHeight) / 2 + tabHeight * 0.4} `;
+      path += `${-tabDepth * 0.4},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
       
       // Ending curve back to edge
-      path += `C ${-tabDepth * 0.1},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
+      path += `C ${-tabDepth * 0.15},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
       path += `0,${(height - tabHeight) / 2} `;
       path += `0,${(height - tabHeight) / 2} `;
     } else {
-      // Create an intruding slot with traditional rounded shape using cubic Bezier curves
-      path += `C ${tabDepth * 0.1},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
-      path += `${tabDepth * 0.3},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
-      path += `${tabDepth * 0.5},${(height + tabHeight) / 2 - tabHeight * 0.4} `;
+      // Create an intruding slot with traditional rounded shape
+      path += `C ${tabDepth * 0.15},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
+      path += `${tabDepth * 0.4},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
+      path += `${tabDepth * 0.7},${(height + tabHeight) / 2 - tabHeight * 0.4} `;
       
-      // Rounded indentation of slot
-      path += `C ${tabDepth * 0.7},${height / 2} `;
-      path += `${tabDepth * 0.5},${(height - tabHeight) / 2 + tabHeight * 0.4} `;
-      path += `${tabDepth * 0.3},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
+      // Rounded indentation of slot with a traditional socket shape
+      path += `C ${tabDepth * 0.9},${height / 2} `;
+      path += `${tabDepth * 0.7},${(height - tabHeight) / 2 + tabHeight * 0.4} `;
+      path += `${tabDepth * 0.4},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
       
       // Ending curve back to edge
-      path += `C ${tabDepth * 0.1},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
+      path += `C ${tabDepth * 0.15},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
       path += `0,${(height - tabHeight) / 2} `;
       path += `0,${(height - tabHeight) / 2} `;
     }
