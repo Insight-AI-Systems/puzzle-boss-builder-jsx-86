@@ -18,6 +18,7 @@ interface PhaserPuzzleEngineProps {
   columns: number;
   showNumbers?: boolean;
   puzzleId?: string;
+  onError?: (error: string) => void;
 }
 
 const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
@@ -25,7 +26,8 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
   rows,
   columns,
   showNumbers = false,
-  puzzleId = 'default'
+  puzzleId = 'default',
+  onError
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -46,6 +48,9 @@ const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
     console.error('Iframe error:', error);
     setIsLoading(false);
     setLoadError(error);
+    if (onError) {
+      onError(error);
+    }
   };
   
   const { elapsed, isRunning } = usePhaserMessaging({

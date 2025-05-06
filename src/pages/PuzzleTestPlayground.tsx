@@ -7,7 +7,7 @@ import PuzzleEnginePlayground from '@/components/puzzles/playground/PuzzleEngine
 import Breadcrumb from '@/components/common/Breadcrumb';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Info, PuzzlePiece } from 'lucide-react';
+import { AlertCircle, Info, Puzzle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const SAMPLE_IMAGES = [
@@ -38,7 +38,7 @@ const PuzzleTestPlayground: React.FC = () => {
           <CardHeader className="bg-muted/30">
             <div className="flex justify-between items-center">
               <CardTitle className="text-xl flex items-center gap-2">
-                <PuzzlePiece className="h-5 w-5" />
+                <Puzzle className="h-5 w-5" />
                 Puzzle Engine Comparison
               </CardTitle>
             </div>
