@@ -10,7 +10,7 @@ export function generateHtmlTemplate(puzzleConfig: PuzzleConfig): string {
   
   return `
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -100,6 +100,19 @@ export function generateHtmlTemplate(puzzleConfig: PuzzleConfig): string {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
           }
+          
+          /* Error message styling */
+          .error-message {
+            background-color: rgba(220, 38, 38, 0.1);
+            border: 1px solid #dc2626;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 20px auto;
+            max-width: 80%;
+            text-align: center;
+            display: none;
+          }
         </style>
       </head>
       <body>
@@ -113,6 +126,7 @@ export function generateHtmlTemplate(puzzleConfig: PuzzleConfig): string {
             <button class="btn primary" id="hint-button">Hint</button>
           </div>
           <div class="timer" id="timer">00:00</div>
+          <div class="error-message" id="error-message">Failed to load game</div>
           <script>
             // Send loading message to parent immediately
             window.parent.postMessage({ type: 'PHASER_PUZZLE_LOADING' }, '*');
@@ -120,12 +134,16 @@ export function generateHtmlTemplate(puzzleConfig: PuzzleConfig): string {
             // Check if Phaser loaded
             window.addEventListener('load', function() {
               if (typeof Phaser === 'undefined') {
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('error-message').textContent = 'Failed to load Phaser library';
+                document.querySelector('.spinner').style.display = 'none';
                 window.parent.postMessage({ 
                   type: 'PHASER_PUZZLE_ERROR',
                   error: 'Failed to load Phaser library'
                 }, '*');
               } else {
                 console.log('Phaser library loaded successfully');
+                // Message will be sent by the game script once puzzle is ready
               }
             });
           </script>

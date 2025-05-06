@@ -22,6 +22,7 @@ const PuzzleGameIframe: React.FC<PuzzleGameIframeProps> = ({
     ...config,
     cacheBuster
   });
+  
   // Use blob URL instead of data URL for better performance with large content
   const blobUrl = useRef<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -48,7 +49,7 @@ const PuzzleGameIframe: React.FC<PuzzleGameIframeProps> = ({
         console.error('Phaser game loading timeout');
         onError('Game loading timed out. Please try again or switch to a different puzzle engine.');
       }
-    }, 10000);
+    }, 15000); // Extended to 15 seconds for slower connections
     
     const handleMessage = (event: MessageEvent) => {
       // Ensure the message is coming from our iframe (for security)

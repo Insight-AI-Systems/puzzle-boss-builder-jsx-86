@@ -7,6 +7,8 @@ import PuzzleEnginePlayground from '@/components/puzzles/playground/PuzzleEngine
 import Breadcrumb from '@/components/common/Breadcrumb';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const SAMPLE_IMAGES = [
   "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=500&h=500&fit=crop",
@@ -39,6 +41,13 @@ const PuzzleTestPlayground: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent className="pt-6">
+            <Alert className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Enhanced Jigsaw is set as the default engine, featuring traditional jigsaw pieces with bulb and socket shapes.
+              </AlertDescription>
+            </Alert>
+            
             <p className="mb-4 text-muted-foreground">
               This playground allows you to test and compare different puzzle engine implementations 
               without affecting the main application. Cycle through different engines using the button,

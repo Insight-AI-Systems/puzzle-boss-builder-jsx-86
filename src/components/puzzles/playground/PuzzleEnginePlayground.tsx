@@ -27,7 +27,7 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
   miniColumns,
   showNumbersToggle = false
 }) => {
-  // Changed default engine to 'enhanced' instead of previous value
+  // Set default engine to 'enhanced' for a more reliable experience
   const [engine, setEngine] = useState<'enhanced' | 'custom' | 'svg-jigsaw' | 'phaser'>('enhanced');
   const [showNumbers, setShowNumbers] = useState(false);
 
@@ -104,7 +104,9 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
             rows={rows}
             columns={columns}
             showNumbers={showNumbers}
-            onComplete={() => {}}
+            onComplete={() => {
+              toast('Puzzle completed!');
+            }}
             onReset={() => {}}
           />
         )}

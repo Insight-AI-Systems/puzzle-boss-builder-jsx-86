@@ -1,205 +1,313 @@
 
-/* Main container */
 .enhanced-jigsaw-puzzle {
-  --puzzle-cell-border: rgba(255, 255, 255, 0.1);
+  --puzzle-primary: #2563eb;
+  --puzzle-secondary: #1d4ed8;
+  --puzzle-accent: #fbbf24;
+  --puzzle-aqua: #0ea5e9;
+  --puzzle-gold: #eab308;
+  --puzzle-border: #475569;
+  --puzzle-grid: rgba(148, 163, 184, 0.3);
+  --puzzle-shadow: rgba(0, 0, 0, 0.25);
+  --puzzle-highlight: rgba(255, 255, 255, 0.9);
 }
 
-/* Puzzle board */
+/* Container styling */
+.enhanced-jigsaw-puzzle {
+  position: relative;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px var(--puzzle-shadow);
+}
+
+/* Board styling */
 .puzzle-board {
-  min-height: 280px;
+  position: relative;
+  border: 2px solid var(--puzzle-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #f1f5f9;
+  min-height: 400px;
+}
+
+/* Grid styling */
+.puzzle-grid {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Guide image styling */
+.puzzle-guide-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 1;
   transition: opacity 0.3s ease;
-  perspective: 1000px; /* Add 3D perspective for better visual effects */
-}
-
-/* Puzzle cell styling */
-.puzzle-cell {
-  border: 1px dashed var(--puzzle-cell-border);
-  transition: all 0.2s ease;
-}
-
-.puzzle-cell.empty-cell {
-  cursor: pointer;
-}
-
-.puzzle-cell-hover {
-  background-color: rgba(99, 102, 241, 0.15);
-  border: 2px dashed rgba(99, 102, 241, 0.5);
-  box-shadow: inset 0 0 10px rgba(99, 102, 241, 0.1);
 }
 
 /* Puzzle piece styling */
 .puzzle-piece {
-  user-select: none;
-  transform-origin: center center;
-  will-change: transform;
-}
-
-.puzzle-piece.correct {
-  filter: drop-shadow(0 2px 6px rgba(0, 200, 0, 0.4));
-}
-
-.puzzle-piece.dragging {
-  cursor: grabbing;
-  z-index: 50 !important;
-  filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.6)) brightness(1.05) !important;
-  transform: scale(1.05) translateZ(20px);
+  position: absolute;
+  cursor: grab;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  z-index: 10;
 }
 
 .puzzle-piece:hover {
-  filter: brightness(1.05) contrast(1.02);
-  transform: scale(1.02) translateY(-1px);
+  z-index: 20;
+  transform: scale(1.02);
+  box-shadow: 0 5px 10px var(--puzzle-shadow);
 }
 
 .puzzle-piece:active {
   cursor: grabbing;
+  transform: scale(1.05);
+  z-index: 30;
+  box-shadow: 0 8px 15px var(--puzzle-shadow);
 }
 
-/* 3D effect for traditional jigsaw pieces */
-.puzzle-piece-3d-effect {
-  box-shadow: 
-    inset 2px 2px 8px rgba(255, 255, 255, 0.8),
-    inset -2px -2px 8px rgba(0, 0, 0, 0.4),
-    3px 3px 6px rgba(0, 0, 0, 0.3);
+.puzzle-piece.correct {
+  cursor: default;
+  filter: brightness(1.05);
+}
+
+.puzzle-piece-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.puzzle-piece-clip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Make pieces look 3D */
+.puzzle-piece .piece-3d-effect {
+  position: absolute;
+  inset: 0;
   border-radius: 2px;
+  box-shadow: 
+    inset 2px 2px 3px var(--puzzle-highlight),
+    inset -2px -2px 3px var(--puzzle-shadow);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Piece number styling */
+.piece-number {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--puzzle-accent);
+  text-shadow: 1px 1px 2px #000;
+  pointer-events: none;
+  z-index: 5;
 }
 
 /* Staging area styling */
 .staging-area {
-  transition: opacity 0.3s ease;
-  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  padding: 16px;
+  background-color: #e2e8f0;
   border-radius: 8px;
-  background-color: rgba(0,0,0,0.03);
+  margin-top: 16px;
+  min-height: 100px;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
-.staging-piece-container {
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-  border-radius: 3px;
+.staging-piece {
+  cursor: grab;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  border-radius: 4px;
   overflow: hidden;
+  aspect-ratio: 1;
 }
 
-.staging-piece-container:hover {
-  transform: translateY(-5px) scale(1.04);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.2), 0 3px 3px rgba(0,0,0,0.1);
+.staging-piece:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 8px var(--puzzle-shadow);
+  z-index: 10;
 }
 
-/* Dark mode adjustments */
-.dark .enhanced-jigsaw-puzzle {
-  --puzzle-cell-border: rgba(255, 255, 255, 0.1);
+/* Controls styling */
+.puzzle-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: #e2e8f0;
+  border-radius: 8px 8px 0 0;
 }
 
-.dark .puzzle-cell-hover {
-  background-color: rgba(99, 102, 241, 0.25);
+.puzzle-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.puzzle-stats div {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.puzzle-stats svg {
+  color: var(--puzzle-secondary);
+}
+
+/* Game completion overlay */
+.game-completion-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(15, 23, 42, 0.8);
+  z-index: 100;
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  animation: fadeIn 0.5s ease;
+  color: white;
+}
+
+.game-completion-overlay h2 {
+  font-size: 2rem;
+  color: var(--puzzle-gold);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  margin-bottom: 16px;
+}
+
+.game-completion-overlay p {
+  font-size: 1.2rem;
+  margin-bottom: 24px;
+}
+
+/* First move overlay */
+.first-move-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(15, 23, 42, 0.6);
+  z-index: 50;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.first-move-overlay div {
+  background-color: #1e293b;
+  padding: 16px 24px;
+  border-radius: 8px;
+  text-align: center;
+  color: white;
+  max-width: 80%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* Animations */
-@keyframes pulse {
-  0%, 100% { 
-    opacity: 1; 
-    transform: scale(1);
-  }
-  50% { 
-    opacity: 0.9; 
-    transform: scale(1.01);
-  }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-@keyframes victory-pulse {
-  0%, 100% { 
-    transform: scale(1); 
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-  }
-  50% { 
-    transform: scale(1.05); 
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
-  }
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
-.puzzle-complete {
-  animation: victory-pulse 2.5s ease-in-out infinite;
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 5px 2px var(--puzzle-gold); }
+  50% { box-shadow: 0 0 15px 5px var(--puzzle-gold); }
 }
 
-/* Piece locking animation */
-@keyframes piece-lock {
-  0% {
-    transform: scale(1.15) rotate(1deg);
-    filter: brightness(1.4);
-  }
-  25% {
-    transform: scale(0.95) rotate(-1deg);
-  }
-  50% {
-    transform: scale(1.05) rotate(0.5deg);
-  }
-  75% {
-    transform: scale(0.98) rotate(-0.3deg);
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-  }
+/* Piece snap animation */
+.puzzle-piece.snapping {
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: pieceSnap 0.5s ease;
 }
 
-.puzzle-piece-locking {
-  animation: piece-lock 0.6s ease-out forwards;
-}
-
-/* Traditional jigsaw SVG styles - enhanced to match classic jigsaw puzzles */
-.jigsaw-svg-piece {
-  filter: drop-shadow(2px 5px 6px rgba(0, 0, 0, 0.35));
-  transition: all 0.2s ease-out;
-}
-
-.jigsaw-svg-piece:hover {
-  filter: drop-shadow(3px 6px 9px rgba(0, 0, 0, 0.45));
-}
-
-.jigsaw-svg-piece.dragging {
-  filter: drop-shadow(6px 12px 18px rgba(0, 0, 0, 0.6));
-}
-
-.jigsaw-svg-piece.correct {
-  filter: drop-shadow(0 4px 6px rgba(0, 200, 0, 0.5));
-}
-
-/* Snap feedback effect */
-@keyframes snap-feedback {
-  0% { transform: scale(1); }
+@keyframes pieceSnap {
+  0% { transform: scale(1.05); }
   50% { transform: scale(1.1); }
   100% { transform: scale(1); }
 }
 
-.puzzle-snap-feedback {
-  animation: snap-feedback 0.3s ease-out;
+/* Celebration animation for completion */
+.celebration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 200;
 }
 
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .staging-piece-container {
-    width: 48px !important;
-    height: calc(48px * var(--aspect-ratio, 1)) !important;
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: var(--puzzle-gold);
+  border-radius: 50%;
+  animation: confettiDrop 3s ease-in infinite;
+}
+
+@keyframes confettiDrop {
+  from {
+    transform: translateY(-20vh) rotate(0deg);
+    opacity: 1;
   }
-  
-  .puzzle-board {
-    min-height: 220px;
+  to {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
   }
 }
 
-/* Success animation when puzzle is complete */
-@keyframes puzzle-complete {
-  0% { 
-    filter: brightness(1);
-    transform: scale(1);
-  }
-  50% { 
-    filter: brightness(1.2);
-    transform: scale(1.03);
-  }
-  100% { 
-    filter: brightness(1);
-    transform: scale(1);
-  }
+/* Loading overlay */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(241, 245, 249, 0.8);
+  z-index: 150;
+  border-radius: 8px;
 }
 
-.puzzle-success {
-  animation: puzzle-complete 1.5s ease infinite;
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 16px;
+  border: 4px solid rgba(203, 213, 225, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--puzzle-primary);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
