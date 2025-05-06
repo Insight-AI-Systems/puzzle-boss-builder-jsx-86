@@ -1,6 +1,6 @@
 
 /**
- * Generates an SVG path for a jigsaw puzzle piece with traditional rounded tabs and slots
+ * Generates an SVG path for a jigsaw puzzle piece with traditional bulb and socket shapes
  * that closely match classic jigsaw puzzle appearance
  * 
  * @param position The position of the piece in the puzzle grid
@@ -31,8 +31,8 @@ export function generatePiecePath(
   const tabWidth = width * 0.4; // Wider, traditional tab
   const tabHeight = height * 0.4; // Wider, traditional tab
   
-  // Tab depth (how much it protrudes or intrudes)
-  const tabDepth = Math.min(width, height) * 0.45; // More pronounced depth for traditional look
+  // Tab depth - increased for more pronounced bulb and socket shapes
+  const tabDepth = Math.min(width, height) * 0.5; // More pronounced classic bulb/socket
   
   // Use pseudo-random but consistent tabs/slots based on position
   // This ensures connected pieces fit together
@@ -52,35 +52,34 @@ export function generatePiecePath(
     // First part of the top edge (before the tab/slot)
     path += `H ${(width - tabWidth) / 2} `;
     
-    // Create tab or slot on the top edge with a more traditional rounded shape
     if (hasTopTab) {
-      // Create a more pronounced bulb shape for the tab
-      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${-tabDepth * 0.15} `;
-      path += `${(width - tabWidth) / 2 + tabWidth * 0.3},${-tabDepth * 0.4} `;
-      path += `${(width - tabWidth) / 2 + tabWidth * 0.4},${-tabDepth * 0.7} `;
+      // Classic bulb shape - narrower neck, rounded bulb head
+      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${-tabDepth * 0.2} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.25},${-tabDepth * 0.5} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.35},${-tabDepth * 0.8} `;
       
-      // Rounded top of tab with a traditional bulb shape
-      path += `C ${width / 2},${-tabDepth * 0.9} `;
-      path += `${(width + tabWidth) / 2 - tabWidth * 0.4},${-tabDepth * 0.7} `;
-      path += `${(width + tabWidth) / 2 - tabWidth * 0.3},${-tabDepth * 0.4} `;
+      // Rounded bulb top
+      path += `C ${width / 2},${-tabDepth * 1.1} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.35},${-tabDepth * 0.8} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.25},${-tabDepth * 0.5} `;
       
-      // Ending curve back to edge
-      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${-tabDepth * 0.15} `;
+      // Return to edge with narrow neck
+      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${-tabDepth * 0.2} `;
       path += `${(width + tabWidth) / 2},0 `;
       path += `${(width + tabWidth) / 2},0 `;
     } else {
-      // Create an intruding slot with traditional rounded shape
-      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${tabDepth * 0.15} `;
-      path += `${(width - tabWidth) / 2 + tabWidth * 0.3},${tabDepth * 0.4} `;
-      path += `${(width - tabWidth) / 2 + tabWidth * 0.4},${tabDepth * 0.7} `;
+      // Classic socket shape - narrower opening, rounded inner cavity
+      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${tabDepth * 0.2} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.25},${tabDepth * 0.5} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.35},${tabDepth * 0.8} `;
       
-      // Rounded bottom of slot with a traditional socket shape
-      path += `C ${width / 2},${tabDepth * 0.9} `;
-      path += `${(width + tabWidth) / 2 - tabWidth * 0.4},${tabDepth * 0.7} `;
-      path += `${(width + tabWidth) / 2 - tabWidth * 0.3},${tabDepth * 0.4} `;
+      // Rounded socket bottom
+      path += `C ${width / 2},${tabDepth * 1.1} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.35},${tabDepth * 0.8} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.25},${tabDepth * 0.5} `;
       
-      // Ending curve back to edge
-      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${tabDepth * 0.15} `;
+      // Return to edge with narrow opening
+      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${tabDepth * 0.2} `;
       path += `${(width + tabWidth) / 2},0 `;
       path += `${(width + tabWidth) / 2},0 `;
     }
@@ -97,35 +96,34 @@ export function generatePiecePath(
     // First part of the right edge (before the tab/slot)
     path += `V ${(height - tabHeight) / 2} `;
     
-    // Create tab or slot on the right edge with traditional rounded shape
     if (hasRightTab) {
-      // Create a more pronounced bulb shape for the tab
-      path += `C ${width + tabDepth * 0.15},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
-      path += `${width + tabDepth * 0.4},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
-      path += `${width + tabDepth * 0.7},${(height - tabHeight) / 2 + tabHeight * 0.4} `;
+      // Classic bulb shape - narrower neck, rounded bulb head
+      path += `C ${width + tabDepth * 0.2},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
+      path += `${width + tabDepth * 0.5},${(height - tabHeight) / 2 + tabHeight * 0.25} `;
+      path += `${width + tabDepth * 0.8},${(height - tabHeight) / 2 + tabHeight * 0.35} `;
       
-      // Rounded side of tab with a traditional bulb shape
-      path += `C ${width + tabDepth * 0.9},${height / 2} `;
-      path += `${width + tabDepth * 0.7},${(height + tabHeight) / 2 - tabHeight * 0.4} `;
-      path += `${width + tabDepth * 0.4},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
+      // Rounded bulb side
+      path += `C ${width + tabDepth * 1.1},${height / 2} `;
+      path += `${width + tabDepth * 0.8},${(height + tabHeight) / 2 - tabHeight * 0.35} `;
+      path += `${width + tabDepth * 0.5},${(height + tabHeight) / 2 - tabHeight * 0.25} `;
       
-      // Ending curve back to edge
-      path += `C ${width + tabDepth * 0.15},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
+      // Return to edge with narrow neck
+      path += `C ${width + tabDepth * 0.2},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
       path += `${width},${(height + tabHeight) / 2} `;
       path += `${width},${(height + tabHeight) / 2} `;
     } else {
-      // Create an intruding slot with traditional rounded shape
-      path += `C ${width - tabDepth * 0.15},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
-      path += `${width - tabDepth * 0.4},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
-      path += `${width - tabDepth * 0.7},${(height - tabHeight) / 2 + tabHeight * 0.4} `;
+      // Classic socket shape - narrower opening, rounded inner cavity
+      path += `C ${width - tabDepth * 0.2},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
+      path += `${width - tabDepth * 0.5},${(height - tabHeight) / 2 + tabHeight * 0.25} `;
+      path += `${width - tabDepth * 0.8},${(height - tabHeight) / 2 + tabHeight * 0.35} `;
       
-      // Rounded indentation of slot with a traditional socket shape
-      path += `C ${width - tabDepth * 0.9},${height / 2} `;
-      path += `${width - tabDepth * 0.7},${(height + tabHeight) / 2 - tabHeight * 0.4} `;
-      path += `${width - tabDepth * 0.4},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
+      // Rounded socket cavity
+      path += `C ${width - tabDepth * 1.1},${height / 2} `;
+      path += `${width - tabDepth * 0.8},${(height + tabHeight) / 2 - tabHeight * 0.35} `;
+      path += `${width - tabDepth * 0.5},${(height + tabHeight) / 2 - tabHeight * 0.25} `;
       
-      // Ending curve back to edge
-      path += `C ${width - tabDepth * 0.15},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
+      // Return to edge with narrow opening
+      path += `C ${width - tabDepth * 0.2},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
       path += `${width},${(height + tabHeight) / 2} `;
       path += `${width},${(height + tabHeight) / 2} `;
     }
@@ -142,35 +140,34 @@ export function generatePiecePath(
     // First part of the bottom edge (before the tab/slot)
     path += `H ${(width + tabWidth) / 2} `;
     
-    // Create tab or slot on the bottom edge with traditional rounded shape
     if (hasBottomTab) {
-      // Create a more pronounced bulb shape for the tab
-      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${height + tabDepth * 0.15} `;
-      path += `${(width + tabWidth) / 2 - tabWidth * 0.3},${height + tabDepth * 0.4} `;
-      path += `${(width + tabWidth) / 2 - tabWidth * 0.4},${height + tabDepth * 0.7} `;
+      // Classic bulb shape - narrower neck, rounded bulb head
+      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${height + tabDepth * 0.2} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.25},${height + tabDepth * 0.5} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.35},${height + tabDepth * 0.8} `;
       
-      // Rounded bottom of tab with a traditional bulb shape
-      path += `C ${width / 2},${height + tabDepth * 0.9} `;
-      path += `${(width - tabWidth) / 2 + tabWidth * 0.4},${height + tabDepth * 0.7} `;
-      path += `${(width - tabWidth) / 2 + tabWidth * 0.3},${height + tabDepth * 0.4} `;
+      // Rounded bulb bottom
+      path += `C ${width / 2},${height + tabDepth * 1.1} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.35},${height + tabDepth * 0.8} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.25},${height + tabDepth * 0.5} `;
       
-      // Ending curve back to edge
-      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${height + tabDepth * 0.15} `;
+      // Return to edge with narrow neck
+      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${height + tabDepth * 0.2} `;
       path += `${(width - tabWidth) / 2},${height} `;
       path += `${(width - tabWidth) / 2},${height} `;
     } else {
-      // Create an intruding slot with traditional rounded shape
-      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${height - tabDepth * 0.15} `;
-      path += `${(width + tabWidth) / 2 - tabWidth * 0.3},${height - tabDepth * 0.4} `;
-      path += `${(width + tabWidth) / 2 - tabWidth * 0.4},${height - tabDepth * 0.7} `;
+      // Classic socket shape - narrower opening, rounded inner cavity
+      path += `C ${(width + tabWidth) / 2 - tabWidth * 0.1},${height - tabDepth * 0.2} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.25},${height - tabDepth * 0.5} `;
+      path += `${(width + tabWidth) / 2 - tabWidth * 0.35},${height - tabDepth * 0.8} `;
       
-      // Rounded indentation of slot with a traditional socket shape
-      path += `C ${width / 2},${height - tabDepth * 0.9} `;
-      path += `${(width - tabWidth) / 2 + tabWidth * 0.4},${height - tabDepth * 0.7} `;
-      path += `${(width - tabWidth) / 2 + tabWidth * 0.3},${height - tabDepth * 0.4} `;
+      // Rounded socket cavity
+      path += `C ${width / 2},${height - tabDepth * 1.1} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.35},${height - tabDepth * 0.8} `;
+      path += `${(width - tabWidth) / 2 + tabWidth * 0.25},${height - tabDepth * 0.5} `;
       
-      // Ending curve back to edge
-      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${height - tabDepth * 0.15} `;
+      // Return to edge with narrow opening
+      path += `C ${(width - tabWidth) / 2 + tabWidth * 0.1},${height - tabDepth * 0.2} `;
       path += `${(width - tabWidth) / 2},${height} `;
       path += `${(width - tabWidth) / 2},${height} `;
     }
@@ -187,35 +184,34 @@ export function generatePiecePath(
     // First part of the left edge (before the tab/slot)
     path += `V ${(height + tabHeight) / 2} `;
     
-    // Create tab or slot on the left edge with traditional rounded shape
     if (hasLeftTab) {
-      // Create a more pronounced bulb shape for the tab
-      path += `C ${-tabDepth * 0.15},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
-      path += `${-tabDepth * 0.4},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
-      path += `${-tabDepth * 0.7},${(height + tabHeight) / 2 - tabHeight * 0.4} `;
+      // Classic bulb shape - narrower neck, rounded bulb head
+      path += `C ${-tabDepth * 0.2},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
+      path += `${-tabDepth * 0.5},${(height + tabHeight) / 2 - tabHeight * 0.25} `;
+      path += `${-tabDepth * 0.8},${(height + tabHeight) / 2 - tabHeight * 0.35} `;
       
-      // Rounded side of tab with a traditional bulb shape
-      path += `C ${-tabDepth * 0.9},${height / 2} `;
-      path += `${-tabDepth * 0.7},${(height - tabHeight) / 2 + tabHeight * 0.4} `;
-      path += `${-tabDepth * 0.4},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
+      // Rounded bulb side
+      path += `C ${-tabDepth * 1.1},${height / 2} `;
+      path += `${-tabDepth * 0.8},${(height - tabHeight) / 2 + tabHeight * 0.35} `;
+      path += `${-tabDepth * 0.5},${(height - tabHeight) / 2 + tabHeight * 0.25} `;
       
-      // Ending curve back to edge
-      path += `C ${-tabDepth * 0.15},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
+      // Return to edge with narrow neck
+      path += `C ${-tabDepth * 0.2},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
       path += `0,${(height - tabHeight) / 2} `;
       path += `0,${(height - tabHeight) / 2} `;
     } else {
-      // Create an intruding slot with traditional rounded shape
-      path += `C ${tabDepth * 0.15},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
-      path += `${tabDepth * 0.4},${(height + tabHeight) / 2 - tabHeight * 0.3} `;
-      path += `${tabDepth * 0.7},${(height + tabHeight) / 2 - tabHeight * 0.4} `;
+      // Classic socket shape - narrower opening, rounded inner cavity
+      path += `C ${tabDepth * 0.2},${(height + tabHeight) / 2 - tabHeight * 0.1} `;
+      path += `${tabDepth * 0.5},${(height + tabHeight) / 2 - tabHeight * 0.25} `;
+      path += `${tabDepth * 0.8},${(height + tabHeight) / 2 - tabHeight * 0.35} `;
       
-      // Rounded indentation of slot with a traditional socket shape
-      path += `C ${tabDepth * 0.9},${height / 2} `;
-      path += `${tabDepth * 0.7},${(height - tabHeight) / 2 + tabHeight * 0.4} `;
-      path += `${tabDepth * 0.4},${(height - tabHeight) / 2 + tabHeight * 0.3} `;
+      // Rounded socket cavity
+      path += `C ${tabDepth * 1.1},${height / 2} `;
+      path += `${tabDepth * 0.8},${(height - tabHeight) / 2 + tabHeight * 0.35} `;
+      path += `${tabDepth * 0.5},${(height - tabHeight) / 2 + tabHeight * 0.25} `;
       
-      // Ending curve back to edge
-      path += `C ${tabDepth * 0.15},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
+      // Return to edge with narrow opening
+      path += `C ${tabDepth * 0.2},${(height - tabHeight) / 2 + tabHeight * 0.1} `;
       path += `0,${(height - tabHeight) / 2} `;
       path += `0,${(height - tabHeight) / 2} `;
     }

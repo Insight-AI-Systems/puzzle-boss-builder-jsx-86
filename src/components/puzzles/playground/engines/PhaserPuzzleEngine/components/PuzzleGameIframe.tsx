@@ -50,13 +50,13 @@ const PuzzleGameIframe: React.FC<PuzzleGameIframeProps> = ({
   
   // Listen for messages from the iframe
   useEffect(() => {
-    // Set a timeout for loading - increase to 30 seconds to account for slower connections
+    // Set a timeout for loading - if no response after 30 seconds, show error
     const loadTimeout = setTimeout(() => {
       if (isLoading) {
-        console.error('Phaser game loading timeout');
+        console.error('Phaser game loading timeout after 30 seconds');
         onError('Game loading timed out. Please try again or switch to a different puzzle engine.');
       }
-    }, 30000); // Extended to 30 seconds for slower connections
+    }, 30000);
     
     const handleMessage = (event: MessageEvent) => {
       // Ensure the message is coming from our iframe (for security)
@@ -68,7 +68,7 @@ const PuzzleGameIframe: React.FC<PuzzleGameIframeProps> = ({
       console.log('Parent received message from iframe:', data.type);
       
       if (data.type === 'PHASER_PUZZLE_LOADED') {
-        console.log('Parent received: Phaser puzzle loaded');
+        console.log('Parent received: Phaser puzzle loaded successfully');
         clearTimeout(loadTimeout);
         onLoad();
       } else if (data.type === 'PHASER_PUZZLE_ERROR') {
@@ -90,7 +90,7 @@ const PuzzleGameIframe: React.FC<PuzzleGameIframeProps> = ({
   
   // Handle iframe load event
   const handleIframeLoad = () => {
-    console.log('Iframe HTML document loaded');
+    console.log('Iframe HTML document loaded - waiting for Phaser initialization');
   };
   
   return (

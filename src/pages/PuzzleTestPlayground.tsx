@@ -7,7 +7,7 @@ import PuzzleEnginePlayground from '@/components/puzzles/playground/PuzzleEngine
 import Breadcrumb from '@/components/common/Breadcrumb';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Info } from 'lucide-react';
+import { AlertCircle, Info, PuzzlePiece } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const SAMPLE_IMAGES = [
@@ -37,23 +37,26 @@ const PuzzleTestPlayground: React.FC = () => {
         <Card className="mb-8">
           <CardHeader className="bg-muted/30">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-xl">Puzzle Engine Comparison</CardTitle>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <PuzzlePiece className="h-5 w-5" />
+                Puzzle Engine Comparison
+              </CardTitle>
             </div>
           </CardHeader>
           <CardContent className="pt-6">
             <Alert className="mb-4 border-primary/50 bg-primary/10">
               <Info className="h-4 w-4 text-primary" />
-              <AlertTitle>Enhanced Jigsaw Engine Selected</AlertTitle>
+              <AlertTitle>Classic Jigsaw Engine with Traditional Pieces</AlertTitle>
               <AlertDescription>
-                The Enhanced Jigsaw engine is set as the default, featuring traditional jigsaw pieces with 
-                bulb and socket shapes. This engine provides the best stability and visual experience.
+                Our jigsaw engines feature traditional puzzle pieces with classic bulb and socket shapes.
+                Each piece has precisely crafted interlocking tabs that provide a satisfying traditional jigsaw experience.
               </AlertDescription>
             </Alert>
             
             <p className="mb-4 text-muted-foreground">
-              This playground allows you to test and compare different puzzle engine implementations 
-              without affecting the main application. Cycle through different engines using the button,
-              configure settings, and evaluate which solution works best for our needs.
+              This playground allows you to test different puzzle engine implementations
+              with classic jigsaw puzzle pieces. All engines use traditional bulb and socket piece designs
+              for an authentic puzzle experience.
             </p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

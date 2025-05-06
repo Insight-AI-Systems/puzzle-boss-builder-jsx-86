@@ -10,8 +10,8 @@ export function generatePiecePath(
   const row = Math.floor(position / columns);
   const col = position % columns;
   
-  // Tab/slot size as a percentage of the piece size - increased for more traditional appearance
-  const tabSize = Math.min(width, height) * 0.4; // Larger tabs for traditional appearance
+  // Tab/slot size as a percentage of the piece size - increased for more pronounced bulb and socket
+  const tabSize = Math.min(width, height) * 0.42; // Larger tabs for traditional appearance
   
   // Determine which sides have tabs or slots
   // We'll use a deterministic approach based on position:
@@ -33,26 +33,30 @@ export function generatePiecePath(
     // Straight line for top row
     path += `H ${width} `;
   } else if (hasTopTab) {
-    // Traditional tab on top with pronounced curves
+    // Traditional bulb on top with pronounced narrow neck and rounded head
     path += `H ${width * 0.3} `;
     
-    // Create a more pronounced bulb shape for the tab
-    // First curve into the tab
-    path += `C ${width * 0.35},${-tabSize * 0.3} ${width * 0.4},${-tabSize * 0.6} ${width * 0.5},${-tabSize * 0.7} `;
+    // Narrow neck into the bulb
+    path += `C ${width * 0.32},${-tabSize * 0.2} ${width * 0.35},${-tabSize * 0.4} ${width * 0.4},${-tabSize * 0.6} `;
     
-    // Rounded tab top with a slight bulb shape
-    path += `C ${width * 0.6},${-tabSize * 0.6} ${width * 0.65},${-tabSize * 0.3} ${width * 0.7},0 `;
+    // Rounded bulb top with a pronounced bulb shape
+    path += `C ${width * 0.5},${-tabSize * 0.9} ${width * 0.6},${-tabSize * 0.6} ${width * 0.65},${-tabSize * 0.4} `;
+    
+    // Narrow neck returning to the edge
+    path += `C ${width * 0.7},${-tabSize * 0.2} ${width * 0.7},0 ${width * 0.7},0 `;
     path += `H ${width} `;
   } else {
-    // Traditional slot on top with pronounced curves
+    // Traditional socket on top with pronounced narrow opening and rounded cavity
     path += `H ${width * 0.3} `;
     
-    // Create a more pronounced socket shape for the slot
-    // First curve into the slot
-    path += `C ${width * 0.35},${tabSize * 0.3} ${width * 0.4},${tabSize * 0.6} ${width * 0.5},${tabSize * 0.7} `;
+    // Narrow opening into the socket
+    path += `C ${width * 0.32},${tabSize * 0.2} ${width * 0.35},${tabSize * 0.4} ${width * 0.4},${tabSize * 0.6} `;
     
-    // Rounded slot bottom with a slight socket shape
-    path += `C ${width * 0.6},${tabSize * 0.6} ${width * 0.65},${tabSize * 0.3} ${width * 0.7},0 `;
+    // Rounded socket cavity
+    path += `C ${width * 0.5},${tabSize * 0.9} ${width * 0.6},${tabSize * 0.6} ${width * 0.65},${tabSize * 0.4} `;
+    
+    // Narrow opening returning to the edge
+    path += `C ${width * 0.7},${tabSize * 0.2} ${width * 0.7},0 ${width * 0.7},0 `;
     path += `H ${width} `;
   }
   
@@ -61,26 +65,30 @@ export function generatePiecePath(
     // Straight line for rightmost column
     path += `V ${height} `;
   } else if (hasRightTab) {
-    // Traditional tab on right with pronounced curves
+    // Traditional bulb on right with pronounced narrow neck and rounded head
     path += `V ${height * 0.3} `;
     
-    // Create a more pronounced bulb shape
-    // First curve into the tab
-    path += `C ${width + tabSize * 0.3},${height * 0.35} ${width + tabSize * 0.6},${height * 0.4} ${width + tabSize * 0.7},${height * 0.5} `;
+    // Narrow neck into the bulb
+    path += `C ${width + tabSize * 0.2},${height * 0.32} ${width + tabSize * 0.4},${height * 0.35} ${width + tabSize * 0.6},${height * 0.4} `;
     
-    // Rounded tab side with a slight bulb shape
-    path += `C ${width + tabSize * 0.6},${height * 0.6} ${width + tabSize * 0.3},${height * 0.65} ${width},${height * 0.7} `;
+    // Rounded bulb side
+    path += `C ${width + tabSize * 0.9},${height * 0.5} ${width + tabSize * 0.6},${height * 0.6} ${width + tabSize * 0.4},${height * 0.65} `;
+    
+    // Narrow neck returning to the edge
+    path += `C ${width + tabSize * 0.2},${height * 0.7} ${width},${height * 0.7} ${width},${height * 0.7} `;
     path += `V ${height} `;
   } else {
-    // Traditional slot on right with pronounced curves
+    // Traditional socket on right with pronounced narrow opening and rounded cavity
     path += `V ${height * 0.3} `;
     
-    // Create a more pronounced socket shape
-    // First curve into the slot
-    path += `C ${width - tabSize * 0.3},${height * 0.35} ${width - tabSize * 0.6},${height * 0.4} ${width - tabSize * 0.7},${height * 0.5} `;
+    // Narrow opening into the socket
+    path += `C ${width - tabSize * 0.2},${height * 0.32} ${width - tabSize * 0.4},${height * 0.35} ${width - tabSize * 0.6},${height * 0.4} `;
     
-    // Rounded slot side with a slight socket shape
-    path += `C ${width - tabSize * 0.6},${height * 0.6} ${width - tabSize * 0.3},${height * 0.65} ${width},${height * 0.7} `;
+    // Rounded socket cavity
+    path += `C ${width - tabSize * 0.9},${height * 0.5} ${width - tabSize * 0.6},${height * 0.6} ${width - tabSize * 0.4},${height * 0.65} `;
+    
+    // Narrow opening returning to the edge
+    path += `C ${width - tabSize * 0.2},${height * 0.7} ${width},${height * 0.7} ${width},${height * 0.7} `;
     path += `V ${height} `;
   }
   
@@ -89,26 +97,30 @@ export function generatePiecePath(
     // Straight line for bottom row
     path += `H 0 `;
   } else if (hasBottomTab) {
-    // Traditional tab on bottom with pronounced curves
+    // Traditional bulb on bottom with pronounced narrow neck and rounded head
     path += `H ${width * 0.7} `;
     
-    // Create a more pronounced bulb shape
-    // First curve into the tab
-    path += `C ${width * 0.65},${height + tabSize * 0.3} ${width * 0.6},${height + tabSize * 0.6} ${width * 0.5},${height + tabSize * 0.7} `;
+    // Narrow neck into the bulb
+    path += `C ${width * 0.68},${height + tabSize * 0.2} ${width * 0.65},${height + tabSize * 0.4} ${width * 0.6},${height + tabSize * 0.6} `;
     
-    // Rounded tab bottom with a slight bulb shape
-    path += `C ${width * 0.4},${height + tabSize * 0.6} ${width * 0.35},${height + tabSize * 0.3} ${width * 0.3},${height} `;
+    // Rounded bulb bottom
+    path += `C ${width * 0.5},${height + tabSize * 0.9} ${width * 0.4},${height + tabSize * 0.6} ${width * 0.35},${height + tabSize * 0.4} `;
+    
+    // Narrow neck returning to the edge
+    path += `C ${width * 0.3},${height + tabSize * 0.2} ${width * 0.3},${height} ${width * 0.3},${height} `;
     path += `H 0 `;
   } else {
-    // Traditional slot on bottom with pronounced curves
+    // Traditional socket on bottom with pronounced narrow opening and rounded cavity
     path += `H ${width * 0.7} `;
     
-    // Create a more pronounced socket shape
-    // First curve into the slot
-    path += `C ${width * 0.65},${height - tabSize * 0.3} ${width * 0.6},${height - tabSize * 0.6} ${width * 0.5},${height - tabSize * 0.7} `;
+    // Narrow opening into the socket
+    path += `C ${width * 0.68},${height - tabSize * 0.2} ${width * 0.65},${height - tabSize * 0.4} ${width * 0.6},${height - tabSize * 0.6} `;
     
-    // Rounded slot top with a slight socket shape
-    path += `C ${width * 0.4},${height - tabSize * 0.6} ${width * 0.35},${height - tabSize * 0.3} ${width * 0.3},${height} `;
+    // Rounded socket cavity
+    path += `C ${width * 0.5},${height - tabSize * 0.9} ${width * 0.4},${height - tabSize * 0.6} ${width * 0.35},${height - tabSize * 0.4} `;
+    
+    // Narrow opening returning to the edge
+    path += `C ${width * 0.3},${height - tabSize * 0.2} ${width * 0.3},${height} ${width * 0.3},${height} `;
     path += `H 0 `;
   }
   
@@ -117,26 +129,30 @@ export function generatePiecePath(
     // Straight line for leftmost column
     path += `V 0 `;
   } else if (hasLeftTab) {
-    // Traditional tab on left with pronounced curves
+    // Traditional bulb on left with pronounced narrow neck and rounded head
     path += `V ${height * 0.7} `;
     
-    // Create a more pronounced bulb shape
-    // First curve into the tab
-    path += `C ${-tabSize * 0.3},${height * 0.65} ${-tabSize * 0.6},${height * 0.6} ${-tabSize * 0.7},${height * 0.5} `;
+    // Narrow neck into the bulb
+    path += `C ${-tabSize * 0.2},${height * 0.68} ${-tabSize * 0.4},${height * 0.65} ${-tabSize * 0.6},${height * 0.6} `;
     
-    // Rounded tab side with a slight bulb shape
-    path += `C ${-tabSize * 0.6},${height * 0.4} ${-tabSize * 0.3},${height * 0.35} 0,${height * 0.3} `;
+    // Rounded bulb side
+    path += `C ${-tabSize * 0.9},${height * 0.5} ${-tabSize * 0.6},${height * 0.4} ${-tabSize * 0.4},${height * 0.35} `;
+    
+    // Narrow neck returning to the edge
+    path += `C ${-tabSize * 0.2},${height * 0.3} 0,${height * 0.3} 0,${height * 0.3} `;
     path += `V 0 `;
   } else {
-    // Traditional slot on left with pronounced curves
+    // Traditional socket on left with pronounced narrow opening and rounded cavity
     path += `V ${height * 0.7} `;
     
-    // Create a more pronounced socket shape
-    // First curve into the slot
-    path += `C ${tabSize * 0.3},${height * 0.65} ${tabSize * 0.6},${height * 0.6} ${tabSize * 0.7},${height * 0.5} `;
+    // Narrow opening into the socket
+    path += `C ${tabSize * 0.2},${height * 0.68} ${tabSize * 0.4},${height * 0.65} ${tabSize * 0.6},${height * 0.6} `;
     
-    // Rounded slot side with a slight socket shape
-    path += `C ${tabSize * 0.6},${height * 0.4} ${tabSize * 0.3},${height * 0.35} 0,${height * 0.3} `;
+    // Rounded socket cavity
+    path += `C ${tabSize * 0.9},${height * 0.5} ${tabSize * 0.6},${height * 0.4} ${tabSize * 0.4},${height * 0.35} `;
+    
+    // Narrow opening returning to the edge
+    path += `C ${tabSize * 0.2},${height * 0.3} 0,${height * 0.3} 0,${height * 0.3} `;
     path += `V 0 `;
   }
   
