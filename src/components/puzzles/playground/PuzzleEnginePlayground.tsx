@@ -27,7 +27,7 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
   miniColumns,
   showNumbersToggle = false
 }) => {
-  // Set default engine to 'enhanced' for a more reliable experience
+  // Set default engine to 'enhanced' for a more reliable experience with traditional jigsaw pieces
   const [engine, setEngine] = useState<'enhanced' | 'custom' | 'svg-jigsaw' | 'phaser'>('enhanced');
   const [showNumbers, setShowNumbers] = useState(false);
 
@@ -42,6 +42,11 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
       if (prev === 'custom') return 'phaser';
       return 'enhanced';
     });
+  }, []);
+
+  const handleEngineError = useCallback(() => {
+    toast('Engine error detected. Switching to Enhanced Jigsaw engine.');
+    setEngine('enhanced');
   }, []);
 
   // Calculate rows and columns based on difficulty
@@ -59,7 +64,7 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
       {!isCondensed && (
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Puzzle Engine: {
-            engine === 'enhanced' ? 'Enhanced Jigsaw' : 
+            engine === 'enhanced' ? 'Enhanced Jigsaw (Traditional Shape)' : 
             engine === 'svg-jigsaw' ? 'SVG Jigsaw' : 
             engine === 'custom' ? 'Legacy Jigsaw' : 
             'Phaser Engine'

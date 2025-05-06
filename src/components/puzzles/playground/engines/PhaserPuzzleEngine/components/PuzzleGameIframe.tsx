@@ -29,27 +29,34 @@ const PuzzleGameIframe: React.FC<PuzzleGameIframeProps> = ({
   
   // Create blob URL on component mount
   useEffect(() => {
-    // Create a blob with the HTML content
-    const blob = new Blob([phaserGameContent], { type: 'text/html' });
-    blobUrl.current = URL.createObjectURL(blob);
-    
-    // Clean up the blob URL when component unmounts
-    return () => {
-      if (blobUrl.current) {
-        URL.revokeObjectURL(blobUrl.current);
-      }
-    };
-  }, [phaserGameContent]);
+    try {
+      // Create a blob with the HTML content
+      const blob = new Blob([phaserGameContent], { type: 'text/html' });
+      blobUrl.current = URL.createObjectURL(blob);
+      
+      console.log('Created blob URL for Phaser game content');
+      
+      // Clean up the blob URL when component unmounts
+      return () => {
+        if (blobUrl.current) {
+          URL.revokeObjectURL(blobUrl.current);
+        }
+      };
+    } catch (error) {
+      console.error('Error creating blob URL:', error);
+      onError('Failed to create game content');
+    }
+  }, [phaserGameContent, onError]);
   
   // Listen for messages from the iframe
   useEffect(() => {
-    // Set a timeout for loading - if the game doesn't load in 10 seconds, show error
+    // Set a timeout for loading - increase to 30 seconds to account for slower connections
     const loadTimeout = setTimeout(() => {
       if (isLoading) {
         console.error('Phaser game loading timeout');
         onError('Game loading timed out. Please try again or switch to a different puzzle engine.');
       }
-    }, 15000); // Extended to 15 seconds for slower connections
+    }, 30000); // Extended to 30 seconds for slower connections
     
     const handleMessage = (event: MessageEvent) => {
       // Ensure the message is coming from our iframe (for security)
