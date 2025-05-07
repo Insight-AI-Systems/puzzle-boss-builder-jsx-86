@@ -50,7 +50,8 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
   const {
     data,
     isLoading,
-    error
+    error,
+    refetch
   } = useQuery({
     queryKey: ['email-analytics', dateRange, campaignId],
     queryFn: async () => {
@@ -58,18 +59,56 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
         const startDate = dateRange?.from || subDays(new Date(), 30);
         const endDate = dateRange?.to || new Date();
         
-        // Get delivery stats using the database function
-        // Using standard RPC call pattern that works with TypeScript
+        // Get delivery stats using a direct SQL query to avoid the column ambiguity issue
         const { data: statsData, error: statsError } = await supabase
-          .rpc('get_email_analytics', {
-            start_date: startDate.toISOString().split('T')[0],
-            end_date: endDate.toISOString().split('T')[0],
-            campaign_id_param: campaignId === 'all' ? null : campaignId
-          });
+          .from('email_analytics')
+          .select(`
+            id,
+            date,
+            campaign_id,
+            sum(email_analytics.sent) as sent,
+            sum(email_analytics.delivered) as delivered, 
+            sum(email_analytics.opened) as opened,
+            sum(email_analytics.clicked) as clicked,
+            avg(email_analytics.mobile_pct) as mobile_pct,
+            avg(email_analytics.desktop_pct) as desktop_pct,
+            avg(email_analytics.webmail_pct) as webmail_pct,
+            avg(email_analytics.other_pct) as other_pct
+          `)
+          .gte('date', startDate.toISOString().split('T')[0])
+          .lte('date', endDate.toISOString().split('T')[0])
+          .order('date', { ascending: false })
+          .limit(1);
         
         if (statsError) {
           debugLog('EmailAnalytics', `Error fetching email analytics stats: ${statsError.message}`, DebugLevel.ERROR);
           throw statsError;
+        }
+        
+        // Calculate rates manually to avoid SQL function issues
+        let processedStats = defaultDeliveryStats;
+        
+        if (statsData && statsData.length > 0) {
+          const stats = statsData[0];
+          const sentCount = Number(stats.sent) || 0;
+          const deliveredCount = Number(stats.delivered) || 0;
+          const openedCount = Number(stats.opened) || 0;
+          const clickedCount = Number(stats.clicked) || 0;
+          
+          processedStats = {
+            sent: sentCount,
+            delivered: deliveredCount,
+            opened: openedCount,
+            clicked: clickedCount,
+            delivery_rate: sentCount > 0 ? (deliveredCount / sentCount) * 100 : 0,
+            open_rate: deliveredCount > 0 ? (openedCount / deliveredCount) * 100 : 0,
+            click_rate: openedCount > 0 ? (clickedCount / openedCount) * 100 : 0,
+            bounce_rate: sentCount > 0 ? ((sentCount - deliveredCount) / sentCount) * 100 : 0,
+            mobile_pct: Number(stats.mobile_pct) || 0,
+            desktop_pct: Number(stats.desktop_pct) || 0,
+            webmail_pct: Number(stats.webmail_pct) || 0,
+            other_pct: Number(stats.other_pct) || 0
+          };
         }
         
         // Get engagement data over time
@@ -120,7 +159,7 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
         
         // Process and return all the analytics data
         return {
-          deliveryStats: statsData && statsData.length > 0 ? statsData[0] : defaultDeliveryStats,
+          deliveryStats: processedStats,
           engagementData: engagementData || [],
           clicksData: clicksData || [],
           campaignsList: campaignsList || []
@@ -130,7 +169,8 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
         throw error;
       }
     },
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    retry: 1
   });
 
   // Export data function - in a real app, this would generate and download data
@@ -180,6 +220,7 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
     campaignsList: data?.campaignsList || [],
     isLoading,
     error,
-    exportData
+    exportData,
+    refetch
   };
 }
