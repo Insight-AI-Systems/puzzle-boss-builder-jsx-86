@@ -113,7 +113,113 @@ The authentication system in The Puzzle Boss platform is built using Supabase Au
 4. Update security measures as needed
 5. Regularly rotate sensitive credentials
 
+## Edge Function Development Style Guide
+
+### 1. Structure and Organization
+
+- **Single Responsibility**: Each edge function should have a clearly defined purpose
+- **Modular Design**: Break complex logic into helper functions
+- **Consistent Naming**: Use descriptive names following the pattern `action-target` (e.g., `auth-manager`, `rbac-validator`)
+- **Error Handling**: Always implement proper error handling and reporting
+
+### 2. Security Best Practices
+
+- **Input Validation**: Always validate and sanitize all incoming data
+- **CORS Configuration**: Use appropriate CORS headers based on function purpose
+- **Authentication**: Implement proper authentication checks unless function explicitly doesn't require it
+- **Rate Limiting**: Add rate limiting for sensitive operations
+- **Logging**: Log all important events, but avoid logging sensitive data
+
+### 3. Performance Optimization
+
+- **Minimize Dependencies**: Keep dependencies to the minimum required
+- **Caching Strategy**: Implement appropriate caching where beneficial
+- **Response Size**: Minimize response payload size
+- **Error Management**: Return appropriate error codes and messages
+- **Timeouts**: Implement appropriate timeouts for external calls
+
+### 4. Code Style
+
+- **Comments**: Include JSDoc-style comments for all functions
+- **Error Types**: Use consistent error types and messages
+- **Response Format**: Standardize on a consistent response format
+- **Variables**: Use descriptive variable names and appropriate types
+- **Constants**: Extract magic values into named constants
+
+### 5. Testing
+
+- **Test Edge Cases**: Ensure all edge cases are tested
+- **Mock External Dependencies**: Use mocks for external services in tests
+- **Security Tests**: Include tests for security vulnerabilities
+- **Performance Tests**: Test function performance under load
+
+### 6. Example Edge Function Template
+
+```typescript
+/**
+ * [Function Name] Edge Function
+ * 
+ * [Brief description of what the function does]
+ */
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders } from "../_shared/cors.ts";
+import { validateRequiredFields } from "../_shared/validation.ts";
+import { errorResponse, successResponse } from "../_shared/response.ts";
+
+// Configuration constants
+const CONFIG = {
+  MAX_ITEMS_PER_REQUEST: 100,
+  CACHE_DURATION: 60 * 5 // 5 minutes in seconds
+};
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    // Initialize Supabase client
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    // Parse request body
+    const { action, ...data } = await req.json();
+    
+    // Validate required fields
+    const { isValid, missingFields } = validateRequiredFields(
+      data,
+      ['requiredField1', 'requiredField2']
+    );
+    
+    if (!isValid) {
+      return errorResponse(
+        `Missing required fields: ${missingFields.join(', ')}`,
+        "validation_error",
+        400
+      );
+    }
+    
+    // Process based on action
+    switch (action) {
+      case 'doSomething':
+        // Implementation
+        return successResponse({ result: "Success" });
+        
+      default:
+        return errorResponse("Invalid action specified", "invalid_action", 400);
+    }
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    return errorResponse("An unexpected error occurred", "server_error", 500);
+  }
+});
+```
+
 ---
 
 This document is confidential and should be shared only with authorized personnel.
-Last Updated: April 18, 2025
+Last Updated: May 7, 2025

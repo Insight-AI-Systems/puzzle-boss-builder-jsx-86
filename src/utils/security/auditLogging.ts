@@ -1,5 +1,10 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
+/**
+ * Security event types enum
+ * This standardized list ensures consistent event tracking across the application
+ */
 export enum SecurityEventType {
   // Authentication events
   LOGIN_SUCCESS = 'LOGIN_SUCCESS',
@@ -25,7 +30,7 @@ export enum SecurityEventType {
   // Admin actions
   ADMIN_ACTION = 'ADMIN_ACTION',
   
-  // Access control events - Adding these to fix the error
+  // Access control events
   ACCESS_GRANTED = 'ACCESS_GRANTED',
   ACCESS_DENIED = 'ACCESS_DENIED'
 }
@@ -42,7 +47,21 @@ interface SecurityLogEvent {
   severity: SecurityEventSeverity;
 }
 
-// Mask sensitive information like email addresses
+// Local caching configuration
+const SECURITY_CONFIG = {
+  MAX_LOCAL_EVENTS: 100,
+  BATCH_SIZE: 10,
+  LOCAL_STORAGE_KEYS: {
+    EVENTS: 'securityEvents',
+    QUEUE: 'securityEventQueue'
+  }
+};
+
+/**
+ * Mask sensitive information like email addresses
+ * @param email The email address to mask
+ * @returns A masked email address (e.g., "joh***@example.com")
+ */
 const maskEmail = (email: string): string => {
   if (!email) return '';
   const [username, domain] = email.split('@');
@@ -55,7 +74,11 @@ const maskEmail = (email: string): string => {
   return `${maskedUsername}@${domain}`;
 };
 
-// Log security event to both local storage and the database
+/**
+ * Logs a security event to both local storage and the database
+ * Implements batching and caching to improve performance
+ * @param event The security event to log
+ */
 export const logSecurityEvent = async (event: Omit<SecurityLogEvent, 'timestamp'>): Promise<void> => {
   const timestamp = new Date().toISOString();
   const maskedEmail = event.email ? maskEmail(event.email) : undefined;
@@ -67,7 +90,7 @@ export const logSecurityEvent = async (event: Omit<SecurityLogEvent, 'timestamp'
     email: maskedEmail // Use masked email for local storage
   };
   
-  // In development, log to console
+  // In development, log to console with style based on severity
   if (process.env.NODE_ENV === 'development') {
     const logStyle = getLogStyle(event.severity);
     console[logStyle]('SECURITY EVENT:', localEvent);
@@ -98,28 +121,40 @@ export const logSecurityEvent = async (event: Omit<SecurityLogEvent, 'timestamp'
   storeSecurityEventLocally(localEvent);
 };
 
-// Queue events for retry when connection is restored
+/**
+ * Queue events for retry when connection is restored
+ * Implements batching for better network performance
+ * @param event The event to queue
+ */
 const queueEventForRetry = (event: any): void => {
   try {
-    const queue = JSON.parse(localStorage.getItem('securityEventQueue') || '[]');
-    queue.push(event);
-    localStorage.setItem('securityEventQueue', JSON.stringify(queue));
+    const queue = JSON.parse(localStorage.getItem(SECURITY_CONFIG.LOCAL_STORAGE_KEYS.QUEUE) || '[]');
+    queue.push({
+      ...event,
+      queuedAt: new Date().toISOString()
+    });
+    localStorage.setItem(SECURITY_CONFIG.LOCAL_STORAGE_KEYS.QUEUE, JSON.stringify(queue));
   } catch (error) {
     console.error('Error queueing security event:', error);
   }
 };
 
-// Process queued events when online
+/**
+ * Process queued events when online
+ * Uses batching for better performance
+ */
 export const processQueuedSecurityEvents = async (): Promise<void> => {
   try {
-    const queueString = localStorage.getItem('securityEventQueue');
+    const queueString = localStorage.getItem(SECURITY_CONFIG.LOCAL_STORAGE_KEYS.QUEUE);
     if (!queueString) return;
     
     const queue = JSON.parse(queueString);
     if (!Array.isArray(queue) || queue.length === 0) return;
     
-    // Process in batches of 10
-    const batchSize = 10;
+    // Process in optimized batches
+    const batchSize = SECURITY_CONFIG.BATCH_SIZE;
+    let successfulBatches = 0;
+    
     for (let i = 0; i < queue.length; i += batchSize) {
       const batch = queue.slice(i, i + batchSize);
       
@@ -139,20 +174,32 @@ export const processQueuedSecurityEvents = async (): Promise<void> => {
             }
           });
         }
+        
+        // Mark this batch as processed
+        successfulBatches++;
       } catch (error) {
         console.error('Error processing queued security events:', error);
-        return; // Stop processing on error to retry later
+        break; // Stop processing on error to retry later
       }
     }
     
-    // Clear the queue after successful processing
-    localStorage.removeItem('securityEventQueue');
+    // If we processed some batches successfully, update the queue
+    if (successfulBatches > 0) {
+      const remainingEvents = queue.slice(successfulBatches * batchSize);
+      if (remainingEvents.length > 0) {
+        localStorage.setItem(SECURITY_CONFIG.LOCAL_STORAGE_KEYS.QUEUE, JSON.stringify(remainingEvents));
+      } else {
+        localStorage.removeItem(SECURITY_CONFIG.LOCAL_STORAGE_KEYS.QUEUE);
+      }
+    }
   } catch (error) {
     console.error('Error processing security event queue:', error);
   }
 };
 
-// Helper to determine console log method based on severity
+/**
+ * Helper to determine console log method based on severity
+ */
 const getLogStyle = (severity: string): 'log' | 'info' | 'warn' | 'error' => {
   switch (severity) {
     case 'info': return 'info';
@@ -164,35 +211,62 @@ const getLogStyle = (severity: string): 'log' | 'info' | 'warn' | 'error' => {
   }
 };
 
-// Store security events in local storage (for development/debugging)
+/**
+ * Store security events in local storage with LRU cache behavior
+ * @param event The event to store locally
+ */
 const storeSecurityEventLocally = (event: any): void => {
   try {
-    const existingEvents = JSON.parse(localStorage.getItem('securityEvents') || '[]');
-    const updatedEvents = [event, ...existingEvents].slice(0, 100); // Keep last 100 events
-    localStorage.setItem('securityEvents', JSON.stringify(updatedEvents));
+    const existingEvents = JSON.parse(localStorage.getItem(SECURITY_CONFIG.LOCAL_STORAGE_KEYS.EVENTS) || '[]');
+    const updatedEvents = [event, ...existingEvents].slice(0, SECURITY_CONFIG.MAX_LOCAL_EVENTS); // Keep last X events (LRU cache)
+    localStorage.setItem(SECURITY_CONFIG.LOCAL_STORAGE_KEYS.EVENTS, JSON.stringify(updatedEvents));
   } catch (error) {
     console.error('Error storing security event:', error);
   }
 };
 
-// Get security events from local storage (for development/debugging)
+/**
+ * Get security events from local storage (for development/debugging)
+ * @returns Array of locally stored security events
+ */
 export const getSecurityEvents = (): any[] => {
   try {
-    return JSON.parse(localStorage.getItem('securityEvents') || '[]');
+    return JSON.parse(localStorage.getItem(SECURITY_CONFIG.LOCAL_STORAGE_KEYS.EVENTS) || '[]');
   } catch (error) {
     console.error('Error retrieving security events:', error);
     return [];
   }
 };
 
-// Clear security events from local storage
+/**
+ * Clear security events from local storage
+ */
 export const clearSecurityEvents = (): void => {
-  localStorage.removeItem('securityEvents');
+  localStorage.removeItem(SECURITY_CONFIG.LOCAL_STORAGE_KEYS.EVENTS);
 };
 
-// Initialize event listeners for online/offline status
+/**
+ * Initialize event listeners for online/offline status
+ * Will automatically process queued events when coming online
+ */
 export const initSecurityEventListeners = (): void => {
   window.addEventListener('online', async () => {
     await processQueuedSecurityEvents();
   });
+  
+  // Check network status on init to process any queued events
+  if (navigator.onLine) {
+    processQueuedSecurityEvents().catch(err => 
+      console.error('Failed to process queued events on init:', err)
+    );
+  }
+};
+
+/**
+ * Security tests helper - used by the test framework
+ * @internal For testing purposes only
+ */
+export const _securityTestHelpers = {
+  maskEmail,
+  getLogStyle
 };
