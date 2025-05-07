@@ -36,7 +36,9 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
       hasData: !!allProfilesData,
       userCount: allProfilesData?.data?.length || 0,
       isLoading: isLoadingProfiles,
-      error: profileError
+      error: profileError,
+      isAdmin,
+      currentUserId
     });
     
     // Show toast if there's an error
@@ -47,7 +49,20 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
         variant: "destructive"
       });
     }
-  }, [allProfilesData, isLoadingProfiles, profileError]);
+  }, [allProfilesData, isLoadingProfiles, profileError, isAdmin, currentUserId]);
+
+  // Trigger a refetch if initial data is empty but credentials seem valid
+  useEffect(() => {
+    if (isAdmin && currentUserId && !isLoadingProfiles && !profileError && (!allProfilesData || !allProfilesData.data || allProfilesData.data.length === 0)) {
+      console.log('No users found initially, attempting refetch...');
+      // Add a slight delay before refetch
+      const timer = setTimeout(() => {
+        refetch();
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isAdmin, currentUserId, isLoadingProfiles, profileError, allProfilesData, refetch]);
 
   // Handle role change for a single user
   const handleRoleChange = async (userId: string, newRole: UserRole) => {

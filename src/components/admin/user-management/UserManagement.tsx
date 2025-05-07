@@ -8,11 +8,13 @@ import { UserPagination } from './UserPagination';
 import { UserTypeToggle } from './UserTypeToggle';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
 import { useAuth } from '@/hooks/auth/useAuth';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { EmailDialog } from './EmailDialog';
 import { BulkRoleDialog } from './BulkRoleDialog';
 import { UserInsightsDashboard } from './UserInsightsDashboard';
 import { UserRole } from '@/types/userTypes';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const UserManagement: React.FC = () => {
   const { user, userRole } = useAuth();
@@ -60,7 +62,10 @@ export const UserManagement: React.FC = () => {
     
     // Sorting
     lastLoginSortDirection,
-    setLastLoginSortDirection
+    setLastLoginSortDirection,
+    
+    // Refetch
+    refetch
   } = useUserManagement(isAdmin, userId);
   
   // Handle search submission
@@ -93,9 +98,15 @@ export const UserManagement: React.FC = () => {
           <CardDescription>Error loading user data</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-red-500">
-            {profileError.message || "An error occurred while loading user data."}
-          </p>
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {profileError.message || "An error occurred while loading user data."}
+            </AlertDescription>
+          </Alert>
+          <Button onClick={() => refetch()} className="mt-2">
+            Try Again
+          </Button>
         </CardContent>
       </Card>
     );
@@ -160,11 +171,25 @@ export const UserManagement: React.FC = () => {
                   onUserSelection={handleUserSelection}
                   onSelectAll={handleSelectAllUsers}
                   lastLoginSortDirection={lastLoginSortDirection}
+                  onRefresh={() => refetch()}
                 />
               )}
               
+              {/* No data loaded yet message */}
+              {(!allProfilesData || !allProfilesData.data) && !isLoadingProfiles && (
+                <Alert className="my-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    No user data available. This could be due to database configuration or permissions.
+                  </AlertDescription>
+                  <Button onClick={() => refetch()} className="mt-2">
+                    Refresh Data
+                  </Button>
+                </Alert>
+              )}
+              
               {/* Pagination */}
-              {allProfilesData && (
+              {allProfilesData && allProfilesData.data && allProfilesData.data.length > 0 && (
                 <UserPagination
                   page={page}
                   setPage={setPage}

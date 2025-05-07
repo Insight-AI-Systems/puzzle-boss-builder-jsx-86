@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { handleCorsOptions } from "../_shared/cors.ts";
+import { handleCorsOptions, corsHeaders } from "../_shared/cors.ts";
 import { successResponse, errorResponse, HttpStatus } from "../_shared/response.ts";
 import { verifyAuth } from "../_shared/auth.ts";
 import { EdgeFunctionLogger } from "../_shared/logging.ts";
@@ -57,50 +57,7 @@ async function verifyAdminAccess(supabase: any, userId: string): Promise<boolean
   }
 }
 
-// Check if a column exists in a table with safe error handling
-async function checkColumnExists(supabase: any, table: string, column: string): Promise<boolean> {
-  try {
-    // Try different approaches to check if column exists
-    
-    // Method 1: Use direct SQL to check
-    try {
-      const { data, error } = await supabase.functions.invoke("column-exists", {
-        body: { table_name: table, column_name: column }
-      });
-      
-      if (!error) {
-        return !!data;
-      }
-      
-      logger.warn(`Error checking column via function: ${error?.message || "Unknown error"}`);
-    } catch (fnError) {
-      logger.warn(`Exception calling column-exists function: ${fnError.message}`);
-    }
-    
-    // Method 2: Fallback to direct query
-    try {
-      await supabase
-        .from(table)
-        .select(column)
-        .limit(1);
-      
-      return true;
-    } catch (e) {
-      if (e.message?.includes(`column "${column}" does not exist`)) {
-        return false;
-      }
-      
-      logger.warn(`Unexpected error in column check: ${e.message}`);
-    }
-    
-    return false;
-  } catch (e) {
-    logger.error(`Error checking if column ${column} exists in ${table}`, { error: e });
-    return false;
-  }
-}
-
-// Fetch all users with profile data
+// Fetch all users with profile data - with robust column detection
 async function fetchAllUsers(supabase: any): Promise<UserData[]> {
   try {
     // First, let's get all auth users
@@ -111,53 +68,93 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
       throw new Error("Error fetching users: " + authError.message);
     }
     
-    // Build a base query that should always work
-    let selectQuery = "id, role, username, created_at, updated_at";
-    
-    // Check for additional fields
-    const hasCountryColumn = await checkColumnExists(supabase, "profiles", "country");
-    const hasLastSignInColumn = await checkColumnExists(supabase, "profiles", "last_sign_in");
-    const hasCreditsColumn = await checkColumnExists(supabase, "profiles", "credits");
-    const hasAvatarUrlColumn = await checkColumnExists(supabase, "profiles", "avatar_url");
-    const hasGenderColumn = await checkColumnExists(supabase, "profiles", "gender");
-    const hasAgeGroupColumn = await checkColumnExists(supabase, "profiles", "age_group");
-    const hasCategoriesPlayedColumn = await checkColumnExists(supabase, "profiles", "categories_played");
-    
-    // Add columns that exist to the query
-    if (hasCountryColumn) selectQuery += ", country";
-    if (hasLastSignInColumn) selectQuery += ", last_sign_in";
-    if (hasCreditsColumn) selectQuery += ", credits";
-    if (hasAvatarUrlColumn) selectQuery += ", avatar_url";
-    if (hasGenderColumn) selectQuery += ", gender";
-    if (hasAgeGroupColumn) selectQuery += ", age_group";
-    if (hasCategoriesPlayedColumn) selectQuery += ", categories_played";
-    
-    logger.info("Using profiles query", { selectQuery });
-    
-    // Fetch all profiles with safe column selection
+    // Get profiles with only guaranteed fields
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select(selectQuery);
+      .select("id, role, username, created_at, updated_at");
     
     if (profilesError) {
-      logger.error("Error fetching profiles", { error: profilesError });
+      logger.error("Error fetching base profiles data", { error: profilesError });
       throw new Error("Error fetching profiles: " + profilesError.message);
     }
 
-    // Create a map of profiles by user id for easy lookup
+    // Attempt to get additional optional fields separately to avoid column errors
+    let countryData = [];
+    try {
+      const { data, error } = await supabase.from("profiles").select("id, country").is("country", null).limit(1);
+      if (!error) countryData = await supabase.from("profiles").select("id, country");
+    } catch (e) {
+      logger.warn("Country column not available", { error: e });
+    }
+    
+    let lastSignInData = [];
+    try {
+      const { data, error } = await supabase.from("profiles").select("id, last_sign_in").is("last_sign_in", null).limit(1);
+      if (!error) lastSignInData = await supabase.from("profiles").select("id, last_sign_in");
+    } catch (e) {
+      logger.warn("last_sign_in column not available", { error: e });
+    }
+    
+    let creditsData = [];
+    try {
+      const { data, error } = await supabase.from("profiles").select("id, credits").is("credits", null).limit(1);
+      if (!error) creditsData = await supabase.from("profiles").select("id, credits");
+    } catch (e) {
+      logger.warn("credits column not available", { error: e });
+    }
+    
+    let avatarUrlData = [];
+    try {
+      const { data, error } = await supabase.from("profiles").select("id, avatar_url").is("avatar_url", null).limit(1);
+      if (!error) avatarUrlData = await supabase.from("profiles").select("id, avatar_url");
+    } catch (e) {
+      logger.warn("avatar_url column not available", { error: e });
+    }
+    
+    let categoriesPlayedData = [];
+    try {
+      const { data, error } = await supabase.from("profiles").select("id, categories_played").is("categories_played", null).limit(1);
+      if (!error) categoriesPlayedData = await supabase.from("profiles").select("id, categories_played");
+    } catch (e) {
+      logger.warn("categories_played column not available", { error: e });
+    }
+
+    // Create maps for efficient lookups
     const profileMap = new Map();
     profiles?.forEach(profile => {
       profileMap.set(profile.id, profile);
     });
+    
+    const countryMap = new Map();
+    countryData?.data?.forEach(item => {
+      countryMap.set(item.id, item.country);
+    });
+    
+    const lastSignInMap = new Map();
+    lastSignInData?.data?.forEach(item => {
+      lastSignInMap.set(item.id, item.last_sign_in);
+    });
+    
+    const creditsMap = new Map();
+    creditsData?.data?.forEach(item => {
+      creditsMap.set(item.id, item.credits);
+    });
+    
+    const avatarUrlMap = new Map();
+    avatarUrlData?.data?.forEach(item => {
+      avatarUrlMap.set(item.id, item.avatar_url);
+    });
+    
+    const categoriesPlayedMap = new Map();
+    categoriesPlayedData?.data?.forEach(item => {
+      categoriesPlayedMap.set(item.id, item.categories_played);
+    });
 
-    // Combine auth users with their profiles
+    // Combine auth users with their profiles and optional fields
     const combinedUsers = authUsers.users.map(user => {
       const profile = profileMap.get(user.id) || {};
       
-      // Get last sign in from either profile or auth user
-      const lastSignIn = hasLastSignInColumn ? 
-        profile.last_sign_in || user.last_sign_in_at || null : 
-        user.last_sign_in_at || null;
+      const lastSignIn = lastSignInMap.get(user.id) || user.last_sign_in_at || null;
       
       // Build the user data object with available fields
       const userData: UserData = {
@@ -165,17 +162,15 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
         email: user.email || '',
         display_name: profile.username || user.email?.split('@')[0] || 'N/A',
         role: profile.role || 'player',
-        created_at: user.created_at || new Date().toISOString(),
+        created_at: user.created_at || profile.created_at || new Date().toISOString(),
         last_sign_in: lastSignIn,
       };
       
-      // Add optional fields if they exist
-      if (hasCountryColumn) userData.country = profile.country || null;
-      if (hasAvatarUrlColumn) userData.avatar_url = profile.avatar_url || null;
-      if (hasCreditsColumn) userData.credits = profile.credits || 0;
-      if (hasGenderColumn) userData.gender = profile.gender || null;
-      if (hasAgeGroupColumn) userData.age_group = profile.age_group || null;
-      if (hasCategoriesPlayedColumn) userData.categories_played = profile.categories_played || [];
+      // Add optional fields if they exist in the maps
+      if (countryMap.has(user.id)) userData.country = countryMap.get(user.id);
+      if (avatarUrlMap.has(user.id)) userData.avatar_url = avatarUrlMap.get(user.id);
+      if (creditsMap.has(user.id)) userData.credits = creditsMap.get(user.id);
+      if (categoriesPlayedMap.has(user.id)) userData.categories_played = categoriesPlayedMap.get(user.id);
       
       userData.updated_at = profile.updated_at || user.updated_at || null;
       

@@ -28,12 +28,14 @@ export function useAdminProfiles(
 
     try {
       console.log('Fetching users with get-all-users edge function');
-      const { data: rpcData, error } = await supabase.functions.invoke<RpcUserData[]>('get-all-users');
-
-      if (error) {
-        console.error('Error fetching users:', error);
-        throw error;
+      const response = await supabase.functions.invoke<RpcUserData[]>('get-all-users');
+      
+      if (response.error) {
+        console.error('Error fetching users:', response.error);
+        throw response.error;
       }
+      
+      const rpcData = response.data;
 
       if (!rpcData || !Array.isArray(rpcData)) {
         console.error('Invalid response from get-all-users:', rpcData);
@@ -90,6 +92,13 @@ export function useAdminProfiles(
       // Calculate signup stats by month
       const signupStats = calculateSignupStats(rpcData);
 
+      console.log('Successfully processed user data', {
+        totalCount,
+        paginatedCount: paginatedData.length,
+        countries: countries.length,
+        categories: categories.length
+      });
+
       return { 
         data: profiles,
         count: totalCount,
@@ -130,6 +139,9 @@ export function useAdminProfiles(
       queryKey: ['all-users', page, pageSize, options, lastLoginSortDirection],
       queryFn: fetchUsers,
       enabled: !!currentUserId && isAdmin,
+      retry: 3, // Add retries
+      retryDelay: (attempt) => Math.min(attempt > 1 ? 2000 * 2 ** attempt : 1000, 30000), // Exponential backoff
+      staleTime: 5 * 60 * 1000, // 5 minutes
     });
   } catch (error) {
     console.error('React Query error in useAdminProfiles:', error);

@@ -12,6 +12,7 @@ export interface UserTableProps {
   onUserSelection?: (userId: string, isSelected: boolean) => void;
   onSelectAll?: (isSelected: boolean) => void;
   lastLoginSortDirection?: 'asc' | 'desc';
+  onRefresh?: () => void;
 }
 
 export interface UserRowProps {
