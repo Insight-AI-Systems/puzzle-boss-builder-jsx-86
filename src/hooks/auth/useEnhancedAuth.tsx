@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session, AuthError } from '@supabase/supabase-js';
@@ -199,8 +198,22 @@ export function useEnhancedAuth() {
       return roleCache.get(cacheKey)!;
     }
     
+    // Special case for protected admin email - always has admin privileges
+    if (user?.email === 'alan@insight-ai-systems.com') {
+      if (role === 'super_admin' || role === 'admin') {
+        roleCache.set(cacheKey, true);
+        return true;
+      }
+    }
+    
     // Super admin has all roles
     if (userRole === 'super_admin') {
+      roleCache.set(cacheKey, true);
+      return true;
+    }
+    
+    // Admin has admin role
+    if (userRole === 'admin' && role === 'admin') {
       roleCache.set(cacheKey, true);
       return true;
     }
@@ -479,14 +492,31 @@ export function useEnhancedAuth() {
     try {
       if (!user) return false;
       
-      const { data, error } = await supabase.functions.invoke('admin-auth', {
+      // Special case for alan@insight-ai-systems.com
+      if (user.email === 'alan@insight-ai-systems.com') {
+        console.log('Admin access granted via protected email');
+        return true;
+      }
+      
+      // Check if user is an admin by role
+      if (userRole === 'super_admin' || userRole === 'admin') {
+        console.log('Admin access granted via role:', userRole);
+        return true;
+      }
+
+      // If still here, check with security config service
+      const { data, error } = await supabase.functions.invoke('security-config-service', {
         body: {
-          action: 'verify_admin'
+          action: 'validateAdminAccess'
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error validating admin access:', error);
+        return false;
+      }
       
+      console.log('Admin access check result:', data.isAdmin);
       return data.isAdmin;
     } catch (err) {
       console.error('Error verifying admin access:', err);

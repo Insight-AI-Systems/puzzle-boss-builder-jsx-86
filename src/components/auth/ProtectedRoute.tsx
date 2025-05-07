@@ -27,6 +27,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { logSecurityEvent } = useSecurity();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
+  // Special case for the protected admin email
+  const isProtectedAdmin = user?.email === 'alan@insight-ai-systems.com';
+
   // Check role and permission authorization
   useEffect(() => {
     if (!isInitialized || isLoading) return;
@@ -34,6 +37,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     // Not authenticated
     if (!isAuthenticated) {
       setIsAuthorized(false);
+      return;
+    }
+
+    // Special case for protected admin email - always authorized for all routes
+    if (isProtectedAdmin) {
+      console.log('Protected admin detected, granting access');
+      setIsAuthorized(true);
       return;
     }
 
@@ -62,7 +72,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   }, [
     isInitialized, isLoading, isAuthenticated, requiredRoles, requiredPermissions, 
-    requireAllPermissions, hasRole, hasPermission, isAdmin
+    requireAllPermissions, hasRole, hasPermission, isAdmin, isProtectedAdmin
   ]);
 
   // Log access attempts if enabled

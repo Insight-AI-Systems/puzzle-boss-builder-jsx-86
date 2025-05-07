@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Menu, X, LayoutDashboard, TicketIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -41,7 +40,12 @@ const Navbar: React.FC = () => {
   
   // Enhanced admin check
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
-  const isAdminUser = isProtectedAdmin || hasRole('admin') || hasRole('super_admin');
+  const isAdmin = isProtectedAdmin || hasRole('admin') || hasRole('super_admin');
+  const isCategoryManager = hasRole('category_manager');
+  const isSocialMediaManager = hasRole('social_media_manager');
+  const isPartnerManager = hasRole('partner_manager');
+  const isCfo = hasRole('cfo');
+  const isAdminUser = isAdmin || isCategoryManager || isSocialMediaManager || isPartnerManager || isCfo;
   
   return (
     <nav className="bg-puzzle-black border-b border-puzzle-aqua/20">

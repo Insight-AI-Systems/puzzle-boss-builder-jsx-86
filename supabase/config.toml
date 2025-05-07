@@ -57,5 +57,8 @@ verify_jwt = true
 [functions.admin-auth]
 verify_jwt = true
 
+[functions.admin-update-roles]
+verify_jwt = true
+
 [realtime]
 enabled = true

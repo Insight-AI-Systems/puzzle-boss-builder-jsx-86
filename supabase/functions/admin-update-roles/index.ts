@@ -7,7 +7,6 @@ import { validateRequiredFields, isValidUuid } from "../_shared/validation.ts";
 
 // Valid roles that can be assigned
 const VALID_ROLES = ["super_admin", "admin", "category_manager", "social_media_manager", "partner_manager", "cfo", "player"];
-const PROTECTED_ADMIN_EMAIL = "alan@insight-ai-systems.com";
 
 // Rate limiting state (in production, use a persistent store)
 const rateLimitState: Record<string, { count: number; resetTime: number }> = {};
@@ -29,6 +28,28 @@ function isRateLimited(identifier: string, maxRequests = 10, windowMs = 60000): 
   state.count++;
   rateLimitState[identifier] = state;
   return state.count > maxRequests;
+}
+
+// Fetch protected admin emails from security-config-service
+async function getProtectedAdminEmails(supabaseAdmin: any): Promise<string[]> {
+  try {
+    // Call the security-config-service to get protected admin emails
+    const { data, error } = await supabaseAdmin.functions.invoke('security-config-service', {
+      body: {
+        action: 'getAdminEmails'
+      }
+    });
+    
+    if (error) {
+      console.error('Error fetching protected admin emails:', error);
+      return ['alan@insight-ai-systems.com']; // Fallback to hardcoded value for safety
+    }
+    
+    return data.adminEmails || ['alan@insight-ai-systems.com'];
+  } catch (err) {
+    console.error('Exception fetching protected admin emails:', err);
+    return ['alan@insight-ai-systems.com']; // Fallback to hardcoded value for safety
+  }
 }
 
 serve(async (req) => {
@@ -69,7 +90,10 @@ serve(async (req) => {
     // Log user trying to perform action
     console.log(`User ${user.id} (${user.email}) attempting to update roles`);
 
-    // Check if user is super_admin
+    // Fetch protected admin emails
+    const protectedAdminEmails = await getProtectedAdminEmails(supabaseAdmin);
+
+    // Check if user is super_admin or in protected emails list
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .select("role")
@@ -80,11 +104,12 @@ serve(async (req) => {
       return errorResponse("Unauthorized - profile not found", "profile_not_found", 403);
     }
 
-    // Special case for specific super admin email
-    const isSpecificAdminEmail = user.email === PROTECTED_ADMIN_EMAIL;
-    const isSuperAdmin = profile.role === "super_admin" || isSpecificAdminEmail;
+    // Special case for protected admin emails
+    const isProtectedAdminEmail = protectedAdminEmails.includes(user.email || '');
+    const isSuperAdmin = profile.role === "super_admin" || isProtectedAdminEmail;
+    const isAdmin = isSuperAdmin || profile.role === "admin";
 
-    if (!isSuperAdmin) {
+    if (!isAdmin) {
       // Log security event
       await supabaseAdmin.from("security_audit_logs").insert({
         user_id: user.id,
@@ -95,7 +120,7 @@ serve(async (req) => {
         severity: "warning"
       });
 
-      return forbiddenResponse("Unauthorized - not a super_admin");
+      return forbiddenResponse("Unauthorized - not an admin");
     }
 
     // Validate CSRF token for sensitive operations if appropriate
@@ -142,8 +167,13 @@ serve(async (req) => {
     // Update roles with upsert in case profiles don't exist yet
     const results = [];
     for (const userId of userIds) {
-      // Special protection for protected admin - only the protected admin itself or super admins can change its role
-      if (userId === PROTECTED_ADMIN_EMAIL && !isSpecificAdminEmail) {
+      // Special protection for protected admins
+      const isTargetProtectedAdmin = protectedAdminEmails.some(email => 
+        email === userId || // If userIds contains email directly
+        await isUserEmailProtected(supabaseAdmin, userId, protectedAdminEmails)
+      );
+
+      if (isTargetProtectedAdmin && !isProtectedAdminEmail) {
         results.push({
           id: userId,
           success: false,
@@ -212,3 +242,20 @@ serve(async (req) => {
     return errorResponse(error.message || "An unexpected error occurred");
   }
 });
+
+// Helper function to check if a user ID's email is in the protected admin list
+async function isUserEmailProtected(supabaseAdmin: any, userId: string, protectedEmails: string[]): Promise<boolean> {
+  try {
+    // Get the user's email from auth.users using the admin API
+    const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+    
+    if (error || !data || !data.user || !data.user.email) {
+      return false;
+    }
+    
+    return protectedEmails.includes(data.user.email);
+  } catch (err) {
+    console.error('Error checking if user email is protected:', err);
+    return false;
+  }
+}

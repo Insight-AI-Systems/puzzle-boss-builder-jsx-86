@@ -19,9 +19,17 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
-  // Simple admin access check
+  // Comprehensive admin access check
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
   const isSuperAdmin = isProtectedAdmin || hasRole('super_admin');
+  const isAdmin = isSuperAdmin || hasRole('admin');
+  const isCategoryManager = hasRole('category_manager');
+  const isSocialMediaManager = hasRole('social_media_manager');
+  const isPartnerManager = hasRole('partner_manager');
+  const isCfo = hasRole('cfo');
+  
+  // Combined check for any admin-related role
+  const hasAdminAccess = isAdmin || isCategoryManager || isSocialMediaManager || isPartnerManager || isCfo;
   
   useEffect(() => {
     if (isLoading) return;
@@ -30,7 +38,13 @@ const AdminDashboard = () => {
       isLoggedIn: !!user,
       userEmail: user?.email,
       isProtectedAdmin,
+      isAdmin,
       isSuperAdmin,
+      isCategoryManager,
+      isSocialMediaManager,
+      isPartnerManager,
+      isCfo,
+      hasAdminAccess,
       profileRole: profile?.role
     });
 
@@ -41,8 +55,7 @@ const AdminDashboard = () => {
     }
     
     // Check access for regular users
-    if (!isSuperAdmin && !hasRole('category_manager') && !hasRole('social_media_manager') && 
-        !hasRole('partner_manager') && !hasRole('cfo') && user) {
+    if (!hasAdminAccess && user) {
       console.log('AdminDashboard - Access denied, redirecting to homepage');
       toast({
         title: "Access Denied",
@@ -51,7 +64,7 @@ const AdminDashboard = () => {
       });
       navigate('/', { replace: true });
     }
-  }, [isLoading, isSuperAdmin, navigate, profile, user, toast, isProtectedAdmin, hasRole]);
+  }, [isLoading, hasAdminAccess, isSuperAdmin, navigate, profile, user, toast, isProtectedAdmin]);
 
   const showDebugInfo = () => {
     const info = {
@@ -65,6 +78,14 @@ const AdminDashboard = () => {
         role: profile.role,
         email: profile.email || profile.id
       } : null,
+      hasRoles: {
+        admin: hasRole('admin'),
+        superAdmin: hasRole('super_admin'),
+        categoryManager: hasRole('category_manager'),
+        socialMediaManager: hasRole('social_media_manager'),
+        partnerManager: hasRole('partner_manager'),
+        cfo: hasRole('cfo')
+      }
     };
     setDebugInfo(JSON.stringify(info, null, 2));
   };
@@ -77,12 +98,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (user && !isSuperAdmin && 
-      !hasRole('category_manager') && 
-      !hasRole('social_media_manager') && 
-      !hasRole('partner_manager') && 
-      !hasRole('cfo') && 
-      !isLoading) {
+  if (user && !hasAdminAccess && !isLoading) {
     return (
       <AdminAccessCheck 
         user={user}
@@ -93,11 +109,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (isProtectedAdmin || isSuperAdmin || 
-      hasRole('category_manager') || 
-      hasRole('social_media_manager') || 
-      hasRole('partner_manager') || 
-      hasRole('cfo')) {
+  if (hasAdminAccess) {
     return (
       <div className="min-h-screen bg-puzzle-black p-6">
         <div className="max-w-6xl mx-auto space-y-8">
