@@ -1,17 +1,22 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { AdminProfilesOptions, ProfilesResult, RpcUserData } from '@/types/adminTypes';
 import { useRoleManagement } from './admin/useRoleManagement';
 import { useEmailManagement } from './admin/useEmailManagement';
 import { filterUserData, transformToUserProfile, extractUniqueValues } from '@/utils/admin/userDataProcessing';
+import { UserRole } from '@/types/userTypes';
+
+// Define admin roles for filtering
+const ADMIN_ROLES = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
 
 export function useAdminProfiles(
   isAdmin: boolean, 
   currentUserId: string | null,
   options: AdminProfilesOptions = {}
 ) {
-  const { page = 0, pageSize = 10, roleSortDirection = 'asc', lastLoginSortDirection } = options;
+  const { page = 0, pageSize = 10, roleSortDirection = 'asc', lastLoginSortDirection, userType } = options;
+  const queryClient = useQueryClient();
   
   const fetchUsers = async (): Promise<ProfilesResult> => {
     if (!isAdmin || !currentUserId) {
@@ -103,7 +108,8 @@ export function useAdminProfiles(
         paginatedCount: paginatedData.length,
         countries: countries.length,
         categories: categories.length,
-        genders: genders ? genders.length : 0
+        genders: genders ? genders.length : 0,
+        userType
       });
 
       return { 
@@ -140,61 +146,69 @@ export function useAdminProfiles(
   };
 
   // Use try-catch to handle potential React Query context errors
-  let usersQuery;
-  try {
-    usersQuery = useQuery({
-      queryKey: ['all-users', page, pageSize, options, lastLoginSortDirection],
-      queryFn: fetchUsers,
-      enabled: !!currentUserId && isAdmin,
-      retry: 3, // Add retries
-      retryDelay: (attempt) => Math.min(attempt > 1 ? 2000 * 2 ** attempt : 1000, 30000), // Exponential backoff
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    });
-  } catch (error) {
-    console.error('React Query error in useAdminProfiles:', error);
-    // Provide a fallback empty result if useQuery fails
-    usersQuery = {
-      data: { 
-        data: [], 
-        count: 0, 
-        countries: [], 
-        categories: [],
-        genders: [],
-        signup_stats: [] 
-      },
-      isLoading: false,
-      error: error,
-      refetch: () => Promise.resolve()
-    };
-  }
+  const usersQuery = useQuery({
+    queryKey: ['all-users', page, pageSize, options, lastLoginSortDirection, userType],
+    queryFn: fetchUsers,
+    enabled: !!currentUserId && isAdmin,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(attempt > 1 ? 2000 * 2 ** attempt : 1000, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-  // Get role management functions safely
-  let roleManagementFns;
-  try {
-    roleManagementFns = useRoleManagement();
-  } catch (error) {
-    console.error('React Query error in useRoleManagement:', error);
-    roleManagementFns = {
-      updateUserRole: null,
-      bulkUpdateRoles: null
-    };
-  }
+  // Role management mutations
+  const updateUserRole = useMutation({
+    mutationFn: async ({ userId, newRole }: { userId: string; newRole: UserRole }) => {
+      console.log(`Updating role for user ${userId} to ${newRole}`);
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', userId)
+        .select();
 
-  // Get email management functions safely
-  let emailManagementFns;
-  try {
-    emailManagementFns = useEmailManagement();
-  } catch (error) {
-    console.error('React Query error in useEmailManagement:', error);
-    emailManagementFns = {
-      sendBulkEmail: null
-    };
-  }
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
+    },
+  });
+
+  const bulkUpdateRoles = useMutation({
+    mutationFn: async ({ userIds, newRole }: { userIds: string[]; newRole: UserRole }) => {
+      console.log(`Bulk updating roles for ${userIds.length} users to ${newRole}`);
+      // Use Promise.all to handle multiple updates
+      const promises = userIds.map(userId =>
+        supabase
+          .from('profiles')
+          .update({ role: newRole })
+          .eq('id', userId)
+      );
+      
+      await Promise.all(promises);
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
+    },
+  });
+
+  // Email management mutation
+  const sendBulkEmail = useMutation({
+    mutationFn: async ({ userIds, subject, body }: { userIds: string[]; subject: string; body: string }) => {
+      console.log(`Sending email to ${userIds.length} users`);
+      const { data, error } = await supabase.functions.invoke('send-bulk-email', {
+        body: { userIds, subject, body }
+      });
+      
+      if (error) throw error;
+      return data;
+    }
+  });
 
   return {
     ...usersQuery,
-    updateUserRole: roleManagementFns?.updateUserRole,
-    bulkUpdateRoles: roleManagementFns?.bulkUpdateRoles,
-    sendBulkEmail: emailManagementFns?.sendBulkEmail
+    updateUserRole,
+    bulkUpdateRoles,
+    sendBulkEmail
   };
 }

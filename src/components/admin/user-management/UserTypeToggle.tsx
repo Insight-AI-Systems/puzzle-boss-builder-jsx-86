@@ -12,7 +12,7 @@ export function UserTypeToggle({ value, onChange }: UserTypeToggleProps) {
     <ToggleGroup
       type="single"
       value={value}
-      onValueChange={(val) => onChange(val as 'regular' | 'admin')}
+      onValueChange={(val) => val && onChange(val as 'regular' | 'admin')}
       className="mb-4"
     >
       <ToggleGroupItem value="regular" aria-label="Show regular users">

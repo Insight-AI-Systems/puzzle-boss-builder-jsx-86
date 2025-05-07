@@ -8,6 +8,9 @@ import { useState, useEffect } from 'react';
 import { UserStats } from '@/types/adminTypes';
 import { toast } from '@/components/ui/use-toast';
 
+// Define admin roles array for filtering
+const ADMIN_ROLES = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
+
 export function useUserManagement(isAdmin: boolean, currentUserId: string | null) {
   const filters = useUserFilters();
   const selection = useUserSelection();
@@ -31,11 +34,24 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     userType: filters.userType
   });
 
+  // Filter users based on user type (admin vs regular)
+  const filteredUsers = allProfilesData?.data?.filter(user => {
+    const isAdminUser = ADMIN_ROLES.includes(user.role);
+    
+    if (filters.userType === 'admin') {
+      return isAdminUser;
+    } else {
+      return !isAdminUser;
+    }
+  }) || [];
+
   useEffect(() => {
     // Log data for debugging
     console.log('useUserManagement - Received data:', {
       hasData: !!allProfilesData,
       userCount: allProfilesData?.data?.length || 0,
+      filteredCount: filteredUsers.length,
+      userType: filters.userType,
       isLoading: isLoadingProfiles,
       error: profileError,
       isAdmin,
@@ -51,7 +67,7 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
         variant: "destructive"
       });
     }
-  }, [allProfilesData, isLoadingProfiles, profileError, isAdmin, currentUserId, hasAttemptedRefetch]);
+  }, [allProfilesData, filteredUsers, filters.userType, isLoadingProfiles, profileError, isAdmin, currentUserId, hasAttemptedRefetch]);
 
   // Trigger a refetch if initial data is empty but credentials seem valid
   useEffect(() => {
@@ -99,6 +115,19 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
   // Calculate user statistics when data changes
   useEffect(() => {
     if (allProfilesData?.data) {
+      // Count admins vs regular users
+      let adminCount = 0;
+      let regularCount = 0;
+      
+      allProfilesData.data.forEach(user => {
+        const role = user.role || 'player';
+        if (ADMIN_ROLES.includes(role)) {
+          adminCount++;
+        } else {
+          regularCount++;
+        }
+      });
+
       // Calculate gender breakdown
       const genderBreakdown: { [key: string]: number } = {
         'Male': 0,
@@ -118,19 +147,6 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
       allProfilesData.data.forEach(user => {
         if (user.age_group) {
           ageBreakdown[user.age_group] = (ageBreakdown[user.age_group] || 0) + 1;
-        }
-      });
-
-      // Count admins vs regular users
-      let adminCount = 0;
-      let regularCount = 0;
-      
-      allProfilesData.data.forEach(user => {
-        const role = user.role || 'player';
-        if (['admin', 'super_admin', 'category_manager', 'cfo', 'partner_manager'].includes(role)) {
-          adminCount++;
-        } else {
-          regularCount++;
         }
       });
 
@@ -178,12 +194,13 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     handleRoleChange,
     // Data props
     allProfilesData,
+    filteredUsers, // Return filtered users instead of all users
     isLoadingProfiles,
     profileError,
     // Export functionality
-    handleExportUsers: () => handleExportUsers(allProfilesData?.data),
+    handleExportUsers: () => handleExportUsers(filteredUsers),
     // Stats and calculated values
-    totalPages: Math.ceil((allProfilesData?.count || 0) / filters.pageSize),
+    totalPages: Math.ceil((filteredUsers.length || 0) / filters.pageSize),
     userStats,
     // Sorting props
     lastLoginSortDirection,

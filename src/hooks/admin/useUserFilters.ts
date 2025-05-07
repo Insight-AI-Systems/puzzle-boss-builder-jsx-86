@@ -1,62 +1,44 @@
 
 import { useState } from 'react';
-import { DateRange } from 'react-day-picker';
-import { UserRole } from '@/types/userTypes';
-import { AdminProfilesOptions } from '@/types/adminTypes';
 
-export function useUserFilters(initialPageSize: number = 10) {
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(initialPageSize);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
-  const [roleSortDirection, setRoleSortDirection] = useState<'asc' | 'desc'>('asc');
+export function useUserFilters() {
   const [userType, setUserType] = useState<'regular' | 'admin'>('regular');
-
-  const filterOptions: AdminProfilesOptions = {
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [page, setPage] = useState<number>(0);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
+  
+  // Determine filter options based on selected user type
+  const filterOptions = {
+    searchQuery,
+    role: selectedRole,
+    country: selectedCountry,
     page,
     pageSize,
-    searchTerm: searchTerm.trim(), // Trim whitespace to avoid unnecessary queries
-    dateRange,
-    role: selectedRole,
-    roleSortDirection,
-    country: selectedCountry,
-    category: selectedCategory,
+    // If viewing admin users, include all admin roles, otherwise exclude them
     userType
   };
 
-  const resetFilters = () => {
-    setSearchTerm('');
-    setDateRange(undefined);
-    setSelectedCountry(null);
-    setSelectedCategory(null);
-    setSelectedRole(null);
-    setRoleSortDirection('asc');
-    setPage(0);
+  // Function to determine if a filter is active
+  const hasActiveFilters = (): boolean => {
+    return !!(searchQuery || selectedRole || selectedCountry);
   };
 
   return {
-    page,
+    userType,
+    setUserType,
+    searchQuery,
+    setSearchQuery,
+    selectedRole,
+    setSelectedRole,
+    page, 
     setPage,
     pageSize,
     setPageSize,
-    searchTerm,
-    setSearchTerm,
-    dateRange,
-    setDateRange,
     selectedCountry,
     setSelectedCountry,
-    selectedCategory,
-    setSelectedCategory,
-    selectedRole,
-    setSelectedRole,
-    roleSortDirection,
-    setRoleSortDirection,
-    userType,
-    setUserType,
     filterOptions,
-    resetFilters
+    hasActiveFilters
   };
 }
