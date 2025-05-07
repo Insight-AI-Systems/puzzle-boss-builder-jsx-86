@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Shield, ChevronDown } from "lucide-react";
-import { ROLE_DEFINITIONS } from '@/types/userTypes';
+import { ROLE_DEFINITIONS, UserRole } from '@/types/userTypes';
 import { UserRoleMenuProps } from '@/types/userTableTypes';
 import { isProtectedAdmin } from '@/constants/securityConfig';
 import { debugLog, DebugLevel } from '@/utils/debug';
@@ -41,7 +41,7 @@ export const UserRoleMenu: React.FC<UserRoleMenuProps> = ({
   }, [user.id, user.email, user.role, isProtectedAdminUser]);
   
   // Function to handle role change with logging
-  const handleRoleChange = (newRole: string) => {
+  const handleRoleChange = (newRole: UserRole) => {
     debugLog('UserRoleMenu', `Changing role for user ${user.id} to ${newRole}`, DebugLevel.INFO);
     onRoleChange(user.id, newRole);
   };

@@ -7,7 +7,9 @@ export class TestReportManager {
   private testReports: Record<string, TestReport> = {};
 
   addReport(report: TestReport) {
-    this.testReports[report.testId] = report;
+    // Use either testId or id for backward compatibility
+    const reportId = report.testId || report.id;
+    this.testReports[reportId] = report;
   }
 
   getReport(testId: string): TestReport | undefined {
@@ -24,7 +26,7 @@ export class TestReportManager {
 
   summarizeResults(): TestSummary {
     const results = Object.values(this.testReports);
-    const passed = results.filter(report => report.result).length;
+    const passed = results.filter(report => report.result === true || report.status === TEST_RESULTS.VERIFIED).length;
     const total = results.length;
     
     return {
@@ -32,7 +34,7 @@ export class TestReportManager {
       passedTests: passed,
       failedTests: total - passed,
       duration: results.reduce((sum, report) => sum + report.duration, 0),
-      timestamp: new Date(),
+      timestamp: Date.now(),
       status: this.getTestStatus(passed, total)
     };
   }

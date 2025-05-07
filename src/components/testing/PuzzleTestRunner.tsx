@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserCompatibilityTests, CompatibilityTestResult } from '@/utils/testing/BrowserCompatibilityTests';
+import { BrowserCompatibilityTests } from '@/utils/testing/BrowserCompatibilityTests';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { TestReport } from '@/utils/testing/types/testTypes';
 
 interface PuzzleTestRunnerProps {
   testType?: string;
@@ -24,7 +25,7 @@ const PuzzleTestRunner: React.FC<PuzzleTestRunnerProps> = ({ testType = 'unit' }
   const [isRunning, setIsRunning] = useState(false);
   const [testProgress, setTestProgress] = useState(0);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
-  const [browserResult, setBrowserResult] = useState<CompatibilityTestResult | null>(null);
+  const [browserResult, setBrowserResult] = useState<TestReport | null>(null);
   const [activeTab, setActiveTab] = useState(testType);
 
   useEffect(() => {

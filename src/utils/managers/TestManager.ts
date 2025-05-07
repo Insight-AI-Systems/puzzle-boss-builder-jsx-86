@@ -46,11 +46,15 @@ export class TestManager {
       test.lastResult = result;
       
       this.reportManager.addReport({
-        testId,
-        testName: test.name,
-        result,
+        id: testId,
+        testId: testId, // For backward compatibility
+        name: test.name,
+        testName: test.name, // For backward compatibility
+        result: result, // For backward compatibility
+        status: result ? TEST_RESULTS.VERIFIED : TEST_RESULTS.FAILED,
+        results: [result],
         duration: endTime - startTime,
-        timestamp: new Date(),
+        timestamp: Date.now(),
         details: test.details || {}
       });
       
@@ -61,11 +65,15 @@ export class TestManager {
       test.lastResult = false;
       
       this.reportManager.addReport({
-        testId,
+        id: testId,
+        testId: testId, // For backward compatibility
         testName: test.name,
-        result: false,
+        name: test.name,
+        result: false, // For backward compatibility
+        status: TEST_RESULTS.FAILED,
+        results: [false],
         duration: 0,
-        timestamp: new Date(),
+        timestamp: Date.now(),
         error: error instanceof Error ? error.message : String(error),
         details: test.details || {}
       });
@@ -106,13 +114,14 @@ export class TestManager {
         passedTests: 0,
         failedTests: 0,
         duration: 0,
-        timestamp: new Date(),
         status: TestManager.RESULT_FAILED
       };
     }
 
     const startTime = Date.now();
-    await this.runTests(suite.testIds);
+    // Use tests array if available, otherwise use testIds for backward compatibility
+    const testsToRun = suite.tests?.map(test => test.id || test) || suite.testIds || [];
+    await this.runTests(testsToRun);
     const endTime = Date.now();
 
     return this.summarizeResults();

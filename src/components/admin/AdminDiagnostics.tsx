@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Refresh, Download, Bug } from 'lucide-react';
+import { RefreshCw, Download, Bug } from 'lucide-react';
 import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';
 
 export function AdminDiagnostics() {
@@ -154,7 +153,7 @@ export function AdminDiagnostics() {
               onClick={fetchDiagnostics} 
               disabled={loading}
             >
-              <Refresh className="mr-1 h-4 w-4" />
+              <RefreshCw className="mr-1 h-4 w-4" />
               Refresh
             </Button>
             

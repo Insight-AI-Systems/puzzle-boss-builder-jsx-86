@@ -16,12 +16,17 @@ export interface VerificationResult {
  */
 export interface TestReport {
   id: string;
+  testId?: string; // Added for backward compatibility
   name: string;
+  testName?: string; // Added for backward compatibility
   status: string;
   results: any[];
+  result?: boolean; // Added for backward compatibility
   timestamp: number;
   duration: number;
+  error?: string; // Added for error information
   metadata?: Record<string, any>;
+  details?: Record<string, any>;
 }
 
 /**
@@ -34,6 +39,7 @@ export interface TestSummary {
   skippedTests: number;
   status: string;
   duration: number;
+  timestamp?: number; // Added timestamp to match implementation
 }
 
 /**
@@ -53,7 +59,8 @@ export interface TestSuite {
   id: string;
   name: string;
   category: TestCategory;
-  tests: any[];
+  tests: any[]; // Primary tests array
+  testIds?: string[]; // Added for backward compatibility
   setup?: () => Promise<void>;
   teardown?: () => Promise<void>;
   metadata?: Record<string, any>;
