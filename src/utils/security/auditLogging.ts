@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export enum SecurityEventType {
@@ -24,7 +23,11 @@ export enum SecurityEventType {
   CONFIG_CHANGE = 'CONFIG_CHANGE',
   
   // Admin actions
-  ADMIN_ACTION = 'ADMIN_ACTION'
+  ADMIN_ACTION = 'ADMIN_ACTION',
+  
+  // Access control events - Adding these to fix the error
+  ACCESS_GRANTED = 'ACCESS_GRANTED',
+  ACCESS_DENIED = 'ACCESS_DENIED'
 }
 
 export type SecurityEventSeverity = 'info' | 'warning' | 'error' | 'critical';

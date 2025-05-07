@@ -9,7 +9,7 @@ const RETRY_DELAY = 5000; // 5 seconds
 
 // Token refresh state
 let refreshPromise: Promise<any> | null = null;
-let refreshTimer: number | null = null;
+let refreshTimer: ReturnType<typeof setInterval> | null = null; // Fix: Using correct type
 let isRefreshing = false;
 let retryCount = 0;
 
