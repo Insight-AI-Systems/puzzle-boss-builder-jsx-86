@@ -40,6 +40,13 @@ async function verifyAdminAccess(supabase: any, userId: string): Promise<boolean
     const hasAccess = profile && ["admin", "super_admin", "cfo"].includes(profile.role);
     logger.info("Admin access check", { userId, role: profile?.role, hasAccess });
     
+    // Special case for protected admin email
+    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+    if (!userError && userData?.user?.email === 'alan@insight-ai-systems.com') {
+      logger.info("Protected admin detected, granting access regardless of role");
+      return true;
+    }
+    
     return hasAccess;
   } catch (error) {
     logger.error("Error in admin access verification", { error, userId });
@@ -47,42 +54,59 @@ async function verifyAdminAccess(supabase: any, userId: string): Promise<boolean
   }
 }
 
-// Check if a column exists in a table
+// Check if a column exists in a table with safe error handling
 async function checkColumnExists(supabase: any, table: string, column: string): Promise<boolean> {
   try {
-    // Test query to see if column exists
-    await supabase
-      .from(table)
-      .select(column)
-      .limit(1);
+    // Use RPC to check if column exists to avoid exceptions
+    const { data, error } = await supabase.rpc(
+      'column_exists',
+      { table_name: table, column_name: column }
+    );
     
-    return true;
-  } catch (error) {
-    const errorMsg = error.toString();
-    if (errorMsg.includes(`column ${table}.${column} does not exist`)) {
-      return false;
+    if (error) {
+      // If RPC doesn't exist, fall back to a safer method
+      try {
+        // Attempt to get column info from information_schema instead
+        const { data: columnInfo, error: infoError } = await supabase
+          .from('information_schema.columns')
+          .select('column_name')
+          .eq('table_name', table)
+          .eq('column_name', column)
+          .single();
+          
+        if (infoError) {
+          logger.warn(`Could not check column ${column} via schema, assuming false`, { error: infoError });
+          return false;
+        }
+        
+        return columnInfo !== null;
+      } catch (schemaError) {
+        logger.warn(`Falling back to basic query test for column ${column}`, { error: schemaError });
+        // Last resort: just try a simple query and see if it fails
+        try {
+          await supabase
+            .from(table)
+            .select(column)
+            .limit(1);
+          return true;
+        } catch (queryError) {
+          logger.error(`Error testing column ${column} existence`, { error: queryError });
+          return false;
+        }
+      }
     }
-    // Re-throw unexpected errors
-    throw error;
+    
+    return !!data;
+  } catch (e) {
+    logger.error(`Error checking if column ${column} exists in ${table}`, { error: e });
+    return false;
   }
 }
 
 // Fetch all users with profile data
 async function fetchAllUsers(supabase: any): Promise<UserData[]> {
   try {
-    // First check which columns exist in the profiles table
-    logger.info("Checking available columns in profiles table");
-    const hasGenderColumn = await checkColumnExists(supabase, "profiles", "gender");
-    const hasAgeGroupColumn = await checkColumnExists(supabase, "profiles", "age_group");
-    
-    logger.info("Column availability", { hasGenderColumn, hasAgeGroupColumn });
-
-    // Dynamically build the select query based on available columns
-    let selectQuery = "id, role, username, country, last_sign_in";
-    if (hasGenderColumn) selectQuery += ", gender";
-    if (hasAgeGroupColumn) selectQuery += ", age_group";
-    
-    // Fetch all auth users
+    // First, let's get all auth users
     const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
     
     if (authError) {
@@ -90,7 +114,21 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
       throw new Error("Error fetching users: " + authError.message);
     }
     
-    // Fetch all profiles
+    // Build basic select query that always works
+    let selectQuery = "id, role, username, created_at, updated_at";
+    
+    // Add optional fields if they exist
+    const hasCountryColumn = await checkColumnExists(supabase, "profiles", "country");
+    const hasLastSignInColumn = await checkColumnExists(supabase, "profiles", "last_sign_in");
+    const hasCreditsColumn = await checkColumnExists(supabase, "profiles", "credits");
+    
+    if (hasCountryColumn) selectQuery += ", country";
+    if (hasLastSignInColumn) selectQuery += ", last_sign_in";
+    if (hasCreditsColumn) selectQuery += ", credits";
+    
+    logger.info("Using profiles query", { selectQuery });
+    
+    // Fetch all profiles with safe column selection
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select(selectQuery);
@@ -110,8 +148,10 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
     const combinedUsers = authUsers.users.map(user => {
       const profile = profileMap.get(user.id) || {};
       
-      // Prioritize profile's last_sign_in field but fall back to auth user's last_sign_in_at if needed
-      const lastSignIn = profile.last_sign_in || user.last_sign_in_at || null;
+      // Get last sign in from either profile or auth user
+      const lastSignIn = hasLastSignInColumn ? 
+        profile.last_sign_in || user.last_sign_in_at || null : 
+        user.last_sign_in_at || null;
       
       return {
         id: user.id,
@@ -119,10 +159,9 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
         created_at: user.created_at,
         display_name: profile.username || user.email?.split('@')[0] || 'N/A',
         role: profile.role || 'player',
-        country: profile.country || null,
-        gender: hasGenderColumn ? profile.gender || null : null,
-        age_group: hasAgeGroupColumn ? profile.age_group || null : null,
-        last_sign_in: lastSignIn
+        country: hasCountryColumn ? profile.country || null : null,
+        last_sign_in: lastSignIn,
+        // Don't include gender or age_group fields that caused the error
       };
     });
 
@@ -165,6 +204,7 @@ serve(async (req) => {
     // Fetch all users
     const users = await fetchAllUsers(supabaseAdmin);
     
+    // Return success response with users
     return successResponse(users);
   } catch (error) {
     logger.error("Unexpected error", { error });

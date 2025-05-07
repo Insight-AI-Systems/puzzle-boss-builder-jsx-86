@@ -1,140 +1,71 @@
 
-import { corsHeaders } from './cors.ts';
-
-// Standard response type
-export interface StandardResponse<T = any> {
-  success: boolean;
-  message?: string;
-  data?: T;
-  error?: {
-    code: string;
-    message: string;
-    details?: any;
-  };
+// Standard HTTP status codes
+export enum HttpStatus {
+  OK = 200,
+  CREATED = 201,
+  BAD_REQUEST = 400,
+  UNAUTHORIZED = 401,
+  FORBIDDEN = 403,
+  NOT_FOUND = 404,
+  CONFLICT = 409,
+  UNPROCESSABLE_ENTITY = 422,
+  INTERNAL_SERVER_ERROR = 500,
+  SERVICE_UNAVAILABLE = 503
 }
 
+// Standard CORS headers for edge functions
+export const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 /**
- * Create a standardized success response
- * 
- * @param data Optional data to include in the response
- * @param message Optional success message
+ * Creates a standardized success response
+ * @param data The data to return in the response
  * @param status HTTP status code (defaults to 200)
- * @returns Formatted Response object
+ * @returns Response object with standardized format
  */
-export function successResponse<T = any>(data?: T, message?: string, status = 200): Response {
-  const responseBody: StandardResponse<T> = {
-    success: true,
-    message,
-    data
-  };
-  
+export function successResponse(data: any, status: number = HttpStatus.OK): Response {
   return new Response(
-    JSON.stringify(responseBody),
+    JSON.stringify(data),
     {
       status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
     }
   );
 }
 
 /**
- * Create a standardized error response
- * 
- * @param message Error message to display
- * @param code Error code identifier (defaults to 'internal_error')
- * @param status HTTP status code (defaults to 500)
- * @param details Additional error details (optional)
- * @returns Formatted Response object
+ * Creates a standardized error response
+ * @param message Human-readable error message
+ * @param code Machine-readable error code
+ * @param status HTTP status code (defaults to 400)
+ * @param details Optional additional details about the error
+ * @returns Response object with standardized format
  */
 export function errorResponse(
   message: string,
-  code = 'internal_error',
-  status = 500,
+  code: string,
+  status: number = HttpStatus.BAD_REQUEST,
   details?: any
 ): Response {
-  const responseBody: StandardResponse = {
-    success: false,
-    error: {
-      code,
-      message,
-      details
-    }
-  };
-  
-  console.error(`Error [${code}]: ${message}`, details);
-  
   return new Response(
-    JSON.stringify(responseBody),
+    JSON.stringify({
+      error: {
+        message,
+        code,
+        details
+      }
+    }),
     {
       status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
     }
   );
 }
-
-/**
- * Create a validation error response
- * 
- * @param message Validation error message
- * @param validationErrors Map of field-specific validation errors
- * @returns Formatted Response object
- */
-export function validationErrorResponse(
-  message: string,
-  validationErrors: Record<string, string>
-): Response {
-  return errorResponse(
-    message,
-    'validation_error',
-    400,
-    { validationErrors }
-  );
-}
-
-/**
- * Create an unauthorized error response
- * 
- * @param message Error message (defaults to 'Unauthorized')
- * @param details Additional error details (optional)
- * @returns Formatted Response object
- */
-export function unauthorizedResponse(message = 'Unauthorized', details?: any): Response {
-  return errorResponse(message, 'unauthorized', 401, details);
-}
-
-/**
- * Create a forbidden error response
- * 
- * @param message Error message (defaults to 'Permission denied')
- * @param details Additional error details (optional)
- * @returns Formatted Response object
- */
-export function forbiddenResponse(message = 'Permission denied', details?: any): Response {
-  return errorResponse(message, 'forbidden', 403, details);
-}
-
-/**
- * Create a not found error response
- * 
- * @param message Error message (defaults to 'Resource not found')
- * @param details Additional error details (optional)
- * @returns Formatted Response object
- */
-export function notFoundResponse(message = 'Resource not found', details?: any): Response {
-  return errorResponse(message, 'not_found', 404, details);
-}
-
-// HTTP Status code helpers
-export const HttpStatus = {
-  OK: 200,
-  CREATED: 201,
-  NO_CONTENT: 204,
-  BAD_REQUEST: 400,
-  UNAUTHORIZED: 401,
-  FORBIDDEN: 403,
-  NOT_FOUND: 404,
-  CONFLICT: 409,
-  UNPROCESSABLE_ENTITY: 422, 
-  INTERNAL_SERVER_ERROR: 500,
-  SERVICE_UNAVAILABLE: 503
-};
