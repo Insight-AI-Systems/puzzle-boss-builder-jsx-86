@@ -21,6 +21,10 @@ interface UserData {
   gender?: string | null;
   age_group?: string | null;
   country?: string | null;
+  categories_played?: string[] | null;
+  avatar_url?: string | null;
+  credits?: number | null;
+  updated_at?: string | null;
 }
 
 // Check if the user has admin privileges
@@ -57,45 +61,27 @@ async function verifyAdminAccess(supabase: any, userId: string): Promise<boolean
 // Check if a column exists in a table with safe error handling
 async function checkColumnExists(supabase: any, table: string, column: string): Promise<boolean> {
   try {
-    // Use RPC to check if column exists to avoid exceptions
-    const { data, error } = await supabase.rpc(
-      'column_exists',
-      { table_name: table, column_name: column }
-    );
-    
+    // Call our column-exists edge function
+    const { data, error } = await supabase.functions.invoke("column-exists", {
+      body: { table_name: table, column_name: column }
+    });
+
     if (error) {
-      // If RPC doesn't exist, fall back to a safer method
+      logger.warn(`Error checking if column ${column} exists via function`, { error });
+      
+      // Fallback: Just try a basic select query as a last resort
       try {
-        // Attempt to get column info from information_schema instead
-        const { data: columnInfo, error: infoError } = await supabase
-          .from('information_schema.columns')
-          .select('column_name')
-          .eq('table_name', table)
-          .eq('column_name', column)
-          .single();
-          
-        if (infoError) {
-          logger.warn(`Could not check column ${column} via schema, assuming false`, { error: infoError });
-          return false;
-        }
-        
-        return columnInfo !== null;
-      } catch (schemaError) {
-        logger.warn(`Falling back to basic query test for column ${column}`, { error: schemaError });
-        // Last resort: just try a simple query and see if it fails
-        try {
-          await supabase
-            .from(table)
-            .select(column)
-            .limit(1);
-          return true;
-        } catch (queryError) {
-          logger.error(`Error testing column ${column} existence`, { error: queryError });
-          return false;
-        }
+        await supabase
+          .from(table)
+          .select(column)
+          .limit(1);
+        return true;
+      } catch (queryError) {
+        logger.error(`Fallback check for column ${column} failed`, { queryError });
+        return false;
       }
     }
-    
+
     return !!data;
   } catch (e) {
     logger.error(`Error checking if column ${column} exists in ${table}`, { error: e });
@@ -117,14 +103,16 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
     // Build basic select query that always works
     let selectQuery = "id, role, username, created_at, updated_at";
     
-    // Add optional fields if they exist
+    // These fields always exist in the profiles table
     const hasCountryColumn = await checkColumnExists(supabase, "profiles", "country");
     const hasLastSignInColumn = await checkColumnExists(supabase, "profiles", "last_sign_in");
     const hasCreditsColumn = await checkColumnExists(supabase, "profiles", "credits");
+    const hasAvatarUrlColumn = await checkColumnExists(supabase, "profiles", "avatar_url");
     
     if (hasCountryColumn) selectQuery += ", country";
     if (hasLastSignInColumn) selectQuery += ", last_sign_in";
     if (hasCreditsColumn) selectQuery += ", credits";
+    if (hasAvatarUrlColumn) selectQuery += ", avatar_url";
     
     logger.info("Using profiles query", { selectQuery });
     
@@ -161,7 +149,10 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
         role: profile.role || 'player',
         country: hasCountryColumn ? profile.country || null : null,
         last_sign_in: lastSignIn,
-        // Don't include gender or age_group fields that caused the error
+        avatar_url: hasAvatarUrlColumn ? profile.avatar_url || null : null,
+        credits: hasCreditsColumn ? profile.credits || 0 : 0,
+        updated_at: profile.updated_at || user.updated_at || null
+        // Don't include fields that weren't checked or don't exist
       };
     });
 
