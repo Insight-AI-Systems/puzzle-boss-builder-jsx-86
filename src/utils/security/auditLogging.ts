@@ -57,18 +57,7 @@ export const logSecurityEvent = async (event: Omit<SecurityLogEvent, 'timestamp'
   const timestamp = new Date().toISOString();
   const maskedEmail = event.email ? maskEmail(event.email) : undefined;
   
-  // Prepare the event with full details for database and masked details for local
-  const dbEvent = {
-    user_id: event.userId || null,
-    event_type: event.eventType,
-    severity: event.severity,
-    ip_address: event.ipAddress || null,
-    user_agent: event.userAgent || null,
-    details: event.details || {},
-    email: event.email || null,
-    created_at: timestamp
-  };
-  
+  // Prepare the local event with masked info for privacy
   const localEvent = {
     ...event,
     timestamp,
@@ -83,14 +72,23 @@ export const logSecurityEvent = async (event: Omit<SecurityLogEvent, 'timestamp'
   
   // Store event in the database (ensure this is async to not block UI)
   try {
-    // Instead of using RPC, we'll directly insert to the security_audit_logs table
-    await supabase
-      .from('security_audit_logs')
-      .insert(dbEvent);
+    // Use the log_security_event RPC function
+    await supabase.functions.invoke('security-events', {
+      body: {
+        action: 'log',
+        event_type: event.eventType,
+        user_id: event.userId || null,
+        email: event.email || null,
+        severity: event.severity,
+        ip_address: event.ipAddress || null,
+        user_agent: event.userAgent || null,
+        event_details: event.details || {}
+      }
+    });
   } catch (dbError) {
     console.error('Failed to store security event in database:', dbError);
     // Attempt to queue the event for retry when online
-    queueEventForRetry(dbEvent);
+    queueEventForRetry(event);
   }
   
   // Always store locally as well (for development and as backup)
@@ -123,19 +121,20 @@ export const processQueuedSecurityEvents = async (): Promise<void> => {
       const batch = queue.slice(i, i + batchSize);
       
       try {
-        // Using direct insert instead of RPC
+        // Process batch using the edge function
         for (const event of batch) {
-          await supabase
-            .from('security_audit_logs')
-            .insert({
-              user_id: event.userId || null,
+          await supabase.functions.invoke('security-events', {
+            body: {
+              action: 'log',
               event_type: event.eventType,
+              user_id: event.userId || null,
+              email: event.email || null,
               severity: event.severity,
               ip_address: event.ipAddress || null,
               user_agent: event.userAgent || null,
-              details: event.details || {},
-              email: event.email || null
-            });
+              event_details: event.details || {}
+            }
+          });
         }
       } catch (error) {
         console.error('Error processing queued security events:', error);
