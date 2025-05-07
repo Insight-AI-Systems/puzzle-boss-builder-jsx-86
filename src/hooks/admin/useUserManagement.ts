@@ -6,6 +6,7 @@ import { useAdminProfiles } from '@/hooks/useAdminProfiles';
 import { UserRole } from '@/types/userTypes';
 import { useState, useEffect } from 'react';
 import { UserStats } from '@/types/adminTypes';
+import { toast } from '@/components/ui/use-toast';
 
 export function useUserManagement(isAdmin: boolean, currentUserId: string | null) {
   const filters = useUserFilters();
@@ -28,6 +29,25 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     lastLoginSortDirection,
     userType: filters.userType
   });
+
+  useEffect(() => {
+    // Log data for debugging
+    console.log('useUserManagement - Received data:', {
+      hasData: !!allProfilesData,
+      userCount: allProfilesData?.data?.length || 0,
+      isLoading: isLoadingProfiles,
+      error: profileError
+    });
+    
+    // Show toast if there's an error
+    if (profileError) {
+      toast({
+        title: "Error loading users",
+        description: profileError.message || "Unknown error occurred",
+        variant: "destructive"
+      });
+    }
+  }, [allProfilesData, isLoadingProfiles, profileError]);
 
   // Handle role change for a single user
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
@@ -64,7 +84,7 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
       const genderBreakdown: { [key: string]: number } = {};
       
       allProfilesData.data.forEach(user => {
-        const gender = user.gender || 'null';
+        const gender = user.gender || 'Unknown';
         genderBreakdown[gender] = (genderBreakdown[gender] || 0) + 1;
       });
 
@@ -79,7 +99,7 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
 
       // Set the complete stats object
       setUserStats({
-        total: allProfilesData.count,
+        total: allProfilesData.count || allProfilesData.data.length,
         genderBreakdown,
         ageBreakdown: Object.keys(ageBreakdown).length > 0 ? ageBreakdown : undefined
       });
@@ -115,6 +135,8 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     // Bulk role props
     bulkRole,
     setBulkRole,
-    isBulkRoleChanging
+    isBulkRoleChanging,
+    // Refetch function
+    refetch
   };
 }

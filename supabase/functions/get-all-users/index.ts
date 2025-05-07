@@ -40,9 +40,6 @@ async function verifyAdminAccess(supabase: any, userId: string): Promise<boolean
       logger.error("Error fetching user role", { error: profileError, userId });
       return false;
     }
-
-    const hasAccess = profile && ["admin", "super_admin", "cfo"].includes(profile.role);
-    logger.info("Admin access check", { userId, role: profile?.role, hasAccess });
     
     // Special case for protected admin email
     const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
@@ -50,7 +47,9 @@ async function verifyAdminAccess(supabase: any, userId: string): Promise<boolean
       logger.info("Protected admin detected, granting access regardless of role");
       return true;
     }
-    
+
+    const hasAccess = profile && ["admin", "super_admin", "cfo"].includes(profile.role);
+    logger.info("Admin access check", { userId, role: profile?.role, hasAccess });
     return hasAccess;
   } catch (error) {
     logger.error("Error in admin access verification", { error, userId });
@@ -61,28 +60,40 @@ async function verifyAdminAccess(supabase: any, userId: string): Promise<boolean
 // Check if a column exists in a table with safe error handling
 async function checkColumnExists(supabase: any, table: string, column: string): Promise<boolean> {
   try {
-    // Call our column-exists edge function
-    const { data, error } = await supabase.functions.invoke("column-exists", {
-      body: { table_name: table, column_name: column }
-    });
-
-    if (error) {
-      logger.warn(`Error checking if column ${column} exists via function`, { error });
+    // Try different approaches to check if column exists
+    
+    // Method 1: Use direct SQL to check
+    try {
+      const { data, error } = await supabase.functions.invoke("column-exists", {
+        body: { table_name: table, column_name: column }
+      });
       
-      // Fallback: Just try a basic select query as a last resort
-      try {
-        await supabase
-          .from(table)
-          .select(column)
-          .limit(1);
-        return true;
-      } catch (queryError) {
-        logger.error(`Fallback check for column ${column} failed`, { queryError });
+      if (!error) {
+        return !!data;
+      }
+      
+      logger.warn(`Error checking column via function: ${error?.message || "Unknown error"}`);
+    } catch (fnError) {
+      logger.warn(`Exception calling column-exists function: ${fnError.message}`);
+    }
+    
+    // Method 2: Fallback to direct query
+    try {
+      await supabase
+        .from(table)
+        .select(column)
+        .limit(1);
+      
+      return true;
+    } catch (e) {
+      if (e.message?.includes(`column "${column}" does not exist`)) {
         return false;
       }
+      
+      logger.warn(`Unexpected error in column check: ${e.message}`);
     }
-
-    return !!data;
+    
+    return false;
   } catch (e) {
     logger.error(`Error checking if column ${column} exists in ${table}`, { error: e });
     return false;
@@ -100,19 +111,26 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
       throw new Error("Error fetching users: " + authError.message);
     }
     
-    // Build basic select query that always works
+    // Build a base query that should always work
     let selectQuery = "id, role, username, created_at, updated_at";
     
-    // These fields always exist in the profiles table
+    // Check for additional fields
     const hasCountryColumn = await checkColumnExists(supabase, "profiles", "country");
     const hasLastSignInColumn = await checkColumnExists(supabase, "profiles", "last_sign_in");
     const hasCreditsColumn = await checkColumnExists(supabase, "profiles", "credits");
     const hasAvatarUrlColumn = await checkColumnExists(supabase, "profiles", "avatar_url");
+    const hasGenderColumn = await checkColumnExists(supabase, "profiles", "gender");
+    const hasAgeGroupColumn = await checkColumnExists(supabase, "profiles", "age_group");
+    const hasCategoriesPlayedColumn = await checkColumnExists(supabase, "profiles", "categories_played");
     
+    // Add columns that exist to the query
     if (hasCountryColumn) selectQuery += ", country";
     if (hasLastSignInColumn) selectQuery += ", last_sign_in";
     if (hasCreditsColumn) selectQuery += ", credits";
     if (hasAvatarUrlColumn) selectQuery += ", avatar_url";
+    if (hasGenderColumn) selectQuery += ", gender";
+    if (hasAgeGroupColumn) selectQuery += ", age_group";
+    if (hasCategoriesPlayedColumn) selectQuery += ", categories_played";
     
     logger.info("Using profiles query", { selectQuery });
     
@@ -141,19 +159,27 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
         profile.last_sign_in || user.last_sign_in_at || null : 
         user.last_sign_in_at || null;
       
-      return {
+      // Build the user data object with available fields
+      const userData: UserData = {
         id: user.id,
-        email: user.email,
-        created_at: user.created_at,
+        email: user.email || '',
         display_name: profile.username || user.email?.split('@')[0] || 'N/A',
         role: profile.role || 'player',
-        country: hasCountryColumn ? profile.country || null : null,
+        created_at: user.created_at || new Date().toISOString(),
         last_sign_in: lastSignIn,
-        avatar_url: hasAvatarUrlColumn ? profile.avatar_url || null : null,
-        credits: hasCreditsColumn ? profile.credits || 0 : 0,
-        updated_at: profile.updated_at || user.updated_at || null
-        // Don't include fields that weren't checked or don't exist
       };
+      
+      // Add optional fields if they exist
+      if (hasCountryColumn) userData.country = profile.country || null;
+      if (hasAvatarUrlColumn) userData.avatar_url = profile.avatar_url || null;
+      if (hasCreditsColumn) userData.credits = profile.credits || 0;
+      if (hasGenderColumn) userData.gender = profile.gender || null;
+      if (hasAgeGroupColumn) userData.age_group = profile.age_group || null;
+      if (hasCategoriesPlayedColumn) userData.categories_played = profile.categories_played || [];
+      
+      userData.updated_at = profile.updated_at || user.updated_at || null;
+      
+      return userData;
     });
 
     logger.info(`Retrieved ${combinedUsers.length} users`);
