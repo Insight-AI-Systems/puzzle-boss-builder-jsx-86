@@ -36,6 +36,14 @@ export async function verifyAuth(req: Request): Promise<AuthResult> {
 
     // Create Supabase client
     const config = getSupabaseConfig();
+    if (!config || !config.url || !config.serviceRoleKey) {
+      logger.error("Missing Supabase configuration");
+      return {
+        user: null,
+        error: errorResponse("Server configuration error", "server_error", HttpStatus.INTERNAL_SERVER_ERROR)
+      };
+    }
+    
     const supabase = createClient(config.url, config.serviceRoleKey);
     
     // Verify the token
@@ -50,10 +58,17 @@ export async function verifyAuth(req: Request): Promise<AuthResult> {
     }
 
     // Special case for a protected admin
-    if (user.email === 'alan@insight-ai-systems.com') {
-      logger.info("Protected admin authenticated");
+    const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+    if (user.email === PROTECTED_ADMIN_EMAIL) {
+      logger.info("Protected admin authenticated", { 
+        userId: user.id, 
+        email: user.email 
+      });
     } else {
-      logger.info("User authenticated successfully", { userId: user.id });
+      logger.info("User authenticated successfully", { 
+        userId: user.id,
+        email: user.email 
+      });
     }
 
     return { 
@@ -67,4 +82,9 @@ export async function verifyAuth(req: Request): Promise<AuthResult> {
       error: errorResponse("Authentication error", "server_error", HttpStatus.INTERNAL_SERVER_ERROR)
     };
   }
+}
+
+// Helper function to check if user is a specific protected admin
+export function isProtectedAdmin(email?: string): boolean {
+  return email === 'alan@insight-ai-systems.com';
 }

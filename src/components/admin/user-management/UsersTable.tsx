@@ -6,7 +6,7 @@ import { UserTableRow } from './UserTableRow';
 import { UserTableProps } from '@/types/userTableTypes';
 import { UserRole } from '@/types/userTypes';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, AlertCircle, Database } from 'lucide-react';
 
 const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
@@ -52,20 +52,40 @@ export function UsersTable({
             <tr>
               <td colSpan={selectionEnabled ? 8 : 7} className="text-center py-6">
                 <div className="flex flex-col items-center justify-center space-y-4 p-4">
-                  <p className="text-muted-foreground">
-                    No users found. There may be an issue with database connectivity or permissions.
-                  </p>
-                  {onRefresh && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Database className="h-5 w-5" />
+                    <p>
+                      No users found. There may be an issue with database connectivity or permissions.
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    {onRefresh && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={onRefresh}
+                        className="flex items-center gap-2"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                        Refresh User List
+                      </Button>
+                    )}
                     <Button 
-                      variant="outline" 
+                      variant="secondary" 
                       size="sm"
-                      onClick={onRefresh}
+                      onClick={() => {
+                        if (isCurrentUserProtectedAdmin) {
+                          alert("Protected admin detected. Please check database configuration and logs.");
+                        } else {
+                          alert("Please check with your administrator about database permissions.");
+                        }
+                      }}
                       className="flex items-center gap-2"
                     >
-                      <RefreshCw className="h-4 w-4" />
-                      Refresh User List
+                      <AlertCircle className="h-4 w-4" />
+                      Database Info
                     </Button>
-                  )}
+                  </div>
                 </div>
               </td>
             </tr>
