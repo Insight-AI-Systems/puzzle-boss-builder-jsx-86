@@ -1,15 +1,21 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Bug, Settings, Terminal, Shield } from "lucide-react";
+import { RefreshCw, Bug, Settings, Terminal, Shield, DownloadCloud } from "lucide-react";
 
 interface AdminToolbarProps {
   showDebugInfo: () => void;
   showDiagnostics?: () => void;
   onRefresh?: () => void;
+  exportUsers?: () => void;
 }
 
-export function AdminToolbar({ showDebugInfo, showDiagnostics, onRefresh }: AdminToolbarProps) {
+export function AdminToolbar({ 
+  showDebugInfo, 
+  showDiagnostics, 
+  onRefresh,
+  exportUsers
+}: AdminToolbarProps) {
   const handleRefresh = () => {
     if (onRefresh) {
       onRefresh();
@@ -34,6 +40,13 @@ export function AdminToolbar({ showDebugInfo, showDiagnostics, onRefresh }: Admi
         <Button variant="outline" size="sm" onClick={showDiagnostics} className="flex items-center gap-1">
           <Bug className="h-4 w-4" />
           Admin Diagnostics
+        </Button>
+      )}
+      
+      {exportUsers && (
+        <Button variant="outline" size="sm" onClick={exportUsers} className="flex items-center gap-1">
+          <DownloadCloud className="h-4 w-4" />
+          Export Users
         </Button>
       )}
       

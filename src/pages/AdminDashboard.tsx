@@ -72,7 +72,8 @@ const AdminDashboard = () => {
       user: user ? {
         id: user.id,
         email: user.email,
-        role: userRole
+        role: userRole,
+        isProtectedAdmin: isProtectedAdmin(user.email)
       } : null,
       profile: profile ? {
         id: profile.id,
@@ -95,6 +96,13 @@ const AdminDashboard = () => {
       hasAdminAccess
     };
     setDebugInfo(JSON.stringify(info, null, 2));
+  };
+
+  const refreshDashboard = () => {
+    // Clear any cached debug state
+    setDebugInfo(null);
+    // Force page refresh
+    window.location.reload();
   };
 
   if (isLoading) {
@@ -121,12 +129,16 @@ const AdminDashboard = () => {
       <div className="min-h-screen bg-puzzle-black p-6">
         <div className="max-w-6xl mx-auto space-y-8">
           <h1 className="text-3xl font-game text-puzzle-aqua">
-            {hasProtectedEmail || isSuperAdmin ? 'Admin Dashboard' : `${profile?.role?.replace('_', ' ')} Dashboard`}
+            {hasProtectedEmail ? 'Admin Dashboard (Protected Admin)' : 
+             (isSuperAdmin ? 'Admin Dashboard (Super Admin)' :
+              (isAdmin ? 'Admin Dashboard' : 
+               `${profile?.role?.replace('_', ' ')} Dashboard`))}
           </h1>
 
           <AdminToolbar 
             showDebugInfo={showDebugInfo}
             showDiagnostics={() => setShowDiagnostics(!showDiagnostics)}
+            onRefresh={refreshDashboard}
           />
           
           {debugInfo && (

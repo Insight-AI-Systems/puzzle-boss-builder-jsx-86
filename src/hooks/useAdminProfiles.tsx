@@ -6,8 +6,9 @@ import { useRoleManagement } from './admin/useRoleManagement';
 import { useEmailManagement } from './admin/useEmailManagement';
 import { filterUserData, transformToUserProfile, extractUniqueValues } from '@/utils/admin/userDataProcessing';
 import { UserRole } from '@/types/userTypes';
-import { isProtectedAdmin } from '@/constants/securityConfig';
+import { isProtectedAdmin, PROTECTED_ADMIN_EMAIL } from '@/constants/securityConfig';
 import { debugLog, DebugLevel } from '@/utils/debug';
+import { toast } from '@/hooks/use-toast';
 
 // Define admin roles for filtering
 const ADMIN_ROLES = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
@@ -101,6 +102,28 @@ export function useAdminProfiles(
           last_sign_in: null
         }));
         
+        // Add the protected admin if it's not already in the list
+        const hasProtectedAdmin = profiles.some(p => isProtectedAdmin(p.email));
+        if (!hasProtectedAdmin && isProtectedAdminUser) {
+          // Add the protected admin with super_admin role
+          profiles.push({
+            id: userData?.user?.id || 'protected-admin',
+            email: PROTECTED_ADMIN_EMAIL,
+            display_name: 'Protected Admin',
+            bio: null,
+            avatar_url: null,
+            role: 'super_admin',
+            country: null,
+            categories_played: [],
+            credits: 0,
+            achievements: [],
+            referral_code: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            last_sign_in: new Date().toISOString()
+          });
+        }
+        
         debugLog('useAdminProfiles', 'Successfully retrieved profiles via fallback', DebugLevel.INFO, {
           count: profiles.length
         });
@@ -143,6 +166,20 @@ export function useAdminProfiles(
         });
       }
       
+      // Check if protected admin is in the list, add if not
+      const hasProtectedAdmin = filteredData.some(user => isProtectedAdmin(user.email));
+      if (!hasProtectedAdmin && isProtectedAdminUser) {
+        // Add the current protected admin user with super_admin role
+        filteredData.push({
+          id: userData?.user?.id || 'protected-admin',
+          email: PROTECTED_ADMIN_EMAIL,
+          display_name: 'Protected Admin',
+          role: 'super_admin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      }
+      
       const totalCount = filteredData.length;
       
       // Apply pagination
@@ -178,6 +215,14 @@ export function useAdminProfiles(
       
     } catch (error) {
       debugLog('useAdminProfiles', 'Error in useAdminProfiles:', DebugLevel.ERROR, { error });
+      
+      // Show error toast to notify the user
+      toast({
+        title: "Error loading users",
+        description: "Failed to fetch user data. Please try refreshing the page.",
+        variant: "destructive",
+      });
+      
       throw error;
     }
   };
@@ -222,41 +267,7 @@ export function useAdminProfiles(
   }
 
   // Role management mutations
-  const updateUserRole = useMutation({
-    mutationFn: async ({ userId, newRole }: { userId: string; newRole: UserRole }) => {
-      debugLog('useAdminProfiles', `Updating role for user ${userId} to ${newRole}`, DebugLevel.INFO);
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({ role: newRole })
-        .eq('id', userId)
-        .select();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['all-users'] });
-    },
-  });
-
-  const bulkUpdateRoles = useMutation({
-    mutationFn: async ({ userIds, newRole }: { userIds: string[]; newRole: UserRole }) => {
-      debugLog('useAdminProfiles', `Bulk updating roles for ${userIds.length} users to ${newRole}`, DebugLevel.INFO);
-      // Use Promise.all to handle multiple updates
-      const promises = userIds.map(userId =>
-        supabase
-          .from('profiles')
-          .update({ role: newRole })
-          .eq('id', userId)
-      );
-      
-      await Promise.all(promises);
-      return true;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['all-users'] });
-    },
-  });
+  const { updateUserRole, bulkUpdateRoles } = useRoleManagement();
 
   // Email management mutation
   const sendBulkEmail = useMutation({

@@ -32,14 +32,20 @@ export const UserRoleMenu: React.FC<UserRoleMenuProps> = ({
   
   // Log the role menu rendering for debugging
   React.useEffect(() => {
-    if (isProtectedAdminUser) {
-      debugLog('UserRoleMenu', 'Protected admin user role menu rendered', DebugLevel.INFO, {
-        userId: user.id,
-        email: user.email
-      });
-    }
-  }, [user.id, user.email, isProtectedAdminUser]);
+    debugLog('UserRoleMenu', `Rendering role menu for user: ${user.id}`, DebugLevel.INFO, {
+      userId: user.id,
+      email: user.email,
+      currentRole: user.role,
+      isProtectedAdmin: isProtectedAdminUser
+    });
+  }, [user.id, user.email, user.role, isProtectedAdminUser]);
   
+  // Function to handle role change with logging
+  const handleRoleChange = (newRole: string) => {
+    debugLog('UserRoleMenu', `Changing role for user ${user.id} to ${newRole}`, DebugLevel.INFO);
+    onRoleChange(user.id, newRole);
+  };
+
   // If this is the protected admin, disable role changes completely
   if (isProtectedAdminUser) {
     return (
@@ -55,7 +61,7 @@ export const UserRoleMenu: React.FC<UserRoleMenuProps> = ({
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="flex items-center gap-1">
           <Shield className="h-4 w-4" />
-          Change Role
+          {user.role === 'player' ? 'Assign Role' : 'Change Role'}
           <ChevronDown className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -70,7 +76,7 @@ export const UserRoleMenu: React.FC<UserRoleMenuProps> = ({
               key={roleDef.role}
               onClick={() => {
                 if (canAssign && !isCurrentRole) {
-                  onRoleChange(user.id, roleDef.role);
+                  handleRoleChange(roleDef.role);
                 }
               }}
               disabled={!canAssign || isCurrentRole}

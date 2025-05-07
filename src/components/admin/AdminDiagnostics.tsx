@@ -1,240 +1,173 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { RefreshCw, AlertCircle, Check, X } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserProfile } from '@/hooks/useUserProfile';
+import { Button } from '@/components/ui/button';
+import { Refresh, Download, Bug } from 'lucide-react';
 import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';
-import { debugLog, DebugLevel } from '@/utils/debug';
 
-/**
- * Admin Diagnostics Component
- * 
- * A troubleshooting tool to help diagnose admin access issues
- */
 export function AdminDiagnostics() {
-  const [diagnosticData, setDiagnosticData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const { user, session } = useAuth();
-  const { profile } = useUserProfile();
-
-  const runDiagnostics = async () => {
+  const { user, session, hasRole } = useAuth();
+  const [userDetails, setUserDetails] = useState<any>(null);
+  const [profileDetails, setProfileDetails] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Fetch diagnostic information
+  const fetchDiagnostics = async () => {
     setLoading(true);
+    setError(null);
+    
     try {
-      // Check authentication status
-      const authCheck = {
-        isAuthenticated: !!user,
-        userId: user?.id || 'Not authenticated',
-        userEmail: user?.email || 'Not authenticated',
-        emailMatches: isProtectedAdmin(user?.email),
-        sessionExists: !!session,
-      };
-
-      // Check profile data
-      const profileCheck = {
-        profileExists: !!profile,
-        profileId: profile?.id || 'No profile found',
-        profileRole: profile?.role || 'No role found',
-      };
-
-      // Test edge function access
-      let edgeFunctionCheck = { success: false, message: 'Not attempted', data: null };
-      try {
-        const { data, error } = await supabase.functions.invoke('get-all-users', {
-          method: 'GET',
-        });
-        
-        edgeFunctionCheck = {
-          success: !error && Array.isArray(data),
-          message: error ? `Error: ${error.message}` : `Success: Retrieved ${data?.length || 0} users`,
-          data: data ? { userCount: data.length } : null,
-        };
-      } catch (err) {
-        edgeFunctionCheck = {
-          success: false,
-          message: `Exception: ${err instanceof Error ? err.message : String(err)}`,
-          data: null,
-        };
+      // Check current user auth status
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        throw new Error(`Auth error: ${userError.message}`);
       }
-
-      // Direct database test (using RLS)
-      let databaseCheck = { success: false, message: 'Not attempted', data: null };
-      try {
-        const { data, error } = await supabase
+      
+      setUserDetails(userData.user);
+      
+      // Check profile from database
+      if (userData.user?.id) {
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('count(*)', { count: 'exact', head: true });
-
-        databaseCheck = {
-          success: !error,
-          message: error ? `Error: ${error.message}` : `Success: Database accessible`,
-          data: data,
-        };
-      } catch (err) {
-        databaseCheck = {
-          success: false,
-          message: `Exception: ${err instanceof Error ? err.message : String(err)}`,
-          data: null,
-        };
+          .select('*')
+          .eq('id', userData.user.id)
+          .single();
+          
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error('Profile fetch error:', profileError);
+        }
+        
+        setProfileDetails(profileData || null);
       }
-
-      // Compile all checks
-      const diagnostics = {
-        timestamp: new Date().toISOString(),
-        auth: authCheck,
-        profile: profileCheck,
-        edgeFunction: edgeFunctionCheck,
-        database: databaseCheck,
-      };
-      
-      setDiagnosticData(diagnostics);
-      debugLog('AdminDiagnostics', 'Diagnostics completed', DebugLevel.INFO, diagnostics);
-      
-    } catch (error) {
-      debugLog('AdminDiagnostics', 'Error running diagnostics', DebugLevel.ERROR, { error });
-      setDiagnosticData({
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString(),
-      });
+    } catch (err) {
+      console.error('Diagnostics error:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
       setLoading(false);
     }
   };
-
+  
+  // Download diagnostics as JSON
+  const downloadDiagnostics = () => {
+    const diagnosticData = {
+      timestamp: new Date().toISOString(),
+      sessionExists: !!session,
+      userFromContext: user ? {
+        id: user.id,
+        email: user.email,
+        role: user.role
+      } : null,
+      userFromAPI: userDetails,
+      profileFromDB: profileDetails,
+      isProtectedAdmin: user?.email ? isProtectedAdmin(user.email) : false,
+      PROTECTED_ADMIN_EMAIL,
+      roles: {
+        isAdmin: hasRole('admin'),
+        isSuperAdmin: hasRole('super_admin'),
+        isCategoryManager: hasRole('category_manager')
+      }
+    };
+    
+    const blob = new Blob([JSON.stringify(diagnosticData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'admin-diagnostics.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+  
+  // Fetch on initial render
   useEffect(() => {
-    // Run diagnostics on mount
-    runDiagnostics();
+    fetchDiagnostics();
   }, []);
-
+  
   return (
     <Card className="mt-4">
       <CardHeader>
-        <CardTitle className="flex justify-between items-center">
-          <span>Admin Access Diagnostics</span>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={runDiagnostics} 
-            disabled={loading}
-            className="flex items-center gap-1"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            {loading ? 'Running...' : 'Run Diagnostics'}
-          </Button>
+        <CardTitle className="flex items-center gap-2">
+          <Bug className="h-5 w-5 text-red-500" />
+          Admin Diagnostics
         </CardTitle>
         <CardDescription>
-          Troubleshooting tool to diagnose admin access issues
+          Troubleshooting information for administrators
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {diagnosticData?.error ? (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error running diagnostics</AlertTitle>
-            <AlertDescription>{diagnosticData.error}</AlertDescription>
-          </Alert>
-        ) : diagnosticData ? (
-          <div className="space-y-4">
-            {/* Authentication Status */}
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">Authentication:</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <span>Authenticated:</span>
-                  {diagnosticData.auth.isAuthenticated ? 
-                    <Check className="text-green-500 h-4 w-4" /> : 
-                    <X className="text-red-500 h-4 w-4" />}
-                </div>
-                <div>User ID: <span className="font-mono text-xs">{diagnosticData.auth.userId.substring(0, 8)}...</span></div>
-                <div className="flex items-center gap-2">
-                  <span>Email:</span>
-                  <span className="text-xs">{diagnosticData.auth.userEmail}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span>Protected Admin Email Match:</span>
-                  {diagnosticData.auth.emailMatches ? 
-                    <Check className="text-green-500 h-4 w-4" /> : 
-                    <X className="text-red-500 h-4 w-4" />}
-                </div>
-              </div>
+        <div className="space-y-4">
+          {error && (
+            <div className="p-3 bg-red-100 text-red-800 rounded-md">
+              Error: {error}
             </div>
-
-            {/* Profile Status */}
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">User Profile:</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <span>Profile Exists:</span>
-                  {diagnosticData.profile.profileExists ? 
-                    <Check className="text-green-500 h-4 w-4" /> : 
-                    <X className="text-red-500 h-4 w-4" />}
-                </div>
-                <div>Role: <Badge variant={diagnosticData.profile.profileRole ? "default" : "outline"}>{diagnosticData.profile.profileRole}</Badge></div>
-              </div>
+          )}
+          
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Authorization Status</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="font-medium">Protected Admin:</div>
+              <div>{user?.email && isProtectedAdmin(user.email) ? 'Yes' : 'No'}</div>
+              
+              <div className="font-medium">Session Active:</div>
+              <div>{session ? 'Yes' : 'No'}</div>
+              
+              <div className="font-medium">User Role:</div>
+              <div>{user?.role || 'Not set'}</div>
             </div>
-
-            {/* Edge Function Test */}
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">Edge Function Access:</h3>
-              <div className="flex items-center gap-2">
-                <span>Status:</span>
-                {diagnosticData.edgeFunction.success ? 
-                  <Badge className="bg-green-600">Success</Badge> : 
-                  <Badge variant="destructive">Failed</Badge>}
-              </div>
-              <div className="text-xs">{diagnosticData.edgeFunction.message}</div>
-              {diagnosticData.edgeFunction.data?.userCount !== undefined && (
-                <div className="text-xs">Users returned: {diagnosticData.edgeFunction.data.userCount}</div>
-              )}
+            
+            <h3 className="text-sm font-medium mt-4">Role Checks</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="font-medium">Is Super Admin:</div>
+              <div>{hasRole('super_admin') ? 'Yes' : 'No'}</div>
+              
+              <div className="font-medium">Is Admin:</div>
+              <div>{hasRole('admin') ? 'Yes' : 'No'}</div>
+              
+              <div className="font-medium">Is Category Manager:</div>
+              <div>{hasRole('category_manager') ? 'Yes' : 'No'}</div>
             </div>
-
-            {/* Database Access Test */}
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">Database Access:</h3>
-              <div className="flex items-center gap-2">
-                <span>Status:</span>
-                {diagnosticData.database.success ? 
-                  <Badge className="bg-green-600">Success</Badge> : 
-                  <Badge variant="destructive">Failed</Badge>}
-              </div>
-              <div className="text-xs">{diagnosticData.database.message}</div>
-            </div>
-
-            {/* Admin Check Summary */}
-            <Alert className={`${(diagnosticData.auth.emailMatches || diagnosticData.profile.profileRole === 'super_admin' || diagnosticData.profile.profileRole === 'admin') ? 'bg-green-50' : 'bg-red-50'}`}>
-              <div className="flex items-center gap-2">
-                <span>Admin Status:</span>
-                {(diagnosticData.auth.emailMatches || diagnosticData.profile.profileRole === 'super_admin' || diagnosticData.profile.profileRole === 'admin') ? (
-                  <Badge className="bg-green-600">Admin Access Confirmed</Badge>
-                ) : (
-                  <Badge variant="destructive">Not An Admin</Badge>
-                )}
-              </div>
-              <AlertDescription className="mt-2">
-                {(diagnosticData.auth.emailMatches || diagnosticData.profile.profileRole === 'super_admin' || diagnosticData.profile.profileRole === 'admin') ? (
-                  <span>You have admin privileges.</span>
-                ) : (
-                  <div>
-                    <p>You do not appear to have admin privileges. This could be due to:</p>
-                    <ul className="list-disc list-inside mt-2 pl-2">
-                      <li>Your email does not match the protected admin email</li>
-                      <li>Your profile does not have an admin role</li>
-                      <li>Edge function authentication issues</li>
-                      <li>Database permission issues</li>
-                    </ul>
-                  </div>
-                )}
-              </AlertDescription>
-            </Alert>
+            
+            {profileDetails && (
+              <>
+                <h3 className="text-sm font-medium mt-4">Profile Data</h3>
+                <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-28">
+                  {JSON.stringify({
+                    id: profileDetails.id,
+                    role: profileDetails.role,
+                    username: profileDetails.username,
+                    email: profileDetails.email
+                  }, null, 2)}
+                </pre>
+              </>
+            )}
           </div>
-        ) : (
-          <div className="py-4 text-center text-muted-foreground">
-            Running diagnostics...
+          
+          <div className="flex gap-2 pt-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={fetchDiagnostics} 
+              disabled={loading}
+            >
+              <Refresh className="mr-1 h-4 w-4" />
+              Refresh
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={downloadDiagnostics}
+            >
+              <Download className="mr-1 h-4 w-4" />
+              Download Diagnostics
+            </Button>
           </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );
