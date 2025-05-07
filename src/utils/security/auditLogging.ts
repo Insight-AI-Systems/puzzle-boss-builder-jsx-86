@@ -59,8 +59,13 @@ export const logSecurityEvent = async (event: Omit<SecurityLogEvent, 'timestamp'
   
   // Prepare the event with full details for database and masked details for local
   const dbEvent = {
-    ...event,
-    email: event.email, // Store full email in the database for admin investigation
+    user_id: event.userId || null,
+    event_type: event.eventType,
+    severity: event.severity,
+    ip_address: event.ipAddress || null,
+    user_agent: event.userAgent || null,
+    details: event.details || {},
+    email: event.email || null,
     created_at: timestamp
   };
   
@@ -78,16 +83,10 @@ export const logSecurityEvent = async (event: Omit<SecurityLogEvent, 'timestamp'
   
   // Store event in the database (ensure this is async to not block UI)
   try {
-    // The table was created in the migrations, so we can safely insert to it
-    await supabase.rpc('log_security_event', {
-      event_type: event.eventType,
-      user_id: event.userId || null,
-      email: event.email || null,
-      severity: event.severity,
-      ip_address: event.ipAddress || null,
-      user_agent: event.userAgent || null,
-      event_details: event.details || {}
-    });
+    // Instead of using RPC, we'll directly insert to the security_audit_logs table
+    await supabase
+      .from('security_audit_logs')
+      .insert(dbEvent);
   } catch (dbError) {
     console.error('Failed to store security event in database:', dbError);
     // Attempt to queue the event for retry when online
@@ -124,17 +123,19 @@ export const processQueuedSecurityEvents = async (): Promise<void> => {
       const batch = queue.slice(i, i + batchSize);
       
       try {
-        // Using RPC for batch operations
+        // Using direct insert instead of RPC
         for (const event of batch) {
-          await supabase.rpc('log_security_event', {
-            event_type: event.eventType,
-            user_id: event.userId || null,
-            email: event.email || null,
-            severity: event.severity,
-            ip_address: event.ipAddress || null,
-            user_agent: event.userAgent || null,
-            event_details: event.details || {}
-          });
+          await supabase
+            .from('security_audit_logs')
+            .insert({
+              user_id: event.userId || null,
+              event_type: event.eventType,
+              severity: event.severity,
+              ip_address: event.ipAddress || null,
+              user_agent: event.userAgent || null,
+              details: event.details || {},
+              email: event.email || null
+            });
         }
       } catch (error) {
         console.error('Error processing queued security events:', error);
