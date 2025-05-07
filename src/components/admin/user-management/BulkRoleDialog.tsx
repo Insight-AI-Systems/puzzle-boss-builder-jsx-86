@@ -14,24 +14,28 @@ import { Label } from "@/components/ui/label";
 import { UserRole } from '@/types/userTypes';
 import { Loader2 } from 'lucide-react';
 
-interface BulkRoleDialogProps {
+export interface BulkRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedCount: number;
-  bulkRole: UserRole | null;
-  setBulkRole: (role: UserRole) => void;
-  onUpdateRoles: () => void;
-  isUpdating: boolean;
+  bulkRole?: UserRole | null;
+  setBulkRole?: (role: UserRole) => void;
+  onUpdateRoles?: () => void;
+  isUpdating?: boolean;
+  selectedRole: UserRole | null;
+  onSelectRole: (role: UserRole) => void;
+  isLoading: boolean;
+  onSubmit: (role: UserRole) => Promise<void>;
 }
 
 export function BulkRoleDialog({
   open,
   onOpenChange,
   selectedCount,
-  bulkRole,
-  setBulkRole,
-  onUpdateRoles,
-  isUpdating
+  selectedRole,
+  onSelectRole,
+  onSubmit,
+  isLoading
 }: BulkRoleDialogProps) {
   const roles: {value: UserRole, label: string}[] = [
     { value: 'player', label: 'Player' },
@@ -42,6 +46,12 @@ export function BulkRoleDialog({
     { value: 'social_media_manager', label: 'Social Media Manager' },
     { value: 'cfo', label: 'CFO' }
   ];
+
+  const handleUpdateRoles = () => {
+    if (selectedRole) {
+      onSubmit(selectedRole);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -54,7 +64,7 @@ export function BulkRoleDialog({
         </DialogHeader>
 
         <div className="py-4">
-          <RadioGroup value={bulkRole || undefined} onValueChange={(value) => setBulkRole(value as UserRole)}>
+          <RadioGroup value={selectedRole || undefined} onValueChange={(value) => onSelectRole(value as UserRole)}>
             {roles.map((role) => (
               <div className="flex items-center space-x-2" key={role.value}>
                 <RadioGroupItem value={role.value} id={`role-${role.value}`} />
@@ -68,16 +78,16 @@ export function BulkRoleDialog({
           <Button 
             variant="secondary" 
             onClick={() => onOpenChange(false)}
-            disabled={isUpdating}
+            disabled={isLoading}
           >
             Cancel
           </Button>
           <Button 
             variant="default" 
-            onClick={onUpdateRoles}
-            disabled={!bulkRole || isUpdating}
+            onClick={handleUpdateRoles}
+            disabled={!selectedRole || isLoading}
           >
-            {isUpdating ? (
+            {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Updating...

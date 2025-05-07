@@ -14,24 +14,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2, Mail } from "lucide-react";
 
-interface EmailDialogProps {
+export interface EmailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedCount: number;
-  onSend: (subject: string, body: string) => void;
+  onSend?: (subject: string, body: string) => void;
+  onSendEmail: (subject: string, message: string) => Promise<void>;
 }
 
 export function EmailDialog({
   open,
   onOpenChange,
   selectedCount,
-  onSend
+  onSendEmail
 }: EmailDialogProps) {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [isSending, setIsSending] = useState(false);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!subject.trim() || !body.trim()) {
       alert('Please enter both subject and body');
       return;
@@ -39,13 +40,17 @@ export function EmailDialog({
 
     setIsSending(true);
     
-    // Simulate sending delay
-    setTimeout(() => {
-      onSend(subject, body);
-      setIsSending(false);
+    try {
+      await onSendEmail(subject, body);
       setSubject('');
       setBody('');
-    }, 1000);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error sending email:', error);
+      alert('Failed to send email. Please try again.');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (

@@ -12,6 +12,7 @@ import { UserStatsDisplay } from './UserStatsDisplay';
 import { EmailDialog } from './EmailDialog';
 import { BulkRoleDialog } from './BulkRoleDialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { UserRole } from '@/types/userTypes';
 
 export function UserManagement() {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
@@ -113,7 +114,7 @@ export function UserManagement() {
         {/* Users Table */}
         <UsersTable 
           users={filteredUsers || []}
-          currentUserRole={user?.role || 'player'}
+          currentUserRole={user?.role as UserRole || 'player'}
           currentUserEmail={user?.email}
           onRoleChange={handleRoleChange}
           onSortByRole={() => {}}
