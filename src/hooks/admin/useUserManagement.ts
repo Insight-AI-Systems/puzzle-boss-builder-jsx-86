@@ -2,14 +2,13 @@
 import { useUserFilters } from './useUserFilters';
 import { useUserSelection } from './useUserSelection';
 import { useUserExport } from './useUserExport';
-import { useAdminProfiles } from '@/hooks/useAdminProfiles';
 import { UserRole } from '@/types/userTypes';
 import { useState, useEffect } from 'react';
 import { UserStats } from '@/types/adminTypes';
 import { toast } from '@/components/ui/use-toast';
-
-// Define admin roles array for filtering
-const ADMIN_ROLES = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { userService } from '@/services/userService';
+import { roleService } from '@/services/roleService';
 
 export function useUserManagement(isAdmin: boolean, currentUserId: string | null) {
   const filters = useUserFilters();
@@ -19,155 +18,158 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
   const [bulkRole, setBulkRole] = useState<UserRole | null>(null);
   const [isBulkRoleChanging, setIsBulkRoleChanging] = useState(false);
   const [hasAttemptedRefetch, setHasAttemptedRefetch] = useState(false);
+  const queryClient = useQueryClient();
   
-  const { 
-    data: allProfilesData, 
-    isLoading: isLoadingProfiles, 
+  // Set queryClient in services
+  userService.setQueryClient(queryClient);
+  roleService.setQueryClient(queryClient);
+
+  // Define admin roles array for filtering
+  const ADMIN_ROLES = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
+  
+  // Fetch users using the new userService
+  const {
+    data: allUsers,
+    isLoading: isLoadingProfiles,
     error: profileError,
-    updateUserRole,
-    bulkUpdateRoles: updateRoles,
-    sendBulkEmail: sendEmail,
-    refetch 
-  } = useAdminProfiles(isAdmin, currentUserId, {
-    ...filters.filterOptions,
-    lastLoginSortDirection,
-    userType: filters.userType
+    refetch
+  } = useQuery({
+    queryKey: ['all-users', filters.userType],
+    queryFn: async () => {
+      try {
+        const users = await userService.getAllUsers();
+        return users;
+      } catch (error) {
+        toast({
+          title: "Error loading users",
+          description: error instanceof Error ? error.message : "Failed to load users",
+          variant: "destructive"
+        });
+        throw error;
+      }
+    },
+    enabled: isAdmin && !!currentUserId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Filter users based on user type (admin vs regular)
-  const filteredUsers = allProfilesData?.data?.filter(user => {
-    const isAdminUser = ADMIN_ROLES.includes(user.role);
-    
-    if (filters.userType === 'admin') {
-      return isAdminUser;
-    } else {
-      return !isAdminUser;
-    }
-  }) || [];
-
-  useEffect(() => {
-    // Log data for debugging
-    console.log('useUserManagement - Received data:', {
-      hasData: !!allProfilesData,
-      userCount: allProfilesData?.data?.length || 0,
-      filteredCount: filteredUsers.length,
-      userType: filters.userType,
-      isLoading: isLoadingProfiles,
-      error: profileError,
-      isAdmin,
-      currentUserId,
-      hasAttemptedRefetch
-    });
-    
-    // Show toast if there's an error
-    if (profileError) {
-      toast({
-        title: "Error loading users",
-        description: profileError.message || "Unknown error occurred",
-        variant: "destructive"
-      });
-    }
-  }, [allProfilesData, filteredUsers, filters.userType, isLoadingProfiles, profileError, isAdmin, currentUserId, hasAttemptedRefetch]);
-
-  // Trigger a refetch if initial data is empty but credentials seem valid
-  useEffect(() => {
-    if (isAdmin && currentUserId && !isLoadingProfiles && !hasAttemptedRefetch && 
-        (!allProfilesData || !allProfilesData.data || allProfilesData.data.length === 0)) {
-      console.log('No users found initially, attempting refetch...');
-      // Add a slight delay before refetch
-      const timer = setTimeout(() => {
-        refetch();
-        setHasAttemptedRefetch(true);
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isAdmin, currentUserId, isLoadingProfiles, profileError, allProfilesData, refetch, hasAttemptedRefetch]);
+  // Filter users based on filters and user type
+  const filteredUsers = allUsers ? userService.filterUsers(allUsers, {
+    ...filters.filterOptions,
+    userType: filters.userType
+  }) : [];
 
   // Handle role change for a single user
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
-    if (updateUserRole) {
-      updateUserRole.mutate({ userId, newRole });
+    try {
+      await roleService.updateUserRole(userId, newRole, () => {
+        refetch();
+      });
+    } catch (error) {
+      // Error handling is done inside roleService
+      console.error("Role change failed:", error);
     }
   };
 
   // Handle bulk role updates
   const bulkUpdateRoles = async (userIds: string[], newRole: UserRole) => {
-    if (updateRoles) {
-      setIsBulkRoleChanging(true);
-      try {
-        await updateRoles.mutateAsync({ userIds, newRole });
+    if (userIds.length === 0 || !newRole) return;
+    
+    setIsBulkRoleChanging(true);
+    try {
+      await roleService.bulkUpdateRoles(userIds, newRole, () => {
         selection.setSelectedUsers(new Set());
-      } finally {
-        setIsBulkRoleChanging(false);
-      }
-    }
-  };
-
-  // Handle sending bulk emails
-  const sendBulkEmail = async (subject: string, message: string) => {
-    if (sendEmail && selection.selectedUsers.size > 0) {
-      const userIds = Array.from(selection.selectedUsers);
-      await sendEmail.mutateAsync({ userIds, subject, body: message });
+        refetch();
+      });
+    } catch (error) {
+      // Error handling is done inside roleService
+      console.error("Bulk role update failed:", error);
+    } finally {
+      setIsBulkRoleChanging(false);
     }
   };
 
   // Calculate user statistics when data changes
   useEffect(() => {
-    if (allProfilesData?.data) {
-      // Count admins vs regular users
-      let adminCount = 0;
-      let regularCount = 0;
-      
-      allProfilesData.data.forEach(user => {
-        const role = user.role || 'player';
-        if (ADMIN_ROLES.includes(role)) {
-          adminCount++;
-        } else {
-          regularCount++;
-        }
-      });
+    if (!allUsers) return;
+    
+    // Count admins vs regular users
+    let adminCount = 0;
+    let regularCount = 0;
+    
+    allUsers.forEach(user => {
+      const role = user.role || 'player';
+      if (ADMIN_ROLES.includes(role)) {
+        adminCount++;
+      } else {
+        regularCount++;
+      }
+    });
 
-      // Calculate gender breakdown
-      const genderBreakdown: { [key: string]: number } = {
-        'Male': 0,
-        'Female': 0,
-        'Other': 0,
-        'Unknown': 0
-      };
-      
-      allProfilesData.data.forEach(user => {
-        const gender = user.gender || 'Unknown';
-        genderBreakdown[gender] = (genderBreakdown[gender] || 0) + 1;
-      });
+    // Calculate gender breakdown
+    const genderBreakdown: { [key: string]: number } = {
+      'Male': 0,
+      'Female': 0,
+      'Other': 0,
+      'Unknown': 0
+    };
+    
+    allUsers.forEach(user => {
+      const gender = user.gender || 'Unknown';
+      genderBreakdown[gender] = (genderBreakdown[gender] || 0) + 1;
+    });
 
-      // Calculate age breakdown if available
-      const ageBreakdown: { [key: string]: number } = {};
-      
-      allProfilesData.data.forEach(user => {
-        if (user.age_group) {
-          ageBreakdown[user.age_group] = (ageBreakdown[user.age_group] || 0) + 1;
-        }
-      });
+    // Calculate age breakdown if available
+    const ageBreakdown: { [key: string]: number } = {};
+    
+    allUsers.forEach(user => {
+      if (user.age_group) {
+        ageBreakdown[user.age_group] = (ageBreakdown[user.age_group] || 0) + 1;
+      }
+    });
 
-      // Set the complete stats object
-      setUserStats({
-        total: allProfilesData.count || allProfilesData.data.length,
-        genderBreakdown,
-        ageBreakdown: Object.keys(ageBreakdown).length > 0 ? ageBreakdown : undefined,
-        adminCount,
-        regularCount
+    // Set the complete stats object
+    setUserStats({
+      total: allUsers.length,
+      genderBreakdown,
+      ageBreakdown: Object.keys(ageBreakdown).length > 0 ? ageBreakdown : undefined,
+      adminCount,
+      regularCount
+    });
+  }, [allUsers]);
+
+  // Handle sending bulk emails through edge function
+  const sendBulkEmail = async (subject: string, message: string) => {
+    if (selection.selectedUsers.size === 0) return;
+    
+    try {
+      const userIds = Array.from(selection.selectedUsers);
+      toast({
+        title: "Sending emails...",
+        description: `Sending email to ${userIds.length} users`
       });
-    } else {
-      // Set default stats when no data is available
-      setUserStats({
-        total: 0,
-        genderBreakdown: { 'Unknown': 0 },
-        adminCount: 0,
-        regularCount: 0
+      
+      const { data, error } = await fetch('/api/send-bulk-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds, subject, body: message })
+      }).then(res => res.json());
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Emails sent successfully",
+        description: `${userIds.length} emails have been scheduled for delivery`
+      });
+      
+      return data;
+    } catch (error) {
+      toast({
+        title: "Failed to send emails",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive"
       });
     }
-  }, [allProfilesData]);
+  };
 
   const { handleExportUsers } = useUserExport();
   
@@ -193,8 +195,8 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     bulkUpdateRoles,
     handleRoleChange,
     // Data props
-    allProfilesData,
-    filteredUsers, // Return filtered users instead of all users
+    allProfilesData: { data: allUsers },
+    filteredUsers, // Return filtered users
     isLoadingProfiles,
     profileError,
     // Export functionality

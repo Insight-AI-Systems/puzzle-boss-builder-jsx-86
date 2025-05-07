@@ -2,12 +2,12 @@
 import React from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from './UserAvatar';
 import { UserRoleMenu } from './UserRoleMenu';
 import { UserLastLogin } from './UserLastLogin';
 import { UserRowProps } from '@/types/userTableTypes';
-import { ROLE_DEFINITIONS } from '@/types/userTypes';
+import { UserRoleIndicator } from './UserRoleIndicator';
+import { adminService } from '@/services/adminService';
 
 export const UserTableRow: React.FC<UserRowProps> = ({
   user,
@@ -17,26 +17,21 @@ export const UserTableRow: React.FC<UserRowProps> = ({
   onSelect,
   selectionEnabled
 }) => {
-  const getRoleBadgeClass = (role?: string) => {
-    switch (role) {
-      case 'super_admin': return 'bg-red-600';
-      case 'admin': return 'bg-purple-600';
-      case 'category_manager': return 'bg-blue-600';
-      case 'social_media_manager': return 'bg-green-600';
-      case 'partner_manager': return 'bg-amber-600';
-      case 'cfo': return 'bg-emerald-600';
-      default: return 'bg-slate-600';
-    }
-  };
-
+  // Detect protected admin status
+  const isProtectedAdmin = adminService.isProtectedAdminEmail(user.email);
+  
   return (
-    <TableRow className={isSelected ? "bg-muted/20" : undefined}>
+    <TableRow className={`
+      ${isSelected ? "bg-muted/20" : undefined}
+      ${isProtectedAdmin ? "bg-red-50/10" : undefined}
+    `}>
       {selectionEnabled && (
         <TableCell>
           <Checkbox 
             checked={isSelected}
             onCheckedChange={(checked) => onSelect?.(!!checked)}
             aria-label={`Select ${user.display_name || 'user'}`}
+            disabled={isProtectedAdmin} // Can't select protected admin
           />
         </TableCell>
       )}
@@ -48,12 +43,14 @@ export const UserTableRow: React.FC<UserRowProps> = ({
         />
       </TableCell>
       <TableCell className="font-mono text-xs">
-        {(user as any).email || 'N/A'}
+        {(user.email) || user.id}
       </TableCell>
       <TableCell>
-        <Badge className={getRoleBadgeClass(user.role)}>
-          {user.role ? (ROLE_DEFINITIONS[user.role]?.label || user.role) : 'Player'}
-        </Badge>
+        <UserRoleIndicator 
+          role={user.role}
+          email={user.email} 
+          size="sm"
+        />
       </TableCell>
       <TableCell>{user.country || 'Not specified'}</TableCell>
       <TableCell>

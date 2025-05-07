@@ -27,6 +27,14 @@ export interface TestReport {
   error?: string; // Added for error information
   metadata?: Record<string, any>;
   details?: Record<string, any>;
+  // Additional backward compatibility fields
+  success?: boolean;
+  failureReason?: string;
+  browser?: {
+    name?: string;
+    version?: string;
+  };
+  tests?: any[];
 }
 
 /**

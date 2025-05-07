@@ -1,4 +1,3 @@
-
 import { ProjectTest } from '../types/projectTypes';
 import { TestReport, TestSummary, TestSuite, TestCategory } from '../testing/types/testTypes';
 import { TEST_RESULTS } from '../testing/constants/testResults';
@@ -51,6 +50,7 @@ export class TestManager {
         name: test.name,
         testName: test.name, // For backward compatibility
         result: result, // For backward compatibility
+        success: result, // For backward compatibility
         status: result ? TEST_RESULTS.VERIFIED : TEST_RESULTS.FAILED,
         results: [result],
         duration: endTime - startTime,
@@ -70,6 +70,7 @@ export class TestManager {
         testName: test.name,
         name: test.name,
         result: false, // For backward compatibility
+        success: false, // For backward compatibility
         status: TEST_RESULTS.FAILED,
         results: [false],
         duration: 0,
@@ -113,6 +114,7 @@ export class TestManager {
         totalTests: 0,
         passedTests: 0,
         failedTests: 0,
+        skippedTests: 0,
         duration: 0,
         status: TestManager.RESULT_FAILED
       };

@@ -6,12 +6,15 @@ import { ROLE_DEFINITIONS, UserRole } from '@/types/userTypes';
 import { UserRoleMenuProps } from '@/types/userTableTypes';
 import { isProtectedAdmin } from '@/constants/securityConfig';
 import { debugLog, DebugLevel } from '@/utils/debug';
+import { adminService } from '@/services/adminService';
+import { roleService } from '@/services/roleService';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * User Role Menu Component
@@ -27,8 +30,9 @@ export const UserRoleMenu: React.FC<UserRoleMenuProps> = ({
   canAssignRole,
   onRoleChange
 }) => {
+  const { toast } = useToast();
   // Check if this is the protected admin user
-  const isProtectedAdminUser = isProtectedAdmin(user.email);
+  const isProtectedAdminUser = adminService.isProtectedAdminEmail(user.email);
   
   // Log the role menu rendering for debugging
   React.useEffect(() => {
@@ -41,9 +45,21 @@ export const UserRoleMenu: React.FC<UserRoleMenuProps> = ({
   }, [user.id, user.email, user.role, isProtectedAdminUser]);
   
   // Function to handle role change with logging
-  const handleRoleChange = (newRole: UserRole) => {
-    debugLog('UserRoleMenu', `Changing role for user ${user.id} to ${newRole}`, DebugLevel.INFO);
-    onRoleChange(user.id, newRole);
+  const handleRoleChange = async (newRole: UserRole) => {
+    try {
+      debugLog('UserRoleMenu', `Changing role for user ${user.id} to ${newRole}`, DebugLevel.INFO);
+      
+      // Use the onRoleChange callback (for backward compatibility)
+      onRoleChange(user.id, newRole);
+      
+    } catch (error) {
+      debugLog('UserRoleMenu', `Error changing role: ${error}`, DebugLevel.ERROR);
+      toast({
+        title: "Error changing role",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive"
+      });
+    }
   };
 
   // If this is the protected admin, disable role changes completely
@@ -80,6 +96,7 @@ export const UserRoleMenu: React.FC<UserRoleMenuProps> = ({
                 }
               }}
               disabled={!canAssign || isCurrentRole}
+              className={isCurrentRole ? "bg-muted/50 font-medium" : ""}
             >
               {roleDef.label}
               {isCurrentRole && " (current)"}

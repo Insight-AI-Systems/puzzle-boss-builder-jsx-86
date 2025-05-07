@@ -1,13 +1,13 @@
 
 import { useState, useEffect } from 'react';
 import { UserProfile } from '@/types/userTypes';
-import { isProtectedAdmin, PROTECTED_ADMIN_EMAIL } from '@/constants/securityConfig';
+import { adminService } from '@/services/adminService';
 import { debugLog, DebugLevel } from '@/utils/debug';
 
 /**
  * Hook to determine if a user has admin privileges
  * 
- * This hook checks multiple conditions for admin status:
+ * This hook uses the AdminService to check multiple conditions for admin status:
  * 1. If the user email matches the protected admin email
  * 2. If the user role is 'admin' or 'super_admin'
  * 
@@ -16,41 +16,43 @@ import { debugLog, DebugLevel } from '@/utils/debug';
  */
 export function useAdminStatus(profile: UserProfile | null) {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState<boolean>(false);
 
   useEffect(() => {
     // Clear admin state if no profile
     if (!profile) {
       setIsAdmin(false);
+      setIsSuperAdmin(false);
       return;
     }
     
-    // Check if email matches protected admin (either in profile.email or in profile.id which may contain email)
-    const profileEmail = profile.email || profile.id;
-    const hasProtectedEmail = isProtectedAdmin(profileEmail);
+    // Check if protected admin by email
+    const hasProtectedEmail = adminService.isProtectedAdminEmail(profile.email || profile.id);
     
     // Explicit check for protected admin with super admin privileges
     if (hasProtectedEmail) {
       debugLog('useAdminStatus', 'Protected admin detected, granting full admin privileges', DebugLevel.INFO, {
-        email: profileEmail
+        email: profile.email || profile.id
       });
       setIsAdmin(true);
+      setIsSuperAdmin(true);
       return;
     }
     
     // Check if the user role is super_admin or admin
-    const hasAdminRole = profile.role === 'super_admin' || profile.role === 'admin';
-    setIsAdmin(hasAdminRole);
+    setIsAdmin(adminService.hasAdminRole(profile.role));
+    setIsSuperAdmin(profile.role === 'super_admin');
     
     debugLog('useAdminStatus', 'Admin status check completed', DebugLevel.INFO, { 
       profileId: profile.id, 
-      profileEmail, 
+      profileEmail: profile.email || profile.id, 
       role: profile.role,
       hasProtectedEmail, 
-      hasAdminRole, 
-      adminStatus: hasProtectedEmail || hasAdminRole 
+      isAdmin: adminService.hasAdminRole(profile.role),
+      isSuperAdmin: profile.role === 'super_admin'
     });
     
   }, [profile]);
 
-  return { isAdmin };
+  return { isAdmin, isSuperAdmin };
 }
