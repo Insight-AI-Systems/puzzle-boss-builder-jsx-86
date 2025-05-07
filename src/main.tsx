@@ -36,7 +36,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <EnhancedAuthProvider>
-        <AuthProvider> {/* Keep for backward compatibility */}
+        <AuthProvider>
           <SecurityProvider>
             <Root />
           </SecurityProvider>

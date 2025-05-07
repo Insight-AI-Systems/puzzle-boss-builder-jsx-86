@@ -36,50 +36,31 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   // Use the enhanced auth system
-  const {
-    user,
-    session,
-    isLoading,
-    error,
-    clearAuthError,
-    isAuthenticated,
-    isAdmin,
-    userRole,
-    permissions,
-    isInitialized,
-    signIn,
-    signUp,
-    signOut,
-    resetPassword,
-    updatePassword,
-    refreshSession,
-    hasRole,
-    hasPermission
-  } = useEnhancedAuthContext();
+  const enhancedAuth = useEnhancedAuthContext();
 
   // Interface adapter to maintain backward compatibility
   const contextValue: AuthContextType = {
-    user,
-    session,
-    isLoading,
-    error,
+    user: enhancedAuth.user,
+    session: enhancedAuth.session,
+    isLoading: enhancedAuth.isLoading,
+    error: enhancedAuth.error,
     signIn: async (email, password, options = {}) => {
-      await signIn(email, password);
+      await enhancedAuth.signIn(email, password);
     },
     signUp: async (email, password, metadata = {}) => {
-      await signUp(email, password, metadata);
+      await enhancedAuth.signUp(email, password, metadata);
     },
-    signOut,
-    resetPassword,
-    updatePassword,
-    refreshSession,
-    isAuthenticated,
-    isAdmin,
-    hasRole,
-    userRole,
-    userRoles: permissions, // Map permissions to userRoles for backward compatibility
-    rolesLoaded: isInitialized && !isLoading,
-    clearAuthError
+    signOut: enhancedAuth.signOut,
+    resetPassword: enhancedAuth.resetPassword,
+    updatePassword: enhancedAuth.updatePassword,
+    refreshSession: enhancedAuth.refreshSession,
+    isAuthenticated: enhancedAuth.isAuthenticated,
+    isAdmin: enhancedAuth.isAdmin,
+    hasRole: enhancedAuth.hasRole,
+    userRole: enhancedAuth.userRole,
+    userRoles: enhancedAuth.permissions, // Map permissions to userRoles for backward compatibility
+    rolesLoaded: enhancedAuth.isInitialized && !enhancedAuth.isLoading,
+    clearAuthError: enhancedAuth.clearAuthError
   };
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
