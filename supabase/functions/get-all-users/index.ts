@@ -33,7 +33,7 @@ async function verifyAdminAccess(supabase: any, userId: string): Promise<boolean
     // Special case: Check if the user is the protected admin by email
     const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
     
-    if (!userError && userData?.user?.email === 'alan@insight-ai-systems.com') {
+    if (!userError && userData?.user?.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase()) {
       logger.info("Protected admin detected, granting access regardless of role");
       return true;
     }
@@ -223,12 +223,16 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
     const combinedUsers = authUsers.users.map(user => {
       const profile = profileMap.get(user.id) || {};
       
+      // Special case for protected admin
+      const isProtectedAdminUser = user.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase();
+      
       // Build the user data object with available fields
       const userData: UserData = {
         id: user.id,
         email: user.email || '',
         display_name: profile.username || user.email?.split('@')[0] || 'User',
-        role: profile.role || 'player',
+        // For protected admin, always set role to super_admin regardless of what's in the database
+        role: isProtectedAdminUser ? 'super_admin' : (profile.role || 'player'),
         created_at: user.created_at || profile.created_at || new Date().toISOString(),
         last_sign_in: profile.last_sign_in || user.last_sign_in_at || null,
       };
@@ -295,7 +299,7 @@ serve(async (req) => {
     logger.info("Request authenticated", { userId: user.id, userEmail: user.email });
 
     // Special case for protected admin
-    if (user.email === 'alan@insight-ai-systems.com') {
+    if (user.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase()) {
       logger.info("Protected admin detected, bypassing role check");
       
       // Fetch all users for the protected admin

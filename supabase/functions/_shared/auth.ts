@@ -61,7 +61,7 @@ export async function verifyAuth(req: Request): Promise<AuthResult> {
     }
 
     // Special case for a protected admin
-    if (user.email === PROTECTED_ADMIN_EMAIL) {
+    if (user.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase()) {
       logger.info("Protected admin authenticated", { 
         userId: user.id, 
         email: user.email 
@@ -88,5 +88,6 @@ export async function verifyAuth(req: Request): Promise<AuthResult> {
 
 // Helper function to check if user is a specific protected admin
 export function isProtectedAdmin(email?: string): boolean {
-  return email === PROTECTED_ADMIN_EMAIL;
+  if (!email) return false;
+  return email.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase();
 }

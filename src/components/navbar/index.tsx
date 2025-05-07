@@ -13,9 +13,7 @@ import UserMenu from './UserMenu';
 import AuthButtons from './AuthButtons';
 import MobileMenu from './MobileMenu';
 import { mainNavItems } from './NavbarData';
-
-// Special admin email that should always have access - ensure consistency
-const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';
 
 const Navbar: React.FC = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -40,8 +38,8 @@ const Navbar: React.FC = () => {
   }, [profileData.isLoading, profileData.profile]);
   
   // Enhanced admin check with improved logging
-  const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
-  const isSuperAdmin = isProtectedAdmin || hasRole('super_admin');
+  const hasProtectedEmail = isProtectedAdmin(user?.email);
+  const isSuperAdmin = hasProtectedEmail || hasRole('super_admin');
   const isAdmin = isSuperAdmin || hasRole('admin');
   const isCategoryManager = hasRole('category_manager');
   const isSocialMediaManager = hasRole('social_media_manager');
@@ -52,7 +50,7 @@ const Navbar: React.FC = () => {
   console.log('Navbar - Admin Check:', {
     userEmail: user?.email,
     sessionExists: !!session,
-    isProtectedAdmin,
+    hasProtectedEmail,
     isSuperAdmin,
     isAdmin,
     isAdminUser,
@@ -76,7 +74,7 @@ const Navbar: React.FC = () => {
           
           {/* User Menu / Auth Buttons */}
           <div className="hidden md:flex items-center space-x-2">
-            {!loading && userProfile && (isAdminUser || isProtectedAdmin) && (
+            {!loading && userProfile && (isAdminUser || hasProtectedEmail) && (
               <>
                 <Link 
                   to="/admin-dashboard"
@@ -98,7 +96,7 @@ const Navbar: React.FC = () => {
           <div className="md:hidden flex items-center">
             {!loading && userProfile ? (
               <>
-                {(isAdminUser || isProtectedAdmin) && (
+                {(isAdminUser || hasProtectedEmail) && (
                   <>
                     <Link 
                       to="/admin-dashboard"

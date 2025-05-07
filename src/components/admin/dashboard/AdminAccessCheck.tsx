@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';
 import { debugAuthState, forceProtectedAdminAccess } from '@/utils/admin/debugAuth';
+import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';
 
 interface AdminAccessCheckProps {
   user: any;
@@ -25,7 +26,10 @@ export const AdminAccessCheck: React.FC<AdminAccessCheckProps> = ({
   profile 
 }) => {
   const [debugInfo, setDebugInfo] = React.useState<string | null>(null);
-
+  
+  // Check for protected admin
+  const hasProtectedEmail = isProtectedAdmin(user?.email);
+  
   const showDebugInfo = () => {
     const info = {
       user: user ? {
@@ -40,8 +44,10 @@ export const AdminAccessCheck: React.FC<AdminAccessCheckProps> = ({
       } : null,
       hasRoles: {
         superAdmin: hasRole('super_admin'),
+        admin: hasRole('admin'),
         player: hasRole('player')
-      }
+      },
+      hasProtectedEmail
     };
     
     setDebugInfo(JSON.stringify(info, null, 2));

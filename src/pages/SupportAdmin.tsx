@@ -4,22 +4,20 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AdminTicketDashboard } from '@/components/support/admin/AdminTicketDashboard';
 import PageLayout from '@/components/layouts/PageLayout';
 import { useAuth } from '@/contexts/AuthContext';
-
-// Special admin email that should always have access
-const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';
 
 const SupportAdmin = () => {
   const { user } = useAuth();
   
   // Check for protected admin
-  const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
+  const hasProtectedEmail = isProtectedAdmin(user?.email);
   
   useEffect(() => {
     console.log('Rendering SupportAdmin page', {
       userEmail: user?.email,
-      isProtectedAdmin
+      hasProtectedEmail
     });
-  }, [user, isProtectedAdmin]);
+  }, [user, hasProtectedEmail]);
   
   return (
     <ProtectedRoute requiredRoles={['admin', 'super_admin']}>

@@ -8,9 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminAccessCheck } from '@/components/admin/dashboard/AdminAccessCheck';
 import { AdminToolbar } from '@/components/admin/dashboard/AdminToolbar';
-
-// Special admin email that should always have access
-const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';
 
 const AdminDashboard = () => {
   const { profile, isLoading } = useUserProfile();
@@ -20,8 +18,8 @@ const AdminDashboard = () => {
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   // Comprehensive admin access check
-  const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
-  const isSuperAdmin = isProtectedAdmin || hasRole('super_admin');
+  const hasProtectedEmail = isProtectedAdmin(user?.email);
+  const isSuperAdmin = hasProtectedEmail || hasRole('super_admin');
   const isAdmin = isSuperAdmin || hasRole('admin');
   const isCategoryManager = hasRole('category_manager');
   const isSocialMediaManager = hasRole('social_media_manager');
@@ -37,7 +35,7 @@ const AdminDashboard = () => {
     console.log('AdminDashboard - Access Check:', { 
       isLoggedIn: !!user,
       userEmail: user?.email,
-      isProtectedAdmin,
+      hasProtectedEmail,
       isAdmin,
       isSuperAdmin,
       isCategoryManager,
@@ -50,7 +48,7 @@ const AdminDashboard = () => {
     });
 
     // Special case for protected admin - always grant access
-    if (isProtectedAdmin) {
+    if (hasProtectedEmail) {
       console.log('AdminDashboard - Protected admin detected, granting full access');
       return;
     }
@@ -65,7 +63,7 @@ const AdminDashboard = () => {
       });
       navigate('/', { replace: true });
     }
-  }, [isLoading, hasAdminAccess, isSuperAdmin, navigate, profile, user, toast, isProtectedAdmin, session]);
+  }, [isLoading, hasAdminAccess, isSuperAdmin, navigate, profile, user, toast, hasProtectedEmail, session]);
 
   const showDebugInfo = () => {
     const info = {
@@ -91,7 +89,7 @@ const AdminDashboard = () => {
         partnerManager: hasRole('partner_manager'),
         cfo: hasRole('cfo')
       },
-      isProtectedAdmin,
+      hasProtectedEmail,
       hasAdminAccess
     };
     setDebugInfo(JSON.stringify(info, null, 2));
@@ -105,7 +103,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (user && !hasAdminAccess && !isProtectedAdmin && !isLoading) {
+  if (user && !hasAdminAccess && !hasProtectedEmail && !isLoading) {
     return (
       <AdminAccessCheck 
         user={user}
@@ -116,12 +114,12 @@ const AdminDashboard = () => {
     );
   }
 
-  if (hasAdminAccess || isProtectedAdmin) {
+  if (hasAdminAccess || hasProtectedEmail) {
     return (
       <div className="min-h-screen bg-puzzle-black p-6">
         <div className="max-w-6xl mx-auto space-y-8">
           <h1 className="text-3xl font-game text-puzzle-aqua">
-            {isProtectedAdmin || isSuperAdmin ? 'Admin Dashboard' : `${profile?.role?.replace('_', ' ')} Dashboard`}
+            {hasProtectedEmail || isSuperAdmin ? 'Admin Dashboard' : `${profile?.role?.replace('_', ' ')} Dashboard`}
           </h1>
 
           <AdminToolbar showDebugInfo={showDebugInfo} />

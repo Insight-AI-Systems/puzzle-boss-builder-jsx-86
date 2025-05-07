@@ -6,6 +6,7 @@ import { useSecurity } from '@/hooks/useSecurityContext';
 import { SecurityEventType } from '@/utils/security/auditLogging';
 import { UserRole } from '@/types/userTypes';
 import { Loader2 } from 'lucide-react';
+import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -14,9 +15,6 @@ interface ProtectedRouteProps {
   requireAllPermissions?: boolean;
   logAccess?: boolean;
 }
-
-// Special admin email that should always have access
-const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
@@ -41,8 +39,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
 
     // Special case for protected admin email - always authorized for all routes
-    const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
-    if (isProtectedAdmin) {
+    const hasProtectedEmail = isProtectedAdmin(user?.email);
+    if (hasProtectedEmail) {
       console.log('Protected admin detected, granting access');
       setIsAuthorized(true);
       return;
@@ -87,7 +85,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     const matchedPermissions = requiredPermissions.filter(perm => hasPermission(perm));
 
     // Special case for protected admin
-    const isProtectedAdmin = user.email === PROTECTED_ADMIN_EMAIL;
+    const hasProtectedEmail = isProtectedAdmin(user.email);
     
     logSecurityEvent({
       eventType: isAuthorized ? SecurityEventType.ACCESS_GRANTED : SecurityEventType.ACCESS_DENIED,
@@ -98,11 +96,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         route: location.pathname,
         requiredRoles: requiredRoles.length > 0 ? requiredRoles : ['any'],
         requiredPermissions: requiredPermissions.length > 0 ? requiredPermissions : [],
-        matchedRoles: isProtectedAdmin ? ['protected_admin', ...matchedRoles] : matchedRoles,
+        matchedRoles: hasProtectedEmail ? ['protected_admin', ...matchedRoles] : matchedRoles,
         matchedPermissions: matchedPermissions,
         requireAllPermissions,
         result: isAuthorized ? 'granted' : 'denied',
-        isProtectedAdmin
+        hasProtectedEmail
       }
     });
   }, [isAuthorized, user, logAccess, logSecurityEvent, location.pathname, requiredRoles, requiredPermissions, requireAllPermissions, hasRole, hasPermission]);
