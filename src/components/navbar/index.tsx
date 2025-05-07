@@ -1,5 +1,6 @@
+
 import React, { useEffect, useState } from 'react';
-import { Menu, X, LayoutDashboard, TicketIcon } from 'lucide-react';
+import { Menu, X, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -13,13 +14,13 @@ import AuthButtons from './AuthButtons';
 import MobileMenu from './MobileMenu';
 import { mainNavItems } from './NavbarData';
 
-// Special admin email that should always have access
+// Special admin email that should always have access - ensure consistency
 const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 const Navbar: React.FC = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, session } = useAuth();
   const isMobile = useIsMobile();
   const { isMenuOpen, toggleMenu, closeMenu } = useMobileMenu();
   
@@ -38,14 +39,25 @@ const Navbar: React.FC = () => {
     }
   }, [profileData.isLoading, profileData.profile]);
   
-  // Enhanced admin check
+  // Enhanced admin check with improved logging
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
-  const isAdmin = isProtectedAdmin || hasRole('admin') || hasRole('super_admin');
+  const isSuperAdmin = isProtectedAdmin || hasRole('super_admin');
+  const isAdmin = isSuperAdmin || hasRole('admin');
   const isCategoryManager = hasRole('category_manager');
   const isSocialMediaManager = hasRole('social_media_manager');
   const isPartnerManager = hasRole('partner_manager');
   const isCfo = hasRole('cfo');
   const isAdminUser = isAdmin || isCategoryManager || isSocialMediaManager || isPartnerManager || isCfo;
+  
+  console.log('Navbar - Admin Check:', {
+    userEmail: user?.email,
+    sessionExists: !!session,
+    isProtectedAdmin,
+    isSuperAdmin,
+    isAdmin,
+    isAdminUser,
+    profileRole: userProfile?.role
+  });
   
   return (
     <nav className="bg-puzzle-black border-b border-puzzle-aqua/20">

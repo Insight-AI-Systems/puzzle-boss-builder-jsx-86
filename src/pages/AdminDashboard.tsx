@@ -14,7 +14,7 @@ const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 const AdminDashboard = () => {
   const { profile, isLoading } = useUserProfile();
-  const { user, hasRole, userRole } = useAuth();
+  const { user, hasRole, userRole, session } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
@@ -45,7 +45,8 @@ const AdminDashboard = () => {
       isPartnerManager,
       isCfo,
       hasAdminAccess,
-      profileRole: profile?.role
+      profileRole: profile?.role,
+      sessionExists: !!session
     });
 
     // Special case for protected admin - always grant access
@@ -64,7 +65,7 @@ const AdminDashboard = () => {
       });
       navigate('/', { replace: true });
     }
-  }, [isLoading, hasAdminAccess, isSuperAdmin, navigate, profile, user, toast, isProtectedAdmin]);
+  }, [isLoading, hasAdminAccess, isSuperAdmin, navigate, profile, user, toast, isProtectedAdmin, session]);
 
   const showDebugInfo = () => {
     const info = {
@@ -77,6 +78,10 @@ const AdminDashboard = () => {
         id: profile.id,
         role: profile.role,
         email: profile.email || profile.id
+      } : null,
+      session: session ? {
+        exists: true,
+        userId: session.user.id,
       } : null,
       hasRoles: {
         admin: hasRole('admin'),
@@ -109,7 +114,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (hasAdminAccess) {
+  if (hasAdminAccess || isProtectedAdmin) {
     return (
       <div className="min-h-screen bg-puzzle-black p-6">
         <div className="max-w-6xl mx-auto space-y-8">

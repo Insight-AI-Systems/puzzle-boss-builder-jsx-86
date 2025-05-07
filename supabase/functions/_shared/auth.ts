@@ -7,6 +7,9 @@ import { getSupabaseConfig } from "./config.ts";
 // Initialize logger
 const logger = new EdgeFunctionLogger("auth-utils");
 
+// Define protected admin email constant for consistent reference
+export const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+
 export interface AuthResult {
   user: { id: string; email?: string } | null;
   error: Response | null;
@@ -58,7 +61,6 @@ export async function verifyAuth(req: Request): Promise<AuthResult> {
     }
 
     // Special case for a protected admin
-    const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
     if (user.email === PROTECTED_ADMIN_EMAIL) {
       logger.info("Protected admin authenticated", { 
         userId: user.id, 
@@ -86,5 +88,5 @@ export async function verifyAuth(req: Request): Promise<AuthResult> {
 
 // Helper function to check if user is a specific protected admin
 export function isProtectedAdmin(email?: string): boolean {
-  return email === 'alan@insight-ai-systems.com';
+  return email === PROTECTED_ADMIN_EMAIL;
 }

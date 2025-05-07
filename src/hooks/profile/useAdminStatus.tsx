@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { UserProfile } from '@/types/userTypes';
 
-// Special admin email that should always have access
+// Special admin email that should always have access - ensure consistency with edge function
 const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 export function useAdminStatus(profile: UserProfile | null) {
@@ -15,10 +15,11 @@ export function useAdminStatus(profile: UserProfile | null) {
       return;
     }
     
-    // Check profile email (id contains email for profiles)
+    // Check if email matches protected admin (either in profile.id which may contain email, or in profile.email)
+    const profileEmail = profile.email || profile.id;
     const isProtectedAdmin = 
-      profile.id === PROTECTED_ADMIN_EMAIL || 
-      profile.email === PROTECTED_ADMIN_EMAIL;
+      profileEmail === PROTECTED_ADMIN_EMAIL || 
+      profile.id === PROTECTED_ADMIN_EMAIL;
     
     // Explicit check for Alan's email with super admin privileges
     if (isProtectedAdmin) {
@@ -27,9 +28,18 @@ export function useAdminStatus(profile: UserProfile | null) {
       return;
     }
     
-    // Check if the user role is super_admin (no more admin role)
-    const hasAdminRole = profile.role === 'super_admin';
+    // Check if the user role is super_admin or admin
+    const hasAdminRole = profile.role === 'super_admin' || profile.role === 'admin';
     setIsAdmin(hasAdminRole);
+    
+    console.log('useAdminStatus check:', { 
+      profileId: profile.id, 
+      profileEmail, 
+      role: profile.role,
+      isProtectedAdmin, 
+      hasAdminRole, 
+      adminStatus: isProtectedAdmin || hasAdminRole 
+    });
     
   }, [profile]);
 
