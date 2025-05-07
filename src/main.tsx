@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
@@ -107,17 +106,18 @@ class ErrorFallback extends React.Component<ErrorFallbackProps, { hasError: bool
   }
 }
 
-// Create root and render app with error boundary - Note the correct provider nesting order
+// Create root and render app with error boundary
+// Fix the provider nesting order to resolve circular dependencies
 const root = createRoot(container);
 root.render(
   <React.StrictMode>
     <ErrorFallback>
       <QueryClientProvider client={queryClient}>
-        <SecurityProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <SecurityProvider>
             <App />
-          </AuthProvider>
-        </SecurityProvider>
+          </SecurityProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ErrorFallback>
   </React.StrictMode>

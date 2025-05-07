@@ -5,7 +5,6 @@ import { UserRole } from '@/types/userTypes';
 import { useAuthProvider } from '@/hooks/auth/useAuthProvider';
 import { useAuthOperations } from '@/hooks/auth/useAuthOperations';
 import { supabase } from '@/integrations/supabase/client';
-import { useSecurity } from '@/hooks/useSecurityContext';
 import { SecurityEventType } from '@/utils/security/auditLogging';
 
 export interface AuthContextType {
@@ -37,6 +36,17 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+// Helper to safely log security events without requiring the security context
+const safeLogSecurityEvent = async (event: any) => {
+  try {
+    // Import and use the logSecurityEvent function directly
+    const { logSecurityEvent } = await import('@/utils/security/auditLogging');
+    await logSecurityEvent(event);
+  } catch (error) {
+    console.error('Failed to log security event:', error);
+  }
+};
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const {
     user,
@@ -57,8 +67,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     toast,
     roleCache
   } = useAuthProvider();
-
-  const securityContext = useSecurity();
 
   // Implement authentication operations without useNavigate dependencies
   const auth = useAuthOperations({
@@ -99,7 +107,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
 
           // Log successful login
-          securityContext.logSecurityEvent({
+          await safeLogSecurityEvent({
             eventType: SecurityEventType.LOGIN_SUCCESS,
             userId: session.user.id,
             email: session.user.email,
@@ -109,9 +117,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
               timestamp: new Date().toISOString()
             }
           });
-
-          // Update session state and refresh CSRF token
-          await securityContext.refreshCsrf();
           
         } catch (error) {
           console.error('Exception calling handle_user_signin function:', error);
@@ -119,7 +124,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     } catch (error) {
       // Log failed login attempt
-      securityContext.logSecurityEvent({
+      await safeLogSecurityEvent({
         eventType: SecurityEventType.LOGIN_FAILURE,
         email,
         severity: 'warning',
@@ -135,7 +140,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const handleSignOut = async () => {
     if (user) {
       // Log the sign out event before actually signing out
-      await securityContext.logSecurityEvent({
+      await safeLogSecurityEvent({
         eventType: SecurityEventType.LOGOUT,
         userId: user.id,
         email: user.email,
@@ -168,18 +173,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       availableRoles: userRoles,
       rolesLoaded
     });
-    
-    // If requesting admin role or super_admin role, assume false initially
-    // (the actual check happens asynchronously and updates later)
-    if (role === 'super_admin' || role === 'admin') {
-      // Start async validation but return current best guess
-      securityContext.validateAdminAccess().then(isAdmin => {
-        roleCache.current[cacheKey] = isAdmin;
-      });
-      
-      // Return the current admin status
-      return isAdmin;
-    }
     
     // Super admin can access all roles
     if (userRole === 'super_admin') {
