@@ -1,110 +1,103 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { handleCorsOptions } from "../_shared/cors.ts";
+import { successResponse, errorResponse, HttpStatus } from "../_shared/response.ts";
+import { verifyAuth } from "../_shared/auth.ts";
+import { EdgeFunctionLogger } from "../_shared/logging.ts";
+import { getSupabaseConfig } from "../_shared/config.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Initialize logger
+const logger = new EdgeFunctionLogger("get-all-users");
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+// Interface for the user data we return
+interface UserData {
+  id: string;
+  email: string;
+  display_name: string;
+  role: string;
+  created_at: string;
+  last_sign_in: string | null;
+  gender?: string | null;
+  age_group?: string | null;
+  country?: string | null;
+}
 
+// Check if the user has admin privileges
+async function verifyAdminAccess(supabase: any, userId: string): Promise<boolean> {
   try {
-    // Create a Supabase client with the Admin API key for full access
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    );
-
-    // Extract auth token from request
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "No authorization header provided" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Get JWT token from header and verify user
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (userError || !user) {
-      console.error("Auth error:", userError);
-      return new Response(
-        JSON.stringify({ error: "Unauthorized - invalid token" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Check if user is admin or super_admin
-    const { data: profile, error: profileError } = await supabaseAdmin
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("role")
-      .eq("id", user.id)
+      .eq("id", userId)
       .single();
 
-    if (profileError || !profile || !["admin", "super_admin", "cfo"].includes(profile.role)) {
-      console.error("Permissions error:", profileError || "Not an admin");
-      return new Response(
-        JSON.stringify({ error: "Unauthorized - not an admin" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (profileError) {
+      logger.error("Error fetching user role", { error: profileError, userId });
+      return false;
     }
 
-    // Fetch all users from auth.users and join with profiles
-    const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+    const hasAccess = profile && ["admin", "super_admin", "cfo"].includes(profile.role);
+    logger.info("Admin access check", { userId, role: profile?.role, hasAccess });
     
-    if (authError) {
-      console.error("Error fetching auth users:", authError);
-      return new Response(
-        JSON.stringify({ error: "Error fetching users" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    return hasAccess;
+  } catch (error) {
+    logger.error("Error in admin access verification", { error, userId });
+    return false;
+  }
+}
 
-    // Check if the profiles table has gender and age_group columns
-    let hasGenderColumn = true;
-    let hasAgeGroupColumn = true;
+// Check if a column exists in a table
+async function checkColumnExists(supabase: any, table: string, column: string): Promise<boolean> {
+  try {
+    // Test query to see if column exists
+    await supabase
+      .from(table)
+      .select(column)
+      .limit(1);
     
-    try {
-      // Test query to see if columns exist
-      await supabaseAdmin
-        .from("profiles")
-        .select("gender, age_group")
-        .limit(1);
-    } catch (columnError) {
-      console.log("Column check error:", columnError);
-      // If error contains message about missing column
-      const errorMsg = columnError.toString();
-      if (errorMsg.includes("column profiles.gender does not exist")) {
-        hasGenderColumn = false;
-      }
-      if (errorMsg.includes("column profiles.age_group does not exist")) {
-        hasAgeGroupColumn = false;
-      }
+    return true;
+  } catch (error) {
+    const errorMsg = error.toString();
+    if (errorMsg.includes(`column ${table}.${column} does not exist`)) {
+      return false;
     }
+    // Re-throw unexpected errors
+    throw error;
+  }
+}
+
+// Fetch all users with profile data
+async function fetchAllUsers(supabase: any): Promise<UserData[]> {
+  try {
+    // First check which columns exist in the profiles table
+    logger.info("Checking available columns in profiles table");
+    const hasGenderColumn = await checkColumnExists(supabase, "profiles", "gender");
+    const hasAgeGroupColumn = await checkColumnExists(supabase, "profiles", "age_group");
+    
+    logger.info("Column availability", { hasGenderColumn, hasAgeGroupColumn });
 
     // Dynamically build the select query based on available columns
     let selectQuery = "id, role, username, country, last_sign_in";
     if (hasGenderColumn) selectQuery += ", gender";
     if (hasAgeGroupColumn) selectQuery += ", age_group";
     
+    // Fetch all auth users
+    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+    
+    if (authError) {
+      logger.error("Error fetching auth users", { error: authError });
+      throw new Error("Error fetching users: " + authError.message);
+    }
+    
     // Fetch all profiles
-    const { data: profiles, error: profilesError } = await supabaseAdmin
+    const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select(selectQuery);
     
     if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
-      return new Response(
-        JSON.stringify({ error: "Error fetching profiles", details: profilesError }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      logger.error("Error fetching profiles", { error: profilesError });
+      throw new Error("Error fetching profiles: " + profilesError.message);
     }
 
     // Create a map of profiles by user id for easy lookup
@@ -133,17 +126,52 @@ serve(async (req) => {
       };
     });
 
-    console.log(`Returning ${combinedUsers.length} users`);
-
-    return new Response(
-      JSON.stringify(combinedUsers),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    logger.info(`Retrieved ${combinedUsers.length} users`);
+    return combinedUsers;
   } catch (error) {
-    console.error("Unexpected error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message || "An unexpected error occurred" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    logger.error("Error in fetchAllUsers", { error });
+    throw error;
+  }
+}
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  const corsResponse = handleCorsOptions(req);
+  if (corsResponse) return corsResponse;
+
+  try {
+    // Verify authentication
+    const { user, error } = await verifyAuth(req);
+    if (error) return error;
+    if (!user) {
+      return errorResponse("Authentication required", "unauthorized", HttpStatus.UNAUTHORIZED);
+    }
+
+    // Create Supabase admin client
+    const config = getSupabaseConfig();
+    const supabaseAdmin = createClient(config.url, config.serviceRoleKey);
+    
+    // Verify the user has admin privileges
+    const isAdmin = await verifyAdminAccess(supabaseAdmin, user.id);
+    if (!isAdmin) {
+      logger.warn("Unauthorized admin access attempt", { userId: user.id });
+      return errorResponse(
+        "Unauthorized - not an admin",
+        "forbidden",
+        HttpStatus.FORBIDDEN
+      );
+    }
+
+    // Fetch all users
+    const users = await fetchAllUsers(supabaseAdmin);
+    
+    return successResponse(users);
+  } catch (error) {
+    logger.error("Unexpected error", { error });
+    return errorResponse(
+      error.message || "An unexpected error occurred",
+      "server_error",
+      HttpStatus.INTERNAL_SERVER_ERROR
     );
   }
 });
