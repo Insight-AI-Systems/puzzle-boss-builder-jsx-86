@@ -4,10 +4,23 @@
  * These utilities help test security features across the application
  */
 
-import { SecurityEventType } from './auditLogging';
 import { supabase } from '@/integrations/supabase/client';
 import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';
 import { debugLog, DebugLevel } from '@/utils/debug';
+
+/**
+ * Security Event Types for the application
+ */
+export enum SecurityEventType {
+  LOGIN_ATTEMPT = 'login_attempt',
+  LOGIN_SUCCESS = 'login_success',
+  LOGIN_FAILURE = 'login_failure',
+  PASSWORD_RESET = 'password_reset',
+  PROFILE_UPDATE = 'profile_update',
+  ROLE_CHANGE = 'role_change',
+  ADMIN_ACTION = 'admin_action',
+  SECURITY_TEST = 'security_test'
+}
 
 /**
  * Types representing test verification results
@@ -16,6 +29,9 @@ export type VerificationResult = {
   success: boolean;
   message: string;
   details?: Record<string, any>;
+  status?: string;
+  changeId?: string;
+  description?: string;
 };
 
 /**
@@ -340,13 +356,19 @@ export class SecurityTestRunner {
       return {
         success: true,
         message: `All ${stats.total} security tests passed`,
-        details: { results: runner.getResults() }
+        details: { results: runner.getResults() },
+        status: 'VERIFIED',
+        changeId: 'security-validation',
+        description: 'Security implementation validation'
       };
     } else {
       return {
         success: false,
         message: `${stats.total - stats.passed} of ${stats.total} security tests failed`,
-        details: { results: runner.getResults() }
+        details: { results: runner.getResults() },
+        status: 'FAILED',
+        changeId: 'security-validation',
+        description: 'Security implementation validation'
       };
     }
   }

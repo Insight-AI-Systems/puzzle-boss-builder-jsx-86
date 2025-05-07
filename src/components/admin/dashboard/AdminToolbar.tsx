@@ -1,31 +1,48 @@
 
 import React from 'react';
-import { Bug } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Link } from 'react-router-dom';
-import { debugAuthState, forceProtectedAdminAccess } from '@/utils/admin/debugAuth';
+import { RefreshCw, Bug, Settings, Terminal, Shield } from "lucide-react";
 
 interface AdminToolbarProps {
   showDebugInfo: () => void;
+  showDiagnostics?: () => void;
+  onRefresh?: () => void;
 }
 
-export const AdminToolbar: React.FC<AdminToolbarProps> = ({
-  showDebugInfo
-}) => <div className="mb-6 space-y-2">
-    <h2 className="text-xl font-game text-puzzle-gold">Admin Tools</h2>
+export function AdminToolbar({ showDebugInfo, showDiagnostics, onRefresh }: AdminToolbarProps) {
+  const handleRefresh = () => {
+    if (onRefresh) {
+      onRefresh();
+    } else {
+      window.location.reload();
+    }
+  };
+
+  return (
     <div className="flex flex-wrap gap-2">
-      <Button onClick={() => debugAuthState()} variant="outline" size="sm">
-        Debug Auth State
+      <Button variant="outline" size="sm" onClick={handleRefresh} className="flex items-center gap-1">
+        <RefreshCw className="h-4 w-4" />
+        Refresh
       </Button>
       
-      <Button onClick={showDebugInfo} variant="outline" size="sm">
-        <Bug className="h-4 w-4 mr-1" />
-        Show Debug Info
+      <Button variant="outline" size="sm" onClick={showDebugInfo} className="flex items-center gap-1">
+        <Terminal className="h-4 w-4" />
+        Debug Info
       </Button>
-      <Button asChild variant="outline" size="lg">
-        <Link to="/puzzle-test-playground">
-          Open Puzzle Engine Test Playground
-        </Link>
+      
+      {showDiagnostics && (
+        <Button variant="outline" size="sm" onClick={showDiagnostics} className="flex items-center gap-1">
+          <Bug className="h-4 w-4" />
+          Admin Diagnostics
+        </Button>
+      )}
+      
+      <Button variant="outline" size="sm" asChild className="flex items-center gap-1 ml-auto">
+        <a href="https://supabase.com/dashboard/project/vcacfysfjgoahledqdwa/auth/users" target="_blank" rel="noopener noreferrer">
+          <Shield className="h-4 w-4" />
+          Supabase Users
+        </a>
       </Button>
     </div>
-  </div>;
+  );
+}

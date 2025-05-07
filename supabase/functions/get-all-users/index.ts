@@ -2,12 +2,15 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { handleCorsOptions, corsHeaders } from "../_shared/cors.ts";
 import { successResponse, errorResponse, HttpStatus } from "../_shared/response.ts";
-import { verifyAuth } from "../_shared/auth.ts";
+import { verifyAuth, isProtectedAdmin } from "../_shared/auth.ts";
 import { EdgeFunctionLogger } from "../_shared/logging.ts";
 import { getSupabaseConfig } from "../_shared/config.ts";
 
 // Initialize logger
 const logger = new EdgeFunctionLogger("get-all-users");
+
+// Special admin email for direct access
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 // Interface for the user data we return
 interface UserData {
@@ -49,7 +52,7 @@ async function verifyAdminAccess(supabase: any, userId: string): Promise<boolean
       return false;
     }
     
-    const hasAccess = profile && ["admin", "super_admin", "cfo"].includes(profile.role);
+    const hasAccess = profile && ["admin", "super_admin", "cfo", "category_manager"].includes(profile.role);
     logger.info("Admin access check", { userId, role: profile?.role, hasAccess });
     return hasAccess;
   } catch (error) {
@@ -124,53 +127,12 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
     logger.info(`Retrieved ${authUsers.users.length} users from auth service`);
     
     // First check if the profiles table exists and has the basic columns we need
-    const hasProfilesTable = await columnExists(supabase, "profiles", "id");
-    
-    if (!hasProfilesTable) {
-      logger.error("Profiles table doesn't exist or is inaccessible");
-      // Return minimal data from auth.users
-      return authUsers.users.map(user => ({
-        id: user.id,
-        email: user.email || '',
-        display_name: user.email?.split('@')[0] || 'User',
-        role: 'player',
-        created_at: user.created_at || new Date().toISOString(),
-        last_sign_in: user.last_sign_in_at || null
-      }));
-    }
-    
-    // Check which columns exist in profiles table
-    const columnsToCheck = [
-      "role", "username", "created_at", "updated_at", "country", "last_sign_in", 
+    let columnsToCheck = ["id", "role", "username", "created_at", "updated_at", "country", "last_sign_in", 
       "credits", "avatar_url", "categories_played", "gender", "age_group", 
-      "custom_gender", "email"
-    ];
+      "custom_gender", "email"];
     
-    let availableColumns: string[] = [];
-    
-    // Check each column
-    for (const column of columnsToCheck) {
-      const exists = await columnExists(supabase, "profiles", column);
-      if (exists) {
-        availableColumns.push(column);
-      }
-    }
-    
-    if (availableColumns.length === 0) {
-      logger.warn("No usable columns found in profiles table");
-      // Return minimal data from auth.users
-      return authUsers.users.map(user => ({
-        id: user.id,
-        email: user.email || '',
-        display_name: user.email?.split('@')[0] || 'User',
-        role: 'player',
-        created_at: user.created_at || new Date().toISOString(),
-        last_sign_in: user.last_sign_in_at || null
-      }));
-    }
-    
-    // Construct our select statement
-    const selectColumns = ["id", ...availableColumns].join(", ");
+    // Get profiles with all columns
+    let selectColumns = columnsToCheck.join(", ");
     logger.info(`Using profiles query with columns: ${selectColumns}`);
     
     // Get profiles with detected fields
@@ -188,7 +150,17 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
         
       if (idsError) {
         logger.error("Failed to fetch even profile IDs", { error: idsError });
-        throw new Error("Error fetching profiles: " + profilesError.message);
+        
+        // Last resort: return basic user data from auth
+        logger.info("Falling back to basic auth user data");
+        return authUsers.users.map(user => ({
+          id: user.id,
+          email: user.email || '',
+          display_name: user.email?.split('@')[0] || 'User',
+          role: user.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase() ? 'super_admin' : 'player',
+          created_at: user.created_at || new Date().toISOString(),
+          last_sign_in: user.last_sign_in_at || null
+        }));
       }
       
       // Map basic user info if we have IDs
@@ -204,7 +176,7 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
           id: user.id,
           email: user.email || '',
           display_name: user.email?.split('@')[0] || 'User',
-          role: 'player',
+          role: user.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase() ? 'super_admin' : 'player',
           created_at: user.created_at || new Date().toISOString(),
           last_sign_in: user.last_sign_in_at || null
         };

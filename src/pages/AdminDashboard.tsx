@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminAccessCheck } from '@/components/admin/dashboard/AdminAccessCheck';
 import { AdminToolbar } from '@/components/admin/dashboard/AdminToolbar';
+import { AdminDiagnostics } from '@/components/admin/AdminDiagnostics';
 import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';
 
 const AdminDashboard = () => {
@@ -16,6 +17,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   // Comprehensive admin access check
   const hasProtectedEmail = isProtectedAdmin(user?.email);
@@ -122,13 +124,18 @@ const AdminDashboard = () => {
             {hasProtectedEmail || isSuperAdmin ? 'Admin Dashboard' : `${profile?.role?.replace('_', ' ')} Dashboard`}
           </h1>
 
-          <AdminToolbar showDebugInfo={showDebugInfo} />
+          <AdminToolbar 
+            showDebugInfo={showDebugInfo}
+            showDiagnostics={() => setShowDiagnostics(!showDiagnostics)}
+          />
           
           {debugInfo && (
             <pre className="mt-4 p-4 bg-black/30 text-white rounded-md overflow-x-auto text-xs">
               {debugInfo}
             </pre>
           )}
+
+          {showDiagnostics && <AdminDiagnostics />}
 
           <RoleBasedDashboard />
         </div>
