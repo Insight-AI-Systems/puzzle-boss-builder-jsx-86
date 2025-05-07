@@ -90,7 +90,9 @@ const AdminDashboard = () => {
         socialMediaManager: hasRole('social_media_manager'),
         partnerManager: hasRole('partner_manager'),
         cfo: hasRole('cfo')
-      }
+      },
+      isProtectedAdmin,
+      hasAdminAccess
     };
     setDebugInfo(JSON.stringify(info, null, 2));
   };
@@ -103,7 +105,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (user && !hasAdminAccess && !isLoading) {
+  if (user && !hasAdminAccess && !isProtectedAdmin && !isLoading) {
     return (
       <AdminAccessCheck 
         user={user}

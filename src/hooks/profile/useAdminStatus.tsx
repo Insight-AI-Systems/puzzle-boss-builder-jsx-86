@@ -15,15 +15,13 @@ export function useAdminStatus(profile: UserProfile | null) {
       return;
     }
     
-    // Check if email matches protected admin (either in profile.id which may contain email, or in profile.email)
+    // Check if email matches protected admin (either in profile.email or in profile.id which may contain email)
     const profileEmail = profile.email || profile.id;
-    const isProtectedAdmin = 
-      profileEmail === PROTECTED_ADMIN_EMAIL || 
-      profile.id === PROTECTED_ADMIN_EMAIL;
+    const isProtectedAdmin = profileEmail === PROTECTED_ADMIN_EMAIL;
     
-    // Explicit check for Alan's email with super admin privileges
+    // Explicit check for protected admin with super admin privileges
     if (isProtectedAdmin) {
-      console.log('useAdminStatus - Protected super admin detected, granting full admin privileges');
+      console.log('useAdminStatus - Protected admin detected, granting full admin privileges');
       setIsAdmin(true);
       return;
     }

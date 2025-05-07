@@ -49,7 +49,8 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
       admin: hasRole('admin'),
       superAdmin: hasRole('super_admin'),
       categoryManager: hasRole('category_manager'),
-    }
+    },
+    accessStatus: isProtectedAdmin ? 'protected_admin_access' : (isAdminUser ? 'role_based_access' : 'no_admin_access')
   });
 
   if (!profile) return null;
@@ -80,7 +81,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
         </DropdownMenuItem>
         
         {/* Admin Menu Section - Show for any admin role */}
-        {isAdminUser && (
+        {(isAdminUser || isProtectedAdmin) && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="flex items-center text-puzzle-aqua">

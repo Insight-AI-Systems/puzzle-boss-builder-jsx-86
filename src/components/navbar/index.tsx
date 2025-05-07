@@ -76,7 +76,7 @@ const Navbar: React.FC = () => {
           
           {/* User Menu / Auth Buttons */}
           <div className="hidden md:flex items-center space-x-2">
-            {!loading && userProfile && isAdminUser && (
+            {!loading && userProfile && (isAdminUser || isProtectedAdmin) && (
               <>
                 <Link 
                   to="/admin-dashboard"
@@ -98,7 +98,7 @@ const Navbar: React.FC = () => {
           <div className="md:hidden flex items-center">
             {!loading && userProfile ? (
               <>
-                {isAdminUser && (
+                {(isAdminUser || isProtectedAdmin) && (
                   <>
                     <Link 
                       to="/admin-dashboard"

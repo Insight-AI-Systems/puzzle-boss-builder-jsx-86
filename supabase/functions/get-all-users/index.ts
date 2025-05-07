@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { handleCorsOptions, corsHeaders } from "../_shared/cors.ts";
@@ -31,6 +30,14 @@ interface UserData {
 // Check if the user has admin privileges
 async function verifyAdminAccess(supabase: any, userId: string): Promise<boolean> {
   try {
+    // Special case: Check if the user is the protected admin by email
+    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+    
+    if (!userError && userData?.user?.email === 'alan@insight-ai-systems.com') {
+      logger.info("Protected admin detected, granting access regardless of role");
+      return true;
+    }
+    
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("role")
@@ -42,13 +49,6 @@ async function verifyAdminAccess(supabase: any, userId: string): Promise<boolean
       return false;
     }
     
-    // Special case for protected admin email
-    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
-    if (!userError && userData?.user?.email === 'alan@insight-ai-systems.com') {
-      logger.info("Protected admin detected, granting access regardless of role");
-      return true;
-    }
-
     const hasAccess = profile && ["admin", "super_admin", "cfo"].includes(profile.role);
     logger.info("Admin access check", { userId, role: profile?.role, hasAccess });
     return hasAccess;
@@ -292,7 +292,7 @@ serve(async (req) => {
       return errorResponse("Authentication required", "unauthorized", HttpStatus.UNAUTHORIZED);
     }
     
-    logger.info("Request authenticated", { userId: user.id });
+    logger.info("Request authenticated", { userId: user.id, userEmail: user.email });
 
     // Special case for protected admin
     if (user.email === 'alan@insight-ai-systems.com') {
@@ -316,7 +316,7 @@ serve(async (req) => {
     // For other users, verify they have admin privileges
     const isAdmin = await verifyAdminAccess(supabaseAdmin, user.id);
     if (!isAdmin) {
-      logger.warn("Unauthorized admin access attempt", { userId: user.id });
+      logger.warn("Unauthorized admin access attempt", { userId: user.id, userEmail: user.email });
       return errorResponse(
         "Unauthorized - not an admin",
         "forbidden",
