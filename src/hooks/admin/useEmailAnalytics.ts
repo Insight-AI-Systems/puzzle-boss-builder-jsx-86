@@ -59,57 +59,70 @@ export function useEmailAnalytics(dateRange?: DateRange, campaignId: string = 'a
         const startDate = dateRange?.from || subDays(new Date(), 30);
         const endDate = dateRange?.to || new Date();
         
-        // Get delivery stats using a direct SQL query to avoid the column ambiguity issue
+        // Get delivery stats with type safety
         const { data: statsData, error: statsError } = await supabase
           .from('email_analytics')
-          .select(`
-            id,
-            date,
-            campaign_id,
-            sum(email_analytics.sent) as sent,
-            sum(email_analytics.delivered) as delivered, 
-            sum(email_analytics.opened) as opened,
-            sum(email_analytics.clicked) as clicked,
-            avg(email_analytics.mobile_pct) as mobile_pct,
-            avg(email_analytics.desktop_pct) as desktop_pct,
-            avg(email_analytics.webmail_pct) as webmail_pct,
-            avg(email_analytics.other_pct) as other_pct
-          `)
+          .select('id, date, campaign_id, sent, delivered, opened, clicked, mobile_pct, desktop_pct, webmail_pct, other_pct')
           .gte('date', startDate.toISOString().split('T')[0])
-          .lte('date', endDate.toISOString().split('T')[0])
-          .order('date', { ascending: false })
-          .limit(1);
+          .lte('date', endDate.toISOString().split('T')[0]);
         
         if (statsError) {
           debugLog('EmailAnalytics', `Error fetching email analytics stats: ${statsError.message}`, DebugLevel.ERROR);
           throw statsError;
         }
         
-        // Calculate rates manually to avoid SQL function issues
-        let processedStats = defaultDeliveryStats;
+        // Calculate aggregate stats from raw data
+        let aggregatedStats = {
+          sent: 0,
+          delivered: 0,
+          opened: 0,
+          clicked: 0,
+          mobile_pct: 0,
+          desktop_pct: 0,
+          webmail_pct: 0,
+          other_pct: 0
+        };
         
         if (statsData && statsData.length > 0) {
-          const stats = statsData[0];
-          const sentCount = Number(stats.sent) || 0;
-          const deliveredCount = Number(stats.delivered) || 0;
-          const openedCount = Number(stats.opened) || 0;
-          const clickedCount = Number(stats.clicked) || 0;
+          // Aggregate values across all records
+          statsData.forEach(record => {
+            aggregatedStats.sent += Number(record.sent || 0);
+            aggregatedStats.delivered += Number(record.delivered || 0);
+            aggregatedStats.opened += Number(record.opened || 0);
+            aggregatedStats.clicked += Number(record.clicked || 0);
+          });
           
-          processedStats = {
-            sent: sentCount,
-            delivered: deliveredCount,
-            opened: openedCount,
-            clicked: clickedCount,
-            delivery_rate: sentCount > 0 ? (deliveredCount / sentCount) * 100 : 0,
-            open_rate: deliveredCount > 0 ? (openedCount / deliveredCount) * 100 : 0,
-            click_rate: openedCount > 0 ? (clickedCount / openedCount) * 100 : 0,
-            bounce_rate: sentCount > 0 ? ((sentCount - deliveredCount) / sentCount) * 100 : 0,
-            mobile_pct: Number(stats.mobile_pct) || 0,
-            desktop_pct: Number(stats.desktop_pct) || 0,
-            webmail_pct: Number(stats.webmail_pct) || 0,
-            other_pct: Number(stats.other_pct) || 0
-          };
+          // Calculate averages for percentages
+          if (statsData.length > 0) {
+            const validRecords = statsData.filter(r => 
+              r.mobile_pct !== null && r.desktop_pct !== null && 
+              r.webmail_pct !== null && r.other_pct !== null
+            );
+            
+            if (validRecords.length > 0) {
+              aggregatedStats.mobile_pct = validRecords.reduce((sum, r) => sum + Number(r.mobile_pct || 0), 0) / validRecords.length;
+              aggregatedStats.desktop_pct = validRecords.reduce((sum, r) => sum + Number(r.desktop_pct || 0), 0) / validRecords.length;
+              aggregatedStats.webmail_pct = validRecords.reduce((sum, r) => sum + Number(r.webmail_pct || 0), 0) / validRecords.length;
+              aggregatedStats.other_pct = validRecords.reduce((sum, r) => sum + Number(r.other_pct || 0), 0) / validRecords.length;
+            }
+          }
         }
+        
+        // Calculate rates based on aggregated data
+        const processedStats: DeliveryStats = {
+          sent: aggregatedStats.sent,
+          delivered: aggregatedStats.delivered,
+          opened: aggregatedStats.opened,
+          clicked: aggregatedStats.clicked,
+          delivery_rate: aggregatedStats.sent > 0 ? (aggregatedStats.delivered / aggregatedStats.sent) * 100 : 0,
+          open_rate: aggregatedStats.delivered > 0 ? (aggregatedStats.opened / aggregatedStats.delivered) * 100 : 0,
+          click_rate: aggregatedStats.opened > 0 ? (aggregatedStats.clicked / aggregatedStats.opened) * 100 : 0,
+          bounce_rate: aggregatedStats.sent > 0 ? ((aggregatedStats.sent - aggregatedStats.delivered) / aggregatedStats.sent) * 100 : 0,
+          mobile_pct: aggregatedStats.mobile_pct,
+          desktop_pct: aggregatedStats.desktop_pct,
+          webmail_pct: aggregatedStats.webmail_pct,
+          other_pct: aggregatedStats.other_pct
+        };
         
         // Get engagement data over time
         const { data: engagementData, error: engagementError } = await supabase
