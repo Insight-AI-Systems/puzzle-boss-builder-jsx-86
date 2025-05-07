@@ -69,3 +69,36 @@ export function errorResponse(
     }
   );
 }
+
+/**
+ * Shorthand for 403 Forbidden responses
+ */
+export function forbiddenResponse(message: string = "You don't have permission to perform this action"): Response {
+  return errorResponse(message, "forbidden", HttpStatus.FORBIDDEN);
+}
+
+/**
+ * Shorthand for 401 Unauthorized responses
+ */
+export function unauthorizedResponse(message: string = "Authentication required"): Response {
+  return errorResponse(message, "unauthorized", HttpStatus.UNAUTHORIZED);
+}
+
+/**
+ * Shorthand for 404 Not Found responses
+ */
+export function notFoundResponse(message: string = "Resource not found"): Response {
+  return errorResponse(message, "not_found", HttpStatus.NOT_FOUND);
+}
+
+/**
+ * Shorthand for validation error responses
+ */
+export function validationErrorResponse(message: string, fieldErrors: Record<string, string>): Response {
+  return errorResponse(
+    message,
+    "validation_error",
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    { fields: fieldErrors }
+  );
+}

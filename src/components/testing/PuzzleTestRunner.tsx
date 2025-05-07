@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserCompatibilityTests } from '@/utils/testing/BrowserCompatibilityTests';
+import React, { useState, useEffect, useCallback } from 'react';
+import { BrowserCompatibilityTest } from '@/utils/testing/BrowserCompatibilityTests';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { TestReport } from '@/utils/testing/types/testTypes';
 
 interface PuzzleTestRunnerProps {
@@ -27,6 +26,7 @@ const PuzzleTestRunner: React.FC<PuzzleTestRunnerProps> = ({ testType = 'unit' }
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [browserResult, setBrowserResult] = useState<TestReport | null>(null);
   const [activeTab, setActiveTab] = useState(testType);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Update active tab when testType prop changes
@@ -35,7 +35,7 @@ const PuzzleTestRunner: React.FC<PuzzleTestRunnerProps> = ({ testType = 'unit' }
     }
     
     // Get browser info on mount
-    const browserInfo = BrowserCompatibilityTests.getBrowserInfo();
+    const browserInfo = BrowserCompatibilityTest.getBrowserInfo();
     console.log('Browser Info:', browserInfo);
   }, [testType]);
 
@@ -95,6 +95,11 @@ const PuzzleTestRunner: React.FC<PuzzleTestRunnerProps> = ({ testType = 'unit' }
       ]);
     } catch (error) {
       console.error('Error running tests:', error);
+      toast({
+        title: 'Error running tests',
+        description: 'Please try again later',
+        variant: 'destructive'
+      });
     } finally {
       setIsRunning(false);
     }
@@ -112,10 +117,15 @@ const PuzzleTestRunner: React.FC<PuzzleTestRunnerProps> = ({ testType = 'unit' }
       }
       
       // Actually run browser compatibility tests
-      const result = await BrowserCompatibilityTests.runCompatibilityTests();
+      const result = await BrowserCompatibilityTest.runCompatibilityTests();
       setBrowserResult(result);
     } catch (error) {
       console.error('Error running browser tests:', error);
+      toast({
+        title: 'Error running browser tests',
+        description: 'Please try again later',
+        variant: 'destructive'
+      });
     } finally {
       setIsRunning(false);
     }

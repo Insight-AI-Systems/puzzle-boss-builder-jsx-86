@@ -1,21 +1,21 @@
 
 /**
- * Gets the Supabase configuration from environment variables
- * @returns Object with Supabase URL and API keys
+ * Configuration utilities for edge functions
  */
-export function getSupabaseConfig() {
-  // For edge functions, these are set in the environment
-  const url = Deno.env.get('SUPABASE_URL') || '';
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-  
-  if (!url || !anonKey || !serviceRoleKey) {
-    throw new Error('Missing Supabase configuration');
+
+// Get environment variable with optional error handling
+export function getEnvVariable(name: string, throwOnMissing = false): string {
+  const value = Deno.env.get(name);
+  if (!value && throwOnMissing) {
+    throw new Error(`Missing required environment variable: ${name}`);
   }
-  
+  return value || '';
+}
+
+// Get Supabase configuration
+export function getSupabaseConfig(): { url: string; serviceRoleKey: string } {
   return {
-    url,
-    anonKey,
-    serviceRoleKey
+    url: getEnvVariable('SUPABASE_URL', true),
+    serviceRoleKey: getEnvVariable('SUPABASE_SERVICE_ROLE_KEY', true)
   };
 }

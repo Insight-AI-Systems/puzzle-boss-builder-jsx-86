@@ -2,6 +2,13 @@
 /**
  * Simple logger for edge functions
  */
+export enum LogLevel {
+  DEBUG = 'debug',
+  INFO = 'info',
+  WARN = 'warn',
+  ERROR = 'error'
+}
+
 export class EdgeFunctionLogger {
   private context: string;
 

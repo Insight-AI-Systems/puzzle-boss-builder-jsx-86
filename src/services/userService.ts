@@ -154,9 +154,9 @@ export class UserService {
       credits: user.credits || 0,
       achievements: [],
       referral_code: null,
-      gender: user.gender as any,
+      gender: user.gender || null,
       custom_gender: user.custom_gender || null,
-      age_group: user.age_group as any,
+      age_group: user.age_group || null,
       created_at: user.created_at,
       updated_at: user.updated_at || user.created_at,
       last_sign_in: user.last_sign_in || null
@@ -270,9 +270,20 @@ export class UserService {
       
       debugLog('UserService', `Updating user ${userId}`, DebugLevel.INFO, { userData });
       
+      // Create a sanitized version of the user data that matches the database schema
+      // This fixes the type mismatch with age_group and other enum fields
+      const sanitizedData: Record<string, any> = {};
+      
+      // Only copy fields that are actually present and not null/undefined
+      Object.entries(userData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          sanitizedData[key] = value;
+        }
+      });
+      
       const { data, error } = await supabase
         .from('profiles')
-        .update(userData)
+        .update(sanitizedData)
         .eq('id', userId)
         .select('*')
         .single();

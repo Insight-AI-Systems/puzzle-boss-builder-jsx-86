@@ -33,6 +33,11 @@ export interface TestReport {
   browser?: {
     name?: string;
     version?: string;
+    os?: string;
+    mobile?: boolean;
+    touchEnabled?: boolean;
+    screenWidth?: number;
+    screenHeight?: number;
   };
   tests?: any[];
 }
@@ -47,7 +52,7 @@ export interface TestSummary {
   skippedTests: number;
   status: string;
   duration: number;
-  timestamp?: number; // Added timestamp to match implementation
+  timestamp: number; // Added timestamp to match implementation
 }
 
 /**

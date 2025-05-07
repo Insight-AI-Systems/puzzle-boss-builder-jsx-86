@@ -1,19 +1,17 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { UserRole } from '@/types/userTypes';
-import { isProtectedAdmin, PROTECTED_ADMIN_EMAIL } from '@/constants/securityConfig';
-import { debugLog, DebugLevel } from '@/utils/debug';
-import { toast } from '@/hooks/use-toast';
 import { QueryClient } from '@tanstack/react-query';
-import { userService } from './userService';
+import { UserRole } from '@/types/userTypes';
+import { debugLog, DebugLevel } from '@/utils/debug';
+import { isProtectedAdmin, PROTECTED_ADMIN_EMAIL } from '@/constants/securityConfig';
+import { toast as useToast } from '@/hooks/use-toast';
 
 /**
- * Role Service
- * Centralized service for handling all role-related operations
+ * Service for managing user roles and permissions
  */
 export class RoleService {
   private queryClient: QueryClient | null = null;
   private static instance: RoleService;
+  private maxRetries = 3;
 
   private constructor() {}
 
@@ -30,8 +28,214 @@ export class RoleService {
   /**
    * Set the QueryClient instance for cache invalidation
    */
-  public setQueryClient(queryClient: QueryClient) {
+  public setQueryClient(queryClient: QueryClient): void {
     this.queryClient = queryClient;
+  }
+
+  /**
+   * Update a user's role
+   * @param userId User ID to update
+   * @param newRole New role to assign
+   * @returns Promise with result
+   */
+  public async updateUserRole(userId: string, newRole: UserRole): Promise<{ success: boolean; error?: string }> {
+    try {
+      debugLog('RoleService', `Updating role for user ${userId} to ${newRole}`, DebugLevel.INFO);
+      
+      // Load toast notification indicator
+      const loadingToast = useToast({
+        title: 'Updating user role...',
+        description: `Changing role to ${newRole}`,
+        variant: 'default',
+        duration: 10000,
+      });
+      
+      // Try to update role through edge function
+      try {
+        const { data, error } = await supabase.functions.invoke('admin-update-roles', {
+          body: {
+            userIds: [userId],
+            newRole
+          }
+        });
+        
+        if (error) {
+          // Handle error from the edge function
+          debugLog('RoleService', `Edge function error: ${error.message}`, DebugLevel.ERROR);
+          
+          // Dismiss loading toast
+          if (loadingToast) {
+            loadingToast.update({
+              id: loadingToast.id,
+              title: 'Error updating role',
+              description: error.message,
+              variant: 'destructive',
+            });
+          }
+          return { success: false, error: error.message };
+        }
+        
+        // Check if the update was successful
+        const userResult = data?.results?.find((r: any) => r.id === userId);
+        if (!userResult?.success) {
+          const errorMsg = userResult?.error || 'Unknown error updating role';
+          debugLog('RoleService', `Role update failed: ${errorMsg}`, DebugLevel.ERROR);
+          
+          // Dismiss loading toast
+          if (loadingToast) {
+            loadingToast.update({
+              id: loadingToast.id,
+              title: 'Error updating role',
+              description: errorMsg,
+              variant: 'destructive',
+            });
+          }
+          return { success: false, error: errorMsg };
+        }
+        
+        // Success case: update cached data
+        debugLog('RoleService', `Role updated successfully to ${newRole}`, DebugLevel.INFO);
+        
+        // Invalidate user queries
+        if (this.queryClient) {
+          this.queryClient.invalidateQueries({ queryKey: ['user', userId] });
+          this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
+        }
+        
+        // Dismiss loading toast with success
+        if (loadingToast) {
+          loadingToast.update({
+            id: loadingToast.id,
+            title: 'Role updated',
+            description: `User's role changed to ${newRole}`,
+            variant: 'default',
+          });
+        }
+        
+        return { success: true };
+        
+      } catch (err) {
+        // Handle unexpected errors
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        debugLog('RoleService', `Exception in updateUserRole: ${errorMessage}`, DebugLevel.ERROR);
+        
+        // Dismiss loading toast
+        if (loadingToast) {
+          loadingToast.update({
+            id: loadingToast.id,
+            title: 'Error updating role',
+            description: errorMessage,
+            variant: 'destructive',
+          });
+        }
+        
+        return { success: false, error: errorMessage };
+      }
+    } catch (err) {
+      // Final error handler
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      debugLog('RoleService', `Top-level error in updateUserRole: ${errorMessage}`, DebugLevel.ERROR);
+      return { success: false, error: errorMessage };
+    }
+  }
+
+  /**
+   * Update roles for multiple users at once
+   * @param userIds Array of user IDs
+   * @param newRole New role to assign to all users
+   * @returns Promise with results
+   */
+  public async bulkUpdateRoles(userIds: string[], newRole: UserRole): Promise<{ 
+    success: boolean; 
+    results?: any[]; 
+    error?: string;
+  }> {
+    try {
+      debugLog('RoleService', `Bulk updating ${userIds.length} users to role ${newRole}`, DebugLevel.INFO);
+      
+      // Loading toast for bulk update
+      const loadingToast = useToast({
+        title: 'Updating user roles...',
+        description: `Changing ${userIds.length} users to ${newRole}`,
+        variant: 'default',
+        duration: 30000,
+      });
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('admin-update-roles', {
+          body: {
+            userIds,
+            newRole
+          }
+        });
+        
+        if (error) {
+          debugLog('RoleService', `Edge function error in bulk update: ${error.message}`, DebugLevel.ERROR);
+          
+          // Dismiss loading toast with error
+          if (loadingToast) {
+            loadingToast.update({
+              id: loadingToast.id,
+              title: 'Error updating roles',
+              description: error.message,
+              variant: 'destructive',
+            });
+          }
+          
+          return { success: false, error: error.message };
+        }
+        
+        // Process results
+        const successCount = data?.results?.filter((r: any) => r.success).length || 0;
+        const failureCount = userIds.length - successCount;
+        
+        debugLog('RoleService', `Bulk update completed: ${successCount} successes, ${failureCount} failures`, DebugLevel.INFO);
+        
+        // Invalidate queries for all users
+        if (this.queryClient) {
+          this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
+        }
+        
+        // Show success toast
+        if (loadingToast) {
+          loadingToast.update({
+            id: loadingToast.id,
+            title: 'Roles updated',
+            description: `Successfully updated ${successCount} of ${userIds.length} users to ${newRole}`,
+            variant: failureCount > 0 ? 'default' : 'default',
+          });
+        }
+        
+        // Return results
+        return { 
+          success: successCount > 0, 
+          results: data?.results || []
+        };
+        
+      } catch (err) {
+        // Handle unexpected errors
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        debugLog('RoleService', `Exception in bulkUpdateRoles: ${errorMessage}`, DebugLevel.ERROR);
+        
+        // Dismiss loading toast with error
+        if (loadingToast) {
+          loadingToast.update({
+            id: loadingToast.id,
+            title: 'Error updating roles',
+            description: errorMessage,
+            variant: 'destructive',
+          });
+        }
+        
+        return { success: false, error: errorMessage };
+      }
+      
+    } catch (err) {
+      // Final error handler
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      debugLog('RoleService', `Top-level error in bulkUpdateRoles: ${errorMessage}`, DebugLevel.ERROR);
+      return { success: false, error: errorMessage };
+    }
   }
 
   /**
@@ -40,263 +244,46 @@ export class RoleService {
   public canAssignRole(
     currentUserRole: UserRole, 
     targetRole: UserRole, 
-    targetUserId: string, 
+    targetUserId: string,
     currentUserEmail?: string
   ): boolean {
-    // Check if target user is protected admin
-    if (isProtectedAdmin(targetUserId)) {
-      debugLog('RoleService', "Cannot change protected admin's role", DebugLevel.WARN);
-      return false;
-    }
-    
-    // Special case: current user is protected admin (can do anything)
-    if (isProtectedAdmin(currentUserEmail)) {
-      debugLog('RoleService', "Protected admin can assign any role", DebugLevel.INFO);
+    // Special case for protected admin
+    if (currentUserEmail && isProtectedAdmin(currentUserEmail)) {
       return true;
     }
     
-    // Role assignment rules
-    switch (currentUserRole) {
-      case 'super_admin':
-        // Super admins can assign any role
-        return true;
-      case 'admin':
-        // Admins can't assign super_admin role
-        return targetRole !== 'super_admin';
-      // Add more role rules as needed
-      default:
-        return false;
-    }
-  }
-
-  /**
-   * Update a user's role with optimistic UI update
-   */
-  public async updateUserRole(
-    userId: string, 
-    newRole: UserRole,
-    onSuccess?: () => void,
-    onError?: (error: Error) => void
-  ): Promise<void> {
-    try {
-      // Validate inputs
-      if (!userId || !newRole) {
-        throw new Error('Invalid parameters: userId and newRole are required');
-      }
-      
-      debugLog('RoleService', `Updating role for user ${userId} to ${newRole}`, DebugLevel.INFO);
-      
-      // Get current user to check permissions
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
-        throw new Error(`Failed to get current user: ${userError.message}`);
-      }
-      
-      // Check if target user is protected admin
-      if (userId === PROTECTED_ADMIN_EMAIL || isProtectedAdmin(userId)) {
-        throw new Error("Protected admin's role cannot be changed");
-      }
-      
-      // Optimistic UI update - We'll invalidate this cache later if the update fails
-      if (this.queryClient) {
-        // Get the current data from cache
-        const previousData = this.queryClient.getQueryData(['all-users']);
-        
-        // Optimistically update the cache
-        this.queryClient.setQueryData(['all-users'], (old: any) => {
-          if (!old || !old.data) return old;
-          
-          return {
-            ...old,
-            data: old.data.map((user: any) => 
-              user.id === userId 
-                ? { ...user, role: newRole }
-                : user
-            )
-          };
-        });
-        
-        // Also update single user cache if it exists
-        this.queryClient.setQueryData(['profile', userId], (oldUserData: any) => {
-          if (!oldUserData) return oldUserData;
-          return { ...oldUserData, role: newRole };
-        });
-      }
-      
-      // Show loading toast
-      const loadingToastId = toast({
-        title: "Updating role...",
-        description: "Please wait while we update the user's role.",
-      }).id;
-      
-      // Call the edge function to update the role
-      const { data, error } = await supabase.functions.invoke('admin-update-roles', {
-        body: { userIds: [userId], newRole }
-      });
-      
-      if (error) {
-        // Dismiss loading toast
-        toast.dismiss(loadingToastId);
-        
-        // Show error toast
-        toast({
-          title: "Error updating role",
-          description: error.message || "An unknown error occurred",
-          variant: "destructive",
-        });
-        
-        // Revert optimistic update
-        if (this.queryClient) {
-          this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
-          this.queryClient.invalidateQueries({ queryKey: ['profile', userId] });
-        }
-        
-        debugLog('RoleService', "Error in updateUserRole:", DebugLevel.ERROR, { error });
-        if (onError) onError(error);
-        throw error;
-      }
-      
-      // Dismiss loading toast
-      toast.dismiss(loadingToastId);
-      
-      // Show success toast
-      toast({
-        title: "Role updated",
-        description: `User's role has been changed to ${newRole}`,
-        variant: "default",
-      });
-      
-      // Make sure cache is updated with server data
-      if (this.queryClient) {
-        this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
-        this.queryClient.invalidateQueries({ queryKey: ['profile', userId] });
-      }
-      
-      debugLog('RoleService', "Role update success:", DebugLevel.INFO, { data });
-      if (onSuccess) onSuccess();
-      
-    } catch (err) {
-      debugLog('RoleService', "Exception in updateUserRole:", DebugLevel.ERROR, { error: err });
-      
-      // Show error toast
-      toast({
-        title: "Error updating role",
-        description: err instanceof Error ? err.message : "An unknown error occurred",
-        variant: "destructive",
-      });
-      
-      if (onError) onError(err as Error);
-      throw err;
-    }
-  }
-
-  /**
-   * Bulk update user roles
-   */
-  public async bulkUpdateRoles(
-    userIds: string[], 
-    newRole: UserRole,
-    onSuccess?: () => void,
-    onError?: (error: Error) => void
-  ): Promise<void> {
-    if (!userIds.length || !newRole) {
-      throw new Error('Invalid parameters: userIds and newRole are required');
+    // Role hierarchy checks
+    const roleHierarchy: Record<string, number> = {
+      'super_admin': 100,
+      'admin': 80,
+      'category_manager': 60,
+      'social_media_manager': 50,
+      'partner_manager': 50,
+      'cfo': 50,
+      'player': 10
+    };
+    
+    // Check if the user's role has sufficient privileges
+    const currentRoleLevel = roleHierarchy[currentUserRole] || 0;
+    const targetRoleLevel = roleHierarchy[targetRole] || 0;
+    
+    // Can only assign roles of lower level than your own
+    if (targetRoleLevel >= currentRoleLevel) {
+      return false;
     }
     
-    try {
-      debugLog('RoleService', `Bulk updating role to ${newRole} for ${userIds.length} users`, DebugLevel.INFO);
-      
-      // Filter out protected admin from bulk updates
-      const filteredUserIds = userIds.filter(id => !isProtectedAdmin(id) && id !== PROTECTED_ADMIN_EMAIL);
-      
-      if (filteredUserIds.length < userIds.length) {
-        debugLog('RoleService', "Protected admin users were excluded from bulk update", DebugLevel.WARN);
-      }
-      
-      if (filteredUserIds.length === 0) {
-        debugLog('RoleService', "No users to update after filtering", DebugLevel.WARN);
-        throw new Error("No eligible users to update");
-      }
-      
-      // Optimistic UI update
-      if (this.queryClient) {
-        this.queryClient.setQueryData(['all-users'], (old: any) => {
-          if (!old || !old.data) return old;
-          
-          return {
-            ...old,
-            data: old.data.map((user: any) => 
-              filteredUserIds.includes(user.id)
-                ? { ...user, role: newRole }
-                : user
-            )
-          };
-        });
-      }
-      
-      // Show loading toast
-      const loadingToastId = toast({
-        title: "Updating roles...",
-        description: `Updating ${filteredUserIds.length} users to ${newRole} role`,
-      }).id;
-      
-      const { data, error } = await supabase.functions.invoke('admin-update-roles', {
-        body: { userIds: filteredUserIds, newRole }
-      });
-      
-      // Dismiss loading toast
-      toast.dismiss(loadingToastId);
-      
-      if (error) {
-        // Show error toast
-        toast({
-          title: "Error updating roles",
-          description: error.message || "An unknown error occurred",
-          variant: "destructive",
-        });
-        
-        // Revert optimistic update
-        if (this.queryClient) {
-          this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
-        }
-        
-        debugLog('RoleService', "Error in bulkUpdateRoles:", DebugLevel.ERROR, { error });
-        if (onError) onError(error);
-        throw error;
-      }
-      
-      // Show success toast
-      toast({
-        title: "Roles updated",
-        description: `${filteredUserIds.length} users have been updated to ${newRole}`,
-        variant: "default",
-      });
-      
-      // Make sure cache is updated with server data
-      if (this.queryClient) {
-        this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
-        for (const userId of filteredUserIds) {
-          this.queryClient.invalidateQueries({ queryKey: ['profile', userId] });
-        }
-      }
-      
-      debugLog('RoleService', "Bulk role update success:", DebugLevel.INFO, { data });
-      if (onSuccess) onSuccess();
-      
-    } catch (err) {
-      debugLog('RoleService', "Exception in bulkUpdateRoles:", DebugLevel.ERROR, { error: err });
-      
-      // Show error toast
-      toast({
-        title: "Error updating roles",
-        description: err instanceof Error ? err.message : "An unknown error occurred",
-        variant: "destructive",
-      });
-      
-      if (onError) onError(err as Error);
-      throw err;
+    // Super admins can assign any role (except to other super admins)
+    if (currentUserRole === 'super_admin') {
+      return true;
     }
+    
+    // Regular admins can assign any role except super_admin
+    if (currentUserRole === 'admin') {
+      return targetRole !== 'super_admin';
+    }
+    
+    // Other roles can't assign roles
+    return false;
   }
 }
 

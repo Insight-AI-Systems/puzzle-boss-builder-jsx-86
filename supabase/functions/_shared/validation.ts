@@ -1,20 +1,32 @@
 
-// Input validation utilities
+/**
+ * Validation utilities for edge functions
+ */
 
-// Validate required fields
-export function validateRequiredFields<T>(
-  data: T,
-  requiredFields: Array<keyof T>
-): { isValid: boolean; missingFields: string[] } {
+// Validate required fields in request body
+export function validateRequiredFields(body: any, requiredFields: string[]): { 
+  isValid: boolean;
+  missingFields: string[];
+} {
+  if (!body) {
+    return { isValid: false, missingFields: requiredFields };
+  }
+  
   const missingFields = requiredFields.filter(field => {
-    const value = data[field];
+    const value = body[field];
     return value === undefined || value === null || value === '';
   });
   
   return {
     isValid: missingFields.length === 0,
-    missingFields: missingFields as string[]
+    missingFields
   };
+}
+
+// Validate UUID format
+export function isValidUuid(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
 }
 
 // Validate email format
@@ -23,17 +35,9 @@ export function isValidEmail(email: string): boolean {
   return emailRegex.test(email);
 }
 
-// Validate UUID format
-export function isValidUuid(uuid: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(uuid);
-}
-
-// Generic validator that takes a value and a validator function
-export function validate<T>(value: T, validator: (value: T) => boolean, errorMessage: string): { isValid: boolean; error?: string } {
-  const isValid = validator(value);
-  return {
-    isValid,
-    error: isValid ? undefined : errorMessage
-  };
+// Validate numeric value
+export function isValidNumber(value: any): boolean {
+  if (typeof value === 'number') return !isNaN(value);
+  if (typeof value === 'string') return !isNaN(Number(value));
+  return false;
 }
