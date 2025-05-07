@@ -15,6 +15,12 @@ export interface AuthResult {
   error: Response | null;
 }
 
+/**
+ * Verify authentication token in request
+ * 
+ * @param req - The incoming request
+ * @returns Authentication result with user info or error
+ */
 export async function verifyAuth(req: Request): Promise<AuthResult> {
   try {
     // Get JWT from the Authorization header
@@ -86,7 +92,12 @@ export async function verifyAuth(req: Request): Promise<AuthResult> {
   }
 }
 
-// Helper function to check if user is a specific protected admin
+/**
+ * Helper function to check if user is a specific protected admin
+ * 
+ * @param email - Email to check
+ * @returns Boolean indicating if email matches protected admin
+ */
 export function isProtectedAdmin(email?: string): boolean {
   if (!email) return false;
   return email.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase();

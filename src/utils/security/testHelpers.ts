@@ -6,6 +6,8 @@
 
 import { SecurityEventType } from './auditLogging';
 import { supabase } from '@/integrations/supabase/client';
+import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';
+import { debugLog, DebugLevel } from '@/utils/debug';
 
 /**
  * Types representing test verification results
@@ -23,11 +25,18 @@ export type VerificationResult = {
  */
 export class SecurityTestRunner {
   private results: VerificationResult[] = [];
+  private testsCompleted = 0;
+  private testsPassed = 0;
   
   /**
    * Tests CSRF protection mechanisms
+   * 
+   * @returns Verification result
    */
   async testCsrfProtection(): Promise<VerificationResult> {
+    this.testsCompleted++;
+    debugLog('SecurityTestRunner', 'Running CSRF protection test', DebugLevel.INFO);
+    
     try {
       // Get CSRF token from cookie if available
       const cookies = document.cookie.split(';')
@@ -60,6 +69,7 @@ export class SecurityTestRunner {
         };
       }
       
+      this.testsPassed++;
       return {
         success: true,
         message: 'CSRF protection is properly implemented',
@@ -76,8 +86,13 @@ export class SecurityTestRunner {
   
   /**
    * Tests if authentication flow is secure
+   * 
+   * @returns Verification result
    */
   async testAuthenticationSecurity(): Promise<VerificationResult> {
+    this.testsCompleted++;
+    debugLog('SecurityTestRunner', 'Running authentication security test', DebugLevel.INFO);
+    
     try {
       // Check if we have a session
       const { data: sessionData } = await supabase.auth.getSession();
@@ -101,6 +116,7 @@ export class SecurityTestRunner {
             };
           }
           
+          this.testsPassed++;
           return {
             success: true,
             message: 'Authentication flow is secure and token refresh mechanism works',
@@ -115,6 +131,7 @@ export class SecurityTestRunner {
         }
       }
       
+      this.testsPassed++;
       return {
         success: true,
         message: 'No active session to test',
@@ -130,20 +147,157 @@ export class SecurityTestRunner {
   }
   
   /**
+   * Tests if protected admin email recognition is working
+   * 
+   * @returns Verification result
+   */
+  async testProtectedAdminRecognition(): Promise<VerificationResult> {
+    this.testsCompleted++;
+    debugLog('SecurityTestRunner', 'Running protected admin recognition test', DebugLevel.INFO);
+    
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        this.testsPassed++;
+        return {
+          success: true,
+          message: 'No user logged in to test admin recognition',
+          details: { userPresent: false }
+        };
+      }
+      
+      // Check if the current user is the protected admin
+      const isProtectedAdminUser = isProtectedAdmin(user.email);
+      
+      if (isProtectedAdminUser) {
+        // Verify admin access via security config service
+        const { data, error } = await supabase.functions.invoke('security-config-service', {
+          body: {
+            action: 'validateAdminAccess'
+          }
+        });
+        
+        if (error || !data?.isAdmin) {
+          return {
+            success: false,
+            message: 'Protected admin email not recognized by security service',
+            details: { error, response: data, userEmail: user.email }
+          };
+        }
+        
+        this.testsPassed++;
+        return {
+          success: true,
+          message: 'Protected admin email recognition is working correctly',
+          details: { 
+            userEmail: user.email,
+            isProtectedAdmin: isProtectedAdminUser,
+            recognizedByService: true
+          }
+        };
+      }
+      
+      this.testsPassed++;
+      return {
+        success: true,
+        message: 'Current user is not a protected admin',
+        details: { userEmail: user.email, isProtectedAdmin: false }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Exception during protected admin test: ${error instanceof Error ? error.message : String(error)}`,
+        details: { error }
+      };
+    }
+  }
+  
+  /**
+   * Tests security event logging functionality
+   * 
+   * @returns Verification result
+   */
+  async testSecurityEventLogging(): Promise<VerificationResult> {
+    this.testsCompleted++;
+    debugLog('SecurityTestRunner', 'Running security event logging test', DebugLevel.INFO);
+    
+    try {
+      // Create a test security event
+      const testEvent = {
+        eventType: SecurityEventType.SECURITY_TEST,
+        severity: 'info',
+        details: {
+          testId: `test-${Date.now()}`,
+          testName: 'Security Event Logging Test'
+        }
+      };
+      
+      // Attempt to log the event via the edge function
+      const { data, error } = await supabase.functions.invoke('security-events', {
+        body: {
+          action: 'log',
+          event_type: testEvent.eventType,
+          severity: testEvent.severity,
+          event_details: testEvent.details
+        }
+      });
+      
+      if (error) {
+        return {
+          success: false,
+          message: 'Failed to log security event',
+          details: { error, testEvent }
+        };
+      }
+      
+      this.testsPassed++;
+      return {
+        success: true,
+        message: 'Security event logging is functional',
+        details: { response: data, testEvent }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Exception during security event test: ${error instanceof Error ? error.message : String(error)}`,
+        details: { error }
+      };
+    }
+  }
+  
+  /**
    * Runs all security tests
+   * 
+   * @returns Array of verification results
    */
   async runAllTests(): Promise<VerificationResult[]> {
     this.results = [];
+    this.testsCompleted = 0;
+    this.testsPassed = 0;
+    
+    debugLog('SecurityTestRunner', 'Starting security test suite', DebugLevel.INFO);
     
     // Add test results to the collection
     this.results.push(await this.testCsrfProtection());
     this.results.push(await this.testAuthenticationSecurity());
+    this.results.push(await this.testProtectedAdminRecognition());
+    this.results.push(await this.testSecurityEventLogging());
+    
+    debugLog('SecurityTestRunner', 'Security test suite complete', DebugLevel.INFO, {
+      passed: this.testsPassed,
+      total: this.testsCompleted,
+      success: this.allTestsPassed()
+    });
     
     return this.results;
   }
   
   /**
    * Returns test results
+   * 
+   * @returns Array of verification results
    */
   getResults(): VerificationResult[] {
     return this.results;
@@ -151,30 +305,49 @@ export class SecurityTestRunner {
   
   /**
    * Checks if all tests passed
+   * 
+   * @returns Boolean indicating if all tests passed
    */
   allTestsPassed(): boolean {
     return this.results.every(result => result.success);
   }
-}
-
-/**
- * Quick security validation - runs tests and returns overall result
- */
-export async function validateSecurityImplementation(): Promise<VerificationResult> {
-  const runner = new SecurityTestRunner();
-  await runner.runAllTests();
   
-  if (runner.allTestsPassed()) {
+  /**
+   * Get test statistics
+   * 
+   * @returns Test statistics object
+   */
+  getTestStats(): { passed: number; total: number; percentage: number } {
     return {
-      success: true,
-      message: 'All security tests passed',
-      details: { results: runner.getResults() }
+      passed: this.testsPassed,
+      total: this.testsCompleted,
+      percentage: this.testsCompleted > 0 ? (this.testsPassed / this.testsCompleted) * 100 : 0
     };
-  } else {
-    return {
-      success: false,
-      message: 'Some security tests failed',
-      details: { results: runner.getResults() }
-    };
+  }
+  
+  /**
+   * Static method to quickly validate security implementation
+   * 
+   * @returns Verification result
+   */
+  static async validateSecurityImplementation(): Promise<VerificationResult> {
+    const runner = new SecurityTestRunner();
+    await runner.runAllTests();
+    
+    const stats = runner.getTestStats();
+    
+    if (runner.allTestsPassed()) {
+      return {
+        success: true,
+        message: `All ${stats.total} security tests passed`,
+        details: { results: runner.getResults() }
+      };
+    } else {
+      return {
+        success: false,
+        message: `${stats.total - stats.passed} of ${stats.total} security tests failed`,
+        details: { results: runner.getResults() }
+      };
+    }
   }
 }

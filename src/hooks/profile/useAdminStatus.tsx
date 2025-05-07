@@ -2,7 +2,18 @@
 import { useState, useEffect } from 'react';
 import { UserProfile } from '@/types/userTypes';
 import { isProtectedAdmin, PROTECTED_ADMIN_EMAIL } from '@/constants/securityConfig';
+import { debugLog, DebugLevel } from '@/utils/debug';
 
+/**
+ * Hook to determine if a user has admin privileges
+ * 
+ * This hook checks multiple conditions for admin status:
+ * 1. If the user email matches the protected admin email
+ * 2. If the user role is 'admin' or 'super_admin'
+ * 
+ * @param profile - The user profile object
+ * @returns Object containing isAdmin status
+ */
 export function useAdminStatus(profile: UserProfile | null) {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
@@ -19,7 +30,9 @@ export function useAdminStatus(profile: UserProfile | null) {
     
     // Explicit check for protected admin with super admin privileges
     if (hasProtectedEmail) {
-      console.log('useAdminStatus - Protected admin detected, granting full admin privileges');
+      debugLog('useAdminStatus', 'Protected admin detected, granting full admin privileges', DebugLevel.INFO, {
+        email: profileEmail
+      });
       setIsAdmin(true);
       return;
     }
@@ -28,7 +41,7 @@ export function useAdminStatus(profile: UserProfile | null) {
     const hasAdminRole = profile.role === 'super_admin' || profile.role === 'admin';
     setIsAdmin(hasAdminRole);
     
-    console.log('useAdminStatus check:', { 
+    debugLog('useAdminStatus', 'Admin status check completed', DebugLevel.INFO, { 
       profileId: profile.id, 
       profileEmail, 
       role: profile.role,

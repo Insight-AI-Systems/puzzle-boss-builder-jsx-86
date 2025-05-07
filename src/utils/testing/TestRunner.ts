@@ -6,16 +6,28 @@ import { VerificationResult } from './types/testTypes';
 import { DatabaseTestRunner } from './runners/DatabaseTestRunner';
 import { ComponentTestRunner } from './runners/ComponentTestRunner';
 import { ProgressTestRunner } from './runners/ProgressTestRunner';
+import { SecurityTestRunner } from '../security/testHelpers';
+import { debugLog, DebugLevel } from '@/utils/debug';
 
+/**
+ * Test Runner
+ * 
+ * Central testing utility for running various types of tests including security tests
+ * Supports different environments and can be configured to run specific test suites
+ */
 export class TestRunner {
   private static verificationEnabled = true;
   private static testManager = new TestManager();
   private static environment = process.env.NODE_ENV || 'development';
+  private static securityTestRunner = new SecurityTestRunner();
   
-  // Set the environment for the test runner
+  /**
+   * Set the environment for the test runner
+   * @param env - The environment to set
+   */
   static setEnvironment(env: 'development' | 'test' | 'production'): void {
     TestRunner.environment = env;
-    console.info(`Test environment set to: ${env}`);
+    debugLog('TestRunner', `Test environment set to: ${env}`, DebugLevel.INFO);
     
     // In production, disable verification unless explicitly enabled
     if (env === 'production') {
@@ -23,19 +35,38 @@ export class TestRunner {
     }
   }
   
+  /**
+   * Enable or disable verification
+   * @param enable - Whether verification should be enabled
+   */
   static enableVerification(enable: boolean): void {
     TestRunner.verificationEnabled = enable;
+    debugLog('TestRunner', `Verification ${enable ? 'enabled' : 'disabled'}`, DebugLevel.INFO);
   }
   
+  /**
+   * Check if verification is enabled
+   * @returns Boolean indicating if verification is enabled
+   */
   static isVerificationEnabled(): boolean {
     return TestRunner.verificationEnabled;
   }
   
+  /**
+   * Get the current environment
+   * @returns The current environment string
+   */
   static getEnvironment(): string {
     return TestRunner.environment;
   }
   
+  /**
+   * Run all tests for a specific task
+   * @param taskId - The task ID to run tests for
+   * @returns Promise resolving to boolean indicating test success
+   */
   static async runAllTaskTests(taskId: string): Promise<boolean> {
+    debugLog('TestRunner', `Running all tests for task: ${taskId}`, DebugLevel.INFO);
     const result = await projectTracker.runTaskTests(taskId);
     
     if (result) {
@@ -54,11 +85,26 @@ export class TestRunner {
     return result;
   }
   
+  /**
+   * Run all security tests
+   * @returns Promise resolving to test results
+   */
+  static async runSecurityTests(): Promise<VerificationResult[]> {
+    debugLog('TestRunner', 'Running security tests', DebugLevel.INFO);
+    return TestRunner.securityTestRunner.runAllTests();
+  }
+  
+  /**
+   * Verify a specific change
+   * @param changeId - ID of the change to verify
+   * @param description - Description of the change
+   * @returns Promise resolving to verification result
+   */
   static async verifyChange(changeId: string, description: string): Promise<VerificationResult> {
-    console.log(`Verifying change: ${changeId} (${description})`);
+    debugLog('TestRunner', `Verifying change: ${changeId} (${description})`, DebugLevel.INFO);
     
     if (!TestRunner.verificationEnabled) {
-      console.log('Verification disabled, skipping tests');
+      debugLog('TestRunner', 'Verification disabled, skipping tests', DebugLevel.INFO);
       return {
         status: 'SKIPPED',
         message: 'Verification is disabled',
@@ -113,4 +159,5 @@ export class TestRunner {
   static readonly testAuthStatus = DatabaseTestRunner.testAuthStatus;
   static readonly testComponentRender = ComponentTestRunner.testComponentRender;
   static readonly testProgressItemOrder = ProgressTestRunner.testProgressItemOrder;
+  static readonly validateSecurityImplementation = SecurityTestRunner.validateSecurityImplementation;
 }

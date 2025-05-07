@@ -5,6 +5,7 @@ import { Shield, ChevronDown } from "lucide-react";
 import { ROLE_DEFINITIONS } from '@/types/userTypes';
 import { UserRoleMenuProps } from '@/types/userTableTypes';
 import { isProtectedAdmin } from '@/constants/securityConfig';
+import { debugLog, DebugLevel } from '@/utils/debug';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +13,15 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 
+/**
+ * User Role Menu Component
+ * 
+ * Dropdown menu for changing user roles in the admin panel
+ * Special handling for protected admin users whose role cannot be changed
+ * 
+ * @param props - Component props
+ * @returns Role selection dropdown component
+ */
 export const UserRoleMenu: React.FC<UserRoleMenuProps> = ({
   user,
   canAssignRole,
@@ -19,6 +29,16 @@ export const UserRoleMenu: React.FC<UserRoleMenuProps> = ({
 }) => {
   // Check if this is the protected admin user
   const isProtectedAdminUser = isProtectedAdmin(user.email);
+  
+  // Log the role menu rendering for debugging
+  React.useEffect(() => {
+    if (isProtectedAdminUser) {
+      debugLog('UserRoleMenu', 'Protected admin user role menu rendered', DebugLevel.INFO, {
+        userId: user.id,
+        email: user.email
+      });
+    }
+  }, [user.id, user.email, isProtectedAdminUser]);
   
   // If this is the protected admin, disable role changes completely
   if (isProtectedAdminUser) {

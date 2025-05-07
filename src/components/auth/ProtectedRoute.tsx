@@ -7,6 +7,7 @@ import { SecurityEventType } from '@/utils/security/auditLogging';
 import { UserRole } from '@/types/userTypes';
 import { Loader2 } from 'lucide-react';
 import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';
+import { debugLog, DebugLevel } from '@/utils/debug';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -16,6 +17,15 @@ interface ProtectedRouteProps {
   logAccess?: boolean;
 }
 
+/**
+ * Protected Route Component
+ * 
+ * Controls access to routes based on authentication status, user roles, and permissions
+ * Special handling for the protected admin email which always has access
+ * 
+ * @param props - Component props
+ * @returns React component that either redirects or renders protected content
+ */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
   requiredRoles = [],
@@ -41,7 +51,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     // Special case for protected admin email - always authorized for all routes
     const hasProtectedEmail = isProtectedAdmin(user?.email);
     if (hasProtectedEmail) {
-      console.log('Protected admin detected, granting access');
+      debugLog('ProtectedRoute', 'Protected admin detected, granting access', DebugLevel.INFO, {
+        email: user?.email,
+        path: location.pathname
+      });
       setIsAuthorized(true);
       return;
     }
@@ -69,9 +82,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     // Set authorization result
     setIsAuthorized(hasRequiredRole && hasRequiredPermissions);
 
+    debugLog('ProtectedRoute', 'Authorization check', DebugLevel.INFO, {
+      path: location.pathname,
+      hasRequiredRole,
+      hasRequiredPermissions,
+      isAuthorized: hasRequiredRole && hasRequiredPermissions,
+      requiredRoles,
+      requiredPermissions
+    });
+
   }, [
     isInitialized, isLoading, isAuthenticated, requiredRoles, requiredPermissions, 
-    requireAllPermissions, hasRole, hasPermission, isAdmin, user
+    requireAllPermissions, hasRole, hasPermission, isAdmin, user, location.pathname
   ]);
 
   // Log access attempts if enabled
