@@ -2,8 +2,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initCsrfProtection, refreshCsrfToken, getCsrfToken, rotateCsrfToken } from '@/utils/security/csrfCookies';
 import { logSecurityEvent, SecurityEventType, initSecurityEventListeners, processQueuedSecurityEvents } from '@/utils/security/auditLogging';
+import { useEnhancedAuthContext } from '@/contexts/EnhancedAuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@supabase/supabase-js';
 
 interface SecurityContextType {
   // CSRF Protection
@@ -42,26 +42,16 @@ const defaultSecurityContext: SecurityContextType = {
 const SecurityContext = createContext<SecurityContextType>(defaultSecurityContext);
 
 export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Manage our own user state instead of depending on AuthContext
-  const [user, setUser] = useState<User | null>(null);
+  const { user, isAuthenticated } = useEnhancedAuthContext();
   const [csrfToken, setCsrfToken] = useState<string>('');
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [securityLevel, setSecurityLevel] = useState<'normal' | 'elevated' | 'lockdown'>('normal');
   
-  // Initialize security features and set up auth listener
+  // Initialize security features
   useEffect(() => {
     const initSecurity = async () => {
       try {
         console.log('Initializing security context');
-        
-        // Initialize user state from Supabase
-        const { data: { session } } = await supabase.auth.getSession();
-        setUser(session?.user || null);
-        
-        // Set up auth state listener
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          setUser(session?.user || null);
-        });
         
         // Initialize CSRF protection
         await initCsrfProtection();
@@ -76,48 +66,43 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Log security initialization
         await logSecurityEvent({
           eventType: SecurityEventType.CONFIG_CHANGE,
-          userId: session?.user?.id,
+          userId: user?.id,
           severity: 'info',
           details: { action: 'security_context_initialized' }
         });
         
         setIsInitialized(true);
         console.log('Security context initialized successfully');
-        
-        // Clean up subscription
-        return () => {
-          subscription.unsubscribe();
-        };
       } catch (error) {
         console.error('Error initializing security context:', error);
       }
     };
     
     initSecurity();
-  }, []);
+  }, [user]);
   
   // Update CSRF token when authentication state changes
   useEffect(() => {
     const updateCsrfOnAuth = async () => {
-      if (user) {
+      if (isAuthenticated) {
         const newToken = await refreshCsrfToken();
         setCsrfToken(newToken);
         
         // Log user authentication for security monitoring
         await logSecurityEvent({
           eventType: SecurityEventType.LOGIN_SUCCESS,
-          userId: user.id,
+          userId: user?.id,
           severity: 'info',
-          email: user.email,
+          email: user?.email,
           details: { authenticated: true }
         });
       }
     };
     
-    if (user) {
+    if (isAuthenticated) {
       updateCsrfOnAuth();
     }
-  }, [user]);
+  }, [isAuthenticated, user]);
   
   // Refresh CSRF token
   const refreshCsrf = async () => {
@@ -138,30 +123,12 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!user) return;
     
     try {
-      // Get current session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      
-      // Call the edge function to terminate other sessions
-      const sessionId = session.access_token;
-      
-      // Use the Supabase function to terminate other sessions
-      const { error } = await supabase.rpc('terminate_other_sessions', {
-        current_session_id: sessionId
-      });
-      
-      if (error) {
-        console.error('Failed to invalidate other sessions:', error);
-        throw error;
-      }
-      
-      // Log the security action
-      await logSecurityEvent({
-        eventType: SecurityEventType.SESSION_EXPIRED,
-        userId: user.id,
-        severity: 'warning',
-        email: user.email,
-        details: { action: 'invalidate_other_sessions', currentSession: sessionId }
+      // Call the enhanced auth function to invalidate sessions
+      await supabase.functions.invoke('auth-manager', {
+        body: {
+          action: 'invalidate_sessions',
+          userId: user.id
+        }
       });
       
       // Rotate CSRF token after security-sensitive action
@@ -177,9 +144,9 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!user) return false;
     
     try {
-      // Call the security config edge function to validate admin access
-      const { data, error } = await supabase.functions.invoke('security-config', {
-        body: { action: 'validateAdminAccess' }
+      // Use the admin-auth edge function
+      const { data, error } = await supabase.functions.invoke('admin-auth', {
+        body: { action: 'verify_admin' }
       });
       
       if (error) {

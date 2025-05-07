@@ -45,5 +45,14 @@ verify_jwt = true
 [functions.get-all-users]
 verify_jwt = true
 
+[functions.auth-manager]
+verify_jwt = false
+
+[functions.rbac-manager]
+verify_jwt = true
+
+[functions.admin-auth]
+verify_jwt = true
+
 [realtime]
 enabled = true
