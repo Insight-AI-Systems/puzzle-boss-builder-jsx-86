@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { UsersTable } from './UsersTable';
 import { UserTableFilters } from './UserTableFilters';
@@ -8,22 +8,67 @@ import { UserPagination } from './UserPagination';
 import { UserTypeToggle } from './UserTypeToggle';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
 import { useAuth } from '@/hooks/auth/useAuth';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { EmailDialog } from './EmailDialog';
 import { BulkRoleDialog } from './BulkRoleDialog';
 import { UserInsightsDashboard } from './UserInsightsDashboard';
 import { UserRole } from '@/types/userTypes';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { supabase } from '@/integrations/supabase/client';
 
 export const UserManagement: React.FC = () => {
   const { user, userRole } = useAuth();
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [confirmRoleDialogOpen, setConfirmRoleDialogOpen] = useState(false);
   const [localSearchTerm, setLocalSearchTerm] = useState('');
+  const [adminTestComplete, setAdminTestComplete] = useState(false);
+  const [isTestingAdmin, setIsTestingAdmin] = useState(false);
+  const [adminTestResult, setAdminTestResult] = useState<{success: boolean, message: string} | null>(null);
   
+  // Check if user is admin through explicit roles
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
   const userId = user?.id || null;
+  
+  // Test if admin access is working
+  const testAdminAccess = async () => {
+    setIsTestingAdmin(true);
+    try {
+      const result = await supabase.functions.invoke('get-all-users', {
+        method: 'GET'
+      });
+      
+      if (result.error) {
+        console.error("Admin access test failed:", result.error);
+        setAdminTestResult({ 
+          success: false, 
+          message: `Admin check failed: ${result.error.message || 'Unknown error'}` 
+        });
+      } else {
+        console.log("Admin access test succeeded:", result);
+        setAdminTestResult({ 
+          success: true, 
+          message: `Admin check successful. Found ${result.data?.length || 0} users.` 
+        });
+      }
+    } catch (error) {
+      console.error("Error testing admin access:", error);
+      setAdminTestResult({ 
+        success: false, 
+        message: `Error testing admin access: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      });
+    } finally {
+      setIsTestingAdmin(false);
+      setAdminTestComplete(true);
+    }
+  };
+
+  // Auto-run admin test once when component mounts
+  useEffect(() => {
+    if (isAdmin && userId && !adminTestComplete && !isTestingAdmin) {
+      testAdminAccess();
+    }
+  }, [isAdmin, userId, adminTestComplete, isTestingAdmin]);
   
   const {
     // Filter state
@@ -100,13 +145,37 @@ export const UserManagement: React.FC = () => {
         <CardContent>
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
             <AlertDescription>
               {profileError.message || "An error occurred while loading user data."}
             </AlertDescription>
           </Alert>
-          <Button onClick={() => refetch()} className="mt-2">
-            Try Again
-          </Button>
+          <div className="flex flex-col space-y-4">
+            <Button onClick={() => refetch()} className="mt-2 w-full sm:w-auto">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Try Again
+            </Button>
+            {!adminTestComplete && (
+              <Button 
+                onClick={testAdminAccess} 
+                disabled={isTestingAdmin}
+                variant="outline" 
+                className="w-full sm:w-auto"
+              >
+                {isTestingAdmin ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertCircle className="mr-2 h-4 w-4" />}
+                Test Admin Access
+              </Button>
+            )}
+          </div>
+          
+          {adminTestResult && (
+            <Alert className="mt-4" variant={adminTestResult.success ? "default" : "destructive"}>
+              <AlertTitle>{adminTestResult.success ? "Admin Access Test Successful" : "Admin Access Test Failed"}</AlertTitle>
+              <AlertDescription>
+                {adminTestResult.message}
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
     );
@@ -179,12 +248,35 @@ export const UserManagement: React.FC = () => {
               {(!allProfilesData || !allProfilesData.data) && !isLoadingProfiles && (
                 <Alert className="my-4">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    No user data available. This could be due to database configuration or permissions.
+                  <AlertTitle>No Users Found</AlertTitle>
+                  <AlertDescription className="flex flex-col gap-4">
+                    <p>
+                      No user data available. This may be due to database configuration, permissions,
+                      or connectivity issues.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button onClick={() => refetch()} size="sm" className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4" />
+                        Refresh Data
+                      </Button>
+                      <Button 
+                        onClick={testAdminAccess} 
+                        variant="outline" 
+                        size="sm" 
+                        disabled={isTestingAdmin}
+                        className="flex items-center gap-2"
+                      >
+                        {isTestingAdmin ? <Loader2 className="h-4 w-4 animate-spin" /> : <AlertCircle className="h-4 w-4" />}
+                        Test Admin Access
+                      </Button>
+                    </div>
+                    
+                    {adminTestResult && (
+                      <div className={`text-sm ${adminTestResult.success ? "text-green-600" : "text-red-600"}`}>
+                        {adminTestResult.message}
+                      </div>
+                    )}
                   </AlertDescription>
-                  <Button onClick={() => refetch()} className="mt-2">
-                    Refresh Data
-                  </Button>
                 </Alert>
               )}
               

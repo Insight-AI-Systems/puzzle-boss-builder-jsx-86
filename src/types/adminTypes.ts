@@ -1,10 +1,15 @@
-
 import { UserProfile } from './userTypes';
 
 export interface UserStats {
   total: number;
-  genderBreakdown: { [key: string]: number };
-  ageBreakdown?: { [key: string]: number };
+  genderBreakdown: {
+    [key: string]: number;
+  };
+  ageBreakdown?: {
+    [key: string]: number;
+  };
+  adminCount: number;
+  regularCount: number;
 }
 
 export interface AdminProfilesOptions {

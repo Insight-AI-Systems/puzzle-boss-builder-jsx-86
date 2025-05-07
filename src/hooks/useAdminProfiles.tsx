@@ -28,7 +28,13 @@ export function useAdminProfiles(
 
     try {
       console.log('Fetching users with get-all-users edge function');
-      const response = await supabase.functions.invoke<RpcUserData[]>('get-all-users');
+      const response = await supabase.functions.invoke<RpcUserData[]>('get-all-users', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
       
       if (response.error) {
         console.error('Error fetching users:', response.error);
@@ -96,7 +102,8 @@ export function useAdminProfiles(
         totalCount,
         paginatedCount: paginatedData.length,
         countries: countries.length,
-        categories: categories.length
+        categories: categories.length,
+        genders: genders ? genders.length : 0
       });
 
       return { 

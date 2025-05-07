@@ -53,7 +53,7 @@ export function UsersTable({
               <td colSpan={selectionEnabled ? 8 : 7} className="text-center py-6">
                 <div className="flex flex-col items-center justify-center space-y-4 p-4">
                   <p className="text-muted-foreground">
-                    No users found matching your search.
+                    No users found. There may be an issue with database connectivity or permissions.
                   </p>
                   {onRefresh && (
                     <Button 

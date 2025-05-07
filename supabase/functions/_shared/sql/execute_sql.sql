@@ -1,15 +1,14 @@
 
 CREATE OR REPLACE FUNCTION public.execute_sql(sql text)
-RETURNS json
+RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
-DECLARE
-  result json;
 BEGIN
-  EXECUTE sql INTO result;
-  RETURN result;
+  EXECUTE sql;
+  RETURN jsonb_build_object('result', true);
 EXCEPTION WHEN OTHERS THEN
-  RETURN json_build_object('error', SQLERRM);
+  RETURN jsonb_build_object('error', SQLERRM);
 END;
 $$;

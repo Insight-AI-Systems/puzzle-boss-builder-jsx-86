@@ -15,6 +15,7 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
   const [lastLoginSortDirection, setLastLoginSortDirection] = useState<'asc' | 'desc'>('desc');
   const [bulkRole, setBulkRole] = useState<UserRole | null>(null);
   const [isBulkRoleChanging, setIsBulkRoleChanging] = useState(false);
+  const [hasAttemptedRefetch, setHasAttemptedRefetch] = useState(false);
   
   const { 
     data: allProfilesData, 
@@ -38,7 +39,8 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
       isLoading: isLoadingProfiles,
       error: profileError,
       isAdmin,
-      currentUserId
+      currentUserId,
+      hasAttemptedRefetch
     });
     
     // Show toast if there's an error
@@ -49,20 +51,22 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
         variant: "destructive"
       });
     }
-  }, [allProfilesData, isLoadingProfiles, profileError, isAdmin, currentUserId]);
+  }, [allProfilesData, isLoadingProfiles, profileError, isAdmin, currentUserId, hasAttemptedRefetch]);
 
   // Trigger a refetch if initial data is empty but credentials seem valid
   useEffect(() => {
-    if (isAdmin && currentUserId && !isLoadingProfiles && !profileError && (!allProfilesData || !allProfilesData.data || allProfilesData.data.length === 0)) {
+    if (isAdmin && currentUserId && !isLoadingProfiles && !hasAttemptedRefetch && 
+        (!allProfilesData || !allProfilesData.data || allProfilesData.data.length === 0)) {
       console.log('No users found initially, attempting refetch...');
       // Add a slight delay before refetch
       const timer = setTimeout(() => {
         refetch();
+        setHasAttemptedRefetch(true);
       }, 1000);
       
       return () => clearTimeout(timer);
     }
-  }, [isAdmin, currentUserId, isLoadingProfiles, profileError, allProfilesData, refetch]);
+  }, [isAdmin, currentUserId, isLoadingProfiles, profileError, allProfilesData, refetch, hasAttemptedRefetch]);
 
   // Handle role change for a single user
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
@@ -96,7 +100,12 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
   useEffect(() => {
     if (allProfilesData?.data) {
       // Calculate gender breakdown
-      const genderBreakdown: { [key: string]: number } = {};
+      const genderBreakdown: { [key: string]: number } = {
+        'Male': 0,
+        'Female': 0,
+        'Other': 0,
+        'Unknown': 0
+      };
       
       allProfilesData.data.forEach(user => {
         const gender = user.gender || 'Unknown';
@@ -112,16 +121,48 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
         }
       });
 
+      // Count admins vs regular users
+      let adminCount = 0;
+      let regularCount = 0;
+      
+      allProfilesData.data.forEach(user => {
+        const role = user.role || 'player';
+        if (['admin', 'super_admin', 'category_manager', 'cfo', 'partner_manager'].includes(role)) {
+          adminCount++;
+        } else {
+          regularCount++;
+        }
+      });
+
       // Set the complete stats object
       setUserStats({
         total: allProfilesData.count || allProfilesData.data.length,
         genderBreakdown,
-        ageBreakdown: Object.keys(ageBreakdown).length > 0 ? ageBreakdown : undefined
+        ageBreakdown: Object.keys(ageBreakdown).length > 0 ? ageBreakdown : undefined,
+        adminCount,
+        regularCount
+      });
+    } else {
+      // Set default stats when no data is available
+      setUserStats({
+        total: 0,
+        genderBreakdown: { 'Unknown': 0 },
+        adminCount: 0,
+        regularCount: 0
       });
     }
   }, [allProfilesData]);
 
   const { handleExportUsers } = useUserExport();
+  
+  // Manual refresh function with feedback
+  const handleRefresh = () => {
+    toast({
+      title: "Refreshing user data",
+      description: "Fetching the latest user information..."
+    });
+    refetch();
+  };
 
   return {
     // Filter props from useUserFilters
@@ -152,6 +193,6 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     setBulkRole,
     isBulkRoleChanging,
     // Refetch function
-    refetch
+    refetch: handleRefresh
   };
 }

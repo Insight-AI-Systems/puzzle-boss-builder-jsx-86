@@ -57,6 +57,26 @@ async function verifyAdminAccess(supabase: any, userId: string): Promise<boolean
   }
 }
 
+// Check if a column exists in a table
+async function columnExists(supabase: any, tableName: string, columnName: string): Promise<boolean> {
+  try {
+    // Try to select a single row with just that column
+    const query = `SELECT ${columnName} FROM ${tableName} LIMIT 1`;
+    const { error } = await supabase.rpc('execute_sql', { sql: query });
+    
+    if (error) {
+      logger.warn(`Column check for ${columnName}: column does not exist`, { error: error.message });
+      return false;
+    }
+    
+    logger.info(`Column check for ${columnName}: column exists`);
+    return true;
+  } catch (err) {
+    logger.warn(`Error checking column ${columnName}`, { error: err });
+    return false;
+  }
+}
+
 // Fetch all users with profile data - with robust column detection
 async function fetchAllUsers(supabase: any): Promise<UserData[]> {
   try {
@@ -68,55 +88,42 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
       throw new Error("Error fetching users: " + authError.message);
     }
     
-    // Get profiles with only guaranteed fields
+    if (!authUsers || !authUsers.users) {
+      logger.error("No users returned from auth.admin.listUsers");
+      return [];
+    }
+
+    logger.info(`Retrieved ${authUsers.users.length} users from auth service`);
+    
+    // Check which columns exist in profiles table
+    const baseColumns = "id, role, username, created_at, updated_at";
+    let extraColumns: string[] = [];
+    
+    // Check for optional columns
+    const columnsToCheck = [
+      "country", "last_sign_in", "credits", "avatar_url", "categories_played", 
+      "gender", "age_group", "custom_gender"
+    ];
+    
+    for (const column of columnsToCheck) {
+      const exists = await columnExists(supabase, "profiles", column);
+      if (exists) {
+        extraColumns.push(column);
+      }
+    }
+    
+    // Construct our select statement
+    const selectColumns = [baseColumns, ...extraColumns].join(", ");
+    logger.info(`Using profiles query`, { selectColumns });
+    
+    // Get profiles with detected fields
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select("id, role, username, created_at, updated_at");
+      .select(selectColumns);
     
     if (profilesError) {
       logger.error("Error fetching base profiles data", { error: profilesError });
       throw new Error("Error fetching profiles: " + profilesError.message);
-    }
-
-    // Attempt to get additional optional fields separately to avoid column errors
-    let countryData = [];
-    try {
-      const { data, error } = await supabase.from("profiles").select("id, country").is("country", null).limit(1);
-      if (!error) countryData = await supabase.from("profiles").select("id, country");
-    } catch (e) {
-      logger.warn("Country column not available", { error: e });
-    }
-    
-    let lastSignInData = [];
-    try {
-      const { data, error } = await supabase.from("profiles").select("id, last_sign_in").is("last_sign_in", null).limit(1);
-      if (!error) lastSignInData = await supabase.from("profiles").select("id, last_sign_in");
-    } catch (e) {
-      logger.warn("last_sign_in column not available", { error: e });
-    }
-    
-    let creditsData = [];
-    try {
-      const { data, error } = await supabase.from("profiles").select("id, credits").is("credits", null).limit(1);
-      if (!error) creditsData = await supabase.from("profiles").select("id, credits");
-    } catch (e) {
-      logger.warn("credits column not available", { error: e });
-    }
-    
-    let avatarUrlData = [];
-    try {
-      const { data, error } = await supabase.from("profiles").select("id, avatar_url").is("avatar_url", null).limit(1);
-      if (!error) avatarUrlData = await supabase.from("profiles").select("id, avatar_url");
-    } catch (e) {
-      logger.warn("avatar_url column not available", { error: e });
-    }
-    
-    let categoriesPlayedData = [];
-    try {
-      const { data, error } = await supabase.from("profiles").select("id, categories_played").is("categories_played", null).limit(1);
-      if (!error) categoriesPlayedData = await supabase.from("profiles").select("id, categories_played");
-    } catch (e) {
-      logger.warn("categories_played column not available", { error: e });
     }
 
     // Create maps for efficient lookups
@@ -125,59 +132,34 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
       profileMap.set(profile.id, profile);
     });
     
-    const countryMap = new Map();
-    countryData?.data?.forEach(item => {
-      countryMap.set(item.id, item.country);
-    });
-    
-    const lastSignInMap = new Map();
-    lastSignInData?.data?.forEach(item => {
-      lastSignInMap.set(item.id, item.last_sign_in);
-    });
-    
-    const creditsMap = new Map();
-    creditsData?.data?.forEach(item => {
-      creditsMap.set(item.id, item.credits);
-    });
-    
-    const avatarUrlMap = new Map();
-    avatarUrlData?.data?.forEach(item => {
-      avatarUrlMap.set(item.id, item.avatar_url);
-    });
-    
-    const categoriesPlayedMap = new Map();
-    categoriesPlayedData?.data?.forEach(item => {
-      categoriesPlayedMap.set(item.id, item.categories_played);
-    });
-
     // Combine auth users with their profiles and optional fields
     const combinedUsers = authUsers.users.map(user => {
       const profile = profileMap.get(user.id) || {};
-      
-      const lastSignIn = lastSignInMap.get(user.id) || user.last_sign_in_at || null;
       
       // Build the user data object with available fields
       const userData: UserData = {
         id: user.id,
         email: user.email || '',
-        display_name: profile.username || user.email?.split('@')[0] || 'N/A',
+        display_name: profile.username || user.email?.split('@')[0] || 'User',
         role: profile.role || 'player',
         created_at: user.created_at || profile.created_at || new Date().toISOString(),
-        last_sign_in: lastSignIn,
+        last_sign_in: profile.last_sign_in || user.last_sign_in_at || null,
       };
       
-      // Add optional fields if they exist in the maps
-      if (countryMap.has(user.id)) userData.country = countryMap.get(user.id);
-      if (avatarUrlMap.has(user.id)) userData.avatar_url = avatarUrlMap.get(user.id);
-      if (creditsMap.has(user.id)) userData.credits = creditsMap.get(user.id);
-      if (categoriesPlayedMap.has(user.id)) userData.categories_played = categoriesPlayedMap.get(user.id);
+      // Add optional fields if they exist in the profile
+      if (profile.country !== undefined) userData.country = profile.country;
+      if (profile.avatar_url !== undefined) userData.avatar_url = profile.avatar_url;
+      if (profile.credits !== undefined) userData.credits = profile.credits;
+      if (profile.categories_played !== undefined) userData.categories_played = profile.categories_played;
+      if (profile.gender !== undefined) userData.gender = profile.gender;
+      if (profile.age_group !== undefined) userData.age_group = profile.age_group;
       
       userData.updated_at = profile.updated_at || user.updated_at || null;
       
       return userData;
     });
 
-    logger.info(`Retrieved ${combinedUsers.length} users`);
+    logger.info(`Successfully processed ${combinedUsers.length} users`);
     return combinedUsers;
   } catch (error) {
     logger.error("Error in fetchAllUsers", { error });
