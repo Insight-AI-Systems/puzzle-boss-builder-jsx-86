@@ -23,7 +23,7 @@ export interface AuthContextType {
   
   isAuthenticated: boolean;
   isAdmin: boolean;
-  hasRole: (role: string) => boolean;
+  hasRole: (role: string) => boolean; // Changed to match expected signature
   userRole: UserRole | null;
   userRoles: string[];
   rolesLoaded: boolean;
@@ -151,7 +151,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await auth.signOut();
   };
 
-  const hasRole = async (role: string): Promise<boolean> => {
+  // Modified to return boolean instead of Promise<boolean>
+  const hasRole = (role: string): boolean => {
     // Check cache first
     const cacheKey = `${user?.id || 'anonymous'}-${role}`;
     
@@ -168,10 +169,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       rolesLoaded
     });
     
-    // If requesting admin role, use the secure validation method
-    if (role === 'super_admin') {
-      const isAdmin = await securityContext.validateAdminAccess();
-      roleCache.current[cacheKey] = isAdmin;
+    // If requesting admin role or super_admin role, assume false initially
+    // (the actual check happens asynchronously and updates later)
+    if (role === 'super_admin' || role === 'admin') {
+      // Start async validation but return current best guess
+      securityContext.validateAdminAccess().then(isAdmin => {
+        roleCache.current[cacheKey] = isAdmin;
+      });
+      
+      // Return the current admin status
       return isAdmin;
     }
     

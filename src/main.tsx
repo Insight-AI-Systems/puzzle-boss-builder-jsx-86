@@ -5,6 +5,7 @@ import App from './App.tsx';
 import './index.css';
 import { AuthProvider } from './contexts/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SecurityProvider } from './hooks/useSecurityContext';
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient({
@@ -106,15 +107,17 @@ class ErrorFallback extends React.Component<ErrorFallbackProps, { hasError: bool
   }
 }
 
-// Create root and render app with error boundary
+// Create root and render app with error boundary - Note the correct provider nesting order
 const root = createRoot(container);
 root.render(
   <React.StrictMode>
     <ErrorFallback>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <SecurityProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </SecurityProvider>
       </QueryClientProvider>
     </ErrorFallback>
   </React.StrictMode>

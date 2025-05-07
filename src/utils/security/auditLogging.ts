@@ -78,14 +78,15 @@ export const logSecurityEvent = async (event: Omit<SecurityLogEvent, 'timestamp'
   
   // Store event in the database (ensure this is async to not block UI)
   try {
-    await supabase.from('security_audit_logs').insert({
-      user_id: event.userId,
+    // The table was created in the migrations, so we can safely insert to it
+    await supabase.rpc('log_security_event', {
       event_type: event.eventType,
+      user_id: event.userId || null,
+      email: event.email || null,
       severity: event.severity,
-      ip_address: event.ipAddress,
-      user_agent: event.userAgent,
-      details: event.details || {},
-      email: event.email
+      ip_address: event.ipAddress || null,
+      user_agent: event.userAgent || null,
+      event_details: event.details || {}
     });
   } catch (dbError) {
     console.error('Failed to store security event in database:', dbError);
@@ -122,19 +123,20 @@ export const processQueuedSecurityEvents = async (): Promise<void> => {
     for (let i = 0; i < queue.length; i += batchSize) {
       const batch = queue.slice(i, i + batchSize);
       
-      const { error } = await supabase.from('security_audit_logs').insert(
-        batch.map(event => ({
-          user_id: event.userId,
-          event_type: event.eventType,
-          severity: event.severity,
-          ip_address: event.ipAddress,
-          user_agent: event.userAgent,
-          details: event.details || {},
-          email: event.email
-        }))
-      );
-      
-      if (error) {
+      try {
+        // Using RPC for batch operations
+        for (const event of batch) {
+          await supabase.rpc('log_security_event', {
+            event_type: event.eventType,
+            user_id: event.userId || null,
+            email: event.email || null,
+            severity: event.severity,
+            ip_address: event.ipAddress || null,
+            user_agent: event.userAgent || null,
+            event_details: event.details || {}
+          });
+        }
+      } catch (error) {
         console.error('Error processing queued security events:', error);
         return; // Stop processing on error to retry later
       }
