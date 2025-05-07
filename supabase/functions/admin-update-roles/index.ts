@@ -1,11 +1,35 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { corsHeaders } from "../_shared/cors.ts";
+import { successResponse, errorResponse, forbiddenResponse, validationErrorResponse } from "../_shared/response.ts";
+import { validateRequiredFields, isValidUuid } from "../_shared/validation.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Valid roles that can be assigned
+const VALID_ROLES = ["super_admin", "admin", "category_manager", "social_media_manager", "partner_manager", "cfo", "player"];
+const PROTECTED_ADMIN_EMAIL = "alan@insight-ai-systems.com";
+
+// Rate limiting state (in production, use a persistent store)
+const rateLimitState: Record<string, { count: number; resetTime: number }> = {};
+
+// Check if request is rate limited
+function isRateLimited(identifier: string, maxRequests = 10, windowMs = 60000): boolean {
+  const now = Date.now();
+  const state = rateLimitState[identifier] || { count: 0, resetTime: now + windowMs };
+  
+  // Reset counter if window expired
+  if (now > state.resetTime) {
+    state.count = 1;
+    state.resetTime = now + windowMs;
+    rateLimitState[identifier] = state;
+    return false;
+  }
+  
+  // Increment and check
+  state.count++;
+  rateLimitState[identifier] = state;
+  return state.count > maxRequests;
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -23,11 +47,7 @@ serve(async (req) => {
     // Extract auth token from request
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      console.error("No authorization header provided");
-      return new Response(
-        JSON.stringify({ error: "No authorization header provided" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse("No authorization header provided", "unauthorized", 401);
     }
 
     // Get JWT token from header and verify user
@@ -35,11 +55,15 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     
     if (userError || !user) {
-      console.error("Auth error:", userError);
-      return new Response(
-        JSON.stringify({ error: "Unauthorized - invalid token" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse("Unauthorized - invalid token", "unauthorized", 401);
+    }
+
+    // Rate limiting check (using IP and user ID)
+    const clientIp = req.headers.get("x-forwarded-for") || "unknown";
+    const rateLimitKey = `role-update:${user.id}:${clientIp}`;
+    
+    if (isRateLimited(rateLimitKey)) {
+      return errorResponse("Too many requests, please try again later", "rate_limit_exceeded", 429);
     }
 
     // Log user trying to perform action
@@ -53,65 +77,73 @@ serve(async (req) => {
       .single();
 
     if (profileError || !profile) {
-      console.error("Profile error:", profileError);
-      return new Response(
-        JSON.stringify({ error: "Unauthorized - profile not found" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse("Unauthorized - profile not found", "profile_not_found", 403);
     }
 
     // Special case for specific super admin email
-    const isSpecificAdminEmail = user.email === "alan@insight-ai-systems.com";
+    const isSpecificAdminEmail = user.email === PROTECTED_ADMIN_EMAIL;
     const isSuperAdmin = profile.role === "super_admin" || isSpecificAdminEmail;
 
-    console.log(`User permissions check: isSuperAdmin=${isSuperAdmin}, isSpecificAdminEmail=${isSpecificAdminEmail}, role=${profile.role}, email=${user.email}`);
-
     if (!isSuperAdmin) {
-      console.error("Permissions error: Not an admin");
-      return new Response(
-        JSON.stringify({ error: "Unauthorized - not a super_admin" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      // Log security event
+      await supabaseAdmin.from("security_audit_logs").insert({
+        user_id: user.id,
+        event_type: "PERMISSION_DENIED",
+        ip_address: clientIp,
+        user_agent: req.headers.get("user-agent") || "unknown",
+        details: { action: "update_roles", requesterRole: profile.role },
+        severity: "warning"
+      });
+
+      return forbiddenResponse("Unauthorized - not a super_admin");
+    }
+
+    // Validate CSRF token for sensitive operations if appropriate
+    // This implementation will depend on your CSRF protection strategy
+    const csrfToken = req.headers.get("X-CSRF-Token");
+    if (!csrfToken) {
+      // In production, this should be enforced for non-GET requests
+      console.warn("CSRF token missing but not enforced in this implementation");
+    }
+
+    // Parse and validate the request body
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (e) {
+      return validationErrorResponse("Invalid JSON body", { body: "Could not parse JSON body" });
+    }
+    
+    const { userIds, newRole } = requestBody;
+    
+    // Validate required fields
+    const validation = validateRequiredFields(requestBody, ["userIds", "newRole"]);
+    if (!validation.isValid) {
+      return validationErrorResponse("Missing required fields", 
+        validation.missingFields.reduce((acc, field) => ({...acc, [field]: "This field is required"}), {})
       );
     }
 
-    // Parse the request body
-    const { userIds, newRole } = await req.json();
-    
-    console.log(`Attempting to update roles: userIds=${JSON.stringify(userIds)}, newRole=${newRole}`);
-    
-    if (!userIds || !Array.isArray(userIds) || !newRole) {
-      console.error("Invalid request body:", { userIds, newRole });
-      return new Response(
-        JSON.stringify({ error: "Invalid request body" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Validate userIds is an array
+    if (!Array.isArray(userIds)) {
+      return validationErrorResponse("Invalid request format", { userIds: "Must be an array" });
     }
-
-    // Validate the role before proceeding
-    const validRoles = ["super_admin", "category_manager", "social_media_manager", "partner_manager", "cfo", "player"];
-    if (!validRoles.includes(newRole)) {
-      console.error("Invalid role specified:", newRole);
-      return new Response(
-        JSON.stringify({ error: "Invalid role specified" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    
+    // Validate that newRole is a valid role
+    if (!VALID_ROLES.includes(newRole)) {
+      return validationErrorResponse("Invalid role specified", { newRole: `Must be one of: ${VALID_ROLES.join(", ")}` });
     }
 
     // Only super admins can assign super_admin role
     if (newRole === "super_admin" && !isSuperAdmin) {
-      console.error("Permission denied: Only super_admin can assign super_admin role");
-      return new Response(
-        JSON.stringify({ error: "Permission denied: Only super_admin can assign super_admin role" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return forbiddenResponse("Permission denied: Only super_admin can assign super_admin role");
     }
 
     // Update roles with upsert in case profiles don't exist yet
     const results = [];
     for (const userId of userIds) {
       // Special protection for protected admin - only the protected admin itself or super admins can change its role
-      if (userId === "alan@insight-ai-systems.com" && !isSpecificAdminEmail && !isSuperAdmin) {
-        console.error(`Cannot modify protected admin account. Requester: ${user.email}, isSpecificAdminEmail: ${isSpecificAdminEmail}, isSuperAdmin: ${isSuperAdmin}`);
+      if (userId === PROTECTED_ADMIN_EMAIL && !isSpecificAdminEmail) {
         results.push({
           id: userId,
           success: false,
@@ -120,8 +152,6 @@ serve(async (req) => {
         });
         continue;
       }
-      
-      console.log(`Updating role for user ${userId} to ${newRole} by ${user.email} (${isSuperAdmin ? 'super_admin' : profile.role})`);
       
       try {
         const { data, error } = await supabaseAdmin
@@ -139,10 +169,26 @@ serve(async (req) => {
           data
         });
 
+        // Log success/failure
         if (error) {
           console.error(`Error updating role for user ${userId}:`, error);
         } else {
           console.log(`Successfully updated role for user ${userId} to ${newRole}`);
+          
+          // Log security audit event for successful role change
+          await supabaseAdmin.from("security_audit_logs").insert({
+            user_id: user.id,
+            event_type: "ROLE_CHANGED",
+            ip_address: clientIp,
+            user_agent: req.headers.get("user-agent") || "unknown",
+            details: { 
+              action: "update_roles",
+              target_user: userId, 
+              new_role: newRole,
+              changed_by: user.email
+            },
+            severity: "info"
+          });
         }
       } catch (err) {
         console.error(`Exception updating role for user ${userId}:`, err);
@@ -155,18 +201,14 @@ serve(async (req) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({
+    return successResponse(
+      {
         message: `Updated ${results.filter(r => r.success).length} users to role: ${newRole}`,
         results
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      }
     );
   } catch (error) {
     console.error("Unexpected error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message || "An unexpected error occurred" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return errorResponse(error.message || "An unexpected error occurred");
   }
 });
