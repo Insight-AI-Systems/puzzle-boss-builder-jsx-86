@@ -1,17 +1,15 @@
 
-/**
- * Security Context Hook
- * Provides security utilities and state throughout the application
- */
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { initCsrfProtection, refreshCsrfToken, getCsrfToken } from '@/utils/security/csrf';
-import { logSecurityEvent, SecurityEventType } from '@/utils/security/logging';
+import { initCsrfProtection, refreshCsrfToken, getCsrfToken, rotateCsrfToken } from '@/utils/security/csrfCookies';
+import { logSecurityEvent, SecurityEventType, initSecurityEventListeners, processQueuedSecurityEvents } from '@/utils/security/auditLogging';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SecurityContextType {
   // CSRF Protection
   csrfToken: string;
-  refreshCsrf: () => string;
+  refreshCsrf: () => Promise<string>;
+  rotateCsrf: () => Promise<string>;
   
   // Security Logging
   logSecurityEvent: typeof logSecurityEvent;
@@ -22,6 +20,7 @@ interface SecurityContextType {
   
   // Session Security
   invalidateAllOtherSessions: () => Promise<void>;
+  validateAdminAccess: () => Promise<boolean>;
   
   // Status
   isInitialized: boolean;
@@ -37,46 +36,71 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   
   // Initialize security features
   useEffect(() => {
-    try {
-      console.log('Initializing security context');
-      // Initialize CSRF protection
-      initCsrfProtection();
-      setCsrfToken(getCsrfToken());
-      
-      // Log security initialization
-      logSecurityEvent({
-        eventType: SecurityEventType.LOGIN_SUCCESS,
-        userId: user?.id,
-        severity: 'info',
-        details: { action: 'security_context_initialized' }
-      });
-      
-      setIsInitialized(true);
-      console.log('Security context initialized successfully');
-    } catch (error) {
-      console.error('Error initializing security context:', error);
-    }
+    const initSecurity = async () => {
+      try {
+        console.log('Initializing security context');
+        
+        // Initialize CSRF protection
+        await initCsrfProtection();
+        setCsrfToken(getCsrfToken());
+        
+        // Initialize security event listeners
+        initSecurityEventListeners();
+        
+        // Process any queued security events
+        await processQueuedSecurityEvents();
+        
+        // Log security initialization
+        await logSecurityEvent({
+          eventType: SecurityEventType.CONFIG_CHANGE,
+          userId: user?.id,
+          severity: 'info',
+          details: { action: 'security_context_initialized' }
+        });
+        
+        setIsInitialized(true);
+        console.log('Security context initialized successfully');
+      } catch (error) {
+        console.error('Error initializing security context:', error);
+      }
+    };
+    
+    initSecurity();
   }, []);
   
   // Update CSRF token when authentication state changes
   useEffect(() => {
-    if (isAuthenticated) {
-      const newToken = refreshCsrfToken();
-      setCsrfToken(newToken);
-      
-      // Log user authentication for security monitoring
-      logSecurityEvent({
-        eventType: SecurityEventType.LOGIN_SUCCESS,
-        userId: user?.id,
-        severity: 'info',
-        details: { authenticated: true }
-      });
+    const updateCsrfOnAuth = async () => {
+      if (isAuthenticated && user) {
+        const newToken = await refreshCsrfToken();
+        setCsrfToken(newToken);
+        
+        // Log user authentication for security monitoring
+        await logSecurityEvent({
+          eventType: SecurityEventType.LOGIN_SUCCESS,
+          userId: user.id,
+          severity: 'info',
+          email: user.email,
+          details: { authenticated: true }
+        });
+      }
+    };
+    
+    if (isAuthenticated && user) {
+      updateCsrfOnAuth();
     }
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated, user]);
   
   // Refresh CSRF token
-  const refreshCsrf = () => {
-    const newToken = refreshCsrfToken();
+  const refreshCsrf = async () => {
+    const newToken = await refreshCsrfToken();
+    setCsrfToken(newToken);
+    return newToken;
+  };
+  
+  // Rotate CSRF token for security-sensitive actions
+  const rotateCsrf = async () => {
+    const newToken = await rotateCsrfToken();
     setCsrfToken(newToken);
     return newToken;
   };
@@ -86,31 +110,67 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!user || !session) return;
     
     try {
-      // This is a placeholder - implement with Supabase edge function
-      // In a real implementation, this would call an API endpoint
+      // Call the edge function to terminate other sessions
       const sessionId = session.access_token;
       
+      // Use the Supabase function to terminate other sessions
+      const { error } = await supabase.rpc('terminate_other_sessions', {
+        current_session_id: sessionId
+      });
+      
+      if (error) {
+        console.error('Failed to invalidate other sessions:', error);
+        throw error;
+      }
+      
       // Log the security action
-      logSecurityEvent({
+      await logSecurityEvent({
         eventType: SecurityEventType.SESSION_EXPIRED,
         userId: user?.id,
         severity: 'warning',
+        email: user.email,
         details: { action: 'invalidate_other_sessions', currentSession: sessionId }
       });
       
-      // This is where you would call your API to invalidate other sessions
+      // Rotate CSRF token after security-sensitive action
+      await rotateCsrf();
+      
     } catch (error) {
       console.error('Failed to invalidate other sessions:', error);
+    }
+  };
+  
+  // Validate if the current user has admin access
+  const validateAdminAccess = async (): Promise<boolean> => {
+    if (!user || !session) return false;
+    
+    try {
+      // Call the security config edge function to validate admin access
+      const { data, error } = await supabase.functions.invoke('security-config', {
+        body: { action: 'validateAdminAccess' }
+      });
+      
+      if (error) {
+        console.error('Error validating admin access:', error);
+        return false;
+      }
+      
+      return data.isAdmin;
+    } catch (error) {
+      console.error('Exception validating admin access:', error);
+      return false;
     }
   };
   
   const value: SecurityContextType = {
     csrfToken,
     refreshCsrf,
+    rotateCsrf,
     logSecurityEvent,
     securityLevel,
     setSecurityLevel,
     invalidateAllOtherSessions,
+    validateAdminAccess,
     isInitialized
   };
   

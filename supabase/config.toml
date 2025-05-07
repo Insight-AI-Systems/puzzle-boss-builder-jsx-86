@@ -4,7 +4,7 @@ project_id = "vcacfysfjgoahledqdwa"
 [api]
 enabled = true
 port = 54321
-schemas = ["public", "storage", "graphql_public"]
+url = "http://localhost:54321"
 
 [db]
 port = 54322
@@ -12,36 +12,26 @@ port = 54322
 [studio]
 enabled = true
 port = 54323
+url = "http://localhost:54323"
 
 [inbucket]
 enabled = true
 port = 54324
+url = "http://localhost:54324"
 
 [storage]
 enabled = true
 
 [auth]
 enabled = true
-site_url = "https://thepuzzleboss.com"
+url = "http://localhost:54321"
 
 [functions]
-[functions.xero-auth]
+[functions.security-config]
 verify_jwt = true
-[functions.xero-callback]
+
+[functions.security-cookies]
 verify_jwt = false
-[functions.xero-refresh-token]
-verify_jwt = true
-[functions.xero-sync]
-verify_jwt = true
-[functions.xero-create-contact]
-verify_jwt = true
-[functions.xero-update-contact]
-verify_jwt = true
-[functions.xero-member-sync]
-verify_jwt = true
-[functions.xero-get-syncable-members]
-verify_jwt = true
-[functions.xero-webhook]
-verify_jwt = false
-[functions.xero-webhook-register]
-verify_jwt = true
+
+[realtime]
+enabled = true
