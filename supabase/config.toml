@@ -30,6 +30,9 @@ url = "http://localhost:54321"
 [functions.security-config]
 verify_jwt = true
 
+[functions.security-config-service]
+verify_jwt = true
+
 [functions.security-cookies]
 verify_jwt = false
 
