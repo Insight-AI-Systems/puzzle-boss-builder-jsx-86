@@ -6,8 +6,6 @@ import { userService } from '@/services/userService';
 import { roleService } from '@/services/roleService';
 import { useToast } from '@/hooks/use-toast';
 import { UserProfile, UserRole } from '@/types/userTypes';
-import { errorTracker } from '@/utils/monitoring/errorTracker';
-import { performanceMonitor } from '@/utils/performance/PerformanceMonitor';
 
 export function useUserManagement(isAdmin: boolean = false, currentUserId: string | null = null) {
   // Fetch all filter related state and functions
@@ -38,12 +36,7 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
     setError(null);
     
     try {
-      const perfMark = `fetch_users_${Date.now()}`;
-      performanceMonitor.markStart(perfMark);
-      
       const profiles = await userService.getAllUsers();
-      
-      performanceMonitor.markEnd(perfMark);
       
       if (profiles && Array.isArray(profiles)) {
         setUsers(profiles);
@@ -62,7 +55,6 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to fetch users');
       setError(error);
-      errorTracker.trackError(error, 'medium', { source: 'useUserManagement.fetchUsers' });
       
       toast({
         title: 'Error',
@@ -74,41 +66,88 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
     }
   }, [isAdmin, currentUserId, toast]);
   
-  // Role management functionality
-  const roleManagement = useUserRoles({
-    updateUserRole: async (userId: string, newRole: UserRole) => {
-      return roleService.updateUserRole(userId, newRole)
-        .then(result => {
-          if (result.success) {
-            // Update local state optimistically
-            setUsers(prevUsers => 
-              prevUsers.map(user => 
-                user.id === userId ? { ...user, role: newRole } : user
-              )
-            );
-          }
-          return result;
+  // Role management 
+  const [bulkRole, setBulkRole] = useState<UserRole>('player');
+  const [isBulkRoleChanging, setIsBulkRoleChanging] = useState(false);
+  
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
+    try {
+      const result = await roleService.updateUserRole(userId, newRole);
+      
+      if (result.success) {
+        toast({
+          title: 'Role Updated',
+          description: `User role has been updated to ${newRole}`,
         });
-    },
-    bulkUpdateRoles: async (userIds: string[], newRole: UserRole) => {
-      return roleService.bulkUpdateUserRoles(userIds, newRole)
-        .then(result => {
-          if (result.success) {
-            // Update local state optimistically
-            setUsers(prevUsers => 
-              prevUsers.map(user => 
-                userIds.includes(user.id) ? { ...user, role: newRole } : user
-              )
-            );
-            // Clear selection after successful bulk update
-            setSelectedUsers(new Set());
-          }
-          return result;
+        
+        // Update local state
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user.id === userId ? { ...user, role: newRole } : user
+          )
+        );
+        
+        return true;
+      } else {
+        toast({
+          title: 'Update Failed',
+          description: result.message || 'Failed to update role',
+          variant: 'destructive',
         });
-    },
-    refetch: fetchUsers,
-    selectedUsers
-  });
+        
+        return false;
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
+        variant: 'destructive',
+      });
+      
+      return false;
+    }
+  };
+
+  const bulkUpdateRoles = async (userIds: string[], newRole: UserRole) => {
+    setIsBulkRoleChanging(true);
+    try {
+      const result = await roleService.bulkUpdateUserRoles(userIds, newRole);
+      
+      if (result.success) {
+        toast({
+          title: 'Roles Updated',
+          description: `${result.results?.length} user roles have been updated`,
+        });
+        
+        // Update local state
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            userIds.includes(user.id) ? { ...user, role: newRole } : user
+          )
+        );
+        
+        // Clear selection
+        setSelectedUsers(new Set());
+        return true;
+      } else {
+        toast({
+          title: 'Update Failed',
+          description: result.message || 'Failed to update roles',
+          variant: 'destructive',
+        });
+        return false;
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
+        variant: 'destructive',
+      });
+      return false;
+    } finally {
+      setIsBulkRoleChanging(false);
+    }
+  };
 
   // Apply filters and pagination to users
   useEffect(() => {
@@ -132,11 +171,7 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
       setTotalPages(Math.ceil(filtered.length / pageSize));
       
     } catch (err) {
-      errorTracker.trackError(
-        err instanceof Error ? err : new Error('Error filtering users'), 
-        'low', 
-        { source: 'useUserManagement.filterEffect' }
-      );
+      console.error('Error filtering users:', err);
     }
   }, [users, filterHook.searchQuery, filterHook.selectedRole, filterHook.selectedCountry, filterHook.userType, filterHook.page, filterHook.pageSize]);
   
@@ -160,11 +195,10 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
   
   // Select/deselect all visible users
   const handleSelectAllUsers = useCallback((selectAll: boolean) => {
-    if (selectAll) {
+    if (selectAll && filteredUsers) {
       // Select all visible users
       const newSelected = new Set(selectedUsers);
       filteredUsers.forEach(user => {
-        // Skip protected admin users
         if (!userService.isProtectedAdmin(user.email)) {
           newSelected.add(user.id);
         }
@@ -179,13 +213,11 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
   // Export users to CSV or other formats
   const handleExportUsers = useCallback(() => {
     try {
-      // Implement export functionality here
       toast({
         title: 'Export Started',
-        description: 'Preparing user data export...',
+        description: 'User data export is being prepared...',
       });
       
-      // For now, just log that this would export users
       console.log('Exporting users:', filteredUsers);
       
       setTimeout(() => {
@@ -194,14 +226,7 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
           description: 'User data has been exported successfully',
         });
       }, 1000);
-      
     } catch (err) {
-      errorTracker.trackError(
-        err instanceof Error ? err : new Error('Error exporting users'),
-        'medium',
-        { source: 'useUserManagement.handleExportUsers' }
-      );
-      
       toast({
         title: 'Export Failed',
         description: 'Could not export user data',
@@ -219,9 +244,6 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
         duration: 5000,
       });
       
-      // Implement actual email sending here
-      // This would typically call an edge function
-      
       console.log('Would send email to:', Array.from(selectedUsers));
       console.log('Email subject:', subject);
       console.log('Email message:', message);
@@ -236,12 +258,6 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
       
       return true;
     } catch (err) {
-      errorTracker.trackError(
-        err instanceof Error ? err : new Error('Error sending bulk email'),
-        'medium',
-        { source: 'useUserManagement.sendBulkEmail' }
-      );
-      
       toast({
         title: 'Email Failed',
         description: 'Could not send emails to selected users',
@@ -253,24 +269,10 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
   }, [selectedUsers, toast]);
   
   // Function to check if any filters are active
-  const hasActiveFilters = () => filterHook.hasActiveFilters();
-  
-  // Implement bulkUpdateRoles function 
-  const bulkUpdateRoles = async (userIds: string[], newRole: UserRole) => {
-    // Fixed to use role management's handleBulkRoleChange with the correct arguments
-    try {
-      // Convert to proper UserRole type
-      const typedRole = newRole as UserRole;
-      return await roleManagement.bulkUpdateRoles(userIds, typedRole);
-    } catch (err) {
-      console.error('Error in bulkUpdateRoles:', err);
-      toast({
-        title: 'Role Update Failed',
-        description: 'Could not update roles for selected users',
-        variant: 'destructive',
-      });
-      return false;
-    }
+  const hasActiveFilters = () => {
+    return filterHook.searchQuery !== '' || 
+           filterHook.selectedRole !== null || 
+           filterHook.selectedCountry !== null;
   };
   
   return {
@@ -294,27 +296,16 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
     handleSelectAllUsers,
     
     // Role management
-    ...roleManagement,
+    bulkRole,
+    setBulkRole,
+    isBulkRoleChanging,
+    handleRoleChange,
+    bulkUpdateRoles,
     
     // Data operations
     fetchUsers,
     refetch: fetchUsers,
     handleExportUsers,
-    sendBulkEmail,
-    bulkUpdateRoles,
-    
-    // Legacy API for compatibility
-    updateUserRole: roleManagement.handleRoleChange,
-    deleteUser: async (userId: string) => {
-      // This would be implemented in the userService
-      console.log('Delete user not implemented yet:', userId);
-      return { success: false, error: new Error('Not implemented') };
-    },
-    toggleUserSelection: (userId: string) => {
-      handleUserSelection(userId, !selectedUsers.has(userId));
-    },
-    clearUserSelection: () => {
-      setSelectedUsers(new Set());
-    }
+    sendBulkEmail
   };
 }

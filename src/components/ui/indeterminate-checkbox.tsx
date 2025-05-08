@@ -1,52 +1,29 @@
 
-import * as React from "react";
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
-import { Check, Minus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import React, { useRef, useEffect } from 'react';
+import { Checkbox } from "@/components/ui/checkbox";
+import { CheckboxProps } from "@radix-ui/react-checkbox";
 
-export interface IndeterminateCheckboxProps extends React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root> {
+interface IndeterminateCheckboxProps extends CheckboxProps {
   indeterminate?: boolean;
 }
 
-const IndeterminateCheckbox = React.forwardRef<
-  React.ElementRef<typeof CheckboxPrimitive.Root>,
+export const IndeterminateCheckbox = React.forwardRef<
+  HTMLButtonElement,
   IndeterminateCheckboxProps
->(({ className, indeterminate, ...props }, ref) => {
-  const internalRef = React.useRef<HTMLButtonElement>(null);
+>(({ indeterminate = false, ...props }, forwardedRef) => {
+  const ref = useRef<HTMLButtonElement>(null);
   
-  React.useEffect(() => {
-    if (internalRef.current) {
+  // Use forwarded ref if available, otherwise use local ref
+  const resolvedRef = (forwardedRef || ref) as React.RefObject<HTMLButtonElement>;
+  
+  useEffect(() => {
+    if (resolvedRef.current) {
       // Use property accessor because TypeScript doesn't know about indeterminate
-      (internalRef.current as any).indeterminate = !!indeterminate;
+      (resolvedRef.current as any).indeterminate = indeterminate;
     }
-  }, [indeterminate]);
+  }, [resolvedRef, indeterminate]);
 
-  return (
-    <CheckboxPrimitive.Root
-      ref={(node) => {
-        // Handle the ref passing
-        if (typeof ref === 'function') {
-          ref(node);
-        } else if (ref) {
-          ref.current = node;
-        }
-        internalRef.current = node;
-      }}
-      className={cn(
-        "peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
-        className
-      )}
-      {...props}
-    >
-      <CheckboxPrimitive.Indicator
-        className={cn("flex items-center justify-center text-current")}
-      >
-        {indeterminate ? <Minus className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-      </CheckboxPrimitive.Indicator>
-    </CheckboxPrimitive.Root>
-  );
+  return <Checkbox ref={resolvedRef} {...props} />;
 });
 
-IndeterminateCheckbox.displayName = "IndeterminateCheckbox";
-
-export { IndeterminateCheckbox };
+IndeterminateCheckbox.displayName = 'IndeterminateCheckbox';

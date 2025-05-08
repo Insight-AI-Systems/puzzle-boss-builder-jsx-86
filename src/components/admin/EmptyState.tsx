@@ -1,27 +1,35 @@
 
 import React from 'react';
-import { FolderOpen, AlertCircle } from 'lucide-react';
+import { Box, Loader } from "lucide-react";
 
 interface EmptyStateProps {
   title: string;
-  description: string;
+  description?: string;
   icon?: React.ReactNode;
-  className?: string;
+  isLoading?: boolean;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
   title,
   description,
-  icon = <FolderOpen className="h-12 w-12 text-muted-foreground/50" />,
-  className = '',
+  icon,
+  isLoading = false
 }) => {
   return (
-    <div className={`flex flex-col items-center justify-center p-8 text-center ${className}`}>
-      <div className="rounded-full bg-muted p-3 mb-4">
-        {icon}
+    <div className="flex flex-col items-center justify-center p-10 text-center bg-muted/30 rounded-md">
+      <div className="mb-4 p-3 rounded-full bg-muted">
+        {isLoading ? (
+          <Loader className="h-8 w-8 text-muted-foreground animate-spin" />
+        ) : (
+          icon || <Box className="h-8 w-8 text-muted-foreground" />
+        )}
       </div>
-      <h3 className="text-lg font-medium mb-1">{title}</h3>
-      <p className="text-muted-foreground text-sm max-w-sm">{description}</p>
+      <h3 className="text-lg font-medium">{title}</h3>
+      {description && (
+        <p className="mt-2 text-sm text-muted-foreground max-w-sm">
+          {description}
+        </p>
+      )}
     </div>
   );
 };

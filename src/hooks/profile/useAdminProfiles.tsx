@@ -6,8 +6,6 @@ import { roleService } from '@/services/roleService';
 import { debugLog, DebugLevel } from '@/utils/debug';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { userPipelineDebugger } from '@/utils/admin/userPipelineDebugger';
-import { userDataFallback } from '@/utils/admin/userDataFallback';
 
 export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null) {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -36,24 +34,11 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
       
       const profiles = await userService.getAllUsers();
       
-      // Record API call end time and log
-      const endTime = Date.now();
-      userPipelineDebugger.logApiCall(
-        'useAdminProfiles', 
-        'userService.getAllUsers', 
-        startTime, 
-        endTime, 
-        true
-      );
-      
       if (!profiles || !Array.isArray(profiles)) {
         throw new Error('Invalid response from userService.getAllUsers');
       }
       
       debugLog('useAdminProfiles', `Successfully retrieved ${profiles.length} profiles`, DebugLevel.INFO);
-      
-      // Cache the users for fallback usage
-      userDataFallback.cacheUsers(profiles);
       
       setUsers(profiles);
       setLastRefreshTime(Date.now());
@@ -61,30 +46,6 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to fetch profiles');
       debugLog('useAdminProfiles', 'Error fetching profiles', DebugLevel.ERROR, { error });
-      
-      // Record API call failure
-      const endTime = Date.now();
-      userPipelineDebugger.logApiCall(
-        'useAdminProfiles', 
-        'userService.getAllUsers', 
-        startTime, 
-        endTime, 
-        false,
-        error.message
-      );
-      
-      // Try getting cached users first
-      const cachedUsers = userDataFallback.getCachedUsers();
-      
-      if (cachedUsers && cachedUsers.length > 0) {
-        debugLog('useAdminProfiles', 'Using cached users as fallback', DebugLevel.INFO);
-        setUsers(cachedUsers);
-      }
-      // If in development and no cached data, use mock data
-      else if (process.env.NODE_ENV === 'development') {
-        debugLog('useAdminProfiles', 'Using mock users for development', DebugLevel.INFO);
-        setUsers(userDataFallback.getMockUsers());
-      }
       
       setError(error);
       
@@ -116,11 +77,6 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
     fetchProfiles();
   }, [isAdmin, currentUserId]);
   
-  // Log the current state for debugging
-  useEffect(() => {
-    userPipelineDebugger.logUserLoadingState('useAdminProfiles', users, loading, error);
-  }, [users, loading, error]);
-  
   const updateUserRole = async (targetUserId: string, newRole: UserRole) => {
     try {
       const result = await roleService.updateUserRole(targetUserId, newRole);
@@ -150,7 +106,7 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
   
   const bulkUpdateRoles = async (userIds: string[], newRole: UserRole) => {
     try {
-      const result = await roleService.bulkUpdateRoles(userIds, newRole);
+      const result = await roleService.bulkUpdateUserRoles(userIds, newRole);
       
       if (result.success) {
         // Update local state optimistically

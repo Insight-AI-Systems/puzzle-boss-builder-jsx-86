@@ -1,147 +1,124 @@
 
 import React from 'react';
-import { Checkbox } from "@/components/ui/checkbox";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { UserAvatar } from './UserAvatar';
-import { UserRoleMenu } from './UserRoleMenu';
-import { UserLastLogin } from './UserLastLogin';
 import { Badge } from "@/components/ui/badge";
-import { UserRowProps } from '@/types/userTableTypes';
-import { UserRoleIndicator } from './UserRoleIndicator';
-import { adminService } from '@/services/adminService';
-import { ShieldAlert, Shield, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu } from "@/components/ui/dropdown-menu";
+import { IndeterminateCheckbox } from "@/components/ui/indeterminate-checkbox";
+import { UserRoleMenu } from './UserRoleMenu';
+import { UserProfile, UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
+import { formatDistanceToNow } from 'date-fns';
+import { isProtectedAdmin } from '@/config/securityConfig';
+import { debugLog, DebugLevel } from '@/utils/debug';
 
-export const UserTableRow: React.FC<UserRowProps> = ({
+interface UserTableRowProps {
+  user: UserProfile;
+  canAssignRole: (role: string, userId: string) => boolean;
+  onRoleChange: (userId: string, newRole: string) => void;
+  isSelected: boolean;
+  onSelect: (checked: boolean) => void;
+  selectionEnabled: boolean;
+}
+
+export const UserTableRow: React.FC<UserTableRowProps> = ({
   user,
   canAssignRole,
   onRoleChange,
   isSelected,
   onSelect,
-  selectionEnabled
+  selectionEnabled = true
 }) => {
-  // Detect protected admin status
-  const isProtectedAdmin = adminService.isProtectedAdminEmail(user.email);
+  // Check if user is a protected admin
+  const isUserProtectedAdmin = isProtectedAdmin(user.email);
   
-  // Determine account status - ensure these optional properties are handled
-  const isActive = !!user.last_sign_in;
-  const recentLogin = user.last_sign_in && new Date(user.last_sign_in).getTime() > Date.now() - (30 * 24 * 60 * 60 * 1000); // 30 days
-  const accountLocked = user.account_locked || false;
+  // Debug log for role menu
+  debugLog('UserRoleMenu', `Rendering role menu for user: ${user.id}`, DebugLevel.INFO, {
+    userId: user.id,
+    email: user.email,
+    currentRole: user.role,
+    isProtectedAdmin: isUserProtectedAdmin
+  });
   
-  // Format creation date
-  const creationDate = new Date(user.created_at).toLocaleDateString();
-  const creationTime = new Date(user.created_at).toLocaleTimeString();
+  // Format dates
+  const getFormattedDate = (dateString?: string | null) => {
+    if (!dateString) return "Never";
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch (e) {
+      return "Invalid date";
+    }
+  };
   
+  // Get role label
+  const getRoleLabel = (role: UserRole) => {
+    return ROLE_DEFINITIONS[role]?.label || role;
+  };
+  
+  // Get role color
+  const getRoleBadgeClass = (role: UserRole) => {
+    switch(role) {
+      case 'super_admin': return 'bg-red-600';
+      case 'admin': return 'bg-orange-600';
+      case 'category_manager': return 'bg-blue-600';
+      case 'social_media_manager': return 'bg-green-600';
+      case 'partner_manager': return 'bg-amber-600';
+      case 'cfo': return 'bg-emerald-600';
+      default: return 'bg-slate-600';
+    }
+  };
+
   return (
-    <TableRow className={`
-      ${isSelected ? "bg-muted/20" : undefined}
-      ${isProtectedAdmin ? "bg-red-50/10" : undefined}
-      ${accountLocked ? "bg-red-950/10" : undefined}
-      hover:bg-accent/5
-    `}>
-      {selectionEnabled && (
-        <TableCell>
-          <Checkbox 
-            checked={isSelected}
-            onCheckedChange={(checked) => onSelect?.(!!checked)}
-            aria-label={`Select ${user.display_name || 'user'}`}
-            disabled={isProtectedAdmin} // Can't select protected admin
+    <TableRow key={user.id} className={isSelected ? "bg-muted/50" : undefined}>
+      <TableCell className="w-12">
+        {selectionEnabled && !isUserProtectedAdmin && (
+          <IndeterminateCheckbox 
+            checked={isSelected} 
+            onCheckedChange={onSelect}
+            aria-label={`Select user ${user.display_name}`}
           />
-        </TableCell>
-      )}
+        )}
+      </TableCell>
+      
       <TableCell>
         <div className="flex items-center space-x-2">
-          <UserAvatar 
-            avatarUrl={user.avatar_url} 
-            displayName={user.display_name || 'N/A'} 
-            userId={user.id}
-          />
+          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+            {user.display_name?.charAt(0) || 'U'}
+          </div>
           <div>
-            <div className="font-medium flex items-center">
+            <div className="font-medium">
               {user.display_name || 'Anonymous User'}
-              {isProtectedAdmin && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <ShieldAlert className="h-3.5 w-3.5 ml-1 text-red-500" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Protected Admin Account</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+              {isUserProtectedAdmin && (
+                <Badge variant="outline" className="ml-2 bg-green-900 text-white border-green-700">Protected</Badge>
               )}
             </div>
-            {user.bio && <p className="text-xs text-muted-foreground line-clamp-1">{user.bio}</p>}
+            <div className="text-xs text-muted-foreground">{user.id.substring(0, 8)}...</div>
           </div>
         </div>
       </TableCell>
-      <TableCell className="font-mono text-xs">
-        <div>
-          {(user.email) || user.id}
-          {user.email && (
-            <div className="text-[10px] text-muted-foreground mt-1 truncate max-w-[140px]">
-              {user.id}
-            </div>
-          )}
-        </div>
+      
+      <TableCell className="w-56 max-w-[200px] truncate">
+        {user.email || 'No email'}
       </TableCell>
+      
       <TableCell>
-        <UserRoleIndicator 
-          role={user.role}
-          email={user.email} 
-          size="md"
-        />
+        <Badge className={getRoleBadgeClass(user.role)}>
+          {getRoleLabel(user.role)}
+        </Badge>
       </TableCell>
+      
+      <TableCell>{user.country || 'N/A'}</TableCell>
+      
+      <TableCell>{getFormattedDate(user.last_sign_in)}</TableCell>
+      
+      <TableCell>{getFormattedDate(user.created_at)}</TableCell>
+      
       <TableCell>
-        {user.country ? (
-          <Badge variant="outline" className="font-normal">
-            {user.country}
-          </Badge>
-        ) : 'Not specified'}
+        {user.account_locked ? (
+          <Badge variant="outline" className="bg-red-900 text-white border-red-700">Locked</Badge>
+        ) : (
+          <Badge variant="outline" className="bg-green-900 text-white border-green-700">Active</Badge>
+        )}
       </TableCell>
-      <TableCell>
-        <UserLastLogin lastSignIn={user.last_sign_in} />
-      </TableCell>
-      <TableCell>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span>{creationDate}</span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Created at: {creationDate} {creationTime}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </TableCell>
-      <TableCell>
-        <div className="flex items-center">
-          {accountLocked ? (
-            <Badge variant="destructive" className="flex items-center gap-1">
-              <XCircle className="h-3 w-3" />
-              <span>Locked</span>
-            </Badge>
-          ) : isActive ? (
-            recentLogin ? (
-              <Badge variant="default" className="flex items-center gap-1 bg-green-600">
-                <CheckCircle2 className="h-3 w-3" />
-                <span>Active</span>
-              </Badge>
-            ) : (
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                <span>Inactive</span>
-              </Badge>
-            )
-          ) : (
-            <Badge variant="outline" className="flex items-center gap-1">
-              <AlertCircle className="h-3 w-3" />
-              <span>New</span>
-            </Badge>
-          )}
-        </div>
-      </TableCell>
+      
       <TableCell className="text-right">
         <UserRoleMenu 
           user={user}
@@ -151,4 +128,4 @@ export const UserTableRow: React.FC<UserRowProps> = ({
       </TableCell>
     </TableRow>
   );
-}
+};

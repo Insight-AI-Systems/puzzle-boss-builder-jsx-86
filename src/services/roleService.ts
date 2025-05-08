@@ -104,7 +104,6 @@ class RoleService {
   
   /**
    * Bulk update user roles
-   * Renamed from bulkUpdateRoles to bulkUpdateUserRoles
    */
   public async bulkUpdateUserRoles(userIds: string[], newRole: UserRole): Promise<UserResponse> {
     try {

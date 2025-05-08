@@ -1,111 +1,158 @@
 
-import { debugLog, DebugLevel } from '@/utils/debug';
-
 /**
- * Performance Monitoring
- * Tracks performance metrics for the application
+ * Performance Monitor
+ * 
+ * Utility for tracking performance metrics, mark points, and navigation timing
  */
-export class PerformanceMonitor {
-  private static instance: PerformanceMonitor;
-  private metrics: Record<string, number[]> = {};
-  private enabled: boolean = true;
-  
-  private constructor() {}
-  
-  public static getInstance(): PerformanceMonitor {
-    if (!PerformanceMonitor.instance) {
-      PerformanceMonitor.instance = new PerformanceMonitor();
-    }
-    return PerformanceMonitor.instance;
-  }
-  
-  /**
-   * Record a performance metric
-   */
-  public recordMetric(name: string, value: number, tags?: Record<string, string>): void {
-    if (!this.enabled) return;
-    
-    if (!this.metrics[name]) {
-      this.metrics[name] = [];
-    }
-    
-    this.metrics[name].push(value);
-    
-    // Log performance metric if it exceeds threshold
-    if (value > 1000) {
-      debugLog('Performance', `${name} took ${value}ms`, DebugLevel.WARN, { value, ...(tags || {}) });
-    }
-  }
-  
+
+export interface PerformanceMonitor {
   /**
    * Mark the start of a performance measurement
+   * @param name - Unique identifier for the mark
    */
-  public markStart(name: string): void {
-    if (!this.enabled) return;
-    if (typeof performance !== 'undefined') {
-      performance.mark(`${name}-start`);
-    }
-  }
+  markStart: (name: string) => void;
   
   /**
-   * Mark the end of a performance measurement and record the result
+   * Mark the end of a performance measurement and calculate duration
+   * @param name - The identifier used in markStart
+   * @returns Duration in milliseconds
    */
-  public markEnd(name: string): void {
-    if (!this.enabled || typeof performance === 'undefined') return;
-    
-    const startMark = `${name}-start`;
-    const endMark = `${name}-end`;
-    
-    try {
-      performance.mark(endMark);
-      performance.measure(name, startMark, endMark);
-      
-      const entries = performance.getEntriesByName(name, 'measure');
-      if (entries.length > 0) {
-        this.recordMetric(name, entries[0].duration);
-      }
-      
-      // Clean up marks
-      performance.clearMarks(startMark);
-      performance.clearMarks(endMark);
-      performance.clearMeasures(name);
-    } catch (e) {
-      console.error('Error measuring performance:', e);
-    }
-  }
+  markEnd: (name: string) => number;
   
   /**
-   * Get metrics for a specific name
+   * Record a specific performance metric with a value
+   * @param metricName - Name of the metric to record
+   * @param value - Value to record
+   * @param tags - Optional tags for the metric
    */
-  public getMetrics(name: string): number[] {
-    return this.metrics[name] || [];
-  }
+  recordMetric: (metricName: string, value: number, tags?: Record<string, string>) => void;
   
   /**
-   * Get average for a specific metric
+   * Get all currently stored performance marks
    */
-  public getAverageMetric(name: string): number | null {
-    const values = this.metrics[name];
-    if (!values || values.length === 0) return null;
-    
-    const sum = values.reduce((acc, val) => acc + val, 0);
-    return sum / values.length;
-  }
+  getMarks: () => Record<string, { start?: number; end?: number; duration?: number }>;
   
   /**
-   * Enable or disable performance monitoring
+   * Get all recorded metrics
    */
-  public setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
-  }
+  getMetrics: () => Record<string, { value: number; timestamp: number; tags?: Record<string, string> }[]>;
   
   /**
-   * Reset all metrics
+   * Clear all stored marks
    */
-  public resetMetrics(): void {
+  clearMarks: () => void;
+  
+  /**
+   * Clear all recorded metrics
+   */
+  clearMetrics: () => void;
+  
+  /**
+   * Get navigation timing metrics from the browser
+   */
+  getNavigationTiming: () => Record<string, number> | null;
+}
+
+class PerformanceMonitorImpl implements PerformanceMonitor {
+  private marks: Record<string, { start?: number; end?: number; duration?: number }> = {};
+  private metrics: Record<string, { value: number; timestamp: number; tags?: Record<string, string> }[]> = {};
+  
+  constructor() {
+    // Initialize with empty marks and metrics
+    this.marks = {};
     this.metrics = {};
+  }
+  
+  public markStart(name: string): void {
+    this.marks[name] = {
+      ...this.marks[name],
+      start: performance.now()
+    };
+  }
+  
+  public markEnd(name: string): number {
+    if (!this.marks[name] || this.marks[name].start === undefined) {
+      console.warn(`No start mark found for "${name}"`);
+      return 0;
+    }
+    
+    const end = performance.now();
+    const duration = end - (this.marks[name].start || 0);
+    
+    this.marks[name] = {
+      ...this.marks[name],
+      end,
+      duration
+    };
+    
+    return duration;
+  }
+  
+  public recordMetric(metricName: string, value: number, tags?: Record<string, string>): void {
+    if (!this.metrics[metricName]) {
+      this.metrics[metricName] = [];
+    }
+    
+    this.metrics[metricName].push({
+      value,
+      timestamp: performance.now(),
+      tags
+    });
+  }
+  
+  public getMarks(): Record<string, { start?: number; end?: number; duration?: number }> {
+    return { ...this.marks };
+  }
+  
+  public getMetrics(): Record<string, { value: number; timestamp: number; tags?: Record<string, string> }[]> {
+    return { ...this.metrics };
+  }
+  
+  public clearMarks(): void {
+    this.marks = {};
+  }
+  
+  public clearMetrics(): void {
+    this.metrics = {};
+  }
+  
+  public getNavigationTiming(): Record<string, number> | null {
+    if (typeof window === 'undefined' || !window.performance || !window.performance.timing) {
+      return null;
+    }
+    
+    const timing = window.performance.timing;
+    
+    return {
+      // Time to first byte
+      ttfb: timing.responseStart - timing.navigationStart,
+      
+      // DOM load time
+      domLoad: timing.domContentLoadedEventEnd - timing.navigationStart,
+      
+      // Page load time
+      pageLoad: timing.loadEventEnd - timing.navigationStart,
+      
+      // DNS resolution time
+      dns: timing.domainLookupEnd - timing.domainLookupStart,
+      
+      // TCP connection time
+      tcp: timing.connectEnd - timing.connectStart,
+      
+      // Request time
+      request: timing.responseEnd - timing.requestStart,
+      
+      // Response time
+      response: timing.responseEnd - timing.responseStart,
+      
+      // DOM processing time
+      domProcessing: timing.domComplete - timing.domLoading,
+      
+      // Unload event time
+      unload: timing.unloadEventEnd - timing.unloadEventStart,
+    };
   }
 }
 
-// Export singleton instance
-export const performanceMonitor = PerformanceMonitor.getInstance();
+// Export a singleton instance
+export const performanceMonitor: PerformanceMonitor = new PerformanceMonitorImpl();
