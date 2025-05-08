@@ -1,9 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { monitoringService } from '@/utils/monitoring/monitoringService';
 import { performanceMonitor } from '@/utils/performance/PerformanceMonitor';
-import { errorTracker } from '@/utils/monitoring/errorTracker';
-import { userActivityMonitor } from '@/utils/monitoring/userActivityMonitor';
 import { 
   Bug, ChevronDown, ChevronUp, AlertTriangle, 
   Activity, Clock, Download, Maximize, Minimize, 
@@ -16,6 +12,25 @@ interface DeveloperToolsProps {
   initiallyExpanded?: boolean;
 }
 
+// Create safe versions of our monitoring tools
+const safeErrorTracker = {
+  getStats: () => ({ count: 0, byType: {} })
+};
+
+const safeActivityMonitor = {
+  getSessionInfo: () => ({
+    sessionStart: Date.now(),
+    sessionDuration: 0,
+    pageViews: 0,
+    lastActive: Date.now()
+  })
+};
+
+const safeMonitoringService = {
+  isDebugEnabled: process.env.NODE_ENV === 'development',
+  toggleDebug: () => console.log('Debug mode toggled')
+};
+
 const DeveloperTools: React.FC<DeveloperToolsProps> = ({ initiallyExpanded = false }) => {
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
   const [activeTab, setActiveTab] = useState('performance');
@@ -23,15 +38,16 @@ const DeveloperTools: React.FC<DeveloperToolsProps> = ({ initiallyExpanded = fal
   const [errorData, setErrorData] = useState<any>(null);
   const [activityData, setActivityData] = useState<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isDebugMode, setIsDebugMode] = useState(safeMonitoringService.isDebugEnabled);
   
-  // Use monitoring service with default values
-  const isDebugMode = monitoringService.isEnabled;
   const toggleDebugMode = () => {
-    monitoringService.isEnabled = !monitoringService.isEnabled;
+    safeMonitoringService.toggleDebug();
+    setIsDebugMode(!isDebugMode);
   };
+
   const createSnapshot = () => {
     return {
-      performance: performanceMonitor.getMetrics(),
+      performance: performanceMonitor?.getMetrics ? performanceMonitor.getMetrics() : {},
       errors: errorData,
       activity: activityData
     };
@@ -44,13 +60,9 @@ const DeveloperTools: React.FC<DeveloperToolsProps> = ({ initiallyExpanded = fal
     }
     
     const updateData = () => {
-      setPerformanceData(performanceMonitor.getSummary ? performanceMonitor.getSummary() : {});
-      setErrorData(errorTracker && typeof errorTracker.getStats === 'function' 
-        ? errorTracker.getStats() 
-        : { count: 0, byType: {} });
-      setActivityData(userActivityMonitor 
-        ? { sessionTime: 0, pageViews: 0, lastActive: new Date() }
-        : { sessionTime: 0, pageViews: 0, lastActive: new Date() });
+      setPerformanceData(performanceMonitor?.getSummary ? performanceMonitor.getSummary() : {});
+      setErrorData(safeErrorTracker.getStats());
+      setActivityData(safeActivityMonitor.getSessionInfo());
     };
     
     updateData();

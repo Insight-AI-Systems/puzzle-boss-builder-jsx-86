@@ -83,7 +83,7 @@ export const ChangeVerifier: React.FC<ChangeVerifierProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle>{title}</CardTitle>
           {result && (
-            <Badge variant={result.success ? 'success' : 'destructive'}>
+            <Badge variant={result.success ? 'secondary' : 'destructive'}>
               {result.success ? 'Verified' : 'Failed'}
             </Badge>
           )}

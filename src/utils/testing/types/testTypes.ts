@@ -3,32 +3,36 @@
  * Verification result for test operations
  */
 export interface VerificationResult {
-  status: 'VERIFIED' | 'PARTIAL' | 'FAILED' | 'SKIPPED';
-  message: string;
-  changeId: string;
   description: string;
+  success: boolean;
+  error?: string | null;
+  status?: 'VERIFIED' | 'PARTIAL' | 'FAILED' | 'SKIPPED';
+  message?: string;
+  changeId?: string;
   details?: Record<string, any>;
-  success?: boolean;
 }
 
 /**
  * Test report containing results and metadata
  */
 export interface TestReport {
-  id: string;
+  success: boolean;
+  passedTests: number;
+  totalTests: number;
+  taskResults: Record<string, VerificationResult[]>;
+  id?: string;
   testId?: string; // Added for backward compatibility
-  name: string;
+  name?: string;
   testName?: string; // Added for backward compatibility
-  status: string;
-  results: any[];
+  status?: string;
+  results?: any[];
   result?: boolean; // Added for backward compatibility
-  timestamp: number;
-  duration: number;
+  timestamp?: number;
+  duration?: number;
   error?: string; // Added for error information
   metadata?: Record<string, any>;
   details?: Record<string, any>;
   // Additional backward compatibility fields
-  success?: boolean;
   failureReason?: string;
   browser?: {
     name?: string;
@@ -71,7 +75,7 @@ export interface TestCategory {
 export interface TestSuite {
   id: string;
   name: string;
-  category: TestCategory;
+  category?: TestCategory;
   tests: any[]; // Primary tests array
   testIds?: string[]; // Added for backward compatibility
   setup?: () => Promise<void>;
@@ -88,5 +92,6 @@ export enum SecurityEventType {
   PASSWORD_CHANGE = 'PASSWORD_CHANGE',
   ROLE_CHANGE = 'ROLE_CHANGE',
   ACCESS_DENIED = 'ACCESS_DENIED',
-  SUSPICIOUS_ACTIVITY = 'SUSPICIOUS_ACTIVITY'
+  SUSPICIOUS_ACTIVITY = 'SUSPICIOUS_ACTIVITY',
+  PERMISSION_DENIED = 'PERMISSION_DENIED'
 }

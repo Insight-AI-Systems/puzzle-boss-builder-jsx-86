@@ -60,8 +60,34 @@ export function usePermissions() {
     return targetRole.canBeAssignedBy.includes(userRole);
   };
   
+  /**
+   * Check if the current user has all of the specified permissions
+   */
+  const hasAllPermissions = (permissions: string[]): boolean => {
+    if (!user) return false;
+    
+    // Super admins have all permissions
+    if (hasRole('super_admin')) return true;
+    
+    return permissions.every(permission => hasPermission(permission));
+  };
+  
+  /**
+   * Check if the current user has any of the specified permissions
+   */
+  const hasAnyPermission = (permissions: string[]): boolean => {
+    if (!user) return false;
+    
+    // Super admins have all permissions
+    if (hasRole('super_admin')) return true;
+    
+    return permissions.some(permission => hasPermission(permission));
+  };
+  
   return {
     hasPermission,
-    canAssignRole
+    canAssignRole,
+    hasAllPermissions,
+    hasAnyPermission
   };
 }

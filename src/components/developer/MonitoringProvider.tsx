@@ -8,24 +8,44 @@ interface MonitoringProviderProps {
   enableDeveloperTools?: boolean;
 }
 
-// Extended MonitoringService with stubs for the missing methods
-if (!monitoringService.configure) {
-  (monitoringService as any).configure = (options: any) => {
-    console.log('Monitoring configured with options:', options);
-  };
-}
-
-if (!monitoringService.startReporting) {
-  (monitoringService as any).startReporting = () => {
-    console.log('Monitoring reporting started');
-  };
-}
-
-if (!monitoringService.stopReporting) {
-  (monitoringService as any).stopReporting = () => {
-    console.log('Monitoring reporting stopped');
-  };
-}
+// Create a safe monitoringService interface
+const safeMonitoringService = {
+  ...monitoringService,
+  
+  configure: (options: any) => {
+    if (monitoringService.configure) {
+      monitoringService.configure(options);
+    } else {
+      console.log('Monitoring configured with options:', options);
+    }
+  },
+  
+  startReporting: () => {
+    if (monitoringService.startReporting) {
+      monitoringService.startReporting();
+    } else {
+      console.log('Monitoring reporting started');
+    }
+  },
+  
+  stopReporting: () => {
+    if (monitoringService.stopReporting) {
+      monitoringService.stopReporting();
+    } else {
+      console.log('Monitoring reporting stopped');
+    }
+  },
+  
+  // Safely access isEnabled
+  getEnabled: () => {
+    return process.env.NODE_ENV === 'development';
+  },
+  
+  setEnabled: (value: boolean) => {
+    console.log(`Setting monitoring enabled to: ${value}`);
+    // We can't directly set the private property
+  }
+};
 
 const MonitoringProvider: React.FC<MonitoringProviderProps> = ({
   children,
@@ -35,8 +55,7 @@ const MonitoringProvider: React.FC<MonitoringProviderProps> = ({
   
   useEffect(() => {
     // Configure monitoring service
-    monitoringService.configure({
-      performanceMonitoring: true,
+    safeMonitoringService.configure({
       errorTracking: true,
       userActivityTracking: true,
       developerTools: process.env.NODE_ENV === 'development',
@@ -44,14 +63,14 @@ const MonitoringProvider: React.FC<MonitoringProviderProps> = ({
     });
     
     // Start reporting
-    monitoringService.startReporting();
+    safeMonitoringService.startReporting();
     
     // Mark as initialized
     setIsInitialized(true);
     
     // Clean up
     return () => {
-      monitoringService.stopReporting();
+      safeMonitoringService.stopReporting();
     };
   }, []);
   

@@ -144,6 +144,15 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
       </Card>
     );
   }
+
+  // Event handlers for Select components
+  const handleGenderChange = (value: string) => {
+    setGender(value as Gender);
+  };
+
+  const handleAgeGroupChange = (value: string) => {
+    setAgeGroup(value as AgeGroup);
+  };
   
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -182,7 +191,7 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
           <Label htmlFor="gender">Gender</Label>
           <Select
             value={gender}
-            onValueChange={setGender}
+            onValueChange={handleGenderChange}
             disabled={readOnly}
           >
             <SelectTrigger>
@@ -214,7 +223,7 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
           <Label htmlFor="ageGroup">Age Group</Label>
           <Select
             value={ageGroup}
-            onValueChange={setAgeGroup}
+            onValueChange={handleAgeGroupChange}
             disabled={readOnly}
           >
             <SelectTrigger>
