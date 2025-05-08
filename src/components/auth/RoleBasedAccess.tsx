@@ -49,7 +49,7 @@ export const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
   if (!user) {
     if (logAccessAttempts) {
       logSecurityEvent({
-        eventType: SecurityEventType.PERMISSION_DENIED,
+        eventType: SecurityEventType.ACCESS_DENIED,
         severity: 'info',
         details: { 
           reason: 'not_authenticated',

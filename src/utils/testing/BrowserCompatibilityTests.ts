@@ -1,6 +1,9 @@
+
 import { TestReport } from './types/testTypes';
-import { generateTestId } from './testUtils';
 import { performanceMonitor } from '@/utils/performance/PerformanceMonitor';
+
+// Helper function to generate a test ID
+const generateTestId = () => `test-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
 interface BrowserInfo {
   name: string;
@@ -43,7 +46,7 @@ const detectBrowser = (): BrowserInfo => {
   } else if (userAgent.indexOf('Edge') !== -1) {
     browserName = 'Edge';
     browserVersion = userAgent.substring(userAgent.indexOf('Edge/') + 5).split(' ')[0];
-  } else if (userAgent.indexOf('MSIE') !== -1 || !!document.documentMode) {
+  } else if (userAgent.indexOf('MSIE') !== -1 || document.documentMode) {
     browserName = 'IE';
     browserVersion = userAgent.substring(userAgent.indexOf('MSIE') + 4).split(';')[0];
   }
@@ -134,7 +137,7 @@ const compatibilityTests = [
   },
   {
     name: 'Touch Events Support',
-    test: () => 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0,
+    test: () => 'ontouchstart' in window || navigator.maxTouchPoints > 0,
     importance: 'low'
   }
 ];

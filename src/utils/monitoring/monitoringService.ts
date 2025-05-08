@@ -1,5 +1,9 @@
+
 // This is a partial rewrite of the file, focusing only on the isEnabled fix
 // We need to ensure it has public getters/setters for this property
+
+// Private property for monitoring state
+let _isEnabled = process.env.NODE_ENV === 'development';
 
 export const monitoringService = {
   // Existing methods and properties
@@ -45,12 +49,12 @@ export const monitoringService = {
   
   // Public getter for isEnabled property
   getEnabled: () => {
-    return process.env.NODE_ENV === 'development';
+    return _isEnabled;
   },
   
-  // Public setter for isEnabled (may not actually change private property)
+  // Public setter for isEnabled
   setEnabled: (value: boolean) => {
     console.log(`Setting monitoring enabled to: ${value}`);
-    // Note: actual implementation would modify the private variable
+    _isEnabled = value;
   }
 };

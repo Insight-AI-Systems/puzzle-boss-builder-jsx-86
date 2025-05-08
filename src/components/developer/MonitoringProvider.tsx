@@ -8,7 +8,7 @@ interface MonitoringProviderProps {
   enableDeveloperTools?: boolean;
 }
 
-// Create a safe monitoringService interface
+// Create a safe monitoring service access
 const safeMonitoringService = {
   ...monitoringService,
   

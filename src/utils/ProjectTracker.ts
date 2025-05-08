@@ -8,7 +8,7 @@ class ProjectTracker {
   private testManager: TestManager;
   
   constructor() {
-    this.testManager = new TestManager();
+    this.testManager = TestManager.getInstance();
     this.taskManager = new TaskManager(this.testManager);
     this.initializeProjectPlan();
   }

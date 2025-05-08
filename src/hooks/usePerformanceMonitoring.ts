@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { performanceMonitor } from '@/utils/monitoring/performanceMonitor';
+import { performanceMonitor } from '@/utils/performance/PerformanceMonitor';
 
 interface PerformanceOptions {
   componentName: string;
@@ -41,15 +41,21 @@ export function usePerformanceMonitoring({
     // Report slow renders (over 16ms which is roughly 60fps threshold)
     if (renderTime > 16) {
       setIsSlowRender(true);
-      performanceMonitor.recordMetric(`component:${componentName}:slow-render`, renderTime, {
-        renderCount: renderCount.current.toString(),
-        props: includeProps ? JSON.stringify(props.current) : undefined
-      });
+      // Use safe access to monitor
+      if (performanceMonitor && typeof performanceMonitor.recordMetric === 'function') {
+        performanceMonitor.recordMetric(`component:${componentName}:slow-render`, renderTime, {
+          renderCount: renderCount.current.toString(),
+          props: includeProps ? JSON.stringify(props.current) : undefined
+        });
+      }
     } else {
       setIsSlowRender(false);
-      performanceMonitor.recordMetric(`component:${componentName}:render`, renderTime, {
-        renderCount: renderCount.current.toString()
-      });
+      // Use safe access to monitor
+      if (performanceMonitor && typeof performanceMonitor.recordMetric === 'function') {
+        performanceMonitor.recordMetric(`component:${componentName}:render`, renderTime, {
+          renderCount: renderCount.current.toString()
+        });
+      }
     }
   });
   
@@ -62,7 +68,10 @@ export function usePerformanceMonitoring({
     return () => {
       if (effectStartTime.current) {
         const effectDuration = performance.now() - effectStartTime.current;
-        performanceMonitor.recordMetric(`component:${componentName}:effect`, effectDuration);
+        // Use safe access to monitor
+        if (performanceMonitor && typeof performanceMonitor.recordMetric === 'function') {
+          performanceMonitor.recordMetric(`component:${componentName}:effect`, effectDuration);
+        }
       }
     };
   }, [componentName, trackEffects]);
@@ -82,16 +91,25 @@ export function usePerformanceMonitoring({
       if (result instanceof Promise) {
         return result.then(value => {
           const duration = performance.now() - start;
-          performanceMonitor.recordMetric(`component:${componentName}:callback:${name}`, duration);
+          // Use safe access to monitor
+          if (performanceMonitor && typeof performanceMonitor.recordMetric === 'function') {
+            performanceMonitor.recordMetric(`component:${componentName}:callback:${name}`, duration);
+          }
           return value;
         }).catch(err => {
           const duration = performance.now() - start;
-          performanceMonitor.recordMetric(`component:${componentName}:callback-error:${name}`, duration);
+          // Use safe access to monitor
+          if (performanceMonitor && typeof performanceMonitor.recordMetric === 'function') {
+            performanceMonitor.recordMetric(`component:${componentName}:callback-error:${name}`, duration);
+          }
           throw err;
         });
       } else {
         const duration = performance.now() - start;
-        performanceMonitor.recordMetric(`component:${componentName}:callback:${name}`, duration);
+        // Use safe access to monitor
+        if (performanceMonitor && typeof performanceMonitor.recordMetric === 'function') {
+          performanceMonitor.recordMetric(`component:${componentName}:callback:${name}`, duration);
+        }
         return result;
       }
     }) as T;
