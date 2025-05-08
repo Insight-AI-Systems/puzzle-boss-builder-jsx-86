@@ -26,7 +26,10 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
   goBack,
 }) => {
   const [validationError, setValidationError] = useState<string>('');
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string>('');
+  const [isSuccess, setIsSuccess] = useState(false);
+
   useEffect(() => {
     if (email) {
       setValidationError('');
@@ -50,6 +53,42 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
     setValidationError('');
     
     handleSubmit();
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError('');
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password Reset Email Sent",
+        description: "Check your email for a link to reset your password.",
+        variant: "default"
+      });
+      
+      // Show success state
+      setIsSuccess(true);
+    } catch (error) {
+      console.error('Error requesting password reset:', error);
+      
+      // Show error toast
+      toast({
+        title: "Reset Request Failed",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+      
+      setError(error instanceof Error ? error.message : "Failed to request password reset");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

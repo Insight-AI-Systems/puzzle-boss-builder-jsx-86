@@ -1,6 +1,7 @@
 
 import { UserProfile, UserRole } from '@/types/userTypes';
 import { debugLog, DebugLevel } from '@/utils/debug';
+import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/config/securityConfig';
 
 // Store for locally cached users
 let localUserCache: {
@@ -65,7 +66,7 @@ const mockUsers: UserProfile[] = [
   {
     id: 'mock-user-4',
     display_name: 'Mock Protected Admin',
-    email: 'alan@insight-ai-systems.com',
+    email: PROTECTED_ADMIN_EMAIL,
     bio: 'This is the protected admin account',
     avatar_url: null,
     role: 'super_admin',
@@ -150,6 +151,11 @@ export const userDataFallback = {
     role: UserRole = 'player'
   ): UserProfile => {
     const displayName = email ? email.split('@')[0] : `User-${userId.substring(0, 6)}`;
+    
+    // If this is the protected admin, ensure proper role
+    if (isProtectedAdmin(email)) {
+      role = 'super_admin';
+    }
     
     return {
       id: userId,

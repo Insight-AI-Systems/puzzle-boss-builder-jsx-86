@@ -1,192 +1,137 @@
 
 import React from 'react';
-import { Table, TableBody } from "@/components/ui/table";
-import { UserTableHeader } from './UserTableHeader';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { UserTableRow } from './UserTableRow';
-import { UserTableProps } from '@/types/userTableTypes';
-import { UserRole } from '@/types/userTypes';
-import { Button } from '@/components/ui/button';
-import { RefreshCw, AlertCircle, Database, UserSearch, Shield } from 'lucide-react';
-import { isProtectedAdmin } from '@/utils/constants';
+import { Checkbox } from "@/components/ui/checkbox";
+import { UserProfile } from '@/types/userTypes';
+import { EmptyState } from '../EmptyState';
+import { userPipelineDebugger } from '@/utils/admin/userPipelineDebugger';
 
-export function UsersTable({ 
-  users, 
-  currentUserRole, 
-  currentUserEmail,
+interface UsersTableProps {
+  users: UserProfile[];
+  isLoading: boolean;
+  canAssignRole: (role: string, userId: string) => boolean;
+  onRoleChange: (userId: string, newRole: string) => void;
+  selectedUsers: string[];
+  onSelectUser: (userId: string, isSelected: boolean) => void;
+  onSelectAllUsers: (isSelected: boolean) => void;
+  userType: 'admin' | 'regular' | 'player';
+}
+
+export const UsersTable: React.FC<UsersTableProps> = ({
+  users,
+  isLoading,
+  canAssignRole,
   onRoleChange,
-  onSortByRole,
-  onSortByLastLogin,
-  selectedUsers = new Set(),
-  onUserSelection,
-  onSelectAll,
-  lastLoginSortDirection,
-  onRefresh
-}: UserTableProps) {
-  const selectionEnabled = !!onUserSelection && !!onSelectAll;
+  selectedUsers,
+  onSelectUser,
+  onSelectAllUsers,
+  userType
+}) => {
+  // Log the current state for debugging
+  userPipelineDebugger.logUserLoadingState(
+    'UsersTable', 
+    users, 
+    isLoading, 
+    null
+  );
   
-  const isSuperAdmin = currentUserRole === 'super_admin';
-  const isCurrentUserProtectedAdmin = isProtectedAdmin(currentUserEmail);
-  const canAssignAnyRole = isSuperAdmin || isCurrentUserProtectedAdmin;
-  
-  const canAssignRole = (role: UserRole, userId: string): boolean => {
-    if (canAssignAnyRole) return true;
-    if (isProtectedAdmin(userId)) return isCurrentUserProtectedAdmin;
-    if (currentUserRole === 'super_admin' && role !== 'super_admin') return true;
-    return false;
+  // Filter users based on userType
+  const filteredUsers = React.useMemo(() => {
+    if (!users) return [];
+    
+    if (userType === 'admin') {
+      // Admin includes all administrative roles
+      return users.filter(user => 
+        user.role === 'admin' || 
+        user.role === 'super_admin' ||
+        user.role === 'category_manager' ||
+        user.role === 'social_media_manager' ||
+        user.role === 'partner_manager' ||
+        user.role === 'cfo'
+      );
+    }
+    
+    if (userType === 'player') {
+      // Only show players
+      return users.filter(user => user.role === 'player');
+    }
+    
+    if (userType === 'regular') {
+      // Show non-admin, non-player users (or any users that don't fit elsewhere)
+      return users.filter(user => 
+        user.role !== 'admin' && 
+        user.role !== 'super_admin' &&
+        user.role !== 'category_manager' &&
+        user.role !== 'social_media_manager' &&
+        user.role !== 'partner_manager' &&
+        user.role !== 'cfo'
+      );
+    }
+    
+    // Default: return all users
+    return users;
+  }, [users, userType]);
+
+  // Calculate if all visible users are selected
+  const allSelected = filteredUsers.length > 0 && 
+    filteredUsers.every(user => selectedUsers.includes(user.id));
+    
+  // Check if some users are selected (for indeterminate state)
+  const someSelected = !allSelected && 
+    filteredUsers.some(user => selectedUsers.includes(user.id));
+
+  const handleSelectAllChange = (checked: boolean) => {
+    onSelectAllUsers(checked);
   };
 
-  // Group users by type (admin vs regular)
-  const adminUsers = users.filter(user => 
-    ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'].includes(user.role)
-  );
-  
-  const regularUsers = users.filter(user => 
-    user.role === 'player'
-  );
-
-  // Determine which user group to display based on empty arrays
-  const displayAdminUsers = adminUsers.length > 0;
-  const displayRegularUsers = regularUsers.length > 0;
-  const displayNoUsers = adminUsers.length === 0 && regularUsers.length === 0;
+  if (!users || users.length === 0) {
+    return (
+      <EmptyState 
+        title={isLoading ? "Loading users..." : "No users found"}
+        description={isLoading ? "Please wait while we load the user data." : "Try adjusting your filters or search criteria."}
+      />
+    );
+  }
 
   return (
-    <div>
-      {/* If we have admin users, show them in a table with a header */}
-      {displayAdminUsers && (
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2 flex items-center text-amber-500">
-            <Shield className="h-5 w-5 mr-2" />
-            Admin & Management Users
-          </h3>
-          <div className="rounded-md border overflow-x-auto">
-            <Table>
-              <UserTableHeader
-                selectionEnabled={selectionEnabled}
-                onSelectAll={onSelectAll ? 
-                  (checked) => onSelectAll(checked) : 
-                  undefined
-                }
-                onSortByRole={onSortByRole}
-                onSortByLastLogin={onSortByLastLogin || (() => {})}
-                lastLoginSortDirection={lastLoginSortDirection}
-                showAccountStatus={true}
+    <div className="border rounded-md overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-12">
+              <Checkbox 
+                checked={allSelected} 
+                indeterminate={someSelected}
+                onCheckedChange={handleSelectAllChange}
+                aria-label="Select all users"
+                className="translate-y-[2px]"
               />
-              <TableBody>
-                {adminUsers.map(user => (
-                  <UserTableRow
-                    key={user.id}
-                    user={user}
-                    canAssignRole={canAssignRole}
-                    onRoleChange={onRoleChange}
-                    isSelected={selectedUsers.has(user.id)}
-                    onSelect={onUserSelection ? (checked) => onUserSelection(user.id, checked) : undefined}
-                    selectionEnabled={selectionEnabled}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      )}
-
-      {/* If we have regular users, show them in a table with a header */}
-      {displayRegularUsers && (
-        <div>
-          <h3 className="text-lg font-semibold mb-2 flex items-center text-blue-500">
-            <UserSearch className="h-5 w-5 mr-2" />
-            Regular Users
-          </h3>
-          <div className="rounded-md border overflow-x-auto">
-            <Table>
-              <UserTableHeader
-                selectionEnabled={selectionEnabled}
-                onSelectAll={onSelectAll ? 
-                  (checked) => onSelectAll(checked) : 
-                  undefined
-                }
-                onSortByRole={onSortByRole}
-                onSortByLastLogin={onSortByLastLogin || (() => {})}
-                lastLoginSortDirection={lastLoginSortDirection}
-                showAccountStatus={true}
-              />
-              <TableBody>
-                {regularUsers.map(user => (
-                  <UserTableRow
-                    key={user.id}
-                    user={user}
-                    canAssignRole={canAssignRole}
-                    onRoleChange={onRoleChange}
-                    isSelected={selectedUsers.has(user.id)}
-                    onSelect={onUserSelection ? (checked) => onUserSelection(user.id, checked) : undefined}
-                    selectionEnabled={selectionEnabled}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      )}
-
-      {/* If we have no users, show an error message */}
-      {displayNoUsers && (
-        <div className="rounded-md border overflow-x-auto">
-          <Table>
-            <UserTableHeader
-              selectionEnabled={selectionEnabled}
-              onSelectAll={onSelectAll ? 
-                (checked) => onSelectAll(checked) : 
-                undefined
-              }
-              onSortByRole={onSortByRole}
-              onSortByLastLogin={onSortByLastLogin || (() => {})}
-              lastLoginSortDirection={lastLoginSortDirection}
-              showAccountStatus={true}
+            </TableHead>
+            <TableHead className="min-w-[180px]">User</TableHead>
+            <TableHead className="min-w-[180px]">Email/ID</TableHead>
+            <TableHead className="min-w-[120px]">Role</TableHead>
+            <TableHead className="min-w-[100px]">Country</TableHead>
+            <TableHead className="min-w-[140px]">Last Login</TableHead>
+            <TableHead className="min-w-[100px]">Created</TableHead>
+            <TableHead className="min-w-[100px]">Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredUsers.map(user => (
+            <UserTableRow
+              key={user.id}
+              user={user}
+              canAssignRole={canAssignRole}
+              onRoleChange={onRoleChange}
+              isSelected={selectedUsers.includes(user.id)}
+              onSelect={(checked) => onSelectUser(user.id, checked)}
+              selectionEnabled={true}
             />
-            <TableBody>
-              <tr>
-                <td colSpan={selectionEnabled ? 8 : 7} className="text-center py-6">
-                  <div className="flex flex-col items-center justify-center space-y-4 p-4">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Database className="h-5 w-5" />
-                      <p>
-                        No users found. There may be an issue with database connectivity or permissions.
-                      </p>
-                    </div>
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      {onRefresh && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={onRefresh}
-                          className="flex items-center gap-2"
-                        >
-                          <RefreshCw className="h-4 w-4" />
-                          Refresh User List
-                        </Button>
-                      )}
-                      <Button 
-                        variant="secondary" 
-                        size="sm"
-                        onClick={() => {
-                          if (isCurrentUserProtectedAdmin) {
-                            alert("Protected admin detected. Please check database configuration and logs.");
-                          } else {
-                            alert("Please check with your administrator about database permissions.");
-                          }
-                        }}
-                        className="flex items-center gap-2"
-                      >
-                        <AlertCircle className="h-4 w-4" />
-                        Database Info
-                      </Button>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </TableBody>
-          </Table>
-        </div>
-      )}
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
-}
+};

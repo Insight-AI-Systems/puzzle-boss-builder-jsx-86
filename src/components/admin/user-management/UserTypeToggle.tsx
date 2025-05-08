@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Users, Shield } from 'lucide-react';
+import { Users, Shield, User } from 'lucide-react';
 
 interface UserTypeToggleProps {
   value: string;
@@ -11,8 +11,8 @@ interface UserTypeToggleProps {
 export function UserTypeToggle({ value, onChange }: UserTypeToggleProps) {
   // This function ensures we always have a valid value, defaulting to 'regular'
   const handleValueChange = (newValue: string) => {
-    if (newValue === 'admin' || newValue === 'player') {
-      onChange(newValue);
+    if (newValue === 'admin' || newValue === 'player' || newValue === 'regular') {
+      onChange(newValue as 'regular' | 'admin' | 'player');
     } else {
       onChange('regular');
     }
@@ -41,6 +41,14 @@ export function UserTypeToggle({ value, onChange }: UserTypeToggleProps) {
         >
           <Shield className="h-4 w-4 mr-2" />
           <span>Admins</span>
+        </ToggleGroupItem>
+        <ToggleGroupItem 
+          value="player" 
+          aria-label="View players"
+          className="flex-1 sm:flex-none"
+        >
+          <User className="h-4 w-4 mr-2" />
+          <span>Players</span>
         </ToggleGroupItem>
       </ToggleGroup>
     </div>

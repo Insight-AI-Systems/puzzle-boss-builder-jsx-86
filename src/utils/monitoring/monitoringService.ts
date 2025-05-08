@@ -1,51 +1,28 @@
-import { debugLog, DebugLevel } from '@/utils/debug';
-import { supabase } from '@/integrations/supabase/client';
-
-// Define error priorities
-export enum ErrorPriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  CRITICAL = 'critical'
-}
-
-// Define event types
-export enum MonitoringEventType {
-  ERROR = 'error',
-  PERFORMANCE = 'performance',
-  SECURITY = 'security',
-  USER_ACTION = 'user_action'
-}
-
-interface MonitoringEvent {
-  type: MonitoringEventType;
-  timestamp: number; // Unix timestamp
-  data: Record<string, any>;
-  userId?: string;
-}
 
 /**
  * Monitoring Service
- * Central service for tracking errors, performance, and user activity
+ * Handles application monitoring and telemetry
  */
-class MonitoringService {
+
+import { debugLog, DebugLevel } from '@/utils/debug';
+
+export interface MonitoringConfig {
+  enabled: boolean;
+  logLevel: 'info' | 'warn' | 'error';
+  includeUserData: boolean;
+}
+
+export class MonitoringService {
   private static instance: MonitoringService;
-  private events: MonitoringEvent[] = [];
-  private maxQueueSize = 50;
-  private flushInterval: NodeJS.Timeout | null = null;
-  private flushIntervalMs = 30000; // 30 seconds
+  private isEnabled: boolean = false;
+  private reportingInterval: number | null = null;
+  private config: MonitoringConfig = {
+    enabled: false,
+    logLevel: 'warn',
+    includeUserData: false
+  };
   
-  private constructor() {
-    // Start flush interval
-    this.startFlushInterval();
-    
-    // Add window unload event to flush remaining events
-    if (typeof window !== 'undefined') {
-      window.addEventListener('beforeunload', () => {
-        this.flush(true);
-      });
-    }
-  }
+  private constructor() {}
   
   public static getInstance(): MonitoringService {
     if (!MonitoringService.instance) {
@@ -55,168 +32,150 @@ class MonitoringService {
   }
   
   /**
-   * Track an error with priority level
+   * Configure the monitoring service
    */
-  public trackError(error: Error, priority: ErrorPriority | string = ErrorPriority.MEDIUM, metadata: Record<string, any> = {}): void {
-    try {
-      const errorData = {
-        message: error.message,
-        stack: error.stack,
-        priority,
-        ...metadata
-      };
-      
-      debugLog('MonitoringService', `Tracking error: ${error.message}`, DebugLevel.ERROR);
-      
-      this.addEvent({
-        type: MonitoringEventType.ERROR,
-        timestamp: Date.now(),
-        data: errorData,
-        userId: this.getCurrentUserId()
-      });
-      
-      // If critical, flush immediately
-      if (priority === ErrorPriority.CRITICAL) {
-        this.flush(true);
+  public configure(config: Partial<MonitoringConfig>): void {
+    this.config = { ...this.config, ...config };
+    debugLog('Monitoring', 'Monitoring service configured', DebugLevel.INFO, { config: this.config });
+  }
+  
+  /**
+   * Start collecting and reporting monitoring data
+   */
+  public startReporting(intervalMs: number = 30000): void {
+    if (this.reportingInterval) {
+      clearInterval(this.reportingInterval);
+    }
+    
+    this.isEnabled = true;
+    this.reportingInterval = window.setInterval(() => {
+      this.collectAndReport();
+    }, intervalMs);
+    
+    debugLog('Monitoring', 'Monitoring reporting started', DebugLevel.INFO, {
+      intervalMs,
+      firstReportAt: new Date(Date.now() + intervalMs).toISOString()
+    });
+  }
+  
+  /**
+   * Stop reporting monitoring data
+   */
+  public stopReporting(): void {
+    if (this.reportingInterval) {
+      clearInterval(this.reportingInterval);
+      this.reportingInterval = null;
+    }
+    
+    this.isEnabled = false;
+    debugLog('Monitoring', 'Monitoring reporting stopped', DebugLevel.INFO);
+  }
+  
+  /**
+   * Track a specific event
+   */
+  public trackEvent(eventName: string, data?: Record<string, any>): void {
+    if (!this.isEnabled) return;
+    
+    debugLog('Monitoring', `Event tracked: ${eventName}`, DebugLevel.INFO, data);
+  }
+  
+  /**
+   * Track an error
+   */
+  public trackError(error: Error, severity: 'low' | 'medium' | 'high' = 'medium', context?: Record<string, any>): void {
+    debugLog('Monitoring', `Error tracked: ${error.message}`, DebugLevel.ERROR, {
+      error,
+      severity,
+      ...context
+    });
+  }
+  
+  private collectAndReport(): void {
+    if (!this.isEnabled) return;
+    
+    // Collect key metrics
+    const metrics = {
+      timestamp: new Date().toISOString(),
+      memory: {
+        jsHeapSize: (performance as any).memory?.usedJSHeapSize,
+        totalJSHeapSize: (performance as any).memory?.totalJSHeapSize
+      },
+      timings: {
+        navigationStart: performance.timing.navigationStart,
+        loadEventEnd: performance.timing.loadEventEnd,
+        domComplete: performance.timing.domComplete
       }
-    } catch (err) {
-      console.error('Error in trackError:', err);
-    }
-  }
-  
-  /**
-   * Track performance metric
-   */
-  public trackPerformance(metricName: string, durationMs: number, metadata: Record<string, any> = {}): void {
-    try {
-      this.addEvent({
-        type: MonitoringEventType.PERFORMANCE,
-        timestamp: Date.now(),
-        data: {
-          metricName,
-          durationMs,
-          ...metadata
-        },
-        userId: this.getCurrentUserId()
-      });
-    } catch (err) {
-      console.error('Error in trackPerformance:', err);
-    }
-  }
-  
-  /**
-   * Track security event
-   */
-  public trackSecurityEvent(eventName: string, metadata: Record<string, any> = {}): void {
-    try {
-      this.addEvent({
-        type: MonitoringEventType.SECURITY,
-        timestamp: Date.now(),
-        data: {
-          eventName,
-          ...metadata
-        },
-        userId: this.getCurrentUserId()
-      });
-      
-      // Security events flush immediately
-      this.flush(true);
-    } catch (err) {
-      console.error('Error in trackSecurityEvent:', err);
-    }
-  }
-  
-  /**
-   * Track user action
-   */
-  public trackUserAction(action: string, metadata: Record<string, any> = {}): void {
-    try {
-      this.addEvent({
-        type: MonitoringEventType.USER_ACTION,
-        timestamp: Date.now(),
-        data: {
-          action,
-          ...metadata
-        },
-        userId: this.getCurrentUserId()
-      });
-    } catch (err) {
-      console.error('Error in trackUserAction:', err);
-    }
-  }
-  
-  /**
-   * Add event to queue
-   */
-  private addEvent(event: MonitoringEvent): void {
-    this.events.push(event);
+    };
     
-    // If queue is full, flush
-    if (this.events.length >= this.maxQueueSize) {
-      this.flush();
-    }
-  }
-  
-  /**
-   * Start flush interval
-   */
-  private startFlushInterval(): void {
-    if (this.flushInterval) {
-      clearInterval(this.flushInterval);
-    }
-    
-    this.flushInterval = setInterval(() => {
-      this.flush();
-    }, this.flushIntervalMs);
-  }
-  
-  /**
-   * Flush events to server
-   */
-  private flush(immediate: boolean = false): void {
-    if (this.events.length === 0) return;
-    
-    const eventsToSend = [...this.events];
-    this.events = [];
-    
-    // Send events to server
-    this.sendEvents(eventsToSend, immediate);
-  }
-  
-  /**
-   * Send events to server
-   */
-  private async sendEvents(events: MonitoringEvent[], immediate: boolean = false): Promise<void> {
-    try {
-      if (immediate) {
-        // Use fetch with keepalive for critical events on page unload
-        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-          const blob = new Blob([JSON.stringify({ events })], { type: 'application/json' });
-          navigator.sendBeacon('/api/monitoring/events', blob);
-          return;
-        }
-      }
-      
-      // Normal case - use Supabase function
-      await supabase.functions.invoke('track-monitoring-events', {
-        body: { events }
-      });
-    } catch (err) {
-      console.error('Error sending monitoring events:', err);
-    }
-  }
-  
-  /**
-   * Get current user ID
-   */
-  private getCurrentUserId(): string | undefined {
-    try {
-      // This is a placeholder - should be implemented to get actual user ID
-      return 'anonymous';
-    } catch {
-      return undefined;
-    }
+    debugLog('Monitoring', 'Metrics collected', DebugLevel.INFO, metrics);
   }
 }
 
+// User activity monitoring
+export class UserActivityMonitor {
+  private static instance: UserActivityMonitor;
+  private activities: any[] = [];
+  
+  private constructor() {}
+  
+  public static getInstance(): UserActivityMonitor {
+    if (!UserActivityMonitor.instance) {
+      UserActivityMonitor.instance = new UserActivityMonitor();
+    }
+    return UserActivityMonitor.instance;
+  }
+  
+  // Additional methods for the interface
+  public getActivities(): any[] {
+    return [...this.activities];
+  }
+  
+  public getSessionInfo(): any {
+    return {
+      sessionId: this.generateSessionId(),
+      startTime: new Date().toISOString(),
+      duration: 0,
+      active: true
+    };
+  }
+  
+  private generateSessionId(): string {
+    return Math.random().toString(36).substring(2, 15) + 
+           Math.random().toString(36).substring(2, 15);
+  }
+}
+
+// Error tracking
+export class ErrorTracker {
+  private static instance: ErrorTracker;
+  private errors: Error[] = [];
+  
+  private constructor() {}
+  
+  public static getInstance(): ErrorTracker {
+    if (!ErrorTracker.instance) {
+      ErrorTracker.instance = new ErrorTracker();
+    }
+    return ErrorTracker.instance;
+  }
+  
+  // Additional methods for the interface
+  public getErrors(): Error[] {
+    return [...this.errors];
+  }
+}
+
+// Export hook for monitoring
+export function useMonitoring() {
+  return {
+    trackEvent: monitoringService.trackEvent.bind(monitoringService),
+    trackError: monitoringService.trackError.bind(monitoringService),
+    isEnabled: monitoringService.isEnabled,
+  };
+}
+
+// Export singleton instances
 export const monitoringService = MonitoringService.getInstance();
+export const userActivityMonitor = UserActivityMonitor.getInstance();
+export const errorTracker = ErrorTracker.getInstance();

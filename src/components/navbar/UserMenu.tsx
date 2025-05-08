@@ -14,21 +14,19 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { UserProfile } from '@/types/userTypes';
 import { useAuth } from '@/contexts/AuthContext';
+import { isProtectedAdmin } from '@/config/securityConfig';
 
 interface UserMenuProps {
   profile: UserProfile | null;
   isMobile?: boolean;
 }
 
-// Special admin email that should always have access
-const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
-
 const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
   const { user, hasRole, signOut } = useAuth();
 
   // Enhanced admin check with proper logging
-  const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
-  const isSuperAdmin = isProtectedAdmin || hasRole('super_admin');
+  const isProtectedAdminUser = isProtectedAdmin(user?.email);
+  const isSuperAdmin = isProtectedAdminUser || hasRole('super_admin');
   const isAdmin = isSuperAdmin || hasRole('admin');
   const isCategoryManager = hasRole('category_manager');
   const isSocialMediaManager = hasRole('social_media_manager');
@@ -40,7 +38,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
   
   console.log('UserMenu - Admin Check:', {
     userEmail: user?.email,
-    isProtectedAdmin,
+    isProtectedAdminUser,
     isSuperAdmin,
     isAdmin,
     isAdminUser,
@@ -50,7 +48,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
       superAdmin: hasRole('super_admin'),
       categoryManager: hasRole('category_manager'),
     },
-    accessStatus: isProtectedAdmin ? 'protected_admin_access' : (isAdminUser ? 'role_based_access' : 'no_admin_access')
+    accessStatus: isProtectedAdminUser ? 'protected_admin_access' : (isAdminUser ? 'role_based_access' : 'no_admin_access')
   });
 
   if (!profile) return null;
@@ -81,7 +79,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
         </DropdownMenuItem>
         
         {/* Admin Menu Section - Show for any admin role */}
-        {(isAdminUser || isProtectedAdmin) && (
+        {(isAdminUser || isProtectedAdminUser) && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="flex items-center text-puzzle-aqua">

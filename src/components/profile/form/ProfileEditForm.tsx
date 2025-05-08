@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,19 +35,21 @@ export function ProfileEditForm({
     onChange(simulatedEvent);
   };
 
-  // Map the display values to our actual AgeGroup type values
-  const ageGroupMapping: Record<string, AgeGroup> = {
-    '13-17': 'under_18',
-    '18-24': '18_24',
-    '25-34': '25_34',
-    '35-44': '35_44',
-    '45-54': '45_54',
-    '55-64': '55_64',
-    '60+': '65_plus'
-  };
+  // Fix the values to match the AgeGroup type
+  const ageGroupOptions = [
+    { value: 'under_18', label: 'Under 18' },
+    { value: '13-17', label: '13-17' },
+    { value: '18-24', label: '18-24' },
+    { value: '25-34', label: '25-34' },
+    { value: '35-44', label: '35-44' },
+    { value: '45-54', label: '45-54' },
+    { value: '45-60', label: '45-60' },
+    { value: '60+', label: '60+' },
+    { value: '65_plus', label: '65+' }
+  ];
 
   // The display values for age groups that will appear in the UI
-  const ageGroupDisplayValues = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '60+'];
+  const ageGroupDisplayValues = ['13-17', '18-24', '25-34', '35-44', '45-54', '45-60', '60+'];
 
   if (!isEditing) {
     return (
@@ -180,16 +181,16 @@ export function ProfileEditForm({
       <div className="space-y-2">
         <Label htmlFor="age_group" className="text-puzzle-white">Age Range</Label>
         <Select 
-          value={Object.entries(ageGroupMapping).find(([_, value]) => value === formData.age_group)?.[0] || undefined}
-          onValueChange={(displayValue) => handleSelectChange('age_group', ageGroupMapping[displayValue])}
+          value={Object.entries(ageGroupOptions).find(([_, value]) => value === formData.age_group)?.[0] || undefined}
+          onValueChange={(displayValue) => handleSelectChange('age_group', ageGroupOptions[displayValue].value)}
         >
           <SelectTrigger className="bg-puzzle-black/50 border-puzzle-aqua/30 text-puzzle-white w-full">
             <SelectValue placeholder="Select your age range" />
           </SelectTrigger>
           <SelectContent>
-            {ageGroupDisplayValues.map((displayValue) => (
-              <SelectItem key={displayValue} value={displayValue}>
-                {displayValue}
+            {ageGroupOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
               </SelectItem>
             ))}
           </SelectContent>

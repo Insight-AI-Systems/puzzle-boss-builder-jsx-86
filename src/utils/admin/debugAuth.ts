@@ -1,139 +1,113 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { debugLog, DebugLevel } from '@/utils/debug';
+import { PROTECTED_ADMIN_EMAIL } from '@/config/securityConfig';
 
 /**
- * Emergency function to force a user login check and refresh their session
- * This can be called from the browser console to troubleshoot auth issues
+ * Debug the current auth state
+ * This will log detailed auth information to help debug issues
  */
-export async function debugAuthState() {
+export function debugAuthState() {
   try {
-    console.log('Debugging auth state...');
-    toast.info('Debugging auth state, please check console for details');
+    // Get auth data from local storage
+    const sbAuth = localStorage.getItem('sb-auth');
     
-    // First, get the current user 
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    
-    if (userError) {
-      console.error('Error getting user:', userError);
-      toast.error(`Error getting user: ${userError.message}`);
-      return { success: false, error: userError };
+    if (!sbAuth) {
+      console.log('No Supabase auth data found in local storage');
+      return;
     }
     
-    if (!userData.user) {
-      console.log('No user is currently logged in');
-      toast.warning('No user is currently logged in');
-      return { success: false, message: 'No user logged in' };
-    }
+    const authData = JSON.parse(sbAuth);
     
-    console.log('Current user:', userData.user);
-    console.log('User email:', userData.user.email);
-    console.log('User metadata:', userData.user.user_metadata);
+    // Safe extraction of data
+    const user = authData?.user;
+    const session = authData?.session;
+    const email = user?.email;
     
-    // Get the session details
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const isProtectedAdmin = email?.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase();
     
-    if (sessionError) {
-      console.error('Error getting session:', sessionError);
-      toast.error(`Error getting session: ${sessionError.message}`);
-      return { success: false, error: sessionError };
-    }
-    
-    console.log('Current session:', sessionData.session);
-    
-    // Get the profile details
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userData.user.id)
-      .single();
-    
-    if (profileError) {
-      console.error('Error getting profile:', profileError);
-      toast.error(`Error getting profile: ${profileError.message}`);
-    } else {
-      console.log('Current profile:', profileData);
-    }
-    
-    // Attempt to refresh the session
-    console.log('Refreshing session...');
-    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-    
-    if (refreshError) {
-      console.error('Error refreshing session:', refreshError);
-      toast.error(`Error refreshing session: ${refreshError.message}`);
-      return { success: false, error: refreshError };
-    }
-    
-    console.log('Refreshed session:', refreshData.session);
-    
-    // Show results as toast
-    toast.success('Auth state debugged - check console for details');
-    
-    return { 
-      success: true, 
-      user: userData.user,
-      session: refreshData.session,
-      profile: profileData
-    };
-  } catch (err) {
-    console.error('Exception in debugAuthState:', err);
-    toast.error(`Auth debug error: ${err instanceof Error ? err.message : String(err)}`);
-    return { success: false, error: err };
-  }
-}
-
-/**
- * Force Alan to have super_admin role
- * This is a special function to ensure Alan always has access
- */
-export async function forceProtectedAdminAccess() {
-  try {
-    const protectedEmail = 'alan@insight-ai-systems.com';
-    console.log(`Ensuring ${protectedEmail} has super_admin role...`);
-    
-    toast.loading(`Setting up protected admin access...`);
-    
-    // Call the set-admin-role function
-    const { data, error } = await supabase.functions.invoke('set-admin-role', {
-      body: { email: protectedEmail, role: 'super_admin' }
+    // Log detailed auth info
+    debugLog('AuthDebug', 'Current auth state', DebugLevel.INFO, {
+      hasUser: !!user,
+      hasSession: !!session,
+      email,
+      isProtectedAdmin,
+      userId: user?.id,
+      sessionExpiry: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
+      sessionValid: session?.expires_at ? (session.expires_at * 1000) > Date.now() : false
     });
     
-    if (error) {
-      console.error('Error setting admin role:', error);
-      toast.error(`Failed to set protected admin access. Error: ${error.message}`);
-      return { success: false, error };
+    console.log('Auth Debug:', {
+      user,
+      session,
+      isProtectedAdmin
+    });
+    
+    // Check for and display any role data
+    const roleData = localStorage.getItem('user-roles');
+    if (roleData) {
+      try {
+        const roles = JSON.parse(roleData);
+        console.log('Stored Roles:', roles);
+      } catch {
+        console.log('Failed to parse stored roles data');
+      }
+    } else {
+      console.log('No stored roles data found');
     }
     
-    console.log(`Successfully set ${protectedEmail} as super_admin`, data);
-    toast.success(`Protected admin access configured!`);
+    return { user, session, isProtectedAdmin };
     
-    // Check if current user is Alan
-    const { data: authData } = await supabase.auth.getUser();
-    if (authData?.user?.email === protectedEmail) {
-      console.log('Current user is the protected admin. Refreshing session...');
-      await supabase.auth.refreshSession();
-      
-      // Force reload page after a short delay
-      toast.success('Admin access granted, reloading page...');
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-    }
-    
-    return { success: true, data };
-  } catch (err) {
-    console.error('Exception in forceProtectedAdminAccess:', err);
-    toast.error(`Error setting up protected admin: ${err instanceof Error ? err.message : String(err)}`);
-    return { success: false, error: err };
+  } catch (error) {
+    console.error('Error debugging auth state:', error);
+    return null;
   }
 }
 
-// Make functions available in the global window object for console access
-if (typeof window !== 'undefined') {
-  (window as any).debugAuthState = debugAuthState;
-  (window as any).forceProtectedAdminAccess = forceProtectedAdminAccess;
+/**
+ * Force protected admin access for testing
+ * This will update the current user's email in local storage to match the protected admin
+ * WARNING: This is for development/testing only!
+ */
+export function forceProtectedAdminAccess(): boolean {
+  try {
+    // Get auth data
+    const sbAuth = localStorage.getItem('sb-auth');
+    
+    if (!sbAuth) {
+      console.log('No Supabase auth data found in local storage');
+      return false;
+    }
+    
+    const authData = JSON.parse(sbAuth);
+    
+    // Check if user exists
+    if (!authData?.user) {
+      console.log('No user found in auth data');
+      return false;
+    }
+    
+    // Check if already protected admin
+    if (authData.user.email === PROTECTED_ADMIN_EMAIL) {
+      console.log('Already set as protected admin');
+      return true;
+    }
+    
+    // Store original email for reference
+    const originalEmail = authData.user.email;
+    
+    // Update the email to protected admin email
+    authData.user.email = PROTECTED_ADMIN_EMAIL;
+    
+    // Save back to local storage
+    localStorage.setItem('sb-auth', JSON.stringify(authData));
+    
+    console.log(`Temporarily changed user email from ${originalEmail} to ${PROTECTED_ADMIN_EMAIL}`);
+    console.log('Page refresh required for changes to take effect');
+    
+    return true;
+    
+  } catch (error) {
+    console.error('Error forcing protected admin access:', error);
+    return false;
+  }
 }
-
-// Re-export the admin tools for convenience
-export * from './adminTools';

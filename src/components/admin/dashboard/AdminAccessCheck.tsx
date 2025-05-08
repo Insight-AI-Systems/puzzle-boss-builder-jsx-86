@@ -6,7 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';
 import { debugAuthState, forceProtectedAdminAccess } from '@/utils/admin/debugAuth';
-import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';
+import { isProtectedAdmin } from '@/config/securityConfig';
 
 interface AdminAccessCheckProps {
   user: any;

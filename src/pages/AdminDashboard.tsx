@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
@@ -8,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AdminAccessCheck } from '@/components/admin/dashboard/AdminAccessCheck';
 import { AdminToolbar } from '@/components/admin/dashboard/AdminToolbar';
 import { AdminDiagnostics } from '@/components/admin/AdminDiagnostics';
-import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/utils/constants';
+import { isProtectedAdmin } from '@/config/securityConfig';
 import { userService } from '@/services/userService';
 import { debugLog, DebugLevel } from '@/utils/debug';
 
@@ -160,16 +161,24 @@ const AdminDashboard = () => {
               {debugInfo}
             </pre>
           )}
-
+          
           {showDiagnostics && <AdminDiagnostics />}
-
-          <RoleBasedDashboard />
+          
+          <RoleBasedDashboard userRole={profile?.role} isProtectedAdmin={hasProtectedEmail} />
         </div>
       </div>
     );
   }
 
-  return null;
+  // Fallback for any other scenarios
+  return (
+    <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
+      <div>
+        <h2 className="text-puzzle-aqua text-2xl mb-4">Unable to verify access</h2>
+        <p className="text-white">Please try logging in again.</p>
+      </div>
+    </div>
+  );
 };
 
 export default AdminDashboard;

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { UserProfile } from '@/types/userTypes';
 import { adminService } from '@/services/adminService';
 import { debugLog, DebugLevel } from '@/utils/debug';
+import { isProtectedAdmin } from '@/config/securityConfig';
 
 /**
  * Hook to determine if a user has admin privileges
@@ -27,7 +28,7 @@ export function useAdminStatus(profile: UserProfile | null) {
     }
     
     // Check if protected admin by email
-    const hasProtectedEmail = adminService.isProtectedAdminEmail(profile.email || profile.id);
+    const hasProtectedEmail = isProtectedAdmin(profile.email || profile.id);
     
     // Explicit check for protected admin with super admin privileges
     if (hasProtectedEmail) {
