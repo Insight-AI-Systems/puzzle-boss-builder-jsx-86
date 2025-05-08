@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AdminAccessCheck } from '@/components/admin/dashboard/AdminAccessCheck';
 import { AdminToolbar } from '@/components/admin/dashboard/AdminToolbar';
 import { AdminDiagnostics } from '@/components/admin/AdminDiagnostics';
-import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';
+import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/utils/constants';
 
 const AdminDashboard = () => {
   const { profile, isLoading } = useUserProfile();

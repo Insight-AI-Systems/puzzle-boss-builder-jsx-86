@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Download, Bug } from 'lucide-react';
-import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';
+import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/utils/constants';
 
 export function AdminDiagnostics() {
   const { user, session, hasRole } = useAuth();

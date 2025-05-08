@@ -6,7 +6,7 @@ import { useRoleManagement } from './admin/useRoleManagement';
 import { useEmailManagement } from './admin/useEmailManagement';
 import { filterUserData, transformToUserProfile, extractUniqueValues } from '@/utils/admin/userDataProcessing';
 import { UserRole } from '@/types/userTypes';
-import { isProtectedAdmin, PROTECTED_ADMIN_EMAIL } from '@/constants/securityConfig';
+import { isProtectedAdmin, PROTECTED_ADMIN_EMAIL } from '@/utils/constants';
 import { debugLog, DebugLevel } from '@/utils/debug';
 import { toast } from '@/hooks/use-toast';
 
