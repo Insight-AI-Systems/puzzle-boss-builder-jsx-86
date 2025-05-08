@@ -1,40 +1,44 @@
+
 import { UserRole } from '@/types/userTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { debugLog, DebugLevel } from '@/utils/debug';
-import { QueryClient } from '@tanstack/react-query';
 import { isProtectedAdmin } from '@/config/securityConfig';
 
-interface UserResponse {
-  data: {
-    id: string;
-    email: string;
-    role: string;
-  };
-  error: Error | null;
+/**
+ * Interface for user update response
+ */
+export interface UserResponse {
+  success: boolean;
+  error?: Error | null;
+  message?: string;
+  user?: any;
 }
 
 /**
  * Role Service
- * Manages user roles and permissions
+ * Handles role-related operations
  */
 class RoleService {
   private static instance: RoleService;
-  private queryClient: QueryClient | null = null;
+  private queryClient: any = null;
   
   private constructor() {}
   
+  /**
+   * Get singleton instance
+   */
   public static getInstance(): RoleService {
     if (!RoleService.instance) {
       RoleService.instance = new RoleService();
     }
     return RoleService.instance;
   }
-
+  
   /**
-   * Set the QueryClient for cache invalidation
+   * Set query client for cache invalidation
    */
-  public setQueryClient(queryClient: QueryClient) {
-    this.queryClient = queryClient;
+  public setQueryClient(client: any): void {
+    this.queryClient = client;
   }
   
   /**
@@ -42,112 +46,153 @@ class RoleService {
    */
   public async updateUserRole(userId: string, newRole: UserRole): Promise<UserResponse> {
     try {
-      // First check if the user is a protected admin
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', userId)
-        .single();
-      
-      if (userError) {
-        debugLog('RoleService', `Error getting user data: ${userError.message}`, DebugLevel.ERROR);
-        return { data: null as any, error: userError };
+      // Check if this is the protected admin
+      if (await this.isProtectedAdminId(userId)) {
+        return {
+          success: false,
+          message: "Cannot change role for protected admin",
+          error: new Error("Protected admin role cannot be modified")
+        };
       }
       
-      // Check if protected admin - don't allow role changes
-      if (userData.email && isProtectedAdmin(userData.email)) {
-        const error = new Error('Cannot change role for protected admin');
-        debugLog('RoleService', `Attempted to change protected admin role: ${userData.email}`, DebugLevel.ERROR);
-        return { data: null as any, error };
-      }
+      debugLog('RoleService', `Updating role for user ${userId} to ${newRole}`, DebugLevel.INFO);
       
-      // Update the user's role
       const { data, error } = await supabase
         .from('profiles')
         .update({ role: newRole })
         .eq('id', userId)
-        .select()
-        .single();
+        .select();
       
       if (error) {
-        debugLog('RoleService', `Error updating user role: ${error.message}`, DebugLevel.ERROR);
-        return { data: null as any, error };
+        throw error;
       }
       
-      // Invalidate relevant queries if we have a query client
-      if (this.queryClient) {
-        this.queryClient.invalidateQueries(['users']);
-        this.queryClient.invalidateQueries(['user', userId]);
-      }
+      return {
+        success: true,
+        message: `Role updated to ${newRole}`,
+        user: data?.[0] || null
+      };
       
-      return { data, error: null };
     } catch (err) {
-      debugLog('RoleService', `Exception updating user role: ${err}`, DebugLevel.ERROR);
-      return { data: null as any, error: err instanceof Error ? err : new Error('Failed to update user role') };
+      debugLog('RoleService', `Error updating role for user ${userId}`, DebugLevel.ERROR, { error: err });
+      return {
+        success: false,
+        message: err instanceof Error ? err.message : 'Unknown error occurred',
+        error: err instanceof Error ? err : new Error('Failed to update user role')
+      };
+    }
+  }
+  
+  /**
+   * Check if a user is the protected admin
+   */
+  private async isProtectedAdminId(userId: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase.auth.admin.getUserById(userId);
+      
+      if (error || !data?.user) {
+        return false;
+      }
+      
+      return isProtectedAdmin(data.user.email);
+    } catch (err) {
+      debugLog('RoleService', `Error checking protected admin status for ${userId}`, DebugLevel.ERROR);
+      return false;
     }
   }
   
   /**
    * Bulk update user roles
    */
-  public async bulkUpdateUserRoles(userIds: string[], newRole: UserRole): Promise<{ 
-    success: boolean, 
-    updatedCount: number,
-    error?: Error
-  }> {
+  public async bulkUpdateUserRoles(userIds: string[], newRole: UserRole): Promise<UserResponse> {
     try {
-      // Call the server function to update roles
-      const { data, error } = await supabase.functions.invoke('admin-update-roles', {
-        body: { userIds, newRole }
-      });
+      debugLog('RoleService', `Bulk updating roles for ${userIds.length} users to ${newRole}`, DebugLevel.INFO);
+      
+      if (!userIds.length) {
+        return {
+          success: false,
+          message: "No users selected for update",
+          error: new Error("No users selected")
+        };
+      }
+      
+      // Filter out protected admin if present
+      const filteredIds = await this.filterOutProtectedAdmins(userIds);
+      
+      if (filteredIds.length === 0) {
+        return {
+          success: false,
+          message: "Cannot update roles for protected admin accounts",
+          error: new Error("Protected admin accounts filtered out")
+        };
+      }
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .in('id', filteredIds);
       
       if (error) {
-        debugLog('RoleService', `Error in bulk update roles: ${error.message}`, DebugLevel.ERROR);
-        return { success: false, updatedCount: 0, error };
+        throw error;
       }
       
-      // Invalidate relevant queries if we have a query client
+      // Invalidate cache if query client exists
       if (this.queryClient) {
-        this.queryClient.invalidateQueries(['users']);
+        this.queryClient.invalidateQueries({ queryKey: ['profiles'] });
       }
       
-      return { 
-        success: true, 
-        updatedCount: data.updatedCount || userIds.length,
+      return {
+        success: true,
+        message: `Updated ${filteredIds.length} user roles to ${newRole}`
       };
+      
     } catch (err) {
-      debugLog('RoleService', `Exception in bulk update roles: ${err}`, DebugLevel.ERROR);
-      return { 
-        success: false, 
-        updatedCount: 0,
-        error: err instanceof Error ? err : new Error('Failed to update user roles') 
+      debugLog('RoleService', `Error bulk updating roles`, DebugLevel.ERROR, { error: err });
+      return {
+        success: false,
+        message: err instanceof Error ? err.message : 'Unknown error occurred',
+        error: err instanceof Error ? err : new Error('Failed to update user roles')
       };
     }
   }
   
   /**
-   * Check if one role can assign another role
+   * Filter out protected admins from a list of user IDs
    */
-  public canAssignRole(currentUserRole: UserRole, roleToAssign: UserRole, targetUserId: string): boolean {
-    // Super admins can assign any role
-    if (currentUserRole === 'super_admin') {
-      return true;
+  private async filterOutProtectedAdmins(userIds: string[]): Promise<string[]> {
+    // This is a simplified implementation
+    // In a real implementation, you'd check each user against the protected admin list
+    try {
+      const filteredIds = [];
+      
+      for (const userId of userIds) {
+        const isProtected = await this.isProtectedAdminId(userId);
+        if (!isProtected) {
+          filteredIds.push(userId);
+        }
+      }
+      
+      return filteredIds;
+    } catch (err) {
+      debugLog('RoleService', `Error filtering protected admins`, DebugLevel.ERROR);
+      return userIds; // Return original list if filtering fails
+    }
+  }
+  
+  /**
+   * Check if user can assign a role
+   */
+  public canAssignRole(currentUserRole: UserRole, targetRole: UserRole, isProtectedAdmin: boolean): boolean {
+    if (isProtectedAdmin) return true;
+    
+    if (currentUserRole === 'super_admin') return true;
+    
+    if (currentUserRole === 'admin') {
+      return targetRole !== 'super_admin';
     }
     
-    // Regular admins can't assign super_admin roles
-    if (currentUserRole === 'admin' && roleToAssign !== 'super_admin') {
-      return true;
-    }
-    
-    // Category managers can only assign roles to users on their categories
-    if (currentUserRole === 'category_manager') {
-      return false; // Simplified - would need category checking logic in a real implementation
-    }
-    
-    // Other roles can't assign roles
     return false;
   }
 }
 
-// Export singleton instance
 export const roleService = RoleService.getInstance();

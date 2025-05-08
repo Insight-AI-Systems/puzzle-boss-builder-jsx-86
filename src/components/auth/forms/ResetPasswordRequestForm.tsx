@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -5,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Mail, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ResetPasswordRequestFormProps {
   email: string;
@@ -29,6 +32,7 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string>('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (email) {
@@ -55,7 +59,7 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
     handleSubmit();
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
@@ -94,7 +98,7 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       {errorMessage && (
-        <Alert variant="warning" className="border-yellow-500 bg-yellow-500/10">
+        <Alert variant="destructive" className="border-yellow-500 bg-yellow-500/10">
           <AlertCircle className="h-4 w-4 text-yellow-300" />
           <AlertDescription className="text-yellow-300">{errorMessage}</AlertDescription>
         </Alert>
@@ -108,7 +112,7 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
       )}
 
       {validationError && !errorMessage && (
-        <Alert variant="warning" className="border-yellow-500 bg-yellow-500/10">
+        <Alert variant="destructive" className="border-yellow-500 bg-yellow-500/10">
           <AlertCircle className="h-4 w-4 text-yellow-300" />
           <AlertDescription className="text-yellow-300">{validationError}</AlertDescription>
         </Alert>

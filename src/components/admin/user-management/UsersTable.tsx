@@ -2,7 +2,7 @@
 import React from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { UserTableRow } from './UserTableRow';
-import { Checkbox } from "@/components/ui/checkbox";
+import { IndeterminateCheckbox } from "@/components/ui/indeterminate-checkbox";
 import { UserProfile } from '@/types/userTypes';
 import { EmptyState } from '../EmptyState';
 import { userPipelineDebugger } from '@/utils/admin/userPipelineDebugger';
@@ -100,7 +100,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({
         <TableHeader>
           <TableRow>
             <TableHead className="w-12">
-              <Checkbox 
+              <IndeterminateCheckbox 
                 checked={allSelected} 
                 indeterminate={someSelected}
                 onCheckedChange={handleSelectAllChange}

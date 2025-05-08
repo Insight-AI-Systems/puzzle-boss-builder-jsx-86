@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types/userTypes';
 import { debugLog, DebugLevel } from '@/utils/debug';
 import { monitoringService } from '@/utils/monitoring/monitoringService';
+import { isProtectedAdmin, PROTECTED_ADMIN_EMAIL } from '@/config/securityConfig';
 
 // In-memory cache for users to reduce API calls
 type UserCache = {
@@ -16,7 +17,7 @@ interface UserFilterOptions {
   searchQuery?: string;
   role?: UserRole | null;
   country?: string | null;
-  userType?: 'all' | 'admin' | 'player';
+  userType?: 'all' | 'admin' | 'player' | 'regular';
 }
 
 /**
@@ -28,7 +29,6 @@ class UserService {
   private cache: UserCache = {};
   private cacheExpiry = 1000 * 60 * 5; // 5 minutes
   private maxRetries = 3;
-  private protectedEmails: string[] = ['alan@insight-ai-systems.com'];
 
   private constructor() {}
 
@@ -90,7 +90,8 @@ class UserService {
             age_group: data.age_group || undefined,
             created_at: data.created_at,
             updated_at: data.updated_at,
-            last_sign_in: data.last_sign_in || null
+            last_sign_in: data.last_sign_in || null,
+            account_locked: data.account_locked || false
           };
           
           this.cache[userId] = { profile, timestamp: Date.now() };
@@ -159,7 +160,8 @@ class UserService {
           last_sign_in: item.last_sign_in || null,
           gender: item.gender || undefined,
           custom_gender: item.custom_gender || null,
-          age_group: item.age_group || undefined
+          age_group: item.age_group || undefined,
+          account_locked: item.account_locked || false
         };
         
         // Update cache
@@ -414,16 +416,14 @@ class UserService {
    */
   public isProtectedAdmin(email?: string | null): boolean {
     if (!email) return false;
-    return this.protectedEmails.some(protectedEmail => 
-      email.toLowerCase() === protectedEmail.toLowerCase()
-    );
+    return email.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase();
   }
   
   /**
    * Check if an email belongs to a protected admin
    */
   public isProtectedAdminEmail(email?: string | null): boolean {
-    return this.isProtectedAdmin(email);
+    return isProtectedAdmin(email);
   }
 }
 
