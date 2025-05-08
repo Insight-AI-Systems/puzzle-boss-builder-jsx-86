@@ -68,14 +68,14 @@ export function UserTableFilters({
         
         <div className="w-full sm:w-auto flex flex-wrap gap-2">
           <Select
-            value={selectedRole || ''}
-            onValueChange={(value) => onRoleChange(value || null)}
+            value={selectedRole || 'all'}
+            onValueChange={(value) => onRoleChange(value === 'all' ? null : value)}
           >
             <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Filter by role" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All roles</SelectItem>
+              <SelectItem value="all">All roles</SelectItem>
               {Object.values(ROLE_DEFINITIONS).map((role) => (
                 <SelectItem key={role.role} value={role.role}>
                   {role.label}
@@ -85,14 +85,14 @@ export function UserTableFilters({
           </Select>
           
           <Select
-            value={selectedCountry || ''}
-            onValueChange={(value) => onCountryChange(value || null)}
+            value={selectedCountry || 'all'}
+            onValueChange={(value) => onCountryChange(value === 'all' ? null : value)}
           >
             <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Filter by country" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All countries</SelectItem>
+              <SelectItem value="all">All countries</SelectItem>
               {availableCountries.map((country) => (
                 <SelectItem key={country.value} value={country.value}>
                   {country.label}

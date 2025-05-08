@@ -189,97 +189,17 @@ export function AdvancedUserFilter({
                       <SelectValue placeholder="Select activity status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All users</SelectItem>
-                      <SelectItem value="active">Active users (logged in)</SelectItem>
-                      <SelectItem value="recent">Recently active (last 30 days)</SelectItem>
-                      <SelectItem value="inactive">Inactive users</SelectItem>
+                      <SelectItem value="all">All Users</SelectItem>
+                      <SelectItem value="active">Active Users</SelectItem>
+                      <SelectItem value="inactive">Inactive Users</SelectItem>
+                      <SelectItem value="recent">Recently Active</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
-                <div>
-                  <Label className="text-xs mb-2 flex items-center">
-                    <Calendar className="h-3.5 w-3.5 mr-1 opacity-70" />
-                    Registration Date
-                  </Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">After</Label>
-                      <Input
-                        type="date"
-                        value={localFilters.createdAfter || ''}
-                        onChange={(e) => updateFilters({ createdAfter: e.target.value || null })}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Before</Label>
-                      <Input
-                        type="date"
-                        value={localFilters.createdBefore || ''}
-                        onChange={(e) => updateFilters({ createdBefore: e.target.value || null })}
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                </div>
+                {/* More filters can be added here */}
                 
-                <Separator />
-                
-                <div>
-                  <Label className="text-xs mb-2 flex items-center">
-                    <CalendarDays className="h-3.5 w-3.5 mr-1 opacity-70" />
-                    Profile Completion
-                  </Label>
-                  <Select
-                    value={localFilters.hasCompletedProfile === null ? 'all' : 
-                           localFilters.hasCompletedProfile ? 'complete' : 'incomplete'}
-                    onValueChange={(value) => 
-                      updateFilters({ 
-                        hasCompletedProfile: value === 'all' ? null : value === 'complete'
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Profile completion" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All profiles</SelectItem>
-                      <SelectItem value="complete">Complete profiles only</SelectItem>
-                      <SelectItem value="incomplete">Incomplete profiles only</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {availableCountries.length > 0 && (
-                  <>
-                    <Separator />
-                    
-                    <div>
-                      <Label className="text-xs mb-2">Country</Label>
-                      <div className="h-32 overflow-y-auto border rounded-md p-2">
-                        {availableCountries.map((country) => (
-                          <div
-                            key={country}
-                            onClick={() => toggleCountry(country)}
-                            className={`text-xs px-2 py-1.5 mb-1 rounded cursor-pointer flex items-center gap-1
-                              ${localFilters.countries.includes(country) 
-                                ? 'bg-primary/20 border border-primary/30' 
-                                : 'bg-muted/30 border border-transparent hover:border-primary/20'}
-                            `}
-                          >
-                            {localFilters.countries.includes(country) && (
-                              <CheckCircle2 className="h-3 w-3" />
-                            )}
-                            {country}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-                
-                <div className="flex justify-end space-x-2 pt-2">
+                <div className="pt-4 flex justify-end gap-2">
                   <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>
                     Cancel
                   </Button>
@@ -290,62 +210,10 @@ export function AdvancedUserFilter({
               </div>
             </PopoverContent>
           </Popover>
-          
-          {/* Active filter badges */}
-          {hasActiveFilters && (
-            <div className="flex flex-wrap gap-1">
-              {filters.roles.map((role) => (
-                <Badge key={role} variant="outline" className="text-xs font-normal">
-                  {ROLE_DEFINITIONS[role]?.label || role}
-                  <X 
-                    className="ml-1 h-3 w-3 cursor-pointer hover:text-destructive" 
-                    onClick={() => {
-                      onFilterChange({
-                        ...filters,
-                        roles: filters.roles.filter(r => r !== role)
-                      });
-                    }}
-                  />
-                </Badge>
-              ))}
-              
-              {filters.countries.map((country) => (
-                <Badge key={country} variant="outline" className="text-xs font-normal">
-                  {country}
-                  <X 
-                    className="ml-1 h-3 w-3 cursor-pointer hover:text-destructive" 
-                    onClick={() => {
-                      onFilterChange({
-                        ...filters,
-                        countries: filters.countries.filter(c => c !== country)
-                      });
-                    }}
-                  />
-                </Badge>
-              ))}
-              
-              {filters.activityStatus !== 'all' && (
-                <Badge variant="outline" className="text-xs font-normal">
-                  {filters.activityStatus === 'active' && 'Active users'}
-                  {filters.activityStatus === 'recent' && 'Recently active'}
-                  {filters.activityStatus === 'inactive' && 'Inactive users'}
-                  <X 
-                    className="ml-1 h-3 w-3 cursor-pointer hover:text-destructive" 
-                    onClick={() => {
-                      onFilterChange({
-                        ...filters,
-                        activityStatus: 'all'
-                      });
-                    }}
-                  />
-                </Badge>
-              )}
-            </div>
-          )}
         </div>
         
-        <div className="text-xs text-muted-foreground">
-          Showing {visibleUsers} of {totalUsers} users
+        <div className="text-sm text-muted-foreground">
+          Showing <span className="font-medium">{visibleUsers}</span> of <span className="font-medium">{totalUsers}</span> users
         </div>
       </div>
     </div>
