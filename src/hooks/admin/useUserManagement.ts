@@ -8,14 +8,13 @@ import { useToast } from '@/hooks/use-toast';
 import { UserProfile, UserRole } from '@/types/userTypes';
 import { errorTracker } from '@/utils/monitoring/errorTracker';
 import { performanceMonitor } from '@/utils/monitoring/performanceMonitor';
-import { supabase } from '@/integrations/supabase/client';
 
 export function useUserManagement(isAdmin: boolean = false, currentUserId: string | null = null) {
   // Fetch all filter related state and functions
   const filterHook = useUserFilters();
   
   // User data state
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -29,7 +28,7 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
   
   const { toast } = useToast();
 
-  // Fetch users from the service - defined first before it's used
+  // Fetch users from the service 
   const fetchUsers = useCallback(async () => {
     if (!isAdmin && !currentUserId) {
       return;
@@ -123,9 +122,6 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
         country: filterHook.selectedCountry,
         userType: filterHook.userType
       });
-      
-      // Apply sorting if needed
-      // const sorted = userService.sortUsers(filtered, sortBy, sortDirection);
       
       // Apply pagination
       const pageSize = filterHook.pageSize;
@@ -259,6 +255,11 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
   // Function to check if any filters are active
   const hasActiveFilters = () => filterHook.hasActiveFilters();
   
+  // Implement bulkUpdateRoles function
+  const bulkUpdateRoles = async (userIds: string[], newRole: UserRole) => {
+    return roleManagement.handleBulkRoleChange();
+  };
+  
   return {
     // User data
     users,
@@ -287,6 +288,7 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
     refetch: fetchUsers,
     handleExportUsers,
     sendBulkEmail,
+    bulkUpdateRoles,
     
     // Legacy API for compatibility
     updateUserRole: roleManagement.handleRoleChange,
@@ -300,7 +302,6 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
     },
     clearUserSelection: () => {
       setSelectedUsers(new Set());
-    },
-    bulkUpdateRoles: roleManagement.handleBulkRoleChange
+    }
   };
 }

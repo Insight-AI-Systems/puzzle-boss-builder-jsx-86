@@ -1,351 +1,306 @@
 
-/**
- * Error tracking system for monitoring and reporting application errors
- */
-
 import React from 'react';
+import { debugLog, DebugLevel } from '../debug';
 
-type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
-
-interface ErrorEventBase {
-  message: string;
-  stack?: string;
-  componentName?: string;
+// Enhanced ErrorEvent interface with additional properties
+interface EnhancedErrorEvent extends ErrorEvent {
   timestamp: number;
-  severity: ErrorSeverity;
-  userId?: string;
-  metadata?: Record<string, any>;
+  severity: string;
   isFatal: boolean;
   url: string;
   isHandled: boolean;
+  filename?: string;
 }
 
-// Our custom ErrorEvent type for tracking purposes
-interface CustomErrorEvent extends ErrorEventBase {}
-
+// Common configuration interface
 interface ErrorTrackerConfig {
-  captureGlobalErrors: boolean;
-  capturePromiseRejections: boolean;
-  captureReactErrors: boolean;
-  maxErrors: number;
-  sampleRate: number;
-  enableConsoleLogging: boolean;
+  captureGlobalErrors?: boolean;
+  capturePromiseRejections?: boolean;
+  captureReactErrors?: boolean;
+  sampleRate?: number;
+  enableConsoleLogging?: boolean;
+  maxErrors?: number;
 }
 
-class ErrorTracker {
+// Default configuration
+const DEFAULT_CONFIG: ErrorTrackerConfig = {
+  captureGlobalErrors: true,
+  capturePromiseRejections: true,
+  captureReactErrors: true,
+  sampleRate: 1.0, // 100% of errors
+  enableConsoleLogging: process.env.NODE_ENV === 'development',
+  maxErrors: 100
+};
+
+// Error service class
+export class ErrorTracker {
+  private config: ErrorTrackerConfig;
+  private errorCount: number = 0;
+  private errorsLog: Record<string, any>[] = [];
   private static instance: ErrorTracker;
-  private errors: CustomErrorEvent[] = [];
-  private config: ErrorTrackerConfig = {
-    captureGlobalErrors: true,
-    capturePromiseRejections: true,
-    captureReactErrors: true,
-    maxErrors: 100,
-    sampleRate: 1.0,  // Capture 100% of errors by default
-    enableConsoleLogging: process.env.NODE_ENV === 'development'
-  };
-  private originalConsoleError: typeof console.error;
-  
-  private constructor() {
-    this.originalConsoleError = console.error;
+  private errorHandlersRegistered = false;
+
+  /**
+   * Private constructor for singleton pattern
+   */
+  private constructor(config: ErrorTrackerConfig = {}) {
+    this.config = { ...DEFAULT_CONFIG, ...config };
     
+    // Initialize error handlers conditionally
     if (typeof window !== 'undefined') {
-      this.setupErrorListeners();
+      this.initializeErrorHandlers();
     }
   }
-  
+
   /**
-   * Get the singleton instance
+   * Get singleton instance of ErrorTracker
    */
-  public static getInstance(): ErrorTracker {
+  public static getInstance(config?: ErrorTrackerConfig): ErrorTracker {
     if (!ErrorTracker.instance) {
-      ErrorTracker.instance = new ErrorTracker();
+      ErrorTracker.instance = new ErrorTracker(config);
+    } else if (config) {
+      // If config is passed but instance exists, just update the config
+      ErrorTracker.instance.configure(config);
     }
     return ErrorTracker.instance;
   }
-  
+
   /**
-   * Configure the error tracker
+   * Set up event listeners for various error types
+   */
+  private initializeErrorHandlers(): void {
+    if (this.errorHandlersRegistered) return;
+
+    if (this.config.captureGlobalErrors) {
+      window.addEventListener('error', this.handleGlobalError.bind(this));
+    }
+
+    if (this.config.capturePromiseRejections) {
+      window.addEventListener('unhandledrejection', this.handlePromiseRejection.bind(this));
+    }
+
+    this.errorHandlersRegistered = true;
+    debugLog('ErrorTracker', 'Error handlers initialized', DebugLevel.INFO);
+  }
+
+  /**
+   * Update configuration
    */
   public configure(config: Partial<ErrorTrackerConfig>): void {
+    // Update config
     this.config = { ...this.config, ...config };
     
-    // Re-setup listeners if configuration changes
-    if (typeof window !== 'undefined') {
-      this.setupErrorListeners();
+    // Re-initialize handlers if needed based on new config
+    if (!this.errorHandlersRegistered && typeof window !== 'undefined') {
+      this.initializeErrorHandlers();
     }
   }
-  
+
   /**
-   * Track a specific error
+   * Handle global error events
+   */
+  private handleGlobalError(event: ErrorEvent): void {
+    // Apply sampling
+    if (Math.random() > (this.config.sampleRate || 1.0)) return;
+    
+    try {
+      // Convert to enhanced error event format
+      const enhancedEvent: Partial<EnhancedErrorEvent> = {
+        ...event,
+        timestamp: Date.now(),
+        severity: 'error',
+        isFatal: true,
+        url: window.location.href,
+        isHandled: false
+      };
+      
+      // Process the error
+      this.processError(
+        event.error || new Error(event.message || 'Unknown error'),
+        'high',
+        { 
+          type: 'global',
+          filename: enhancedEvent.filename || 'unknown',
+          lineno: event.lineno,
+          colno: event.colno
+        }
+      );
+      
+    } catch (err) {
+      console.error('Error in error handler:', err);
+    }
+  }
+
+  /**
+   * Handle unhandled promise rejections
+   */
+  private handlePromiseRejection(event: PromiseRejectionEvent): void {
+    // Apply sampling
+    if (Math.random() > (this.config.sampleRate || 1.0)) return;
+    
+    try {
+      // Extract error from reason
+      let error = event.reason;
+      if (!(error instanceof Error)) {
+        error = new Error(
+          typeof error === 'string' 
+            ? error 
+            : JSON.stringify(error) || 'Unknown promise rejection'
+        );
+      }
+      
+      // Process the error
+      this.processError(
+        error,
+        'medium',
+        { 
+          type: 'promise',
+          url: window.location.href,
+          timestamp: Date.now()
+        }
+      );
+      
+    } catch (err) {
+      console.error('Error handling promise rejection:', err);
+    }
+  }
+
+  /**
+   * Track errors from anywhere in the application
    */
   public trackError(
-    error: Error | string, 
-    severity: ErrorSeverity = 'medium', 
+    error: Error | string,
+    severity: 'low' | 'medium' | 'high' | 'critical' = 'medium',
     metadata?: Record<string, any>,
     componentName?: string
   ): void {
-    if (Math.random() > this.config.sampleRate) {
-      return; // Skip based on sample rate
+    // Apply sampling
+    if (Math.random() > (this.config.sampleRate || 1.0)) return;
+    
+    try {
+      // Convert string to Error if needed
+      const errorObject = typeof error === 'string' ? new Error(error) : error;
+      
+      // Add component name to metadata if provided
+      const enhancedMetadata = {
+        ...metadata,
+        ...(componentName ? { component: componentName } : {})
+      };
+      
+      // Process the error
+      this.processError(errorObject, severity, enhancedMetadata);
+      
+    } catch (err) {
+      console.error('Error tracking error:', err);
+    }
+  }
+
+  /**
+   * Process errors in a standardized way
+   */
+  private processError(
+    error: Error,
+    severity: 'low' | 'medium' | 'high' | 'critical',
+    metadata?: Record<string, any>
+  ): void {
+    // Check if we've reached the max error count
+    if (this.errorCount >= (this.config.maxErrors || 100)) {
+      if (this.errorCount === (this.config.maxErrors || 100)) {
+        console.warn('Maximum error count reached, suppressing further errors');
+        this.errorCount++; // Increment to prevent this warning from showing again
+      }
+      return;
     }
     
-    const errorEvent: CustomErrorEvent = {
-      message: typeof error === 'string' ? error : error.message,
-      stack: error instanceof Error ? error.stack : undefined,
-      componentName,
-      timestamp: Date.now(),
+    // Construct error entry
+    const errorEntry = {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
       severity,
-      metadata,
-      isFatal: false,
-      url: typeof window !== 'undefined' ? window.location.href : '',
-      isHandled: true
+      timestamp: Date.now(),
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+      metadata: metadata || {}
     };
     
-    this.recordError(errorEvent);
-  }
-  
-  /**
-   * Track errors from try/catch blocks
-   */
-  public tryCatch<T>(fn: () => T, componentName?: string): T | undefined {
-    try {
-      return fn();
-    } catch (error) {
-      this.trackError(
-        error instanceof Error ? error : new Error(String(error)),
-        'medium',
-        { source: 'tryCatch' },
-        componentName
-      );
-      return undefined;
-    }
-  }
-  
-  /**
-   * Record an error event
-   */
-  private recordError(errorEvent: CustomErrorEvent): void {
-    this.errors.unshift(errorEvent); // Add to the beginning for most recent first
+    // Add to log
+    this.errorsLog.push(errorEntry);
+    this.errorCount++;
     
-    // Trim errors if we have too many
-    if (this.errors.length > this.config.maxErrors) {
-      this.errors = this.errors.slice(0, this.config.maxErrors);
-    }
-    
-    // Log to console if enabled
+    // Console logging if enabled
     if (this.config.enableConsoleLogging) {
-      const logMethod = errorEvent.severity === 'critical' || errorEvent.isFatal 
-        ? this.originalConsoleError 
-        : console.warn;
-      
-      logMethod(
-        `[${errorEvent.severity.toUpperCase()}] ${errorEvent.message}`,
-        {
-          stack: errorEvent.stack,
-          component: errorEvent.componentName,
-          metadata: errorEvent.metadata
-        }
+      console.error(
+        `[ErrorTracker] ${severity.toUpperCase()}: ${error.message}`,
+        { error, metadata }
       );
     }
     
-    // Here you would normally send to a backend error tracking service
-    // But we'll implement that separately with a proper queue system
+    // Log to server in a real implementation
+    // this.sendToServer(errorEntry);
   }
-  
+
   /**
-   * Set up event listeners for errors
+   * Get error statistics
    */
-  private setupErrorListeners(): void {
-    if (this.config.captureGlobalErrors) {
-      window.addEventListener('error', (event: ErrorEvent) => {
-        // Don't capture errors from extensions and other non-app sources
-        if (this.shouldIgnoreError(event)) {
-          return;
-        }
-        
-        const errorEvent: CustomErrorEvent = {
-          message: event.message || 'Unknown error',
-          stack: event.error?.stack,
-          timestamp: Date.now(),
-          severity: 'high',
-          metadata: {
-            fileName: event.filename || 'unknown',
-            lineNumber: event.lineno || 0,
-            columnNumber: event.colno || 0
-          },
-          isFatal: true,
-          url: window.location.href,
-          isHandled: false
-        };
-        
-        this.recordError(errorEvent);
-      });
-    }
+  public getStats() {
+    const severityCounts = this.errorsLog.reduce(
+      (acc, error) => {
+        const severity = error.severity || 'unknown';
+        acc[severity] = (acc[severity] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
     
-    if (this.config.capturePromiseRejections) {
-      window.addEventListener('unhandledrejection', (event) => {
-        const error = event.reason;
-        const errorEvent: CustomErrorEvent = {
-          message: error instanceof Error ? error.message : 'Unhandled Promise Rejection',
-          stack: error instanceof Error ? error.stack : undefined,
-          timestamp: Date.now(),
-          severity: 'high',
-          metadata: {
-            reason: error instanceof Error ? undefined : error
-          },
-          isFatal: false,
-          url: window.location.href,
-          isHandled: false
-        };
-        
-        this.recordError(errorEvent);
-      });
-    }
-    
-    // Console error interception
-    if (this.config.enableConsoleLogging) {
-      console.error = (...args) => {
-        // Get the stack trace to find the source component
-        const stack = new Error().stack || '';
-        const matches = stack.match(/at\s+(.*)\s+\(/);
-        const componentName = matches ? matches[1] : undefined;
-        
-        if (args[0] instanceof Error) {
-          this.trackError(args[0], 'medium', { fromConsole: true }, componentName);
-        } else if (typeof args[0] === 'string' && args[0].includes('Warning:') && args[0].includes('React')) {
-          // React specific warnings
-          this.trackError(args[0], 'low', { fromReactWarning: true }, componentName);
-        }
-        
-        // Call original console.error
-        this.originalConsoleError.apply(console, args);
-      };
-    }
+    return {
+      totalErrors: this.errorCount,
+      severityCounts,
+      lastError: this.errorsLog.length > 0 ? this.errorsLog[this.errorsLog.length - 1] : null
+    };
   }
-  
+
   /**
-   * Check if error should be ignored
-   */
-  private shouldIgnoreError(event: ErrorEvent): boolean {
-    // Ignore errors from external scripts and extensions
-    // Safe access to properties with optional chaining to prevent errors
-    const filename = event.filename || '';
-    
-    if (filename && !filename.includes(window.location.origin)) {
-      return true;
-    }
-    
-    // Ignore network errors for images, etc.
-    if (event.message && (
-      event.message.includes('Script error') || 
-      event.message.includes('Load failed')
-    )) {
-      return true;
-    }
-    
-    return false;
-  }
-  
-  /**
-   * Get all recorded errors
-   */
-  public getErrors(): CustomErrorEvent[] {
-    return [...this.errors];
-  }
-  
-  /**
-   * Get errors by severity
-   */
-  public getErrorsBySeverity(severity: ErrorSeverity): CustomErrorEvent[] {
-    return this.errors.filter(error => error.severity === severity);
-  }
-  
-  /**
-   * Clear all errors
+   * Clear collected errors
    */
   public clearErrors(): void {
-    this.errors = [];
-  }
-  
-  /**
-   * Get error stats
-   */
-  public getStats(): { 
-    total: number; 
-    bySeverity: Record<ErrorSeverity, number>;
-    fatalCount: number;
-    handledCount: number;
-  } {
-    const stats = {
-      total: this.errors.length,
-      bySeverity: {
-        low: 0,
-        medium: 0,
-        high: 0,
-        critical: 0
-      },
-      fatalCount: 0,
-      handledCount: 0
-    };
-    
-    for (const error of this.errors) {
-      stats.bySeverity[error.severity]++;
-      
-      if (error.isFatal) {
-        stats.fatalCount++;
-      }
-      
-      if (error.isHandled) {
-        stats.handledCount++;
-      }
-    }
-    
-    return stats;
-  }
-  
-  /**
-   * Export errors to JSON
-   */
-  public exportToJson(): string {
-    return JSON.stringify({
-      errors: this.errors,
-      stats: this.getStats(),
-      timestamp: new Date().toISOString()
-    }, null, 2);
+    this.errorsLog = [];
+    this.errorCount = 0;
   }
 }
 
-export const errorTracker = ErrorTracker.getInstance();
-
-/**
- * HOC for tracking errors in React components
- */
+// HOC for wrapping components with error tracking
 export function withErrorTracking<P extends object>(
   Component: React.ComponentType<P>,
-  componentName: string
+  componentName?: string
 ): React.FC<P> {
-  const tracker = ErrorTracker.getInstance();
   const displayName = componentName || Component.displayName || Component.name || 'UnknownComponent';
-  
-  const WrappedComponent: React.FC<P> = (props) => {
+
+  const WithErrorTracking: React.FC<P> = (props) => {
     try {
       return <Component {...props} />;
     } catch (error) {
-      tracker.trackError(
+      // Track the error
+      errorTracker.trackError(
         error instanceof Error ? error : new Error(String(error)),
         'high',
         { props },
         displayName
       );
-      
+
+      // Render fallback
       return (
-        <div className="error-boundary">
-          <p>Something went wrong in {displayName}.</p>
+        <div className="error-boundary p-4 bg-red-50 border border-red-200 rounded">
+          <h3 className="text-red-700 font-medium">Component Error</h3>
+          <p className="text-red-600">{displayName} encountered an error</p>
         </div>
       );
     }
   };
-  
-  WrappedComponent.displayName = `WithErrorTracking(${displayName})`;
-  
-  return WrappedComponent;
+
+  WithErrorTracking.displayName = `WithErrorTracking(${displayName})`;
+  return WithErrorTracking;
 }
+
+// Export singleton instance
+export const errorTracker = ErrorTracker.getInstance();

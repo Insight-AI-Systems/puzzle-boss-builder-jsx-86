@@ -155,7 +155,7 @@ export function UserManagement() {
         <UsersTable 
           users={filteredUsers || []}
           currentUserRole={user?.role as UserRole || 'player'}
-          currentUserEmail={user?.email}
+          currentUserEmail={user?.email || ''}
           onRoleChange={handleRoleChange}
           onSortByRole={() => {}}
           onSortByLastLogin={() => {}}

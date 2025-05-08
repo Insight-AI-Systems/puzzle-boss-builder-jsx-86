@@ -1,346 +1,458 @@
-
 /**
- * User activity monitoring for tracking user interactions
+ * User activity monitoring service
+ * Tracks user interactions and behaviors
  */
 
 import React from 'react';
 import { debugLog, DebugLevel } from '@/utils/debug';
 
-// Types
-interface UserActivityEvent {
+// Configuration interface
+interface ActivityConfig {
+  trackClicks?: boolean;
+  trackPageViews?: boolean;
+  trackErrors?: boolean;
+  trackFormInteractions?: boolean;
+  sampleRate?: number;
+}
+
+// Event data interface
+interface ActivityEvent {
   type: string;
   timestamp: number;
-  page: string;
-  metadata?: Record<string, any>;
+  data?: Record<string, any>;
 }
 
-interface ActivityStats {
-  totalEvents: number;
-  pageViews: number;
-  clicks: number;
-  formSubmissions: number;
-  errors: number;
-  customEvents: number;
-}
+// Default configuration
+const DEFAULT_CONFIG: ActivityConfig = {
+  trackClicks: true,
+  trackPageViews: true,
+  trackErrors: true,
+  trackFormInteractions: false,
+  sampleRate: 0.1, // 10% of events by default (to avoid too much data)
+};
 
-interface UserActivityConfig {
-  trackClicks: boolean;
-  trackPageViews: boolean;
-  trackErrors: boolean;
-  trackFormInteractions: boolean;
-  sampleRate: number; // 0.0 to 1.0
-}
-
+/**
+ * User Activity Monitor singleton class
+ */
 class UserActivityMonitor {
   private static instance: UserActivityMonitor;
-  private events: UserActivityEvent[] = [];
-  private maxEvents = 1000;
-  private config: UserActivityConfig = {
-    trackClicks: true,
-    trackPageViews: true,
-    trackErrors: true,
-    trackFormInteractions: false,
-    sampleRate: 1.0,
-  };
-  private clickListener: ((e: MouseEvent) => void) | null = null;
-  private formListener: ((e: Event) => void) | null = null;
-  private errorListener: ((e: ErrorEvent) => void) | null = null;
-  private currentPage: string = '';
-
-  private constructor() {
+  private config: ActivityConfig;
+  private events: ActivityEvent[] = [];
+  private initialized: boolean = false;
+  private clickHandler: ((e: MouseEvent) => void) | null = null;
+  private errorHandler: ((e: ErrorEvent) => void) | null = null;
+  private formSubmitHandler: ((e: SubmitEvent) => void) | null = null;
+  private pageViewTimer: any = null;
+  
+  private constructor(config: Partial<ActivityConfig> = {}) {
+    this.config = { ...DEFAULT_CONFIG, ...config };
+    
     if (typeof window !== 'undefined') {
-      this.currentPage = window.location.pathname;
-      this.setupListeners();
+      this.initialize();
     }
   }
-
+  
   /**
-   * Get singleton instance of UserActivityMonitor
+   * Get singleton instance
    */
-  public static getInstance(): UserActivityMonitor {
+  public static getInstance(config?: Partial<ActivityConfig>): UserActivityMonitor {
     if (!UserActivityMonitor.instance) {
-      UserActivityMonitor.instance = new UserActivityMonitor();
+      UserActivityMonitor.instance = new UserActivityMonitor(config);
+    } else if (config) {
+      UserActivityMonitor.instance.configure(config);
     }
     return UserActivityMonitor.instance;
   }
-
+  
   /**
-   * Configure the user activity monitor
+   * Initialize the user activity monitoring
    */
-  public configure(config: Partial<UserActivityConfig>): void {
-    this.config = { ...this.config, ...config };
-    this.removeListeners();
-    this.setupListeners();
-  }
-
-  /**
-   * Set up event listeners
-   */
-  private setupListeners(): void {
-    if (typeof window === 'undefined') return;
-
-    // Page view tracking
-    if (this.config.trackPageViews) {
-      // Check if URL has changed since last check
-      const recordPageView = () => {
-        const currentPage = window.location.pathname;
-        if (currentPage !== this.currentPage) {
-          this.currentPage = currentPage;
-          this.trackEvent('pageview', {
-            url: window.location.href,
-            referrer: document.referrer || '',
-            title: document.title,
-          });
-        }
-      };
-
-      // Record initial pageview
-      recordPageView();
-
-      // Listen for route changes in single-page apps
-      const originalPushState = history.pushState;
-      history.pushState = function(...args) {
-        originalPushState.apply(this, args);
-        recordPageView();
-      };
-
-      window.addEventListener('popstate', recordPageView);
+  private initialize(): void {
+    if (this.initialized || typeof window === 'undefined') {
+      return;
     }
-
-    // Click tracking
-    if (this.config.trackClicks) {
-      this.clickListener = (e: MouseEvent) => {
-        if (Math.random() > this.config.sampleRate) return; // Sample based on rate
-
-        // Only track specific elements
-        const target = e.target as HTMLElement;
-        if (!target) return;
-
-        // Get element information
-        const tagName = target.tagName.toLowerCase();
-        const id = target.id;
-        const classNames = target.className instanceof SVGAnimatedString 
-          ? target.className.baseVal 
-          : target.className;
-          
-        // Additional useful attributes
-        const href = 'href' in target ? (target as HTMLAnchorElement).href : '';
-        const text = target.textContent?.trim().substring(0, 50) || '';
+    
+    try {
+      // Setup page view tracking
+      if (this.config.trackPageViews) {
+        this.trackPageView();
         
-        // Identify the element for tracking
-        let elementIdentifier = '';
-        if (id) {
-          elementIdentifier = `#${id}`;
-        } else if (classNames) {
-          elementIdentifier = `.${classNames.split(' ').join('.')}`;
-        } else {
-          elementIdentifier = tagName;
-        }
-
-        this.trackEvent('click', {
-          element: elementIdentifier,
-          tagName,
-          id,
-          class: classNames,
-          href,
-          text,
-          x: e.clientX,
-          y: e.clientY,
-        });
-      };
-
-      window.addEventListener('click', this.clickListener);
-    }
-
-    // Form interaction tracking
-    if (this.config.trackFormInteractions) {
-      this.formListener = (e: Event) => {
-        if (Math.random() > this.config.sampleRate) return; // Sample based on rate
-
-        const target = e.target as HTMLFormElement;
-        if (!target || target.tagName.toLowerCase() !== 'form') return;
+        // Track when URL changes for SPAs
+        window.addEventListener('popstate', () => this.trackPageView());
         
-        // Don't track password forms or forms with sensitive classes
-        if (
-          target.querySelector('input[type="password"]') ||
-          target.classList.contains('sensitive') ||
-          target.classList.contains('private')
-        ) {
-          this.trackEvent('form_submit', {
-            formId: target.id || 'unknown',
-            formAction: target.action || 'none',
-            hasSensitiveData: true,
-          });
-          return;
-        }
-        
-        // For non-sensitive forms, collect field names (but not values)
-        const fields: string[] = [];
-        target.querySelectorAll('input, select, textarea').forEach(field => {
-          if (field instanceof HTMLElement) {
-            const name = field.getAttribute('name') || field.id || field.className;
-            if (name && !field.classList.contains('sensitive')) {
-              fields.push(name);
-            }
+        // Check for URL changes periodically (for SPAs that don't use History API)
+        let lastUrl = window.location.href;
+        this.pageViewTimer = setInterval(() => {
+          const currentUrl = window.location.href;
+          if (currentUrl !== lastUrl) {
+            lastUrl = currentUrl;
+            this.trackPageView();
           }
-        });
-
-        this.trackEvent('form_submit', {
-          formId: target.id || 'unknown',
-          formAction: target.action || 'none',
-          fields,
-        });
-      };
-
-      window.addEventListener('submit', this.formListener);
-    }
-
-    // Error tracking
-    if (this.config.trackErrors) {
-      this.errorListener = (e: ErrorEvent) => {
-        if (Math.random() > this.config.sampleRate) return; // Sample based on rate
-
-        this.trackEvent('js_error', {
-          message: e.message,
-          filename: e.filename,
-          lineno: e.lineno,
-          colno: e.colno,
-        });
-      };
-
-      window.addEventListener('error', this.errorListener);
+        }, 2000);
+      }
+      
+      // Setup click tracking
+      if (this.config.trackClicks) {
+        this.clickHandler = this.handleClick.bind(this);
+        document.body.addEventListener('click', this.clickHandler);
+      }
+      
+      // Setup error tracking
+      if (this.config.trackErrors) {
+        this.errorHandler = this.handleError.bind(this);
+        window.addEventListener('error', this.errorHandler);
+      }
+      
+      // Setup form interaction tracking
+      if (this.config.trackFormInteractions) {
+        this.formSubmitHandler = this.handleFormSubmit.bind(this);
+        document.body.addEventListener('submit', this.formSubmitHandler);
+      }
+      
+      this.initialized = true;
+      debugLog('UserActivityMonitor', 'User activity monitoring initialized', DebugLevel.INFO);
+    } catch (err) {
+      debugLog('UserActivityMonitor', 'Error initializing user activity monitoring', DebugLevel.ERROR, { error: err });
     }
   }
-
+  
   /**
-   * Remove event listeners
+   * Update configuration
    */
-  private removeListeners(): void {
-    if (typeof window === 'undefined') return;
-
-    if (this.clickListener) {
-      window.removeEventListener('click', this.clickListener);
-      this.clickListener = null;
+  public configure(config: Partial<ActivityConfig>): void {
+    const previousConfig = { ...this.config };
+    this.config = { ...this.config, ...config };
+    
+    // If not previously initialized, initialize now
+    if (!this.initialized && typeof window !== 'undefined') {
+      return this.initialize();
     }
-
-    if (this.formListener) {
-      window.removeEventListener('submit', this.formListener);
-      this.formListener = null;
-    }
-
-    if (this.errorListener) {
-      window.removeEventListener('error', this.errorListener);
-      this.errorListener = null;
+    
+    // Update event listeners based on configuration changes
+    if (typeof window !== 'undefined') {
+      // Click tracking
+      if (previousConfig.trackClicks !== this.config.trackClicks) {
+        if (this.config.trackClicks) {
+          this.clickHandler = this.handleClick.bind(this);
+          document.body.addEventListener('click', this.clickHandler);
+        } else if (this.clickHandler) {
+          document.body.removeEventListener('click', this.clickHandler);
+          this.clickHandler = null;
+        }
+      }
+      
+      // Error tracking
+      if (previousConfig.trackErrors !== this.config.trackErrors) {
+        if (this.config.trackErrors) {
+          this.errorHandler = this.handleError.bind(this);
+          window.addEventListener('error', this.errorHandler);
+        } else if (this.errorHandler) {
+          window.removeEventListener('error', this.errorHandler);
+          this.errorHandler = null;
+        }
+      }
+      
+      // Form interaction tracking
+      if (previousConfig.trackFormInteractions !== this.config.trackFormInteractions) {
+        if (this.config.trackFormInteractions) {
+          this.formSubmitHandler = this.handleFormSubmit.bind(this);
+          document.body.addEventListener('submit', this.formSubmitHandler);
+        } else if (this.formSubmitHandler) {
+          document.body.removeEventListener('submit', this.formSubmitHandler);
+          this.formSubmitHandler = null;
+        }
+      }
+      
+      // Page view tracking
+      if (previousConfig.trackPageViews !== this.config.trackPageViews) {
+        if (this.config.trackPageViews) {
+          this.trackPageView();
+          window.addEventListener('popstate', () => this.trackPageView());
+          
+          // Setup URL change detection
+          let lastUrl = window.location.href;
+          this.pageViewTimer = setInterval(() => {
+            const currentUrl = window.location.href;
+            if (currentUrl !== lastUrl) {
+              lastUrl = currentUrl;
+              this.trackPageView();
+            }
+          }, 2000);
+        } else {
+          window.removeEventListener('popstate', () => this.trackPageView());
+          if (this.pageViewTimer) {
+            clearInterval(this.pageViewTimer);
+            this.pageViewTimer = null;
+          }
+        }
+      }
     }
   }
-
+  
+  /**
+   * Handle click events
+   */
+  private handleClick(e: MouseEvent): void {
+    // Apply sampling rate
+    if (Math.random() > (this.config.sampleRate || 1)) return;
+    
+    try {
+      // Ignore clicks that aren't on elements
+      if (!(e.target instanceof Element)) return;
+      
+      const target = e.target;
+      const tagName = target.tagName.toLowerCase();
+      
+      // Track more information for interactive elements
+      let elementType = tagName;
+      let elementId = target.id || undefined;
+      let elementClass = target.className && typeof target.className === 'string' ? target.className : undefined;
+      let elementText = target.textContent ? target.textContent.trim().substring(0, 50) : undefined;
+      let elementHref: string | undefined;
+      
+      // Get href for links
+      if (tagName === 'a') {
+        elementHref = (target as HTMLAnchorElement).href;
+      }
+      
+      // Get label text for buttons
+      if (tagName === 'button') {
+        const ariaLabel = target.getAttribute('aria-label');
+        if (ariaLabel) elementText = ariaLabel;
+      }
+      
+      // Look for interactive parent element if the target itself isn't interesting
+      if (!['a', 'button', 'input', 'select', 'textarea'].includes(tagName)) {
+        let parentElement = target.closest('a, button, [role="button"], .clickable');
+        if (parentElement) {
+          elementType = `${tagName}-with-parent-${parentElement.tagName.toLowerCase()}`;
+          elementId = parentElement.id || elementId;
+          elementClass = parentElement.className && typeof parentElement.className === 'string' 
+            ? parentElement.className 
+            : elementClass;
+          
+          if (parentElement.tagName.toLowerCase() === 'a') {
+            elementHref = (parentElement as HTMLAnchorElement).href;
+          }
+        }
+      }
+      
+      this.trackEvent('click', {
+        elementType,
+        elementId,
+        elementClass,
+        elementText,
+        elementHref,
+        x: e.clientX,
+        y: e.clientY,
+        page: window.location.pathname
+      });
+      
+    } catch (err) {
+      debugLog('UserActivityMonitor', 'Error handling click event', DebugLevel.ERROR, { error: err });
+    }
+  }
+  
+  /**
+   * Handle error events
+   */
+  private handleError(e: ErrorEvent): void {
+    // Apply sampling rate
+    if (Math.random() > (this.config.sampleRate || 1)) return;
+    
+    try {
+      this.trackEvent('error', {
+        message: e.message,
+        filename: e.filename,
+        lineno: e.lineno,
+        colno: e.colno,
+        page: window.location.pathname
+      });
+    } catch (err) {
+      debugLog('UserActivityMonitor', 'Error handling error event', DebugLevel.ERROR, { error: err });
+    }
+  }
+  
+  /**
+   * Handle form submission events
+   */
+  private handleFormSubmit(e: SubmitEvent): void {
+    // Apply sampling rate
+    if (Math.random() > (this.config.sampleRate || 1)) return;
+    
+    try {
+      if (!(e.target instanceof HTMLFormElement)) return;
+      
+      const form = e.target;
+      const formId = form.id || undefined;
+      const formAction = form.action || undefined;
+      const formMethod = form.method || undefined;
+      
+      // Get form element types but no values for privacy
+      const formElements = Array.from(form.elements).map((element) => {
+        if (element instanceof HTMLInputElement) {
+          return {
+            type: element.type,
+            name: element.name || undefined,
+            // Don't track actual values for privacy reasons
+            hasValue: element.value.length > 0
+          };
+        }
+        return {
+          type: element.tagName.toLowerCase(),
+          name: (element as HTMLElement).getAttribute('name') || undefined
+        };
+      });
+      
+      this.trackEvent('form_submit', {
+        formId,
+        formAction,
+        formMethod,
+        elementCount: formElements.length,
+        page: window.location.pathname
+      });
+    } catch (err) {
+      debugLog('UserActivityMonitor', 'Error handling form submit event', DebugLevel.ERROR, { error: err });
+    }
+  }
+  
+  /**
+   * Track page view
+   */
+  private trackPageView(): void {
+    // Apply sampling rate
+    if (Math.random() > (this.config.sampleRate || 1)) return;
+    
+    try {
+      const url = window.location.href;
+      const path = window.location.pathname;
+      const referrer = document.referrer;
+      const title = document.title;
+      
+      this.trackEvent('page_view', {
+        url,
+        path,
+        referrer,
+        title
+      });
+    } catch (err) {
+      debugLog('UserActivityMonitor', 'Error tracking page view', DebugLevel.ERROR, { error: err });
+    }
+  }
+  
   /**
    * Track a custom event
    */
-  public trackEvent(type: string, metadata?: Record<string, any>): void {
-    if (Math.random() > this.config.sampleRate) return; // Sample based on rate
-
-    const event: UserActivityEvent = {
-      type,
-      timestamp: Date.now(),
-      page: typeof window !== 'undefined' ? window.location.pathname : '',
-      metadata,
-    };
-
-    this.events.push(event);
+  public trackEvent(eventType: string, data?: Record<string, any>): void {
+    // Apply sampling rate for custom events
+    if (Math.random() > (this.config.sampleRate || 1)) return;
     
-    // Prevent the array from growing too large
-    if (this.events.length > this.maxEvents) {
-      this.events = this.events.slice(-this.maxEvents);
-    }
-    
-    // Debug log for development
-    if (process.env.NODE_ENV === 'development') {
-      debugLog('UserActivityMonitor', `Event: ${type}`, DebugLevel.DEBUG, metadata);
+    try {
+      const event: ActivityEvent = {
+        type: eventType,
+        timestamp: Date.now(),
+        data
+      };
+      
+      this.events.push(event);
+      
+      // Keep events array from growing too large
+      if (this.events.length > 1000) {
+        this.events = this.events.slice(-1000);
+      }
+      
+      // Send event to server asynchronously
+      // this.sendEventToAnalytics(event);
+      
+      debugLog('UserActivityMonitor', `Tracked event: ${eventType}`, DebugLevel.DEBUG, data);
+    } catch (err) {
+      debugLog('UserActivityMonitor', 'Error tracking event', DebugLevel.ERROR, { error: err, eventType });
     }
   }
-
+  
   /**
-   * Get all tracked events
+   * Get recent events
    */
-  public getEvents(eventType?: string): UserActivityEvent[] {
+  public getRecentEvents(limit = 100, eventType?: string): ActivityEvent[] {
+    let filteredEvents = this.events;
+    
     if (eventType) {
-      return this.events.filter(e => e.type === eventType);
+      filteredEvents = filteredEvents.filter(event => event.type === eventType);
     }
-    return [...this.events];
-  }
-
-  /**
-   * Get a summary of user activity
-   */
-  public getSummary(): ActivityStats {
-    const stats: ActivityStats = {
-      totalEvents: this.events.length,
-      pageViews: this.events.filter(e => e.type === 'pageview').length,
-      clicks: this.events.filter(e => e.type === 'click').length,
-      formSubmissions: this.events.filter(e => e.type === 'form_submit').length,
-      errors: this.events.filter(e => e.type === 'js_error').length,
-      customEvents: this.events.filter(e => 
-        !['pageview', 'click', 'form_submit', 'js_error'].includes(e.type)
-      ).length,
-    };
     
-    return stats;
+    return filteredEvents.slice(-limit).reverse();
   }
-
+  
   /**
-   * Clear all tracked events
+   * Get summary of tracked events
+   */
+  public getSummary() {
+    // Count event types
+    const eventCounts = this.events.reduce((acc, event) => {
+      const { type } = event;
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Get most recent events by type
+    const recentEventsByType: Record<string, ActivityEvent | null> = {};
+    Object.keys(eventCounts).forEach(type => {
+      const event = [...this.events]
+        .filter(e => e.type === type)
+        .sort((a, b) => b.timestamp - a.timestamp)[0];
+      recentEventsByType[type] = event || null;
+    });
+    
+    return {
+      totalEvents: this.events.length,
+      eventCounts,
+      recentEventsByType
+    };
+  }
+  
+  /**
+   * Clear all events
    */
   public clearEvents(): void {
     this.events = [];
   }
-
-  /**
-   * Get events for a particular page
-   */
-  public getPageEvents(page: string): UserActivityEvent[] {
-    return this.events.filter(e => e.page === page);
-  }
 }
 
+// Export singleton instance
 export const userActivityMonitor = UserActivityMonitor.getInstance();
 
 /**
- * React hook for tracking page views
+ * HOC that wraps a component with user activity tracking
  */
-export function usePageViewTracking(pageName?: string): void {
-  React.useEffect(() => {
-    // Use the provided page name or get from URL
-    const page = pageName || (typeof window !== 'undefined' ? window.location.pathname : '');
-    
-    // Track page view
-    userActivityMonitor.trackEvent('pageview', {
-      page,
-      title: typeof document !== 'undefined' ? document.title : '',
-      timestamp: Date.now(),
-    });
-    
-    // Cleanup not needed as we want to record the view
-  }, [pageName]);
-}
-
-/**
- * React hook for tracking component mount/unmount
- */
-export function useComponentTracking(componentName: string): void {
-  React.useEffect(() => {
-    // Track component mount
-    userActivityMonitor.trackEvent('component_mount', {
-      component: componentName,
-      timestamp: Date.now(),
-    });
-    
-    return () => {
-      // Track component unmount
-      userActivityMonitor.trackEvent('component_unmount', {
-        component: componentName,
-        timestamp: Date.now(),
+export function withActivityTracking<P extends object>(
+  Component: React.ComponentType<P>,
+  componentName?: string,
+  trackProps: boolean = false
+): React.FC<P> {
+  const displayName = componentName || Component.displayName || Component.name || 'UnknownComponent';
+  
+  const WithActivityTracking: React.FC<P> = (props) => {
+    React.useEffect(() => {
+      // Track component mount
+      userActivityMonitor.trackEvent('component_mount', {
+        component: displayName,
+        props: trackProps ? Object.keys(props) : undefined,
+        timestamp: Date.now()
       });
-    };
-  }, [componentName]);
+      
+      // Track component unmount
+      return () => {
+        userActivityMonitor.trackEvent('component_unmount', {
+          component: displayName,
+          duration: Date.now() - (Date.now() - 100), // Approximate duration
+          timestamp: Date.now()
+        });
+      };
+    }, []);
+    
+    return <Component {...props} />;
+  };
+  
+  WithActivityTracking.displayName = `WithActivityTracking(${displayName})`;
+  return WithActivityTracking;
 }

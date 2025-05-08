@@ -43,7 +43,7 @@ export function UsersTable({
           selectionEnabled={selectionEnabled}
           onSelectAll={onSelectAll}
           onSortByRole={onSortByRole}
-          onSortByLastLogin={() => onSortByLastLogin?.()}
+          onSortByLastLogin={onSortByLastLogin ? onSortByLastLogin : () => {}}
           lastLoginSortDirection={lastLoginSortDirection}
         />
         <TableBody>

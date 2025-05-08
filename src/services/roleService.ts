@@ -42,8 +42,8 @@ export class RoleService {
     try {
       debugLog('RoleService', `Updating role for user ${userId} to ${newRole}`, DebugLevel.INFO);
       
-      // Load toast notification indicator
-      const loadingToastId = toast({
+      // Show loading toast
+      toast({
         title: 'Updating user role...',
         description: `Changing role to ${newRole}`,
         variant: 'default',
@@ -63,7 +63,7 @@ export class RoleService {
           // Handle error from the edge function
           debugLog('RoleService', `Edge function error: ${error.message}`, DebugLevel.ERROR);
           
-          // Dismiss loading toast
+          // Show error toast
           toast({
             title: 'Error updating role',
             description: error.message,
@@ -78,7 +78,7 @@ export class RoleService {
           const errorMsg = userResult?.error || 'Unknown error updating role';
           debugLog('RoleService', `Role update failed: ${errorMsg}`, DebugLevel.ERROR);
           
-          // Dismiss loading toast
+          // Show error toast
           toast({
             title: 'Error updating role',
             description: errorMsg,
@@ -96,7 +96,7 @@ export class RoleService {
           this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
         }
         
-        // Dismiss loading toast with success
+        // Show success toast
         toast({
             title: 'Role updated',
             description: `User's role changed to ${newRole}`,
@@ -110,7 +110,7 @@ export class RoleService {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         debugLog('RoleService', `Exception in updateUserRole: ${errorMessage}`, DebugLevel.ERROR);
         
-        // Dismiss loading toast
+        // Show error toast
         toast({
             title: 'Error updating role',
             description: errorMessage,
@@ -142,7 +142,7 @@ export class RoleService {
       debugLog('RoleService', `Bulk updating ${userIds.length} users to role ${newRole}`, DebugLevel.INFO);
       
       // Loading toast for bulk update
-      const loadingToastId = toast({
+      toast({
         title: 'Updating user roles...',
         description: `Changing ${userIds.length} users to ${newRole}`,
         variant: 'default',
@@ -160,7 +160,6 @@ export class RoleService {
         if (error) {
           debugLog('RoleService', `Edge function error in bulk update: ${error.message}`, DebugLevel.ERROR);
           
-          // Dismiss loading toast with error
           toast({
             title: 'Error updating roles',
             description: error.message,
@@ -199,7 +198,6 @@ export class RoleService {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         debugLog('RoleService', `Exception in bulkUpdateRoles: ${errorMessage}`, DebugLevel.ERROR);
         
-        // Dismiss loading toast with error
         toast({
             title: 'Error updating roles',
             description: errorMessage,

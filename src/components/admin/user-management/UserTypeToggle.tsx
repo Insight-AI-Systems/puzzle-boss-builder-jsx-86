@@ -1,39 +1,33 @@
 
 import React from 'react';
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Users, Shield } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Shield, User } from "lucide-react";
 
 interface UserTypeToggleProps {
   value: 'regular' | 'admin';
-  onChange: (value: 'regular' | 'admin') => void;
+  onChange: (userType: 'regular' | 'admin') => void;
 }
 
 export function UserTypeToggle({ value, onChange }: UserTypeToggleProps) {
   return (
-    <div className="flex justify-center mb-6">
-      <ToggleGroup
-        type="single"
-        value={value}
-        onValueChange={(val) => {
-          if (val) onChange(val as 'regular' | 'admin');
-        }}
-        className="border rounded-lg p-1"
+    <div className="mb-6">
+      <Tabs 
+        defaultValue="regular" 
+        value={value} 
+        onValueChange={(newValue) => onChange(newValue as 'regular' | 'admin')}
+        className="w-full"
       >
-        <ToggleGroupItem
-          value="regular"
-          className="flex items-center gap-1 px-4 rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-        >
-          <Users className="h-4 w-4" />
-          Regular Users
-        </ToggleGroupItem>
-        <ToggleGroupItem
-          value="admin"
-          className="flex items-center gap-1 px-4 rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-        >
-          <Shield className="h-4 w-4" />
-          Admin Users
-        </ToggleGroupItem>
-      </ToggleGroup>
+        <TabsList className="grid w-full grid-cols-2 mb-2">
+          <TabsTrigger value="regular" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            <span className="md:block">Regular Users</span>
+          </TabsTrigger>
+          <TabsTrigger value="admin" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            <span className="md:block">Admins & Managers</span>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
     </div>
   );
 }

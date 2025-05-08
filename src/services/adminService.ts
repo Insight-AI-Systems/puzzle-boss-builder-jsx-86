@@ -29,7 +29,8 @@ class AdminService {
    * Check if an email is the protected admin
    */
   public isProtectedAdminEmail(email?: string | null): boolean {
-    return email === PROTECTED_ADMIN_EMAIL;
+    if (!email) return false;
+    return email.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase();
   }
 
   /**

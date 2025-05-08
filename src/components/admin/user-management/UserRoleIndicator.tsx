@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { Badge } from "@/components/ui/badge";
-import { Shield, Star, Users, Image, BarChart4, Landmark } from "lucide-react";
+import { Badge } from '@/components/ui/badge';
+import { Shield, Crown, User, UserCog, PieChart, Users, Building2 } from 'lucide-react';
 import { UserRole } from '@/types/userTypes';
-import { PROTECTED_ADMIN_EMAIL } from '@/utils/constants';
+import { isProtectedAdmin } from '@/utils/constants';
 
 interface UserRoleIndicatorProps {
   role: UserRole;
@@ -11,95 +11,65 @@ interface UserRoleIndicatorProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-/**
- * Component to display a user's role with appropriate visual indicators
- */
-export const UserRoleIndicator: React.FC<UserRoleIndicatorProps> = ({
-  role,
-  email,
-  size = 'md'
-}) => {
-  // Check for protected admin status
-  const isProtectedAdmin = email === PROTECTED_ADMIN_EMAIL;
-  
-  // Configure styles based on size
-  const iconSizes = {
-    sm: "h-3 w-3 mr-1",
-    md: "h-4 w-4 mr-1.5",
-    lg: "h-5 w-5 mr-2"
+export function UserRoleIndicator({ role, email, size = 'md' }: UserRoleIndicatorProps) {
+  // Icon mappings
+  const iconMap = {
+    'super_admin': Crown,
+    'admin': Shield,
+    'category_manager': PieChart,
+    'social_media_manager': Users,
+    'partner_manager': Building2,
+    'cfo': UserCog,
+    'player': User
   };
   
-  const textSizes = {
-    sm: "text-xs",
-    md: "text-sm",
-    lg: "text-base"
+  // Color mappings
+  const colorMap = {
+    'super_admin': 'bg-red-500 hover:bg-red-600',
+    'admin': 'bg-amber-500 hover:bg-amber-600',
+    'category_manager': 'bg-blue-500 hover:bg-blue-600',
+    'social_media_manager': 'bg-green-500 hover:bg-green-600',
+    'partner_manager': 'bg-purple-500 hover:bg-purple-600',
+    'cfo': 'bg-emerald-500 hover:bg-emerald-600',
+    'player': 'bg-gray-500 hover:bg-gray-600'
   };
   
-  // For the badge itself
-  const badgeSizes = {
-    sm: "px-1.5 py-0.5 gap-0.5",
-    md: "px-2.5 py-1 gap-1",
-    lg: "px-3 py-1.5 gap-1.5"
+  // Badge text
+  const badgeText = {
+    'super_admin': 'Super Admin',
+    'admin': 'Admin',
+    'category_manager': 'Category Mgr',
+    'social_media_manager': 'Social Media',
+    'partner_manager': 'Partner Mgr',
+    'cfo': 'CFO',
+    'player': 'Player'
   };
   
-  // Get role configuration based on role type
-  const getRoleConfig = () => {
-    const baseClasses = `inline-flex items-center ${badgeSizes[size]}`;
-    
-    switch(role) {
-      case 'super_admin':
-        return {
-          classes: `${baseClasses} bg-red-600 hover:bg-red-700`,
-          icon: <Shield className={iconSizes[size]} />,
-          label: isProtectedAdmin ? 'Protected Admin' : 'Super Admin'
-        };
-      case 'admin':
-        return {
-          classes: `${baseClasses} bg-amber-600 hover:bg-amber-700`,
-          icon: <Star className={iconSizes[size]} />,
-          label: 'Admin'
-        };
-      case 'category_manager':
-        return {
-          classes: `${baseClasses} bg-blue-600 hover:bg-blue-700`,
-          icon: <Image className={iconSizes[size]} />,
-          label: 'Category Manager'
-        };
-      case 'social_media_manager':
-        return {
-          classes: `${baseClasses} bg-purple-600 hover:bg-purple-700`,
-          icon: <Users className={iconSizes[size]} />,
-          label: 'Social Media'
-        };
-      case 'partner_manager':
-        return {
-          classes: `${baseClasses} bg-green-600 hover:bg-green-700`,
-          icon: <Users className={iconSizes[size]} />,
-          label: 'Partner Manager'
-        };
-      case 'cfo':
-        return {
-          classes: `${baseClasses} bg-teal-600 hover:bg-teal-700`,
-          icon: <Landmark className={iconSizes[size]} />,
-          label: 'CFO'
-        };
-      default:
-        return {
-          classes: `${baseClasses} bg-gray-600 hover:bg-gray-700`,
-          icon: <Users className={iconSizes[size]} />,
-          label: 'Player'
-        };
-    }
-  };
+  // Determine if this is the protected admin
+  const isProtectedAdminUser = isProtectedAdmin(email);
   
-  const { classes, icon, label } = getRoleConfig();
+  // Get the correct icon component
+  const IconComponent = iconMap[role] || User;
   
-  return (
-    <Badge className={classes} variant="outline">
-      {icon}
-      <span className={textSizes[size]}>
-        {label}
+  // For the smallest size, just show the icon
+  if (size === 'sm') {
+    return (
+      <span className="inline-flex items-center">
+        <IconComponent 
+          className={`h-4 w-4 ${isProtectedAdminUser ? 'text-red-500' : ''}`} 
+        />
       </span>
+    );
+  }
+  
+  // Default rendering (md, lg)
+  return (
+    <Badge 
+      className={`gap-1 ${isProtectedAdminUser ? 'bg-red-500 hover:bg-red-600' : colorMap[role]}`}
+    >
+      <IconComponent className="h-3 w-3" />
+      <span>{badgeText[role]}</span>
+      {isProtectedAdminUser && <span className="text-xs">★</span>}
     </Badge>
   );
-};
+}
