@@ -1,261 +1,155 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { corsHeaders } from "../_shared/cors.ts";
-import { successResponse, errorResponse, forbiddenResponse, validationErrorResponse } from "../_shared/response.ts";
-import { validateRequiredFields, isValidUuid } from "../_shared/validation.ts";
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { corsHeaders } from '../_shared/cors.ts';
+import { successResponse, errorResponse, forbiddenResponse } from '../_shared/response.ts';
+import { validateRequiredFields, isValidUuid } from '../_shared/validation.ts';
 
-// Valid roles that can be assigned
-const VALID_ROLES = ["super_admin", "admin", "category_manager", "social_media_manager", "partner_manager", "cfo", "player"];
+type UserRole = 'super_admin' | 'admin' | 'category_manager' | 'social_media_manager' | 'partner_manager' | 'cfo' | 'player';
 
-// Rate limiting state (in production, use a persistent store)
-const rateLimitState: Record<string, { count: number; resetTime: number }> = {};
-
-// Check if request is rate limited
-function isRateLimited(identifier: string, maxRequests = 10, windowMs = 60000): boolean {
-  const now = Date.now();
-  const state = rateLimitState[identifier] || { count: 0, resetTime: now + windowMs };
-  
-  // Reset counter if window expired
-  if (now > state.resetTime) {
-    state.count = 1;
-    state.resetTime = now + windowMs;
-    rateLimitState[identifier] = state;
-    return false;
+// Create a Supabase client with the Auth context of the function
+const supabaseClient = createClient(
+  // Supabase API URL - env var exported by default.
+  Deno.env.get('SUPABASE_URL') ?? '',
+  // Supabase API ANON KEY - env var exported by default.
+  Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+  // Create client with Auth context of the user that called the function.
+  {
+    global: {
+      headers: { Authorization: req.headers.get('Authorization')! },
+    },
   }
-  
-  // Increment and check
-  state.count++;
-  rateLimitState[identifier] = state;
-  return state.count > maxRequests;
-}
+);
 
-// Fetch protected admin emails from security-config-service
-async function getProtectedAdminEmails(supabaseAdmin: any): Promise<string[]> {
-  try {
-    // Call the security-config-service to get protected admin emails
-    const { data, error } = await supabaseAdmin.functions.invoke('security-config-service', {
-      body: {
-        action: 'getAdminEmails'
-      }
-    });
-    
-    if (error) {
-      console.error('Error fetching protected admin emails:', error);
-      return ['alan@insight-ai-systems.com']; // Fallback to hardcoded value for safety
-    }
-    
-    return data.adminEmails || ['alan@insight-ai-systems.com'];
-  } catch (err) {
-    console.error('Exception fetching protected admin emails:', err);
-    return ['alan@insight-ai-systems.com']; // Fallback to hardcoded value for safety
-  }
-}
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Create a Supabase client with the Admin API key for full access
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    );
+    // Get the authorized user from the request
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseClient.auth.getUser();
 
-    // Extract auth token from request
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return errorResponse("No authorization header provided", "unauthorized", 401);
+    if (authError || !user) {
+      return forbiddenResponse('Unauthorized access');
     }
 
-    // Get JWT token from header and verify user
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (userError || !user) {
-      return errorResponse("Unauthorized - invalid token", "unauthorized", 401);
-    }
-
-    // Rate limiting check (using IP and user ID)
-    const clientIp = req.headers.get("x-forwarded-for") || "unknown";
-    const rateLimitKey = `role-update:${user.id}:${clientIp}`;
-    
-    if (isRateLimited(rateLimitKey)) {
-      return errorResponse("Too many requests, please try again later", "rate_limit_exceeded", 429);
-    }
-
-    // Log user trying to perform action
-    console.log(`User ${user.id} (${user.email}) attempting to update roles`);
-
-    // Fetch protected admin emails
-    const protectedAdminEmails = await getProtectedAdminEmails(supabaseAdmin);
-
-    // Check if user is super_admin or in protected emails list
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
+    // Check if the user has admin privileges
+    const { data: userProfile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
       .single();
 
-    if (profileError || !profile) {
-      return errorResponse("Unauthorized - profile not found", "profile_not_found", 403);
+    if (profileError || !userProfile) {
+      return forbiddenResponse('Unable to verify user role');
     }
 
-    // Special case for protected admin emails
-    const isProtectedAdminEmail = protectedAdminEmails.includes(user.email || '');
-    const isSuperAdmin = profile.role === "super_admin" || isProtectedAdminEmail;
-    const isAdmin = isSuperAdmin || profile.role === "admin";
-
+    const isAdmin = userProfile.role === 'admin' || userProfile.role === 'super_admin';
+    
     if (!isAdmin) {
-      // Log security event
-      await supabaseAdmin.from("security_audit_logs").insert({
-        user_id: user.id,
-        event_type: "PERMISSION_DENIED",
-        ip_address: clientIp,
-        user_agent: req.headers.get("user-agent") || "unknown",
-        details: { action: "update_roles", requesterRole: profile.role },
-        severity: "warning"
-      });
-
-      return forbiddenResponse("Unauthorized - not an admin");
+      return forbiddenResponse('Only administrators can update user roles');
     }
 
-    // Validate CSRF token for sensitive operations if appropriate
-    // This implementation will depend on your CSRF protection strategy
-    const csrfToken = req.headers.get("X-CSRF-Token");
-    if (!csrfToken) {
-      // In production, this should be enforced for non-GET requests
-      console.warn("CSRF token missing but not enforced in this implementation");
-    }
+    // Get the request body
+    const requestData = await req.json();
 
-    // Parse and validate the request body
-    let requestBody;
-    try {
-      requestBody = await req.json();
-    } catch (e) {
-      return validationErrorResponse("Invalid JSON body", { body: "Could not parse JSON body" });
-    }
-    
-    const { userIds, newRole } = requestBody;
-    
     // Validate required fields
-    const validation = validateRequiredFields(requestBody, ["userIds", "newRole"]);
-    if (!validation.isValid) {
-      return validationErrorResponse("Missing required fields", 
-        validation.missingFields.reduce((acc, field) => ({...acc, [field]: "This field is required"}), {})
-      );
+    const { isValid, missingFields } = validateRequiredFields(requestData, ['userIds', 'newRole']);
+
+    if (!isValid) {
+      return errorResponse(`Missing required fields: ${missingFields.join(', ')}`, 'validation_error', 400);
     }
 
-    // Validate userIds is an array
-    if (!Array.isArray(userIds)) {
-      return validationErrorResponse("Invalid request format", { userIds: "Must be an array" });
+    const { userIds, newRole } = requestData;
+
+    // Validate user IDs
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return errorResponse('No user IDs provided or invalid format', 'validation_error', 400);
     }
+
+    // Validate all UUIDs
+    const invalidIds = userIds.filter(id => !isValidUuid(id));
+    if (invalidIds.length > 0) {
+      return errorResponse(`Invalid user IDs: ${invalidIds.join(', ')}`, 'validation_error', 400);
+    }
+
+    // Check if the new role is valid
+    const validRoles = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo', 'player'];
+    if (!validRoles.includes(newRole)) {
+      return errorResponse('Invalid role specified', 'validation_error', 400);
+    }
+
+    // Check if user is super_admin when assigning super_admin roles
+    if (newRole === 'super_admin' && userProfile.role !== 'super_admin') {
+      return forbiddenResponse('Only super admins can assign super admin roles');
+    }
+
+    // Get emails of users to be updated to check for protected admins
+    const { data: targetUsersData, error: targetUsersError } = await supabaseClient
+      .from('profiles')
+      .select('id, email')
+      .in('id', userIds);
+
+    if (targetUsersError) {
+      return errorResponse('Error fetching user data', 'database_error', 500);
+    }
+
+    // Filter out protected admins
+    const protectedAdmins = targetUsersData?.filter(user => 
+      user.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase()
+    ) || [];
     
-    // Validate that newRole is a valid role
-    if (!VALID_ROLES.includes(newRole)) {
-      return validationErrorResponse("Invalid role specified", { newRole: `Must be one of: ${VALID_ROLES.join(", ")}` });
-    }
-
-    // Only super admins can assign super_admin role
-    if (newRole === "super_admin" && !isSuperAdmin) {
-      return forbiddenResponse("Permission denied: Only super_admin can assign super_admin role");
-    }
-
-    // Update roles with upsert in case profiles don't exist yet
-    const results = [];
-    for (const userId of userIds) {
-      // Special protection for protected admins
-      const isTargetProtectedAdmin = protectedAdminEmails.some(email => 
-        email === userId || // If userIds contains email directly
-        await isUserEmailProtected(supabaseAdmin, userId, protectedAdminEmails)
-      );
-
-      if (isTargetProtectedAdmin && !isProtectedAdminEmail) {
-        results.push({
-          id: userId,
-          success: false,
-          error: "Cannot modify protected admin account",
-          data: null
-        });
-        continue;
-      }
-      
-      try {
-        const { data, error } = await supabaseAdmin
-          .from("profiles")
-          .upsert({
-            id: userId,
-            role: newRole,
-          })
-          .select("id, role");
-
-        results.push({
-          id: userId,
-          success: !error,
-          error: error ? error.message : null,
-          data
-        });
-
-        // Log success/failure
-        if (error) {
-          console.error(`Error updating role for user ${userId}:`, error);
-        } else {
-          console.log(`Successfully updated role for user ${userId} to ${newRole}`);
-          
-          // Log security audit event for successful role change
-          await supabaseAdmin.from("security_audit_logs").insert({
-            user_id: user.id,
-            event_type: "ROLE_CHANGED",
-            ip_address: clientIp,
-            user_agent: req.headers.get("user-agent") || "unknown",
-            details: { 
-              action: "update_roles",
-              target_user: userId, 
-              new_role: newRole,
-              changed_by: user.email
-            },
-            severity: "info"
-          });
-        }
-      } catch (err) {
-        console.error(`Exception updating role for user ${userId}:`, err);
-        results.push({
-          id: userId,
-          success: false, 
-          error: err.message || "Unknown error",
-          data: null
-        });
-      }
-    }
-
-    return successResponse(
-      {
-        message: `Updated ${results.filter(r => r.success).length} users to role: ${newRole}`,
-        results
-      }
+    // Remove protected admins from the list
+    const filteredUserIds = userIds.filter(id => 
+      !protectedAdmins.some(admin => admin.id === id)
     );
+    
+    if (filteredUserIds.length === 0) {
+      return errorResponse('Cannot update roles. All selected users are protected admins.', 'forbidden', 403);
+    }
+
+    // Update roles in the database
+    const { data: updateData, error: updateError } = await supabaseClient
+      .from('profiles')
+      .update({ role: newRole })
+      .in('id', filteredUserIds);
+
+    if (updateError) {
+      return errorResponse(`Error updating roles: ${updateError.message}`, 'database_error', 500);
+    }
+
+    // Log the role changes for audit
+    const auditEntries = filteredUserIds.map(targetId => ({
+      event_type: 'role_change',
+      user_id: user.id,
+      severity: 'medium',
+      details: {
+        target_user_id: targetId,
+        new_role: newRole,
+        timestamp: new Date().toISOString(),
+        source: 'bulk_update'
+      }
+    }));
+
+    await supabaseClient.from('security_audit_logs').insert(auditEntries);
+
+    // Return success response
+    return successResponse({
+      success: true, 
+      updatedCount: filteredUserIds.length,
+      message: `Successfully updated ${filteredUserIds.length} user roles to ${newRole}`,
+      skippedCount: protectedAdmins.length
+    });
+
   } catch (error) {
-    console.error("Unexpected error:", error);
-    return errorResponse(error.message || "An unexpected error occurred");
+    console.error('Error in admin-update-roles function:', error);
+    return errorResponse('Internal server error', 'server_error', 500);
   }
 });
-
-// Helper function to check if a user ID's email is in the protected admin list
-async function isUserEmailProtected(supabaseAdmin: any, userId: string, protectedEmails: string[]): Promise<boolean> {
-  try {
-    // Get the user's email from auth.users using the admin API
-    const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
-    
-    if (error || !data || !data.user || !data.user.email) {
-      return false;
-    }
-    
-    return protectedEmails.includes(data.user.email);
-  } catch (err) {
-    console.error('Error checking if user email is protected:', err);
-    return false;
-  }
-}

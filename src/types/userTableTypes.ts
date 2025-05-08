@@ -35,3 +35,32 @@ export interface UserFilterState {
   page: number;
   pageSize: number;
 }
+
+// Add the missing UserTableProps interface
+export interface UserTableProps {
+  users: UserProfile[];
+  currentUserRole: UserRole;
+  currentUserEmail: string;
+  onRoleChange: (userId: string, newRole: UserRole) => void;
+  onSortByRole?: () => void;
+  onSortByLastLogin?: () => void;
+  selectedUsers?: Set<string>;
+  onUserSelection?: (userId: string, checked: boolean) => void;
+  onSelectAll?: (selectAll: boolean) => void;
+  lastLoginSortDirection?: 'asc' | 'desc';
+  onRefresh?: () => void;
+}
+
+// New interfaces for enhanced user visualization
+export interface UserStatsDisplayProps {
+  stats: {
+    regularCount: number;
+    adminCount: number;
+    totalCount: number;
+    activeUsers?: number;
+    inactiveUsers?: number;
+    roleCounts?: Record<string, number>;
+    genderBreakdown?: Record<string, number>;
+    signupsByPeriod?: Array<{ period: string; count: number }>;
+  };
+}

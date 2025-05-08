@@ -1,34 +1,26 @@
 
 import React from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
-import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowDownUp, ArrowUp, ArrowDown } from "lucide-react";
+import { TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowDownUp, ArrowDown, ArrowUp, Shield } from "lucide-react";
 
 interface UserTableHeaderProps {
   selectionEnabled?: boolean;
-  onSelectAll?: (selected: boolean) => void;
+  onSelectAll?: (checked: boolean) => void;
   onSortByRole?: () => void;
-  onSortByLastLogin?: () => void;
+  onSortByLastLogin: () => void;
   lastLoginSortDirection?: 'asc' | 'desc';
+  showAccountStatus?: boolean;
 }
 
-export const UserTableHeader: React.FC<UserTableHeaderProps> = ({
-  selectionEnabled = false,
+export function UserTableHeader({
+  selectionEnabled,
   onSelectAll,
   onSortByRole,
   onSortByLastLogin,
-  lastLoginSortDirection
-}) => {
-  const renderSortIcon = () => {
-    if (!lastLoginSortDirection) {
-      return <ArrowDownUp className="h-4 w-4 ml-1" />;
-    }
-    
-    return lastLoginSortDirection === 'asc' 
-      ? <ArrowUp className="h-4 w-4 ml-1" /> 
-      : <ArrowDown className="h-4 w-4 ml-1" />;
-  };
-  
+  lastLoginSortDirection,
+  showAccountStatus = false
+}: UserTableHeaderProps) {
   return (
     <TableHeader>
       <TableRow>
@@ -40,30 +32,29 @@ export const UserTableHeader: React.FC<UserTableHeaderProps> = ({
             />
           </TableHead>
         )}
-        <TableHead className="w-[250px]">User</TableHead>
-        <TableHead className="w-[220px]">Email/ID</TableHead>
-        <TableHead className="w-[150px]">
-          <button 
-            className="flex items-center text-sm font-medium focus:outline-none"
-            onClick={onSortByRole}
-          >
+        <TableHead>User</TableHead>
+        <TableHead>Email/ID</TableHead>
+        <TableHead className="cursor-pointer" onClick={onSortByRole}>
+          <div className="flex items-center">
             Role
-            {onSortByRole && <ArrowDownUp className="h-4 w-4 ml-1" />}
-          </button>
+            {onSortByRole && <ArrowDownUp className="ml-1 h-4 w-4" />}
+          </div>
         </TableHead>
         <TableHead>Country</TableHead>
-        <TableHead>
-          <button 
-            className="flex items-center text-sm font-medium focus:outline-none"
-            onClick={onSortByLastLogin}
-          >
+        <TableHead className="cursor-pointer" onClick={onSortByLastLogin}>
+          <div className="flex items-center">
             Last Login
-            {onSortByLastLogin && renderSortIcon()}
-          </button>
+            {lastLoginSortDirection === 'asc' && <ArrowUp className="ml-1 h-4 w-4" />}
+            {lastLoginSortDirection === 'desc' && <ArrowDown className="ml-1 h-4 w-4" />}
+            {!lastLoginSortDirection && <ArrowDownUp className="ml-1 h-4 w-4" />}
+          </div>
         </TableHead>
         <TableHead>Created</TableHead>
+        {showAccountStatus && (
+          <TableHead>Status</TableHead>
+        )}
         <TableHead className="text-right">Actions</TableHead>
       </TableRow>
     </TableHeader>
   );
-};
+}

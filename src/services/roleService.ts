@@ -3,31 +3,34 @@ import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/userTypes';
 import { debugLog, DebugLevel } from '@/utils/debug';
 import { toast } from '@/hooks/use-toast';
-import { userService } from './userService';
-import { ROLE_DEFINITIONS } from '@/types/userTypes';
-import { isProtectedAdmin, PROTECTED_ADMIN_EMAIL } from '@/utils/constants';
-import { QueryClient } from '@tanstack/react-query';
+
+// Rate limiting settings
+const RATE_LIMIT = {
+  maxOperations: 10,
+  timeWindow: 60000, // 1 minute in milliseconds
+  operations: [] as number[]
+};
+
+// Protected admin email
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 interface RoleChangeResult {
   success: boolean;
-  error?: Error | null;
   message?: string;
-  results?: any[];
+  error?: Error;
 }
 
 /**
  * Role Service
- * Centralized service for handling user role operations
+ * Centralized service for managing user roles
  */
-export class RoleService {
+class RoleService {
   private static instance: RoleService;
-  private maxRetries = 2;
-  private queryClient: QueryClient | null = null;
-
+  
   private constructor() {}
-
+  
   /**
-   * Get singleton instance of RoleService
+   * Get singleton instance
    */
   public static getInstance(): RoleService {
     if (!RoleService.instance) {
@@ -37,327 +40,283 @@ export class RoleService {
   }
   
   /**
-   * Set a query client for cache invalidation
+   * Check if a user has permission to change roles
+   * @param currentUserRole - The role of the user attempting to make changes
+   * @param targetUserId - The ID of the user whose role is being changed
+   * @param targetUserEmail - The email of the user whose role is being changed
+   * @param newRole - The new role being assigned
    */
-  public setQueryClient(client: QueryClient): void {
-    this.queryClient = client;
-  }
-
-  /**
-   * Update a user's role
-   */
-  public async updateUserRole(
-    userId: string, 
-    newRole: UserRole,
-    currentUserRole: UserRole = 'super_admin'
-  ): Promise<RoleChangeResult> {
-    let retries = 0;
-    
-    const attempt = async (): Promise<RoleChangeResult> => {
-      try {
-        debugLog('RoleService', `Updating role for user ${userId} to ${newRole}`, DebugLevel.INFO);
-        
-        // Check if user is protected admin
-        const user = await userService.getUserById(userId);
-        if (user && isProtectedAdmin(user.email)) {
-          debugLog('RoleService', 'Cannot change role of protected admin', DebugLevel.WARN);
-          toast({
-            title: "Operation not allowed",
-            description: "Cannot change role of protected admin user",
-            variant: "destructive",
-          });
-          return { success: false, message: 'Cannot change role of protected admin' };
-        }
-        
-        // Check if current user has permission to assign this role
-        if (!this.canAssignRole(currentUserRole, newRole, userId)) {
-          debugLog('RoleService', `User with role ${currentUserRole} cannot assign role ${newRole}`, DebugLevel.WARN);
-          toast({
-            title: "Permission denied",
-            description: `You do not have permission to assign the ${newRole} role`,
-            variant: "destructive",
-          });
-          return { success: false, message: 'Permission denied' };
-        }
-        
-        // First, try direct update via Supabase
-        const { error } = await supabase
-          .from('profiles')
-          .update({ role: newRole })
-          .eq('id', userId);
-        
-        if (error) {
-          // If direct update fails, try edge function
-          debugLog('RoleService', 'Direct role update failed, trying edge function', DebugLevel.INFO, { error });
-          
-          const { data, error: fnError } = await supabase.functions.invoke('update-user-role', {
-            body: { userId, newRole }
-          });
-          
-          if (fnError) {
-            throw fnError;
-          }
-          
-          if (!data?.success) {
-            throw new Error(data?.message || 'Failed to update user role');
-          }
-        }
-        
-        // Invalidate cache if query client is available
-        if (this.queryClient) {
-          this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
-          this.queryClient.invalidateQueries({ queryKey: ['profile', userId] });
-        }
-        
-        // Log the successful operation
-        debugLog('RoleService', `Successfully updated role for user ${userId} to ${newRole}`, DebugLevel.INFO);
-        
-        toast({
-          title: "Role updated",
-          description: `User role has been updated to ${ROLE_DEFINITIONS[newRole]?.label || newRole}`,
-        });
-        
-        return { success: true, message: 'Role updated successfully' };
-        
-      } catch (err) {
-        debugLog('RoleService', `Error updating role for user ${userId}`, DebugLevel.ERROR, { error: err });
-        
-        // Implement retry with exponential backoff for network issues
-        if (retries < this.maxRetries && this.isRetryableError(err)) {
-          retries++;
-          const delay = Math.pow(2, retries) * 1000; // exponential backoff
-          debugLog('RoleService', `Retrying after ${delay}ms (attempt ${retries})`, DebugLevel.INFO);
-          
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return attempt();
-        }
-        
-        toast({
-          title: "Error updating role",
-          description: err instanceof Error ? err.message : 'Unknown error occurred',
-          variant: "destructive",
-        });
-        
-        return { success: false, error: err instanceof Error ? err : new Error('Unknown error') };
-      }
-    };
-    
-    return attempt();
-  }
-
-  /**
-   * Check if an error is retryable (network related)
-   */
-  private isRetryableError(error: any): boolean {
-    if (!error) return false;
-    // Network errors, timeouts, and 5xx errors are typically retryable
-    const message = error.message?.toLowerCase() || '';
-    return message.includes('network') || 
-           message.includes('timeout') || 
-           message.includes('connection') ||
-           (error.status && error.status >= 500 && error.status < 600);
-  }
-
-  /**
-   * Check if a user with a specific role can assign another role
-   */
-  public canAssignRole(
-    userRole: UserRole, 
-    roleToAssign: UserRole, 
-    targetUserId?: string, 
-    currentUserEmail?: string
+  public canChangeRole(
+    currentUserRole: UserRole,
+    targetUserId: string,
+    targetUserEmail: string | null | undefined,
+    newRole: UserRole
   ): boolean {
-    // Protected admin can assign any role
-    if (currentUserEmail && isProtectedAdmin(currentUserEmail)) {
-      return true;
-    }
-    
-    if (userRole === 'super_admin') {
-      return true;
-    }
-    
-    // Cannot modify own role unless super_admin
-    if (targetUserId && targetUserId === supabase.auth.getUser().then(({data}) => data.user?.id).toString()) {
-      if (userRole !== 'super_admin') {
-        return false;
-      }
-    }
-    
-    // Look up in role definitions
-    const roleDefinition = ROLE_DEFINITIONS[roleToAssign];
-    if (!roleDefinition) {
+    // Cannot change own role
+    if (targetUserId === supabase.auth.getUser()?.data?.user?.id) {
+      debugLog('roleService', 'Cannot change own role', DebugLevel.WARN);
       return false;
     }
     
-    return roleDefinition.canBeAssignedBy.includes(userRole);
+    // Cannot change protected admin role
+    if (this.isProtectedAdmin(targetUserEmail)) {
+      debugLog('roleService', 'Cannot change protected admin role', DebugLevel.WARN);
+      return false;
+    }
+    
+    // Super admins can change any role
+    if (currentUserRole === 'super_admin') {
+      return true;
+    }
+    
+    // Regular admins can change most roles except super_admin
+    if (currentUserRole === 'admin') {
+      return newRole !== 'super_admin';
+    }
+    
+    // Category managers and other special roles have limited permissions
+    if (['category_manager', 'social_media_manager', 'partner_manager', 'cfo'].includes(currentUserRole)) {
+      // These roles typically can't change other users' roles
+      return false;
+    }
+    
+    // Regular players can't change roles
+    return false;
   }
-
+  
   /**
-   * Bulk update user roles
+   * Update a user's role
+   * @param userId - The ID of the user whose role is being changed
+   * @param newRole - The new role to assign
    */
-  public async bulkUpdateRoles(
-    userIds: string[], 
-    newRole: UserRole,
-    currentUserRole: UserRole = 'super_admin'
-  ): Promise<RoleChangeResult> {
+  public async updateUserRole(userId: string, newRole: UserRole): Promise<RoleChangeResult> {
     try {
-      debugLog('RoleService', `Bulk updating role for ${userIds.length} users to ${newRole}`, DebugLevel.INFO);
+      // Check if we're within rate limits
+      if (!this.checkRateLimit()) {
+        return { 
+          success: false, 
+          message: 'Rate limit exceeded. Please try again later.',
+          error: new Error('Rate limit exceeded')
+        };
+      }
+
+      debugLog('roleService', `Updating role for user ${userId} to ${newRole}`, DebugLevel.INFO);
       
-      // Check if current user has permission to assign this role
-      if (!this.canAssignRole(currentUserRole, newRole)) {
-        debugLog('RoleService', `User with role ${currentUserRole} cannot assign role ${newRole}`, DebugLevel.WARN);
-        toast({
-          title: "Permission denied",
-          description: `You do not have permission to assign the ${newRole} role`,
-          variant: "destructive",
-        });
-        return { success: false, message: 'Permission denied' };
+      // Get current user info
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      // Get target user info to check if they're protected
+      const { data: targetUserData } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', userId)
+        .single();
+      
+      if (targetUserData && this.isProtectedAdmin(targetUserData.email)) {
+        debugLog('roleService', 'Cannot change protected admin role', DebugLevel.ERROR);
+        return { 
+          success: false, 
+          message: 'Cannot modify the protected admin account.',
+          error: new Error('Protected admin modification attempted')
+        };
       }
       
-      // Get all users to check for protected admins
-      const allUsers = await userService.getAllUsers();
+      // Update the role
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', userId);
       
-      // Filter out protected admin users
-      const filteredUserIds = userIds.filter(userId => {
-        const user = allUsers.find(u => u.id === userId);
-        return user && !isProtectedAdmin(user.email);
-      });
+      if (error) throw error;
       
-      if (filteredUserIds.length !== userIds.length) {
-        debugLog('RoleService', 'Some protected admin users were excluded from bulk role update', DebugLevel.WARN);
-        toast({
-          title: "Some users excluded",
-          description: "Protected admin users cannot have their roles changed",
-          variant: "destructive",
-        });
-      }
+      // Log the successful role change
+      this.logRoleChange(currentUser?.id || 'unknown', userId, newRole);
       
-      if (filteredUserIds.length === 0) {
-        return { success: false, message: 'No eligible users to update' };
-      }
+      debugLog('roleService', `Role updated successfully for user ${userId}`, DebugLevel.INFO);
       
-      // Rate limiting - prevent too many operations at once
-      const BATCH_SIZE = 50;
-      if (filteredUserIds.length > BATCH_SIZE) {
-        toast({
-          title: "Operation limited",
-          description: `Maximum ${BATCH_SIZE} users can be updated at once`,
-          variant: "destructive",
-        });
-        filteredUserIds.length = BATCH_SIZE;
-      }
+      return { success: true };
       
-      // Call the edge function for bulk update
-      const { data, error } = await supabase.functions.invoke('bulk-update-roles', {
-        body: { userIds: filteredUserIds, newRole }
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (!data?.success) {
-        throw new Error(data?.message || 'Failed to bulk update user roles');
-      }
-      
-      // Invalidate cache if query client is available
-      if (this.queryClient) {
-        this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
-      }
-      
-      debugLog('RoleService', `Successfully updated ${filteredUserIds.length} users to role ${newRole}`, DebugLevel.INFO);
-      
-      toast({
-        title: "Roles updated",
-        description: `Updated ${filteredUserIds.length} users to role: ${ROLE_DEFINITIONS[newRole]?.label || newRole}`,
-      });
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to update role');
+      debugLog('roleService', 'Error updating role', DebugLevel.ERROR, { error });
       
       return { 
-        success: true, 
-        message: `Updated ${filteredUserIds.length} users successfully`,
-        results: data.results 
+        success: false, 
+        message: error.message,
+        error
+      };
+    }
+  }
+  
+  /**
+   * Update roles for multiple users
+   * @param userIds - Array of user IDs whose roles will be changed
+   * @param newRole - The new role to assign to all users
+   */
+  public async bulkUpdateRoles(userIds: string[], newRole: UserRole): Promise<RoleChangeResult> {
+    try {
+      if (userIds.length === 0) {
+        return {
+          success: false,
+          message: 'No users selected for role update',
+          error: new Error('No users selected')
+        };
+      }
+
+      // Check if we're within rate limits (count each user as an operation)
+      if (!this.checkRateLimit(userIds.length)) {
+        return { 
+          success: false, 
+          message: 'Rate limit exceeded. Please try fewer users or try again later.',
+          error: new Error('Rate limit exceeded')
+        };
+      }
+
+      debugLog('roleService', `Bulk updating roles for ${userIds.length} users to ${newRole}`, DebugLevel.INFO);
+      
+      // Get current user info
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      // First check for protected admins in the list
+      const { data: targetUsersData } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .in('id', userIds);
+      
+      if (targetUsersData) {
+        // Filter out protected admins
+        const protectedAdmins = targetUsersData.filter(user => 
+          this.isProtectedAdmin(user.email)
+        );
+        
+        if (protectedAdmins.length > 0) {
+          // Log the attempt
+          debugLog('roleService', 'Attempted to change protected admin roles in bulk operation', DebugLevel.WARN);
+          
+          // Remove protected admins from the list
+          userIds = userIds.filter(id => 
+            !protectedAdmins.some(admin => admin.id === id)
+          );
+          
+          if (userIds.length === 0) {
+            return {
+              success: false,
+              message: 'Cannot update roles. All selected users are protected admins.',
+              error: new Error('All selected users are protected')
+            };
+          }
+        }
+      }
+
+      // We'll use edge function for bulk operations to avoid client-side loops
+      const { data, error } = await supabase.functions.invoke('admin-update-roles', {
+        body: {
+          userIds,
+          newRole,
+          currentUserId: currentUser?.id
+        }
+      });
+
+      if (error) throw error;
+
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to update roles');
+      }
+      
+      debugLog('roleService', `Bulk role update successful for ${userIds.length} users`, DebugLevel.INFO);
+      
+      return { 
+        success: true,
+        message: `Successfully updated ${data.updatedCount || userIds.length} user roles to ${newRole}`
       };
       
     } catch (err) {
-      debugLog('RoleService', 'Error in bulk role update', DebugLevel.ERROR, { error: err });
+      const error = err instanceof Error ? err : new Error('Failed to bulk update roles');
+      debugLog('roleService', 'Error in bulk role update', DebugLevel.ERROR, { error });
       
-      toast({
-        title: "Error updating roles",
-        description: err instanceof Error ? err.message : 'Unknown error occurred',
-        variant: "destructive",
-      });
-      
-      return { success: false, error: err instanceof Error ? err : new Error('Unknown error') };
+      return { 
+        success: false, 
+        message: error.message,
+        error
+      };
     }
   }
-
+  
   /**
-   * Check if user has a specific role
+   * Verify if a user role change is valid
+   * @param currentRole - The current role of the user
+   * @param newRole - The proposed new role
    */
-  public async hasRole(userId: string, role: UserRole): Promise<boolean> {
-    try {
-      // Special case for protected admin
-      const user = await userService.getUserById(userId);
-      if (user && isProtectedAdmin(user.email)) {
-        // Protected admin has all roles
-        return true;
-      }
-      
-      const { data, error } = await supabase.rpc('has_role', { 
-        user_id: userId, 
-        role_name: role 
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      return !!data;
-      
-    } catch (err) {
-      debugLog('RoleService', `Error checking if user ${userId} has role ${role}`, DebugLevel.ERROR, { error: err });
-      // Default to false on error
+  public isValidRoleChange(currentRole: UserRole, newRole: UserRole): boolean {
+    // Invalid if trying to change to the same role
+    if (currentRole === newRole) {
       return false;
     }
-  }
-
-  /**
-   * Get available roles for assigning
-   */
-  public getAssignableRoles(currentUserRole: UserRole): UserRole[] {
-    const allRoles = Object.keys(ROLE_DEFINITIONS) as UserRole[];
     
-    if (currentUserRole === 'super_admin') {
-      // Super admins can assign any role
-      return allRoles;
+    // Super admin can only be assigned by another super admin
+    if (newRole === 'super_admin' && currentRole !== 'super_admin') {
+      return false;
     }
     
-    // Filter roles that can be assigned by the current user role
-    return allRoles.filter(role => {
-      const definition = ROLE_DEFINITIONS[role];
-      return definition && definition.canBeAssignedBy.includes(currentUserRole);
-    });
+    return true;
   }
-
+  
   /**
-   * Get role label
+   * Check if an email belongs to the protected admin
+   * @param email - The email to check
    */
-  public getRoleLabel(role: UserRole): string {
-    return ROLE_DEFINITIONS[role]?.label || role;
+  public isProtectedAdmin(email?: string | null): boolean {
+    if (!email) return false;
+    return email.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase();
   }
-
+  
   /**
-   * Get role description
+   * Rate limiting implementation
+   * @param count - Number of operations to check against the rate limit
    */
-  public getRoleDescription(role: UserRole): string {
-    return ROLE_DEFINITIONS[role]?.description || '';
+  private checkRateLimit(count: number = 1): boolean {
+    const now = Date.now();
+    
+    // Remove operations outside the time window
+    RATE_LIMIT.operations = RATE_LIMIT.operations.filter(timestamp => 
+      now - timestamp < RATE_LIMIT.timeWindow
+    );
+    
+    // Check if adding these operations would exceed the limit
+    if (RATE_LIMIT.operations.length + count > RATE_LIMIT.maxOperations) {
+      return false;
+    }
+    
+    // Add the new operations
+    for (let i = 0; i < count; i++) {
+      RATE_LIMIT.operations.push(now);
+    }
+    
+    return true;
   }
-
+  
   /**
-   * Get permissions for a role
+   * Log role changes for audit purposes
    */
-  public getRolePermissions(role: UserRole): string[] {
-    return ROLE_DEFINITIONS[role]?.permissions || [];
+  private logRoleChange(adminId: string, targetUserId: string, newRole: UserRole): void {
+    try {
+      supabase.from('security_audit_logs').insert({
+        event_type: 'role_change',
+        user_id: adminId,
+        severity: 'medium',
+        details: {
+          target_user_id: targetUserId,
+          new_role: newRole,
+          timestamp: new Date().toISOString()
+        }
+      }).then(({ error }) => {
+        if (error) {
+          debugLog('roleService', 'Error logging role change', DebugLevel.ERROR, { error });
+        }
+      });
+    } catch (err) {
+      debugLog('roleService', 'Error in audit logging', DebugLevel.ERROR, { error: err });
+    }
   }
 }
 

@@ -1,5 +1,7 @@
 
 import { useState } from 'react';
+import { UserRole } from '@/types/userTypes';
+import { UserFilterCriteria } from '@/components/admin/user-management/AdvancedUserFilter';
 
 export function useUserFilters() {
   const [userType, setUserType] = useState<'regular' | 'admin'>('regular');
@@ -8,21 +10,41 @@ export function useUserFilters() {
   const [page, setPage] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
+  const [advancedFilters, setAdvancedFilters] = useState<UserFilterCriteria>({
+    roles: [],
+    countries: [],
+    activityStatus: 'all',
+    createdAfter: null,
+    createdBefore: null,
+    minLoginCount: 0,
+    hasCompletedProfile: null
+  });
   
-  // Determine filter options based on selected user type
+  // Filter options based on selected user type
   const filterOptions = {
     searchQuery,
-    role: selectedRole,
+    role: selectedRole as UserRole | null,
     country: selectedCountry,
     page,
     pageSize,
-    // If viewing admin users, include all admin roles, otherwise exclude them
-    userType
+    userType,
+    advancedFilters
   };
 
   // Function to determine if a filter is active
   const hasActiveFilters = (): boolean => {
-    return !!(searchQuery || selectedRole || selectedCountry);
+    return !!(
+      searchQuery || 
+      selectedRole || 
+      selectedCountry ||
+      advancedFilters.roles.length > 0 ||
+      advancedFilters.countries.length > 0 ||
+      advancedFilters.activityStatus !== 'all' ||
+      advancedFilters.createdAfter !== null ||
+      advancedFilters.createdBefore !== null ||
+      advancedFilters.minLoginCount > 0 ||
+      advancedFilters.hasCompletedProfile !== null
+    );
   };
 
   return {
@@ -38,6 +60,8 @@ export function useUserFilters() {
     setPageSize,
     selectedCountry,
     setSelectedCountry,
+    advancedFilters,
+    setAdvancedFilters,
     filterOptions,
     hasActiveFilters
   };

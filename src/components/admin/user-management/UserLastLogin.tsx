@@ -1,59 +1,48 @@
 
 import React from 'react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Clock } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Calendar } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 interface UserLastLoginProps {
-  lastSignIn?: string | null;
+  lastSignIn: string | null | undefined;
 }
 
 export function UserLastLogin({ lastSignIn }: UserLastLoginProps) {
   if (!lastSignIn) {
-    return <span className="text-gray-400 text-sm">Never</span>;
+    return <span className="text-muted-foreground text-sm">Never</span>;
   }
-  
-  // Parse the date
-  const lastLoginDate = new Date(lastSignIn);
-  
-  // Check if date is invalid
-  if (isNaN(lastLoginDate.getTime())) {
-    return <span className="text-gray-400 text-sm">Invalid date</span>;
-  }
-  
-  // Get relative time string
-  const relativeTime = getRelativeTimeString(lastLoginDate);
-  
-  // Format exact time for tooltip
-  const exactTime = lastLoginDate.toLocaleString();
-  
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="inline-flex items-center gap-1 text-sm cursor-help">
-            <Clock className="h-3 w-3 text-muted-foreground" />
-            <span>{relativeTime}</span>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Last login: {exactTime}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
 
-// Helper function to get relative time string
-function getRelativeTimeString(date: Date): string {
-  const now = new Date();
-  const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
-  // Handle cases: just now, minutes, hours, days, weeks, months, years
-  if (diffSeconds < 60) return `Just now`;
-  if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)}m ago`;
-  if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)}h ago`;
-  if (diffSeconds < 604800) return `${Math.floor(diffSeconds / 86400)}d ago`;
-  if (diffSeconds < 2629800) return `${Math.floor(diffSeconds / 604800)}w ago`;
-  if (diffSeconds < 31557600) return `${Math.floor(diffSeconds / 2629800)}mo ago`;
-  return `${Math.floor(diffSeconds / 31557600)}y ago`;
+  try {
+    const loginDate = new Date(lastSignIn);
+    const formattedDate = loginDate.toLocaleDateString();
+    const formattedTime = loginDate.toLocaleTimeString();
+    const relativeTime = formatDistanceToNow(loginDate, { addSuffix: true });
+
+    // Determine if the login was recent (within last 24 hours)
+    const isRecent = Date.now() - loginDate.getTime() < 24 * 60 * 60 * 1000;
+
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center">
+              <Calendar className="h-3.5 w-3.5 mr-1 opacity-70" />
+              <span className={isRecent ? "text-green-500 font-medium" : ""}>
+                {relativeTime}
+              </span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>
+              {formattedDate} at {formattedTime}
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  } catch (e) {
+    // Fallback if date parsing fails
+    return <span className="text-muted-foreground text-sm">Invalid date</span>;
+  }
 }

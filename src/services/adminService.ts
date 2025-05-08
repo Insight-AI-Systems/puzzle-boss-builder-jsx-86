@@ -1,22 +1,30 @@
 
+import { supabase } from '@/integrations/supabase/client';
+import { UserProfile, UserRole } from '@/types/userTypes';
+import { debugLog, DebugLevel } from '@/utils/debug';
+import { isProtectedAdmin, PROTECTED_ADMIN_EMAIL } from '@/utils/constants';
+
+interface UserStats {
+  totalCount: number;
+  regularCount: number;
+  adminCount: number;
+  activeCount: number;
+  inactiveCount: number;
+  roleCounts: Record<string, number>;
+  signupsByPeriod: Array<{ period: string; count: number }>;
+}
+
 /**
  * Admin Service
- * Common functionality for admin operations
+ * Centralized service for admin-specific operations
  */
-
-import { supabase } from '@/integrations/supabase/client';
-import { PROTECTED_ADMIN_EMAIL } from '@/utils/constants';
-import { debugLog, DebugLevel } from '@/utils/debug';
-import { errorTracker } from '@/utils/monitoring/errorTracker';
-import { UserRole } from '@/types/userTypes';
-
 class AdminService {
   private static instance: AdminService;
-
+  
   private constructor() {}
-
+  
   /**
-   * Get singleton instance of AdminService
+   * Get singleton instance
    */
   public static getInstance(): AdminService {
     if (!AdminService.instance) {
@@ -24,64 +32,119 @@ class AdminService {
     }
     return AdminService.instance;
   }
-
+  
   /**
-   * Check if an email is the protected admin
+   * Check if an email belongs to the protected admin
    */
   public isProtectedAdminEmail(email?: string | null): boolean {
-    if (!email) return false;
-    return email.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase();
+    return isProtectedAdmin(email);
   }
-
+  
   /**
-   * Get the current authenticated user
+   * Get user statistics
    */
-  public async getCurrentUser() {
+  public async getUserStats(users: UserProfile[]): Promise<UserStats> {
     try {
-      const { data, error } = await supabase.auth.getUser();
-      if (error) throw error;
-      return data?.user || null;
+      // Count by role
+      const roleCounts = users.reduce((acc, user) => {
+        const role = user.role;
+        acc[role] = (acc[role] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      // Count admins vs regular users
+      const adminCount = users.filter(user => 
+        ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'].includes(user.role)
+      ).length;
+      
+      const regularCount = users.length - adminCount;
+      
+      // Count active vs inactive users
+      const activeCount = users.filter(user => !!user.last_sign_in).length;
+      const inactiveCount = users.length - activeCount;
+      
+      // Group signups by month
+      const now = new Date();
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(now.getMonth() - 6);
+      
+      // Initialize months
+      const months: Record<string, number> = {};
+      for (let i = 0; i < 6; i++) {
+        const d = new Date();
+        d.setMonth(now.getMonth() - i);
+        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        months[monthKey] = 0;
+      }
+      
+      // Count users by signup month
+      users.forEach(user => {
+        const date = new Date(user.created_at);
+        if (date >= sixMonthsAgo) {
+          const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          if (months[monthKey] !== undefined) {
+            months[monthKey]++;
+          }
+        }
+      });
+      
+      // Format for chart
+      const signupsByPeriod = Object.entries(months).map(([period, count]) => ({
+        period,
+        count
+      })).reverse();
+      
+      return {
+        totalCount: users.length,
+        regularCount,
+        adminCount,
+        activeCount,
+        inactiveCount,
+        roleCounts,
+        signupsByPeriod
+      };
+      
     } catch (err) {
-      errorTracker.trackError(err instanceof Error ? err : new Error('Error getting current user'), 'medium');
-      return null;
+      debugLog('adminService', 'Error calculating user stats', DebugLevel.ERROR, { error: err });
+      return {
+        totalCount: users.length,
+        regularCount: 0,
+        adminCount: 0,
+        activeCount: 0,
+        inactiveCount: 0,
+        roleCounts: {},
+        signupsByPeriod: []
+      };
     }
   }
-
+  
   /**
-   * Check if the current session is valid
+   * Log admin action for audit purposes
    */
-  public async validateSession() {
+  public async logAdminAction(
+    actionType: string,
+    details: Record<string, any>,
+    severity: 'low' | 'medium' | 'high' = 'medium'
+  ): Promise<void> {
     try {
-      const { data, error } = await supabase.auth.getSession();
-      return !error && !!data.session;
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return;
+      
+      await supabase.from('security_audit_logs').insert({
+        event_type: actionType,
+        user_id: user.id,
+        email: user.email,
+        severity,
+        details: {
+          ...details,
+          timestamp: new Date().toISOString()
+        }
+      });
+      
     } catch (err) {
-      debugLog('AdminService', 'Session validation error', DebugLevel.ERROR, { error: err });
-      return false;
+      debugLog('adminService', 'Error logging admin action', DebugLevel.ERROR, { error: err });
     }
-  }
-
-  /**
-   * Format standard timestamp for consistency
-   */
-  public formatTimestamp(timestamp: string | null | undefined): string {
-    if (!timestamp) return 'Never';
-    
-    try {
-      const date = new Date(timestamp);
-      return date.toLocaleString();
-    } catch (e) {
-      return 'Invalid date';
-    }
-  }
-
-  /**
-   * Check if a role is an admin-level role
-   */
-  public hasAdminRole(role?: UserRole): boolean {
-    if (!role) return false;
-    
-    const adminRoles = ['super_admin', 'admin', 'category_manager'];
-    return adminRoles.includes(role);
   }
 }
 
