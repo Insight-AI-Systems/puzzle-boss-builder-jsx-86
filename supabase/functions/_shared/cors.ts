@@ -1,19 +1,22 @@
 
-/**
- * CORS handling utilities for edge functions
- */
-
-// Standard CORS headers for edge functions
+// CORS Headers for edge functions
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, GET, PUT, DELETE, OPTIONS',
 };
 
-// Handle OPTIONS request for CORS preflight
-export function handleCorsOptions(req: Request): Response | null {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+// Handle CORS preflight requests
+export function handleCors(req: Request): Response {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      headers: corsHeaders,
+      status: 204,
+    });
   }
-  return null;
+  
+  return new Response(
+    JSON.stringify({ error: 'Invalid request' }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+  );
 }

@@ -14,6 +14,8 @@ export class UserService {
   private queryClient: QueryClient | null = null;
   private static instance: UserService;
   private maxRetries = 3;
+  private cache: Map<string, { data: UserProfile; timestamp: number }> = new Map();
+  private cacheTTL = 5 * 60 * 1000; // 5 minutes
 
   private constructor() {}
 
@@ -107,6 +109,11 @@ export class UserService {
         });
       }
       
+      // Update cache with fetched users
+      profiles.forEach(user => {
+        this.updateCache(user.id, user);
+      });
+      
       debugLog('UserService', `Successfully retrieved ${profiles.length} users`, DebugLevel.INFO);
       return profiles;
       
@@ -152,13 +159,13 @@ export class UserService {
       country: user.country || null,
       categories_played: user.categories_played || [],
       credits: user.credits || 0,
-      achievements: [],
-      referral_code: null,
+      achievements: user.achievements || [],
+      referral_code: user.referral_code || null,
       gender: user.gender || null,
       custom_gender: user.custom_gender || null,
       age_group: user.age_group || null,
-      created_at: user.created_at,
-      updated_at: user.updated_at || user.created_at,
+      created_at: user.created_at || new Date().toISOString(),
+      updated_at: user.updated_at || user.created_at || new Date().toISOString(),
       last_sign_in: user.last_sign_in || null
     };
   }
@@ -215,15 +222,49 @@ export class UserService {
   }
 
   /**
+   * Update the cache with a user profile
+   */
+  private updateCache(userId: string, userData: UserProfile): void {
+    this.cache.set(userId, {
+      data: userData,
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Get user from cache if available and not expired
+   */
+  private getCachedUser(userId: string): UserProfile | null {
+    const cachedData = this.cache.get(userId);
+    
+    if (!cachedData) return null;
+    
+    // Check if cache is still valid
+    if (Date.now() - cachedData.timestamp > this.cacheTTL) {
+      this.cache.delete(userId);
+      return null;
+    }
+    
+    return cachedData.data;
+  }
+
+  /**
    * Get user profile by ID
    */
-  public async getUserById(userId: string): Promise<UserProfile | null> {
+  public async getUserById(userId: string, retryCount = 0): Promise<UserProfile | null> {
     try {
       debugLog('UserService', `Fetching user profile for ${userId}`, DebugLevel.INFO);
       
+      // Try to get from cache first
+      const cachedUser = this.getCachedUser(userId);
+      if (cachedUser) {
+        debugLog('UserService', `Using cached user data for ${userId}`, DebugLevel.INFO);
+        return cachedUser;
+      }
+      
       // Check if this is the protected admin
       if (userId === PROTECTED_ADMIN_EMAIL) {
-        return {
+        const protectedAdminProfile = {
           id: userId,
           email: PROTECTED_ADMIN_EMAIL,
           display_name: 'Protected Admin',
@@ -239,6 +280,9 @@ export class UserService {
           updated_at: new Date().toISOString(),
           last_sign_in: new Date().toISOString()
         };
+        
+        this.updateCache(userId, protectedAdminProfile);
+        return protectedAdminProfile;
       }
       
       const { data, error } = await supabase
@@ -249,6 +293,16 @@ export class UserService {
       
       if (error) {
         debugLog('UserService', `Error fetching user ${userId}`, DebugLevel.ERROR, { error });
+        
+        // Retry logic
+        if (retryCount < this.maxRetries) {
+          debugLog('UserService', `Retrying user fetch (${retryCount + 1}/${this.maxRetries})`, DebugLevel.INFO);
+          // Exponential backoff
+          const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return this.getUserById(userId, retryCount + 1);
+        }
+        
         throw error;
       }
       
@@ -256,7 +310,10 @@ export class UserService {
         return null;
       }
       
-      return this.transformUserData(data);
+      const userProfile = this.transformUserData(data);
+      this.updateCache(userId, userProfile);
+      
+      return userProfile;
       
     } catch (err) {
       debugLog('UserService', `Error getting user ${userId}`, DebugLevel.ERROR, { error: err });
@@ -288,6 +345,13 @@ export class UserService {
         }
       });
       
+      // Handle optimistic update
+      const cachedUser = this.getCachedUser(userId);
+      if (cachedUser) {
+        const optimisticUser = { ...cachedUser, ...userData, updated_at: new Date().toISOString() };
+        this.updateCache(userId, optimisticUser);
+      }
+      
       const { data, error } = await supabase
         .from('profiles')
         .update(sanitizedData)
@@ -297,8 +361,18 @@ export class UserService {
       
       if (error) {
         debugLog('UserService', `Error updating user ${userId}`, DebugLevel.ERROR, { error });
+        
+        // Revert optimistic update if there's an error
+        if (cachedUser) {
+          this.updateCache(userId, cachedUser);
+        }
+        
         throw error;
       }
+      
+      // Update cache with the actual data from server
+      const updatedProfile = this.transformUserData(data);
+      this.updateCache(userId, updatedProfile);
       
       // Invalidate cache
       if (this.queryClient) {
@@ -306,10 +380,116 @@ export class UserService {
         this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
       }
       
-      return this.transformUserData(data);
+      return updatedProfile;
       
     } catch (err) {
       debugLog('UserService', `Error updating user ${userId}`, DebugLevel.ERROR, { error: err });
+      throw err;
+    }
+  }
+
+  /**
+   * Create a new user profile
+   */
+  public async createUserProfile(profileData: Partial<UserProfile>): Promise<UserProfile> {
+    try {
+      if (!profileData.id) {
+        throw new Error('User ID is required');
+      }
+      
+      // Validate data
+      const validationError = this.validateUserData(profileData);
+      if (validationError) {
+        throw new Error(`Validation error: ${validationError}`);
+      }
+      
+      debugLog('UserService', `Creating user profile`, DebugLevel.INFO, { profileData });
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert(profileData)
+        .select('*')
+        .single();
+      
+      if (error) {
+        debugLog('UserService', 'Error creating user profile', DebugLevel.ERROR, { error });
+        throw error;
+      }
+      
+      const newProfile = this.transformUserData(data);
+      this.updateCache(newProfile.id, newProfile);
+      
+      // Invalidate cache
+      if (this.queryClient) {
+        this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
+      }
+      
+      return newProfile;
+      
+    } catch (err) {
+      debugLog('UserService', 'Error creating user profile', DebugLevel.ERROR, { error: err });
+      throw err;
+    }
+  }
+
+  /**
+   * Search for users with various filters
+   */
+  public async searchUsers(searchParams: {
+    query?: string;
+    role?: UserRole | string;
+    country?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ users: UserProfile[], total: number }> {
+    try {
+      // First get all users (we'll filter client-side for now)
+      const allUsers = await this.getAllUsers();
+      
+      // Filter based on search parameters
+      let filteredUsers = allUsers;
+      
+      // Apply text search
+      if (searchParams.query) {
+        const query = searchParams.query.toLowerCase();
+        filteredUsers = filteredUsers.filter(user => {
+          return (
+            user.email?.toLowerCase().includes(query) || 
+            user.display_name?.toLowerCase().includes(query) ||
+            user.id.toLowerCase().includes(query)
+          );
+        });
+      }
+      
+      // Apply role filter
+      if (searchParams.role) {
+        filteredUsers = filteredUsers.filter(user => 
+          user.role === searchParams.role
+        );
+      }
+      
+      // Apply country filter
+      if (searchParams.country) {
+        filteredUsers = filteredUsers.filter(user => 
+          user.country === searchParams.country
+        );
+      }
+      
+      // Get total before pagination
+      const total = filteredUsers.length;
+      
+      // Apply pagination
+      if (searchParams.limit !== undefined && searchParams.offset !== undefined) {
+        filteredUsers = filteredUsers.slice(
+          searchParams.offset, 
+          searchParams.offset + searchParams.limit
+        );
+      }
+      
+      return { users: filteredUsers, total };
+      
+    } catch (err) {
+      debugLog('UserService', 'Error searching users', DebugLevel.ERROR, { error: err });
       throw err;
     }
   }
@@ -391,6 +571,157 @@ export class UserService {
         return valueA < valueB ? 1 : -1;
       }
     });
+  }
+
+  /**
+   * Delete a user profile (admin only)
+   */
+  public async deleteUserProfile(userId: string): Promise<boolean> {
+    try {
+      debugLog('UserService', `Attempting to delete user ${userId}`, DebugLevel.WARN);
+      
+      // Check if this is a protected admin
+      if (userId === PROTECTED_ADMIN_EMAIL) {
+        debugLog('UserService', 'Cannot delete protected admin account', DebugLevel.ERROR);
+        toast({
+          title: "Operation not allowed",
+          description: "Protected admin accounts cannot be deleted",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      const { error } = await supabase.functions.invoke('delete-user', {
+        body: { userId }
+      });
+      
+      if (error) {
+        debugLog('UserService', `Error deleting user ${userId}`, DebugLevel.ERROR, { error });
+        throw error;
+      }
+      
+      // Remove from cache
+      this.cache.delete(userId);
+      
+      // Invalidate queries
+      if (this.queryClient) {
+        this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
+      }
+      
+      toast({
+        title: "User deleted",
+        description: "User profile has been successfully deleted",
+      });
+      
+      return true;
+      
+    } catch (err) {
+      debugLog('UserService', `Error deleting user ${userId}`, DebugLevel.ERROR, { error: err });
+      
+      toast({
+        title: "Error deleting user",
+        description: err instanceof Error ? err.message : 'Unknown error occurred',
+        variant: "destructive",
+      });
+      
+      return false;
+    }
+  }
+
+  /**
+   * Export users to CSV format
+   */
+  public exportUsersToCSV(users: UserProfile[]): string {
+    try {
+      const headers = [
+        'ID',
+        'Email',
+        'Display Name',
+        'Role',
+        'Country',
+        'Created At',
+        'Last Sign In'
+      ].join(',');
+      
+      const rows = users.map(user => {
+        return [
+          user.id,
+          user.email || '',
+          user.display_name || '',
+          user.role || 'player',
+          user.country || '',
+          user.created_at,
+          user.last_sign_in || ''
+        ].map(field => `"${field}"`).join(',');
+      });
+      
+      return [headers, ...rows].join('\n');
+      
+    } catch (err) {
+      debugLog('UserService', 'Error exporting users to CSV', DebugLevel.ERROR, { error: err });
+      throw err;
+    }
+  }
+
+  /**
+   * Get unique countries from user profiles
+   */
+  public getUniqueCountries(users: UserProfile[]): string[] {
+    const countries = new Set<string>();
+    
+    users.forEach(user => {
+      if (user.country) {
+        countries.add(user.country);
+      }
+    });
+    
+    return Array.from(countries).sort();
+  }
+
+  /**
+   * Get user statistics
+   */
+  public getUserStats(users: UserProfile[]): {
+    regularCount: number;
+    adminCount: number;
+    totalCount: number;
+    activeLastMonth: number;
+    newLastMonth: number;
+  } {
+    const adminRoles = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
+    
+    const now = Date.now();
+    const lastMonth = now - 30 * 24 * 60 * 60 * 1000;
+    
+    const adminCount = users.filter(user => adminRoles.includes(user.role)).length;
+    const regularCount = users.length - adminCount;
+    
+    const activeLastMonth = users.filter(user => {
+      if (!user.last_sign_in) return false;
+      const lastSignIn = new Date(user.last_sign_in).getTime();
+      return lastSignIn >= lastMonth;
+    }).length;
+    
+    const newLastMonth = users.filter(user => {
+      const createdAt = new Date(user.created_at).getTime();
+      return createdAt >= lastMonth;
+    }).length;
+    
+    return {
+      regularCount,
+      adminCount,
+      totalCount: users.length,
+      activeLastMonth,
+      newLastMonth
+    };
+  }
+
+  /**
+   * Clear all cached user data
+   */
+  public clearCache(): void {
+    this.cache.clear();
+    debugLog('UserService', 'User cache cleared', DebugLevel.INFO);
   }
 }
 

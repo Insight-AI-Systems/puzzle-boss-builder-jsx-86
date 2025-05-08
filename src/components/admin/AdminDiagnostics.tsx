@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Download, Bug } from 'lucide-react';
 import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/utils/constants';
+import { userService } from '@/services/userService';
 
 export function AdminDiagnostics() {
   const { user, session, hasRole } = useAuth();
@@ -13,6 +14,8 @@ export function AdminDiagnostics() {
   const [profileDetails, setProfileDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [directDbTest, setDirectDbTest] = useState<any>(null);
+  const [rpcTest, setRpcTest] = useState<any>(null);
   
   // Fetch diagnostic information
   const fetchDiagnostics = async () => {
@@ -43,11 +46,77 @@ export function AdminDiagnostics() {
         
         setProfileDetails(profileData || null);
       }
+      
+      // Try direct DB query for users
+      try {
+        const { data: directData, error: directError } = await supabase
+          .from('profiles')
+          .select('id, username, email, role, created_at')
+          .limit(5);
+          
+        if (directError) {
+          console.error('Direct DB query error:', directError);
+        }
+        
+        setDirectDbTest({
+          success: !directError,
+          count: directData?.length || 0,
+          error: directError?.message,
+          sample: directData
+        });
+      } catch (directErr) {
+        setDirectDbTest({
+          success: false,
+          error: directErr instanceof Error ? directErr.message : 'Unknown error'
+        });
+      }
+      
+      // Try RPC function for users
+      try {
+        const { data: rpcData, error: rpcError } = await supabase
+          .rpc('get_current_user_role');
+          
+        setRpcTest({
+          success: !rpcError,
+          role: rpcData,
+          error: rpcError?.message
+        });
+      } catch (rpcErr) {
+        setRpcTest({
+          success: false,
+          error: rpcErr instanceof Error ? rpcErr.message : 'Unknown error'
+        });
+      }
+      
     } catch (err) {
       console.error('Diagnostics error:', err);
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Run service tests
+  const runServiceTests = async () => {
+    try {
+      // Test userService.getAllUsers
+      const users = await userService.getAllUsers();
+      console.log('UserService.getAllUsers result:', {
+        success: true,
+        count: users.length,
+        sample: users.slice(0, 2)
+      });
+      
+      // Test getUserById with current user
+      if (user?.id) {
+        const profile = await userService.getUserById(user.id);
+        console.log('UserService.getUserById result:', {
+          success: !!profile,
+          profile
+        });
+      }
+    } catch (err) {
+      console.error('Service test error:', err);
     }
   };
   
@@ -69,7 +138,9 @@ export function AdminDiagnostics() {
         isAdmin: hasRole('admin'),
         isSuperAdmin: hasRole('super_admin'),
         isCategoryManager: hasRole('category_manager')
-      }
+      },
+      directDbTest,
+      rpcTest
     };
     
     const blob = new Blob([JSON.stringify(diagnosticData, null, 2)], { type: 'application/json' });
@@ -132,6 +203,19 @@ export function AdminDiagnostics() {
               <div>{hasRole('category_manager') ? 'Yes' : 'No'}</div>
             </div>
             
+            <h3 className="text-sm font-medium mt-4">Database Tests</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="font-medium">Direct DB Query:</div>
+              <div>{directDbTest?.success 
+                ? `Success (${directDbTest.count} records)` 
+                : `Failed: ${directDbTest?.error || 'Unknown error'}`}</div>
+              
+              <div className="font-medium">RPC Function:</div>
+              <div>{rpcTest?.success 
+                ? `Success (Role: ${rpcTest.role})` 
+                : `Failed: ${rpcTest?.error || 'Unknown error'}`}</div>
+            </div>
+            
             {profileDetails && (
               <>
                 <h3 className="text-sm font-medium mt-4">Profile Data</h3>
@@ -165,6 +249,15 @@ export function AdminDiagnostics() {
             >
               <Download className="mr-1 h-4 w-4" />
               Download Diagnostics
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={runServiceTests}
+            >
+              <Bug className="mr-1 h-4 w-4" />
+              Run Service Tests
             </Button>
           </div>
         </div>

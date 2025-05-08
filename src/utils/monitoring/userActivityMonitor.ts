@@ -1,41 +1,60 @@
 
 import React from 'react';
+import { DebugLevel, debugLog } from '@/utils/debug';
 import { monitoringService } from './monitoringService';
 import { EventType } from '@/types/monitoringTypes';
-import { debugLog, DebugLevel } from '@/utils/debug';
 
-// Types for user activity events
-export interface UserActivityEvent {
-  type: string;
-  timestamp: number;
-  data?: any;
-}
+/**
+ * Inactive threshold in milliseconds (5 minutes)
+ */
+const INACTIVE_THRESHOLD = 5 * 60 * 1000;
 
-export interface UserActivityConfig {
-  trackClicks: boolean;
-  trackNavigation: boolean;
-  trackErrors: boolean;
-  trackFormSubmissions: boolean;
-  sampleRate: number; // 0-1, percentage of events to track
+/**
+ * Activity check interval in milliseconds (30 seconds)
+ */
+const ACTIVITY_CHECK_INTERVAL = 30 * 1000;
+
+/**
+ * Types of user activities to track
+ */
+export enum ActivityType {
+  CLICK = 'click',
+  KEYPRESS = 'keypress',
+  MOUSE_MOVE = 'mousemove',
+  SCROLL = 'scroll',
+  NAVIGATION = 'navigation',
+  API_CALL = 'api_call',
+  PAGE_VIEW = 'page_view',
+  SESSION_START = 'session_start',
+  SESSION_END = 'session_end',
+  USER_IDLE = 'user_idle',
+  USER_ACTIVE = 'user_active'
 }
 
 /**
- * Monitor and track user activity in the application
+ * User activity event data structure
+ */
+export interface UserActivityEvent {
+  type: ActivityType;
+  timestamp: number;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Service for monitoring and tracking user activity
  */
 export class UserActivityMonitor {
   private static instance: UserActivityMonitor | null = null;
-  private events: UserActivityEvent[] = [];
-  private isTracking = false;
+  private enabled: boolean = false;
+  private lastActivity: number = Date.now();
+  private activityEvents: UserActivityEvent[] = [];
+  private isIdle: boolean = false;
+  private checkInterval: number | null = null;
+  private eventListeners: Set<() => void> = new Set();
   
-  private config: UserActivityConfig = {
-    trackClicks: true,
-    trackNavigation: true,
-    trackErrors: true,
-    trackFormSubmissions: true,
-    sampleRate: 1.0 // Track all events by default
-  };
-  
-  // Private constructor for singleton
+  /**
+   * Private constructor for singleton
+   */
   private constructor() {
     debugLog('UserActivityMonitor', 'Initialized', DebugLevel.INFO);
   }
@@ -51,192 +70,171 @@ export class UserActivityMonitor {
   }
   
   /**
-   * Configure the activity monitor
+   * Enable activity monitoring
    */
-  public configure(config: Partial<UserActivityConfig>): void {
-    this.config = {
-      ...this.config,
-      ...config
-    };
-    
-    debugLog('UserActivityMonitor', 'Configuration updated', DebugLevel.INFO, this.config);
+  public enable(): void {
+    if (!this.enabled) {
+      this.enabled = true;
+      this.attachEventListeners();
+      this.startPeriodicCheck();
+      this.recordActivityEvent(ActivityType.SESSION_START, { sessionStart: new Date().toISOString() });
+      debugLog('UserActivityMonitor', 'Activity monitoring enabled', DebugLevel.INFO);
+    }
   }
   
   /**
-   * Start monitoring user activity
+   * Disable activity monitoring
    */
-  public startTracking(): void {
-    if (this.isTracking) {
-      return;
+  public disable(): void {
+    if (this.enabled) {
+      this.enabled = false;
+      this.detachEventListeners();
+      this.stopPeriodicCheck();
+      this.recordActivityEvent(ActivityType.SESSION_END, { sessionEnd: new Date().toISOString() });
+      debugLog('UserActivityMonitor', 'Activity monitoring disabled', DebugLevel.INFO);
     }
-    
-    this.isTracking = true;
-    
-    if (this.config.trackClicks) {
-      this.setupClickTracking();
-    }
-    
-    if (this.config.trackNavigation) {
-      this.setupNavigationTracking();
-    }
-    
-    if (this.config.trackErrors) {
-      this.setupErrorTracking();
-    }
-    
-    if (this.config.trackFormSubmissions) {
-      this.setupFormTracking();
-    }
-    
-    debugLog('UserActivityMonitor', 'Tracking started', DebugLevel.INFO);
   }
   
   /**
-   * Stop monitoring user activity
+   * Record a user activity event
    */
-  public stopTracking(): void {
-    if (!this.isTracking) {
-      return;
-    }
-    
-    // Remove all event listeners
-    document.removeEventListener('click', this.handleClick);
-    window.removeEventListener('popstate', this.handleNavigation);
-    window.removeEventListener('error', this.handleError);
-    document.removeEventListener('submit', this.handleFormSubmit);
-    
-    this.isTracking = false;
-    debugLog('UserActivityMonitor', 'Tracking stopped', DebugLevel.INFO);
-  }
-  
-  /**
-   * Record an activity event
-   */
-  public recordActivity(type: string, data?: any): void {
-    // Check if this event should be sampled based on sample rate
-    if (Math.random() > this.config.sampleRate) {
-      return;
-    }
+  public recordActivityEvent(type: ActivityType, metadata?: Record<string, any>): void {
+    if (!this.enabled) return;
     
     const event: UserActivityEvent = {
       type,
       timestamp: Date.now(),
-      data
+      metadata
     };
     
-    this.events.push(event);
+    this.activityEvents.push(event);
+    this.lastActivity = event.timestamp;
     
-    // Also record in the monitoring service
+    if (this.isIdle && [ActivityType.CLICK, ActivityType.KEYPRESS, ActivityType.MOUSE_MOVE, ActivityType.SCROLL].includes(type)) {
+      this.isIdle = false;
+      this.recordActivityEvent(ActivityType.USER_ACTIVE);
+    }
+    
+    // Also record in the central monitoring service
     monitoringService.recordEvent(EventType.USER_ACTIVITY, event);
-    
-    debugLog('UserActivityMonitor', `Activity recorded: ${type}`, DebugLevel.DEBUG, data);
   }
   
   /**
-   * Get all recorded events
+   * Get all recorded activity events
    */
-  public getEvents(): UserActivityEvent[] {
-    return [...this.events];
+  public getActivityEvents(): UserActivityEvent[] {
+    return [...this.activityEvents];
   }
   
   /**
-   * Clear all recorded events
+   * Clear all recorded activity events
    */
   public clearEvents(): void {
-    this.events = [];
-    debugLog('UserActivityMonitor', 'Events cleared', DebugLevel.INFO);
+    this.activityEvents = [];
+    debugLog('UserActivityMonitor', 'Activity events cleared', DebugLevel.INFO);
   }
   
-  // Setup click tracking
-  private setupClickTracking(): void {
-    document.addEventListener('click', this.handleClick);
+  /**
+   * Get time since last activity in milliseconds
+   */
+  public getTimeSinceLastActivity(): number {
+    return Date.now() - this.lastActivity;
   }
   
-  // Handle click events
-  private handleClick = (event: MouseEvent): void => {
-    const target = event.target as HTMLElement;
-    
-    // Gather relevant info about the clicked element
-    const elementInfo = {
-      tagName: target.tagName,
-      id: target.id,
-      className: target.className,
-      text: target.textContent?.slice(0, 50) // Limit text length
-    };
-    
-    this.recordActivity('click', elementInfo);
-  };
+  /**
+   * Check if user is currently idle
+   */
+  public isUserIdle(): boolean {
+    return this.isIdle;
+  }
   
-  // Setup navigation tracking
-  private setupNavigationTracking(): void {
-    // Track initial page load
-    this.recordActivity('pageview', {
-      url: window.location.href,
-      referrer: document.referrer
+  /**
+   * Register activity listener
+   */
+  public registerActivityListener(callback: () => void): () => void {
+    this.eventListeners.add(callback);
+    return () => this.eventListeners.delete(callback);
+  }
+  
+  /**
+   * Attach event listeners for user activity
+   */
+  private attachEventListeners(): void {
+    window.addEventListener('click', this.handleUserInteraction.bind(this, ActivityType.CLICK));
+    window.addEventListener('keypress', this.handleUserInteraction.bind(this, ActivityType.KEYPRESS));
+    window.addEventListener('mousemove', this.handleUserInteraction.bind(this, ActivityType.MOUSE_MOVE), { passive: true });
+    window.addEventListener('scroll', this.handleUserInteraction.bind(this, ActivityType.SCROLL), { passive: true });
+  }
+  
+  /**
+   * Detach event listeners for user activity
+   */
+  private detachEventListeners(): void {
+    window.removeEventListener('click', this.handleUserInteraction.bind(this, ActivityType.CLICK));
+    window.removeEventListener('keypress', this.handleUserInteraction.bind(this, ActivityType.KEYPRESS));
+    window.removeEventListener('mousemove', this.handleUserInteraction.bind(this, ActivityType.MOUSE_MOVE));
+    window.removeEventListener('scroll', this.handleUserInteraction.bind(this, ActivityType.SCROLL));
+  }
+  
+  /**
+   * Handle user interaction events
+   */
+  private handleUserInteraction(type: ActivityType, event: Event): void {
+    // Throttle mousemove and scroll events
+    if (type === ActivityType.MOUSE_MOVE || type === ActivityType.SCROLL) {
+      // Throttle to once per second
+      const now = Date.now();
+      if (now - this.lastActivity < 1000) return;
+    }
+    
+    this.recordActivityEvent(type, {
+      target: (event.target as HTMLElement)?.tagName || 'unknown',
+      path: (event as any).path?.map((el: HTMLElement) => el?.tagName).filter(Boolean) || []
     });
     
-    // Track navigation changes
-    window.addEventListener('popstate', this.handleNavigation);
-    
-    // Monkey patch history methods to track programmatic navigation
-    const originalPushState = history.pushState;
-    history.pushState = (...args) => {
-      originalPushState.apply(history, args);
-      this.handleNavigation();
-    };
-    
-    const originalReplaceState = history.replaceState;
-    history.replaceState = (...args) => {
-      originalReplaceState.apply(history, args);
-      this.handleNavigation();
-    };
+    this.notifyListeners();
   }
   
-  // Handle navigation events
-  private handleNavigation = (): void => {
-    this.recordActivity('pageview', {
-      url: window.location.href
+  /**
+   * Notify all registered activity listeners
+   */
+  private notifyListeners(): void {
+    this.eventListeners.forEach(callback => {
+      try {
+        callback();
+      } catch (error) {
+        debugLog('UserActivityMonitor', 'Error in activity listener', DebugLevel.ERROR, error);
+      }
     });
-  };
-  
-  // Setup error tracking
-  private setupErrorTracking(): void {
-    window.addEventListener('error', this.handleError);
   }
   
-  // Handle error events
-  private handleError = (event: ErrorEvent): void => {
-    const errorInfo = {
-      message: event.message,
-      filename: event.filename,
-      lineno: event.lineno,
-      colno: event.colno,
-      stack: event.error?.stack
-    };
-    
-    this.recordActivity('error', errorInfo);
-  };
-  
-  // Setup form tracking
-  private setupFormTracking(): void {
-    document.addEventListener('submit', this.handleFormSubmit);
+  /**
+   * Start periodic check for user inactivity
+   */
+  private startPeriodicCheck(): void {
+    this.checkInterval = window.setInterval(() => {
+      const timeSinceLastActivity = this.getTimeSinceLastActivity();
+      
+      // Check if user has become idle
+      if (!this.isIdle && timeSinceLastActivity >= INACTIVE_THRESHOLD) {
+        this.isIdle = true;
+        this.recordActivityEvent(ActivityType.USER_IDLE, {
+          idleTime: timeSinceLastActivity,
+          lastActivityTime: new Date(this.lastActivity).toISOString()
+        });
+      }
+    }, ACTIVITY_CHECK_INTERVAL);
   }
   
-  // Handle form submissions
-  private handleFormSubmit = (event: Event): void => {
-    const form = event.target as HTMLFormElement;
-    
-    // Get form info without capturing sensitive data
-    const formInfo = {
-      id: form.id,
-      name: form.name,
-      action: form.action,
-      method: form.method,
-      fields: Array.from(form.elements).length
-    };
-    
-    this.recordActivity('form_submit', formInfo);
-  };
+  /**
+   * Stop periodic check for user inactivity
+   */
+  private stopPeriodicCheck(): void {
+    if (this.checkInterval !== null) {
+      clearInterval(this.checkInterval);
+      this.checkInterval = null;
+    }
+  }
   
   /**
    * Creates a higher-order component that tracks component usage
@@ -247,14 +245,15 @@ export class UserActivityMonitor {
   ): React.FC<P> {
     const TrackedComponent: React.FC<P> = (props) => {
       React.useEffect(() => {
-        this.recordActivity('component_mount', {
+        this.recordActivityEvent(ActivityType.PAGE_VIEW, {
           component: componentName,
-          props: Object.keys(props)
+          viewStart: Date.now()
         });
         
         return () => {
-          this.recordActivity('component_unmount', {
-            component: componentName
+          this.recordActivityEvent(ActivityType.NAVIGATION, {
+            fromComponent: componentName,
+            viewDuration: Date.now() - this.lastActivity
           });
         };
       }, []);

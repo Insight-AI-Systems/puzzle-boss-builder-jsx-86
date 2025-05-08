@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
@@ -10,6 +9,8 @@ import { AdminAccessCheck } from '@/components/admin/dashboard/AdminAccessCheck'
 import { AdminToolbar } from '@/components/admin/dashboard/AdminToolbar';
 import { AdminDiagnostics } from '@/components/admin/AdminDiagnostics';
 import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/utils/constants';
+import { userService } from '@/services/userService';
+import { debugLog, DebugLevel } from '@/utils/debug';
 
 const AdminDashboard = () => {
   const { profile, isLoading } = useUserProfile();
@@ -34,7 +35,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (isLoading) return;
     
-    console.log('AdminDashboard - Access Check:', { 
+    debugLog('AdminDashboard', 'Access Check', DebugLevel.INFO, { 
       isLoggedIn: !!user,
       userEmail: user?.email,
       hasProtectedEmail,
@@ -51,13 +52,13 @@ const AdminDashboard = () => {
 
     // Special case for protected admin - always grant access
     if (hasProtectedEmail) {
-      console.log('AdminDashboard - Protected admin detected, granting full access');
+      debugLog('AdminDashboard', 'Protected admin detected, granting full access', DebugLevel.INFO);
       return;
     }
     
     // Check access for regular users
     if (!hasAdminAccess && user) {
-      console.log('AdminDashboard - Access denied, redirecting to homepage');
+      debugLog('AdminDashboard', 'Access denied, redirecting to homepage', DebugLevel.WARN);
       toast({
         title: "Access Denied",
         description: `You don't have admin privileges. Current role: ${profile?.role || 'unknown'}`,
@@ -66,6 +67,19 @@ const AdminDashboard = () => {
       navigate('/', { replace: true });
     }
   }, [isLoading, hasAdminAccess, isSuperAdmin, navigate, profile, user, toast, hasProtectedEmail, session]);
+
+  // Preload users to ensure the service is initialized
+  useEffect(() => {
+    if (hasAdminAccess || hasProtectedEmail) {
+      userService.getAllUsers()
+        .then(users => {
+          debugLog('AdminDashboard', `Preloaded ${users.length} users`, DebugLevel.INFO);
+        })
+        .catch(err => {
+          debugLog('AdminDashboard', 'Error preloading users', DebugLevel.ERROR, { error: err });
+        });
+    }
+  }, [hasAdminAccess, hasProtectedEmail]);
 
   const showDebugInfo = () => {
     const info = {

@@ -1,60 +1,48 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Bug, Settings, Terminal, Shield, DownloadCloud } from "lucide-react";
+import { RefreshCw, Bug, Info } from "lucide-react";
 
 interface AdminToolbarProps {
   showDebugInfo: () => void;
-  showDiagnostics?: () => void;
-  onRefresh?: () => void;
-  exportUsers?: () => void;
+  showDiagnostics: () => void;
+  onRefresh: () => void;
 }
 
-export function AdminToolbar({ 
-  showDebugInfo, 
-  showDiagnostics, 
-  onRefresh,
-  exportUsers
-}: AdminToolbarProps) {
-  const handleRefresh = () => {
-    if (onRefresh) {
-      onRefresh();
-    } else {
-      window.location.reload();
-    }
-  };
-
+export function AdminToolbar({ showDebugInfo, showDiagnostics, onRefresh }: AdminToolbarProps) {
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" onClick={handleRefresh} className="flex items-center gap-1">
+    <div className="flex flex-wrap gap-2 my-4">
+      <Button 
+        variant="outline" 
+        size="sm"
+        className="flex items-center gap-2 bg-puzzle-black/20 hover:bg-puzzle-black/30"
+        onClick={onRefresh}
+      >
         <RefreshCw className="h-4 w-4" />
-        Refresh
+        <span className="hidden md:inline">Refresh Dashboard</span>
+        <span className="inline md:hidden">Refresh</span>
       </Button>
       
-      <Button variant="outline" size="sm" onClick={showDebugInfo} className="flex items-center gap-1">
-        <Terminal className="h-4 w-4" />
-        Debug Info
+      <Button 
+        variant="outline" 
+        size="sm"
+        className="flex items-center gap-2 bg-puzzle-black/20 hover:bg-puzzle-black/30"
+        onClick={showDiagnostics}
+      >
+        <Bug className="h-4 w-4" />
+        <span className="hidden md:inline">Toggle Diagnostics</span>
+        <span className="inline md:hidden">Diagnostics</span>
       </Button>
       
-      {showDiagnostics && (
-        <Button variant="outline" size="sm" onClick={showDiagnostics} className="flex items-center gap-1">
-          <Bug className="h-4 w-4" />
-          Admin Diagnostics
-        </Button>
-      )}
-      
-      {exportUsers && (
-        <Button variant="outline" size="sm" onClick={exportUsers} className="flex items-center gap-1">
-          <DownloadCloud className="h-4 w-4" />
-          Export Users
-        </Button>
-      )}
-      
-      <Button variant="outline" size="sm" asChild className="flex items-center gap-1 ml-auto">
-        <a href="https://supabase.com/dashboard/project/vcacfysfjgoahledqdwa/auth/users" target="_blank" rel="noopener noreferrer">
-          <Shield className="h-4 w-4" />
-          Supabase Users
-        </a>
+      <Button 
+        variant="outline" 
+        size="sm"
+        className="flex items-center gap-2 bg-puzzle-black/20 hover:bg-puzzle-black/30"
+        onClick={showDebugInfo}
+      >
+        <Info className="h-4 w-4" />
+        <span className="hidden md:inline">Debug Info</span>
+        <span className="inline md:hidden">Debug</span>
       </Button>
     </div>
   );
