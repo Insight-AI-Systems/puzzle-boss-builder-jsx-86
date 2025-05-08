@@ -23,7 +23,7 @@ export function useRoleManagement() {
         // Use the roleService to update the user role
         const result = await roleService.updateUserRole(userId, newRole);
         if (!result.success) {
-          throw new Error(result.error || 'Failed to update user role');
+          throw new Error(result.message || 'Failed to update user role');
         }
         return { userId, newRole, success: true };
       } catch (err) {
@@ -41,7 +41,7 @@ export function useRoleManagement() {
         // Use the roleService to bulk update roles
         const result = await roleService.bulkUpdateRoles(userIds, newRole);
         if (!result.success) {
-          throw new Error(result.error || 'Failed to update user roles');
+          throw new Error(result.message || 'Failed to update user roles');
         }
         return { userIds, newRole, success: true, results: result.results };
       } catch (err) {

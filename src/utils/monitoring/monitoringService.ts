@@ -1,29 +1,52 @@
+import { debugLog, DebugLevel } from '@/utils/debug';
+import { supabase } from '@/integrations/supabase/client';
 
-import React from 'react';
-import { DebugLevel, debugLog } from '@/utils/debug';
-import { EventType, MonitoringEvent, MonitoringOptions, SecurityEvent } from '@/types/monitoringTypes';
+// Define error priorities
+export enum ErrorPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical'
+}
+
+// Define event types
+export enum MonitoringEventType {
+  ERROR = 'error',
+  PERFORMANCE = 'performance',
+  SECURITY = 'security',
+  USER_ACTION = 'user_action'
+}
+
+interface MonitoringEvent {
+  type: MonitoringEventType;
+  timestamp: number; // Unix timestamp
+  data: Record<string, any>;
+  userId?: string;
+}
 
 /**
- * Service for monitoring application events and performance
+ * Monitoring Service
+ * Central service for tracking errors, performance, and user activity
  */
-export class MonitoringService {
-  private static instance: MonitoringService | null = null;
-  private options: MonitoringOptions = {
-    enableConsoleLogging: true,
-    enableRemoteLogging: false,
-    logLevel: DebugLevel.INFO
-  };
-  
+class MonitoringService {
+  private static instance: MonitoringService;
   private events: MonitoringEvent[] = [];
+  private maxQueueSize = 50;
+  private flushInterval: NodeJS.Timeout | null = null;
+  private flushIntervalMs = 30000; // 30 seconds
   
-  // Private constructor for singleton
   private constructor() {
-    debugLog('MonitoringService', 'Initialized', DebugLevel.INFO);
+    // Start flush interval
+    this.startFlushInterval();
+    
+    // Add window unload event to flush remaining events
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', () => {
+        this.flush(true);
+      });
+    }
   }
   
-  /**
-   * Get the singleton instance
-   */
   public static getInstance(): MonitoringService {
     if (!MonitoringService.instance) {
       MonitoringService.instance = new MonitoringService();
@@ -32,95 +55,167 @@ export class MonitoringService {
   }
   
   /**
-   * Configure monitoring options
+   * Track an error with priority level
    */
-  public configure(options: Partial<MonitoringOptions>): void {
-    this.options = {
-      ...this.options,
-      ...options
-    };
-    
-    debugLog('MonitoringService', 'Configuration updated', DebugLevel.INFO, this.options);
+  public trackError(error: Error, priority: ErrorPriority | string = ErrorPriority.MEDIUM, metadata: Record<string, any> = {}): void {
+    try {
+      const errorData = {
+        message: error.message,
+        stack: error.stack,
+        priority,
+        ...metadata
+      };
+      
+      debugLog('MonitoringService', `Tracking error: ${error.message}`, DebugLevel.ERROR);
+      
+      this.addEvent({
+        type: MonitoringEventType.ERROR,
+        timestamp: Date.now(),
+        data: errorData,
+        userId: this.getCurrentUserId()
+      });
+      
+      // If critical, flush immediately
+      if (priority === ErrorPriority.CRITICAL) {
+        this.flush(true);
+      }
+    } catch (err) {
+      console.error('Error in trackError:', err);
+    }
   }
   
   /**
-   * Record a monitoring event
+   * Track performance metric
    */
-  public recordEvent<T>(eventType: EventType, data: T): void {
-    const event: MonitoringEvent = {
-      timestamp: Date.now(),
-      eventType,
-      data
-    };
-    
+  public trackPerformance(metricName: string, durationMs: number, metadata: Record<string, any> = {}): void {
+    try {
+      this.addEvent({
+        type: MonitoringEventType.PERFORMANCE,
+        timestamp: Date.now(),
+        data: {
+          metricName,
+          durationMs,
+          ...metadata
+        },
+        userId: this.getCurrentUserId()
+      });
+    } catch (err) {
+      console.error('Error in trackPerformance:', err);
+    }
+  }
+  
+  /**
+   * Track security event
+   */
+  public trackSecurityEvent(eventName: string, metadata: Record<string, any> = {}): void {
+    try {
+      this.addEvent({
+        type: MonitoringEventType.SECURITY,
+        timestamp: Date.now(),
+        data: {
+          eventName,
+          ...metadata
+        },
+        userId: this.getCurrentUserId()
+      });
+      
+      // Security events flush immediately
+      this.flush(true);
+    } catch (err) {
+      console.error('Error in trackSecurityEvent:', err);
+    }
+  }
+  
+  /**
+   * Track user action
+   */
+  public trackUserAction(action: string, metadata: Record<string, any> = {}): void {
+    try {
+      this.addEvent({
+        type: MonitoringEventType.USER_ACTION,
+        timestamp: Date.now(),
+        data: {
+          action,
+          ...metadata
+        },
+        userId: this.getCurrentUserId()
+      });
+    } catch (err) {
+      console.error('Error in trackUserAction:', err);
+    }
+  }
+  
+  /**
+   * Add event to queue
+   */
+  private addEvent(event: MonitoringEvent): void {
     this.events.push(event);
     
-    if (this.options.enableConsoleLogging) {
-      debugLog('MonitoringService', `Event recorded: ${eventType}`, DebugLevel.INFO, data);
+    // If queue is full, flush
+    if (this.events.length >= this.maxQueueSize) {
+      this.flush();
+    }
+  }
+  
+  /**
+   * Start flush interval
+   */
+  private startFlushInterval(): void {
+    if (this.flushInterval) {
+      clearInterval(this.flushInterval);
     }
     
-    if (this.options.enableRemoteLogging) {
-      this.sendToRemoteLogging(event);
-    }
+    this.flushInterval = setInterval(() => {
+      this.flush();
+    }, this.flushIntervalMs);
   }
   
   /**
-   * Record a security event
+   * Flush events to server
    */
-  public recordSecurityEvent(event: SecurityEvent): void {
-    this.recordEvent(EventType.SECURITY, event);
-  }
-  
-  /**
-   * Get all recorded events
-   */
-  public getEvents(): MonitoringEvent[] {
-    return [...this.events];
-  }
-  
-  /**
-   * Clear all recorded events
-   */
-  public clearEvents(): void {
+  private flush(immediate: boolean = false): void {
+    if (this.events.length === 0) return;
+    
+    const eventsToSend = [...this.events];
     this.events = [];
-    debugLog('MonitoringService', 'Events cleared', DebugLevel.INFO);
-  }
-  
-  /**
-   * Send event to remote logging system
-   */
-  private sendToRemoteLogging(event: MonitoringEvent): void {
-    // Implementation would depend on remote logging service
-    debugLog('MonitoringService', 'Remote logging not implemented', DebugLevel.WARN);
-  }
-  
-  /**
-   * Creates a higher-order component that wraps the given component with monitoring
-   */
-  public withMonitoring<P extends object>(
-    Component: React.ComponentType<P>,
-    componentName: string
-  ): React.FC<P> {
-    const MonitoredComponent: React.FC<P> = (props) => {
-      React.useEffect(() => {
-        this.recordEvent(EventType.COMPONENT_MOUNT, {
-          component: componentName,
-          timestamp: Date.now()
-        });
-        
-        return () => {
-          this.recordEvent(EventType.COMPONENT_UNMOUNT, {
-            component: componentName,
-            timestamp: Date.now()
-          });
-        };
-      }, []);
-      
-      return <Component {...props} />;
-    };
     
-    MonitoredComponent.displayName = `Monitored(${componentName})`;
-    return MonitoredComponent;
+    // Send events to server
+    this.sendEvents(eventsToSend, immediate);
+  }
+  
+  /**
+   * Send events to server
+   */
+  private async sendEvents(events: MonitoringEvent[], immediate: boolean = false): Promise<void> {
+    try {
+      if (immediate) {
+        // Use fetch with keepalive for critical events on page unload
+        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+          const blob = new Blob([JSON.stringify({ events })], { type: 'application/json' });
+          navigator.sendBeacon('/api/monitoring/events', blob);
+          return;
+        }
+      }
+      
+      // Normal case - use Supabase function
+      await supabase.functions.invoke('track-monitoring-events', {
+        body: { events }
+      });
+    } catch (err) {
+      console.error('Error sending monitoring events:', err);
+    }
+  }
+  
+  /**
+   * Get current user ID
+   */
+  private getCurrentUserId(): string | undefined {
+    try {
+      // This is a placeholder - should be implemented to get actual user ID
+      return 'anonymous';
+    } catch {
+      return undefined;
+    }
   }
 }
 

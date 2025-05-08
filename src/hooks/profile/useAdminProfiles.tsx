@@ -48,15 +48,15 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
     fetchProfiles();
   }, [isAdmin, currentUserId]);
   
-  const updateUserRole = async (targetUserId: string, newRole: string) => {
+  const updateUserRole = async (targetUserId: string, newRole: UserRole) => {
     try {
-      const result = await roleService.updateUserRole(targetUserId, newRole as any);
+      const result = await roleService.updateUserRole(targetUserId, newRole);
       
       if (result.success) {
         // Update local state optimistically
         setUsers(prevUsers => 
           prevUsers.map(user => 
-            user.id === targetUserId ? { ...user, role: newRole as any } : user
+            user.id === targetUserId ? { ...user, role: newRole } : user
           )
         );
         
@@ -75,15 +75,15 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
     }
   };
   
-  const bulkUpdateRoles = async (userIds: string[], newRole: string) => {
+  const bulkUpdateRoles = async (userIds: string[], newRole: UserRole) => {
     try {
-      const result = await roleService.bulkUpdateRoles(userIds, newRole as any);
+      const result = await roleService.bulkUpdateRoles(userIds, newRole);
       
       if (result.success) {
         // Update local state optimistically
         setUsers(prevUsers => 
           prevUsers.map(user => 
-            userIds.includes(user.id) ? { ...user, role: newRole as any } : user
+            userIds.includes(user.id) ? { ...user, role: newRole } : user
           )
         );
         
