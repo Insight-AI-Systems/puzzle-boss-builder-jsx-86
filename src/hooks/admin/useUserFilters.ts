@@ -4,7 +4,7 @@ import { UserRole } from '@/types/userTypes';
 import { UserFilterCriteria } from '@/components/admin/user-management/AdvancedUserFilter';
 
 export function useUserFilters() {
-  // Change to accept 'regular' as a value
+  // Fix the type to include 'regular' as a valid value
   const [userType, setUserType] = useState<'regular' | 'admin' | 'player'>('regular');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedRole, setSelectedRole] = useState<string | null>(null);

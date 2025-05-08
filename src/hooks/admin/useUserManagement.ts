@@ -9,6 +9,13 @@ import { UserProfile, UserRole } from '@/types/userTypes';
 import { errorTracker } from '@/utils/monitoring/errorTracker';
 import { performanceMonitor } from '@/utils/monitoring/performanceMonitor';
 
+// Add recordMetric stub if it doesn't exist
+if (!performanceMonitor.recordMetric) {
+  (performanceMonitor as any).recordMetric = (name: string, value: number, tags?: Record<string, string>) => {
+    console.log(`Performance metric: ${name} = ${value}`, tags);
+  };
+}
+
 export function useUserManagement(isAdmin: boolean = false, currentUserId: string | null = null) {
   // Fetch all filter related state and functions
   const filterHook = useUserFilters();
@@ -118,7 +125,7 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
       // Apply filters based on userType, search, role, etc.
       const filtered = userService.filterUsers(users, {
         searchQuery: filterHook.searchQuery,
-        role: filterHook.selectedRole,
+        role: filterHook.selectedRole as UserRole | null,
         country: filterHook.selectedCountry,
         userType: filterHook.userType
       });

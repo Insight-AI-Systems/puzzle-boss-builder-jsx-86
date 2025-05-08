@@ -1,16 +1,102 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { handleCorsOptions, corsHeaders } from "../_shared/cors.ts";
-import { successResponse, errorResponse, HttpStatus } from "../_shared/response.ts";
-import { verifyAuth, isProtectedAdmin } from "../_shared/auth.ts";
-import { EdgeFunctionLogger } from "../_shared/logging.ts";
-import { getSupabaseConfig } from "../_shared/config.ts";
 
-// Initialize logger
-const logger = new EdgeFunctionLogger("get-all-users");
+// Define HTTP status codes here since they're missing from the shared module
+enum HttpStatus {
+  OK = 200,
+  BAD_REQUEST = 400,
+  UNAUTHORIZED = 401,
+  FORBIDDEN = 403,
+  NOT_FOUND = 404,
+  INTERNAL_SERVER_ERROR = 500
+}
+
+// Helper functions for creating standardized responses
+function successResponse(data: any) {
+  return new Response(
+    JSON.stringify(data),
+    {
+      status: HttpStatus.OK,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+}
+
+function errorResponse(message: string, code: string, status: HttpStatus) {
+  return new Response(
+    JSON.stringify({ error: { message, code } }),
+    {
+      status,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+}
 
 // Special admin email for direct access
 const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+
+// Initialize logger
+class EdgeFunctionLogger {
+  functionName: string;
+
+  constructor(functionName: string) {
+    this.functionName = functionName;
+  }
+
+  info(message: string, data: any = {}) {
+    console.log(JSON.stringify({
+      level: 'info',
+      function: this.functionName,
+      message,
+      data,
+      timestamp: new Date().toISOString()
+    }));
+  }
+
+  warn(message: string, data: any = {}) {
+    console.log(JSON.stringify({
+      level: 'warn',
+      function: this.functionName,
+      message,
+      data,
+      timestamp: new Date().toISOString()
+    }));
+  }
+
+  error(message: string, data: any = {}) {
+    console.log(JSON.stringify({
+      level: 'error',
+      function: this.functionName,
+      message,
+      data,
+      timestamp: new Date().toISOString()
+    }));
+  }
+}
+
+const logger = new EdgeFunctionLogger("get-all-users");
+
+// Function to get Supabase configuration from environment variables
+function getSupabaseConfig() {
+  return {
+    url: Deno.env.get('SUPABASE_URL'),
+    serviceRoleKey: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  };
+}
+
+// Check if a user is protected admin by email
+function isProtectedAdmin(email?: string | null): boolean {
+  if (!email) return false;
+  return email.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase();
+}
 
 // Interface for the user data we return
 interface UserData {
@@ -28,6 +114,49 @@ interface UserData {
   credits?: number | null;
   updated_at?: string | null;
   custom_gender?: string | null;
+}
+
+// Verify authentication from request
+async function verifyAuth(request: Request) {
+  try {
+    // Extract the JWT from the Authorization header
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
+      return { 
+        user: null, 
+        error: errorResponse("No authorization header", "no_auth", HttpStatus.UNAUTHORIZED) 
+      };
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const config = getSupabaseConfig();
+    if (!config.url || !config.serviceRoleKey) {
+      return { 
+        user: null, 
+        error: errorResponse("Server configuration error", "server_error", HttpStatus.INTERNAL_SERVER_ERROR) 
+      };
+    }
+
+    // Create a Supabase client to verify the token
+    const supabaseAdmin = createClient(config.url, config.serviceRoleKey);
+    const { data, error } = await supabaseAdmin.auth.getUser(token);
+
+    if (error || !data.user) {
+      logger.warn("Auth verification failed", { error });
+      return { 
+        user: null, 
+        error: errorResponse("Invalid token", "invalid_token", HttpStatus.UNAUTHORIZED)
+      };
+    }
+
+    return { user: data.user, error: null };
+  } catch (err) {
+    logger.error("Error in verifyAuth", { error: err });
+    return { 
+      user: null, 
+      error: errorResponse("Authentication error", "auth_error", HttpStatus.UNAUTHORIZED)
+    };
+  }
 }
 
 // Check if the user has admin privileges
@@ -61,50 +190,11 @@ async function verifyAdminAccess(supabase: any, userId: string): Promise<boolean
   }
 }
 
-// Check if a column exists in a table
-async function columnExists(supabase: any, tableName: string, columnName: string): Promise<boolean> {
-  try {
-    // Use the column_exists function we created in the database
-    const { data, error } = await supabase.rpc('column_exists', { 
-      table_name: tableName,
-      column_name: columnName
-    });
-    
-    if (error) {
-      logger.warn(`Column check for ${columnName}: failed to check`, { error: error.message });
-      
-      // Fallback method: Try direct SQL execution if RPC fails
-      const query = `SELECT EXISTS (
-        SELECT 1
-        FROM information_schema.columns
-        WHERE table_schema = 'public'
-          AND table_name = '${tableName}'
-          AND column_name = '${columnName}'
-      ) AS exists`;
-      
-      const { data: sqlData, error: sqlError } = await supabase.rpc('execute_sql', { sql: query });
-      
-      if (sqlError) {
-        logger.warn(`Column check for ${columnName}: fallback method failed too`, { error: sqlError.message });
-        return false;
-      }
-      
-      const exists = sqlData?.result?.exists || false;
-      logger.info(`Column check for ${columnName}: ${exists ? 'exists' : 'does not exist'} (fallback method)`);
-      return exists;
-    }
-    
-    logger.info(`Column check for ${columnName}: ${data ? 'exists' : 'does not exist'}`);
-    return !!data;
-  } catch (err) {
-    logger.warn(`Error checking column ${columnName}`, { error: err });
-    return false;
-  }
-}
-
-// Fetch all users with profile data - with robust column detection
+// Fetch all users with profile data
 async function fetchAllUsers(supabase: any): Promise<UserData[]> {
   try {
+    logger.info("Starting fetchAllUsers function");
+    
     // First, let's get all auth users
     const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers({
       perPage: 1000,  // Ensure we get a good amount of users
@@ -126,19 +216,10 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
 
     logger.info(`Retrieved ${authUsers.users.length} users from auth service`);
     
-    // First check if the profiles table exists and has the basic columns we need
-    let columnsToCheck = ["id", "role", "username", "created_at", "updated_at", "country", "last_sign_in", 
-      "credits", "avatar_url", "categories_played", "gender", "age_group", 
-      "custom_gender", "email"];
-    
     // Get profiles with all columns
-    let selectColumns = columnsToCheck.join(", ");
-    logger.info(`Using profiles query with columns: ${selectColumns}`);
-    
-    // Get profiles with detected fields
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select(selectColumns);
+      .select("*");
     
     if (profilesError) {
       logger.error("Error fetching profiles data", { error: profilesError });
@@ -153,7 +234,7 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
         
         // Last resort: return basic user data from auth
         logger.info("Falling back to basic auth user data");
-        return authUsers.users.map(user => ({
+        return authUsers.users.map((user: any) => ({
           id: user.id,
           email: user.email || '',
           display_name: user.email?.split('@')[0] || 'User',
@@ -166,11 +247,11 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
       // Map basic user info if we have IDs
       logger.info(`Retrieved ${profileIds?.length || 0} profile IDs as fallback`);
       const profileMap = new Map();
-      profileIds?.forEach(profile => {
+      profileIds?.forEach((profile: any) => {
         profileMap.set(profile.id, { id: profile.id });
       });
       
-      return authUsers.users.map(user => {
+      return authUsers.users.map((user: any) => {
         const profile = profileMap.get(user.id) || {};
         return {
           id: user.id,
@@ -187,12 +268,12 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
     
     // Create maps for efficient lookups
     const profileMap = new Map();
-    profiles?.forEach(profile => {
+    profiles?.forEach((profile: any) => {
       profileMap.set(profile.id, profile);
     });
     
     // Combine auth users with their profiles and optional fields
-    const combinedUsers = authUsers.users.map(user => {
+    const combinedUsers = authUsers.users.map((user: any) => {
       const profile = profileMap.get(user.id) || {};
       
       // Special case for protected admin
@@ -232,8 +313,12 @@ async function fetchAllUsers(supabase: any): Promise<UserData[]> {
 
 serve(async (req) => {
   // Handle CORS preflight requests
-  const corsResponse = handleCorsOptions(req);
-  if (corsResponse) return corsResponse;
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders
+    });
+  }
 
   try {
     // Create Supabase admin client

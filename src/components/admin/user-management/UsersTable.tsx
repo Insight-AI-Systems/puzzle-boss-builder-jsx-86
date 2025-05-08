@@ -6,7 +6,7 @@ import { UserTableRow } from './UserTableRow';
 import { UserTableProps } from '@/types/userTableTypes';
 import { UserRole } from '@/types/userTypes';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, AlertCircle, Database, UserSearch } from 'lucide-react';
+import { RefreshCw, AlertCircle, Database, UserSearch, Shield } from 'lucide-react';
 import { isProtectedAdmin } from '@/utils/constants';
 
 export function UsersTable({ 
@@ -79,7 +79,7 @@ export function UsersTable({
                     canAssignRole={canAssignRole}
                     onRoleChange={onRoleChange}
                     isSelected={selectedUsers.has(user.id)}
-                    onSelect={(checked) => onUserSelection?.(user.id, checked)}
+                    onSelect={onUserSelection ? (checked) => onUserSelection(user.id, checked) : undefined}
                     selectionEnabled={selectionEnabled}
                   />
                 ))}
@@ -117,7 +117,7 @@ export function UsersTable({
                     canAssignRole={canAssignRole}
                     onRoleChange={onRoleChange}
                     isSelected={selectedUsers.has(user.id)}
-                    onSelect={(checked) => onUserSelection?.(user.id, checked)}
+                    onSelect={onUserSelection ? (checked) => onUserSelection(user.id, checked) : undefined}
                     selectionEnabled={selectionEnabled}
                   />
                 ))}
@@ -190,6 +190,3 @@ export function UsersTable({
     </div>
   );
 }
-
-// For the shield icon
-import { Shield } from 'lucide-react';

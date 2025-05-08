@@ -1,33 +1,48 @@
 
 import React from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, User } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Users, Shield } from 'lucide-react';
 
 interface UserTypeToggleProps {
-  value: 'regular' | 'admin';
-  onChange: (userType: 'regular' | 'admin') => void;
+  value: string;
+  onChange: (value: 'regular' | 'admin' | 'player') => void;
 }
 
 export function UserTypeToggle({ value, onChange }: UserTypeToggleProps) {
+  // This function ensures we always have a valid value, defaulting to 'regular'
+  const handleValueChange = (newValue: string) => {
+    if (newValue === 'admin' || newValue === 'player') {
+      onChange(newValue);
+    } else {
+      onChange('regular');
+    }
+  };
+  
   return (
     <div className="mb-6">
-      <Tabs 
-        defaultValue="regular" 
-        value={value} 
-        onValueChange={(newValue) => onChange(newValue as 'regular' | 'admin')}
-        className="w-full"
+      <ToggleGroup 
+        type="single" 
+        value={value}
+        onValueChange={handleValueChange}
+        className="border rounded-md flex w-full sm:w-auto justify-start"
       >
-        <TabsList className="grid w-full grid-cols-2 mb-2">
-          <TabsTrigger value="regular" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            <span className="md:block">Regular Users</span>
-          </TabsTrigger>
-          <TabsTrigger value="admin" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            <span className="md:block">Admins & Managers</span>
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+        <ToggleGroupItem 
+          value="regular" 
+          aria-label="View regular users"
+          className="flex-1 sm:flex-none"
+        >
+          <Users className="h-4 w-4 mr-2" />
+          <span>Regular Users</span>
+        </ToggleGroupItem>
+        <ToggleGroupItem 
+          value="admin" 
+          aria-label="View admin users"
+          className="flex-1 sm:flex-none"
+        >
+          <Shield className="h-4 w-4 mr-2" />
+          <span>Admins</span>
+        </ToggleGroupItem>
+      </ToggleGroup>
     </div>
   );
 }
