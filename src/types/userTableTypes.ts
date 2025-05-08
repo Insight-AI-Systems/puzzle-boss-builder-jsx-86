@@ -31,7 +31,7 @@ export interface UserFilterState {
   searchQuery: string;
   selectedRole: UserRole | null;
   selectedCountry: string | null;
-  userType: 'all' | 'admin' | 'player';
+  userType: 'all' | 'admin' | 'regular' | 'player';
   page: number;
   pageSize: number;
 }

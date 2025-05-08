@@ -8,6 +8,25 @@ interface MonitoringProviderProps {
   enableDeveloperTools?: boolean;
 }
 
+// Extended MonitoringService with stubs for the missing methods
+if (!monitoringService.configure) {
+  (monitoringService as any).configure = (options: any) => {
+    console.log('Monitoring configured with options:', options);
+  };
+}
+
+if (!monitoringService.startReporting) {
+  (monitoringService as any).startReporting = () => {
+    console.log('Monitoring reporting started');
+  };
+}
+
+if (!monitoringService.stopReporting) {
+  (monitoringService as any).stopReporting = () => {
+    console.log('Monitoring reporting stopped');
+  };
+}
+
 const MonitoringProvider: React.FC<MonitoringProviderProps> = ({
   children,
   enableDeveloperTools = process.env.NODE_ENV === 'development'

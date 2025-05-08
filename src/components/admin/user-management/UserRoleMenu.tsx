@@ -31,6 +31,11 @@ import {
 } from "@/components/ui/tooltip";
 import { useToast } from '@/hooks/use-toast';
 
+// Helper function to replace all occurrences in a string (for ES2020 and below compatibility)
+const safeReplaceAll = (str: string, find: string, replace: string): string => {
+  return str.split(find).join(replace);
+};
+
 /**
  * User Role Menu Component
  * 
@@ -159,7 +164,7 @@ export const UserRoleMenu: React.FC<UserRoleMenuProps> = ({
                         <p className="text-xs font-medium mb-1">Permissions:</p>
                         <ul className="text-xs list-disc pl-4">
                           {roleDef.permissions.slice(0, 5).map(perm => (
-                            <li key={perm}>{perm.replaceAll('_', ' ')}</li>
+                            <li key={perm}>{safeReplaceAll(perm, '_', ' ')}</li>
                           ))}
                           {roleDef.permissions.length > 5 && (
                             <li>+{roleDef.permissions.length - 5} more...</li>
@@ -200,7 +205,7 @@ export const UserRoleMenu: React.FC<UserRoleMenuProps> = ({
               <div className="grid grid-cols-2 gap-2">
                 {ROLE_DEFINITIONS[roleToChangeTo]?.permissions.map(permission => (
                   <div key={permission} className="text-xs py-1 px-2 bg-muted/30 rounded-sm">
-                    {permission.replaceAll('_', ' ')}
+                    {safeReplaceAll(permission, '_', ' ')}
                   </div>
                 ))}
               </div>

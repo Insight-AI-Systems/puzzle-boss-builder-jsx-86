@@ -4,7 +4,8 @@ import { UserRole } from '@/types/userTypes';
 import { UserFilterCriteria } from '@/components/admin/user-management/AdvancedUserFilter';
 
 export function useUserFilters() {
-  const [userType, setUserType] = useState<'regular' | 'admin'>('regular');
+  // Change to accept 'regular' as a value
+  const [userType, setUserType] = useState<'regular' | 'admin' | 'player'>('regular');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [page, setPage] = useState<number>(0);

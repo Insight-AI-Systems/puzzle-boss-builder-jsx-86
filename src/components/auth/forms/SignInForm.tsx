@@ -41,7 +41,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       {errorMessage && (
-        <Alert variant="warning">
+        <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{errorMessage}</AlertDescription>
         </Alert>

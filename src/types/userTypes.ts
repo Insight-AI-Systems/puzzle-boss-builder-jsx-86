@@ -1,4 +1,3 @@
-
 export type UserRole = 
   | 'super_admin' 
   | 'admin' 
@@ -10,7 +9,8 @@ export type UserRole =
 
 export type Gender = 'male' | 'female' | 'non-binary' | 'custom' | 'prefer-not-to-say' | 'other';
 
-export type AgeGroup = 'under_18' | '18_24' | '25_34' | '35_44' | '45_54' | '55_64' | '65_plus';
+// Update AgeGroup type to match the values being used
+export type AgeGroup = 'under_18' | '13-17' | '18-24' | '25-34' | '35-44' | '45-54' | '55_64' | '65_plus' | '45-60' | '60+';
 
 export interface Profile {
   id: string;
@@ -44,6 +44,7 @@ export interface UserProfile {
   created_at: string;
   updated_at: string;
   last_sign_in?: string | null;
+  account_locked?: boolean; // Added missing property
 }
 
 // Define the interface for role definition

@@ -43,7 +43,9 @@ export function useRoleManagement() {
         if (!result.success) {
           throw new Error(result.message || 'Failed to update user roles');
         }
-        return { userIds, newRole, success: true, results: result.results };
+        // Add a safe check for result.results
+        const results = result.results || [];
+        return { userIds, newRole, success: true, results };
       } catch (err) {
         debugLog('useRoleManagement', "Exception in bulkUpdateRoles:", DebugLevel.ERROR, { error: err });
         throw err;

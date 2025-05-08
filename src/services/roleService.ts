@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/userTypes';
 import { debugLog, DebugLevel } from '@/utils/debug';
 import { toast } from '@/hooks/use-toast';
+import { QueryClient } from '@tanstack/react-query';
 
 // Rate limiting settings
 const RATE_LIMIT = {
@@ -14,10 +15,11 @@ const RATE_LIMIT = {
 // Protected admin email
 const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
-interface RoleChangeResult {
+export interface RoleChangeResult {
   success: boolean;
   message?: string;
   error?: Error;
+  results?: Array<{userId: string, success: boolean, message?: string}>;
 }
 
 /**
@@ -26,6 +28,7 @@ interface RoleChangeResult {
  */
 class RoleService {
   private static instance: RoleService;
+  private queryClient: QueryClient | null = null;
   
   private constructor() {}
   
@@ -37,6 +40,54 @@ class RoleService {
       RoleService.instance = new RoleService();
     }
     return RoleService.instance;
+  }
+  
+  /**
+   * Set the QueryClient instance for invalidation
+   */
+  public setQueryClient(client: QueryClient) {
+    this.queryClient = client;
+  }
+  
+  /**
+   * Check if a user has permission to change roles
+   */
+  public canAssignRole(
+    currentUserRole: UserRole,
+    targetRole: UserRole,
+    targetUserId: string, 
+    currentUserEmail?: string
+  ): boolean {
+    // Cannot change own role
+    if (targetUserId === supabase.auth.getUser()?.data?.user?.id) {
+      debugLog('roleService', 'Cannot change own role', DebugLevel.WARN);
+      return false;
+    }
+    
+    // Cannot change protected admin role
+    if (this.isProtectedAdmin(currentUserEmail)) {
+      debugLog('roleService', 'Cannot change protected admin role', DebugLevel.WARN);
+      return false;
+    }
+    
+    // Super admins can change any role
+    if (currentUserRole === 'super_admin') {
+      return true;
+    }
+    
+    // Regular admins can change most roles except super_admin
+    if (currentUserRole === 'admin') {
+      return targetRole !== 'super_admin';
+    }
+    
+    // Category managers and other special roles have limited permissions
+    if (['category_manager', 'social_media_manager', 'partner_manager', 'cfo'].includes(currentUserRole)) {
+      // These roles typically can't change other users' roles
+      return false;
+    }
+    
+    // Regular players can't change roles
+    return false;
   }
   
   /**
@@ -52,36 +103,7 @@ class RoleService {
     targetUserEmail: string | null | undefined,
     newRole: UserRole
   ): boolean {
-    // Cannot change own role
-    if (targetUserId === supabase.auth.getUser()?.data?.user?.id) {
-      debugLog('roleService', 'Cannot change own role', DebugLevel.WARN);
-      return false;
-    }
-    
-    // Cannot change protected admin role
-    if (this.isProtectedAdmin(targetUserEmail)) {
-      debugLog('roleService', 'Cannot change protected admin role', DebugLevel.WARN);
-      return false;
-    }
-    
-    // Super admins can change any role
-    if (currentUserRole === 'super_admin') {
-      return true;
-    }
-    
-    // Regular admins can change most roles except super_admin
-    if (currentUserRole === 'admin') {
-      return newRole !== 'super_admin';
-    }
-    
-    // Category managers and other special roles have limited permissions
-    if (['category_manager', 'social_media_manager', 'partner_manager', 'cfo'].includes(currentUserRole)) {
-      // These roles typically can't change other users' roles
-      return false;
-    }
-    
-    // Regular players can't change roles
-    return false;
+    return this.canAssignRole(currentUserRole, newRole, targetUserId);
   }
   
   /**
@@ -131,6 +153,12 @@ class RoleService {
       
       // Log the successful role change
       this.logRoleChange(currentUser?.id || 'unknown', userId, newRole);
+      
+      // Invalidate queries if queryClient is available
+      if (this.queryClient) {
+        this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
+        this.queryClient.invalidateQueries({ queryKey: ['user', userId] });
+      }
       
       debugLog('roleService', `Role updated successfully for user ${userId}`, DebugLevel.INFO);
       
@@ -222,12 +250,24 @@ class RoleService {
       if (!data.success) {
         throw new Error(data.message || 'Failed to update roles');
       }
+
+      // Create a results array for compatibility
+      const results = userIds.map(id => ({
+        userId: id,
+        success: true
+      }));
+      
+      // Invalidate queries if queryClient is available
+      if (this.queryClient) {
+        this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
+      }
       
       debugLog('roleService', `Bulk role update successful for ${userIds.length} users`, DebugLevel.INFO);
       
       return { 
         success: true,
-        message: `Successfully updated ${data.updatedCount || userIds.length} user roles to ${newRole}`
+        message: `Successfully updated ${data.updatedCount || userIds.length} user roles to ${newRole}`,
+        results
       };
       
     } catch (err) {

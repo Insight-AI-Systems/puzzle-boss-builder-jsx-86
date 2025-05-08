@@ -27,7 +27,7 @@ export function UserTableHeader({
         {selectionEnabled && (
           <TableHead className="w-12">
             <Checkbox 
-              onCheckedChange={onSelectAll}
+              onCheckedChange={(checked) => onSelectAll?.(!!checked)}
               aria-label="Select all users"
             />
           </TableHead>

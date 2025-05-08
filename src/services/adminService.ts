@@ -41,6 +41,13 @@ class AdminService {
   }
   
   /**
+   * Check if user has admin role
+   */
+  public hasAdminRole(role: UserRole): boolean {
+    return ['super_admin', 'admin'].includes(role);
+  }
+  
+  /**
    * Get user statistics
    */
   public async getUserStats(users: UserProfile[]): Promise<UserStats> {
