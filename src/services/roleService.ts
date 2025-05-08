@@ -12,6 +12,7 @@ export interface UserResponse {
   error?: Error | null;
   message?: string;
   user?: any;
+  results?: any[];
 }
 
 /**
@@ -103,6 +104,7 @@ class RoleService {
   
   /**
    * Bulk update user roles
+   * Renamed from bulkUpdateRoles to bulkUpdateUserRoles
    */
   public async bulkUpdateUserRoles(userIds: string[], newRole: UserRole): Promise<UserResponse> {
     try {
@@ -143,7 +145,8 @@ class RoleService {
       
       return {
         success: true,
-        message: `Updated ${filteredIds.length} user roles to ${newRole}`
+        message: `Updated ${filteredIds.length} user roles to ${newRole}`,
+        results: filteredIds
       };
       
     } catch (err) {
@@ -182,8 +185,8 @@ class RoleService {
   /**
    * Check if user can assign a role
    */
-  public canAssignRole(currentUserRole: UserRole, targetRole: UserRole, isProtectedAdmin: boolean): boolean {
-    if (isProtectedAdmin) return true;
+  public canAssignRole(currentUserRole: UserRole, targetRole: UserRole, userId: string, currentUserEmail?: string): boolean {
+    if (isProtectedAdmin(currentUserEmail)) return true;
     
     if (currentUserRole === 'super_admin') return true;
     

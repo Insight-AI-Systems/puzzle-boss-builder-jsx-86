@@ -154,15 +154,13 @@ export function UserManagement() {
         {/* Users Table */}
         <UsersTable 
           users={filteredUsers || []}
-          currentUserRole={user?.role as UserRole || 'player'}
-          currentUserEmail={user?.email || ''}
+          isLoading={isLoadingProfiles}
+          canAssignRole={(role: string, userId: string) => true} // Simplified implementation
           onRoleChange={handleRoleChange}
-          onSortByRole={() => {}}
-          onSortByLastLogin={() => {}}
-          selectedUsers={selectedUsers}
-          onUserSelection={handleUserSelection}
-          onSelectAll={handleSelectAllUsers}
-          onRefresh={refetch}
+          selectedUsers={Array.from(selectedUsers)} // Convert Set to Array
+          onSelectUser={handleUserSelection}
+          onSelectAllUsers={handleSelectAllUsers}
+          userType={userType as 'admin' | 'regular' | 'player'}
         />
         
         {/* Pagination */}

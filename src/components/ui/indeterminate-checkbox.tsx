@@ -16,7 +16,8 @@ const IndeterminateCheckbox = React.forwardRef<
   
   React.useEffect(() => {
     if (internalRef.current) {
-      internalRef.current.indeterminate = !!indeterminate;
+      // Use property accessor because TypeScript doesn't know about indeterminate
+      (internalRef.current as any).indeterminate = !!indeterminate;
     }
   }, [indeterminate]);
 

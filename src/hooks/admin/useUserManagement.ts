@@ -7,14 +7,7 @@ import { roleService } from '@/services/roleService';
 import { useToast } from '@/hooks/use-toast';
 import { UserProfile, UserRole } from '@/types/userTypes';
 import { errorTracker } from '@/utils/monitoring/errorTracker';
-import { performanceMonitor } from '@/utils/monitoring/performanceMonitor';
-
-// Add recordMetric stub if it doesn't exist
-if (!performanceMonitor.recordMetric) {
-  (performanceMonitor as any).recordMetric = (name: string, value: number, tags?: Record<string, string>) => {
-    console.log(`Performance metric: ${name} = ${value}`, tags);
-  };
-}
+import { performanceMonitor } from '@/utils/performance/PerformanceMonitor';
 
 export function useUserManagement(isAdmin: boolean = false, currentUserId: string | null = null) {
   // Fetch all filter related state and functions
@@ -98,7 +91,7 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
         });
     },
     bulkUpdateRoles: async (userIds: string[], newRole: UserRole) => {
-      return roleService.bulkUpdateRoles(userIds, newRole)
+      return roleService.bulkUpdateUserRoles(userIds, newRole)
         .then(result => {
           if (result.success) {
             // Update local state optimistically
@@ -262,9 +255,22 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
   // Function to check if any filters are active
   const hasActiveFilters = () => filterHook.hasActiveFilters();
   
-  // Implement bulkUpdateRoles function
+  // Implement bulkUpdateRoles function 
   const bulkUpdateRoles = async (userIds: string[], newRole: UserRole) => {
-    return roleManagement.handleBulkRoleChange();
+    // Fixed to use role management's handleBulkRoleChange with the correct arguments
+    try {
+      // Convert to proper UserRole type
+      const typedRole = newRole as UserRole;
+      return await roleManagement.bulkUpdateRoles(userIds, typedRole);
+    } catch (err) {
+      console.error('Error in bulkUpdateRoles:', err);
+      toast({
+        title: 'Role Update Failed',
+        description: 'Could not update roles for selected users',
+        variant: 'destructive',
+      });
+      return false;
+    }
   };
   
   return {

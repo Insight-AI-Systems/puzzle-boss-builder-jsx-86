@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types/userTypes';
 import { debugLog, DebugLevel } from '@/utils/debug';
@@ -94,6 +93,12 @@ class UserService {
             account_locked: data.account_locked || false
           };
           
+          // Special case for protected admin
+          if (isProtectedAdmin(profile.email)) {
+            profile.role = 'super_admin';
+            console.log(`Protected admin detected: ${profile.email} - Setting role to super_admin`);
+          }
+          
           this.cache[userId] = { profile, timestamp: Date.now() };
           return profile;
           
@@ -163,6 +168,12 @@ class UserService {
           age_group: item.age_group || undefined,
           account_locked: item.account_locked || false
         };
+        
+        // Special case for protected admin
+        if (isProtectedAdmin(profile.email)) {
+          profile.role = 'super_admin';
+          console.log(`Protected admin found in getAllUsers: ${profile.email} - Setting role to super_admin`);
+        }
         
         // Update cache
         this.cache[item.id] = { profile, timestamp: Date.now() };
@@ -413,14 +424,15 @@ class UserService {
   
   /**
    * Check if an email belongs to a protected admin
+   * Using the centralized security config
    */
   public isProtectedAdmin(email?: string | null): boolean {
-    if (!email) return false;
-    return email.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase();
+    return isProtectedAdmin(email);
   }
   
   /**
    * Check if an email belongs to a protected admin
+   * Alternative name for backward compatibility
    */
   public isProtectedAdminEmail(email?: string | null): boolean {
     return isProtectedAdmin(email);

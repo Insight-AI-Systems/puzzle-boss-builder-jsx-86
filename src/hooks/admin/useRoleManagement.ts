@@ -4,6 +4,7 @@ import { UserRole } from '@/types/userTypes';
 import { adminService } from '@/services/adminService';
 import { roleService } from '@/services/roleService';
 import { debugLog, DebugLevel } from '@/utils/debug';
+import { isProtectedAdmin } from '@/config/securityConfig';
 
 /**
  * Hook for role management functionality
@@ -38,8 +39,8 @@ export function useRoleManagement() {
       debugLog('useRoleManagement', `Bulk updating role to ${newRole} for ${userIds.length} users`, DebugLevel.INFO);
       
       try {
-        // Use the roleService to bulk update roles
-        const result = await roleService.bulkUpdateRoles(userIds, newRole);
+        // Use the roleService to bulk update roles - renamed to bulkUpdateUserRoles
+        const result = await roleService.bulkUpdateUserRoles(userIds, newRole);
         if (!result.success) {
           throw new Error(result.message || 'Failed to update user roles');
         }
@@ -60,8 +61,10 @@ export function useRoleManagement() {
     currentUserRole: UserRole, 
     targetRole: UserRole, 
     targetUserId: string,
-    currentUserEmail?: string
+    currentUserEmail?: string | null
   ): boolean => {
+    // Use the protected admin check from securityConfig
+    const isProtectedAdminUser = isProtectedAdmin(currentUserEmail);
     return roleService.canAssignRole(currentUserRole, targetRole, targetUserId, currentUserEmail);
   };
 

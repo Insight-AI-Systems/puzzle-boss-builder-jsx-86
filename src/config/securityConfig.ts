@@ -17,7 +17,9 @@ export const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
  */
 export function isProtectedAdmin(email?: string | null): boolean {
   if (!email) return false;
-  return email.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase();
+  const result = email.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase();
+  console.log(`Security check for email: ${email} against ${PROTECTED_ADMIN_EMAIL}, result: ${result}`);
+  return result;
 }
 
 /**
