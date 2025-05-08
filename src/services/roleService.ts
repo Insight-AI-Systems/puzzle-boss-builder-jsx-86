@@ -2,8 +2,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { QueryClient } from '@tanstack/react-query';
 import { UserRole } from '@/types/userTypes';
 import { debugLog, DebugLevel } from '@/utils/debug';
-import { isProtectedAdmin, PROTECTED_ADMIN_EMAIL } from '@/constants/securityConfig';
-import { toast as useToast } from '@/hooks/use-toast';
+import { isProtectedAdmin, PROTECTED_ADMIN_EMAIL, ROLE_HIERARCHY } from '@/utils/constants';
+import { toast } from '@/hooks/use-toast';
 
 /**
  * Service for managing user roles and permissions
@@ -43,7 +43,7 @@ export class RoleService {
       debugLog('RoleService', `Updating role for user ${userId} to ${newRole}`, DebugLevel.INFO);
       
       // Load toast notification indicator
-      const loadingToast = useToast({
+      const loadingToast = toast({
         title: 'Updating user role...',
         description: `Changing role to ${newRole}`,
         variant: 'default',
@@ -64,14 +64,12 @@ export class RoleService {
           debugLog('RoleService', `Edge function error: ${error.message}`, DebugLevel.ERROR);
           
           // Dismiss loading toast
-          if (loadingToast) {
-            loadingToast.update({
-              id: loadingToast.id,
-              title: 'Error updating role',
-              description: error.message,
-              variant: 'destructive',
-            });
-          }
+          toast({
+            id: loadingToast,
+            title: 'Error updating role',
+            description: error.message,
+            variant: 'destructive',
+          });
           return { success: false, error: error.message };
         }
         
@@ -82,14 +80,12 @@ export class RoleService {
           debugLog('RoleService', `Role update failed: ${errorMsg}`, DebugLevel.ERROR);
           
           // Dismiss loading toast
-          if (loadingToast) {
-            loadingToast.update({
-              id: loadingToast.id,
-              title: 'Error updating role',
-              description: errorMsg,
-              variant: 'destructive',
-            });
-          }
+          toast({
+            id: loadingToast,
+            title: 'Error updating role',
+            description: errorMsg,
+            variant: 'destructive',
+          });
           return { success: false, error: errorMsg };
         }
         
@@ -103,14 +99,12 @@ export class RoleService {
         }
         
         // Dismiss loading toast with success
-        if (loadingToast) {
-          loadingToast.update({
-            id: loadingToast.id,
-            title: 'Role updated',
-            description: `User's role changed to ${newRole}`,
-            variant: 'default',
-          });
-        }
+        toast({
+          id: loadingToast,
+          title: 'Role updated',
+          description: `User's role changed to ${newRole}`,
+          variant: 'default',
+        });
         
         return { success: true };
         
@@ -120,14 +114,12 @@ export class RoleService {
         debugLog('RoleService', `Exception in updateUserRole: ${errorMessage}`, DebugLevel.ERROR);
         
         // Dismiss loading toast
-        if (loadingToast) {
-          loadingToast.update({
-            id: loadingToast.id,
-            title: 'Error updating role',
-            description: errorMessage,
-            variant: 'destructive',
-          });
-        }
+        toast({
+          id: loadingToast,
+          title: 'Error updating role',
+          description: errorMessage,
+          variant: 'destructive',
+        });
         
         return { success: false, error: errorMessage };
       }
@@ -154,7 +146,7 @@ export class RoleService {
       debugLog('RoleService', `Bulk updating ${userIds.length} users to role ${newRole}`, DebugLevel.INFO);
       
       // Loading toast for bulk update
-      const loadingToast = useToast({
+      const loadingToast = toast({
         title: 'Updating user roles...',
         description: `Changing ${userIds.length} users to ${newRole}`,
         variant: 'default',
@@ -173,14 +165,12 @@ export class RoleService {
           debugLog('RoleService', `Edge function error in bulk update: ${error.message}`, DebugLevel.ERROR);
           
           // Dismiss loading toast with error
-          if (loadingToast) {
-            loadingToast.update({
-              id: loadingToast.id,
-              title: 'Error updating roles',
-              description: error.message,
-              variant: 'destructive',
-            });
-          }
+          toast({
+            id: loadingToast,
+            title: 'Error updating roles',
+            description: error.message,
+            variant: 'destructive',
+          });
           
           return { success: false, error: error.message };
         }
@@ -197,14 +187,12 @@ export class RoleService {
         }
         
         // Show success toast
-        if (loadingToast) {
-          loadingToast.update({
-            id: loadingToast.id,
-            title: 'Roles updated',
-            description: `Successfully updated ${successCount} of ${userIds.length} users to ${newRole}`,
-            variant: failureCount > 0 ? 'default' : 'default',
-          });
-        }
+        toast({
+          id: loadingToast,
+          title: 'Roles updated',
+          description: `Successfully updated ${successCount} of ${userIds.length} users to ${newRole}`,
+          variant: failureCount > 0 ? 'default' : 'default',
+        });
         
         // Return results
         return { 
@@ -218,14 +206,12 @@ export class RoleService {
         debugLog('RoleService', `Exception in bulkUpdateRoles: ${errorMessage}`, DebugLevel.ERROR);
         
         // Dismiss loading toast with error
-        if (loadingToast) {
-          loadingToast.update({
-            id: loadingToast.id,
-            title: 'Error updating roles',
-            description: errorMessage,
-            variant: 'destructive',
-          });
-        }
+        toast({
+          id: loadingToast,
+          title: 'Error updating roles',
+          description: errorMessage,
+          variant: 'destructive',
+        });
         
         return { success: false, error: errorMessage };
       }
@@ -252,20 +238,9 @@ export class RoleService {
       return true;
     }
     
-    // Role hierarchy checks
-    const roleHierarchy: Record<string, number> = {
-      'super_admin': 100,
-      'admin': 80,
-      'category_manager': 60,
-      'social_media_manager': 50,
-      'partner_manager': 50,
-      'cfo': 50,
-      'player': 10
-    };
-    
     // Check if the user's role has sufficient privileges
-    const currentRoleLevel = roleHierarchy[currentUserRole] || 0;
-    const targetRoleLevel = roleHierarchy[targetRole] || 0;
+    const currentRoleLevel = ROLE_HIERARCHY[currentUserRole] || 0;
+    const targetRoleLevel = ROLE_HIERARCHY[targetRole] || 0;
     
     // Can only assign roles of lower level than your own
     if (targetRoleLevel >= currentRoleLevel) {

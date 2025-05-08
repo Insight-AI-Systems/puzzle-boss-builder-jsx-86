@@ -1,51 +1,71 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { UserStats } from '@/types/adminTypes';
+import { Users, ShieldCheck, Clock } from "lucide-react";
 
-interface UserStatsDisplayProps {
-  stats: UserStats;
+interface UserStatProps {
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+  description?: string;
 }
 
-export function UserStatsDisplay({ stats }: UserStatsDisplayProps) {
+interface UserStatsDisplayProps {
+  stats: {
+    totalCount: number;
+    adminCount: number;
+    regularCount: number;
+    activeLastWeek?: number;
+    newThisMonth?: number;
+  };
+}
+
+const UserStat: React.FC<UserStatProps> = ({ icon, label, value, description }) => (
+  <div className="flex items-center space-x-4">
+    <div className="p-3 rounded-md bg-gray-100 dark:bg-gray-800">
+      {icon}
+    </div>
+    <div>
+      <p className="text-sm font-medium text-muted-foreground">{label}</p>
+      <p className="text-2xl font-bold">{value}</p>
+      {description && <p className="text-xs text-muted-foreground">{description}</p>}
+    </div>
+  </div>
+);
+
+export const UserStatsDisplay: React.FC<UserStatsDisplayProps> = ({ stats }) => {
   return (
-    <Card className="bg-muted/30">
-      <CardContent className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <h3 className="text-sm font-medium mb-2">Total Users</h3>
-            <p className="text-2xl font-bold">{stats.total}</p>
-          </div>
-          
-          {stats.genderBreakdown && Object.keys(stats.genderBreakdown).length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium mb-2">Gender Distribution</h3>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(stats.genderBreakdown).map(([gender, count]) => (
-                  <div key={gender} className="bg-background p-2 rounded flex gap-2 items-center">
-                    <span className="text-sm">{gender === 'null' ? 'Not Specified' : gender}</span>
-                    <span className="text-xs bg-primary/10 px-2 py-0.5 rounded-full">{String(count)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+    <Card>
+      <CardContent className="pt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <UserStat
+            icon={<Users className="h-5 w-5 text-blue-600" />}
+            label="Total Users"
+            value={stats.totalCount}
+          />
+          <UserStat
+            icon={<ShieldCheck className="h-5 w-5 text-amber-600" />}
+            label="Admin Users"
+            value={stats.adminCount}
+            description={`${((stats.adminCount / stats.totalCount) * 100).toFixed(1)}% of total users`}
+          />
+          {stats.activeLastWeek !== undefined && (
+            <UserStat
+              icon={<Clock className="h-5 w-5 text-green-600" />}
+              label="Active Last Week"
+              value={stats.activeLastWeek}
+              description={`${((stats.activeLastWeek / stats.totalCount) * 100).toFixed(1)}% of total users`}
+            />
           )}
-          
-          {stats.ageBreakdown && Object.keys(stats.ageBreakdown).length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium mb-2">Age Distribution</h3>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(stats.ageBreakdown).map(([age, count]) => (
-                  <div key={age} className="bg-background p-2 rounded flex gap-2 items-center">
-                    <span className="text-sm">{age}</span>
-                    <span className="text-xs bg-primary/10 px-2 py-0.5 rounded-full">{String(count)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {stats.newThisMonth !== undefined && (
+            <UserStat
+              icon={<Users className="h-5 w-5 text-purple-600" />}
+              label="New This Month"
+              value={stats.newThisMonth}
+            />
           )}
         </div>
       </CardContent>
     </Card>
   );
-}
+};

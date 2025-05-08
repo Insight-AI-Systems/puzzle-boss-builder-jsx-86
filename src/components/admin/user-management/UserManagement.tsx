@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
 import { UserTypeToggle } from './UserTypeToggle';
 import { UsersTable } from './UsersTable';
@@ -12,6 +11,7 @@ import { UserStatsDisplay } from './UserStatsDisplay';
 import { EmailDialog } from './EmailDialog';
 import { BulkRoleDialog } from './BulkRoleDialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { UserRole } from '@/types/userTypes';
 
 export function UserManagement() {
@@ -39,6 +39,7 @@ export function UserManagement() {
     profileError,
     totalPages,
     refetch,
+    userStats,
     // Selection and bulk actions
     selectedUsers,
     handleUserSelection,
@@ -50,8 +51,7 @@ export function UserManagement() {
     handleRoleChange,
     bulkUpdateRoles,
     sendBulkEmail,
-    handleExportUsers,
-    userStats
+    handleExportUsers
   } = useUserManagement(isAdmin, user?.id || null);
 
   // Function to get title text based on user type
@@ -61,6 +61,46 @@ export function UserManagement() {
     }
     return 'Regular Users';
   };
+
+  // Show loading state
+  if (isLoadingProfiles) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>User Management</CardTitle>
+          <CardDescription>Loading user data...</CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center items-center min-h-40">
+          <LoadingSpinner size="lg" centered />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show error state if there was an issue loading users
+  if (profileError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Error Loading Users</CardTitle>
+          <CardDescription>
+            There was a problem loading the user data.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="p-4 border border-red-200 bg-red-50 rounded-md text-red-800">
+            <p>Error: {profileError.message || "Unknown error"}</p>
+            <button 
+              onClick={refetch}
+              className="mt-4 px-4 py-2 bg-red-100 hover:bg-red-200 rounded-md text-red-800 font-medium"
+            >
+              Retry
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

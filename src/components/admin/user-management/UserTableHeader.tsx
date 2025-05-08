@@ -1,25 +1,34 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowDownUp, ArrowUp, ArrowDown } from "lucide-react";
 
 interface UserTableHeaderProps {
-  selectionEnabled: boolean;
-  onSelectAll?: (checked: boolean) => void;
-  onSortByRole: () => void;
-  onSortByLastLogin: () => void;
+  selectionEnabled?: boolean;
+  onSelectAll?: (selected: boolean) => void;
+  onSortByRole?: () => void;
+  onSortByLastLogin?: () => void;
   lastLoginSortDirection?: 'asc' | 'desc';
 }
 
 export const UserTableHeader: React.FC<UserTableHeaderProps> = ({
-  selectionEnabled,
+  selectionEnabled = false,
   onSelectAll,
   onSortByRole,
   onSortByLastLogin,
   lastLoginSortDirection
 }) => {
+  const renderSortIcon = () => {
+    if (!lastLoginSortDirection) {
+      return <ArrowDownUp className="h-4 w-4 ml-1" />;
+    }
+    
+    return lastLoginSortDirection === 'asc' 
+      ? <ArrowUp className="h-4 w-4 ml-1" /> 
+      : <ArrowDown className="h-4 w-4 ml-1" />;
+  };
+  
   return (
     <TableHeader>
       <TableRow>
@@ -31,24 +40,28 @@ export const UserTableHeader: React.FC<UserTableHeaderProps> = ({
             />
           </TableHead>
         )}
-        <TableHead>User</TableHead>
-        <TableHead>Email</TableHead>
-        <TableHead>
-          <Button variant="ghost" onClick={onSortByRole} className="flex items-center gap-1">
+        <TableHead className="w-[250px]">User</TableHead>
+        <TableHead className="w-[220px]">Email/ID</TableHead>
+        <TableHead className="w-[150px]">
+          <button 
+            className="flex items-center text-sm font-medium focus:outline-none"
+            onClick={onSortByRole}
+          >
             Role
-            <ArrowUpDown className="h-4 w-4" />
-          </Button>
+            {onSortByRole && <ArrowDownUp className="h-4 w-4 ml-1" />}
+          </button>
         </TableHead>
         <TableHead>Country</TableHead>
         <TableHead>
-          <Button variant="ghost" onClick={onSortByLastLogin} className="flex items-center gap-1">
+          <button 
+            className="flex items-center text-sm font-medium focus:outline-none"
+            onClick={onSortByLastLogin}
+          >
             Last Login
-            {lastLoginSortDirection && (
-              <ArrowUpDown className="h-4 w-4" />
-            )}
-          </Button>
+            {onSortByLastLogin && renderSortIcon()}
+          </button>
         </TableHead>
-        <TableHead>Joined</TableHead>
+        <TableHead>Created</TableHead>
         <TableHead className="text-right">Actions</TableHead>
       </TableRow>
     </TableHeader>

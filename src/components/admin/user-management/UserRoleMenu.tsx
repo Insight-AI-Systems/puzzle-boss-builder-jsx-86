@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Shield, ChevronDown } from "lucide-react";
 import { ROLE_DEFINITIONS, UserRole } from '@/types/userTypes';
 import { UserRoleMenuProps } from '@/types/userTableTypes';
-import { isProtectedAdmin } from '@/constants/securityConfig';
+import { isProtectedAdmin } from '@/utils/constants';
 import { debugLog, DebugLevel } from '@/utils/debug';
 import { adminService } from '@/services/adminService';
 import { roleService } from '@/services/roleService';

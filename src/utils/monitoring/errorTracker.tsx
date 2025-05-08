@@ -343,4 +343,3 @@ export function withErrorTracking<P extends object>(
   
   return WrappedComponent;
 }
-

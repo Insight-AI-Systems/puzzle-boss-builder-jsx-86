@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types/userTypes';
-import { isProtectedAdmin, PROTECTED_ADMIN_EMAIL } from '@/constants/securityConfig';
+import { isProtectedAdmin, PROTECTED_ADMIN_EMAIL } from '@/utils/constants';
 import { debugLog, DebugLevel } from '@/utils/debug';
 import { toast } from '@/hooks/use-toast';
 import { QueryClient } from '@tanstack/react-query';
@@ -180,6 +180,13 @@ export class UserService {
     }
     
     return null;
+  }
+
+  /**
+   * Check if email is the protected admin
+   */
+  public isProtectedAdmin(email?: string | null): boolean {
+    return isProtectedAdmin(email);
   }
 
   /**

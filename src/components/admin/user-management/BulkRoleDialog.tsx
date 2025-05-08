@@ -6,95 +6,78 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { UserRole } from '@/types/userTypes';
-import { Loader2 } from 'lucide-react';
+import { Shield, AlertTriangle } from "lucide-react";
+import { ROLE_DEFINITIONS, UserRole } from '@/types/userTypes';
+import { RoleSelector } from './RoleSelector';
 
-export interface BulkRoleDialogProps {
+interface BulkRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedCount: number;
-  bulkRole?: UserRole | null;
-  setBulkRole?: (role: UserRole) => void;
-  onUpdateRoles?: () => void;
-  isUpdating?: boolean;
-  selectedRole: UserRole | null;
+  onSubmit: (role: UserRole) => void;
+  selectedRole: UserRole;
   onSelectRole: (role: UserRole) => void;
   isLoading: boolean;
-  onSubmit: (role: UserRole) => Promise<void>;
+  selectedCount: number;
 }
 
 export function BulkRoleDialog({
   open,
   onOpenChange,
-  selectedCount,
+  onSubmit,
   selectedRole,
   onSelectRole,
-  onSubmit,
-  isLoading
+  isLoading,
+  selectedCount
 }: BulkRoleDialogProps) {
-  const roles: {value: UserRole, label: string}[] = [
-    { value: 'player', label: 'Player' },
-    { value: 'admin', label: 'Admin' },
-    { value: 'super_admin', label: 'Super Admin' },
-    { value: 'category_manager', label: 'Category Manager' },
-    { value: 'partner_manager', label: 'Partner Manager' },
-    { value: 'social_media_manager', label: 'Social Media Manager' },
-    { value: 'cfo', label: 'CFO' }
-  ];
-
-  const handleUpdateRoles = () => {
-    if (selectedRole) {
-      onSubmit(selectedRole);
-    }
+  const handleSubmit = () => {
+    onSubmit(selectedRole);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Update User Roles</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Change Role for {selectedCount} {selectedCount === 1 ? 'User' : 'Users'}
+          </DialogTitle>
           <DialogDescription>
-            You are about to change the role for {selectedCount} selected user{selectedCount !== 1 ? 's' : ''}.
+            Select a new role to assign to all selected users.
           </DialogDescription>
         </DialogHeader>
-
-        <div className="py-4">
-          <RadioGroup value={selectedRole || undefined} onValueChange={(value) => onSelectRole(value as UserRole)}>
-            {roles.map((role) => (
-              <div className="flex items-center space-x-2" key={role.value}>
-                <RadioGroupItem value={role.value} id={`role-${role.value}`} />
-                <Label htmlFor={`role-${role.value}`}>{role.label}</Label>
-              </div>
-            ))}
-          </RadioGroup>
+        
+        <div className="space-y-6 py-4">
+          <RoleSelector
+            currentRole={selectedRole}
+            onRoleChange={onSelectRole}
+            label="Select Role"
+          />
+          
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-amber-800 flex items-start gap-2">
+            <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-medium">Important Note</p>
+              <p>
+                This action will change the role for all {selectedCount} selected users.
+                This operation cannot be undone without manual intervention.
+              </p>
+            </div>
+          </div>
         </div>
-
+        
         <DialogFooter>
-          <Button 
-            variant="secondary" 
-            onClick={() => onOpenChange(false)}
-            disabled={isLoading}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button 
-            variant="default" 
-            onClick={handleUpdateRoles}
-            disabled={!selectedRole || isLoading}
+            onClick={handleSubmit} 
+            disabled={isLoading}
+            variant="default"
           >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              `Update ${selectedCount} user${selectedCount !== 1 ? 's' : ''}`
-            )}
+            {isLoading ? 'Updating...' : 'Update Roles'}
           </Button>
         </DialogFooter>
       </DialogContent>

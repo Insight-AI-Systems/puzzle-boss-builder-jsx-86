@@ -1,84 +1,105 @@
 
 import React from 'react';
+import { Badge } from "@/components/ui/badge";
+import { Shield, Star, Users, Image, BarChart4, Landmark } from "lucide-react";
 import { UserRole } from '@/types/userTypes';
-import { ROLE_DEFINITIONS } from '@/types/userTypes';
-import { Shield, User, Users, Calendar, Briefcase, DollarSign } from 'lucide-react';
-import { adminService } from '@/services/adminService';
+import { PROTECTED_ADMIN_EMAIL } from '@/utils/constants';
 
 interface UserRoleIndicatorProps {
   role: UserRole;
-  size?: 'sm' | 'md' | 'lg';
-  showLabel?: boolean;
-  showIcon?: boolean;
   email?: string | null;
+  size?: 'sm' | 'md' | 'lg';
 }
 
+/**
+ * Component to display a user's role with appropriate visual indicators
+ */
 export const UserRoleIndicator: React.FC<UserRoleIndicatorProps> = ({
   role,
-  size = 'md',
-  showLabel = true,
-  showIcon = true,
-  email
+  email,
+  size = 'md'
 }) => {
-  // Special case for protected admin
-  const isProtectedAdmin = email ? adminService.isProtectedAdminEmail(email) : false;
+  // Check for protected admin status
+  const isProtectedAdmin = email === PROTECTED_ADMIN_EMAIL;
   
-  // Icon sizing
+  // Configure styles based on size
   const iconSizes = {
-    sm: 'h-3 w-3',
-    md: 'h-4 w-4',
-    lg: 'h-5 w-5'
+    sm: "h-3 w-3 mr-1",
+    md: "h-4 w-4 mr-1.5",
+    lg: "h-5 w-5 mr-2"
   };
   
-  // Font sizing
-  const fontSizes = {
-    sm: 'text-xs',
-    md: 'text-sm',
-    lg: 'text-base'
+  const textSizes = {
+    sm: "text-xs",
+    md: "text-sm",
+    lg: "text-base"
   };
   
-  // Get background color based on role
-  const getBgColor = () => {
-    if (isProtectedAdmin) return 'bg-red-600 text-white';
+  // For the badge itself
+  const badgeSizes = {
+    sm: "px-1.5 py-0.5 gap-0.5",
+    md: "px-2.5 py-1 gap-1",
+    lg: "px-3 py-1.5 gap-1.5"
+  };
+  
+  // Get role configuration based on role type
+  const getRoleConfig = () => {
+    const baseClasses = `inline-flex items-center ${badgeSizes[size]}`;
     
-    switch (role) {
-      case 'super_admin': return 'bg-red-600 text-white';
-      case 'admin': return 'bg-purple-600 text-white';
-      case 'category_manager': return 'bg-blue-600 text-white';
-      case 'social_media_manager': return 'bg-green-600 text-white';
-      case 'partner_manager': return 'bg-amber-600 text-white';
-      case 'cfo': return 'bg-emerald-600 text-white';
-      default: return 'bg-slate-600 text-white';
+    switch(role) {
+      case 'super_admin':
+        return {
+          classes: `${baseClasses} bg-red-600 hover:bg-red-700`,
+          icon: <Shield className={iconSizes[size]} />,
+          label: isProtectedAdmin ? 'Protected Admin' : 'Super Admin'
+        };
+      case 'admin':
+        return {
+          classes: `${baseClasses} bg-amber-600 hover:bg-amber-700`,
+          icon: <Star className={iconSizes[size]} />,
+          label: 'Admin'
+        };
+      case 'category_manager':
+        return {
+          classes: `${baseClasses} bg-blue-600 hover:bg-blue-700`,
+          icon: <Image className={iconSizes[size]} />,
+          label: 'Category Manager'
+        };
+      case 'social_media_manager':
+        return {
+          classes: `${baseClasses} bg-purple-600 hover:bg-purple-700`,
+          icon: <Users className={iconSizes[size]} />,
+          label: 'Social Media'
+        };
+      case 'partner_manager':
+        return {
+          classes: `${baseClasses} bg-green-600 hover:bg-green-700`,
+          icon: <Users className={iconSizes[size]} />,
+          label: 'Partner Manager'
+        };
+      case 'cfo':
+        return {
+          classes: `${baseClasses} bg-teal-600 hover:bg-teal-700`,
+          icon: <Landmark className={iconSizes[size]} />,
+          label: 'CFO'
+        };
+      default:
+        return {
+          classes: `${baseClasses} bg-gray-600 hover:bg-gray-700`,
+          icon: <Users className={iconSizes[size]} />,
+          label: 'Player'
+        };
     }
   };
   
-  // Get icon based on role
-  const getIcon = () => {
-    switch (role) {
-      case 'super_admin': return <Shield className={iconSizes[size]} />;
-      case 'admin': return <Shield className={iconSizes[size]} />;
-      case 'category_manager': return <Calendar className={iconSizes[size]} />;
-      case 'social_media_manager': return <Users className={iconSizes[size]} />;
-      case 'partner_manager': return <Briefcase className={iconSizes[size]} />;
-      case 'cfo': return <DollarSign className={iconSizes[size]} />;
-      default: return <User className={iconSizes[size]} />;
-    }
-  };
+  const { classes, icon, label } = getRoleConfig();
   
-  // Get label based on role
-  const getLabel = () => {
-    if (isProtectedAdmin) return 'Protected Admin';
-    return ROLE_DEFINITIONS[role]?.label || role;
-  };
-
   return (
-    <div className={`inline-flex items-center px-2 py-1 rounded-full ${getBgColor()} ${fontSizes[size]}`}>
-      {showIcon && (
-        <span className="mr-1">
-          {getIcon()}
-        </span>
-      )}
-      {showLabel && getLabel()}
-    </div>
+    <Badge className={classes} variant="outline">
+      {icon}
+      <span className={textSizes[size]}>
+        {label}
+      </span>
+    </Badge>
   );
 };

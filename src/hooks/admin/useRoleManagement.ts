@@ -4,7 +4,6 @@ import { UserRole } from '@/types/userTypes';
 import { adminService } from '@/services/adminService';
 import { roleService } from '@/services/roleService';
 import { debugLog, DebugLevel } from '@/utils/debug';
-import { toast } from '@/hooks/use-toast';
 
 /**
  * Hook for role management functionality
@@ -22,7 +21,10 @@ export function useRoleManagement() {
       
       try {
         // Use the roleService to update the user role
-        await roleService.updateUserRole(userId, newRole);
+        const result = await roleService.updateUserRole(userId, newRole);
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to update user role');
+        }
         return { userId, newRole, success: true };
       } catch (err) {
         debugLog('useRoleManagement', "Exception in updateUserRole:", DebugLevel.ERROR, { error: err });
@@ -37,8 +39,11 @@ export function useRoleManagement() {
       
       try {
         // Use the roleService to bulk update roles
-        await roleService.bulkUpdateRoles(userIds, newRole);
-        return { userIds, newRole, success: true };
+        const result = await roleService.bulkUpdateRoles(userIds, newRole);
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to update user roles');
+        }
+        return { userIds, newRole, success: true, results: result.results };
       } catch (err) {
         debugLog('useRoleManagement', "Exception in bulkUpdateRoles:", DebugLevel.ERROR, { error: err });
         throw err;
