@@ -7,8 +7,7 @@ import { UserTableProps } from '@/types/userTableTypes';
 import { UserRole } from '@/types/userTypes';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, AlertCircle, Database } from 'lucide-react';
-
-const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+import { isProtectedAdmin } from '@/utils/constants';
 
 export function UsersTable({ 
   users, 
@@ -22,12 +21,12 @@ export function UsersTable({
   onSelectAll,
   lastLoginSortDirection,
   onRefresh
-}: UserTableProps & { onRefresh?: () => void }) {
+}: UserTableProps) {
   const selectionEnabled = !!onUserSelection && !!onSelectAll;
   
   // Fix the type comparison by using type assertion
   const isSuperAdmin = currentUserRole === 'super_admin' as UserRole;
-  const isCurrentUserProtectedAdmin = currentUserEmail === PROTECTED_ADMIN_EMAIL;
+  const isCurrentUserProtectedAdmin = isProtectedAdmin(currentUserEmail);
   const canAssignAnyRole = isSuperAdmin || isCurrentUserProtectedAdmin;
   
   const canAssignRole = (role: UserRole, userId: string): boolean => {
@@ -44,7 +43,7 @@ export function UsersTable({
           selectionEnabled={selectionEnabled}
           onSelectAll={onSelectAll}
           onSortByRole={onSortByRole}
-          onSortByLastLogin={() => onSortByLastLogin?.(lastLoginSortDirection === 'asc' ? 'desc' : 'asc')}
+          onSortByLastLogin={() => onSortByLastLogin?.()}
           lastLoginSortDirection={lastLoginSortDirection}
         />
         <TableBody>
@@ -107,3 +106,5 @@ export function UsersTable({
     </div>
   );
 }
+
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';

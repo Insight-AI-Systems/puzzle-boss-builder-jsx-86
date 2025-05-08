@@ -78,3 +78,15 @@ export interface TestSuite {
   teardown?: () => Promise<void>;
   metadata?: Record<string, any>;
 }
+
+/**
+ * Security event type enumeration
+ */
+export enum SecurityEventType {
+  LOGIN = 'LOGIN',
+  LOGOUT = 'LOGOUT',
+  PASSWORD_CHANGE = 'PASSWORD_CHANGE',
+  ROLE_CHANGE = 'ROLE_CHANGE',
+  ACCESS_DENIED = 'ACCESS_DENIED',
+  SUSPICIOUS_ACTIVITY = 'SUSPICIOUS_ACTIVITY'
+}

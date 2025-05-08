@@ -28,44 +28,8 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
   } | null>(null);
   
   const { toast } = useToast();
-  
-  // Role management functionality
-  const roleManagement = useUserRoles({
-    updateUserRole: async (userId: string, newRole: UserRole) => {
-      return roleService.updateUserRole(userId, newRole)
-        .then(result => {
-          if (result.success) {
-            // Update local state optimistically
-            setUsers(prevUsers => 
-              prevUsers.map(user => 
-                user.id === userId ? { ...user, role: newRole } : user
-              )
-            );
-          }
-          return result;
-        });
-    },
-    bulkUpdateRoles: async (userIds: string[], newRole: UserRole) => {
-      return roleService.bulkUpdateRoles(userIds, newRole)
-        .then(result => {
-          if (result.success) {
-            // Update local state optimistically
-            setUsers(prevUsers => 
-              prevUsers.map(user => 
-                userIds.includes(user.id) ? { ...user, role: newRole } : user
-              )
-            );
-            // Clear selection after successful bulk update
-            setSelectedUsers(new Set());
-          }
-          return result;
-        });
-    },
-    refetch: fetchUsers,
-    selectedUsers
-  });
-  
-  // Fetch users from the service
+
+  // Fetch users from the service - defined first before it's used
   const fetchUsers = useCallback(async () => {
     if (!isAdmin && !currentUserId) {
       return;
@@ -111,6 +75,42 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
     }
   }, [isAdmin, currentUserId, toast]);
   
+  // Role management functionality
+  const roleManagement = useUserRoles({
+    updateUserRole: async (userId: string, newRole: UserRole) => {
+      return roleService.updateUserRole(userId, newRole)
+        .then(result => {
+          if (result.success) {
+            // Update local state optimistically
+            setUsers(prevUsers => 
+              prevUsers.map(user => 
+                user.id === userId ? { ...user, role: newRole } : user
+              )
+            );
+          }
+          return result;
+        });
+    },
+    bulkUpdateRoles: async (userIds: string[], newRole: UserRole) => {
+      return roleService.bulkUpdateRoles(userIds, newRole)
+        .then(result => {
+          if (result.success) {
+            // Update local state optimistically
+            setUsers(prevUsers => 
+              prevUsers.map(user => 
+                userIds.includes(user.id) ? { ...user, role: newRole } : user
+              )
+            );
+            // Clear selection after successful bulk update
+            setSelectedUsers(new Set());
+          }
+          return result;
+        });
+    },
+    refetch: fetchUsers,
+    selectedUsers
+  });
+
   // Apply filters and pagination to users
   useEffect(() => {
     if (!users || !Array.isArray(users)) return;
@@ -300,6 +300,7 @@ export function useUserManagement(isAdmin: boolean = false, currentUserId: strin
     },
     clearUserSelection: () => {
       setSelectedUsers(new Set());
-    }
+    },
+    bulkUpdateRoles: roleManagement.handleBulkRoleChange
   };
 }

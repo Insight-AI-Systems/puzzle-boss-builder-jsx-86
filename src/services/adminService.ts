@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { PROTECTED_ADMIN_EMAIL } from '@/utils/constants';
 import { debugLog, DebugLevel } from '@/utils/debug';
 import { errorTracker } from '@/utils/monitoring/errorTracker';
+import { UserRole } from '@/types/userTypes';
 
 class AdminService {
   private static instance: AdminService;
@@ -70,6 +71,16 @@ class AdminService {
     } catch (e) {
       return 'Invalid date';
     }
+  }
+
+  /**
+   * Check if a role is an admin-level role
+   */
+  public hasAdminRole(role?: UserRole): boolean {
+    if (!role) return false;
+    
+    const adminRoles = ['super_admin', 'admin', 'category_manager'];
+    return adminRoles.includes(role);
   }
 }
 

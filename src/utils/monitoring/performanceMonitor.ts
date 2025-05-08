@@ -1,42 +1,78 @@
-
 /**
- * Performance monitoring system for tracking application performance metrics
+ * Performance monitoring system for tracking application performance
  */
 
-interface PerformanceMetric {
+import { debugLog, DebugLevel } from '@/utils/debug';
+
+// Define interfaces for performance monitoring
+interface PerformanceDataPoint {
   name: string;
   value: number;
   timestamp: number;
-  tags?: Record<string, string>;
+  metadata?: Record<string, any>;
 }
 
-interface PerformanceConfig {
-  sampleRate: number;
-  maxMetrics: number;
-  enableConsoleLogging: boolean;
-  enableNetworkTiming: boolean;
-  slowThreshold: number;
+interface PerformanceEntry {
+  name: string;
+  startTime: number;
+  duration: number;
+  entryType: string;
+  initiatorType?: string;
+  transferSize?: number;
+}
+
+interface PerformanceMeasurement {
+  name: string;
+  startTime: number;
+  endTime: number | null;
+  duration: number | null;
+  metadata?: Record<string, any>;
+  completed: boolean;
+}
+
+interface MemoryUsage {
+  jsHeapSizeLimit: number;
+  totalJSHeapSize: number;
+  usedJSHeapSize: number;
+  timestamp: number;
+}
+
+interface PerformanceMonitorConfig {
+  enableMonitoring: boolean;
+  trackNetworkRequests: boolean;
+  trackLongTasks: boolean;
+  trackResourceTiming: boolean;
+  trackMemoryUsage: boolean;
+  sampleRate: number; // 0.0 to 1.0
 }
 
 class PerformanceMonitor {
   private static instance: PerformanceMonitor;
-  private metrics: PerformanceMetric[] = [];
-  private config: PerformanceConfig = {
-    sampleRate: 0.1, // Only record 10% of metrics by default 
-    maxMetrics: 1000, // Maximum number of metrics to store
-    enableConsoleLogging: process.env.NODE_ENV === 'development',
-    enableNetworkTiming: true,
-    slowThreshold: 300 // milliseconds
+  private measurements: Map<string, PerformanceMeasurement> = new Map();
+  private dataPoints: PerformanceDataPoint[] = [];
+  private memoryUsage: MemoryUsage[] = [];
+  private networkRequests: any[] = [];
+  private resourceLoads: any[] = [];
+  private longTasks: any[] = [];
+  private maxDataPoints = 1000;
+  private memoryInterval: number | null = null;
+  private config: PerformanceMonitorConfig = {
+    enableMonitoring: true,
+    trackNetworkRequests: true,
+    trackLongTasks: false,
+    trackResourceTiming: true,
+    trackMemoryUsage: false,
+    sampleRate: 1.0,
   };
-  
+
   private constructor() {
     if (typeof window !== 'undefined') {
       this.setupPerformanceObservers();
     }
   }
-  
+
   /**
-   * Get the singleton instance
+   * Get singleton instance of PerformanceMonitor
    */
   public static getInstance(): PerformanceMonitor {
     if (!PerformanceMonitor.instance) {
@@ -44,241 +80,339 @@ class PerformanceMonitor {
     }
     return PerformanceMonitor.instance;
   }
-  
+
   /**
    * Configure the performance monitor
    */
-  public configure(config: Partial<PerformanceConfig>): void {
+  public configure(config: Partial<PerformanceMonitorConfig>): void {
     this.config = { ...this.config, ...config };
+
+    // Clear memory monitoring interval if it exists
+    if (this.memoryInterval) {
+      window.clearInterval(this.memoryInterval);
+      this.memoryInterval = null;
+    }
+
+    // If monitoring is enabled and memory tracking is requested
+    if (this.config.enableMonitoring && this.config.trackMemoryUsage) {
+      this.startMemoryMonitoring();
+    }
+
+    // Reset performance observers based on new configuration
+    this.setupPerformanceObservers();
   }
-  
+
   /**
-   * Record a performance metric
+   * Start tracking memory usage
    */
-  public recordMetric(name: string, value: number, tags?: Record<string, string>): void {
-    if (Math.random() > this.config.sampleRate) {
-      return; // Skip recording based on sample rate
+  private startMemoryMonitoring(): void {
+    // Check if performance.memory is available (Chrome only)
+    const performance = window.performance as any;
+    if (performance && performance.memory) {
+      this.memoryInterval = window.setInterval(() => {
+        if (Math.random() > this.config.sampleRate) return; // Sample based on rate
+
+        this.memoryUsage.push({
+          jsHeapSizeLimit: performance.memory.jsHeapSizeLimit,
+          totalJSHeapSize: performance.memory.totalJSHeapSize,
+          usedJSHeapSize: performance.memory.usedJSHeapSize,
+          timestamp: Date.now(),
+        });
+
+        // Keep memory usage array from growing too large
+        if (this.memoryUsage.length > 100) {
+          this.memoryUsage = this.memoryUsage.slice(-100);
+        }
+      }, 30000); // Check every 30 seconds
     }
-    
-    const metric: PerformanceMetric = {
-      name,
-      value,
-      timestamp: Date.now(),
-      tags
-    };
-    
-    this.metrics.push(metric);
-    
-    // Trim metrics if we have too many
-    if (this.metrics.length > this.config.maxMetrics) {
-      this.metrics = this.metrics.slice(-this.config.maxMetrics);
-    }
-    
-    // Log to console if enabled
-    if (this.config.enableConsoleLogging) {
-      if (value > this.config.slowThreshold) {
-        console.warn(`Slow performance detected - ${name}: ${value}ms`, tags);
-      } else {
-        console.debug(`Performance metric - ${name}: ${value}ms`, tags);
+  }
+
+  /**
+   * Setup performance observers
+   */
+  private setupPerformanceObservers(): void {
+    // Only proceed if in browser and monitoring is enabled
+    if (typeof window === 'undefined' || !this.config.enableMonitoring) return;
+
+    try {
+      // Reset existing observers (if any)
+      this.networkRequests = [];
+      this.resourceLoads = [];
+      this.longTasks = [];
+
+      // Resource timing for network requests
+      if (this.config.trackNetworkRequests && window.PerformanceObserver) {
+        try {
+          const networkObserver = new PerformanceObserver((list) => {
+            if (Math.random() > this.config.sampleRate) return; // Sample based on rate
+
+            const entries = list.getEntries().filter(entry => {
+              // We'll treat these as network requests
+              const entry2 = entry as unknown as { initiatorType?: string };
+              return entry2.initiatorType === 'fetch' || entry2.initiatorType === 'xmlhttprequest';
+            });
+
+            entries.forEach(entry => {
+              const customEntry = {
+                name: entry.name,
+                startTime: entry.startTime,
+                duration: entry.duration,
+                entryType: entry.entryType,
+              };
+              this.networkRequests.push(customEntry);
+            });
+
+            // Keep array from growing too large
+            if (this.networkRequests.length > 100) {
+              this.networkRequests = this.networkRequests.slice(-100);
+            }
+          });
+          
+          networkObserver.observe({ entryTypes: ['resource'] });
+        } catch (e) {
+          debugLog('PerformanceMonitor', 'Failed to create network observer', DebugLevel.ERROR, { error: e });
+        }
       }
+
+      // Resource timing for other resources (images, scripts, etc.)
+      if (this.config.trackResourceTiming && window.PerformanceObserver) {
+        try {
+          const resourceObserver = new PerformanceObserver((list) => {
+            if (Math.random() > this.config.sampleRate) return; // Sample based on rate
+
+            const entries = list.getEntries().filter(entry => {
+              // Only track non-network resources
+              const entry2 = entry as unknown as { initiatorType?: string; transferSize?: number };
+              return entry2.initiatorType !== 'fetch' && entry2.initiatorType !== 'xmlhttprequest';
+            });
+
+            entries.forEach(entry => {
+              const entry2 = entry as unknown as { initiatorType?: string; transferSize?: number };
+              
+              const customEntry = {
+                name: entry.name,
+                startTime: entry.startTime,
+                duration: entry.duration,
+                entryType: entry.entryType,
+                initiatorType: entry2.initiatorType || 'unknown',
+                transferSize: entry2.transferSize || 0,
+              };
+              this.resourceLoads.push(customEntry);
+            });
+
+            // Keep array from growing too large
+            if (this.resourceLoads.length > 100) {
+              this.resourceLoads = this.resourceLoads.slice(-100);
+            }
+          });
+          
+          resourceObserver.observe({ entryTypes: ['resource'] });
+        } catch (e) {
+          debugLog('PerformanceMonitor', 'Failed to create resource observer', DebugLevel.ERROR, { error: e });
+        }
+      }
+
+      // Long tasks
+      if (this.config.trackLongTasks && window.PerformanceObserver) {
+        try {
+          const longTaskObserver = new PerformanceObserver((list) => {
+            if (Math.random() > this.config.sampleRate) return; // Sample based on rate
+
+            const entries = list.getEntries();
+            entries.forEach(entry => {
+              const customEntry = {
+                name: entry.name,
+                startTime: entry.startTime,
+                duration: entry.duration,
+                entryType: entry.entryType,
+              };
+              this.longTasks.push(customEntry);
+              
+              // Report long tasks over 100ms
+              if (entry.duration > 100) {
+                debugLog('PerformanceMonitor', `Long task detected: ${entry.duration.toFixed(2)}ms`, DebugLevel.WARN, {
+                  name: entry.name,
+                  duration: entry.duration,
+                });
+              }
+            });
+
+            // Keep array from growing too large
+            if (this.longTasks.length > 50) {
+              this.longTasks = this.longTasks.slice(-50);
+            }
+          });
+          
+          longTaskObserver.observe({ entryTypes: ['longtask'] });
+        } catch (e) {
+          // Some browsers don't support longtask yet
+          debugLog('PerformanceMonitor', 'Long task observation not supported', DebugLevel.INFO);
+        }
+      }
+
+    } catch (err) {
+      debugLog('PerformanceMonitor', 'Error setting up performance observers', DebugLevel.ERROR, { error: err });
     }
   }
-  
-  /**
-   * Time a function execution and record as a metric
-   */
-  public async timeAsync<T>(
-    name: string, 
-    fn: () => Promise<T>, 
-    tags?: Record<string, string>
-  ): Promise<T> {
-    const start = performance.now();
-    try {
-      return await fn();
-    } finally {
-      const duration = performance.now() - start;
-      this.recordMetric(name, duration, tags);
-    }
-  }
-  
-  /**
-   * Time a synchronous function execution and record as a metric
-   */
-  public timeSync<T>(
-    name: string, 
-    fn: () => T, 
-    tags?: Record<string, string>
-  ): T {
-    const start = performance.now();
-    try {
-      return fn();
-    } finally {
-      const duration = performance.now() - start;
-      this.recordMetric(name, duration, tags);
-    }
-  }
-  
+
   /**
    * Mark the start of a performance measurement
    */
   public markStart(name: string): void {
-    performance.mark(`${name}-start`);
-  }
-  
-  /**
-   * Mark the end of a performance measurement and record the metric
-   */
-  public markEnd(name: string, tags?: Record<string, string>): void {
-    const markName = `${name}-start`;
-    
-    try {
-      performance.mark(`${name}-end`);
-      performance.measure(name, markName, `${name}-end`);
-      
-      const entries = performance.getEntriesByName(name);
-      if (entries.length > 0) {
-        this.recordMetric(name, entries[entries.length - 1].duration, tags);
-      }
-      
-      // Clear the marks and measures
-      performance.clearMarks(markName);
-      performance.clearMarks(`${name}-end`);
-      performance.clearMeasures(name);
-    } catch (error) {
-      console.error(`Error measuring performance for ${name}:`, error);
-    }
-  }
-  
-  /**
-   * Get all recorded metrics
-   */
-  public getMetrics(): PerformanceMetric[] {
-    return [...this.metrics];
-  }
-  
-  /**
-   * Get metrics for a specific name
-   */
-  public getMetricsByName(name: string): PerformanceMetric[] {
-    return this.metrics.filter(metric => metric.name === name);
-  }
-  
-  /**
-   * Clear all metrics
-   */
-  public clearMetrics(): void {
-    this.metrics = [];
-  }
-  
-  /**
-   * Set up performance observers
-   */
-  private setupPerformanceObservers(): void {
-    if (!window.PerformanceObserver) {
-      return;
-    }
-    
-    // Track resource timing for network requests
-    if (this.config.enableNetworkTiming) {
+    if (!this.config.enableMonitoring) return;
+
+    // Create or update a measurement
+    const now = performance.now();
+    this.measurements.set(name, {
+      name,
+      startTime: now,
+      endTime: null,
+      duration: null,
+      completed: false,
+    });
+
+    if (typeof window !== 'undefined' && window.performance && window.performance.mark) {
       try {
-        const resourceObserver = new PerformanceObserver(list => {
-          const entries = list.getEntries();
-          
-          entries.forEach(entry => {
-            if (entry.initiatorType === 'fetch' || entry.initiatorType === 'xmlhttprequest') {
-              const url = new URL(entry.name);
-              
-              // Only record API-related requests
-              if (url.pathname.includes('/api/') || url.pathname.includes('/functions/')) {
-                this.recordMetric(`network:${url.pathname}`, entry.duration, {
-                  type: entry.initiatorType,
-                  size: entry.transferSize?.toString() || 'unknown',
-                  protocol: url.protocol
-                });
-              }
-            }
-          });
-        });
-        
-        resourceObserver.observe({ entryTypes: ['resource'] });
-      } catch (error) {
-        console.error('Failed to set up resource timing observer:', error);
+        performance.mark(`${name}_start`);
+      } catch (e) {
+        // Ignore errors from performance marking
       }
-    }
-    
-    // Track long tasks (potential UI freezes)
-    try {
-      const longTaskObserver = new PerformanceObserver(list => {
-        const entries = list.getEntries();
-        
-        entries.forEach(entry => {
-          this.recordMetric('long-task', entry.duration, {
-            attribution: 'Unknown',
-            startTime: entry.startTime.toString()
-          });
-        });
-      });
-      
-      longTaskObserver.observe({ entryTypes: ['longtask'] });
-    } catch (error) {
-      console.debug('Long task observer not supported:', error);
     }
   }
-  
+
   /**
-   * Get a performance summary
+   * Mark the end of a performance measurement
+   * @returns The duration in ms, or null if the start mark wasn't found
    */
-  public getSummary(): { 
-    overallAverage: number; 
-    byName: Record<string, { avg: number; min: number; max: number; count: number }>
-  } {
-    const summary: Record<string, { sum: number; min: number; max: number; count: number }> = {};
-    let totalSum = 0;
-    let totalCount = 0;
-    
-    for (const metric of this.metrics) {
-      if (!summary[metric.name]) {
-        summary[metric.name] = { sum: 0, min: Infinity, max: -Infinity, count: 0 };
-      }
-      
-      summary[metric.name].sum += metric.value;
-      summary[metric.name].min = Math.min(summary[metric.name].min, metric.value);
-      summary[metric.name].max = Math.max(summary[metric.name].max, metric.value);
-      summary[metric.name].count++;
-      
-      totalSum += metric.value;
-      totalCount++;
+  public markEnd(name: string, metadata?: Record<string, any>): number | null {
+    if (!this.config.enableMonitoring) return null;
+    if (Math.random() > this.config.sampleRate) return null; // Sample based on rate
+
+    const measurement = this.measurements.get(name);
+    if (!measurement) {
+      debugLog('PerformanceMonitor', `End mark called for "${name}" without a start mark`, DebugLevel.WARN);
+      return null;
     }
-    
-    const result: { 
-      overallAverage: number; 
-      byName: Record<string, { avg: number; min: number; max: number; count: number }> 
-    } = {
-      overallAverage: totalCount > 0 ? totalSum / totalCount : 0,
-      byName: {}
+
+    const now = performance.now();
+    const duration = now - measurement.startTime;
+
+    // Update the measurement
+    measurement.endTime = now;
+    measurement.duration = duration;
+    measurement.completed = true;
+    measurement.metadata = metadata;
+    this.measurements.set(name, measurement);
+
+    // Add to datapoints for historical analysis
+    this.addDataPoint(name, duration, metadata);
+
+    if (typeof window !== 'undefined' && window.performance && window.performance.mark) {
+      try {
+        performance.mark(`${name}_end`);
+        performance.measure(name, `${name}_start`, `${name}_end`);
+      } catch (e) {
+        // Ignore errors from performance marking
+      }
+    }
+
+    return duration;
+  }
+
+  /**
+   * Add a performance data point
+   */
+  private addDataPoint(name: string, value: number, metadata?: Record<string, any>): void {
+    this.dataPoints.push({
+      name,
+      value,
+      timestamp: Date.now(),
+      metadata,
+    });
+
+    // Prevent the array from growing too large
+    if (this.dataPoints.length > this.maxDataPoints) {
+      this.dataPoints = this.dataPoints.slice(-this.maxDataPoints);
+    }
+  }
+
+  /**
+   * Get a summary of performance data
+   */
+  public getSummary(): Record<string, any> {
+    const measurements: Record<string, number> = {};
+    let completeCount = 0;
+    let incompleteCount = 0;
+
+    this.measurements.forEach((m) => {
+      if (m.completed && m.duration !== null) {
+        measurements[m.name] = m.duration;
+        completeCount++;
+      } else {
+        incompleteCount++;
+      }
+    });
+
+    return {
+      measurements,
+      completeCount,
+      incompleteCount,
+      networkRequestCount: this.networkRequests.length,
+      resourceLoadCount: this.resourceLoads.length,
+      longTaskCount: this.longTasks.length,
+      memoryUsageSamples: this.memoryUsage.length,
+      trackingEnabled: this.config.enableMonitoring,
     };
-    
-    for (const [name, data] of Object.entries(summary)) {
-      result.byName[name] = {
-        avg: data.sum / data.count,
-        min: data.min === Infinity ? 0 : data.min,
-        max: data.max === -Infinity ? 0 : data.max,
-        count: data.count
-      };
-    }
-    
-    return result;
   }
-  
+
   /**
-   * Export performance data to JSON
+   * Get all performance data points
    */
-  public exportToJson(): string {
-    return JSON.stringify({
-      metrics: this.metrics,
-      summary: this.getSummary(),
-      timestamp: new Date().toISOString()
-    }, null, 2);
+  public getDataPoints(name?: string): PerformanceDataPoint[] {
+    if (name) {
+      return this.dataPoints.filter(dp => dp.name === name);
+    }
+    return [...this.dataPoints];
+  }
+
+  /**
+   * Get all network requests
+   */
+  public getNetworkRequests(): any[] {
+    return [...this.networkRequests];
+  }
+
+  /**
+   * Get all resource loads
+   */
+  public getResourceLoads(): any[] {
+    return [...this.resourceLoads];
+  }
+
+  /**
+   * Get all long tasks
+   */
+  public getLongTasks(): any[] {
+    return [...this.longTasks];
+  }
+
+  /**
+   * Get memory usage data
+   */
+  public getMemoryUsage(): MemoryUsage[] {
+    return [...this.memoryUsage];
+  }
+
+  /**
+   * Clear all performance data
+   */
+  public clearData(): void {
+    this.measurements.clear();
+    this.dataPoints = [];
+    this.networkRequests = [];
+    this.resourceLoads = [];
+    this.longTasks = [];
+    this.memoryUsage = [];
   }
 }
 

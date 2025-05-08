@@ -7,7 +7,7 @@ import React from 'react';
 
 type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
 
-interface ErrorEvent {
+interface ErrorEventBase {
   message: string;
   stack?: string;
   componentName?: string;
@@ -20,6 +20,9 @@ interface ErrorEvent {
   isHandled: boolean;
 }
 
+// Our custom ErrorEvent type for tracking purposes
+interface CustomErrorEvent extends ErrorEventBase {}
+
 interface ErrorTrackerConfig {
   captureGlobalErrors: boolean;
   capturePromiseRejections: boolean;
@@ -31,7 +34,7 @@ interface ErrorTrackerConfig {
 
 class ErrorTracker {
   private static instance: ErrorTracker;
-  private errors: ErrorEvent[] = [];
+  private errors: CustomErrorEvent[] = [];
   private config: ErrorTrackerConfig = {
     captureGlobalErrors: true,
     capturePromiseRejections: true,
@@ -85,7 +88,7 @@ class ErrorTracker {
       return; // Skip based on sample rate
     }
     
-    const errorEvent: ErrorEvent = {
+    const errorEvent: CustomErrorEvent = {
       message: typeof error === 'string' ? error : error.message,
       stack: error instanceof Error ? error.stack : undefined,
       componentName,
@@ -120,7 +123,7 @@ class ErrorTracker {
   /**
    * Record an error event
    */
-  private recordError(errorEvent: ErrorEvent): void {
+  private recordError(errorEvent: CustomErrorEvent): void {
     this.errors.unshift(errorEvent); // Add to the beginning for most recent first
     
     // Trim errors if we have too many
@@ -153,21 +156,21 @@ class ErrorTracker {
    */
   private setupErrorListeners(): void {
     if (this.config.captureGlobalErrors) {
-      window.addEventListener('error', (event) => {
+      window.addEventListener('error', (event: ErrorEvent) => {
         // Don't capture errors from extensions and other non-app sources
         if (this.shouldIgnoreError(event)) {
           return;
         }
         
-        const errorEvent: ErrorEvent = {
+        const errorEvent: CustomErrorEvent = {
           message: event.message || 'Unknown error',
           stack: event.error?.stack,
           timestamp: Date.now(),
           severity: 'high',
           metadata: {
-            fileName: event.filename,
-            lineNumber: event.lineno,
-            columnNumber: event.colno
+            fileName: event.filename || 'unknown',
+            lineNumber: event.lineno || 0,
+            columnNumber: event.colno || 0
           },
           isFatal: true,
           url: window.location.href,
@@ -181,7 +184,7 @@ class ErrorTracker {
     if (this.config.capturePromiseRejections) {
       window.addEventListener('unhandledrejection', (event) => {
         const error = event.reason;
-        const errorEvent: ErrorEvent = {
+        const errorEvent: CustomErrorEvent = {
           message: error instanceof Error ? error.message : 'Unhandled Promise Rejection',
           stack: error instanceof Error ? error.stack : undefined,
           timestamp: Date.now(),
@@ -224,7 +227,10 @@ class ErrorTracker {
    */
   private shouldIgnoreError(event: ErrorEvent): boolean {
     // Ignore errors from external scripts and extensions
-    if (event.filename && !event.filename.includes(window.location.origin)) {
+    // Safe access to properties with optional chaining to prevent errors
+    const filename = event.filename || '';
+    
+    if (filename && !filename.includes(window.location.origin)) {
       return true;
     }
     
@@ -242,14 +248,14 @@ class ErrorTracker {
   /**
    * Get all recorded errors
    */
-  public getErrors(): ErrorEvent[] {
+  public getErrors(): CustomErrorEvent[] {
     return [...this.errors];
   }
   
   /**
    * Get errors by severity
    */
-  public getErrorsBySeverity(severity: ErrorSeverity): ErrorEvent[] {
+  public getErrorsBySeverity(severity: ErrorSeverity): CustomErrorEvent[] {
     return this.errors.filter(error => error.severity === severity);
   }
   

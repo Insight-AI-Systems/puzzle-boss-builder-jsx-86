@@ -43,7 +43,7 @@ export class RoleService {
       debugLog('RoleService', `Updating role for user ${userId} to ${newRole}`, DebugLevel.INFO);
       
       // Load toast notification indicator
-      const loadingToast = toast({
+      const loadingToastId = toast({
         title: 'Updating user role...',
         description: `Changing role to ${newRole}`,
         variant: 'default',
@@ -65,7 +65,6 @@ export class RoleService {
           
           // Dismiss loading toast
           toast({
-            id: loadingToast,
             title: 'Error updating role',
             description: error.message,
             variant: 'destructive',
@@ -81,7 +80,6 @@ export class RoleService {
           
           // Dismiss loading toast
           toast({
-            id: loadingToast,
             title: 'Error updating role',
             description: errorMsg,
             variant: 'destructive',
@@ -100,10 +98,9 @@ export class RoleService {
         
         // Dismiss loading toast with success
         toast({
-          id: loadingToast,
-          title: 'Role updated',
-          description: `User's role changed to ${newRole}`,
-          variant: 'default',
+            title: 'Role updated',
+            description: `User's role changed to ${newRole}`,
+            variant: 'default',
         });
         
         return { success: true };
@@ -115,10 +112,9 @@ export class RoleService {
         
         // Dismiss loading toast
         toast({
-          id: loadingToast,
-          title: 'Error updating role',
-          description: errorMessage,
-          variant: 'destructive',
+            title: 'Error updating role',
+            description: errorMessage,
+            variant: 'destructive',
         });
         
         return { success: false, error: errorMessage };
@@ -146,7 +142,7 @@ export class RoleService {
       debugLog('RoleService', `Bulk updating ${userIds.length} users to role ${newRole}`, DebugLevel.INFO);
       
       // Loading toast for bulk update
-      const loadingToast = toast({
+      const loadingToastId = toast({
         title: 'Updating user roles...',
         description: `Changing ${userIds.length} users to ${newRole}`,
         variant: 'default',
@@ -166,7 +162,6 @@ export class RoleService {
           
           // Dismiss loading toast with error
           toast({
-            id: loadingToast,
             title: 'Error updating roles',
             description: error.message,
             variant: 'destructive',
@@ -188,10 +183,9 @@ export class RoleService {
         
         // Show success toast
         toast({
-          id: loadingToast,
-          title: 'Roles updated',
-          description: `Successfully updated ${successCount} of ${userIds.length} users to ${newRole}`,
-          variant: failureCount > 0 ? 'default' : 'default',
+            title: 'Roles updated',
+            description: `Successfully updated ${successCount} of ${userIds.length} users to ${newRole}`,
+            variant: failureCount > 0 ? 'default' : 'default',
         });
         
         // Return results
@@ -207,10 +201,9 @@ export class RoleService {
         
         // Dismiss loading toast with error
         toast({
-          id: loadingToast,
-          title: 'Error updating roles',
-          description: errorMessage,
-          variant: 'destructive',
+            title: 'Error updating roles',
+            description: errorMessage,
+            variant: 'destructive',
         });
         
         return { success: false, error: errorMessage };
