@@ -36,14 +36,17 @@ const safeMonitoringService = {
     }
   },
   
-  // Safely access isEnabled
+  // Safely access enabled state using the public getter/setter
   getEnabled: () => {
-    return process.env.NODE_ENV === 'development';
+    return monitoringService.getEnabled ? monitoringService.getEnabled() : (process.env.NODE_ENV === 'development');
   },
   
   setEnabled: (value: boolean) => {
-    console.log(`Setting monitoring enabled to: ${value}`);
-    // We can't directly set the private property
+    if (monitoringService.setEnabled) {
+      monitoringService.setEnabled(value);
+    } else {
+      console.log(`Setting monitoring enabled to: ${value}`);
+    }
   }
 };
 

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types/userTypes';
 import { debugLog, DebugLevel } from '@/utils/debug';
@@ -85,9 +84,9 @@ class UserService {
             credits: data.credits || 0,
             achievements: [], // Default empty array if property doesn't exist
             referral_code: null, // Default null if property doesn't exist
-            gender: data.gender as any || undefined,
-            custom_gender: data.custom_gender || null,
-            age_group: data.age_group as any || undefined,
+            gender: (data as any).gender || undefined,
+            custom_gender: (data as any).custom_gender || null,
+            age_group: (data as any).age_group || undefined,
             created_at: data.created_at,
             updated_at: data.updated_at,
             last_sign_in: data.last_sign_in || null,
@@ -164,9 +163,9 @@ class UserService {
           created_at: item.created_at,
           updated_at: item.updated_at || item.created_at,
           last_sign_in: item.last_sign_in || null,
-          gender: item.gender as any || undefined,
-          custom_gender: item.custom_gender || null,
-          age_group: item.age_group as any || undefined,
+          gender: (item as any).gender || undefined,
+          custom_gender: (item as any).custom_gender || null,
+          age_group: (item as any).age_group || undefined,
           account_locked: item.account_locked || false
         };
         
@@ -234,9 +233,9 @@ class UserService {
           created_at: item.created_at,
           updated_at: item.updated_at || item.created_at,
           last_sign_in: item.last_sign_in || null,
-          gender: item.gender as any || undefined,
-          custom_gender: item.custom_gender || null,
-          age_group: item.age_group as any || undefined,
+          gender: (item as any).gender || undefined,
+          custom_gender: (item as any).custom_gender || null,
+          age_group: (item as any).age_group || undefined,
           account_locked: item.account_locked || false
         };
         

@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { UserRole } from '@/types/userTypes';
 import { useSecurity } from '@/hooks/useSecurityContext';
+import { SecurityEventType } from '@/utils/testing/types/testTypes';
 
 type RoleBasedAccessProps = {
   children: ReactNode;
@@ -48,7 +49,7 @@ export const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
   if (!user) {
     if (logAccessAttempts) {
       logSecurityEvent({
-        eventType: 'PERMISSION_DENIED',
+        eventType: SecurityEventType.PERMISSION_DENIED,
         severity: 'info',
         details: { 
           reason: 'not_authenticated',
@@ -82,7 +83,7 @@ export const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
   if (logAccessAttempts) {
     const accessGranted = hasRequiredRole && hasRequiredPermissions;
     logSecurityEvent({
-      eventType: accessGranted ? 'PERMISSION_GRANTED' : 'PERMISSION_DENIED',
+      eventType: accessGranted ? SecurityEventType.PERMISSION_GRANTED : SecurityEventType.PERMISSION_DENIED,
       userId: user.id,
       severity: accessGranted ? 'info' : 'warning',
       details: { 

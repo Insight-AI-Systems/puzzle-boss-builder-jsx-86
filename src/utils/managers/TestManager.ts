@@ -1,143 +1,143 @@
 
-import { ProjectTest } from '../types/projectTypes';
-import { TestReport, TestSummary, TestSuite, TestCategory } from '../testing/types/testTypes';
-import { TEST_RESULTS } from '../testing/constants/testResults';
-import { TestReportManager } from './TestReportManager';
-import { TestSuiteManager } from './TestSuiteManager';
+import { TestReport } from '@/utils/testing/types/testTypes';
 
-export class TestManager {
-  private tests: Record<string, ProjectTest> = {};
-  private reportManager: TestReportManager;
-  private suiteManager: TestSuiteManager;
+/**
+ * Manages test runs and reporting
+ */
+class TestManagerImpl {
+  private static instance: TestManagerImpl;
+  private listeners: ((report: TestReport) => void)[] = [];
+  private testReports: TestReport[] = [];
+  private maxReports = 50;
 
-  constructor() {
-    this.reportManager = new TestReportManager();
-    this.suiteManager = new TestSuiteManager();
+  private constructor() {}
+
+  /**
+   * Get singleton instance
+   */
+  public static getInstance(): TestManagerImpl {
+    if (!TestManagerImpl.instance) {
+      TestManagerImpl.instance = new TestManagerImpl();
+    }
+    return TestManagerImpl.instance;
   }
 
-  // Test result constants for backward compatibility
-  public static readonly RESULT_VERIFIED = TEST_RESULTS.VERIFIED;
-  public static readonly RESULT_PARTIAL = TEST_RESULTS.PARTIAL;
-  public static readonly RESULT_FAILED = TEST_RESULTS.FAILED;
+  /**
+   * Record a successful test run
+   */
+  public recordSuccess(testData: {
+    id: string;
+    testId: string;
+    name: string;
+    testName: string;
+    results: boolean[];
+    duration: number;
+    details: Record<string, any>;
+  }): void {
+    // Generate counts based on results array
+    const totalTests = testData.results.length;
+    const passedTests = testData.results.filter(r => r === true).length;
+    
+    // Create a standardized report
+    const report: TestReport = {
+      id: testData.id,
+      testId: testData.testId,
+      name: testData.name,
+      testName: testData.testName,
+      success: true,
+      result: true,
+      passedTests: passedTests,
+      totalTests: totalTests,
+      status: "VERIFIED",
+      results: testData.results,
+      duration: testData.duration,
+      timestamp: Date.now(),
+      details: testData.details,
+      taskResults: {} // Initialize empty taskResults
+    };
 
-  addTest(test: ProjectTest) {
-    this.tests[test.id] = test;
+    this.addReport(report);
   }
 
-  addTestSuite(suite: TestSuite) {
-    this.suiteManager.addTestSuite(suite);
+  /**
+   * Record a failed test run
+   */
+  public recordFailure(testData: {
+    id: string;
+    testId: string;
+    name: string;
+    testName: string;
+    results: boolean[];
+    duration: number;
+    error: string;
+    details: Record<string, any>;
+  }): void {
+    // Generate counts based on results array
+    const totalTests = testData.results.length;
+    const passedTests = testData.results.filter(r => r === true).length;
+    
+    // Create a standardized report
+    const report: TestReport = {
+      id: testData.id,
+      testId: testData.testId,
+      name: testData.name,
+      testName: testData.testName,
+      success: false,
+      result: false,
+      passedTests: passedTests,
+      totalTests: totalTests,
+      status: "FAILED",
+      results: testData.results,
+      duration: testData.duration,
+      timestamp: Date.now(),
+      error: testData.error,
+      details: testData.details,
+      failureReason: testData.error,
+      taskResults: {} // Initialize empty taskResults
+    };
+
+    this.addReport(report);
   }
 
-  async runTest(testId: string): Promise<boolean> {
-    if (!this.tests[testId]) {
-      console.error(`Test ${testId} not found`);
-      return false;
+  /**
+   * Add a report and notify listeners
+   */
+  private addReport(report: TestReport): void {
+    // Add to front of array
+    this.testReports.unshift(report);
+    
+    // Limit the number of stored reports
+    if (this.testReports.length > this.maxReports) {
+      this.testReports = this.testReports.slice(0, this.maxReports);
     }
     
-    const test = this.tests[testId];
-    console.log(`Running test: ${test.name}`);
-    
-    try {
-      const startTime = Date.now();
-      const result = await test.run();
-      const endTime = Date.now();
-      
-      test.lastRun = new Date();
-      test.lastResult = result;
-      
-      this.reportManager.addReport({
-        id: testId,
-        testId: testId, // For backward compatibility
-        name: test.name,
-        testName: test.name, // For backward compatibility
-        result: result, // For backward compatibility
-        success: result, // For backward compatibility
-        status: result ? TEST_RESULTS.VERIFIED : TEST_RESULTS.FAILED,
-        results: [result],
-        duration: endTime - startTime,
-        timestamp: Date.now(),
-        details: test.details || {}
-      });
-      
-      return result;
-    } catch (error) {
-      console.error(`Test ${testId} failed with error:`, error);
-      test.lastRun = new Date();
-      test.lastResult = false;
-      
-      this.reportManager.addReport({
-        id: testId,
-        testId: testId, // For backward compatibility
-        testName: test.name,
-        name: test.name,
-        result: false, // For backward compatibility
-        success: false, // For backward compatibility
-        status: TEST_RESULTS.FAILED,
-        results: [false],
-        duration: 0,
-        timestamp: Date.now(),
-        error: error instanceof Error ? error.message : String(error),
-        details: test.details || {}
-      });
-      
-      return false;
-    }
+    // Notify listeners
+    this.listeners.forEach(listener => listener(report));
   }
 
-  async runTests(testIds: string[]): Promise<boolean> {
-    if (!testIds || testIds.length === 0) {
-      return true;
-    }
-    
-    const results = await Promise.all(
-      testIds.map(testId => this.runTest(testId))
-    );
-    
-    return results.every(result => result === true);
+  /**
+   * Subscribe to test reports
+   */
+  public subscribe(listener: (report: TestReport) => void): () => void {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== listener);
+    };
   }
 
-  async runAllTests(): Promise<TestSummary> {
-    const allTests = this.getAllTests();
-    const testIds = allTests.map(test => test.id);
-    
-    const startTime = Date.now();
-    await Promise.all(testIds.map(testId => this.runTest(testId)));
-    const endTime = Date.now();
-    
-    return this.summarizeResults();
+  /**
+   * Get all test reports
+   */
+  public getReports(): TestReport[] {
+    return [...this.testReports];
   }
 
-  async runTestSuite(suiteId: string): Promise<TestSummary> {
-    const suite = this.suiteManager.getTestSuite(suiteId);
-    if (!suite) {
-      console.error(`Test suite ${suiteId} not found`);
-      return {
-        totalTests: 0,
-        passedTests: 0,
-        failedTests: 0,
-        skippedTests: 0,
-        duration: 0,
-        timestamp: Date.now(), // Add timestamp to fix the build error
-        status: TestManager.RESULT_FAILED
-      };
-    }
-
-    const startTime = Date.now();
-    // Use tests array if available, otherwise use testIds for backward compatibility
-    const testsToRun = suite.tests?.map(test => test.id || test) || suite.testIds || [];
-    await this.runTests(testsToRun);
-    const endTime = Date.now();
-
-    return this.summarizeResults();
+  /**
+   * Clear all test reports
+   */
+  public clearReports(): void {
+    this.testReports = [];
   }
-
-  // Delegate to managers
-  getTestReport = (testId: string) => this.reportManager.getReport(testId);
-  getTestSuite = (suiteId: string) => this.suiteManager.getTestSuite(suiteId);
-  getTestSuitesByCategory = (category: TestCategory) => this.suiteManager.getTestSuitesByCategory(category);
-  getAllTestReports = () => this.reportManager.getAllReports();
-  getAllTests = () => Object.values(this.tests);
-  getAllTestSuites = () => this.suiteManager.getAllTestSuites();
-  clearReports = () => this.reportManager.clearReports();
-  summarizeResults = () => this.reportManager.summarizeResults();
 }
+
+export const TestManager = TestManagerImpl.getInstance();

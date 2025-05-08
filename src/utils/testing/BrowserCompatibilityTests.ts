@@ -1,223 +1,191 @@
-
 import { TestReport } from './types/testTypes';
+import { generateTestId } from './testUtils';
+import { performanceMonitor } from '@/utils/performance/PerformanceMonitor';
 
-/**
- * Browser compatibility tests for the puzzle application
- */
-export class BrowserCompatibilityTest {
-  /**
-   * Get browser information for testing
-   */
-  static getBrowserInfo(): Record<string, any> {
-    const userAgent = navigator.userAgent;
-    const browserInfo = {
-      name: this.getBrowserName(userAgent),
-      version: this.getBrowserVersion(userAgent),
-      os: this.getOperatingSystem(userAgent),
-      mobile: this.isMobileDevice(),
-      touchEnabled: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
-      screenWidth: window.innerWidth,
-      screenHeight: window.innerHeight
-    };
-    
-    return browserInfo;
-  }
-  
-  /**
-   * Get browser name from user agent
-   */
-  private static getBrowserName(userAgent: string): string {
-    if (userAgent.indexOf("Firefox") > -1) {
-      return "Firefox";
-    } else if (userAgent.indexOf("SamsungBrowser") > -1) {
-      return "Samsung Internet";
-    } else if (userAgent.indexOf("Opera") > -1 || userAgent.indexOf("OPR") > -1) {
-      return "Opera";
-    } else if (userAgent.indexOf("Trident") > -1) {
-      return "Internet Explorer";
-    } else if (userAgent.indexOf("Edge") > -1) {
-      return "Edge";
-    } else if (userAgent.indexOf("Chrome") > -1) {
-      return "Chrome";
-    } else if (userAgent.indexOf("Safari") > -1) {
-      return "Safari";
-    } else {
-      return "Unknown";
-    }
-  }
-  
-  /**
-   * Get browser version from user agent
-   */
-  private static getBrowserVersion(userAgent: string): string {
-    const browser = this.getBrowserName(userAgent);
-    let versionRegex: RegExp;
-    
-    switch (browser) {
-      case "Firefox":
-        versionRegex = /Firefox\/([0-9.]+)/;
-        break;
-      case "Samsung Internet":
-        versionRegex = /SamsungBrowser\/([0-9.]+)/;
-        break;
-      case "Opera":
-        versionRegex = /OPR\/([0-9.]+)/;
-        break;
-      case "Internet Explorer":
-        versionRegex = /rv:([0-9.]+)/;
-        break;
-      case "Edge":
-        versionRegex = /Edge\/([0-9.]+)/;
-        break;
-      case "Chrome":
-        versionRegex = /Chrome\/([0-9.]+)/;
-        break;
-      case "Safari":
-        versionRegex = /Version\/([0-9.]+)/;
-        break;
-      default:
-        return "Unknown";
-    }
-    
-    const match = userAgent.match(versionRegex);
-    return match ? match[1] : "Unknown";
-  }
-  
-  /**
-   * Get operating system from user agent
-   */
-  private static getOperatingSystem(userAgent: string): string {
-    if (userAgent.indexOf("Win") !== -1) return "Windows";
-    if (userAgent.indexOf("Mac") !== -1) return "MacOS";
-    if (userAgent.indexOf("Linux") !== -1) return "Linux";
-    if (userAgent.indexOf("Android") !== -1) return "Android";
-    if (userAgent.indexOf("iOS") !== -1 || userAgent.indexOf("iPhone") !== -1 || userAgent.indexOf("iPad") !== -1) return "iOS";
-    return "Unknown";
-  }
-  
-  /**
-   * Check if device is mobile
-   */
-  private static isMobileDevice(): boolean {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
-      || (window.innerWidth <= 768);
-  }
-  
-  /**
-   * Run standard browser compatibility tests
-   */
-  static async runCompatibilityTests(): Promise<TestReport> {
-    const browserInfo = this.getBrowserInfo();
-    const tests = [
-      {
-        testName: "WebGL Support",
-        result: this.testWebGL(),
-        importance: "critical"
-      },
-      {
-        testName: "Canvas Support",
-        result: this.testCanvas(),
-        importance: "critical"
-      },
-      {
-        testName: "Drag and Drop API",
-        result: this.testDragAndDrop(),
-        importance: "critical"
-      },
-      {
-        testName: "LocalStorage Access",
-        result: this.testLocalStorage(),
-        importance: "high"
-      },
-      {
-        testName: "Touch Events",
-        result: browserInfo.touchEnabled,
-        importance: "medium"
-      },
-      {
-        testName: "Audio Support",
-        result: this.testAudio(),
-        importance: "low"
-      }
-    ];
-    
-    // Evaluate overall compatibility
-    const criticalTests = tests.filter(test => test.importance === "critical");
-    const criticalPassing = criticalTests.every(test => test.result);
-    const success = criticalPassing;
-    const failureReason = !criticalPassing
-      ? `Critical features not supported in this browser`
-      : undefined;
-    
-    return {
-      id: `browser-compat-${Date.now()}`,
-      name: "Browser Compatibility",
-      status: success ? "VERIFIED" : "FAILED",
-      results: tests.map(test => test.result),
-      timestamp: Date.now(),
-      duration: 0,
-      success,
-      failureReason,
-      browser: browserInfo,
-      tests
-    };
-  }
-  
-  /**
-   * Test WebGL support
-   */
-  private static testWebGL(): boolean {
-    try {
-      const canvas = document.createElement('canvas');
-      return !!(window.WebGLRenderingContext && 
-        (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
-    } catch (e) {
-      return false;
-    }
-  }
-  
-  /**
-   * Test Canvas support
-   */
-  private static testCanvas(): boolean {
-    try {
-      const canvas = document.createElement('canvas');
-      return !!(canvas.getContext && canvas.getContext('2d'));
-    } catch (e) {
-      return false;
-    }
-  }
-  
-  /**
-   * Test Drag and Drop API support
-   */
-  private static testDragAndDrop(): boolean {
-    const div = document.createElement('div');
-    return 'draggable' in div && 'ondragstart' in div && 'ondrop' in div;
-  }
-  
-  /**
-   * Test localStorage support
-   */
-  private static testLocalStorage(): boolean {
-    try {
-      localStorage.setItem('test', 'test');
-      localStorage.removeItem('test');
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-  
-  /**
-   * Test audio support
-   */
-  private static testAudio(): boolean {
-    try {
-      const audio = document.createElement('audio');
-      return !!audio.canPlayType;
-    } catch (e) {
-      return false;
-    }
-  }
+interface BrowserInfo {
+  name: string;
+  version: string;
+  os: string;
+  mobile: boolean;
 }
+
+// Function to detect browser information
+const detectBrowser = (): BrowserInfo => {
+  const userAgent = navigator.userAgent;
+  let browserName = 'Unknown';
+  let browserVersion = 'Unknown';
+  let os = 'Unknown';
+  let mobile = false;
+
+  // Detect OS
+  if (userAgent.indexOf('Win') !== -1) os = 'Windows';
+  if (userAgent.indexOf('Mac') !== -1) os = 'MacOS';
+  if (userAgent.indexOf('Linux') !== -1) os = 'Linux';
+  if (userAgent.indexOf('Android') !== -1) {
+    os = 'Android';
+    mobile = true;
+  }
+  if (userAgent.indexOf('iOS') !== -1) {
+    os = 'iOS';
+    mobile = true;
+  }
+
+  // Detect browser
+  if (userAgent.indexOf('Chrome') !== -1) {
+    browserName = 'Chrome';
+    browserVersion = userAgent.substring(userAgent.indexOf('Chrome/') + 7).split(' ')[0];
+  } else if (userAgent.indexOf('Firefox') !== -1) {
+    browserName = 'Firefox';
+    browserVersion = userAgent.substring(userAgent.indexOf('Firefox/') + 8).split(' ')[0];
+  } else if (userAgent.indexOf('Safari') !== -1) {
+    browserName = 'Safari';
+    browserVersion = userAgent.substring(userAgent.indexOf('Safari/') + 7).split(' ')[0];
+  } else if (userAgent.indexOf('Edge') !== -1) {
+    browserName = 'Edge';
+    browserVersion = userAgent.substring(userAgent.indexOf('Edge/') + 5).split(' ')[0];
+  } else if (userAgent.indexOf('MSIE') !== -1 || !!document.documentMode) {
+    browserName = 'IE';
+    browserVersion = userAgent.substring(userAgent.indexOf('MSIE') + 4).split(';')[0];
+  }
+
+  return { name: browserName, version: browserVersion, os, mobile };
+};
+
+const browserInfo = detectBrowser();
+
+// Test functions
+const compatibilityTests = [
+  {
+    name: 'localStorage Support',
+    test: () => typeof window.localStorage !== 'undefined',
+    importance: 'high'
+  },
+  {
+    name: 'WebSockets Support',
+    test: () => typeof WebSocket !== 'undefined',
+    importance: 'high'
+  },
+  {
+    name: 'Fetch API Support',
+    test: () => typeof fetch !== 'undefined',
+    importance: 'high'
+  },
+  {
+    name: 'Promises Support',
+    test: () => typeof Promise !== 'undefined',
+    importance: 'high'
+  },
+  {
+    name: 'Arrow Functions Support',
+    test: () => {
+      try {
+        // tslint:disable-next-line:no-eval
+        eval('() => 1');
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
+    importance: 'medium'
+  },
+  {
+    name: 'ES6 Classes Support',
+    test: () => {
+      try {
+        // tslint:disable-next-line:no-eval
+        eval('class Foo {}');
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
+    importance: 'medium'
+  },
+  {
+    name: 'Template Literals Support',
+    test: () => {
+      try {
+        // tslint:disable-next-line:no-eval
+        eval('`hello ${1}`');
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
+    importance: 'medium'
+  },
+  {
+    name: 'async/await Support',
+    test: () => {
+      try {
+        // tslint:disable-next-line:no-eval
+        eval('async function test() { await Promise.resolve(); }');
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
+    importance: 'medium'
+  },
+  {
+    name: 'CSS Variables Support',
+    test: () => window.CSS && window.CSS.supports('--fake-variable', '0'),
+    importance: 'low'
+  },
+  {
+    name: 'Touch Events Support',
+    test: () => 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0,
+    importance: 'low'
+  }
+];
+
+// Update the createTestReport function to include required fields
+const createTestReport = (testResults: any): TestReport => {
+  return {
+    id: generateTestId(),
+    name: 'Browser Compatibility Tests',
+    status: testResults.success ? 'VERIFIED' : 'FAILED',
+    results: testResults.results,
+    timestamp: Date.now(),
+    duration: testResults.duration || 0,
+    success: testResults.success,
+    passedTests: testResults.results.filter((r: any) => r.result).length,
+    totalTests: testResults.results.length,
+    failureReason: testResults.success ? '' : 'Some browser compatibility tests failed',
+    browser: {
+      name: browserInfo.name,
+      version: browserInfo.version,
+      os: browserInfo.os,
+      mobile: browserInfo.mobile,
+      touchEnabled: ('ontouchstart' in window)
+    },
+    tests: testResults.results.map((result: any) => ({
+      testName: result.name,
+      result: result.result,
+      importance: result.importance
+    })),
+    taskResults: {} // Initialize empty taskResults
+  };
+};
+
+// Run the tests
+export const runBrowserCompatibilityTests = (): Promise<TestReport> => {
+  return new Promise((resolve) => {
+    performanceMonitor.markStart('browserCompatibilityTests');
+
+    const testResults = compatibilityTests.map(test => {
+      const result = test.test();
+      return {
+        name: test.name,
+        result,
+        importance: test.importance
+      };
+    });
+
+    const success = testResults.every(result => result.result);
+    const duration = performanceMonitor.markEnd('browserCompatibilityTests');
+
+    const report = createTestReport({ success, duration, results: testResults });
+    resolve(report);
+  });
+};
