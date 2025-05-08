@@ -1,26 +1,39 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types/userTypes';
-import { isProtectedAdmin, PROTECTED_ADMIN_EMAIL } from '@/utils/constants';
 import { debugLog, DebugLevel } from '@/utils/debug';
-import { toast } from '@/hooks/use-toast';
-import { QueryClient } from '@tanstack/react-query';
+import { monitoringService } from '@/utils/monitoring/monitoringService';
+
+// In-memory cache for users to reduce API calls
+type UserCache = {
+  [key: string]: {
+    profile: UserProfile;
+    timestamp: number;
+  }
+};
+
+interface UserFilterOptions {
+  searchQuery?: string;
+  role?: UserRole | null;
+  country?: string | null;
+  userType?: 'all' | 'admin' | 'player';
+}
 
 /**
  * User Service
- * Centralized service for handling all user-related operations
+ * Central service for managing user operations
  */
-export class UserService {
-  private queryClient: QueryClient | null = null;
+class UserService {
   private static instance: UserService;
+  private cache: UserCache = {};
+  private cacheExpiry = 1000 * 60 * 5; // 5 minutes
   private maxRetries = 3;
-  private cache: Map<string, { data: UserProfile; timestamp: number }> = new Map();
-  private cacheTTL = 5 * 60 * 1000; // 5 minutes
+  private protectedEmails: string[] = ['alan@insight-ai-systems.com'];
 
   private constructor() {}
 
   /**
-   * Get singleton instance of UserService
+   * Get singleton instance
    */
   public static getInstance(): UserService {
     if (!UserService.instance) {
@@ -30,698 +43,387 @@ export class UserService {
   }
 
   /**
-   * Set the QueryClient instance for cache invalidation
+   * Get user by ID with caching
    */
-  public setQueryClient(queryClient: QueryClient) {
-    this.queryClient = queryClient;
+  public async getUserById(userId: string): Promise<UserProfile | null> {
+    try {
+      // Check cache first
+      if (this.cache[userId] && Date.now() - this.cache[userId].timestamp < this.cacheExpiry) {
+        debugLog('UserService', `Cache hit for user ${userId}`, DebugLevel.INFO);
+        return this.cache[userId].profile;
+      }
+      
+      debugLog('UserService', `Fetching user by ID: ${userId}`, DebugLevel.INFO);
+      let retries = 0;
+      
+      const fetchUser = async (): Promise<UserProfile | null> => {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+          
+          if (error) {
+            throw error;
+          }
+          
+          if (!data) {
+            return null;
+          }
+          
+          // Convert to UserProfile and cache
+          const profile: UserProfile = {
+            id: data.id,
+            display_name: data.username || data.display_name || null,
+            email: data.email || null,
+            bio: data.bio || null,
+            avatar_url: data.avatar_url || null,
+            role: data.role as UserRole,
+            country: data.country || null,
+            categories_played: data.categories_played || [],
+            credits: data.credits || 0,
+            achievements: data.achievements || [],
+            referral_code: data.referral_code || null,
+            gender: data.gender || undefined,
+            custom_gender: data.custom_gender || null,
+            age_group: data.age_group || undefined,
+            created_at: data.created_at,
+            updated_at: data.updated_at,
+            last_sign_in: data.last_sign_in || null
+          };
+          
+          this.cache[userId] = { profile, timestamp: Date.now() };
+          return profile;
+          
+        } catch (err) {
+          // Handle network errors with retry
+          if (retries < this.maxRetries) {
+            retries++;
+            const delay = Math.pow(2, retries) * 500; // Exponential backoff
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return fetchUser();
+          }
+          throw err;
+        }
+      };
+      
+      return await fetchUser();
+      
+    } catch (err) {
+      debugLog('UserService', `Error getting user by ID: ${userId}`, DebugLevel.ERROR, { error: err });
+      monitoringService.trackError(err instanceof Error ? err : new Error('Failed to get user'), 'medium', {
+        userId,
+        operation: 'getUserById'
+      });
+      return null;
+    }
   }
 
   /**
-   * Get all users with retry mechanism
+   * Get all users
    */
-  public async getAllUsers(retryCount = 0): Promise<UserProfile[]> {
+  public async getAllUsers(): Promise<UserProfile[]> {
     try {
       debugLog('UserService', 'Fetching all users', DebugLevel.INFO);
-      const { data: userData, error: userError } = await supabase.auth.getUser();
       
-      if (userError) {
-        throw new Error(`Failed to get current user: ${userError.message}`);
-      }
-
-      // Special case for protected admin
-      const isCurrentUserProtectedAdmin = isProtectedAdmin(userData?.user?.email);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
       
-      const { data, error } = await supabase.functions.invoke('get-all-users', {
-        method: 'GET',
-      });
-
       if (error) {
-        debugLog('UserService', `Error fetching users (attempt ${retryCount + 1}/${this.maxRetries})`, DebugLevel.ERROR, { error });
-        
-        // Retry logic
-        if (retryCount < this.maxRetries) {
-          debugLog('UserService', `Retrying user fetch (${retryCount + 1}/${this.maxRetries})`, DebugLevel.INFO);
-          // Exponential backoff
-          const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return this.getAllUsers(retryCount + 1);
-        }
-        
-        // If protected admin, provide fallback users list
-        if (isCurrentUserProtectedAdmin) {
-          debugLog('UserService', 'Using fallback for protected admin', DebugLevel.INFO);
-          return this.getFallbackUsers(userData?.user);
-        }
-        
         throw error;
       }
-
+      
       if (!data || !Array.isArray(data)) {
-        debugLog('UserService', 'Invalid response format from get-all-users', DebugLevel.ERROR);
-        
-        if (isCurrentUserProtectedAdmin) {
-          return this.getFallbackUsers(userData?.user);
-        }
-        
-        throw new Error('Invalid response format from server');
+        return [];
       }
       
-      // Transform data into UserProfile format
-      const profiles = data.map(user => this.transformUserData(user));
-      
-      // Special case: ensure protected admin is in the list
-      if (isCurrentUserProtectedAdmin && !profiles.some(p => isProtectedAdmin(p.email))) {
-        profiles.push({
-          id: userData?.user?.id || 'protected-admin',
-          email: PROTECTED_ADMIN_EMAIL,
-          display_name: 'Protected Admin',
-          bio: null,
-          avatar_url: null,
-          role: 'super_admin',
-          country: null,
-          categories_played: [],
-          credits: 0,
-          achievements: [],
-          referral_code: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          last_sign_in: new Date().toISOString()
-        });
-      }
-      
-      // Update cache with fetched users
-      profiles.forEach(user => {
-        this.updateCache(user.id, user);
+      // Convert to UserProfiles and update cache
+      const profiles: UserProfile[] = data.map(item => {
+        const profile: UserProfile = {
+          id: item.id,
+          display_name: item.username || item.display_name || null,
+          email: item.email || null,
+          bio: item.bio || null,
+          avatar_url: item.avatar_url || null,
+          role: item.role as UserRole,
+          country: item.country || null,
+          categories_played: item.categories_played || [],
+          credits: item.credits || 0,
+          achievements: item.achievements || [],
+          referral_code: item.referral_code || null,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          last_sign_in: item.last_sign_in || null,
+          gender: item.gender || undefined,
+          custom_gender: item.custom_gender || null,
+          age_group: item.age_group || undefined
+        };
+        
+        // Update cache
+        this.cache[item.id] = { profile, timestamp: Date.now() };
+        return profile;
       });
       
-      debugLog('UserService', `Successfully retrieved ${profiles.length} users`, DebugLevel.INFO);
       return profiles;
       
     } catch (err) {
-      debugLog('UserService', 'Error in getAllUsers', DebugLevel.ERROR, { error: err });
-      throw err;
+      debugLog('UserService', 'Error fetching all users', DebugLevel.ERROR, { error: err });
+      monitoringService.trackError(err instanceof Error ? err : new Error('Failed to get users'), 'medium', {
+        operation: 'getAllUsers'
+      });
+      return [];
     }
   }
 
   /**
-   * Get a fallback list of users with at least the protected admin
+   * Search users by query
    */
-  private getFallbackUsers(currentUser: any): UserProfile[] {
-    return [{
-      id: currentUser?.id || 'protected-admin',
-      email: PROTECTED_ADMIN_EMAIL,
-      display_name: 'Protected Admin',
-      bio: null,
-      avatar_url: null,
-      role: 'super_admin',
-      country: null,
-      categories_played: [],
-      credits: 0,
-      achievements: [],
-      referral_code: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      last_sign_in: new Date().toISOString()
-    }];
-  }
-
-  /**
-   * Transform raw user data into UserProfile format
-   */
-  private transformUserData(user: any): UserProfile {
-    return {
-      id: user.id,
-      email: user.email || null,
-      display_name: user.display_name || user.email?.split('@')[0] || 'Anonymous User',
-      bio: user.bio || null,
-      avatar_url: user.avatar_url || null,
-      role: (user.role || 'player') as UserRole,
-      country: user.country || null,
-      categories_played: user.categories_played || [],
-      credits: user.credits || 0,
-      achievements: user.achievements || [],
-      referral_code: user.referral_code || null,
-      gender: user.gender || null,
-      custom_gender: user.custom_gender || null,
-      age_group: user.age_group || null,
-      created_at: user.created_at || new Date().toISOString(),
-      updated_at: user.updated_at || user.created_at || new Date().toISOString(),
-      last_sign_in: user.last_sign_in || null
-    };
-  }
-
-  /**
-   * Validate user data before sending to the database
-   */
-  private validateUserData(user: Partial<UserProfile>): string | null {
-    if (!user.id) {
-      return 'User ID is required';
+  public async searchUsers(query: string): Promise<UserProfile[]> {
+    if (!query || query.length < 2) {
+      return [];
     }
     
-    if (user.email && !this.isValidEmail(user.email)) {
-      return 'Invalid email format';
-    }
-    
-    if (user.role && !this.isValidRole(user.role)) {
-      return `Invalid role: ${user.role}`;
-    }
-    
-    return null;
-  }
-
-  /**
-   * Check if email is the protected admin
-   */
-  public isProtectedAdmin(email?: string | null): boolean {
-    return isProtectedAdmin(email);
-  }
-
-  /**
-   * Validate email format
-   */
-  private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  }
-
-  /**
-   * Validate user role
-   */
-  private isValidRole(role: string): boolean {
-    const validRoles = [
-      'super_admin', 
-      'admin', 
-      'category_manager', 
-      'social_media_manager', 
-      'partner_manager',
-      'cfo',
-      'player'
-    ];
-    
-    return validRoles.includes(role);
-  }
-
-  /**
-   * Update the cache with a user profile
-   */
-  private updateCache(userId: string, userData: UserProfile): void {
-    this.cache.set(userId, {
-      data: userData,
-      timestamp: Date.now()
-    });
-  }
-
-  /**
-   * Get user from cache if available and not expired
-   */
-  private getCachedUser(userId: string): UserProfile | null {
-    const cachedData = this.cache.get(userId);
-    
-    if (!cachedData) return null;
-    
-    // Check if cache is still valid
-    if (Date.now() - cachedData.timestamp > this.cacheTTL) {
-      this.cache.delete(userId);
-      return null;
-    }
-    
-    return cachedData.data;
-  }
-
-  /**
-   * Get user profile by ID
-   */
-  public async getUserById(userId: string, retryCount = 0): Promise<UserProfile | null> {
     try {
-      debugLog('UserService', `Fetching user profile for ${userId}`, DebugLevel.INFO);
+      debugLog('UserService', `Searching users with query: ${query}`, DebugLevel.INFO);
       
-      // Try to get from cache first
-      const cachedUser = this.getCachedUser(userId);
-      if (cachedUser) {
-        debugLog('UserService', `Using cached user data for ${userId}`, DebugLevel.INFO);
-        return cachedUser;
+      // Search by email, display_name, username
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .or(`username.ilike.%${query}%,email.ilike.%${query}%,id.eq.${query}`);
+      
+      if (error) {
+        throw error;
       }
       
-      // Check if this is the protected admin
-      if (userId === PROTECTED_ADMIN_EMAIL) {
-        const protectedAdminProfile = {
-          id: userId,
-          email: PROTECTED_ADMIN_EMAIL,
-          display_name: 'Protected Admin',
-          bio: null,
-          avatar_url: null,
-          role: 'super_admin',
-          country: null,
-          categories_played: [],
-          credits: 0,
-          achievements: [],
-          referral_code: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          last_sign_in: new Date().toISOString()
+      if (!data || !Array.isArray(data)) {
+        return [];
+      }
+      
+      // Convert to UserProfiles and update cache
+      const profiles: UserProfile[] = data.map(item => {
+        const profile = {
+          id: item.id,
+          display_name: item.username || item.display_name || null,
+          email: item.email || null,
+          bio: item.bio || null,
+          avatar_url: item.avatar_url || null,
+          role: item.role as UserRole,
+          country: item.country || null,
+          categories_played: item.categories_played || [],
+          credits: item.credits || 0,
+          achievements: item.achievements || [],
+          referral_code: item.referral_code || null,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          last_sign_in: item.last_sign_in || null,
+          gender: item.gender || undefined,
+          custom_gender: item.custom_gender || null,
+          age_group: item.age_group || undefined
         };
         
-        this.updateCache(userId, protectedAdminProfile);
-        return protectedAdminProfile;
-      }
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-      
-      if (error) {
-        debugLog('UserService', `Error fetching user ${userId}`, DebugLevel.ERROR, { error });
-        
-        // Retry logic
-        if (retryCount < this.maxRetries) {
-          debugLog('UserService', `Retrying user fetch (${retryCount + 1}/${this.maxRetries})`, DebugLevel.INFO);
-          // Exponential backoff
-          const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return this.getUserById(userId, retryCount + 1);
-        }
-        
-        throw error;
-      }
-      
-      if (!data) {
-        return null;
-      }
-      
-      const userProfile = this.transformUserData(data);
-      this.updateCache(userId, userProfile);
-      
-      return userProfile;
-      
-    } catch (err) {
-      debugLog('UserService', `Error getting user ${userId}`, DebugLevel.ERROR, { error: err });
-      throw err;
-    }
-  }
-
-  /**
-   * Update user profile data
-   */
-  public async updateUserProfile(userId: string, userData: Partial<UserProfile>): Promise<UserProfile> {
-    try {
-      // Validate data
-      const validationError = this.validateUserData({ ...userData, id: userId });
-      if (validationError) {
-        throw new Error(`Validation error: ${validationError}`);
-      }
-      
-      debugLog('UserService', `Updating user ${userId}`, DebugLevel.INFO, { userData });
-      
-      // Create a sanitized version of the user data that matches the database schema
-      // This fixes the type mismatch with age_group and other enum fields
-      const sanitizedData: Record<string, any> = {};
-      
-      // Only copy fields that are actually present and not null/undefined
-      Object.entries(userData).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          sanitizedData[key] = value;
-        }
+        // Update cache
+        this.cache[item.id] = { profile, timestamp: Date.now() };
+        return profile;
       });
       
-      // Handle optimistic update
-      const cachedUser = this.getCachedUser(userId);
-      if (cachedUser) {
-        const optimisticUser = { ...cachedUser, ...userData, updated_at: new Date().toISOString() };
-        this.updateCache(userId, optimisticUser);
-      }
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(sanitizedData)
-        .eq('id', userId)
-        .select('*')
-        .single();
-      
-      if (error) {
-        debugLog('UserService', `Error updating user ${userId}`, DebugLevel.ERROR, { error });
-        
-        // Revert optimistic update if there's an error
-        if (cachedUser) {
-          this.updateCache(userId, cachedUser);
-        }
-        
-        throw error;
-      }
-      
-      // Update cache with the actual data from server
-      const updatedProfile = this.transformUserData(data);
-      this.updateCache(userId, updatedProfile);
-      
-      // Invalidate cache
-      if (this.queryClient) {
-        this.queryClient.invalidateQueries({ queryKey: ['profile', userId] });
-        this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
-      }
-      
-      return updatedProfile;
+      return profiles;
       
     } catch (err) {
-      debugLog('UserService', `Error updating user ${userId}`, DebugLevel.ERROR, { error: err });
-      throw err;
+      debugLog('UserService', `Error searching users: ${query}`, DebugLevel.ERROR, { error: err });
+      return [];
     }
   }
-
-  /**
-   * Create a new user profile
-   */
-  public async createUserProfile(profileData: Partial<UserProfile>): Promise<UserProfile> {
-    try {
-      if (!profileData.id) {
-        throw new Error('User ID is required');
-      }
-      
-      // Validate data
-      const validationError = this.validateUserData(profileData);
-      if (validationError) {
-        throw new Error(`Validation error: ${validationError}`);
-      }
-      
-      debugLog('UserService', `Creating user profile`, DebugLevel.INFO, { profileData });
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert(profileData)
-        .select('*')
-        .single();
-      
-      if (error) {
-        debugLog('UserService', 'Error creating user profile', DebugLevel.ERROR, { error });
-        throw error;
-      }
-      
-      const newProfile = this.transformUserData(data);
-      this.updateCache(newProfile.id, newProfile);
-      
-      // Invalidate cache
-      if (this.queryClient) {
-        this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
-      }
-      
-      return newProfile;
-      
-    } catch (err) {
-      debugLog('UserService', 'Error creating user profile', DebugLevel.ERROR, { error: err });
-      throw err;
-    }
-  }
-
-  /**
-   * Search for users with various filters
-   */
-  public async searchUsers(searchParams: {
-    query?: string;
-    role?: UserRole | string;
-    country?: string;
-    limit?: number;
-    offset?: number;
-  }): Promise<{ users: UserProfile[], total: number }> {
-    try {
-      // First get all users (we'll filter client-side for now)
-      const allUsers = await this.getAllUsers();
-      
-      // Filter based on search parameters
-      let filteredUsers = allUsers;
-      
-      // Apply text search
-      if (searchParams.query) {
-        const query = searchParams.query.toLowerCase();
-        filteredUsers = filteredUsers.filter(user => {
-          return (
-            user.email?.toLowerCase().includes(query) || 
-            user.display_name?.toLowerCase().includes(query) ||
-            user.id.toLowerCase().includes(query)
-          );
-        });
-      }
-      
-      // Apply role filter
-      if (searchParams.role) {
-        filteredUsers = filteredUsers.filter(user => 
-          user.role === searchParams.role
-        );
-      }
-      
-      // Apply country filter
-      if (searchParams.country) {
-        filteredUsers = filteredUsers.filter(user => 
-          user.country === searchParams.country
-        );
-      }
-      
-      // Get total before pagination
-      const total = filteredUsers.length;
-      
-      // Apply pagination
-      if (searchParams.limit !== undefined && searchParams.offset !== undefined) {
-        filteredUsers = filteredUsers.slice(
-          searchParams.offset, 
-          searchParams.offset + searchParams.limit
-        );
-      }
-      
-      return { users: filteredUsers, total };
-      
-    } catch (err) {
-      debugLog('UserService', 'Error searching users', DebugLevel.ERROR, { error: err });
-      throw err;
-    }
-  }
-
+  
   /**
    * Filter users based on criteria
    */
-  public filterUsers(users: UserProfile[], filters: {
-    searchQuery?: string;
-    role?: string | null;
-    country?: string | null;
-    userType?: 'regular' | 'admin';
-  }): UserProfile[] {
-    const adminRoles = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
+  public filterUsers(users: UserProfile[], options: UserFilterOptions): UserProfile[] {
+    if (!users || !Array.isArray(users)) {
+      return [];
+    }
     
-    return users.filter(user => {
-      // User type filter (admin vs regular)
-      if (filters.userType === 'admin') {
-        if (!adminRoles.includes(user.role)) return false;
-      } else if (filters.userType === 'regular') {
-        if (adminRoles.includes(user.role)) return false;
-      }
-      
-      // Search query filter
-      if (filters.searchQuery && filters.searchQuery.trim() !== '') {
-        const query = filters.searchQuery.toLowerCase();
-        const emailMatch = user.email?.toLowerCase().includes(query);
-        const nameMatch = user.display_name?.toLowerCase().includes(query);
-        if (!emailMatch && !nameMatch) return false;
-      }
-      
-      // Role filter
-      if (filters.role && user.role !== filters.role) {
-        return false;
-      }
-      
-      // Country filter
-      if (filters.country && user.country !== filters.country) {
-        return false;
-      }
-      
-      return true;
-    });
+    let filtered = [...users];
+    
+    // Filter by search query
+    if (options.searchQuery) {
+      const query = options.searchQuery.toLowerCase();
+      filtered = filtered.filter(user => 
+        user.display_name?.toLowerCase().includes(query) || 
+        user.email?.toLowerCase().includes(query) || 
+        user.id.toLowerCase().includes(query)
+      );
+    }
+    
+    // Filter by role
+    if (options.role) {
+      filtered = filtered.filter(user => user.role === options.role);
+    }
+    
+    // Filter by country
+    if (options.country) {
+      filtered = filtered.filter(user => user.country === options.country);
+    }
+    
+    // Filter by user type
+    if (options.userType === 'admin') {
+      filtered = filtered.filter(user => 
+        user.role === 'admin' || 
+        user.role === 'super_admin' ||
+        user.role === 'category_manager' ||
+        user.role === 'social_media_manager' ||
+        user.role === 'partner_manager' ||
+        user.role === 'cfo'
+      );
+    } else if (options.userType === 'player') {
+      filtered = filtered.filter(user => user.role === 'player');
+    }
+    
+    return filtered;
   }
-
+  
   /**
-   * Sort users by various criteria
+   * Create a new user
    */
-  public sortUsers(users: UserProfile[], sortBy: string, sortDirection: 'asc' | 'desc'): UserProfile[] {
-    return [...users].sort((a, b) => {
-      let valueA: any;
-      let valueB: any;
-      
-      switch (sortBy) {
-        case 'role':
-          valueA = a.role;
-          valueB = b.role;
-          break;
-        case 'lastLogin':
-          valueA = a.last_sign_in ? new Date(a.last_sign_in).getTime() : 0;
-          valueB = b.last_sign_in ? new Date(b.last_sign_in).getTime() : 0;
-          break;
-        case 'created':
-          valueA = new Date(a.created_at).getTime();
-          valueB = new Date(b.created_at).getTime();
-          break;
-        case 'name':
-          valueA = a.display_name || '';
-          valueB = b.display_name || '';
-          break;
-        default:
-          valueA = a.display_name || '';
-          valueB = b.display_name || '';
-      }
-      
-      if (sortDirection === 'asc') {
-        return valueA > valueB ? 1 : -1;
-      } else {
-        return valueA < valueB ? 1 : -1;
-      }
-    });
-  }
-
-  /**
-   * Delete a user profile (admin only)
-   */
-  public async deleteUserProfile(userId: string): Promise<boolean> {
+  public async createUser(email: string, password: string, userData: Partial<UserProfile>): Promise<{success: boolean, error?: Error, user?: UserProfile}> {
     try {
-      debugLog('UserService', `Attempting to delete user ${userId}`, DebugLevel.WARN);
+      debugLog('UserService', `Creating new user: ${email}`, DebugLevel.INFO);
+      
+      // First, create the auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            display_name: userData.display_name
+          }
+        }
+      });
+      
+      if (authError) {
+        throw authError;
+      }
+      
+      if (!authData.user) {
+        throw new Error('User creation failed');
+      }
+      
+      // Then, update the profile with additional data
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          username: userData.display_name,
+          bio: userData.bio,
+          avatar_url: userData.avatar_url,
+          role: userData.role || 'player',
+          country: userData.country
+        })
+        .eq('id', authData.user.id)
+        .select();
+      
+      if (profileError) {
+        throw profileError;
+      }
+      
+      // Get the complete user profile
+      const user = await this.getUserById(authData.user.id);
+      
+      if (!user) {
+        throw new Error('Failed to retrieve created user');
+      }
+      
+      return {success: true, user};
+      
+    } catch (err) {
+      debugLog('UserService', `Error creating user: ${err}`, DebugLevel.ERROR);
+      return {success: false, error: err instanceof Error ? err : new Error('User creation failed')};
+    }
+  }
+  
+  /**
+   * Update user profile
+   */
+  public async updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<{success: boolean, error?: Error}> {
+    try {
+      debugLog('UserService', `Updating user ${userId}`, DebugLevel.INFO, { updates });
+      
+      // Remove properties that cannot be updated directly
+      const { id, created_at, updated_at, ...updateData } = updates;
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', userId);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Invalidate cache
+      delete this.cache[userId];
+      
+      return {success: true};
+      
+    } catch (err) {
+      debugLog('UserService', `Error updating user ${userId}`, DebugLevel.ERROR, { error: err });
+      return {success: false, error: err instanceof Error ? err : new Error('Failed to update user')};
+    }
+  }
+  
+  /**
+   * Delete a user
+   */
+  public async deleteUser(userId: string): Promise<{success: boolean, error?: Error}> {
+    try {
+      debugLog('UserService', `Deleting user ${userId}`, DebugLevel.INFO);
       
       // Check if this is a protected admin
-      if (userId === PROTECTED_ADMIN_EMAIL) {
-        debugLog('UserService', 'Cannot delete protected admin account', DebugLevel.ERROR);
-        toast({
-          title: "Operation not allowed",
-          description: "Protected admin accounts cannot be deleted",
-          variant: "destructive",
-        });
-        return false;
+      const user = await this.getUserById(userId);
+      if (user && this.isProtectedAdmin(user.email)) {
+        return {
+          success: false,
+          error: new Error('Cannot delete protected admin account')
+        };
       }
       
+      // Delete from auth (this should cascade to profiles due to RLS)
       const { error } = await supabase.functions.invoke('delete-user', {
         body: { userId }
       });
       
       if (error) {
-        debugLog('UserService', `Error deleting user ${userId}`, DebugLevel.ERROR, { error });
         throw error;
       }
       
       // Remove from cache
-      this.cache.delete(userId);
+      delete this.cache[userId];
       
-      // Invalidate queries
-      if (this.queryClient) {
-        this.queryClient.invalidateQueries({ queryKey: ['all-users'] });
-      }
-      
-      toast({
-        title: "User deleted",
-        description: "User profile has been successfully deleted",
-      });
-      
-      return true;
+      return {success: true};
       
     } catch (err) {
       debugLog('UserService', `Error deleting user ${userId}`, DebugLevel.ERROR, { error: err });
-      
-      toast({
-        title: "Error deleting user",
-        description: err instanceof Error ? err.message : 'Unknown error occurred',
-        variant: "destructive",
-      });
-      
-      return false;
+      return {success: false, error: err instanceof Error ? err : new Error('Failed to delete user')};
     }
   }
-
+  
   /**
-   * Export users to CSV format
+   * Check if an email belongs to a protected admin
    */
-  public exportUsersToCSV(users: UserProfile[]): string {
-    try {
-      const headers = [
-        'ID',
-        'Email',
-        'Display Name',
-        'Role',
-        'Country',
-        'Created At',
-        'Last Sign In'
-      ].join(',');
-      
-      const rows = users.map(user => {
-        return [
-          user.id,
-          user.email || '',
-          user.display_name || '',
-          user.role || 'player',
-          user.country || '',
-          user.created_at,
-          user.last_sign_in || ''
-        ].map(field => `"${field}"`).join(',');
-      });
-      
-      return [headers, ...rows].join('\n');
-      
-    } catch (err) {
-      debugLog('UserService', 'Error exporting users to CSV', DebugLevel.ERROR, { error: err });
-      throw err;
-    }
+  public isProtectedAdmin(email?: string | null): boolean {
+    if (!email) return false;
+    return this.protectedEmails.some(protectedEmail => 
+      email.toLowerCase() === protectedEmail.toLowerCase()
+    );
   }
-
+  
   /**
-   * Get unique countries from user profiles
+   * Check if an email belongs to a protected admin
    */
-  public getUniqueCountries(users: UserProfile[]): string[] {
-    const countries = new Set<string>();
-    
-    users.forEach(user => {
-      if (user.country) {
-        countries.add(user.country);
-      }
-    });
-    
-    return Array.from(countries).sort();
-  }
-
-  /**
-   * Get user statistics
-   */
-  public getUserStats(users: UserProfile[]): {
-    regularCount: number;
-    adminCount: number;
-    totalCount: number;
-    activeLastMonth: number;
-    newLastMonth: number;
-  } {
-    const adminRoles = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
-    
-    const now = Date.now();
-    const lastMonth = now - 30 * 24 * 60 * 60 * 1000;
-    
-    const adminCount = users.filter(user => adminRoles.includes(user.role)).length;
-    const regularCount = users.length - adminCount;
-    
-    const activeLastMonth = users.filter(user => {
-      if (!user.last_sign_in) return false;
-      const lastSignIn = new Date(user.last_sign_in).getTime();
-      return lastSignIn >= lastMonth;
-    }).length;
-    
-    const newLastMonth = users.filter(user => {
-      const createdAt = new Date(user.created_at).getTime();
-      return createdAt >= lastMonth;
-    }).length;
-    
-    return {
-      regularCount,
-      adminCount,
-      totalCount: users.length,
-      activeLastMonth,
-      newLastMonth
-    };
-  }
-
-  /**
-   * Clear all cached user data
-   */
-  public clearCache(): void {
-    this.cache.clear();
-    debugLog('UserService', 'User cache cleared', DebugLevel.INFO);
+  public isProtectedAdminEmail(email?: string | null): boolean {
+    return this.isProtectedAdmin(email);
   }
 }
 

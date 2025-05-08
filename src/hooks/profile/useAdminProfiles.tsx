@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { UserProfile } from '@/types/userTypes';
+import { UserProfile, UserRole } from '@/types/userTypes';
 import { userService } from '@/services/userService';
 import { roleService } from '@/services/roleService';
 import { debugLog, DebugLevel } from '@/utils/debug';

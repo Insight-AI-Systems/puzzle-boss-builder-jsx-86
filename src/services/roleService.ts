@@ -177,7 +177,7 @@ export class RoleService {
     }
     
     // Cannot modify own role unless super_admin
-    if (targetUserId && targetUserId === supabase.auth.getUser().then(({data}) => data.user?.id)) {
+    if (targetUserId && targetUserId === supabase.auth.getUser().then(({data}) => data.user?.id).toString()) {
       if (userRole !== 'super_admin') {
         return false;
       }
@@ -228,7 +228,7 @@ export class RoleService {
         toast({
           title: "Some users excluded",
           description: "Protected admin users cannot have their roles changed",
-          variant: "warning",
+          variant: "destructive",
         });
       }
       
@@ -242,7 +242,7 @@ export class RoleService {
         toast({
           title: "Operation limited",
           description: `Maximum ${BATCH_SIZE} users can be updated at once`,
-          variant: "warning",
+          variant: "destructive",
         });
         filteredUserIds.length = BATCH_SIZE;
       }
