@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useEnhancedAuthContext } from '@/contexts/EnhancedAuthContext';
 import { useSecurity } from '@/hooks/useSecurityContext';
-import { SecurityEventType } from '@/utils/security/auditLogging';
+import { SecurityEventType } from '@/utils/testing/types/testTypes';
 import { UserRole } from '@/types/userTypes';
 import { Loader2 } from 'lucide-react';
 import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';
@@ -38,6 +38,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { logSecurityEvent } = useSecurity();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
+  // Always grant access if in development mode
+  const isDevelopmentMode = process.env.NODE_ENV === 'development';
+
   // Check role and permission authorization
   useEffect(() => {
     if (!isInitialized || isLoading) return;
@@ -45,6 +48,15 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     // Not authenticated
     if (!isAuthenticated) {
       setIsAuthorized(false);
+      return;
+    }
+
+    // Development mode override
+    if (isDevelopmentMode) {
+      debugLog('ProtectedRoute', 'Development mode detected, granting access', DebugLevel.INFO, {
+        path: location.pathname
+      });
+      setIsAuthorized(true);
       return;
     }
 
@@ -93,7 +105,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   }, [
     isInitialized, isLoading, isAuthenticated, requiredRoles, requiredPermissions, 
-    requireAllPermissions, hasRole, hasPermission, isAdmin, user, location.pathname
+    requireAllPermissions, hasRole, hasPermission, isAdmin, user, location.pathname, isDevelopmentMode
   ]);
 
   // Log access attempts if enabled
@@ -137,6 +149,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         </div>
       </div>
     );
+  }
+
+  // Development mode override - Always grant access
+  if (isDevelopmentMode) {
+    return <>{children}</>;
   }
 
   // Not authenticated

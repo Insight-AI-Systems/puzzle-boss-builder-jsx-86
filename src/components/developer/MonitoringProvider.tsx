@@ -52,7 +52,7 @@ const safeMonitoringService = {
 
 const MonitoringProvider: React.FC<MonitoringProviderProps> = ({
   children,
-  enableDeveloperTools = process.env.NODE_ENV === 'development'
+  enableDeveloperTools = true // Changed to true by default to ensure admin tools are available
 }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   
@@ -61,8 +61,8 @@ const MonitoringProvider: React.FC<MonitoringProviderProps> = ({
     safeMonitoringService.configure({
       errorTracking: true,
       userActivityTracking: true,
-      developerTools: process.env.NODE_ENV === 'development',
-      samplingRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.1
+      developerTools: true, // Always enable developer tools
+      samplingRate: 1.0 // Always set to 1.0 to ensure all events are tracked
     });
     
     // Start reporting
@@ -70,6 +70,9 @@ const MonitoringProvider: React.FC<MonitoringProviderProps> = ({
     
     // Mark as initialized
     setIsInitialized(true);
+    
+    // Ensure monitoring is enabled
+    safeMonitoringService.setEnabled(true);
     
     // Clean up
     return () => {
@@ -80,8 +83,8 @@ const MonitoringProvider: React.FC<MonitoringProviderProps> = ({
   return (
     <>
       {children}
-      {enableDeveloperTools && process.env.NODE_ENV === 'development' && isInitialized && (
-        <DeveloperTools initiallyExpanded={false} />
+      {enableDeveloperTools && isInitialized && (
+        <DeveloperTools initiallyExpanded={true} />
       )}
     </>
   );

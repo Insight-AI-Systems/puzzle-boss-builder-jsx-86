@@ -46,9 +46,13 @@ const detectBrowser = (): BrowserInfo => {
   } else if (userAgent.indexOf('Edge') !== -1) {
     browserName = 'Edge';
     browserVersion = userAgent.substring(userAgent.indexOf('Edge/') + 5).split(' ')[0];
-  } else if (userAgent.indexOf('MSIE') !== -1 || document.documentMode) {
+  } else if (userAgent.indexOf('MSIE') !== -1) {
     browserName = 'IE';
     browserVersion = userAgent.substring(userAgent.indexOf('MSIE') + 4).split(';')[0];
+  } else if (userAgent.indexOf('Trident/') !== -1) {
+    // IE 11 detection
+    browserName = 'IE';
+    browserVersion = '11';
   }
 
   return { name: browserName, version: browserVersion, os, mobile };
