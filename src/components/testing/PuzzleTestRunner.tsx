@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserCompatibilityTest } from '@/utils/testing/BrowserCompatibilityTests';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,15 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { TestReport } from '@/utils/testing/types/testTypes';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  AlertCircle, 
+  CheckCircle, 
+  XCircle,
+  AlertTriangle,
+  Info
+} from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface PuzzleTestRunnerProps {
   testType?: string;
@@ -146,9 +156,9 @@ const PuzzleTestRunner: React.FC<PuzzleTestRunnerProps> = ({ testType = 'unit' }
     <Card className="w-full max-w-4xl mx-auto shadow-lg">
       <CardHeader>
         <CardTitle>Puzzle Game Test Runner</CardTitle>
-        <CardDescription>
+        <div className="text-sm text-muted-foreground">
           Run tests to validate puzzle game functionality across unit tests, integration tests, and browser compatibility
-        </CardDescription>
+        </div>
       </CardHeader>
       
       <CardContent>
@@ -315,29 +325,29 @@ const PuzzleTestRunner: React.FC<PuzzleTestRunnerProps> = ({ testType = 'unit' }
                     <h4 className="font-medium mb-2">Browser Information</h4>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                       <div>
-                        <span className="font-medium">Browser:</span> {browserResult.browser.name}
+                        <span className="font-medium">Browser:</span> {browserResult.browser?.name}
                       </div>
                       <div>
-                        <span className="font-medium">Version:</span> {browserResult.browser.version}
+                        <span className="font-medium">Version:</span> {browserResult.browser?.version}
                       </div>
                       <div>
-                        <span className="font-medium">Operating System:</span> {browserResult.browser.os}
+                        <span className="font-medium">Operating System:</span> {browserResult.browser?.os}
                       </div>
                       <div>
-                        <span className="font-medium">Device Type:</span> {browserResult.browser.mobile ? 'Mobile' : 'Desktop'}
+                        <span className="font-medium">Device Type:</span> {browserResult.browser?.mobile ? 'Mobile' : 'Desktop'}
                       </div>
                       <div>
-                        <span className="font-medium">Touch Enabled:</span> {browserResult.browser.touchEnabled ? 'Yes' : 'No'}
+                        <span className="font-medium">Touch Enabled:</span> {browserResult.browser?.touchEnabled ? 'Yes' : 'No'}
                       </div>
                       <div>
-                        <span className="font-medium">Screen Size:</span> {browserResult.browser.screenWidth}×{browserResult.browser.screenHeight}
+                        <span className="font-medium">Screen Size:</span> {browserResult.browser?.screenWidth}×{browserResult.browser?.screenHeight}
                       </div>
                     </div>
                   </div>
                   
                   <div className="space-y-2 mt-4">
                     <h4 className="font-medium">Feature Support</h4>
-                    {browserResult.tests.map((test, index) => (
+                    {browserResult.tests?.map((test, index) => (
                       <div key={index} className="border rounded-md p-3 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {test.result ? (

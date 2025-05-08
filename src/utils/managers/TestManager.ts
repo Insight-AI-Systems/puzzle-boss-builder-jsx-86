@@ -1,3 +1,4 @@
+
 import { ProjectTest } from '../types/projectTypes';
 import { TestReport, TestSummary, TestSuite, TestCategory } from '../testing/types/testTypes';
 import { TEST_RESULTS } from '../testing/constants/testResults';
@@ -116,6 +117,7 @@ export class TestManager {
         failedTests: 0,
         skippedTests: 0,
         duration: 0,
+        timestamp: Date.now(), // Add timestamp to fix the build error
         status: TestManager.RESULT_FAILED
       };
     }
