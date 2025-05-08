@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { monitoringService, useMonitoring } from '@/utils/monitoring/monitoringService';
 import { performanceMonitor } from '@/utils/monitoring/performanceMonitor';
-import { errorTracker } from '@/utils/monitoring/errorTracker';
+import { errorTracker } from '@/utils/monitoring/errorTracker'; // Path stays the same even though file extension changed
 import { userActivityMonitor } from '@/utils/monitoring/userActivityMonitor';
 import { 
   Bug, ChevronDown, ChevronUp, AlertTriangle, 

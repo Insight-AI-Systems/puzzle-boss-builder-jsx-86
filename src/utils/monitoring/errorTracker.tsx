@@ -3,6 +3,8 @@
  * Error tracking system for monitoring and reporting application errors
  */
 
+import React from 'react';
+
 type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
 
 interface ErrorEvent {
@@ -311,7 +313,7 @@ export const errorTracker = ErrorTracker.getInstance();
 /**
  * HOC for tracking errors in React components
  */
-export function withErrorTracking<P>(
+export function withErrorTracking<P extends object>(
   Component: React.ComponentType<P>,
   componentName: string
 ): React.FC<P> {
@@ -341,3 +343,4 @@ export function withErrorTracking<P>(
   
   return WrappedComponent;
 }
+
