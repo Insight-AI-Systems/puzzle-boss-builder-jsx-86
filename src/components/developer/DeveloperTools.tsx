@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { monitoringService, useMonitoring } from '@/utils/monitoring/monitoringService';
-import { performanceMonitor } from '@/utils/monitoring/performanceMonitor';
-import { errorTracker } from '@/utils/monitoring/errorTracker'; // Path stays the same even though file extension changed
+import { monitoringService } from '@/utils/monitoring/monitoringService';
+import { performanceMonitor } from '@/utils/performance/PerformanceMonitor';
+import { errorTracker } from '@/utils/monitoring/errorTracker';
 import { userActivityMonitor } from '@/utils/monitoring/userActivityMonitor';
 import { 
   Bug, ChevronDown, ChevronUp, AlertTriangle, 
@@ -24,7 +24,18 @@ const DeveloperTools: React.FC<DeveloperToolsProps> = ({ initiallyExpanded = fal
   const [activityData, setActivityData] = useState<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   
-  const { isDebugMode, toggleDebugMode, createSnapshot } = useMonitoring();
+  // Use monitoring service with default values
+  const isDebugMode = monitoringService.isEnabled;
+  const toggleDebugMode = () => {
+    monitoringService.isEnabled = !monitoringService.isEnabled;
+  };
+  const createSnapshot = () => {
+    return {
+      performance: performanceMonitor.getMetrics(),
+      errors: errorData,
+      activity: activityData
+    };
+  };
   
   useEffect(() => {
     // Only run in development mode
@@ -33,9 +44,13 @@ const DeveloperTools: React.FC<DeveloperToolsProps> = ({ initiallyExpanded = fal
     }
     
     const updateData = () => {
-      setPerformanceData(performanceMonitor.getSummary());
-      setErrorData(errorTracker.getStats());
-      setActivityData(userActivityMonitor.getSessionInfo());
+      setPerformanceData(performanceMonitor.getSummary ? performanceMonitor.getSummary() : {});
+      setErrorData(errorTracker && typeof errorTracker.getStats === 'function' 
+        ? errorTracker.getStats() 
+        : { count: 0, byType: {} });
+      setActivityData(userActivityMonitor 
+        ? { sessionTime: 0, pageViews: 0, lastActive: new Date() }
+        : { sessionTime: 0, pageViews: 0, lastActive: new Date() });
     };
     
     updateData();
@@ -172,20 +187,14 @@ const DeveloperTools: React.FC<DeveloperToolsProps> = ({ initiallyExpanded = fal
               <div className="space-y-1 max-h-60 overflow-auto">
                 {performanceData && Object.entries(performanceData.byName || {}).map(([name, data]: [string, any]) => (
                   <div key={name} className="bg-muted rounded p-2">
-                    <div className="text-xs font-medium truncate">{name}</div>
+                    <div className="flex justify-between">
+                      <span className="text-xs font-medium truncate">{name}</span>
+                      <span className="text-xs text-muted-foreground">{data.count} calls</span>
+                    </div>
                     <div className="grid grid-cols-3 gap-1 mt-1">
-                      <div className="text-xs">
-                        <span className="text-muted-foreground">Avg:</span>{" "}
-                        <span className="font-mono">{data.avg.toFixed(1)}ms</span>
-                      </div>
-                      <div className="text-xs">
-                        <span className="text-muted-foreground">Min:</span>{" "}
-                        <span className="font-mono">{data.min.toFixed(1)}ms</span>
-                      </div>
-                      <div className="text-xs">
-                        <span className="text-muted-foreground">Max:</span>{" "}
-                        <span className="font-mono">{data.max.toFixed(1)}ms</span>
-                      </div>
+                      <div className="text-xs text-muted-foreground">Avg: <span className="font-mono">{data.avg.toFixed(2)}ms</span></div>
+                      <div className="text-xs text-muted-foreground">Min: <span className="font-mono">{data.min.toFixed(2)}ms</span></div>
+                      <div className="text-xs text-muted-foreground">Max: <span className="font-mono">{data.max.toFixed(2)}ms</span></div>
                     </div>
                   </div>
                 ))}
@@ -194,114 +203,80 @@ const DeveloperTools: React.FC<DeveloperToolsProps> = ({ initiallyExpanded = fal
           </TabsContent>
           
           <TabsContent value="errors" className="m-0">
-            <div className="space-y-2">
-              <div className="bg-muted rounded p-2">
-                <div className="text-xs font-medium mb-1">Error Overview</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-background rounded p-2">
-                    <div className="text-xs text-muted-foreground">Total Errors</div>
-                    <div className="text-sm font-mono">{errorData?.total || 0}</div>
-                  </div>
-                  <div className="bg-background rounded p-2">
-                    <div className="text-xs text-muted-foreground">Fatal Errors</div>
-                    <div className="text-sm font-mono">{errorData?.fatalCount || 0}</div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="text-xs font-medium">Errors by Severity</div>
+            <div className="bg-muted rounded p-2 mb-2">
+              <div className="text-xs font-medium mb-1">Error Summary</div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="bg-muted rounded p-2">
-                  <div className="text-xs text-yellow-500 flex items-center">
-                    <AlertTriangle className="h-3 w-3 mr-1" /> Low/Medium
-                  </div>
-                  <div className="text-sm font-mono">
-                    {(errorData?.bySeverity?.low || 0) + (errorData?.bySeverity?.medium || 0)}
-                  </div>
+                <div className="bg-background rounded p-2">
+                  <div className="text-xs text-muted-foreground">Total Errors</div>
+                  <div className="text-sm font-mono">{errorData?.count || 0}</div>
                 </div>
-                <div className="bg-muted rounded p-2">
-                  <div className="text-xs text-red-500 flex items-center">
-                    <AlertTriangle className="h-3 w-3 mr-1" /> High/Critical
-                  </div>
-                  <div className="text-sm font-mono">
-                    {(errorData?.bySeverity?.high || 0) + (errorData?.bySeverity?.critical || 0)}
-                  </div>
+                <div className="bg-background rounded p-2">
+                  <div className="text-xs text-muted-foreground">Error Types</div>
+                  <div className="text-sm font-mono">{Object.keys(errorData?.byType || {}).length}</div>
                 </div>
               </div>
+            </div>
+            
+            <div className="text-xs font-medium">Recent Errors</div>
+            <div className="space-y-1 max-h-60 overflow-auto">
+              {errorData && Object.entries(errorData?.byType || {}).map(([type, count]: [string, any]) => (
+                <div key={type} className="bg-muted rounded p-2">
+                  <div className="flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3 text-red-500" />
+                    <span className="text-xs font-medium">{type}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">{count} occurrences</span>
+                  </div>
+                </div>
+              ))}
               
-              <div className="text-xs font-medium">Recent Errors</div>
-              <div className="space-y-1 max-h-60 overflow-auto">
-                {errorTracker.getErrors().slice(0, 5).map((error, index) => (
-                  <div key={index} className="bg-muted rounded p-2">
-                    <div className="text-xs font-medium truncate">{error.message}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {new Date(error.timestamp).toLocaleTimeString()} • {error.severity}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {(!errorData || Object.keys(errorData?.byType || {}).length === 0) && (
+                <div className="bg-muted/50 rounded p-2 text-center">
+                  <div className="text-xs text-muted-foreground">No errors recorded</div>
+                </div>
+              )}
             </div>
           </TabsContent>
           
           <TabsContent value="activity" className="m-0">
-            <div className="space-y-2">
+            <div className="bg-muted rounded p-2 mb-2">
+              <div className="text-xs font-medium mb-1">Session Info</div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-background rounded p-2">
+                  <div className="text-xs text-muted-foreground">Session Duration</div>
+                  <div className="text-sm font-mono">
+                    {Math.floor((activityData?.sessionTime || 0) / 60)}m {(activityData?.sessionTime || 0) % 60}s
+                  </div>
+                </div>
+                <div className="bg-background rounded p-2">
+                  <div className="text-xs text-muted-foreground">Page Views</div>
+                  <div className="text-sm font-mono">{activityData?.pageViews || 0}</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="text-xs font-medium">User Activity</div>
+            <div className="space-y-1 max-h-60 overflow-auto">
               <div className="bg-muted rounded p-2">
-                <div className="text-xs font-medium mb-1">Session Overview</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-background rounded p-2">
-                    <div className="text-xs text-muted-foreground">Session Duration</div>
-                    <div className="text-sm font-mono">
-                      {Math.floor((activityData?.duration || 0) / 60000)}m {Math.floor(((activityData?.duration || 0) % 60000) / 1000)}s
-                    </div>
-                  </div>
-                  <div className="bg-background rounded p-2">
-                    <div className="text-xs text-muted-foreground">Activities Count</div>
-                    <div className="text-sm font-mono">{activityData?.activityCount || 0}</div>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Last Active</span>
+                  <span className="text-xs font-mono">
+                    {activityData?.lastActive ? new Date(activityData.lastActive).toLocaleTimeString() : '-'}
+                  </span>
                 </div>
               </div>
               
-              <div className="text-xs font-medium">Last Activity</div>
               <div className="bg-muted rounded p-2">
-                <div className="text-xs text-muted-foreground">Time since last activity</div>
-                <div className="text-sm font-mono">
-                  {Math.floor((activityData?.lastActivity || 0) / 1000)}s ago
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Browser</span>
+                  <span className="text-xs font-mono truncate max-w-[200px]">
+                    {window.navigator.userAgent.split(' ').slice(-3).join(' ')}
+                  </span>
                 </div>
-              </div>
-              
-              <div className="text-xs font-medium">Recent Activities</div>
-              <div className="space-y-1 max-h-60 overflow-auto">
-                {userActivityMonitor.getActivities().slice(-5).reverse().map((activity, index) => (
-                  <div key={index} className="bg-muted rounded p-2">
-                    <div className="text-xs font-medium truncate">{activity.action}</div>
-                    <div className="text-xs text-muted-foreground mt-1 flex justify-between">
-                      <span>{activity.route}</span>
-                      <span>{new Date(activity.timestamp).toLocaleTimeString()}</span>
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
           </TabsContent>
         </div>
       </Tabs>
-      
-      <div className="flex items-center justify-between mt-2 pt-2 border-t text-xs text-muted-foreground">
-        <div>Session ID: {monitoringService['sessionId'].substring(0, 8)}</div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-6 px-2 text-xs"
-          onClick={() => {
-            setPerformanceData(performanceMonitor.getSummary());
-            setErrorData(errorTracker.getStats());
-            setActivityData(userActivityMonitor.getSessionInfo());
-          }}
-        >
-          <RefreshCw className="h-3 w-3 mr-1" />
-          Refresh
-        </Button>
-      </div>
     </div>
   );
 };

@@ -7,11 +7,12 @@ export type UserRole =
   | 'partner_manager' 
   | 'cfo' 
   | 'player'
-  | 'regular';
+  | 'regular'
+  | 'user';  // Added 'user' for compatibility with some components
 
 export type Gender = 'male' | 'female' | 'non-binary' | 'custom' | 'prefer-not-to-say' | 'other';
 
-// Update AgeGroup type to match the values being used
+// Unified AgeGroup type that includes all possible values
 export type AgeGroup = 
   | 'under_18' 
   | '13-17'
@@ -20,7 +21,7 @@ export type AgeGroup =
   | '35-44' 
   | '45-54' 
   | '55-64' 
-  | '65_plus' 
+  | '65_plus'
   | '45-60' 
   | '60+';
 
@@ -56,7 +57,7 @@ export interface UserProfile {
   created_at: string;
   updated_at: string;
   last_sign_in?: string | null;
-  account_locked?: boolean; // Added missing property
+  account_locked?: boolean;
 }
 
 // Define the interface for role definition
@@ -164,6 +165,17 @@ export const ROLE_DEFINITIONS: Record<UserRole, RoleDefinition> = {
     role: 'regular',
     label: 'Regular',
     description: 'Standard user with puzzle access.',
+    permissions: [
+      'play_puzzles',
+      'manage_profile',
+      'view_leaderboards'
+    ],
+    canBeAssignedBy: ['super_admin', 'admin']
+  },
+  user: {
+    role: 'user',
+    label: 'User',
+    description: 'Generic user with basic access.',
     permissions: [
       'play_puzzles',
       'manage_profile',

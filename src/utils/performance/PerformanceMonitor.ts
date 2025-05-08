@@ -51,6 +51,11 @@ export interface PerformanceMonitor {
    * Get navigation timing metrics from the browser
    */
   getNavigationTiming: () => Record<string, number> | null;
+  
+  /**
+   * Get a summary of performance metrics
+   */
+  getSummary: () => any;
 }
 
 class PerformanceMonitorImpl implements PerformanceMonitor {
@@ -150,6 +155,48 @@ class PerformanceMonitorImpl implements PerformanceMonitor {
       
       // Unload event time
       unload: timing.unloadEventEnd - timing.unloadEventStart,
+    };
+  }
+  
+  public getSummary(): any {
+    // Calculate overall stats
+    const allMetrics = Object.values(this.metrics).flat();
+    const totalCount = allMetrics.length;
+    
+    if (totalCount === 0) {
+      return {
+        overallAverage: 0,
+        totalCount: 0,
+        byName: {}
+      };
+    }
+    
+    const overallTotal = allMetrics.reduce((sum, metric) => sum + metric.value, 0);
+    const overallAverage = overallTotal / totalCount;
+    
+    // Calculate stats by metric name
+    const byName: Record<string, { count: number; avg: number; min: number; max: number }> = {};
+    
+    for (const [name, metrics] of Object.entries(this.metrics)) {
+      if (metrics.length === 0) continue;
+      
+      const values = metrics.map(m => m.value);
+      const total = values.reduce((sum, val) => sum + val, 0);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      
+      byName[name] = {
+        count: metrics.length,
+        avg: total / metrics.length,
+        min,
+        max
+      };
+    }
+    
+    return {
+      overallAverage,
+      totalCount,
+      byName
     };
   }
 }

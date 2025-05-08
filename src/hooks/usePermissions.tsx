@@ -1,62 +1,67 @@
 
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
-import { UserRole } from '@/types/userTypes';
+import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 
 export function usePermissions() {
-  const { user, isAdmin } = useAuth();
-
-  // Fetch all permissions for the current user
-  const { data: userPermissions, isLoading } = useQuery({
-    queryKey: ['userPermissions', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      
-      // Option 1: Direct database check using role-permission relationship
-      const { data: permissions, error } = await supabase
-        .from('permissions')
-        .select(`
-          name,
-          description,
-          role_permissions!inner(role)
-        `)
-        .eq('role_permissions.role', user.role as UserRole);
-      
-      if (error) throw error;
-      
-      // Extract permission names from the results
-      return permissions.map(p => p.name);
-    },
-    enabled: !!user,
-  });
-
-  // Check if user has a specific permission
-  const hasPermission = (permissionName: string): boolean => {
+  const { user, hasRole } = useAuth();
+  
+  /**
+   * Check if the current user has the specified permission
+   */
+  const hasPermission = (permission: string): boolean => {
     if (!user) return false;
-    if (isAdmin) return true; // Admins have all permissions
-    return userPermissions?.includes(permissionName) || false;
+    
+    // Super admins have all permissions
+    if (hasRole('super_admin')) return true;
+    
+    // Get the user's role
+    let userRole: keyof typeof ROLE_DEFINITIONS | null = null;
+    
+    if (hasRole('admin')) userRole = 'admin';
+    else if (hasRole('category_manager')) userRole = 'category_manager';
+    else if (hasRole('social_media_manager')) userRole = 'social_media_manager';
+    else if (hasRole('partner_manager')) userRole = 'partner_manager';
+    else if (hasRole('cfo')) userRole = 'cfo';
+    else if (hasRole('player')) userRole = 'player';
+    else if (hasRole('regular')) userRole = 'regular';
+    else if (hasRole('user')) userRole = 'user';
+    
+    if (!userRole || !ROLE_DEFINITIONS[userRole]) return false;
+    
+    // Check if the role has the required permission
+    return ROLE_DEFINITIONS[userRole].permissions.includes(permission);
   };
-
-  // Check if user has any of the permissions
-  const hasAnyPermission = (permissionNames: string[]): boolean => {
+  
+  /**
+   * Check if the current user can assign a role to another user
+   */
+  const canAssignRole = (role: UserRole): boolean => {
     if (!user) return false;
-    if (isAdmin) return true;
-    return permissionNames.some(name => userPermissions?.includes(name));
+    
+    // Super admins can assign any role
+    if (hasRole('super_admin')) return true;
+    
+    // Get the user's role
+    let userRole: keyof typeof ROLE_DEFINITIONS | null = null;
+    
+    if (hasRole('admin')) userRole = 'admin';
+    else if (hasRole('category_manager')) userRole = 'category_manager';
+    else if (hasRole('social_media_manager')) userRole = 'social_media_manager';
+    else if (hasRole('partner_manager')) userRole = 'partner_manager';
+    else if (hasRole('cfo')) userRole = 'cfo';
+    else if (hasRole('player')) userRole = 'player';
+    else if (hasRole('regular')) userRole = 'regular';
+    else if (hasRole('user')) userRole = 'user';
+    
+    if (!userRole || !ROLE_DEFINITIONS[userRole]) return false;
+    
+    // Check if the role can be assigned by the current user's role
+    const targetRole = ROLE_DEFINITIONS[role];
+    return targetRole.canBeAssignedBy.includes(userRole);
   };
-
-  // Check if user has all of the permissions
-  const hasAllPermissions = (permissionNames: string[]): boolean => {
-    if (!user) return false;
-    if (isAdmin) return true;
-    return permissionNames.every(name => userPermissions?.includes(name));
-  };
-
+  
   return {
-    userPermissions,
-    isLoading,
     hasPermission,
-    hasAnyPermission,
-    hasAllPermissions
+    canAssignRole
   };
 }

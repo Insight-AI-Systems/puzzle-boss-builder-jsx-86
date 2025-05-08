@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types/userTypes';
 import { debugLog, DebugLevel } from '@/utils/debug';
@@ -74,7 +75,7 @@ class UserService {
           // Convert to UserProfile and cache
           const profile: UserProfile = {
             id: data.id,
-            display_name: data.username || data.display_name || null,
+            display_name: data.username || null,
             email: data.email || null,
             bio: data.bio || null,
             avatar_url: data.avatar_url || null,
@@ -82,11 +83,11 @@ class UserService {
             country: data.country || null,
             categories_played: data.categories_played || [],
             credits: data.credits || 0,
-            achievements: data.achievements || [],
-            referral_code: data.referral_code || null,
-            gender: data.gender || undefined,
+            achievements: [], // Default empty array if property doesn't exist
+            referral_code: null, // Default null if property doesn't exist
+            gender: data.gender as any || undefined,
             custom_gender: data.custom_gender || null,
-            age_group: data.age_group || undefined,
+            age_group: data.age_group as any || undefined,
             created_at: data.created_at,
             updated_at: data.updated_at,
             last_sign_in: data.last_sign_in || null,
@@ -150,7 +151,7 @@ class UserService {
       const profiles: UserProfile[] = data.map(item => {
         const profile: UserProfile = {
           id: item.id,
-          display_name: item.username || item.display_name || null,
+          display_name: item.username || null,
           email: item.email || null,
           bio: item.bio || null,
           avatar_url: item.avatar_url || null,
@@ -158,14 +159,14 @@ class UserService {
           country: item.country || null,
           categories_played: item.categories_played || [],
           credits: item.credits || 0,
-          achievements: item.achievements || [],
-          referral_code: item.referral_code || null,
+          achievements: [], // Default empty array if property doesn't exist
+          referral_code: null, // Default null if property doesn't exist
           created_at: item.created_at,
-          updated_at: item.updated_at,
+          updated_at: item.updated_at || item.created_at,
           last_sign_in: item.last_sign_in || null,
-          gender: item.gender || undefined,
+          gender: item.gender as any || undefined,
           custom_gender: item.custom_gender || null,
-          age_group: item.age_group || undefined,
+          age_group: item.age_group as any || undefined,
           account_locked: item.account_locked || false
         };
         
@@ -218,9 +219,9 @@ class UserService {
       
       // Convert to UserProfiles and update cache
       const profiles: UserProfile[] = data.map(item => {
-        const profile = {
+        const profile: UserProfile = {
           id: item.id,
-          display_name: item.username || item.display_name || null,
+          display_name: item.username || null,
           email: item.email || null,
           bio: item.bio || null,
           avatar_url: item.avatar_url || null,
@@ -228,14 +229,15 @@ class UserService {
           country: item.country || null,
           categories_played: item.categories_played || [],
           credits: item.credits || 0,
-          achievements: item.achievements || [],
-          referral_code: item.referral_code || null,
+          achievements: [], // Default empty array if property doesn't exist
+          referral_code: null, // Default null if property doesn't exist
           created_at: item.created_at,
-          updated_at: item.updated_at,
+          updated_at: item.updated_at || item.created_at,
           last_sign_in: item.last_sign_in || null,
-          gender: item.gender || undefined,
+          gender: item.gender as any || undefined,
           custom_gender: item.custom_gender || null,
-          age_group: item.age_group || undefined
+          age_group: item.age_group as any || undefined,
+          account_locked: item.account_locked || false
         };
         
         // Update cache
@@ -265,9 +267,9 @@ class UserService {
     if (options.searchQuery) {
       const query = options.searchQuery.toLowerCase();
       filtered = filtered.filter(user => 
-        user.display_name?.toLowerCase().includes(query) || 
-        user.email?.toLowerCase().includes(query) || 
-        user.id.toLowerCase().includes(query)
+        (user.display_name?.toLowerCase().includes(query)) || 
+        (user.email?.toLowerCase().includes(query)) || 
+        (user.id.toLowerCase().includes(query))
       );
     }
     
@@ -366,9 +368,32 @@ class UserService {
       // Remove properties that cannot be updated directly
       const { id, created_at, updated_at, ...updateData } = updates;
       
+      // Map from UserProfile to database schema (profiles table)
+      const profileUpdates: Record<string, any> = {
+        username: updateData.display_name,
+        bio: updateData.bio,
+        avatar_url: updateData.avatar_url,
+        role: updateData.role,
+        country: updateData.country,
+        credits: updateData.credits,
+        categories_played: updateData.categories_played,
+        last_sign_in: updateData.last_sign_in,
+        gender: updateData.gender,
+        custom_gender: updateData.custom_gender,
+        age_group: updateData.age_group,
+        account_locked: updateData.account_locked
+      };
+      
+      // Filter out undefined values
+      Object.keys(profileUpdates).forEach(key => {
+        if (profileUpdates[key] === undefined) {
+          delete profileUpdates[key];
+        }
+      });
+      
       const { error } = await supabase
         .from('profiles')
-        .update(updateData)
+        .update(profileUpdates)
         .eq('id', userId);
       
       if (error) {
