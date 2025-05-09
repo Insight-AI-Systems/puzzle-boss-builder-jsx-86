@@ -1,3 +1,4 @@
+
 import React, { ReactNode, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -82,7 +83,7 @@ export const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
   if (logAccessAttempts) {
     const accessGranted = hasRequiredRole && hasRequiredPermissions;
     logSecurityEvent({
-      eventType: accessGranted ? SecurityEventType.PERMISSION_GRANTED : SecurityEventType.PERMISSION_DENIED,
+      eventType: accessGranted ? SecurityEventType.ACCESS_GRANTED : SecurityEventType.PERMISSION_DENIED,
       userId: user.id,
       severity: accessGranted ? 'info' : 'warning',
       details: { 
