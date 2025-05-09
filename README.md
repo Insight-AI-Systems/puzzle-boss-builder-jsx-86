@@ -1,4 +1,7 @@
+
 # Welcome to your Lovable project
+
+> **STABLE VERSION - May 9, 2025**: This version has fixed Edge Function issues in the get-all-users function and has stable admin redirection behavior.
 
 ## Project info
 
@@ -71,3 +74,4 @@ Yes it is!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
