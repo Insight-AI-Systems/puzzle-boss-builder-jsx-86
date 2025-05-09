@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      auth_rate_limits: {
+        Row: {
+          attempt_count: number | null
+          blocked_until: string | null
+          id: string
+          identifier: string
+          last_attempt_at: string
+        }
+        Insert: {
+          attempt_count?: number | null
+          blocked_until?: string | null
+          id?: string
+          identifier: string
+          last_attempt_at?: string
+        }
+        Update: {
+          attempt_count?: number | null
+          blocked_until?: string | null
+          id?: string
+          identifier?: string
+          last_attempt_at?: string
+        }
+        Relationships: []
+      }
       beta_notes: {
         Row: {
           content: string
@@ -1544,6 +1568,24 @@ export type Database = {
           },
         ]
       }
+      role_hierarchy: {
+        Row: {
+          child_role: Database["public"]["Enums"]["user_role"]
+          created_at: string
+          parent_role: Database["public"]["Enums"]["user_role"]
+        }
+        Insert: {
+          child_role: Database["public"]["Enums"]["user_role"]
+          created_at?: string
+          parent_role: Database["public"]["Enums"]["user_role"]
+        }
+        Update: {
+          child_role?: Database["public"]["Enums"]["user_role"]
+          created_at?: string
+          parent_role?: Database["public"]["Enums"]["user_role"]
+        }
+        Relationships: []
+      }
       role_permissions: {
         Row: {
           created_at: string | null
@@ -1572,6 +1614,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      security_audit_logs: {
+        Row: {
+          created_at: string
+          details: Json | null
+          email: string | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          severity: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          email?: string | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          severity: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          email?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          severity?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       site_content: {
         Row: {
@@ -2485,6 +2563,10 @@ export type Database = {
           total_revenue: number
         }[]
       }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
       get_daily_winners: {
         Args: { date_param: string }
         Returns: {
@@ -2574,6 +2656,13 @@ export type Database = {
           completion_rate: number
         }[]
       }
+      get_role_inherits_from: {
+        Args: {
+          user_role: Database["public"]["Enums"]["user_role"]
+          parent_role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
+      }
       get_user_email: {
         Args: { user_id: string }
         Returns: string
@@ -2594,7 +2683,9 @@ export type Database = {
         Returns: string
       }
       has_permission: {
-        Args: { user_id: string; permission_name: string }
+        Args:
+          | { permission_name: string }
+          | { user_id: string; permission_name: string }
         Returns: boolean
       }
       has_role: {

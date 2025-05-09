@@ -3,7 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 // Public Pages
-import HomePage from './pages/HomePage';
+import Index from './pages/Index';
 import Puzzles from './pages/Puzzles';
 import PrizesWonPage from './pages/PrizesWonPage';
 import SupportPage from './pages/SupportPage';
@@ -41,7 +41,7 @@ function App() {
       <Routes>
         {/* Public Pages using MainLayout with Outlet */}
         <Route element={<MainLayout />}>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<Index />} />
           <Route path="/puzzles" element={<Puzzles />} />
           <Route path="/puzzle/:puzzleId" element={<PuzzlePlay />} /> {/* Add the proper route for puzzle play */}
           <Route path="/puzzle" element={<PuzzlePage />} /> {/* Redirects to /puzzles */}

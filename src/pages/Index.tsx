@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Hero } from '@/components/Hero';
 import HowItWorks from '@/components/HowItWorks';
@@ -18,6 +18,8 @@ function Index() {
   const { isAdmin, profile, isLoading: profileLoading } = useUserProfile();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [showingConfirmation, setShowingConfirmation] = useState<boolean>(false);
+  const confirmedAdmin = useRef<boolean | null>(null);
   
   console.log("Index page rendering", { 
     isAdmin, 
@@ -25,28 +27,68 @@ function Index() {
     profileRole: profile?.role,
     isLoading: profileLoading,
     authLoading,
-    isAuthenticated
+    isAuthenticated,
+    showingConfirmation
   });
   
+  // Use separate useEffect for redirect logic to ensure it runs correctly
   useEffect(() => {
-    // Debug message to verify component rendering
-    console.log('Index page mounted');
+    // Skip this effect if we're already showing the confirmation or still loading
+    if (showingConfirmation || profileLoading || authLoading) return;
     
+    console.log('Index page admin redirect check', {
+      profileLoading,
+      profileRole: profile?.role,
+      isAdmin,
+      hasConfirmedAdmin: confirmedAdmin.current !== null,
+      confirmedAdminValue: confirmedAdmin.current
+    });
+    
+    // Only proceed if loading is done
     if (!profileLoading && profile?.role === 'super_admin') {
-      const userWantsAdmin = window.localStorage.getItem('redirect_to_admin') === 'true';
+      // Check localStorage for user preference
+      const userWantsAdmin = window.localStorage.getItem('redirect_to_admin');
       
-      if (userWantsAdmin) {
+      console.log('Admin redirect check', {
+        userWantsAdmin,
+        isNull: userWantsAdmin === null,
+      });
+      
+      if (userWantsAdmin === 'true') {
+        console.log('Auto-redirecting super_admin to dashboard based on localStorage preference');
         navigate('/admin-dashboard');
       } else if (userWantsAdmin === null) {
-        const shouldRedirect = window.confirm('As a Super Admin, would you like to go directly to the Admin Dashboard?');
-        window.localStorage.setItem('redirect_to_admin', shouldRedirect ? 'true' : 'false');
+        console.log('Showing confirmation dialog for super_admin');
+        setShowingConfirmation(true);
         
-        if (shouldRedirect) {
-          navigate('/admin-dashboard');
-        }
+        // Use setTimeout to ensure this runs after state update
+        setTimeout(() => {
+          const shouldRedirect = window.confirm('As a Super Admin, would you like to go directly to the Admin Dashboard?');
+          confirmedAdmin.current = shouldRedirect;
+          window.localStorage.setItem('redirect_to_admin', shouldRedirect ? 'true' : 'false');
+          
+          if (shouldRedirect) {
+            navigate('/admin-dashboard');
+          }
+          setShowingConfirmation(false);
+        }, 0);
       }
     }
-  }, [profileLoading, profile, navigate]);
+  }, [profileLoading, authLoading, profile, navigate, showingConfirmation]);
+
+  useEffect(() => {
+    // Debug message to verify component mounting
+    console.log('Index page mounted', {
+      pathname: window.location.pathname,
+      localStorage: window.localStorage.getItem('redirect_to_admin')
+    });
+    
+    // Allow testing by clearing localStorage when adding a query parameter
+    if (window.location.search.includes('reset_admin_pref')) {
+      console.log('Resetting admin preference in localStorage');
+      window.localStorage.removeItem('redirect_to_admin');
+    }
+  }, []);
 
   // Add fallback rendering state for debugging
   if (authLoading || profileLoading) {
@@ -59,6 +101,18 @@ function Index() {
             {authLoading ? 'Authenticating...' : ''}
             {profileLoading ? 'Loading profile...' : ''}
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render content while showing confirmation to prevent any race conditions
+  if (showingConfirmation) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-puzzle-aqua border-t-transparent mx-auto"></div>
+          <p>Preparing your experience...</p>
         </div>
       </div>
     );
