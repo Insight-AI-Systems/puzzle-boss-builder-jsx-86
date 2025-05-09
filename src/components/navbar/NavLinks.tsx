@@ -66,6 +66,15 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
     // Show the link if the user has any of the required roles or is admin
     return isAdmin || item.roles.some(role => hasRole(role));
   };
+
+  // Add special handling for admin users navigating to home
+  const getLinkState = (path: string) => {
+    // If we're on an admin page and navigating to home, add state info
+    if (path === '/' && location.pathname.startsWith('/admin')) {
+      return { from: location.pathname };
+    }
+    return {}; // Default empty state for other links
+  };
   
   return (
     <>
@@ -73,6 +82,7 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
         <Link
           key={item.path}
           to={item.path}
+          state={getLinkState(item.path)}
           className={`${className} ${
             isLinkActive(item.path)
               ? 'text-puzzle-aqua bg-puzzle-aqua/10'

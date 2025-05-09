@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Hero } from '@/components/Hero';
 import HowItWorks from '@/components/HowItWorks';
 import FeaturedPuzzles from '@/components/FeaturedPuzzles';
@@ -18,6 +18,7 @@ function Index() {
   const { isAdmin, profile, isLoading: profileLoading } = useUserProfile();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showingConfirmation, setShowingConfirmation] = useState<boolean>(false);
   const confirmedAdmin = useRef<boolean | null>(null);
   
@@ -28,7 +29,8 @@ function Index() {
     isLoading: profileLoading,
     authLoading,
     isAuthenticated,
-    showingConfirmation
+    showingConfirmation,
+    navigatedFrom: location.state?.from
   });
   
   // Use separate useEffect for redirect logic to ensure it runs correctly
@@ -36,22 +38,27 @@ function Index() {
     // Skip this effect if we're already showing the confirmation or still loading
     if (showingConfirmation || profileLoading || authLoading) return;
     
+    // Check if we're coming directly from an admin page - if so, don't redirect
+    const comingFromAdmin = location.state?.from?.startsWith('/admin');
+    
     console.log('Index page admin redirect check', {
       profileLoading,
       profileRole: profile?.role,
       isAdmin,
       hasConfirmedAdmin: confirmedAdmin.current !== null,
-      confirmedAdminValue: confirmedAdmin.current
+      confirmedAdminValue: confirmedAdmin.current,
+      comingFromAdmin
     });
     
-    // Only proceed if loading is done
-    if (!profileLoading && profile?.role === 'super_admin') {
+    // Only proceed if loading is done and we're not coming from admin pages
+    if (!profileLoading && profile?.role === 'super_admin' && !comingFromAdmin) {
       // Check localStorage for user preference
       const userWantsAdmin = window.localStorage.getItem('redirect_to_admin');
       
       console.log('Admin redirect check', {
         userWantsAdmin,
         isNull: userWantsAdmin === null,
+        comingFromAdmin
       });
       
       if (userWantsAdmin === 'true') {
@@ -74,13 +81,14 @@ function Index() {
         }, 0);
       }
     }
-  }, [profileLoading, authLoading, profile, navigate, showingConfirmation]);
+  }, [profileLoading, authLoading, profile, navigate, showingConfirmation, location.state]);
 
   useEffect(() => {
     // Debug message to verify component mounting
     console.log('Index page mounted', {
       pathname: window.location.pathname,
-      localStorage: window.localStorage.getItem('redirect_to_admin')
+      localStorage: window.localStorage.getItem('redirect_to_admin'),
+      state: location.state
     });
     
     // Allow testing by clearing localStorage when adding a query parameter
@@ -88,7 +96,7 @@ function Index() {
       console.log('Resetting admin preference in localStorage');
       window.localStorage.removeItem('redirect_to_admin');
     }
-  }, []);
+  }, [location]);
 
   // Add fallback rendering state for debugging
   if (authLoading || profileLoading) {
