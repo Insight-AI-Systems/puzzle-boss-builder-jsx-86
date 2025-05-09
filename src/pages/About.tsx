@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Award, Users, Target, Globe } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const About = () => {
   return (
@@ -122,8 +124,8 @@ const About = () => {
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
           Become part of The Puzzle Boss family. Create an account today to start solving puzzles and winning premium prizes!
         </p>
-        <Button size="lg" className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
-          Sign Up Now
+        <Button size="lg" className="bg-puzzle-aqua hover:bg-puzzle-aqua/80" asChild>
+          <Link to="/auth?signup=true">Sign Up Now</Link>
         </Button>
       </div>
     </div>
