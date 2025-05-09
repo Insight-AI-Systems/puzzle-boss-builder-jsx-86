@@ -1,21 +1,19 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export function usePuzzleCount(categoryId?: string) {
+export const usePuzzleCount = (categoryId: string) => {
   return useQuery({
     queryKey: ['puzzle-count', categoryId],
     queryFn: async () => {
-      if (!categoryId) return 0;
-      const { count, error } = await supabase
+      const { data, error, count } = await supabase
         .from('puzzles')
-        .select('*', { count: 'exact', head: true })
-        .eq('category_id', categoryId)
-        .eq('status', 'active');
+        .select('id', { count: 'exact' })
+        .eq('category_id', categoryId);
 
       if (error) throw error;
       return count || 0;
     },
-    enabled: !!categoryId
+    // Keep the count data fresh
+    staleTime: 30000, // 30 seconds
   });
-}
+};

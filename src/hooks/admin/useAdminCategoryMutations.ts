@@ -87,6 +87,20 @@ export function useAdminCategoryMutations() {
 
   const deleteCategory = useMutation({
     mutationFn: async (categoryId: string) => {
+      // First check if there are any puzzles using this category
+      const { data: puzzles, error: checkError } = await supabase
+        .from('puzzles')
+        .select('id', { count: 'exact' })
+        .eq('category_id', categoryId);
+
+      if (checkError) throw checkError;
+      
+      // If puzzles are found, prevent deletion
+      if (puzzles && puzzles.length > 0) {
+        throw new Error(`Cannot delete category: ${puzzles.length} puzzle(s) are using this category. Please reassign or delete these puzzles first.`);
+      }
+
+      // If no puzzles found, proceed with deletion
       const { error } = await supabase
         .from('categories')
         .delete()
@@ -106,7 +120,7 @@ export function useAdminCategoryMutations() {
     onError: (error) => {
       toast({
         title: "Error",
-        description: `Failed to delete category: ${error.message}`,
+        description: `${error.message}`,
         variant: "destructive",
       });
     }

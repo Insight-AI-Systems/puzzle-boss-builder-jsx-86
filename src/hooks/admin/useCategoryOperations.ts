@@ -56,6 +56,15 @@ export const useCategoryOperations = () => {
   };
 
   const handleDeleteCategory = (categoryId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to delete categories.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (confirm('Are you sure you want to delete this category?')) {
       deleteCategory.mutate(categoryId);
     }
