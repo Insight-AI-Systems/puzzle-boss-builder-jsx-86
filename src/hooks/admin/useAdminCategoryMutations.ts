@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminCategory } from '@/types/categoryTypes';
@@ -88,12 +87,18 @@ export function useAdminCategoryMutations() {
   const deleteCategory = useMutation({
     mutationFn: async (categoryId: string) => {
       // First check if there are any puzzles using this category
-      const { data: puzzles, error: checkError } = await supabase
+      const { data: puzzles, error: checkError, count } = await supabase
         .from('puzzles')
         .select('id', { count: 'exact' })
         .eq('category_id', categoryId);
 
-      if (checkError) throw checkError;
+      if (checkError) {
+        console.error('Error checking for puzzles:', checkError);
+        throw checkError;
+      }
+      
+      // Log for debugging
+      console.log(`Found ${puzzles?.length || 0} puzzles for category ${categoryId}`);
       
       // If puzzles are found, prevent deletion
       if (puzzles && puzzles.length > 0) {
@@ -106,7 +111,11 @@ export function useAdminCategoryMutations() {
         .delete()
         .eq('id', categoryId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting category:', error);
+        throw error;
+      }
+      
       return categoryId;
     },
     onSuccess: () => {
@@ -117,7 +126,7 @@ export function useAdminCategoryMutations() {
         description: "Category deleted successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: `${error.message}`,

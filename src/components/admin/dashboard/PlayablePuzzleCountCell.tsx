@@ -11,5 +11,12 @@ export const PlayablePuzzleCountCell: React.FC<PlayablePuzzleCountCellProps> = (
   
   if (isLoading) return <span>Loading…</span>;
   if (isError) return <span>—</span>;
-  return <span>{data}</span>;
+  
+  // Add a class to highlight when there are puzzles
+  const hasPuzzles = data > 0;
+  return (
+    <span className={hasPuzzles ? "font-medium text-amber-600" : ""}>
+      {data}
+    </span>
+  );
 };

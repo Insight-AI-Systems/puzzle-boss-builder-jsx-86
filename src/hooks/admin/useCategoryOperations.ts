@@ -66,6 +66,7 @@ export const useCategoryOperations = () => {
     }
 
     if (confirm('Are you sure you want to delete this category?')) {
+      console.log('Attempting to delete category:', categoryId);
       deleteCategory.mutate(categoryId);
     }
   };
