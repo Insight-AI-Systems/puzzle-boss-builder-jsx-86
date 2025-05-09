@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Hero } from '@/components/Hero';
@@ -30,7 +29,8 @@ function HomePage() {
     authLoading,
     isAuthenticated,
     showingConfirmation,
-    navigatedFrom: location.state?.from
+    navigatedFrom: location.state?.from,
+    skipRedirect: location.state?.skipAdminRedirect
   });
   
   // Use separate useEffect for redirect logic to ensure it runs correctly
@@ -41,24 +41,29 @@ function HomePage() {
     // Check if we're coming directly from an admin page - if so, don't redirect
     const comingFromAdmin = location.state?.from?.startsWith('/admin');
     
+    // Check for skipAdminRedirect flag - this is set when clicking Home from admin pages
+    const skipRedirect = location.state?.skipAdminRedirect === true;
+    
     console.log('HomePage admin redirect check', {
       profileLoading,
       profileRole: profile?.role,
       isAdmin,
       hasConfirmedAdmin: confirmedAdmin.current !== null,
       confirmedAdminValue: confirmedAdmin.current,
-      comingFromAdmin
+      comingFromAdmin,
+      skipRedirect
     });
     
-    // Only proceed if loading is done and we're not coming from admin pages
-    if (!profileLoading && profile?.role === 'super_admin' && !comingFromAdmin) {
+    // Only proceed if loading is done, there's no skip flag, and we're not coming from admin pages
+    if (!profileLoading && profile?.role === 'super_admin' && !skipRedirect && !comingFromAdmin) {
       // Check localStorage for user preference
       const userWantsAdmin = window.localStorage.getItem('redirect_to_admin');
       
       console.log('Admin redirect check', {
         userWantsAdmin,
         isNull: userWantsAdmin === null,
-        comingFromAdmin
+        comingFromAdmin,
+        skipRedirect
       });
       
       if (userWantsAdmin === 'true') {

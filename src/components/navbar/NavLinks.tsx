@@ -67,13 +67,16 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
     return isAdmin || item.roles.some(role => hasRole(role));
   };
 
-  // Add special handling for admin users navigating to home
-  const getLinkState = (path: string) => {
-    // If we're on an admin page and navigating to home, add state info
+  // Add special handling for home link when in admin pages
+  const getHomeLinkProps = (path: string) => {
     if (path === '/' && location.pathname.startsWith('/admin')) {
-      return { from: location.pathname };
+      // Add a special flag to skip the admin redirect when coming from admin pages
+      return { 
+        to: '/', 
+        state: { skipAdminRedirect: true }
+      };
     }
-    return {}; // Default empty state for other links
+    return { to: path };
   };
   
   return (
@@ -81,8 +84,7 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
       {items.map((item) => shouldShowLink(item) && (
         <Link
           key={item.path}
-          to={item.path}
-          state={getLinkState(item.path)}
+          {...getHomeLinkProps(item.path)}
           className={`${className} ${
             isLinkActive(item.path)
               ? 'text-puzzle-aqua bg-puzzle-aqua/10'

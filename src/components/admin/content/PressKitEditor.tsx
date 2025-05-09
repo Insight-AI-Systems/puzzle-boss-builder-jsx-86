@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ContentEditor } from './ContentEditor';
 import { useToast } from '@/hooks/use-toast';
-import { ImageUpload } from '@/components/admin/ImageUpload';
+import ImageUpload from '@/components/admin/ImageUpload';
 
 export const PressKitEditor: React.FC = () => {
   const { toast } = useToast();
