@@ -1,7 +1,8 @@
 
 # Welcome to your Lovable project
 
-> **STABLE VERSION - May 9, 2025**: This version has fixed Edge Function issues in the get-all-users function and has stable admin redirection behavior.
+> **STABLE VERSION - Lovable
+21:42 on May 09, 2025  **: This version has fixed Edge Function issues in the get-all-users function and has stable admin redirection behavior.
 
 ## Project info
 
