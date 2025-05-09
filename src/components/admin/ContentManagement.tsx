@@ -7,6 +7,7 @@ import { SiteSettingsEditor } from './content/SiteSettingsEditor';
 import { HeroContentEditor } from './content/HeroContentEditor';
 import { PageContentEditor } from './content/PageContentEditor';
 import { FooterContentEditor } from './content/FooterContentEditor';
+import { PressKitEditor } from './content/PressKitEditor'; // Import the new editor
 import { useContentManagement } from '@/hooks/admin/useContentManagement';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 
@@ -28,6 +29,10 @@ export const ContentManagement: React.FC = () => {
     
     if (location.pathname.includes('/content/footer-content')) {
       return 'footer-content';
+    }
+    
+    if (location.pathname.includes('/content/press-kit')) {
+      return 'press-kit';
     }
     
     return 'site-settings';
@@ -57,6 +62,9 @@ export const ContentManagement: React.FC = () => {
         break;
       case 'footer-content':
         navigate('/admin-dashboard/content/footer-content');
+        break;
+      case 'press-kit':
+        navigate('/admin-dashboard/content/press-kit');
         break;
       default:
         navigate('/admin-dashboard/content');
@@ -109,6 +117,8 @@ export const ContentManagement: React.FC = () => {
         return <PageContentEditor />;
       case 'footer-content':
         return <FooterContentEditor />;
+      case 'press-kit':
+        return <PressKitEditor />;
       default:
         return <SiteSettingsEditor />;
     }
@@ -122,11 +132,12 @@ export const ContentManagement: React.FC = () => {
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid grid-cols-4 mb-6">
+          <TabsList className="grid grid-cols-5 mb-6">
             <TabsTrigger value="site-settings">Site Settings</TabsTrigger>
             <TabsTrigger value="hero-content">Hero Section</TabsTrigger>
             <TabsTrigger value="page-content">Page Content</TabsTrigger>
             <TabsTrigger value="footer-content">Footer</TabsTrigger>
+            <TabsTrigger value="press-kit">Press Kit</TabsTrigger>
           </TabsList>
           
           {renderTabContent()}

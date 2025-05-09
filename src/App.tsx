@@ -18,6 +18,7 @@ import CookiePolicy from './pages/legal/CookiePolicy';
 import Partnerships from './pages/Partnerships';
 import Careers from './pages/Careers';
 import Press from './pages/Press';
+import PressKit from './pages/PressKit'; // Import the new PressKit component
 import PuzzlePage from './pages/PuzzlePage'; // Keep for backward compatibility
 import Auth from './pages/Auth';
 import Categories from './components/Categories';
@@ -59,6 +60,7 @@ function App() {
           <Route path="/partnerships" element={<Partnerships />} />
           <Route path="/careers" element={<Careers />} />
           <Route path="/press" element={<Press />} />
+          <Route path="/press-kit" element={<PressKit />} /> {/* Add route for the new press kit page */}
           <Route path="/puzzle-test-playground" element={<PuzzleTestPlayground />} /> {/* Add the route for puzzle test playground */}
           <Route path="/phaser-puzzle" element={<PhaserPuzzlePage />} /> {/* Add the new route for Phaser puzzle page */}
         </Route>

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { NewspaperIcon, Download, Mail, FileText, FileImage, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom'; // Import Link for navigation
 
 const pressReleases = [
   {
@@ -251,9 +252,11 @@ const Press = () => {
                 Download our comprehensive press kit containing logos, product images, company information, and executive bios.
               </p>
             </div>
-            <Button className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
-              <Download className="h-4 w-4 mr-2" />
-              Download Press Kit
+            <Button className="bg-puzzle-aqua hover:bg-puzzle-aqua/80" asChild>
+              <Link to="/press-kit">
+                <Download className="h-4 w-4 mr-2" />
+                View Press Kit
+              </Link>
             </Button>
           </div>
         </CardContent>
