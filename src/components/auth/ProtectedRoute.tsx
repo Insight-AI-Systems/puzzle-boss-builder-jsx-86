@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useEnhancedAuthContext } from '@/contexts/EnhancedAuthContext';
 import { useSecurity } from '@/hooks/useSecurityContext';
-import { SecurityEventType } from '@/utils/testing/types/testTypes';
+import { SecurityEventType } from '@/utils/security/auditLogging';
 import { UserRole } from '@/types/userTypes';
 import { Loader2 } from 'lucide-react';
 import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';

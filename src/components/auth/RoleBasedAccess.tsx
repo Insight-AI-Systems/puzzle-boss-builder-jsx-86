@@ -1,10 +1,9 @@
-
 import React, { ReactNode, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { UserRole } from '@/types/userTypes';
 import { useSecurity } from '@/hooks/useSecurityContext';
-import { SecurityEventType } from '@/utils/testing/types/testTypes';
+import { SecurityEventType } from '@/utils/security/auditLogging';
 
 type RoleBasedAccessProps = {
   children: ReactNode;
