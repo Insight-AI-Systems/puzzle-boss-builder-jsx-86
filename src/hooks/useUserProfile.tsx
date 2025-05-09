@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserProfile, UserRole } from '@/types/userTypes';
 import { AdminProfilesOptions } from '@/types/adminTypes';
-import { isProtectedAdmin } from '@/constants/securityConfig';
+import { isProtectedAdmin } from '@/config/securityConfig';
 
 export interface ProfileUpdateData {
   username?: string;
@@ -81,7 +80,7 @@ export function useUserProfile(adminOptions?: AdminProfilesOptions) {
           setIsAdmin(adminStatus);
           
           // If they have protected admin email but not the super_admin role in the database,
-          // override the role to super_admin
+          // override the role to super_admin in the returned profile object
           if (hasProtectedAdminEmail && userProfile.role !== 'super_admin') {
             console.log('Protected admin email detected, overriding role to super_admin');
             userProfile.role = 'super_admin';
