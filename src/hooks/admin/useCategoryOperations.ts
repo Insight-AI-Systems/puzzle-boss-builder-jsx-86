@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { AdminCategory } from '@/types/categoryTypes';
 import { useCategoryManagement } from '@/hooks/admin/useCategoryManagement';
@@ -65,9 +64,18 @@ export const useCategoryOperations = () => {
       return;
     }
 
-    if (confirm('Are you sure you want to delete this category?')) {
-      console.log('Attempting to delete category:', categoryId);
-      deleteCategory.mutate(categoryId);
+    console.log('Delete category requested for ID:', categoryId);
+    const confirmMessage = 'Are you sure you want to delete this category?';
+    
+    if (confirm(confirmMessage)) {
+      console.log('Delete confirmed by user for category:', categoryId);
+      deleteCategory.mutate(categoryId, {
+        onError: (error) => {
+          console.error('Delete category error in handler:', error);
+        }
+      });
+    } else {
+      console.log('User cancelled category deletion');
     }
   };
 

@@ -6,6 +6,8 @@ export const usePuzzleCount = (categoryId: string) => {
   return useQuery({
     queryKey: ['puzzle-count', categoryId],
     queryFn: async () => {
+      console.log(`Fetching puzzle count for category: ${categoryId}`);
+      
       const { data, error, count } = await supabase
         .from('puzzles')
         .select('id', { count: 'exact' })

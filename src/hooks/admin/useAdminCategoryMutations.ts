@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminCategory } from '@/types/categoryTypes';
@@ -86,39 +87,50 @@ export function useAdminCategoryMutations() {
 
   const deleteCategory = useMutation({
     mutationFn: async (categoryId: string) => {
-      // First check if there are any puzzles using this category
-      const { data: puzzles, error: checkError, count } = await supabase
-        .from('puzzles')
-        .select('id', { count: 'exact' })
-        .eq('category_id', categoryId);
-
-      if (checkError) {
-        console.error('Error checking for puzzles:', checkError);
-        throw checkError;
-      }
+      console.log('Starting category deletion process for ID:', categoryId);
       
-      // Log for debugging
-      console.log(`Found ${puzzles?.length || 0} puzzles for category ${categoryId}`);
-      
-      // If puzzles are found, prevent deletion
-      if (puzzles && puzzles.length > 0) {
-        throw new Error(`Cannot delete category: ${puzzles.length} puzzle(s) are using this category. Please reassign or delete these puzzles first.`);
-      }
+      try {
+        // First check if there are any puzzles using this category
+        const { data: puzzles, error: checkError, count } = await supabase
+          .from('puzzles')
+          .select('id', { count: 'exact' })
+          .eq('category_id', categoryId);
 
-      // If no puzzles found, proceed with deletion
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', categoryId);
+        if (checkError) {
+          console.error('Error checking for puzzles:', checkError);
+          throw checkError;
+        }
+        
+        // Log for debugging
+        console.log(`Found ${count || 0} puzzles for category ${categoryId}`);
+        
+        // If puzzles are found, prevent deletion
+        if (count && count > 0) {
+          console.log(`Preventing deletion: ${count} puzzles are using this category`);
+          throw new Error(`Cannot delete category: ${count} puzzle(s) are using this category. Please reassign or delete these puzzles first.`);
+        }
 
-      if (error) {
-        console.error('Error deleting category:', error);
+        // If no puzzles found, proceed with deletion
+        console.log('No puzzles found, proceeding with deletion');
+        const { error } = await supabase
+          .from('categories')
+          .delete()
+          .eq('id', categoryId);
+
+        if (error) {
+          console.error('Error deleting category:', error);
+          throw error;
+        }
+        
+        console.log('Category successfully deleted');
+        return categoryId;
+      } catch (error) {
+        console.error('Category deletion failed:', error);
         throw error;
       }
-      
-      return categoryId;
     },
-    onSuccess: () => {
+    onSuccess: (deletedId) => {
+      console.log('Category deletion mutation succeeded:', deletedId);
       queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       toast({
@@ -127,6 +139,7 @@ export function useAdminCategoryMutations() {
       });
     },
     onError: (error: Error) => {
+      console.error('Category deletion mutation error:', error);
       toast({
         title: "Error",
         description: `${error.message}`,
