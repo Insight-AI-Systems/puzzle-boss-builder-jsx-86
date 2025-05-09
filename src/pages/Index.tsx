@@ -80,7 +80,7 @@ function Index() {
           to="/puzzle-demo" 
           className="inline-flex items-center px-4 py-2 bg-puzzle-aqua text-puzzle-black rounded-md hover:bg-puzzle-aqua/80 transition-colors"
         >
-          Try Our Puzzle Demo
+          Try Our FREE Puzzle Demo
         </Link>
       </div>
       <PageDebugger componentName="Index" />
