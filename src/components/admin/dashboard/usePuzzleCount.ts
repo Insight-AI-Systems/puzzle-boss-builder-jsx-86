@@ -8,20 +8,25 @@ export const usePuzzleCount = (categoryId: string) => {
     queryFn: async () => {
       console.log(`Fetching puzzle count for category: ${categoryId}`);
       
-      const { data, error, count } = await supabase
-        .from('puzzles')
-        .select('id', { count: 'exact' })
-        .eq('category_id', categoryId);
+      try {
+        const { count, error } = await supabase
+          .from('puzzles')
+          .select('*', { count: 'exact', head: true })
+          .eq('category_id', categoryId);
 
-      if (error) {
-        console.error('Error fetching puzzle count:', error);
+        if (error) {
+          console.error('Error fetching puzzle count:', error);
+          throw error;
+        }
+        
+        // Log the count for debugging
+        console.log(`Category ${categoryId} has ${count} puzzles`);
+        
+        return count || 0;
+      } catch (error) {
+        console.error('Error in usePuzzleCount:', error);
         throw error;
       }
-      
-      // Log the count for debugging
-      console.log(`Category ${categoryId} has ${count} puzzles`);
-      
-      return count || 0;
     },
     // Keep the count data fresh
     staleTime: 30000, // 30 seconds

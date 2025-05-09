@@ -3,10 +3,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminCategory } from '@/types/categoryTypes';
 import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useState } from 'react';
 
 export function useAdminCategoryMutations() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [deletionError, setDeletionError] = useState<string | null>(null);
 
   const createCategory = useMutation({
     mutationFn: async (newCategory: Partial<AdminCategory>) => {
@@ -91,9 +94,9 @@ export function useAdminCategoryMutations() {
       
       try {
         // First check if there are any puzzles using this category
-        const { data: puzzles, error: checkError, count } = await supabase
+        const { count, error: checkError } = await supabase
           .from('puzzles')
-          .select('id', { count: 'exact' })
+          .select('id', { count: 'exact', head: true })
           .eq('category_id', categoryId);
 
         if (checkError) {
@@ -124,7 +127,7 @@ export function useAdminCategoryMutations() {
         
         console.log('Category successfully deleted');
         return categoryId;
-      } catch (error) {
+      } catch (error: any) {
         console.error('Category deletion failed:', error);
         throw error;
       }
@@ -133,13 +136,16 @@ export function useAdminCategoryMutations() {
       console.log('Category deletion mutation succeeded:', deletedId);
       queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
       queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['puzzle-count'] });
       toast({
         title: "Success",
         description: "Category deleted successfully",
       });
+      setDeletionError(null);
     },
     onError: (error: Error) => {
       console.error('Category deletion mutation error:', error);
+      setDeletionError(error.message);
       toast({
         title: "Error",
         description: `${error.message}`,
@@ -151,6 +157,8 @@ export function useAdminCategoryMutations() {
   return {
     createCategory,
     updateCategory,
-    deleteCategory
+    deleteCategory,
+    deletionError,
+    setDeletionError
   };
 }

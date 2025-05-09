@@ -22,7 +22,11 @@ export const CategoryManagement: React.FC = () => {
     handleEditCategory,
     handleSaveCategory,
     handleDeleteCategory,
-    handleAddCategory
+    handleAddCategory,
+    isDeleteConfirmOpen,
+    confirmDeleteCategory,
+    cancelDeleteCategory,
+    categoryToDelete
   } = useCategoryOperations();
 
   // Create wrapper functions for the refetch calls to fix TypeScript errors
@@ -102,6 +106,10 @@ export const CategoryManagement: React.FC = () => {
               handleEditCategory={handleEditCategory}
               handleDeleteCategory={handleDeleteCategory}
               handleSaveCategory={handleSaveCategory}
+              isDeleteConfirmOpen={isDeleteConfirmOpen}
+              confirmDeleteCategory={confirmDeleteCategory}
+              cancelDeleteCategory={cancelDeleteCategory}
+              categoryToDelete={categoryToDelete}
             />
           )}
         </CardContent>

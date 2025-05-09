@@ -1,12 +1,16 @@
+
 import { useState } from 'react';
 import { AdminCategory } from '@/types/categoryTypes';
 import { useCategoryManagement } from '@/hooks/admin/useCategoryManagement';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 export const useCategoryOperations = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<AdminCategory | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const { 
@@ -65,18 +69,30 @@ export const useCategoryOperations = () => {
     }
 
     console.log('Delete category requested for ID:', categoryId);
-    const confirmMessage = 'Are you sure you want to delete this category?';
-    
-    if (confirm(confirmMessage)) {
-      console.log('Delete confirmed by user for category:', categoryId);
-      deleteCategory.mutate(categoryId, {
+    // Set the category for deletion
+    setCategoryToDelete(categoryId);
+    setIsDeleteConfirmOpen(true);
+  };
+  
+  const confirmDeleteCategory = () => {
+    if (categoryToDelete) {
+      console.log('Delete confirmed by user for category:', categoryToDelete);
+      deleteCategory.mutate(categoryToDelete, {
         onError: (error) => {
           console.error('Delete category error in handler:', error);
+        },
+        onSuccess: () => {
+          setIsDeleteConfirmOpen(false);
+          setCategoryToDelete(null);
         }
       });
-    } else {
-      console.log('User cancelled category deletion');
     }
+  };
+  
+  const cancelDeleteCategory = () => {
+    console.log('User cancelled category deletion');
+    setIsDeleteConfirmOpen(false);
+    setCategoryToDelete(null);
   };
 
   const handleAddCategory = () => {
@@ -115,6 +131,11 @@ export const useCategoryOperations = () => {
     handleEditCategory,
     handleSaveCategory,
     handleDeleteCategory,
-    handleAddCategory
+    handleAddCategory,
+    isDeleteConfirmOpen,
+    setIsDeleteConfirmOpen,
+    confirmDeleteCategory,
+    cancelDeleteCategory,
+    categoryToDelete
   };
 };
