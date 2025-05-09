@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Hero } from '@/components/Hero';
@@ -55,7 +56,7 @@ function Index() {
     });
     
     // Only proceed if loading is done, there's no skip flag, and we're not coming from admin pages
-    if (!profileLoading && profile?.role === 'super_admin' && !skipRedirect && !comingFromAdmin) {
+    if (!profileLoading && !authLoading && profile?.role === 'super_admin' && !skipRedirect && !comingFromAdmin) {
       // Check localStorage for user preference
       const userWantsAdmin = window.localStorage.getItem('redirect_to_admin');
       
@@ -86,7 +87,7 @@ function Index() {
         }, 0);
       }
     }
-  }, [profileLoading, authLoading, profile, navigate, showingConfirmation, location.state]);
+  }, [profileLoading, authLoading, profile, navigate, showingConfirmation, location.state, isAdmin]);
 
   useEffect(() => {
     // Debug message to verify component mounting

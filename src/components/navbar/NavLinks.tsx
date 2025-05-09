@@ -73,7 +73,7 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
       // Add a special flag to skip the admin redirect when coming from admin pages
       return { 
         to: '/', 
-        state: { skipAdminRedirect: true }
+        state: { skipAdminRedirect: true, from: location.pathname }
       };
     }
     return { to: path };
