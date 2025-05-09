@@ -15,9 +15,6 @@ export const PlayablePuzzleCountCell: React.FC<PlayablePuzzleCountCellProps> = (
   // Add a class to highlight when there are puzzles
   const hasPuzzles = data > 0;
   
-  // For debugging
-  console.log(`PlayablePuzzleCountCell for category ${categoryId}: count=${data}`);
-  
   return (
     <span className={hasPuzzles ? "font-medium text-amber-600" : ""}>
       {data}

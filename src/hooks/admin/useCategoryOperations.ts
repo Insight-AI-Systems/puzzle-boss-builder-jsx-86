@@ -4,7 +4,6 @@ import { AdminCategory } from '@/types/categoryTypes';
 import { useCategoryManagement } from '@/hooks/admin/useCategoryManagement';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 export const useCategoryOperations = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
