@@ -1,165 +1,45 @@
 
-import { useState, useEffect } from 'react';
-import { UserProfile, UserRole } from '@/types/userTypes';
-import { userService } from '@/services/userService';
-import { roleService } from '@/services/roleService';
-import { debugLog, DebugLevel } from '@/utils/debug';
-import { toast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { UserProfile, UserRole } from '@/types/userTypes';
 
 export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null) {
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
-  
-  const fetchProfiles = async () => {
-    // Don't fetch if not admin and no user ID
-    if (!isAdmin && !currentUserId) {
-      debugLog('useAdminProfiles', 'Not authorized to fetch profiles or no user ID', DebugLevel.WARN);
-      setUsers([]);
-      setLoading(false);
-      return;
-    }
-    
-    setLoading(true);
-    setError(null);
-    
-    // Record API call start time
-    const startTime = Date.now();
-    
-    try {
-      debugLog('useAdminProfiles', 'Fetching profiles using userService', DebugLevel.INFO);
-      
-      const profiles = await userService.getAllUsers();
-      
-      if (!profiles || !Array.isArray(profiles)) {
-        throw new Error('Invalid response from userService.getAllUsers');
+  return useQuery({
+    queryKey: ['all-profiles'],
+    queryFn: async () => {
+      if (!isAdmin && !currentUserId) {
+        console.log('Not authorized to fetch profiles or no user ID');
+        return [];
       }
       
-      debugLog('useAdminProfiles', `Successfully retrieved ${profiles.length} profiles`, DebugLevel.INFO);
+      console.log('Fetching all profiles from Supabase');
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, bio, avatar_url, role, credits, created_at, updated_at')
+        .order('username', { ascending: true });
       
-      setUsers(profiles);
-      setLastRefreshTime(Date.now());
-      setRetryCount(0); // Reset retry count on success
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to fetch profiles');
-      debugLog('useAdminProfiles', 'Error fetching profiles', DebugLevel.ERROR, { error });
-      
-      setError(error);
-      
-      toast({
-        title: "Error loading users",
-        description: "Failed to fetch user data. Using cached data if available.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  // Implement retry logic for transient failures
-  useEffect(() => {
-    if (error && retryCount < 3) {
-      const timer = setTimeout(() => {
-        debugLog('useAdminProfiles', `Retrying fetch (attempt ${retryCount + 1})`, DebugLevel.INFO);
-        setRetryCount(prevCount => prevCount + 1);
-        fetchProfiles();
-      }, 2000 * Math.pow(2, retryCount)); // Exponential backoff
-      
-      return () => clearTimeout(timer);
-    }
-  }, [error, retryCount]);
-  
-  // Fetch profiles on mount and when dependencies change
-  useEffect(() => {
-    fetchProfiles();
-  }, [isAdmin, currentUserId]);
-  
-  const updateUserRole = async (targetUserId: string, newRole: UserRole) => {
-    try {
-      const result = await roleService.updateUserRole(targetUserId, newRole);
-      
-      if (result.success) {
-        // Update local state optimistically
-        setUsers(prevUsers => 
-          prevUsers.map(user => 
-            user.id === targetUserId ? { ...user, role: newRole } : user
-          )
-        );
-        
-        return { success: true };
-      } else {
-        return { success: false, error: new Error(result.message || 'Failed to update role') };
+      if (error) {
+        console.error('Error fetching profiles:', error);
+        throw error;
       }
-    } catch (error) {
-      toast({
-        title: "Error updating role",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-        variant: "destructive",
-      });
       
-      return { success: false, error };
-    }
-  };
-  
-  const bulkUpdateRoles = async (userIds: string[], newRole: UserRole) => {
-    try {
-      const result = await roleService.bulkUpdateUserRoles(userIds, newRole);
+      console.log('Profiles fetched:', data?.length || 0);
       
-      if (result.success) {
-        // Update local state optimistically
-        setUsers(prevUsers => 
-          prevUsers.map(user => 
-            userIds.includes(user.id) ? { ...user, role: newRole } : user
-          )
-        );
-        
-        return { success: true };
-      } else {
-        return { success: false, error: new Error(result.message || 'Failed to update roles') };
-      }
-    } catch (error) {
-      toast({
-        title: "Error updating roles",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-        variant: "destructive",
-      });
-      
-      return { success: false, error };
-    }
-  };
-  
-  const sendBulkEmail = async ({ userIds, subject, body }: { userIds: string[]; subject: string; body: string }) => {
-    try {
-      debugLog('useAdminProfiles', `Sending email to ${userIds.length} users`, DebugLevel.INFO);
-      const { data, error } = await supabase.functions.invoke('send-bulk-email', {
-        body: { userIds, subject, body }
-      });
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      toast({
-        title: "Error sending emails",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-        variant: "destructive",
-      });
-      
-      throw error;
-    }
-  };
-  
-  return {
-    data: users,
-    isLoading: loading,
-    error,
-    refetch: fetchProfiles,
-    updateUserRole,
-    bulkUpdateRoles,
-    sendBulkEmail,
-    lastRefreshTime,
-    retryCount
-  };
+      return data.map(profile => ({
+        id: profile.id,
+        display_name: profile.username || null,
+        bio: profile.bio || null,
+        avatar_url: profile.avatar_url,
+        role: (profile.role || 'player') as UserRole,
+        country: null, // Default value since column may not exist yet
+        categories_played: [], // Default value since column may not exist yet
+        credits: profile.credits || 0,
+        achievements: [],
+        referral_code: null,
+        created_at: profile.created_at || new Date().toISOString(),
+        updated_at: profile.updated_at || new Date().toISOString()
+      } as UserProfile));
+    },
+    enabled: !!currentUserId,
+  });
 }

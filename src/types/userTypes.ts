@@ -6,24 +6,11 @@ export type UserRole =
   | 'social_media_manager' 
   | 'partner_manager' 
   | 'cfo' 
-  | 'player'
-  | 'regular'
-  | 'user';  // Added 'user' for compatibility with some components
+  | 'player';
 
 export type Gender = 'male' | 'female' | 'non-binary' | 'custom' | 'prefer-not-to-say' | 'other';
 
-// Unified AgeGroup type that includes all possible values
-export type AgeGroup = 
-  | 'under_18' 
-  | '13-17'
-  | '18-24' 
-  | '25-34' 
-  | '35-44' 
-  | '45-54' 
-  | '55-64' 
-  | '65_plus'
-  | '45-60' 
-  | '60+';
+export type AgeGroup = 'under_18' | '18_24' | '25_34' | '35_44' | '45_54' | '55_64' | '65_plus';
 
 export interface Profile {
   id: string;
@@ -57,7 +44,6 @@ export interface UserProfile {
   created_at: string;
   updated_at: string;
   last_sign_in?: string | null;
-  account_locked?: boolean;
 }
 
 // Define the interface for role definition
@@ -154,28 +140,6 @@ export const ROLE_DEFINITIONS: Record<UserRole, RoleDefinition> = {
     role: 'player',
     label: 'Player',
     description: 'Standard user with puzzle access.',
-    permissions: [
-      'play_puzzles',
-      'manage_profile',
-      'view_leaderboards'
-    ],
-    canBeAssignedBy: ['super_admin', 'admin']
-  },
-  regular: {
-    role: 'regular',
-    label: 'Regular',
-    description: 'Standard user with puzzle access.',
-    permissions: [
-      'play_puzzles',
-      'manage_profile',
-      'view_leaderboards'
-    ],
-    canBeAssignedBy: ['super_admin', 'admin']
-  },
-  user: {
-    role: 'user',
-    label: 'User',
-    description: 'Generic user with basic access.',
     permissions: [
       'play_puzzles',
       'manage_profile',

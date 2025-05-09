@@ -3,8 +3,6 @@ import React, { ReactNode, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { UserRole } from '@/types/userTypes';
-import { useSecurity } from '@/hooks/useSecurityContext';
-import { SecurityEventType } from '@/utils/security/auditLogging';
 
 type RoleBasedAccessProps = {
   children: ReactNode;
@@ -12,7 +10,6 @@ type RoleBasedAccessProps = {
   requiredPermissions?: string[];
   requireAllPermissions?: boolean;
   fallback?: ReactNode;
-  logAccessAttempts?: boolean;
 };
 
 /**
@@ -24,46 +21,24 @@ export const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
   requiredPermissions = [],
   requireAllPermissions = false,
   fallback = null,
-  logAccessAttempts = false
 }) => {
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, isAdmin } = useAuth();
   const { hasPermission, hasAllPermissions, hasAnyPermission } = usePermissions();
-  const { logSecurityEvent, validateAdminAccess } = useSecurity();
-  const [isAdmin, setIsAdmin] = React.useState<boolean | null>(null);
 
-  // Check admin access safely using the security edge function
+  // Add enhanced debugging
   useEffect(() => {
-    const checkAdminAccess = async () => {
-      if (user) {
-        const adminAccess = await validateAdminAccess();
-        setIsAdmin(adminAccess);
-      } else {
-        setIsAdmin(false);
-      }
-    };
-    
-    checkAdminAccess();
-  }, [user, validateAdminAccess]);
+    console.log('RoleBasedAccess - Component mounted:', {
+      user: !!user,
+      isAdmin,
+      allowedRoles,
+      requiredPermissions
+    });
+  }, [user, isAdmin, allowedRoles, requiredPermissions]);
 
   // Not authenticated
   if (!user) {
-    if (logAccessAttempts) {
-      logSecurityEvent({
-        eventType: SecurityEventType.ACCESS_DENIED,
-        severity: 'info',
-        details: { 
-          reason: 'not_authenticated',
-          allowedRoles,
-          requiredPermissions
-        }
-      });
-    }
+    console.log('RoleBasedAccess - User not authenticated, rendering fallback');
     return <>{fallback}</>;
-  }
-
-  // Still loading admin status
-  if (isAdmin === null) {
-    return null; // Or some loading indicator
   }
 
   // Check roles if specified
@@ -71,36 +46,29 @@ export const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
     allowedRoles.some(role => hasRole(role)) ||
     isAdmin;
 
+  console.log('RoleBasedAccess - Role check result:', { 
+    hasRequiredRole,
+    isAdmin,
+    allowedRoles: allowedRoles.join(', ')
+  });
+
   // Check permissions if specified
   let hasRequiredPermissions = true;
   if (requiredPermissions.length > 0) {
-    hasRequiredPermissions = isAdmin || (requireAllPermissions
+    hasRequiredPermissions = requireAllPermissions
       ? hasAllPermissions(requiredPermissions)
-      : hasAnyPermission(requiredPermissions));
-  }
-
-  // Log access attempts if enabled
-  if (logAccessAttempts) {
-    const accessGranted = hasRequiredRole && hasRequiredPermissions;
-    logSecurityEvent({
-      eventType: accessGranted ? SecurityEventType.ACCESS_GRANTED : SecurityEventType.PERMISSION_DENIED,
-      userId: user.id,
-      severity: accessGranted ? 'info' : 'warning',
-      details: { 
-        access: accessGranted ? 'granted' : 'denied',
-        allowedRoles,
-        requiredPermissions,
-        userRoles: allowedRoles.filter(role => hasRole(role)),
-        isAdmin
-      }
-    });
+      : hasAnyPermission(requiredPermissions);
+    
+    console.log('RoleBasedAccess - Permission check result:', { hasRequiredPermissions });
   }
 
   // Render children only if user has required role AND permissions
   if (hasRequiredRole && hasRequiredPermissions) {
+    console.log('RoleBasedAccess - Access granted, rendering children');
     return <>{children}</>;
   }
 
+  console.log('RoleBasedAccess - Access denied, rendering fallback');
   return <>{fallback}</>;
 };
 

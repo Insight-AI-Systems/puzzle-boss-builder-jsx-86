@@ -1,21 +1,13 @@
 
 import { TestReport, TestSummary } from '../testing/types/testTypes';
+import { TestResult } from '../testing/constants/testResults';
 import { TEST_RESULTS } from '../testing/constants/testResults';
-
-// Update the TEST_RESULTS to include SKIPPED option for backward compatibility
-// This ensures the constant is available for the manager
-const EXTENDED_TEST_RESULTS = {
-  ...TEST_RESULTS,
-  SKIPPED: "SKIPPED"
-};
 
 export class TestReportManager {
   private testReports: Record<string, TestReport> = {};
 
   addReport(report: TestReport) {
-    // Use either testId or id for backward compatibility
-    const reportId = report.testId || report.id;
-    this.testReports[reportId] = report;
+    this.testReports[report.testId] = report;
   }
 
   getReport(testId: string): TestReport | undefined {
@@ -32,22 +24,20 @@ export class TestReportManager {
 
   summarizeResults(): TestSummary {
     const results = Object.values(this.testReports);
-    const passed = results.filter(report => report.result === true || report.status === TEST_RESULTS.VERIFIED).length;
-    const skipped = results.filter(report => report.status === EXTENDED_TEST_RESULTS.SKIPPED).length;
+    const passed = results.filter(report => report.result).length;
     const total = results.length;
     
     return {
       totalTests: total,
       passedTests: passed,
-      failedTests: total - passed - skipped,
-      skippedTests: skipped,
+      failedTests: total - passed,
       duration: results.reduce((sum, report) => sum + report.duration, 0),
-      timestamp: Date.now(),
+      timestamp: new Date(),
       status: this.getTestStatus(passed, total)
     };
   }
 
-  private getTestStatus(passed: number, total: number): string {
+  private getTestStatus(passed: number, total: number): TestResult {
     if (passed === total) return TEST_RESULTS.VERIFIED;
     return passed > 0 ? TEST_RESULTS.PARTIAL : TEST_RESULTS.FAILED;
   }

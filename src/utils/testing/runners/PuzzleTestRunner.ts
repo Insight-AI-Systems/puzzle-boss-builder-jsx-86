@@ -18,8 +18,7 @@ import { runIntegrationTests } from '../puzzleTests/integrationTests';
 export const runPuzzleTestSuite = async (): Promise<void> => {
   console.log('🧩 Running puzzle test suite...');
   
-  // Use TestManager.getInstance() instead of new TestManager()
-  const testManager = TestManager.getInstance();
+  const testManager = new TestManager();
   
   // Run component tests
   await testPuzzleComponents(testManager);

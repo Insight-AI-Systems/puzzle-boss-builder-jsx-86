@@ -1,204 +1,203 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { useUserManagement } from '@/hooks/admin/useUserManagement';
-import { UserTypeToggle } from './UserTypeToggle';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { UsersTable } from './UsersTable';
-import { UserActionBar } from './UserActionBar';
 import { UserTableFilters } from './UserTableFilters';
+import { UserActions } from './UserActions';
 import { UserPagination } from './UserPagination';
-import { UserStatsDisplay } from './UserStatsDisplay';
+import { UserTypeToggle } from './UserTypeToggle';
+import { useUserManagement } from '@/hooks/admin/useUserManagement';
+import { useAuth } from '@/hooks/auth/useAuth';
+import { Loader2 } from 'lucide-react';
 import { EmailDialog } from './EmailDialog';
 import { BulkRoleDialog } from './BulkRoleDialog';
-import { useAuth } from '@/contexts/AuthContext';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { UserInsightsDashboard } from './UserInsightsDashboard';
 import { UserRole } from '@/types/userTypes';
 
-export function UserManagement() {
+export const UserManagement: React.FC = () => {
+  const { user, userRole } = useAuth();
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
-  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
-  const { user, hasRole } = useAuth();
-  const isAdmin = hasRole('admin') || hasRole('super_admin');
+  const [confirmRoleDialogOpen, setConfirmRoleDialogOpen] = useState(false);
+  const [localSearchTerm, setLocalSearchTerm] = useState('');
+  
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin';
+  const userId = user?.id || null;
   
   const {
-    // Filters
-    userType,
-    setUserType,
-    searchQuery,
-    setSearchQuery,
-    selectedRole,
-    setSelectedRole,
+    // Filter state
+    searchTerm,
+    setSearchTerm,
     page,
     setPage,
-    selectedCountry,
-    setSelectedCountry,
-    hasActiveFilters,
+    pageSize,
+    filterOptions,
+    totalPages,
+    userType,
+    setUserType,
+    
     // User data
-    filteredUsers,
+    allProfilesData,
     isLoadingProfiles,
     profileError,
-    totalPages,
-    refetch,
     userStats,
-    // Selection and bulk actions
+    
+    // Selection
     selectedUsers,
     handleUserSelection,
     handleSelectAllUsers,
+    setSelectedUsers,
+    
+    // Actions
+    handleExportUsers,
+    sendBulkEmail,
+    bulkUpdateRoles,
+    handleRoleChange,
+    
+    // Bulk role state
     bulkRole,
     setBulkRole,
     isBulkRoleChanging,
-    // Actions
-    handleRoleChange,
-    bulkUpdateRoles,
-    sendBulkEmail,
-    handleExportUsers
-  } = useUserManagement(isAdmin, user?.id || null);
-
-  // Function to get title text based on user type
-  const getTitleText = () => {
-    if (userType === 'admin') {
-      return 'Admin & Manager Users';
-    }
-    return 'Regular Users';
+    
+    // Sorting
+    lastLoginSortDirection,
+    setLastLoginSortDirection
+  } = useUserManagement(isAdmin, userId);
+  
+  // Handle search submission
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchTerm(localSearchTerm);
   };
 
-  // Show loading state
-  if (isLoadingProfiles) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>User Management</CardTitle>
-          <CardDescription>Loading user data...</CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center items-center min-h-40">
-          <LoadingSpinner size="lg" centered />
-        </CardContent>
-      </Card>
-    );
-  }
+  // Handle sending bulk emails
+  const handleSendBulkEmail = (subject: string, message: string) => {
+    if (sendBulkEmail) {
+      sendBulkEmail(subject, message);
+      setEmailDialogOpen(false);
+    }
+  };
 
-  // Show error state if there was an issue loading users
+  // Handle bulk role updates
+  const handleBulkRoleChange = () => {
+    if (bulkUpdateRoles && bulkRole) {
+      bulkUpdateRoles(Array.from(selectedUsers), bulkRole);
+      setConfirmRoleDialogOpen(false);
+    }
+  };
+
   if (profileError) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Error Loading Users</CardTitle>
-          <CardDescription>
-            There was a problem loading the user data.
-          </CardDescription>
+          <CardTitle>User Management</CardTitle>
+          <CardDescription>Error loading user data</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="p-4 border border-red-200 bg-red-50 rounded-md text-red-800">
-            <p>Error: {profileError.message || "Unknown error"}</p>
-            <button 
-              onClick={refetch}
-              className="mt-4 px-4 py-2 bg-red-100 hover:bg-red-200 rounded-md text-red-800 font-medium"
-            >
-              Retry
-            </button>
-          </div>
+          <p className="text-red-500">
+            {profileError.message || "An error occurred while loading user data."}
+          </p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>{getTitleText()}</span>
-          {userStats && (
-            <span className="text-sm font-normal">
-              {userType === 'admin' ? `${userStats.adminCount} total admins` : `${userStats.regularCount} total users`}
-            </span>
-          )}
-        </CardTitle>
-        <CardDescription>
-          Manage user accounts and permissions
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {/* User Type Toggle */}
-        <UserTypeToggle 
-          value={userType} 
-          onChange={setUserType}
-        />
-        
-        {/* Action Bar */}
-        <UserActionBar 
-          selectedCount={selectedUsers.size}
-          onEmailSelected={() => setEmailDialogOpen(true)}
-          onChangeRoleSelected={() => setRoleDialogOpen(true)}
-          onExportUsers={handleExportUsers}
-          onRefresh={refetch}
-          showEmailOption={selectedUsers.size > 0}
-          showRoleOption={selectedUsers.size > 0}
-        />
-        
-        {/* Filters */}
-        <UserTableFilters 
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          selectedRole={selectedRole}
-          onRoleChange={setSelectedRole}
-          selectedCountry={selectedCountry}
-          onCountryChange={setSelectedCountry}
-          hasActiveFilters={hasActiveFilters()}
-          onClearFilters={() => {
-            setSearchQuery('');
-            setSelectedRole(null);
-            setSelectedCountry(null);
-          }}
-        />
-        
-        {/* Users Table */}
-        <UsersTable 
-          users={filteredUsers || []}
-          isLoading={isLoadingProfiles}
-          canAssignRole={(role: string, userId: string) => true} // Simplified implementation
-          onRoleChange={handleRoleChange}
-          selectedUsers={Array.from(selectedUsers)} // Convert Set to Array
-          onSelectUser={handleUserSelection}
-          onSelectAllUsers={handleSelectAllUsers}
-          userType={userType as 'admin' | 'regular' | 'player'}
-        />
-        
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <UserPagination 
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>User Management</CardTitle>
+          <CardDescription>Manage user accounts, permissions, and access</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* User insights dashboard */}
+          {userStats && <UserInsightsDashboard userStats={userStats} signupStats={allProfilesData?.signup_stats || []} />}
+          
+          {/* User type toggle */}
+          <UserTypeToggle 
+            value={userType} 
+            onChange={setUserType} 
           />
-        )}
-        
-        {/* Stats Display (if needed) */}
-        {userStats && (
-          <div className="mt-8">
-            <UserStatsDisplay stats={userStats} />
-          </div>
-        )}
-        
-        {/* Dialogs */}
-        <EmailDialog 
-          open={emailDialogOpen} 
-          onOpenChange={setEmailDialogOpen}
-          onSendEmail={sendBulkEmail}
-          selectedCount={selectedUsers.size}
-        />
-        
-        <BulkRoleDialog 
-          open={roleDialogOpen}
-          onOpenChange={setRoleDialogOpen}
-          onSubmit={(role) => bulkUpdateRoles(Array.from(selectedUsers), role)}
-          selectedRole={bulkRole}
-          onSelectRole={setBulkRole}
-          isLoading={isBulkRoleChanging}
-          selectedCount={selectedUsers.size}
-        />
-      </CardContent>
-    </Card>
+          
+          {/* User filters and actions */}
+          <UserTableFilters
+            onDateRangeChange={(range) => console.log("Date range changed", range)}
+            onCountryChange={(country) => console.log("Country changed", country)}
+            onCategoryChange={(category) => console.log("Category changed", category)}
+            onRoleChange={(role) => console.log("Role filter changed", role)}
+            countries={allProfilesData?.countries || []}
+            categories={allProfilesData?.categories || []}
+            dateRange={undefined}
+          />
+          
+          {/* User actions */}
+          <UserActions
+            localSearchTerm={localSearchTerm}
+            setLocalSearchTerm={setLocalSearchTerm}
+            handleSearchSubmit={handleSearchSubmit}
+            selectedUsers={selectedUsers}
+            setEmailDialogOpen={setEmailDialogOpen}
+            setConfirmRoleDialogOpen={setConfirmRoleDialogOpen}
+            handleExportUsers={handleExportUsers}
+          />
+          
+          {/* Loading state */}
+          {isLoadingProfiles ? (
+            <div className="flex justify-center p-8">
+              <Loader2 className="animate-spin h-8 w-8 text-primary" />
+            </div>
+          ) : (
+            <>
+              {/* User table */}
+              {allProfilesData?.data && (
+                <UsersTable
+                  users={allProfilesData.data}
+                  currentUserRole={userRole || 'player'}
+                  currentUserEmail={user?.email || undefined}
+                  onRoleChange={handleRoleChange}
+                  onSortByRole={() => console.log("Sort by role")}
+                  onSortByLastLogin={setLastLoginSortDirection}
+                  selectedUsers={selectedUsers}
+                  onUserSelection={handleUserSelection}
+                  onSelectAll={handleSelectAllUsers}
+                  lastLoginSortDirection={lastLoginSortDirection}
+                />
+              )}
+              
+              {/* Pagination */}
+              {allProfilesData && (
+                <UserPagination
+                  page={page}
+                  setPage={setPage}
+                  totalPages={totalPages}
+                  currentCount={allProfilesData.data?.length || 0}
+                  totalCount={allProfilesData.count}
+                />
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* Email Dialog */}
+      <EmailDialog 
+        open={emailDialogOpen} 
+        onOpenChange={setEmailDialogOpen}
+        selectedCount={selectedUsers.size}
+        onSend={handleSendBulkEmail}
+      />
+      
+      {/* Role Update Dialog */}
+      <BulkRoleDialog
+        open={confirmRoleDialogOpen}
+        onOpenChange={setConfirmRoleDialogOpen}
+        selectedCount={selectedUsers.size}
+        bulkRole={bulkRole}
+        setBulkRole={setBulkRole}
+        onUpdateRoles={handleBulkRoleChange}
+        isUpdating={isBulkRoleChanging}
+      />
+    </div>
   );
-}
+};
 
 export default UserManagement;

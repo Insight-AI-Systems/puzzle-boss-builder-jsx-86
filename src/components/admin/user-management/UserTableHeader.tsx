@@ -1,60 +1,56 @@
 
 import React from 'react';
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowDownUp, ArrowDown, ArrowUp, Shield } from "lucide-react";
+import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowUpDown } from "lucide-react";
 
 interface UserTableHeaderProps {
-  selectionEnabled?: boolean;
+  selectionEnabled: boolean;
   onSelectAll?: (checked: boolean) => void;
-  onSortByRole?: () => void;
+  onSortByRole: () => void;
   onSortByLastLogin: () => void;
   lastLoginSortDirection?: 'asc' | 'desc';
-  showAccountStatus?: boolean;
 }
 
-export function UserTableHeader({
+export const UserTableHeader: React.FC<UserTableHeaderProps> = ({
   selectionEnabled,
   onSelectAll,
   onSortByRole,
   onSortByLastLogin,
-  lastLoginSortDirection,
-  showAccountStatus = false
-}: UserTableHeaderProps) {
+  lastLoginSortDirection
+}) => {
   return (
     <TableHeader>
       <TableRow>
         {selectionEnabled && (
           <TableHead className="w-12">
             <Checkbox 
-              onCheckedChange={(checked) => onSelectAll?.(!!checked)}
+              onCheckedChange={onSelectAll}
               aria-label="Select all users"
             />
           </TableHead>
         )}
         <TableHead>User</TableHead>
-        <TableHead>Email/ID</TableHead>
-        <TableHead className="cursor-pointer" onClick={onSortByRole}>
-          <div className="flex items-center">
+        <TableHead>Email</TableHead>
+        <TableHead>
+          <Button variant="ghost" onClick={onSortByRole} className="flex items-center gap-1">
             Role
-            {onSortByRole && <ArrowDownUp className="ml-1 h-4 w-4" />}
-          </div>
+            <ArrowUpDown className="h-4 w-4" />
+          </Button>
         </TableHead>
         <TableHead>Country</TableHead>
-        <TableHead className="cursor-pointer" onClick={onSortByLastLogin}>
-          <div className="flex items-center">
+        <TableHead>
+          <Button variant="ghost" onClick={onSortByLastLogin} className="flex items-center gap-1">
             Last Login
-            {lastLoginSortDirection === 'asc' && <ArrowUp className="ml-1 h-4 w-4" />}
-            {lastLoginSortDirection === 'desc' && <ArrowDown className="ml-1 h-4 w-4" />}
-            {!lastLoginSortDirection && <ArrowDownUp className="ml-1 h-4 w-4" />}
-          </div>
+            {lastLoginSortDirection && (
+              <ArrowUpDown className="h-4 w-4" />
+            )}
+          </Button>
         </TableHead>
-        <TableHead>Created</TableHead>
-        {showAccountStatus && (
-          <TableHead>Status</TableHead>
-        )}
+        <TableHead>Joined</TableHead>
         <TableHead className="text-right">Actions</TableHead>
       </TableRow>
     </TableHeader>
   );
-}
+};

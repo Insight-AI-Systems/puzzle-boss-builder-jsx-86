@@ -1,76 +1,80 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/userTypes';
-import { adminService } from '@/services/adminService';
-import { roleService } from '@/services/roleService';
-import { debugLog, DebugLevel } from '@/utils/debug';
-import { isProtectedAdmin } from '@/config/securityConfig';
 
-/**
- * Hook for role management functionality
- * Uses the RoleService for all role-related operations
- */
+// Constants
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+
 export function useRoleManagement() {
   const queryClient = useQueryClient();
 
-  // Set the queryClient in the roleService
-  roleService.setQueryClient(queryClient);
-
   const updateUserRole = useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: UserRole }) => {
-      debugLog('useRoleManagement', `Updating role for user ${userId} to ${newRole}`, DebugLevel.INFO);
+      console.log(`Updating role for user ${userId} to ${newRole}`);
       
       try {
-        // Use the roleService to update the user role
-        const result = await roleService.updateUserRole(userId, newRole);
-        if (!result.success) {
-          throw new Error(result.message || 'Failed to update user role');
+        // Special handling for protected admin
+        if (userId === PROTECTED_ADMIN_EMAIL) {
+          console.log("Processing special case for protected admin");
+          // You might want to add additional checks here
         }
-        return { userId, newRole, success: true };
+        
+        const { data, error } = await supabase.functions.invoke('admin-update-roles', {
+          body: { userIds: [userId], newRole }
+        });
+        
+        if (error) {
+          console.error("Error in updateUserRole:", error);
+          throw new Error(`Failed to update role: ${error.message}`);
+        }
+        
+        console.log("Role update success:", data);
+        return data;
       } catch (err) {
-        debugLog('useRoleManagement', "Exception in updateUserRole:", DebugLevel.ERROR, { error: err });
+        console.error("Exception in updateUserRole:", err);
         throw err;
       }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
     }
   });
 
   const bulkUpdateRoles = useMutation({
     mutationFn: async ({ userIds, newRole }: { userIds: string[]; newRole: UserRole }) => {
-      debugLog('useRoleManagement', `Bulk updating role to ${newRole} for ${userIds.length} users`, DebugLevel.INFO);
+      console.log(`Bulk updating role to ${newRole} for ${userIds.length} users`);
       
       try {
-        // Use the roleService to bulk update roles - renamed to bulkUpdateUserRoles
-        const result = await roleService.bulkUpdateUserRoles(userIds, newRole);
-        if (!result.success) {
-          throw new Error(result.message || 'Failed to update user roles');
+        // Check for protected admin in the list
+        const hasProtectedAdmin = userIds.includes(PROTECTED_ADMIN_EMAIL);
+        if (hasProtectedAdmin) {
+          console.log("Bulk update includes protected admin - special handling may be required");
         }
-        // Add a safe check for result.results
-        const results = result.results || [];
-        return { userIds, newRole, success: true, results };
+        
+        const { data, error } = await supabase.functions.invoke('admin-update-roles', {
+          body: { userIds, newRole }
+        });
+        
+        if (error) {
+          console.error("Error in bulkUpdateRoles:", error);
+          throw new Error(`Failed to update roles: ${error.message}`);
+        }
+        
+        console.log("Bulk role update success:", data);
+        return data;
       } catch (err) {
-        debugLog('useRoleManagement', "Exception in bulkUpdateRoles:", DebugLevel.ERROR, { error: err });
+        console.error("Exception in bulkUpdateRoles:", err);
         throw err;
       }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
     }
   });
 
-  /**
-   * Check if current user can assign a specific role
-   */
-  const canAssignRole = (
-    currentUserRole: UserRole, 
-    targetRole: UserRole, 
-    targetUserId: string,
-    currentUserEmail?: string | null
-  ): boolean => {
-    // Use the protected admin check from securityConfig
-    const isProtectedAdminUser = isProtectedAdmin(currentUserEmail);
-    return roleService.canAssignRole(currentUserRole, targetRole, targetUserId, currentUserEmail);
-  };
-
   return {
     updateUserRole,
-    bulkUpdateRoles,
-    canAssignRole
+    bulkUpdateRoles
   };
 }

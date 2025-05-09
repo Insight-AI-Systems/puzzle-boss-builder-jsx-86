@@ -1,8 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useSecurity } from '@/hooks/useSecurityContext';
-import { SecurityEventType } from '@/utils/security/auditLogging';
 
 /**
  * Sets a user's role to super_admin in the database
@@ -17,20 +14,8 @@ export async function setUserAsAdmin(email: string) {
     // Display a toast notification to show the operation is in progress
     toast.loading(`Setting ${email} as super_admin...`);
     
-    // First validate the current user has admin access
-    const { data: validationData, error: validationError } = await supabase.functions.invoke('security-config', {
-      body: { action: 'validateAdminAccess' }
-    });
-    
-    if (validationError || !validationData.isAdmin) {
-      console.error('Error validating admin access:', validationError || 'Access denied');
-      toast.error(`Security validation failed. You don't have permission to set admin roles.`);
-      return { success: false, error: validationError || 'Access denied' };
-    }
-    
-    // If validated, proceed with the admin role change
-    const { data, error } = await supabase.functions.invoke('admin-update-roles', {
-      body: { userIds: [email], newRole: 'super_admin' }
+    const { data, error } = await supabase.functions.invoke('set-admin-role', {
+      body: { email, role: 'super_admin' }
     });
     
     if (error) {
@@ -41,18 +26,6 @@ export async function setUserAsAdmin(email: string) {
     
     console.log(`Successfully set ${email} as super_admin`, data);
     toast.success(`Successfully set ${email} as super_admin`);
-    
-    // Log this security-critical action
-    const { logSecurityEvent } = useSecurity();
-    await logSecurityEvent({
-      eventType: SecurityEventType.ROLE_CHANGED,
-      severity: 'critical',
-      details: { 
-        action: 'set_admin_role', 
-        targetEmail: email,
-        role: 'super_admin'
-      }
-    });
     
     // Force refresh if we're modifying the current user
     const { data: authData } = await supabase.auth.getUser();

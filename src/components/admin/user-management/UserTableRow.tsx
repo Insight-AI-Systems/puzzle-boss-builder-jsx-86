@@ -1,63 +1,26 @@
 
 import React from 'react';
+import { Checkbox } from "@/components/ui/checkbox";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu } from "@/components/ui/dropdown-menu";
-import { IndeterminateCheckbox } from "@/components/ui/indeterminate-checkbox";
+import { UserAvatar } from './UserAvatar';
 import { UserRoleMenu } from './UserRoleMenu';
-import { UserProfile, UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
-import { formatDistanceToNow } from 'date-fns';
-import { isProtectedAdmin } from '@/config/securityConfig';
-import { debugLog, DebugLevel } from '@/utils/debug';
+import { UserLastLogin } from './UserLastLogin';
+import { UserRowProps } from '@/types/userTableTypes';
+import { ROLE_DEFINITIONS } from '@/types/userTypes';
 
-interface UserTableRowProps {
-  user: UserProfile;
-  canAssignRole: (role: string, userId: string) => boolean;
-  onRoleChange: (userId: string, newRole: string) => void;
-  isSelected: boolean;
-  onSelect: (checked: boolean) => void;
-  selectionEnabled: boolean;
-}
-
-export const UserTableRow: React.FC<UserTableRowProps> = ({
+export const UserTableRow: React.FC<UserRowProps> = ({
   user,
   canAssignRole,
   onRoleChange,
   isSelected,
   onSelect,
-  selectionEnabled = true
+  selectionEnabled
 }) => {
-  // Check if user is a protected admin
-  const isUserProtectedAdmin = isProtectedAdmin(user.email);
-  
-  // Debug log for role menu
-  debugLog('UserRoleMenu', `Rendering role menu for user: ${user.id}`, DebugLevel.INFO, {
-    userId: user.id,
-    email: user.email,
-    currentRole: user.role,
-    isProtectedAdmin: isUserProtectedAdmin
-  });
-  
-  // Format dates
-  const getFormattedDate = (dateString?: string | null) => {
-    if (!dateString) return "Never";
-    try {
-      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-    } catch (e) {
-      return "Invalid date";
-    }
-  };
-  
-  // Get role label
-  const getRoleLabel = (role: UserRole) => {
-    return ROLE_DEFINITIONS[role]?.label || role;
-  };
-  
-  // Get role color
-  const getRoleBadgeClass = (role: UserRole) => {
-    switch(role) {
+  const getRoleBadgeClass = (role?: string) => {
+    switch (role) {
       case 'super_admin': return 'bg-red-600';
-      case 'admin': return 'bg-orange-600';
+      case 'admin': return 'bg-purple-600';
       case 'category_manager': return 'bg-blue-600';
       case 'social_media_manager': return 'bg-green-600';
       case 'partner_manager': return 'bg-amber-600';
@@ -67,58 +30,36 @@ export const UserTableRow: React.FC<UserTableRowProps> = ({
   };
 
   return (
-    <TableRow key={user.id} className={isSelected ? "bg-muted/50" : undefined}>
-      <TableCell className="w-12">
-        {selectionEnabled && !isUserProtectedAdmin && (
-          <IndeterminateCheckbox 
-            checked={isSelected} 
-            onCheckedChange={onSelect}
-            aria-label={`Select user ${user.display_name}`}
+    <TableRow className={isSelected ? "bg-muted/20" : undefined}>
+      {selectionEnabled && (
+        <TableCell>
+          <Checkbox 
+            checked={isSelected}
+            onCheckedChange={(checked) => onSelect?.(!!checked)}
+            aria-label={`Select ${user.display_name || 'user'}`}
           />
-        )}
-      </TableCell>
-      
+        </TableCell>
+      )}
       <TableCell>
-        <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-            {user.display_name?.charAt(0) || 'U'}
-          </div>
-          <div>
-            <div className="font-medium">
-              {user.display_name || 'Anonymous User'}
-              {isUserProtectedAdmin && (
-                <Badge variant="outline" className="ml-2 bg-green-900 text-white border-green-700">Protected</Badge>
-              )}
-            </div>
-            <div className="text-xs text-muted-foreground">{user.id.substring(0, 8)}...</div>
-          </div>
-        </div>
+        <UserAvatar 
+          avatarUrl={user.avatar_url} 
+          displayName={user.display_name || 'N/A'} 
+          userId={user.id}
+        />
       </TableCell>
-      
-      <TableCell className="w-56 max-w-[200px] truncate">
-        {user.email || 'No email'}
+      <TableCell className="font-mono text-xs">
+        {(user as any).email || 'N/A'}
       </TableCell>
-      
       <TableCell>
         <Badge className={getRoleBadgeClass(user.role)}>
-          {getRoleLabel(user.role)}
+          {user.role ? (ROLE_DEFINITIONS[user.role]?.label || user.role) : 'Player'}
         </Badge>
       </TableCell>
-      
-      <TableCell>{user.country || 'N/A'}</TableCell>
-      
-      <TableCell>{getFormattedDate(user.last_sign_in)}</TableCell>
-      
-      <TableCell>{getFormattedDate(user.created_at)}</TableCell>
-      
+      <TableCell>{user.country || 'Not specified'}</TableCell>
       <TableCell>
-        {user.account_locked ? (
-          <Badge variant="outline" className="bg-red-900 text-white border-red-700">Locked</Badge>
-        ) : (
-          <Badge variant="outline" className="bg-green-900 text-white border-green-700">Active</Badge>
-        )}
+        <UserLastLogin lastSignIn={user.last_sign_in} />
       </TableCell>
-      
+      <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
       <TableCell className="text-right">
         <UserRoleMenu 
           user={user}

@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Menu, X, LayoutDashboard } from 'lucide-react';
+import { Menu, X, LayoutDashboard, TicketIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -13,12 +13,14 @@ import UserMenu from './UserMenu';
 import AuthButtons from './AuthButtons';
 import MobileMenu from './MobileMenu';
 import { mainNavItems } from './NavbarData';
-import { PROTECTED_ADMIN_EMAIL, isProtectedAdmin } from '@/constants/securityConfig';
+
+// Special admin email that should always have access
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 const Navbar: React.FC = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const { user, hasRole, session } = useAuth();
+  const { user, hasRole } = useAuth();
   const isMobile = useIsMobile();
   const { isMenuOpen, toggleMenu, closeMenu } = useMobileMenu();
   
@@ -37,25 +39,9 @@ const Navbar: React.FC = () => {
     }
   }, [profileData.isLoading, profileData.profile]);
   
-  // Enhanced admin check with improved logging
-  const hasProtectedEmail = isProtectedAdmin(user?.email);
-  const isSuperAdmin = hasProtectedEmail || hasRole('super_admin');
-  const isAdmin = isSuperAdmin || hasRole('admin');
-  const isCategoryManager = hasRole('category_manager');
-  const isSocialMediaManager = hasRole('social_media_manager');
-  const isPartnerManager = hasRole('partner_manager');
-  const isCfo = hasRole('cfo');
-  const isAdminUser = isAdmin || isCategoryManager || isSocialMediaManager || isPartnerManager || isCfo;
-  
-  console.log('Navbar - Admin Check:', {
-    userEmail: user?.email,
-    sessionExists: !!session,
-    hasProtectedEmail,
-    isSuperAdmin,
-    isAdmin,
-    isAdminUser,
-    profileRole: userProfile?.role
-  });
+  // Enhanced admin check
+  const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
+  const isAdminUser = isProtectedAdmin || hasRole('admin') || hasRole('super_admin');
   
   return (
     <nav className="bg-puzzle-black border-b border-puzzle-aqua/20">
@@ -74,7 +60,7 @@ const Navbar: React.FC = () => {
           
           {/* User Menu / Auth Buttons */}
           <div className="hidden md:flex items-center space-x-2">
-            {!loading && userProfile && (isAdminUser || hasProtectedEmail) && (
+            {!loading && userProfile && isAdminUser && (
               <>
                 <Link 
                   to="/admin-dashboard"
@@ -96,7 +82,7 @@ const Navbar: React.FC = () => {
           <div className="md:hidden flex items-center">
             {!loading && userProfile ? (
               <>
-                {(isAdminUser || hasProtectedEmail) && (
+                {isAdminUser && (
                   <>
                     <Link 
                       to="/admin-dashboard"

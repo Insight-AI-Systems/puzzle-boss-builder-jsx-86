@@ -1,113 +1,139 @@
 
-import { debugLog, DebugLevel } from '@/utils/debug';
-import { PROTECTED_ADMIN_EMAIL } from '@/config/securityConfig';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 /**
- * Debug the current auth state
- * This will log detailed auth information to help debug issues
+ * Emergency function to force a user login check and refresh their session
+ * This can be called from the browser console to troubleshoot auth issues
  */
-export function debugAuthState() {
+export async function debugAuthState() {
   try {
-    // Get auth data from local storage
-    const sbAuth = localStorage.getItem('sb-auth');
+    console.log('Debugging auth state...');
+    toast.info('Debugging auth state, please check console for details');
     
-    if (!sbAuth) {
-      console.log('No Supabase auth data found in local storage');
-      return;
+    // First, get the current user 
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error('Error getting user:', userError);
+      toast.error(`Error getting user: ${userError.message}`);
+      return { success: false, error: userError };
     }
     
-    const authData = JSON.parse(sbAuth);
+    if (!userData.user) {
+      console.log('No user is currently logged in');
+      toast.warning('No user is currently logged in');
+      return { success: false, message: 'No user logged in' };
+    }
     
-    // Safe extraction of data
-    const user = authData?.user;
-    const session = authData?.session;
-    const email = user?.email;
+    console.log('Current user:', userData.user);
+    console.log('User email:', userData.user.email);
+    console.log('User metadata:', userData.user.user_metadata);
     
-    const isProtectedAdmin = email?.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase();
+    // Get the session details
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     
-    // Log detailed auth info
-    debugLog('AuthDebug', 'Current auth state', DebugLevel.INFO, {
-      hasUser: !!user,
-      hasSession: !!session,
-      email,
-      isProtectedAdmin,
-      userId: user?.id,
-      sessionExpiry: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
-      sessionValid: session?.expires_at ? (session.expires_at * 1000) > Date.now() : false
-    });
+    if (sessionError) {
+      console.error('Error getting session:', sessionError);
+      toast.error(`Error getting session: ${sessionError.message}`);
+      return { success: false, error: sessionError };
+    }
     
-    console.log('Auth Debug:', {
-      user,
-      session,
-      isProtectedAdmin
-    });
+    console.log('Current session:', sessionData.session);
     
-    // Check for and display any role data
-    const roleData = localStorage.getItem('user-roles');
-    if (roleData) {
-      try {
-        const roles = JSON.parse(roleData);
-        console.log('Stored Roles:', roles);
-      } catch {
-        console.log('Failed to parse stored roles data');
-      }
+    // Get the profile details
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userData.user.id)
+      .single();
+    
+    if (profileError) {
+      console.error('Error getting profile:', profileError);
+      toast.error(`Error getting profile: ${profileError.message}`);
     } else {
-      console.log('No stored roles data found');
+      console.log('Current profile:', profileData);
     }
     
-    return { user, session, isProtectedAdmin };
+    // Attempt to refresh the session
+    console.log('Refreshing session...');
+    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
     
-  } catch (error) {
-    console.error('Error debugging auth state:', error);
-    return null;
+    if (refreshError) {
+      console.error('Error refreshing session:', refreshError);
+      toast.error(`Error refreshing session: ${refreshError.message}`);
+      return { success: false, error: refreshError };
+    }
+    
+    console.log('Refreshed session:', refreshData.session);
+    
+    // Show results as toast
+    toast.success('Auth state debugged - check console for details');
+    
+    return { 
+      success: true, 
+      user: userData.user,
+      session: refreshData.session,
+      profile: profileData
+    };
+  } catch (err) {
+    console.error('Exception in debugAuthState:', err);
+    toast.error(`Auth debug error: ${err instanceof Error ? err.message : String(err)}`);
+    return { success: false, error: err };
   }
 }
 
 /**
- * Force protected admin access for testing
- * This will update the current user's email in local storage to match the protected admin
- * WARNING: This is for development/testing only!
+ * Force Alan to have super_admin role
+ * This is a special function to ensure Alan always has access
  */
-export function forceProtectedAdminAccess(): boolean {
+export async function forceProtectedAdminAccess() {
   try {
-    // Get auth data
-    const sbAuth = localStorage.getItem('sb-auth');
+    const protectedEmail = 'alan@insight-ai-systems.com';
+    console.log(`Ensuring ${protectedEmail} has super_admin role...`);
     
-    if (!sbAuth) {
-      console.log('No Supabase auth data found in local storage');
-      return false;
+    toast.loading(`Setting up protected admin access...`);
+    
+    // Call the set-admin-role function
+    const { data, error } = await supabase.functions.invoke('set-admin-role', {
+      body: { email: protectedEmail, role: 'super_admin' }
+    });
+    
+    if (error) {
+      console.error('Error setting admin role:', error);
+      toast.error(`Failed to set protected admin access. Error: ${error.message}`);
+      return { success: false, error };
     }
     
-    const authData = JSON.parse(sbAuth);
+    console.log(`Successfully set ${protectedEmail} as super_admin`, data);
+    toast.success(`Protected admin access configured!`);
     
-    // Check if user exists
-    if (!authData?.user) {
-      console.log('No user found in auth data');
-      return false;
+    // Check if current user is Alan
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData?.user?.email === protectedEmail) {
+      console.log('Current user is the protected admin. Refreshing session...');
+      await supabase.auth.refreshSession();
+      
+      // Force reload page after a short delay
+      toast.success('Admin access granted, reloading page...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     }
     
-    // Check if already protected admin
-    if (authData.user.email === PROTECTED_ADMIN_EMAIL) {
-      console.log('Already set as protected admin');
-      return true;
-    }
-    
-    // Store original email for reference
-    const originalEmail = authData.user.email;
-    
-    // Update the email to protected admin email
-    authData.user.email = PROTECTED_ADMIN_EMAIL;
-    
-    // Save back to local storage
-    localStorage.setItem('sb-auth', JSON.stringify(authData));
-    
-    console.log(`Temporarily changed user email from ${originalEmail} to ${PROTECTED_ADMIN_EMAIL}`);
-    console.log('Page refresh required for changes to take effect');
-    
-    return true;
-    
-  } catch (error) {
-    console.error('Error forcing protected admin access:', error);
-    return false;
+    return { success: true, data };
+  } catch (err) {
+    console.error('Exception in forceProtectedAdminAccess:', err);
+    toast.error(`Error setting up protected admin: ${err instanceof Error ? err.message : String(err)}`);
+    return { success: false, error: err };
   }
 }
+
+// Make functions available in the global window object for console access
+if (typeof window !== 'undefined') {
+  (window as any).debugAuthState = debugAuthState;
+  (window as any).forceProtectedAdminAccess = forceProtectedAdminAccess;
+}
+
+// Re-export the admin tools for convenience
+export * from './adminTools';

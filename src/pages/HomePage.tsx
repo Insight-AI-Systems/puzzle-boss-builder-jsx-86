@@ -13,11 +13,10 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { Link } from 'react-router-dom';
 import { PageDebugger } from '@/components/debug/PageDebugger';
 import { useAuth } from '@/contexts/AuthContext';
-import { isProtectedAdmin } from '@/constants/securityConfig';
 
 function HomePage() {
   const { isAdmin, profile, isLoading: profileLoading } = useUserProfile();
-  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   
   console.log("HomePage rendering", { 
@@ -26,55 +25,28 @@ function HomePage() {
     profileRole: profile?.role,
     isLoading: profileLoading,
     authLoading,
-    isAuthenticated,
-    userEmail: user?.email
+    isAuthenticated
   });
   
   useEffect(() => {
     // Debug message to verify component rendering
     console.log('HomePage mounted');
     
-    // Only proceed if authentication and profile loading are complete
-    if (authLoading || profileLoading) {
-      return;
-    }
-
-    // Check if user is a super admin either via profile role or protected admin email
-    const isSuperAdmin = (profile?.role === 'super_admin') || 
-                         isProtectedAdmin(user?.email);
-    
-    if (isSuperAdmin) {
-      // Get stored preference from localStorage
-      const adminPreference = window.localStorage.getItem('redirect_to_admin');
+    if (!profileLoading && profile?.role === 'super_admin') {
+      const userWantsAdmin = window.localStorage.getItem('redirect_to_admin') === 'true';
       
-      console.log('Admin redirect check:', { 
-        isSuperAdmin, 
-        adminPreference,
-        profileRole: profile?.role,
-        userEmail: user?.email
-      });
-      
-      // If preference exists and is 'true', redirect to admin
-      if (adminPreference === 'true') {
-        console.log('Auto-redirecting admin to dashboard based on saved preference');
+      if (userWantsAdmin) {
         navigate('/admin-dashboard');
-      } 
-      // If no preference is set (null), show confirmation dialog
-      else if (adminPreference === null) {
-        console.log('Showing admin redirect confirmation dialog');
+      } else if (userWantsAdmin === null) {
         const shouldRedirect = window.confirm('As a Super Admin, would you like to go directly to the Admin Dashboard?');
-        
-        // Save preference to localStorage
         window.localStorage.setItem('redirect_to_admin', shouldRedirect ? 'true' : 'false');
-        console.log('Saved admin preference:', shouldRedirect);
         
-        // If confirmed, navigate to admin dashboard
         if (shouldRedirect) {
           navigate('/admin-dashboard');
         }
       }
     }
-  }, [profileLoading, authLoading, profile, navigate, user]);
+  }, [profileLoading, profile, navigate]);
 
   // Add fallback rendering state for debugging
   if (authLoading || profileLoading) {

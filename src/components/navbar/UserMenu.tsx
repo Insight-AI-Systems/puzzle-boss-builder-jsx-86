@@ -14,41 +14,27 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { UserProfile } from '@/types/userTypes';
 import { useAuth } from '@/contexts/AuthContext';
-import { isProtectedAdmin } from '@/config/securityConfig';
 
 interface UserMenuProps {
   profile: UserProfile | null;
   isMobile?: boolean;
 }
 
+// Special admin email that should always have access
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+
 const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
   const { user, hasRole, signOut } = useAuth();
 
-  // Enhanced admin check with proper logging
-  const isProtectedAdminUser = isProtectedAdmin(user?.email);
-  const isSuperAdmin = isProtectedAdminUser || hasRole('super_admin');
-  const isAdmin = isSuperAdmin || hasRole('admin');
-  const isCategoryManager = hasRole('category_manager');
-  const isSocialMediaManager = hasRole('social_media_manager');
-  const isPartnerManager = hasRole('partner_manager');
-  const isCfo = hasRole('cfo');
-  
-  // Combined check for any admin-related role
-  const isAdminUser = isAdmin || isCategoryManager || isSocialMediaManager || isPartnerManager || isCfo;
+  // Simplified admin check
+  const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
+  const isAdminUser = isProtectedAdmin || hasRole('super_admin');
   
   console.log('UserMenu - Admin Check:', {
     userEmail: user?.email,
-    isProtectedAdminUser,
-    isSuperAdmin,
-    isAdmin,
+    isProtectedAdmin,
     isAdminUser,
-    profileRole: profile?.role,
-    hasRoles: {
-      admin: hasRole('admin'),
-      superAdmin: hasRole('super_admin'),
-      categoryManager: hasRole('category_manager'),
-    },
-    accessStatus: isProtectedAdminUser ? 'protected_admin_access' : (isAdminUser ? 'role_based_access' : 'no_admin_access')
+    profileRole: profile?.role
   });
 
   if (!profile) return null;
@@ -78,19 +64,14 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
           <Link to="/settings">Settings</Link>
         </DropdownMenuItem>
         
-        {/* Admin Menu Section - Show for any admin role */}
-        {(isAdminUser || isProtectedAdminUser) && (
+        {/* Admin Menu Section - No dropdown item but kept link in separate section */}
+        {isAdminUser && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="flex items-center text-puzzle-aqua">
               <ShieldCheck className="mr-2 h-4 w-4" />
               Admin Access
             </DropdownMenuLabel>
-            <DropdownMenuItem asChild>
-              <Link to="/admin-dashboard">
-                Admin Dashboard
-              </Link>
-            </DropdownMenuItem>
           </>
         )}
         

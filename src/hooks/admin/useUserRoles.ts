@@ -4,8 +4,8 @@ import { UserRole } from '@/types/userTypes';
 import { useToast } from '@/hooks/use-toast';
 
 type UseUserRolesProps = {
-  updateUserRole: (userId: string, newRole: UserRole) => Promise<any>;
-  bulkUpdateRoles: (userIds: string[], newRole: UserRole) => Promise<any>;
+  updateUserRole: (userId: string, newRole: UserRole) => Promise<void>;
+  bulkUpdateRoles: (userIds: string[], newRole: UserRole) => Promise<void>;
   refetch: () => Promise<any>;
   selectedUsers: Set<string>;
 };

@@ -1,94 +1,111 @@
 
-import { RpcUserData } from '@/types/adminTypes';
+import { AdminProfilesOptions, RpcUserData } from '@/types/adminTypes';
 import { UserProfile } from '@/types/userTypes';
 
-// Define admin roles for filtering
-const ADMIN_ROLES = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
-
-export const filterUserData = (
-  users: RpcUserData[],
-  filters: {
-    searchQuery?: string;
-    role?: string | null;
-    country?: string | null;
-    gender?: string | null;
-    userType?: 'regular' | 'admin';
+export function filterUserData(data: RpcUserData[], options: AdminProfilesOptions): RpcUserData[] {
+  let filtered = [...data];
+  
+  // Filter by user type first (admin vs regular)
+  if (options.userType) {
+    const isAdmin = options.userType === 'admin';
+    filtered = filtered.filter(user => {
+      const userRole = user.role || 'player';
+      // Admin roles are super_admin, admin, category_manager, social_media_manager, partner_manager, cfo
+      const adminRoles = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
+      const isUserAdmin = adminRoles.includes(userRole);
+      return isAdmin ? isUserAdmin : !isUserAdmin;
+    });
   }
-): RpcUserData[] => {
-  return users.filter((user) => {
-    // User type filter (admin vs regular)
-    if (filters.userType === 'admin') {
-      const isAdminRole = ADMIN_ROLES.includes(user.role || 'player');
-      if (!isAdminRole) return false;
-    } else if (filters.userType === 'regular') {
-      const isAdminRole = ADMIN_ROLES.includes(user.role || 'player');
-      if (isAdminRole) return false;
-    }
-    
-    // Search query filter
-    if (
-      filters.searchQuery &&
-      !(
-        user.email?.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-        user.display_name?.toLowerCase().includes(filters.searchQuery.toLowerCase())
-      )
-    ) {
-      return false;
-    }
+  
+  // Filter by search term (email or display name)
+  if (options.searchTerm) {
+    const searchLower = options.searchTerm.toLowerCase();
+    filtered = filtered.filter(user => 
+      (user.email && user.email.toLowerCase().includes(searchLower)) ||
+      (user.display_name && user.display_name.toLowerCase().includes(searchLower))
+    );
+  }
+  
+  // Filter by date range
+  if (options.dateRange?.from) {
+    const fromDate = new Date(options.dateRange.from);
+    filtered = filtered.filter(user => {
+      const createdDate = new Date(user.created_at);
+      return createdDate >= fromDate;
+    });
+  }
+  
+  if (options.dateRange?.to) {
+    const toDate = new Date(options.dateRange.to);
+    toDate.setDate(toDate.getDate() + 1); // Include the end date
+    filtered = filtered.filter(user => {
+      const createdDate = new Date(user.created_at);
+      return createdDate < toDate;
+    });
+  }
+  
+  // Filter by role
+  if (options.role) {
+    filtered = filtered.filter(user => user.role === options.role);
+  }
+  
+  // Filter by country
+  if (options.country) {
+    filtered = filtered.filter(user => user.country === options.country);
+  }
+  
+  // Filter by category
+  if (options.category) {
+    filtered = filtered.filter(user => 
+      user.categories_played && user.categories_played.includes(options.category as string)
+    );
+  }
+  
+  // Filter by gender
+  if (options.gender) {
+    filtered = filtered.filter(user => user.gender === options.gender);
+  }
+  
+  return filtered;
+}
 
-    // Role filter
-    if (filters.role && user.role !== filters.role) {
-      return false;
-    }
-
-    // Country filter
-    if (filters.country && user.country !== filters.country) {
-      return false;
-    }
-
-    // Gender filter
-    if (filters.gender && user.gender !== filters.gender) {
-      return false;
-    }
-
-    return true;
-  });
-};
-
-export const transformToUserProfile = (user: RpcUserData): UserProfile => {
+export function transformToUserProfile(userData: RpcUserData): UserProfile {
   return {
-    id: user.id,
-    email: user.email || null,
-    display_name: user.display_name || 'Anonymous User',
+    id: userData.id,
+    email: userData.email,
+    display_name: userData.display_name,
     bio: null,
-    avatar_url: user.avatar_url || null,
-    role: (user.role || 'player') as any,
-    country: user.country || null,
-    categories_played: user.categories_played || [],
-    credits: user.credits || 0,
+    avatar_url: userData.avatar_url || null,
+    role: userData.role as any,
+    country: userData.country,
+    categories_played: userData.categories_played || [],
+    credits: userData.credits || 0,
     achievements: [],
     referral_code: null,
-    gender: user.gender as any,
-    custom_gender: user.custom_gender || null,
-    age_group: user.age_group as any,
-    created_at: user.created_at,
-    updated_at: user.updated_at || user.created_at,
-    last_sign_in: user.last_sign_in || null
+    created_at: userData.created_at,
+    updated_at: userData.updated_at || userData.created_at,
+    gender: userData.gender as any || null,
+    custom_gender: userData.custom_gender || null,
+    age_group: userData.age_group as any || null,
+    last_sign_in: userData.last_sign_in
   };
-};
+}
 
-export const extractUniqueValues = (users: RpcUserData[]) => {
-  const countries = [...new Set(users.map(user => user.country).filter(Boolean))];
-  
+export function extractUniqueValues(userData: RpcUserData[]) {
+  const countries = [...new Set(userData.map(user => user.country).filter(Boolean))];
   const categoriesSet = new Set<string>();
-  users.forEach(user => {
-    if (Array.isArray(user.categories_played)) {
-      user.categories_played.forEach(cat => categoriesSet.add(cat));
+  const genders = [...new Set(userData.map(user => user.gender).filter(Boolean))];
+  
+  // Extract all unique categories
+  userData.forEach(user => {
+    if (user.categories_played && Array.isArray(user.categories_played)) {
+      user.categories_played.forEach(category => {
+        if (category) categoriesSet.add(category);
+      });
     }
   });
-  const categories = [...categoriesSet];
-
-  const genders = [...new Set(users.map(user => user.gender).filter(Boolean))];
+  
+  const categories = Array.from(categoriesSet);
   
   return { countries, categories, genders };
-};
+}

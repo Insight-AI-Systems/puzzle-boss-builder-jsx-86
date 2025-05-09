@@ -43,14 +43,14 @@ export function TicketFilters({
       
       <div className="flex items-center space-x-2">
         <Select 
-          value={filters.status || 'all'} 
-          onValueChange={(value) => onUpdateFilters({ status: value === 'all' ? undefined : value as TicketStatus })}
+          value={filters.status || ''} 
+          onValueChange={(value) => onUpdateFilters({ status: value as TicketStatus })}
         >
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="">All Status</SelectItem>
             <SelectItem value="open">Open</SelectItem>
             <SelectItem value="in-progress">In Progress</SelectItem>
             <SelectItem value="resolved">Resolved</SelectItem>
@@ -60,14 +60,14 @@ export function TicketFilters({
         </Select>
 
         <Select 
-          value={filters.type || 'all'} 
-          onValueChange={(value) => onUpdateFilters({ type: value === 'all' ? undefined : value as TicketType })}
+          value={filters.type || ''} 
+          onValueChange={(value) => onUpdateFilters({ type: value as TicketType })}
         >
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="">All Types</SelectItem>
             <SelectItem value="internal">Internal</SelectItem>
             <SelectItem value="external">External</SelectItem>
           </SelectContent>

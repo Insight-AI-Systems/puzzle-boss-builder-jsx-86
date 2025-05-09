@@ -1,76 +1,116 @@
 
-import { debugLog, DebugLevel } from '@/utils/debug';
+import { TestManager } from '../managers/TestManager';
+import { projectTracker } from '@/utils/ProjectTracker';
+import { toast } from '@/hooks/use-toast';
+import { VerificationResult } from './types/testTypes';
+import { DatabaseTestRunner } from './runners/DatabaseTestRunner';
+import { ComponentTestRunner } from './runners/ComponentTestRunner';
+import { ProgressTestRunner } from './runners/ProgressTestRunner';
 
-/**
- * Test Runner
- * Utility for running tests and verification
- */
 export class TestRunner {
-  private static tasks: Record<string, () => boolean> = {};
+  private static verificationEnabled = true;
+  private static testManager = new TestManager();
+  private static environment = process.env.NODE_ENV || 'development';
   
-  /**
-   * Register a new test task
-   */
-  public static registerTask(name: string, testFn: () => boolean): void {
-    this.tasks[name] = testFn;
-  }
-  
-  /**
-   * Run a specific test by name
-   */
-  public static runTest(name: string): boolean {
-    if (!this.tasks[name]) {
-      debugLog('TestRunner', `Test "${name}" not found`, DebugLevel.ERROR);
-      return false;
-    }
+  // Set the environment for the test runner
+  static setEnvironment(env: 'development' | 'test' | 'production'): void {
+    TestRunner.environment = env;
+    console.info(`Test environment set to: ${env}`);
     
-    try {
-      const result = this.tasks[name]();
-      debugLog('TestRunner', `Test "${name}" ${result ? 'passed' : 'failed'}`, result ? DebugLevel.INFO : DebugLevel.ERROR);
-      return result;
-    } catch (error) {
-      debugLog('TestRunner', `Test "${name}" threw an exception: ${error}`, DebugLevel.ERROR);
-      return false;
+    // In production, disable verification unless explicitly enabled
+    if (env === 'production') {
+      TestRunner.verificationEnabled = false;
     }
   }
   
-  /**
-   * Run all registered tests
-   */
-  public static runAllTests(): Record<string, boolean> {
-    const results: Record<string, boolean> = {};
-    
-    for (const name in this.tasks) {
-      results[name] = this.runTest(name);
-    }
-    
-    return results;
+  static enableVerification(enable: boolean): void {
+    TestRunner.verificationEnabled = enable;
   }
   
-  /**
-   * Run all task tests
-   */
-  public static runAllTaskTests(): Record<string, boolean> {
-    const taskTests = Object.keys(this.tasks).filter(name => name.startsWith('task:'));
-    const results: Record<string, boolean> = {};
-    
-    for (const name of taskTests) {
-      results[name] = this.runTest(name);
-    }
-    
-    return results;
+  static isVerificationEnabled(): boolean {
+    return TestRunner.verificationEnabled;
   }
   
-  /**
-   * Verify that a change was correctly implemented
-   */
-  public static verifyChange(changeName: string, options?: any): boolean {
-    const testName = `change:${changeName}`;
-    if (!this.tasks[testName]) {
-      debugLog('TestRunner', `No verification for "${changeName}" exists`, DebugLevel.WARN);
-      return false;
+  static getEnvironment(): string {
+    return TestRunner.environment;
+  }
+  
+  static async runAllTaskTests(taskId: string): Promise<boolean> {
+    const result = await projectTracker.runTaskTests(taskId);
+    
+    if (result) {
+      toast({
+        title: "Tests passed",
+        description: `All tests for this task have passed successfully.`,
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Tests failed",
+        description: `Some tests for this task have failed. Check the console for details.`,
+      });
     }
     
-    return this.runTest(testName);
+    return result;
   }
+  
+  static async verifyChange(changeId: string, description: string): Promise<VerificationResult> {
+    console.log(`Verifying change: ${changeId} (${description})`);
+    
+    if (!TestRunner.verificationEnabled) {
+      console.log('Verification disabled, skipping tests');
+      return {
+        status: 'SKIPPED',
+        message: 'Verification is disabled',
+        changeId,
+        description
+      };
+    }
+    
+    const dbConnected = await DatabaseTestRunner.testDatabaseConnection();
+    if (!dbConnected) {
+      return {
+        status: 'FAILED',
+        message: 'Database connection failed',
+        changeId,
+        description,
+        details: {
+          dbConnectionError: true
+        }
+      };
+    }
+    
+    const summary = await TestRunner.testManager.runAllTests();
+    
+    let status: 'VERIFIED' | 'PARTIAL' | 'FAILED';
+    let message: string;
+    
+    if (summary.status === TestManager.RESULT_VERIFIED) {
+      status = 'VERIFIED';
+      message = `All ${summary.totalTests} tests passed`;
+    } else if (summary.status === TestManager.RESULT_PARTIAL) {
+      status = 'PARTIAL';
+      message = `${summary.passedTests} of ${summary.totalTests} tests passed`;
+    } else {
+      status = 'FAILED';
+      message = `All ${summary.totalTests} tests failed`;
+    }
+    
+    return {
+      status,
+      message,
+      changeId,
+      description,
+      details: {
+        summary,
+        reports: TestRunner.testManager.getAllTestReports()
+      }
+    };
+  }
+
+  // Re-export static methods from other test runners for convenience
+  static readonly testDatabaseConnection = DatabaseTestRunner.testDatabaseConnection;
+  static readonly testAuthStatus = DatabaseTestRunner.testAuthStatus;
+  static readonly testComponentRender = ComponentTestRunner.testComponentRender;
+  static readonly testProgressItemOrder = ProgressTestRunner.testProgressItemOrder;
 }

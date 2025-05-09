@@ -1,69 +1,62 @@
 
 import { useState } from 'react';
+import { DateRange } from 'react-day-picker';
 import { UserRole } from '@/types/userTypes';
-import { UserFilterCriteria } from '@/components/admin/user-management/AdvancedUserFilter';
+import { AdminProfilesOptions } from '@/types/adminTypes';
 
-export function useUserFilters() {
-  // Fix the type to include 'regular' as a valid value
-  const [userType, setUserType] = useState<'regular' | 'admin' | 'player'>('regular');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
-  const [page, setPage] = useState<number>(0);
-  const [pageSize, setPageSize] = useState<number>(10);
+export function useUserFilters(initialPageSize: number = 10) {
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(initialPageSize);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-  const [advancedFilters, setAdvancedFilters] = useState<UserFilterCriteria>({
-    roles: [],
-    countries: [],
-    activityStatus: 'all',
-    createdAfter: null,
-    createdBefore: null,
-    minLoginCount: 0,
-    hasCompletedProfile: null
-  });
-  
-  // Filter options based on selected user type
-  const filterOptions = {
-    searchQuery,
-    role: selectedRole as UserRole | null,
-    country: selectedCountry,
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const [roleSortDirection, setRoleSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [userType, setUserType] = useState<'regular' | 'admin'>('regular');
+
+  const filterOptions: AdminProfilesOptions = {
     page,
     pageSize,
-    userType,
-    advancedFilters
+    searchTerm: searchTerm.trim(), // Trim whitespace to avoid unnecessary queries
+    dateRange,
+    role: selectedRole,
+    roleSortDirection,
+    country: selectedCountry,
+    category: selectedCategory,
+    userType
   };
 
-  // Function to determine if a filter is active
-  const hasActiveFilters = (): boolean => {
-    return !!(
-      searchQuery || 
-      selectedRole || 
-      selectedCountry ||
-      advancedFilters.roles.length > 0 ||
-      advancedFilters.countries.length > 0 ||
-      advancedFilters.activityStatus !== 'all' ||
-      advancedFilters.createdAfter !== null ||
-      advancedFilters.createdBefore !== null ||
-      advancedFilters.minLoginCount > 0 ||
-      advancedFilters.hasCompletedProfile !== null
-    );
+  const resetFilters = () => {
+    setSearchTerm('');
+    setDateRange(undefined);
+    setSelectedCountry(null);
+    setSelectedCategory(null);
+    setSelectedRole(null);
+    setRoleSortDirection('asc');
+    setPage(0);
   };
 
   return {
-    userType,
-    setUserType,
-    searchQuery,
-    setSearchQuery,
-    selectedRole,
-    setSelectedRole,
-    page, 
+    page,
     setPage,
     pageSize,
     setPageSize,
+    searchTerm,
+    setSearchTerm,
+    dateRange,
+    setDateRange,
     selectedCountry,
     setSelectedCountry,
-    advancedFilters,
-    setAdvancedFilters,
+    selectedCategory,
+    setSelectedCategory,
+    selectedRole,
+    setSelectedRole,
+    roleSortDirection,
+    setRoleSortDirection,
+    userType,
+    setUserType,
     filterOptions,
-    hasActiveFilters
+    resetFilters
   };
 }

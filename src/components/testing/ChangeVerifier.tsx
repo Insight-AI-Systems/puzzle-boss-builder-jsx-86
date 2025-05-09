@@ -1,140 +1,141 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { VerificationResult } from '@/utils/testing/types/testTypes';
-import { CheckCircle2, XCircle, Settings, AlertTriangle } from 'lucide-react';
+import React, { useState } from 'react';
+import { TestRunner, VerificationResult } from '@/utils/testing';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Check, AlertTriangle, AlertCircle, Play } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface ChangeVerifierProps {
-  title: string;
+  changeId: string;
   description: string;
-  verificationFn: () => boolean | Promise<boolean>;
-  onResult?: (result: VerificationResult) => void;
+  onVerificationComplete?: (result: VerificationResult) => void;
   autoVerify?: boolean;
-  interval?: number; // In milliseconds
 }
 
-export const ChangeVerifier: React.FC<ChangeVerifierProps> = ({
-  title,
-  description,
-  verificationFn,
-  onResult,
-  autoVerify = false,
-  interval = 2000
+export const ChangeVerifier: React.FC<ChangeVerifierProps> = ({ 
+  changeId, 
+  description, 
+  onVerificationComplete,
+  autoVerify = false
 }) => {
-  const [result, setResult] = useState<VerificationResult | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<VerificationResult | null>(null);
   
-  const verify = useCallback(async () => {
+  React.useEffect(() => {
+    if (autoVerify) {
+      handleVerify();
+    }
+  }, [autoVerify]);
+  
+  const handleVerify = async () => {
     setIsVerifying(true);
-    setError(null);
-    
     try {
-      const verified = await verificationFn();
-      const verificationResult: VerificationResult = {
-        description,
-        success: verified,
-        error: verified ? null : 'Verification failed'
-      };
-      
+      const verificationResult = await TestRunner.verifyChange(changeId, description);
       setResult(verificationResult);
       
-      if (onResult) {
-        onResult(verificationResult);
+      if (onVerificationComplete) {
+        onVerificationComplete(verificationResult);
       }
+    } catch (error) {
+      console.error('Verification error:', error);
       
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      setError(errorMessage);
-      
-      const verificationResult: VerificationResult = {
-        description,
-        success: false,
-        error: errorMessage
+      const errorResult: VerificationResult = {
+        status: 'FAILED',
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+        changeId,
+        description
       };
       
-      setResult(verificationResult);
+      setResult(errorResult);
       
-      if (onResult) {
-        onResult(verificationResult);
+      if (onVerificationComplete) {
+        onVerificationComplete(errorResult);
       }
     } finally {
       setIsVerifying(false);
     }
-  }, [verificationFn, description, onResult]);
+  };
   
-  // Auto verify at specified intervals if enabled
-  useEffect(() => {
-    if (!autoVerify) return;
+  const getStatusIcon = () => {
+    if (!result) return null;
     
-    verify();
-    const timer = setInterval(verify, interval);
+    switch (result.status) {
+      case 'VERIFIED':
+        return <Check className="h-5 w-5 text-green-500" />;
+      case 'PARTIAL':
+        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+      case 'FAILED':
+        return <AlertCircle className="h-5 w-5 text-red-500" />;
+      default:
+        return null;
+    }
+  };
+  
+  const getStatusBadge = () => {
+    if (!result) return null;
     
-    return () => {
-      clearInterval(timer);
-    };
-  }, [autoVerify, interval, verify]);
+    let className = '';
+    
+    switch (result.status) {
+      case 'VERIFIED':
+        className = 'bg-green-100 text-green-800';
+        break;
+      case 'PARTIAL':
+        className = 'bg-yellow-100 text-yellow-800';
+        break;
+      case 'FAILED':
+        className = 'bg-red-100 text-red-800';
+        break;
+      case 'SKIPPED':
+        className = 'bg-gray-100 text-gray-800';
+        break;
+    }
+    
+    return (
+      <Badge className={className}>
+        {result.status}
+      </Badge>
+    );
+  };
   
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>{title}</CardTitle>
-          {result && (
-            <Badge variant={result.success ? 'secondary' : 'destructive'}>
-              {result.success ? 'Verified' : 'Failed'}
-            </Badge>
-          )}
-        </div>
-        <CardDescription>{description}</CardDescription>
+    <Card className="bg-puzzle-black/50 border-puzzle-aqua/20 mb-4">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-puzzle-white text-sm font-medium">Change Verification</CardTitle>
+        {getStatusBadge()}
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col items-center justify-center py-4">
-          {isVerifying ? (
-            <Settings className="h-12 w-12 animate-spin text-muted-foreground" />
-          ) : result ? (
-            result.success ? (
-              <CheckCircle2 className="h-12 w-12 text-green-500" />
-            ) : (
-              <XCircle className="h-12 w-12 text-red-500" />
-            )
-          ) : (
-            <AlertTriangle className="h-12 w-12 text-amber-500" />
+        <div className="space-y-2">
+          <p className="text-puzzle-white/80 text-sm">{description}</p>
+          
+          {result && (
+            <div className="mt-2 flex items-center gap-2">
+              {getStatusIcon()}
+              <span className="text-puzzle-white text-sm">{result.message}</span>
+            </div>
           )}
           
-          <div className="mt-4 text-center">
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="mt-2 border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua/10"
+            onClick={handleVerify}
+            disabled={isVerifying}
+          >
             {isVerifying ? (
-              <p className="text-muted-foreground">Verifying...</p>
-            ) : result ? (
-              result.success ? (
-                <p className="text-green-500 font-medium">Verification successful!</p>
-              ) : (
-                <>
-                  <p className="text-red-500 font-medium">Verification failed</p>
-                  {result.error && <p className="text-sm text-muted-foreground mt-1">{result.error}</p>}
-                </>
-              )
+              <>
+                <Play className="mr-2 h-4 w-4 animate-spin" />
+                Verifying...
+              </>
             ) : (
-              <p className="text-muted-foreground">No verification performed yet</p>
+              <>
+                <Play className="mr-2 h-4 w-4" />
+                Verify Change
+              </>
             )}
-            
-            {error && !result && (
-              <p className="text-sm text-red-500 mt-2">{error}</p>
-            )}
-          </div>
+          </Button>
         </div>
       </CardContent>
-      <CardFooter>
-        <Button 
-          className="w-full"
-          onClick={verify}
-          disabled={isVerifying}
-        >
-          {isVerifying ? 'Verifying...' : 'Verify Change'}
-        </Button>
-      </CardFooter>
     </Card>
   );
 };

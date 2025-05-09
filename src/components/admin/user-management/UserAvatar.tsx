@@ -1,49 +1,36 @@
 
 import React from 'react';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface UserAvatarProps {
-  avatarUrl?: string | null;
-  displayName: string;
+  avatarUrl: string | null;
+  displayName: string | null;
   userId: string;
 }
 
 export function UserAvatar({ avatarUrl, displayName, userId }: UserAvatarProps) {
-  // Extract initials for the avatar fallback
-  const getInitials = () => {
-    if (!displayName) return '?';
-    return displayName
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  };
-
-  // Generate a background color based on the user ID
-  const getBackgroundColor = () => {
-    const colors = [
-      'bg-blue-200', 'bg-green-200', 'bg-yellow-200', 
-      'bg-purple-200', 'bg-pink-200', 'bg-indigo-200',
-      'bg-red-200', 'bg-orange-200', 'bg-teal-200'
-    ];
-    
-    // Use the last character of the user ID to determine the color
-    const lastChar = userId.slice(-1);
-    const index = parseInt(lastChar, 16) % colors.length;
-    return colors[index];
+  // Create a fallback from the display name or user ID
+  const getFallback = () => {
+    if (displayName) {
+      return displayName.charAt(0).toUpperCase();
+    }
+    // Use first character of the user ID if available
+    return userId.charAt(0).toUpperCase();
   };
 
   return (
     <div className="flex items-center gap-3">
-      <Avatar className="h-8 w-8">
-        <AvatarImage src={avatarUrl || undefined} alt={displayName} />
-        <AvatarFallback className={getBackgroundColor()}>
-          {getInitials()}
-        </AvatarFallback>
+      <Avatar className="h-9 w-9">
+        <AvatarImage src={avatarUrl || undefined} alt={displayName || 'User'} />
+        <AvatarFallback>{getFallback()}</AvatarFallback>
       </Avatar>
       <div>
-        <p className="text-sm font-medium">{displayName}</p>
+        <p className="text-sm font-medium leading-none">
+          {displayName || 'Anonymous User'}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {userId.substring(0, 8)}...
+        </p>
       </div>
     </div>
   );

@@ -5,8 +5,7 @@ import { DateRange } from "react-day-picker";
 import { useEmailAnalytics } from "@/hooks/admin/useEmailAnalytics";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, RefreshCcw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AlertTriangle } from "lucide-react";
 
 import { AnalyticsHeader } from "./analytics/AnalyticsHeader";
 import { StatsCards } from "./analytics/StatsCards";
@@ -28,8 +27,7 @@ export const EmailAnalytics: React.FC = () => {
     campaignsList,
     isLoading,
     error,
-    exportData,
-    refetch
+    exportData
   } = useEmailAnalytics(dateRange, campaign);
 
   // Loading state
@@ -48,16 +46,6 @@ export const EmailAnalytics: React.FC = () => {
             {error instanceof Error ? error.message : "An unknown error occurred while loading analytics data"}
           </AlertDescription>
         </Alert>
-        <div className="flex justify-center">
-          <Button 
-            variant="outline"
-            onClick={() => refetch()}
-            className="flex items-center gap-2"
-          >
-            <RefreshCcw className="h-4 w-4" />
-            Retry Loading Data
-          </Button>
-        </div>
       </div>
     );
   }
