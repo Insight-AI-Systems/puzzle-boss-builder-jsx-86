@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { monitoringService } from '@/utils/monitoring/monitoringService';
 import DeveloperTools from './DeveloperTools';
+import { useAuth } from '@/contexts/AuthContext';
+import { isProtectedAdmin } from '@/constants/securityConfig';
 
 interface MonitoringProviderProps {
   children: React.ReactNode;
@@ -55,6 +57,8 @@ const MonitoringProvider: React.FC<MonitoringProviderProps> = ({
   enableDeveloperTools = true // Changed to true by default to ensure admin tools are available
 }) => {
   const [isInitialized, setIsInitialized] = useState(false);
+  const { user, isAdmin } = useAuth();
+  const hasAdminAccess = isAdmin || isProtectedAdmin(user?.email);
   
   useEffect(() => {
     // Configure monitoring service
@@ -83,7 +87,7 @@ const MonitoringProvider: React.FC<MonitoringProviderProps> = ({
   return (
     <>
       {children}
-      {enableDeveloperTools && isInitialized && (
+      {enableDeveloperTools && isInitialized && hasAdminAccess && (
         <DeveloperTools initiallyExpanded={true} />
       )}
     </>

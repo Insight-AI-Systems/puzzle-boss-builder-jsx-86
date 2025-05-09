@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserProfile, UserRole } from '@/types/userTypes';
 import { AdminProfilesOptions } from '@/types/adminTypes';
+import { isProtectedAdmin } from '@/constants/securityConfig';
 
 export interface ProfileUpdateData {
   username?: string;
@@ -53,6 +54,7 @@ export function useUserProfile(adminOptions?: AdminProfilesOptions) {
 
           console.log('Profile data retrieved:', data);
           
+          // Create the profile with data from Supabase
           const userProfile: UserProfile = {
             id: data.id,
             email: user.email || null,
@@ -69,7 +71,21 @@ export function useUserProfile(adminOptions?: AdminProfilesOptions) {
             updated_at: data.updated_at || data.created_at
           };
 
-          setIsAdmin(['admin', 'super_admin'].includes(userProfile.role));
+          // Check if the user is protected admin based on email
+          const hasProtectedAdminEmail = isProtectedAdmin(user.email);
+          
+          // Set isAdmin flag based on role or protected admin status
+          const isAdminRole = ['admin', 'super_admin'].includes(userProfile.role);
+          const adminStatus = isAdminRole || hasProtectedAdminEmail;
+          
+          setIsAdmin(adminStatus);
+          
+          // If they have protected admin email but not the super_admin role in the database,
+          // override the role to super_admin
+          if (hasProtectedAdminEmail && userProfile.role !== 'super_admin') {
+            console.log('Protected admin email detected, overriding role to super_admin');
+            userProfile.role = 'super_admin';
+          }
           
           return userProfile;
         } catch (err) {

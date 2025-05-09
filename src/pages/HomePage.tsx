@@ -13,10 +13,11 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { Link } from 'react-router-dom';
 import { PageDebugger } from '@/components/debug/PageDebugger';
 import { useAuth } from '@/contexts/AuthContext';
+import { isProtectedAdmin } from '@/constants/securityConfig';
 
 function HomePage() {
   const { isAdmin, profile, isLoading: profileLoading } = useUserProfile();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const navigate = useNavigate();
   
   console.log("HomePage rendering", { 
@@ -25,19 +26,24 @@ function HomePage() {
     profileRole: profile?.role,
     isLoading: profileLoading,
     authLoading,
-    isAuthenticated
+    isAuthenticated,
+    userEmail: user?.email
   });
   
   useEffect(() => {
     // Debug message to verify component rendering
     console.log('HomePage mounted');
     
-    if (!profileLoading && profile?.role === 'super_admin') {
+    // Check if user is a super admin either via profile role or protected admin email
+    const isSuperAdmin = (!profileLoading && profile?.role === 'super_admin') || 
+                         isProtectedAdmin(user?.email);
+    
+    if (isSuperAdmin) {
       const userWantsAdmin = window.localStorage.getItem('redirect_to_admin') === 'true';
       
       if (userWantsAdmin) {
         navigate('/admin-dashboard');
-      } else if (userWantsAdmin === null) {
+      } else if (window.localStorage.getItem('redirect_to_admin') === null) {
         const shouldRedirect = window.confirm('As a Super Admin, would you like to go directly to the Admin Dashboard?');
         window.localStorage.setItem('redirect_to_admin', shouldRedirect ? 'true' : 'false');
         
@@ -46,7 +52,7 @@ function HomePage() {
         }
       }
     }
-  }, [profileLoading, profile, navigate]);
+  }, [profileLoading, profile, navigate, user]);
 
   // Add fallback rendering state for debugging
   if (authLoading || profileLoading) {

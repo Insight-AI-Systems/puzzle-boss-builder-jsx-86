@@ -1,44 +1,75 @@
 
 /**
- * Security Configuration
- * 
- * Central configuration for security-related constants and utilities
+ * Protected admin email address
+ * This email always has full system access
  */
-
-// Protected admin email that should always have admin access
 export const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 /**
- * Check if an email belongs to the protected admin
- * Uses case-insensitive comparison for reliability
- * 
+ * Check if an email is the protected admin
  * @param email - Email to check
- * @returns Boolean indicating if this is a protected admin email
+ * @returns Boolean indicating if the email is the protected admin
  */
 export function isProtectedAdmin(email?: string | null): boolean {
   if (!email) return false;
-  const result = email.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase();
-  console.log(`Security check for email: ${email} against ${PROTECTED_ADMIN_EMAIL}, result: ${result}`);
-  return result;
+  
+  // Case insensitive comparison
+  return email.toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase();
 }
 
 /**
- * Get the security role weight for comparison
- * Higher weight means higher permissions
- * 
- * @param role - Role to check
- * @returns Numeric weight of the role
+ * Security configuration for the application
  */
-export function getRoleWeight(role: string): number {
-  switch(role) {
-    case 'super_admin': return 100;
-    case 'admin': return 80;
-    case 'category_manager': return 60;
-    case 'social_media_manager': return 50;
-    case 'partner_manager': return 50; 
-    case 'cfo': return 40;
-    case 'player': return 10;
-    case 'regular': return 10;
-    default: return 0;
+export const securityConfig = {
+  // Minimum password length
+  minPasswordLength: 8,
+  
+  // Maximum failed login attempts before lockout
+  maxFailedLoginAttempts: 5,
+  
+  // Account lockout duration in minutes
+  accountLockoutDuration: 15,
+  
+  // Session timeout in minutes
+  sessionTimeout: 60,
+  
+  // Password reset token expiry in minutes
+  passwordResetExpiry: 30,
+  
+  // Cookie security settings
+  secureCookies: process.env.NODE_ENV === 'production',
+  
+  // CSRF protection
+  csrfProtection: true,
+  
+  // Content Security Policy enabled
+  cspEnabled: process.env.NODE_ENV === 'production',
+  
+  // Allow dev tools in production for admin users
+  allowDevToolsForAdmins: true
+};
+
+/**
+ * Developer access settings
+ */
+export const developerAccess = {
+  // Additional developer emails that should have admin access
+  developerEmails: [
+    'rob.small.1234@gmail.com',
+    'dev@thepuzzleboss.com',
+    'test@puzzleboss.com'
+  ],
+  
+  // Check if email is a developer email
+  isDeveloperEmail: (email?: string | null): boolean => {
+    if (!email) return false;
+    return developerAccess.developerEmails.some(
+      devEmail => email.toLowerCase() === devEmail.toLowerCase()
+    );
+  },
+  
+  // Check if user should have developer access
+  hasDeveloperAccess: (email?: string | null): boolean => {
+    return isProtectedAdmin(email) || developerAccess.isDeveloperEmail(email);
   }
-}
+};

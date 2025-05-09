@@ -3,10 +3,13 @@ import React from 'react';
 import { SparklesIcon } from '@heroicons/react/20/solid'
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { isProtectedAdmin } from '@/constants/securityConfig';
 
 export const Hero = () => {
-  const { hasRole, isAuthenticated } = useAuth();
-  const showCFOLink = isAuthenticated && (hasRole('super_admin') || hasRole('admin') || hasRole('cfo'));
+  const { hasRole, isAuthenticated, user } = useAuth();
+  // Show CFO link for super admins, admins, or users with CFO role
+  const showCFOLink = isAuthenticated && 
+    (hasRole('super_admin') || hasRole('admin') || hasRole('cfo') || isProtectedAdmin(user?.email));
   
   return (
     <div className="relative bg-black overflow-hidden">
