@@ -18,7 +18,13 @@ export function DraggableTableRow({ item }: DraggableTableRowProps) {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: item.id });
+  } = useSortable({ 
+    id: item.id,
+    // Add required configuration for newer @dnd-kit versions
+    resizeObserverConfig: {
+      disabled: false
+    }
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),

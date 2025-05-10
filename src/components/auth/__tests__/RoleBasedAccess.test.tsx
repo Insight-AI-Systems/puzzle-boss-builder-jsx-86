@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { AuthContext, AuthContextType } from '@/contexts/AuthContext';
 import { RoleBasedAccess } from '../RoleBasedAccess';
 import { Session, User } from '@supabase/supabase-js';
@@ -38,7 +38,7 @@ describe('RoleBasedAccess Component', () => {
       userRole: 'super_admin' as UserRole,
       userRoles: ['super_admin'] as UserRole[],
       hasRole: (role: string) => role === 'super_admin',
-      isAdmin: true, // Add missing property
+      isAdmin: true,
       rolesLoaded: true,
       signIn: jest.fn(),
       signUp: jest.fn(),
@@ -49,7 +49,7 @@ describe('RoleBasedAccess Component', () => {
       clearAuthError: jest.fn(),
     };
 
-    render(
+    const { getByTestId } = render(
       <AuthContext.Provider value={mockAuthContext}>
         <RoleBasedAccess allowedRoles={['super_admin']}>
           <div data-testid="protected-content">Protected Content</div>
@@ -57,7 +57,7 @@ describe('RoleBasedAccess Component', () => {
       </AuthContext.Provider>
     );
 
-    expect(screen.getByTestId('protected-content')).toBeInTheDocument();
+    expect(getByTestId('protected-content')).toBeInTheDocument();
   });
 
   test('does not render children when user lacks required role', () => {
@@ -71,7 +71,7 @@ describe('RoleBasedAccess Component', () => {
       userRole: 'player' as UserRole,
       userRoles: ['player'] as UserRole[],
       hasRole: (role: string) => role === 'player',
-      isAdmin: false, // Add missing property
+      isAdmin: false,
       rolesLoaded: true,
       signIn: jest.fn(),
       signUp: jest.fn(),
@@ -82,7 +82,7 @@ describe('RoleBasedAccess Component', () => {
       clearAuthError: jest.fn(),
     };
 
-    render(
+    const { queryByTestId } = render(
       <AuthContext.Provider value={mockAuthContext}>
         <RoleBasedAccess allowedRoles={['admin']}>
           <div data-testid="protected-content">Protected Content</div>
@@ -90,7 +90,7 @@ describe('RoleBasedAccess Component', () => {
       </AuthContext.Provider>
     );
 
-    expect(screen.queryByTestId('protected-content')).not.toBeInTheDocument();
+    expect(queryByTestId('protected-content')).not.toBeInTheDocument();
   });
 
   test('renders children when user has any of the multiple required roles', () => {
@@ -104,7 +104,7 @@ describe('RoleBasedAccess Component', () => {
       userRole: 'admin' as UserRole,
       userRoles: ['admin', 'editor'] as UserRole[],
       hasRole: (testRole: string) => ['admin', 'editor'].includes(testRole),
-      isAdmin: false, // Add missing property
+      isAdmin: false,
       rolesLoaded: true,
       signIn: jest.fn(),
       signUp: jest.fn(),
@@ -115,7 +115,7 @@ describe('RoleBasedAccess Component', () => {
       clearAuthError: jest.fn(),
     };
 
-    render(
+    const { getByTestId } = render(
       <AuthContext.Provider value={mockAuthContext}>
         <RoleBasedAccess allowedRoles={['super_admin', 'admin']}>
           <div data-testid="protected-content">Protected Content</div>
@@ -123,6 +123,6 @@ describe('RoleBasedAccess Component', () => {
       </AuthContext.Provider>
     );
 
-    expect(screen.getByTestId('protected-content')).toBeInTheDocument();
+    expect(getByTestId('protected-content')).toBeInTheDocument();
   });
 });
