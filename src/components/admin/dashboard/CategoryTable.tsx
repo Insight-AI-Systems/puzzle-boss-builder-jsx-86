@@ -146,7 +146,7 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
         </Table>
       </div>
 
-      <AlertDialog open={isDeleteConfirmOpen}>
+      <AlertDialog open={isDeleteConfirmOpen} onOpenChange={() => cancelDeleteCategory()}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
