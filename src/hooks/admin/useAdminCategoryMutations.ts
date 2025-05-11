@@ -94,9 +94,9 @@ export function useAdminCategoryMutations() {
       
       try {
         // Check if there are any puzzles (of any status) using this category
-        const { count, error: checkError } = await supabase
+        const { data, error: checkError } = await supabase
           .from('puzzles')
-          .select('id', { count: 'exact', head: true })
+          .select('id, title, status')
           .eq('category_id', categoryId);
 
         if (checkError) {
@@ -105,12 +105,15 @@ export function useAdminCategoryMutations() {
         }
         
         // Log for debugging
-        console.log(`Found ${count || 0} puzzles for category ${categoryId}`);
+        console.log(`Found ${data?.length || 0} puzzles for category ${categoryId}`);
+        if (data && data.length > 0) {
+          console.log('Puzzle details:', data);
+        }
         
         // If puzzles are found, prevent deletion
-        if (count && count > 0) {
-          console.log(`Preventing deletion: ${count} puzzles are using this category`);
-          throw new Error(`Cannot delete category: ${count} puzzle(s) are associated with this category (including inactive/draft). Please reassign or delete these puzzles first.`);
+        if (data && data.length > 0) {
+          console.log(`Preventing deletion: ${data.length} puzzles are using this category`);
+          throw new Error(`Cannot delete category: ${data.length} puzzle(s) are associated with this category (including inactive/draft). Please reassign or delete these puzzles first.`);
         }
 
         // If no puzzles found, proceed with deletion
