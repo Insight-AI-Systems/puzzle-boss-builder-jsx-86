@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, AlertCircle } from "lucide-react";
 import { AdminCategory } from '@/types/categoryTypes';
 import { CategoryImageUpload } from "./CategoryImageUpload";
 import { PlayablePuzzleCountCell } from "./PlayablePuzzleCountCell";
@@ -36,6 +36,11 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
   cancelDeleteCategory,
   categoryToDelete
 }) => {
+  // Find the category being deleted (for showing puzzle count in warning)
+  const categoryBeingDeleted = categoryToDelete 
+    ? categories.find(cat => cat.id === categoryToDelete) 
+    : null;
+
   return (
     <>
       <div className="rounded-md border">
@@ -146,12 +151,28 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
         </Table>
       </div>
 
-      <AlertDialog open={isDeleteConfirmOpen} onOpenChange={() => cancelDeleteCategory()}>
+      <AlertDialog 
+        open={isDeleteConfirmOpen} 
+        onOpenChange={(open) => {
+          if (!open) cancelDeleteCategory();
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-500" />
+              Delete Category?
+            </AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete the category. This action cannot be undone.
+              
+              {categoryBeingDeleted && (
+                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800">
+                  <p className="font-medium">Important:</p>
+                  <p>Before deleting this category, ensure that no puzzles are using it. If any puzzles are assigned to this category, 
+                  you must first reassign or delete those puzzles.</p>
+                </div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

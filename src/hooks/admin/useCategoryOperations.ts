@@ -76,15 +76,7 @@ export const useCategoryOperations = () => {
   const confirmDeleteCategory = () => {
     if (categoryToDelete) {
       console.log('Delete confirmed by user for category:', categoryToDelete);
-      deleteCategory.mutate(categoryToDelete, {
-        onError: (error) => {
-          console.error('Delete category error in handler:', error);
-        },
-        onSuccess: () => {
-          setIsDeleteConfirmOpen(false);
-          setCategoryToDelete(null);
-        }
-      });
+      deleteCategory.mutate(categoryToDelete);
     }
   };
   
