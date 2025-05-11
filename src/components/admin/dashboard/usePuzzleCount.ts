@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -10,8 +9,7 @@ export const usePuzzleCount = (categoryId: string) => {
         const { count, error } = await supabase
           .from('puzzles')
           .select('*', { count: 'exact', head: true })
-          .eq('category_id', categoryId)
-          .eq('status', 'active'); // Only count active puzzles
+          .eq('category_id', categoryId);
 
         if (error) {
           console.error('Error fetching puzzle count:', error);

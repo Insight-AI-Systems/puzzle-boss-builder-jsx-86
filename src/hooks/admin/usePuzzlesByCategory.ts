@@ -13,6 +13,7 @@ export function usePuzzlesByCategoryId(categoryId: string | null) {
   const fetchPuzzlesByCategory = async () => {
     if (!categoryId) return [];
 
+    // Modified query to get all puzzles for the category without status filter
     const { data, error } = await supabase
       .from('puzzles')
       .select('id, title, status, image_url')
