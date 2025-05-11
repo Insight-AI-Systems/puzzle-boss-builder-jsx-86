@@ -4,6 +4,7 @@ import { AdminCategory } from '@/types/categoryTypes';
 import { useCategoryManagement } from '@/hooks/admin/useCategoryManagement';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useCategoryOperations = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -109,6 +110,53 @@ export const useCategoryOperations = () => {
     setIsAddDialogOpen(true);
   };
 
+  const handleDeletePuzzle = async (puzzleId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to delete puzzles.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      console.log('Deleting puzzle with ID:', puzzleId);
+      
+      // Delete the puzzle from the puzzles table
+      const { error } = await supabase
+        .from('puzzles')
+        .delete()
+        .eq('id', puzzleId);
+
+      if (error) {
+        console.error('Error deleting puzzle:', error);
+        toast({
+          title: "Error",
+          description: `Failed to delete puzzle: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Success
+      toast({
+        title: "Success",
+        description: "Puzzle removed successfully",
+      });
+
+      // Invalidate relevant queries to refresh data
+      refetch();
+    } catch (error: any) {
+      console.error('Failed to delete puzzle:', error);
+      toast({
+        title: "Error",
+        description: `An unexpected error occurred: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     isAddDialogOpen,
     setIsAddDialogOpen,
@@ -127,6 +175,7 @@ export const useCategoryOperations = () => {
     setIsDeleteConfirmOpen,
     confirmDeleteCategory,
     cancelDeleteCategory,
-    categoryToDelete
+    categoryToDelete,
+    handleDeletePuzzle
   };
 };
