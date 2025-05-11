@@ -93,7 +93,7 @@ export function useAdminCategoryMutations() {
       console.log('Starting category deletion process for ID:', categoryId);
       
       try {
-        // First check if there are any puzzles using this category
+        // Check if there are any puzzles (of any status) using this category
         const { count, error: checkError } = await supabase
           .from('puzzles')
           .select('id', { count: 'exact', head: true })
@@ -110,7 +110,7 @@ export function useAdminCategoryMutations() {
         // If puzzles are found, prevent deletion
         if (count && count > 0) {
           console.log(`Preventing deletion: ${count} puzzles are using this category`);
-          throw new Error(`Cannot delete category: ${count} puzzle(s) are using this category. Please reassign or delete these puzzles first.`);
+          throw new Error(`Cannot delete category: ${count} puzzle(s) are associated with this category (including inactive/draft). Please reassign or delete these puzzles first.`);
         }
 
         // If no puzzles found, proceed with deletion

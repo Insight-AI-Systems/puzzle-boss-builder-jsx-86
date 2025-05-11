@@ -169,7 +169,7 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
               {categoryBeingDeleted && (
                 <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800">
                   <p className="font-medium">Important:</p>
-                  <p>Before deleting this category, ensure that no puzzles are using it. If any puzzles are assigned to this category, 
+                  <p>Before deleting this category, ensure that no puzzles are using it (including inactive or draft puzzles). If any puzzles are assigned to this category, 
                   you must first reassign or delete those puzzles.</p>
                 </div>
               )}
