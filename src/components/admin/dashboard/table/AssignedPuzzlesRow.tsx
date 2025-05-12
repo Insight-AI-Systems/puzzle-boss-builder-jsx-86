@@ -26,23 +26,23 @@ export const AssignedPuzzlesRow: React.FC<AssignedPuzzlesRowProps> = ({
     <TableRow>
       <TableCell colSpan={6} className="bg-gray-50 p-3">
         <div className="mt-2 mb-3">
-          <h4 className="text-sm font-semibold mb-2 text-foreground">Assigned Puzzles</h4>
+          <h4 className="text-sm font-semibold mb-2 text-blue-700">Assigned Puzzles</h4>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading puzzles...</p>
+            <p className="text-sm text-blue-700">Loading puzzles...</p>
           ) : puzzles.length > 0 ? (
-            <div className="border rounded-md">
+            <div className="border rounded-md bg-gray-100">
               <Table>
-                <TableHeader>
+                <TableHeader className="bg-gray-200">
                   <TableRow>
-                    <TableHead className="text-foreground">Title</TableHead>
-                    <TableHead className="text-foreground">Status</TableHead>
-                    <TableHead className="text-foreground">Actions</TableHead>
+                    <TableHead className="text-blue-700 font-bold">Title</TableHead>
+                    <TableHead className="text-blue-700 font-bold">Status</TableHead>
+                    <TableHead className="text-blue-700 font-bold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {puzzles.map((puzzle) => (
-                    <TableRow key={puzzle.id}>
-                      <TableCell className="text-foreground font-medium">{puzzle.title}</TableCell>
+                    <TableRow key={puzzle.id} className="bg-gray-100 hover:bg-gray-200">
+                      <TableCell className="text-blue-700 font-medium">{puzzle.title}</TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                           ${puzzle.status === 'active' ? 'bg-green-100 text-green-800' : 
@@ -68,9 +68,9 @@ export const AssignedPuzzlesRow: React.FC<AssignedPuzzlesRowProps> = ({
               </Table>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No puzzles assigned to this category</p>
+            <p className="text-sm text-blue-700">No puzzles assigned to this category</p>
           )}
-          <p className="text-xs text-foreground mt-2">
+          <p className="text-xs text-blue-700 mt-2 font-medium">
             Note: All puzzles must be removed before the category can be deleted.
           </p>
         </div>
