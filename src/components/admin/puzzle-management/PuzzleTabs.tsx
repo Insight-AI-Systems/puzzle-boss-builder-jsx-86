@@ -42,31 +42,31 @@ export const PuzzleTabs: React.FC<PuzzleTabsProps> = ({
     <>
       <TabsList className="grid grid-cols-5 mb-4">
         <TabsTrigger value="active" className="flex items-center">
-          <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
+          <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0 bg-puzzle-gold text-puzzle-black">
             {activePuzzles.length}
           </Badge>
           Active
         </TabsTrigger>
         <TabsTrigger value="inactive" className="flex items-center">
-          <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
+          <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0 bg-puzzle-burgundy text-white">
             {inactivePuzzles.length}
           </Badge>
           Inactive
         </TabsTrigger>
         <TabsTrigger value="scheduled" className="flex items-center">
-          <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
+          <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0 bg-puzzle-aqua text-puzzle-black">
             {scheduledPuzzles.length}
           </Badge>
           Scheduled
         </TabsTrigger>
         <TabsTrigger value="completed" className="flex items-center">
-          <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
+          <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0 bg-green-600 text-white">
             {completedPuzzles.length}
           </Badge>
           Completed
         </TabsTrigger>
         <TabsTrigger value="drafts" className="flex items-center">
-          <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
+          <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0 bg-gray-600 text-white">
             {draftPuzzles.length}
           </Badge>
           Drafts
