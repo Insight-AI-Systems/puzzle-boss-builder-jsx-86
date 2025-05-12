@@ -58,6 +58,7 @@ export const AssignedPuzzlesRow: React.FC<AssignedPuzzlesRowProps> = ({
                           size="sm"
                           onClick={() => handleDeletePuzzle && handleDeletePuzzle(puzzle.id)}
                           className="text-red-500 hover:text-red-700"
+                          disabled={!handleDeletePuzzle}
                         >
                           <Trash2 className="h-3 w-3 mr-1" /> Remove
                         </Button>
