@@ -52,7 +52,7 @@ export const CategoryRow: React.FC<CategoryRowProps> = ({
             })}
           />
         ) : (
-          <span>{category.name}</span>
+          <span className="text-foreground">{category.name}</span>
         )}
       </TableCell>
       <TableCell>
@@ -67,7 +67,7 @@ export const CategoryRow: React.FC<CategoryRowProps> = ({
             }
           />
         ) : (
-          <span className="max-w-xs block truncate text-muted-foreground">
+          <span className="max-w-xs block truncate text-foreground">
             {category.description || <span className="italic text-xs text-gray-400">No description</span>}
           </span>
         )}

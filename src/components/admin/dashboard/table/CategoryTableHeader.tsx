@@ -6,12 +6,12 @@ export const CategoryTableHeader: React.FC = () => {
   return (
     <TableHeader>
       <TableRow>
-        <TableHead>Image</TableHead>
-        <TableHead>Name</TableHead>
-        <TableHead>Description</TableHead>
-        <TableHead>Playable Puzzles</TableHead>
-        <TableHead>Active</TableHead>
-        <TableHead className="text-right">Actions</TableHead>
+        <TableHead className="text-foreground">Image</TableHead>
+        <TableHead className="text-foreground">Name</TableHead>
+        <TableHead className="text-foreground">Description</TableHead>
+        <TableHead className="text-foreground">Playable Puzzles</TableHead>
+        <TableHead className="text-foreground">Active</TableHead>
+        <TableHead className="text-right text-foreground">Actions</TableHead>
       </TableRow>
     </TableHeader>
   );

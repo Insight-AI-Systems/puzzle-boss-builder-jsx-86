@@ -26,7 +26,7 @@ export const AssignedPuzzlesRow: React.FC<AssignedPuzzlesRowProps> = ({
     <TableRow>
       <TableCell colSpan={6} className="bg-gray-50 p-3">
         <div className="mt-2 mb-3">
-          <h4 className="text-sm font-semibold mb-2">Assigned Puzzles</h4>
+          <h4 className="text-sm font-semibold mb-2 text-foreground">Assigned Puzzles</h4>
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading puzzles...</p>
           ) : puzzles.length > 0 ? (
@@ -34,15 +34,15 @@ export const AssignedPuzzlesRow: React.FC<AssignedPuzzlesRowProps> = ({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="text-foreground">Title</TableHead>
+                    <TableHead className="text-foreground">Status</TableHead>
+                    <TableHead className="text-foreground">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {puzzles.map((puzzle) => (
                     <TableRow key={puzzle.id}>
-                      <TableCell>{puzzle.title}</TableCell>
+                      <TableCell className="text-foreground">{puzzle.title}</TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                           ${puzzle.status === 'active' ? 'bg-green-100 text-green-800' : 
