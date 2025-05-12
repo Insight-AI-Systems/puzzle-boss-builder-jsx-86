@@ -33,18 +33,25 @@ export const PuzzleTabs: React.FC<PuzzleTabsProps> = ({
   deletePuzzle,
 }) => {
   const activePuzzles = puzzles.filter(p => p.status === "active");
+  const inactivePuzzles = puzzles.filter(p => p.status === "inactive");
   const scheduledPuzzles = puzzles.filter(p => p.status === "scheduled");
   const completedPuzzles = puzzles.filter(p => p.status === "completed");
   const draftPuzzles = puzzles.filter(p => p.status === "draft");
 
   return (
     <>
-      <TabsList className="grid grid-cols-4 mb-4">
+      <TabsList className="grid grid-cols-5 mb-4">
         <TabsTrigger value="active" className="flex items-center">
           <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
             {activePuzzles.length}
           </Badge>
           Active
+        </TabsTrigger>
+        <TabsTrigger value="inactive" className="flex items-center">
+          <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
+            {inactivePuzzles.length}
+          </Badge>
+          Inactive
         </TabsTrigger>
         <TabsTrigger value="scheduled" className="flex items-center">
           <Badge className="h-5 w-5 mr-2 flex items-center justify-center rounded-full text-xs p-0">
@@ -66,11 +73,12 @@ export const PuzzleTabs: React.FC<PuzzleTabsProps> = ({
         </TabsTrigger>
       </TabsList>
 
-      {["active", "scheduled", "completed", "drafts"].map(tabValue => (
+      {["active", "inactive", "scheduled", "completed", "drafts"].map(tabValue => (
         <TabsContent key={tabValue} value={tabValue} className="space-y-4">
           <PuzzleList
             puzzles={puzzles.filter(puzzle => {
               if (tabValue === "active") return puzzle.status === "active";
+              if (tabValue === "inactive") return puzzle.status === "inactive";
               if (tabValue === "scheduled") return puzzle.status === "scheduled";
               if (tabValue === "completed") return puzzle.status === "completed";
               if (tabValue === "drafts") return puzzle.status === "draft";

@@ -75,8 +75,8 @@ export const PuzzleListRow: React.FC<PuzzleListRowProps> = ({
           <Button variant="ghost" size="icon" onClick={onDelete}>
             <Trash2 className="h-4 w-4 text-red-500" />
           </Button>
-          {puzzle.status === "draft" && (
-            <Button variant="ghost" size="icon" onClick={onToggleStatus}>
+          {(puzzle.status === "draft" || puzzle.status === "inactive") && (
+            <Button variant="ghost" size="icon" onClick={onToggleStatus} title={puzzle.status === "inactive" ? "Make Active" : "Activate"}>
               <Shuffle className="h-4 w-4 text-green-500" />
             </Button>
           )}

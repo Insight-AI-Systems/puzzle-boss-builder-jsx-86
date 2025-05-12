@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { usePuzzles } from '@/hooks/usePuzzles';
@@ -82,7 +83,8 @@ export function usePuzzleManagement() {
   };
 
   const handleToggleStatus = (puzzle: Puzzle) => {
-    const updatedStatus = puzzle.status === 'active' ? 'draft' : 'active';
+    // Toggle between active and inactive instead of active and draft
+    const updatedStatus = puzzle.status === 'active' ? 'inactive' : 'active';
     updatePuzzle({ ...puzzle, status: updatedStatus });
   };
 
