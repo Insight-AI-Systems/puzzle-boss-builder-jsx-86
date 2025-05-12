@@ -42,7 +42,7 @@ export const AssignedPuzzlesRow: React.FC<AssignedPuzzlesRowProps> = ({
                 <TableBody>
                   {puzzles.map((puzzle) => (
                     <TableRow key={puzzle.id}>
-                      <TableCell className="text-foreground">{puzzle.title}</TableCell>
+                      <TableCell className="text-foreground font-medium">{puzzle.title}</TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                           ${puzzle.status === 'active' ? 'bg-green-100 text-green-800' : 
@@ -70,7 +70,7 @@ export const AssignedPuzzlesRow: React.FC<AssignedPuzzlesRowProps> = ({
           ) : (
             <p className="text-sm text-muted-foreground">No puzzles assigned to this category</p>
           )}
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-xs text-foreground mt-2">
             Note: All puzzles must be removed before the category can be deleted.
           </p>
         </div>
