@@ -2,13 +2,10 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from './client';
 import { Database } from './types';
+import { ApiErrorDetails } from '@/types/api-responses';
+import { parseError } from '@/utils/error-handling';
 
-export type ApiError = {
-  code: string;
-  message: string;
-  details?: unknown;
-  status?: number;
-};
+export type ApiError = ApiErrorDetails;
 
 export type ApiResponse<T> = {
   data: T | null;
@@ -29,25 +26,8 @@ class ApiClient {
   /**
    * Standardized error formatting for consistent error handling
    */
-  private formatError(error: any): ApiError {
-    console.error('API error:', error);
-    
-    // Handle Supabase-specific error format
-    if (error.code && error.message) {
-      return {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        status: error.status
-      };
-    }
-    
-    // Handle unexpected error formats
-    return {
-      code: 'unknown_error',
-      message: error.message || 'An unexpected error occurred',
-      details: error
-    };
+  private formatError(error: unknown): ApiError {
+    return parseError(error);
   }
 
   /**
@@ -55,7 +35,32 @@ class ApiClient {
    */
   async get<T>(path: string, options?: any): Promise<ApiResponse<T>> {
     try {
-      const response = await this.client.from(path).select(options?.query || '*');
+      const query = this.client.from(path).select(options?.query || '*');
+      
+      // Apply filters if provided
+      if (options?.filters) {
+        Object.entries(options.filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            query.eq(key, value);
+          }
+        });
+      }
+      
+      // Apply pagination if provided
+      if (options?.page !== undefined && options?.pageSize) {
+        const from = options.page * options.pageSize;
+        const to = from + options.pageSize - 1;
+        query.range(from, to);
+      }
+      
+      // Apply ordering if provided
+      if (options?.orderBy) {
+        query.order(options.orderBy, { 
+          ascending: options?.ascending !== false
+        });
+      }
+      
+      const response = await query;
       
       if (response.error) {
         return {
@@ -199,6 +204,13 @@ class ApiClient {
    */
   query(table: string) {
     return this.client.from(table);
+  }
+
+  /**
+   * Get the raw Supabase client for advanced operations
+   */
+  getRawClient() {
+    return this.client;
   }
 }
 
