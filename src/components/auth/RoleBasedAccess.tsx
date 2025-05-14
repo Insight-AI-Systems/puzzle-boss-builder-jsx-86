@@ -1,16 +1,16 @@
 
-import React, { ReactNode, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { usePermissions } from '@/hooks/usePermissions';
+import React from 'react';
+import { useRoles } from '@/contexts/auth/RoleContext';
+import { useAuthState } from '@/contexts/auth/AuthStateContext';
 import { UserRole } from '@/types/userTypes';
 
-type RoleBasedAccessProps = {
-  children: ReactNode;
+interface RoleBasedAccessProps {
+  children: React.ReactNode;
   allowedRoles?: UserRole[];
   requiredPermissions?: string[];
-  requireAllPermissions?: boolean;
-  fallback?: ReactNode;
-};
+  requireAll?: boolean; // If true, require all roles/permissions, otherwise any
+  fallback?: React.ReactNode;
+}
 
 /**
  * Component that conditionally renders children based on user role and/or permissions
@@ -19,56 +19,44 @@ export const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
   children,
   allowedRoles = [],
   requiredPermissions = [],
-  requireAllPermissions = false,
+  requireAll = false,
   fallback = null,
 }) => {
-  const { user, hasRole, isAdmin } = useAuth();
-  const { hasPermission, hasAllPermissions, hasAnyPermission } = usePermissions();
-
-  // Add enhanced debugging
-  useEffect(() => {
-    console.log('RoleBasedAccess - Component mounted:', {
-      user: !!user,
-      isAdmin,
-      allowedRoles,
-      requiredPermissions
-    });
-  }, [user, isAdmin, allowedRoles, requiredPermissions]);
+  const { user } = useAuthState();
+  const { 
+    hasRole,
+    isAdmin,
+    hasPermission,
+    hasAllPermissions,
+    hasAnyPermission
+  } = useRoles();
 
   // Not authenticated
   if (!user) {
-    console.log('RoleBasedAccess - User not authenticated, rendering fallback');
     return <>{fallback}</>;
   }
 
   // Check roles if specified
-  const hasRequiredRole = allowedRoles.length === 0 || 
-    allowedRoles.some(role => hasRole(role)) ||
-    isAdmin;
-
-  console.log('RoleBasedAccess - Role check result:', { 
-    hasRequiredRole,
-    isAdmin,
-    allowedRoles: allowedRoles.join(', ')
-  });
+  let hasRequiredRole = true;
+  if (allowedRoles.length > 0) {
+    hasRequiredRole = isAdmin || (requireAll
+      ? allowedRoles.every(role => hasRole(role))
+      : allowedRoles.some(role => hasRole(role)));
+  }
 
   // Check permissions if specified
   let hasRequiredPermissions = true;
   if (requiredPermissions.length > 0) {
-    hasRequiredPermissions = requireAllPermissions
+    hasRequiredPermissions = requireAll
       ? hasAllPermissions(requiredPermissions)
       : hasAnyPermission(requiredPermissions);
-    
-    console.log('RoleBasedAccess - Permission check result:', { hasRequiredPermissions });
   }
 
   // Render children only if user has required role AND permissions
   if (hasRequiredRole && hasRequiredPermissions) {
-    console.log('RoleBasedAccess - Access granted, rendering children');
     return <>{children}</>;
   }
 
-  console.log('RoleBasedAccess - Access denied, rendering fallback');
   return <>{fallback}</>;
 };
 

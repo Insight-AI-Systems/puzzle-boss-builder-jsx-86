@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SignInView } from './views/SignInView';
-import { ResetPasswordRequestView } from './views/ResetPasswordRequestView';
-import { ResetPasswordConfirmView } from './views/ResetPasswordConfirmView';
-import { ResetPasswordSuccessView } from './views/ResetPasswordSuccessView';
+import { ResetRequestView } from './views/ResetRequestView';
+import { ResetConfirmView } from './views/ResetConfirmView';
+import { ResetSuccessView } from './views/ResetSuccessView';
 import { VerificationPendingView } from './views/VerificationPendingView';
-import { useAuth } from '@/contexts/AuthContext';
+import { VerificationSuccessView } from './views/VerificationSuccessView';
+import { useAuth } from '@/hooks/auth';
 import { AuthView } from '@/types/auth';
 
 interface AuthContentProps {
@@ -14,14 +15,23 @@ interface AuthContentProps {
   lastEnteredEmail: string;
 }
 
-export const AuthContent: React.FC<AuthContentProps> = ({
+export const AuthContent: React.FC<AuthContentProps> = ({ 
   currentView,
-  setCurrentView,
+  setCurrentView, 
   lastEnteredEmail
 }) => {
-  const auth = useAuth();
+  const {
+    // From useAuthState
+    error,
+    clearAuthError,
+    
+    // From useAuthOperations
+    signIn,
+    signUp,
+    resetPassword,
+    updatePassword,
+  } = useAuth();
   
-  // Local state for form handling
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
@@ -29,183 +39,228 @@ export const AuthContent: React.FC<AuthContentProps> = ({
   const [rememberMe, setRememberMe] = React.useState(false);
   const [acceptTerms, setAcceptTerms] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState('');
-  const [resetPasswordVal, setResetPassword] = React.useState('');
-  const [resetConfirmPassword, setResetConfirmPassword] = React.useState('');
-  const [resetErrorMessage, setResetErrorMessage] = React.useState('');
-  const [resetSuccessMessage, setResetSuccessMessage] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
   
-  // Clear error messages when changing views
-  React.useEffect(() => {
-    setErrorMessage('');
-    setResetErrorMessage('');
-    
-    if (auth.error) {
-      setErrorMessage(auth.error.message || 'Authentication error');
+  // Update error state when error from auth context changes
+  useEffect(() => {
+    if (error) {
+      setErrorMessage(error.message);
+    } else {
+      setErrorMessage('');
     }
-  }, [currentView, auth.error]);
-
-  // Helper functions for auth operations
+  }, [error]);
+  
+  // Reset error when view changes
+  useEffect(() => {
+    clearAuthError();
+    setErrorMessage('');
+  }, [currentView, clearAuthError]);
+  
+  // Fill email field with last entered email when view changes
+  useEffect(() => {
+    if (lastEnteredEmail && currentView === 'reset-request') {
+      setEmail(lastEnteredEmail);
+    }
+  }, [lastEnteredEmail, currentView]);
+  
+  // Validate form inputs
+  const validateForm = (isSignUp: boolean = false): boolean => {
+    clearAuthError();
+    
+    // Validate email
+    if (!email) {
+      setErrorMessage('Email is required');
+      return false;
+    }
+    
+    // Validate password
+    if (!password && currentView !== 'reset-request') {
+      setErrorMessage('Password is required');
+      return false;
+    }
+    
+    // Additional validation for signup
+    if (isSignUp) {
+      // Validate username
+      if (!username) {
+        setErrorMessage('Username is required');
+        return false;
+      }
+      
+      // Validate password confirmation
+      if (password !== confirmPassword) {
+        setErrorMessage('Passwords do not match');
+        return false;
+      }
+      
+      // Validate terms acceptance
+      if (!acceptTerms) {
+        setErrorMessage('You must accept the terms and conditions');
+        return false;
+      }
+    }
+    
+    return true;
+  };
+  
+  // Handle email authentication
   const handleEmailAuth = async (isSignUp: boolean) => {
     try {
+      if (!validateForm(isSignUp)) {
+        return;
+      }
+      
+      setIsLoading(true);
+      
       if (isSignUp) {
-        await auth.signUp(email, password, { username, acceptTerms });
+        await signUp(email, password, { username });
         setCurrentView('verification-pending');
       } else {
-        await auth.signIn(email, password, { rememberMe });
+        await signIn(email, password, { rememberMe });
       }
-    } catch (err) {
-      const error = err as Error;
-      setErrorMessage(error.message || 'Authentication failed');
+    } catch (error) {
+      console.error('Authentication error:', error);
+      setErrorMessage((error as Error).message);
+    } finally {
+      setIsLoading(false);
     }
   };
   
-  const handleGoogleAuth = async () => {
-    // Implement Google auth if needed
-    console.log("Google auth not implemented");
-  };
-  
+  // Handle password reset request
   const handlePasswordResetRequest = async () => {
     try {
-      await auth.resetPassword(email);
-      setResetSuccessMessage('Password reset link has been sent to your email');
-    } catch (err) {
-      const error = err as Error;
-      setResetErrorMessage(error.message || 'Failed to send reset link');
+      if (!email) {
+        setErrorMessage('Email is required');
+        return;
+      }
+      
+      setIsLoading(true);
+      await resetPassword(email);
+      setCurrentView('reset-request');
+    } catch (error) {
+      console.error('Password reset error:', error);
+      setErrorMessage((error as Error).message);
+    } finally {
+      setIsLoading(false);
     }
   };
   
+  // Handle password reset
   const handlePasswordReset = async () => {
     try {
-      await auth.updatePassword(resetPasswordVal);
+      if (password !== confirmPassword) {
+        setErrorMessage('Passwords do not match');
+        return;
+      }
+      
+      if (!password) {
+        setErrorMessage('Password is required');
+        return;
+      }
+      
+      setIsLoading(true);
+      await updatePassword(password);
       setCurrentView('reset-success');
-    } catch (err) {
-      const error = err as Error;
-      setResetErrorMessage(error.message || 'Failed to update password');
+    } catch (error) {
+      console.error('Password reset error:', error);
+      setErrorMessage((error as Error).message);
+    } finally {
+      setIsLoading(false);
     }
   };
   
-  const resetForm = () => {
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
-    setUsername('');
-    setRememberMe(false);
-    setAcceptTerms(false);
-    setErrorMessage('');
+  const handleForgotPassword = () => {
+    setCurrentView('reset-request');
   };
 
-  const handleVerificationResend = async () => {
-    console.log('Attempting to resend verification email to:', lastEnteredEmail);
-    setEmail(lastEnteredEmail);
-    try {
-      await auth.signUp(lastEnteredEmail, password, { username, acceptTerms });
-    } catch (err) {
-      // Silently fail as the user might already exist
-      console.log('Resend verification error (expected):', err);
-    }
-  };
-
-  const renderAuthView = () => {
-    switch (currentView) {
-      case 'signin':
-      case 'signup':
-        return (
-          <SignInView 
-            email={email}
-            password={password}
-            confirmPassword={confirmPassword}
-            username={username}
-            rememberMe={rememberMe}
-            acceptTerms={acceptTerms}
-            errorMessage={errorMessage}
-            isLoading={auth.isLoading}
-            setEmail={setEmail}
-            setPassword={setPassword}
-            setConfirmPassword={setConfirmPassword}
-            setUsername={setUsername}
-            setRememberMe={setRememberMe}
-            setAcceptTerms={setAcceptTerms}
-            handleEmailAuth={handleEmailAuth}
-            handleGoogleAuth={handleGoogleAuth}
-            onForgotPassword={() => setCurrentView('reset-request')}
-            currentView={currentView}
-            setCurrentView={setCurrentView}
-          />
-        );
-        
-      case 'reset-request':
-        return (
-          <ResetPasswordRequestView 
-            email={email}
-            errorMessage={resetErrorMessage}
-            successMessage={resetSuccessMessage}
-            isLoading={auth.isLoading}
-            setEmail={setEmail}
-            handlePasswordResetRequest={handlePasswordResetRequest}
-            goBack={() => {
-              resetForm();
-              setCurrentView('signin');
-            }}
-          />
-        );
-        
-      case 'reset-confirm':
-        return (
-          <ResetPasswordConfirmView 
-            password={resetPasswordVal}
-            confirmPassword={resetConfirmPassword}
-            errorMessage={resetErrorMessage}
-            successMessage={resetSuccessMessage}
-            isLoading={auth.isLoading}
-            setPassword={setResetPassword}
-            setConfirmPassword={setResetConfirmPassword}
-            handlePasswordReset={handlePasswordReset}
-          />
-        );
-        
-      case 'reset-success':
-        return (
-          <ResetPasswordSuccessView 
-            goToSignIn={() => {
-              resetForm();
-              setCurrentView('signin');
-            }} 
-          />
-        );
-        
-      case 'verification-pending':
-        return (
-          <VerificationPendingView 
-            email={lastEnteredEmail || email}
-            goToSignIn={() => {
-              resetForm();
-              setCurrentView('signin');
-            }}
-            resendVerificationEmail={handleVerificationResend}
-          />
-        );
-        
-      case 'verification-success':
-        return (
-          <ResetPasswordSuccessView 
-            title="Email Verified!"
-            description="Your email has been successfully verified. You can now sign in to your account."
-            buttonText="Continue to Sign In"
-            goToSignIn={() => {
-              resetForm();
-              setCurrentView('signin');
-            }} 
-          />
-        );
-        
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="card-highlight p-6 bg-puzzle-black/50 border border-puzzle-aqua/20 rounded-lg shadow-lg">
-      {renderAuthView()}
-    </div>
-  );
+  // Render the appropriate view based on the current view state
+  switch (currentView) {
+    case 'signin':
+    case 'signup':
+      return (
+        <SignInView
+          email={email}
+          password={password}
+          confirmPassword={confirmPassword}
+          username={username}
+          rememberMe={rememberMe}
+          acceptTerms={acceptTerms}
+          errorMessage={errorMessage}
+          isLoading={isLoading}
+          setEmail={setEmail}
+          setPassword={setPassword}
+          setConfirmPassword={setConfirmPassword}
+          setUsername={setUsername}
+          setRememberMe={setRememberMe}
+          setAcceptTerms={setAcceptTerms}
+          handleEmailAuth={handleEmailAuth}
+          handleGoogleAuth={() => {}} // We'll implement this later
+          onForgotPassword={handleForgotPassword}
+          currentView={currentView}
+          setCurrentView={setCurrentView}
+        />
+      );
+    case 'reset-request':
+      return (
+        <ResetRequestView
+          email={email}
+          setEmail={setEmail}
+          errorMessage={errorMessage}
+          isLoading={isLoading}
+          onSubmit={handlePasswordResetRequest}
+          onBackToSignIn={() => setCurrentView('signin')}
+        />
+      );
+    case 'reset-confirm':
+      return (
+        <ResetConfirmView
+          password={password}
+          confirmPassword={confirmPassword}
+          setPassword={setPassword}
+          setConfirmPassword={setConfirmPassword}
+          errorMessage={errorMessage}
+          isLoading={isLoading}
+          onSubmit={handlePasswordReset}
+        />
+      );
+    case 'reset-success':
+      return (
+        <ResetSuccessView onBackToSignIn={() => setCurrentView('signin')} />
+      );
+    case 'verification-pending':
+      return (
+        <VerificationPendingView 
+          email={email}
+          onBackToSignIn={() => setCurrentView('signin')}
+        />
+      );
+    case 'verification-success':
+      return (
+        <VerificationSuccessView onContinue={() => setCurrentView('signin')} />
+      );
+    default:
+      return (
+        <SignInView
+          email={email}
+          password={password}
+          confirmPassword={confirmPassword}
+          username={username}
+          rememberMe={rememberMe}
+          acceptTerms={acceptTerms}
+          errorMessage={errorMessage}
+          isLoading={isLoading}
+          setEmail={setEmail}
+          setPassword={setPassword}
+          setConfirmPassword={setConfirmPassword}
+          setUsername={setUsername}
+          setRememberMe={setRememberMe}
+          setAcceptTerms={setAcceptTerms}
+          handleEmailAuth={handleEmailAuth}
+          handleGoogleAuth={() => {}} // We'll implement this later
+          onForgotPassword={handleForgotPassword}
+          currentView={'signin'}
+          setCurrentView={setCurrentView}
+        />
+      );
+  }
 };

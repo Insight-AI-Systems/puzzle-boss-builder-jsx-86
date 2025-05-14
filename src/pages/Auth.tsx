@@ -2,15 +2,14 @@
 import React, { useEffect } from 'react';
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { AuthForm } from '@/components/auth/AuthForm';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { useAuthState } from '@/contexts/auth/AuthStateContext';
+import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 const Auth = () => {
-  const { isAuthenticated, isLoading, error } = useAuth();
+  const { isAuthenticated, isLoading, error } = useAuthState();
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const { toast } = useToast();
   
   // Get the intended destination from location state, or default to home
   const from = location.state?.from?.pathname || '/';
@@ -29,7 +28,7 @@ const Auth = () => {
         variant: 'destructive',
       });
     }
-  }, [error, toast]);
+  }, [error]);
   
   // Show success toast when email is verified
   useEffect(() => {
@@ -39,7 +38,7 @@ const Auth = () => {
         description: 'Your email has been successfully verified. Please log in with your credentials.',
       });
     }
-  }, [isInVerificationFlow, toast]);
+  }, [isInVerificationFlow]);
 
   // Show loading state
   if (isLoading) {
