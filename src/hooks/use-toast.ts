@@ -1,102 +1,183 @@
 
-import { useState, useEffect, useCallback } from "react";
-import { toast as sonnerToast, type ToastT } from "sonner";
+import { useState, useEffect, useRef } from "react"
+import type {
+  ToastActionElement,
+  ToastProps,
+} from "@/components/ui/toast"
 
-type ToastProps = React.ComponentPropsWithoutRef<typeof sonnerToast>;
+const TOAST_LIMIT = 10
+const TOAST_REMOVE_DELAY = 1000000
 
-export type ToastActionElement = React.ReactElement<{
-  altText: string;
-}>;
-
-export type ToastVariant = 'default' | 'destructive' | 'success' | 'warning' | 'info';
-
-export interface ToastOptions {
-  title?: string;
-  description?: React.ReactNode;
-  action?: ToastActionElement;
-  variant?: ToastVariant;
-  duration?: number;
-  position?: 'top-right' | 'top-center' | 'top-left' | 'bottom-right' | 'bottom-center' | 'bottom-left';
-  important?: boolean;
-  onDismiss?: () => void;
-  onAutoClose?: () => void;
-  closeButton?: boolean;
-  id?: string;
+type ToasterToast = ToastProps & {
+  id: string
+  title?: React.ReactNode
+  description?: React.ReactNode
+  action?: ToastActionElement
+  variant?: "default" | "destructive" | "success"
 }
 
-const defaultToastOptions: Partial<ToastOptions> = {
-  duration: 5000,
-  position: 'bottom-right',
-  closeButton: true,
-};
+const actionTypes = {
+  ADD_TOAST: "ADD_TOAST",
+  UPDATE_TOAST: "UPDATE_TOAST",
+  DISMISS_TOAST: "DISMISS_TOAST",
+  REMOVE_TOAST: "REMOVE_TOAST",
+} as const
 
-function getVariantStyle(variant: ToastVariant = 'default'): any {
-  const variantStyles = {
-    default: {
-      className: 'bg-background border',
-    },
-    destructive: {
-      className: 'bg-destructive text-destructive-foreground border-destructive',
-    },
-    success: {
-      className: 'bg-green-500 text-white border-green-600',
-    },
-    warning: {
-      className: 'bg-amber-500 text-white border-amber-600',
-    },
-    info: {
-      className: 'bg-blue-500 text-white border-blue-600',
-    },
-  };
+type ActionType = typeof actionTypes
 
-  return variantStyles[variant] || variantStyles.default;
+type Action =
+  | {
+      type: ActionType["ADD_TOAST"]
+      toast: ToasterToast
+    }
+  | {
+      type: ActionType["UPDATE_TOAST"]
+      toast: Partial<ToasterToast>
+    }
+  | {
+      type: ActionType["DISMISS_TOAST"]
+      toastId?: ToasterToast["id"]
+    }
+  | {
+      type: ActionType["REMOVE_TOAST"]
+      toastId?: ToasterToast["id"]
+    }
+
+interface State {
+  toasts: ToasterToast[]
 }
 
-export function toast(options: ToastOptions) {
-  const { title, description, variant, action, ...restOptions } = {
-    ...defaultToastOptions,
-    ...options,
-  };
+// Create a unique ID for each toast
+const generateId = () => Math.random().toString(36).slice(2, 9)
 
-  const variantStyle = getVariantStyle(variant);
+// Custom reducer to handle toast state
+const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case "ADD_TOAST":
+      return {
+        ...state,
+        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
+      }
 
-  return sonnerToast(title, {
-    description,
-    action,
-    ...variantStyle,
-    ...restOptions,
-  });
+    case "UPDATE_TOAST":
+      return {
+        ...state,
+        toasts: state.toasts.map((t) =>
+          t.id === action.toast.id ? { ...t, ...action.toast } : t
+        ),
+      }
+
+    case "DISMISS_TOAST": {
+      const { toastId } = action
+
+      // Dismiss all toasts
+      if (toastId === undefined) {
+        return {
+          ...state,
+          toasts: state.toasts.map((t) => ({
+            ...t,
+            open: false,
+          })),
+        }
+      }
+
+      // Dismiss specific toast
+      return {
+        ...state,
+        toasts: state.toasts.map((t) =>
+          t.id === toastId ? { ...t, open: false } : t
+        ),
+      }
+    }
+
+    case "REMOVE_TOAST": {
+      const { toastId } = action
+
+      // Remove all toasts
+      if (toastId === undefined) {
+        return {
+          ...state,
+          toasts: [],
+        }
+      }
+
+      // Remove specific toast
+      return {
+        ...state,
+        toasts: state.toasts.filter((t) => t.id !== toastId),
+      }
+    }
+  }
 }
 
 export function useToast() {
-  const [toasts, setToasts] = useState<ToastT[]>([]);
+  const [state, dispatch] = useState<State>({ toasts: [] })
+  const scheduled = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const { toasts } = state
 
-  const dismissToast = useCallback((toastId?: string) => {
-    if (toastId) {
-      sonnerToast.dismiss(toastId);
+  const toast = (props: Omit<ToasterToast, "id">) => {
+    const id = props.id || generateId()
+    const newToast = { id, open: true, ...props }
+
+    // Add toast
+    dispatch({ type: "ADD_TOAST", toast: newToast })
+
+    return id
+  }
+
+  const update = (props: Partial<ToasterToast>) => {
+    if (!props.id) {
+      return
     }
-  }, []);
 
-  const updateToast = useCallback((toastId: string, options: ToastOptions) => {
-    const { title, description, variant, action, ...restOptions } = {
-      ...defaultToastOptions,
-      ...options,
-    };
+    dispatch({ type: "UPDATE_TOAST", toast: props })
+  }
 
-    const variantStyle = getVariantStyle(variant);
+  const dismiss = (toastId?: string) => {
+    dispatch({ type: "DISMISS_TOAST", toastId })
+  }
 
-    sonnerToast.update(toastId, {
-      ...variantStyle,
-      ...restOptions,
-      description,
-      action,
-    });
-  }, []);
+  const remove = (toastId?: string) => {
+    dispatch({ type: "REMOVE_TOAST", toastId })
+  }
+
+  // Set up cleanup for toasts
+  useEffect(() => {
+    toasts.forEach((toast) => {
+      if (!toast.open && !scheduled.current[toast.id]) {
+        scheduled.current[toast.id] = setTimeout(() => {
+          remove(toast.id)
+          delete scheduled.current[toast.id]
+        }, TOAST_REMOVE_DELAY)
+      }
+    })
+  }, [toasts, remove])
 
   return {
-    toast,
-    dismissToast,
-    updateToast,
     toasts,
-  };
+    toast,
+    dismiss,
+    remove,
+  }
 }
+
+// Helper functions for common toast types
+toast.success = (options: Omit<ToasterToast, "id" | "variant">) => {
+  return useToast().toast({
+    ...options,
+    variant: "success",
+  })
+}
+
+toast.error = (options: Omit<ToasterToast, "id" | "variant">) => {
+  return useToast().toast({
+    ...options,
+    variant: "destructive",
+  })
+}
+
+// Export the toast function
+export { toast }
+
+// Define toast types
+export type { ToasterToast }

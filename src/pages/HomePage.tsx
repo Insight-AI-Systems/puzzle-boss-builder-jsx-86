@@ -1,159 +1,22 @@
 
-import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Hero } from '@/components/Hero';
-import HowItWorks from '@/components/HowItWorks';
-import FeaturedPuzzles from '@/components/FeaturedPuzzles';
-import Categories from '@/components/Categories';
-import Benefits from '@/components/Benefits';
-import Testimonials from '@/components/Testimonials';
-import ConceptSection from '@/components/ConceptSection';
-import RegistrationCTA from '@/components/RegistrationCTA';
-import { useUserProfile } from '@/hooks/useUserProfile';
-import { Link } from 'react-router-dom';
-import { PageDebugger } from '@/components/debug/PageDebugger';
-import { useAuth } from '@/contexts/AuthContext';
+import React from 'react';
 
-function HomePage() {
-  const { isAdmin, profile, isLoading: profileLoading } = useUserProfile();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [showingConfirmation, setShowingConfirmation] = useState<boolean>(false);
-  const confirmedAdmin = useRef<boolean | null>(null);
-  
-  console.log("HomePage rendering", { 
-    isAdmin, 
-    hasProfile: !!profile, 
-    profileRole: profile?.role,
-    isLoading: profileLoading,
-    authLoading,
-    isAuthenticated,
-    showingConfirmation,
-    navigatedFrom: location.state?.from,
-    skipRedirect: location.state?.skipAdminRedirect
-  });
-  
-  // Use separate useEffect for redirect logic to ensure it runs correctly
-  useEffect(() => {
-    // Skip this effect if we're already showing the confirmation or still loading
-    if (showingConfirmation || profileLoading || authLoading) return;
-    
-    // Check if we're coming directly from an admin page - if so, don't redirect
-    const comingFromAdmin = location.state?.from?.startsWith('/admin');
-    
-    // Check for skipAdminRedirect flag - this is set when clicking Home from admin pages
-    const skipRedirect = location.state?.skipAdminRedirect === true;
-    
-    console.log('HomePage admin redirect check', {
-      profileLoading,
-      profileRole: profile?.role,
-      isAdmin,
-      hasConfirmedAdmin: confirmedAdmin.current !== null,
-      confirmedAdminValue: confirmedAdmin.current,
-      comingFromAdmin,
-      skipRedirect
-    });
-    
-    // Only proceed if loading is done, there's no skip flag, and we're not coming from admin pages
-    if (!profileLoading && !authLoading && profile?.role === 'super_admin' && !skipRedirect && !comingFromAdmin) {
-      // Check localStorage for user preference
-      const userWantsAdmin = window.localStorage.getItem('redirect_to_admin');
-      
-      console.log('Admin redirect check', {
-        userWantsAdmin,
-        isNull: userWantsAdmin === null,
-        comingFromAdmin,
-        skipRedirect
-      });
-      
-      if (userWantsAdmin === 'true') {
-        console.log('Auto-redirecting super_admin to dashboard based on localStorage preference');
-        navigate('/admin-dashboard');
-      } else if (userWantsAdmin === null) {
-        console.log('Showing confirmation dialog for super_admin');
-        setShowingConfirmation(true);
-        
-        // Use setTimeout to ensure this runs after state update
-        setTimeout(() => {
-          const shouldRedirect = window.confirm('As a Super Admin, would you like to go directly to the Admin Dashboard?');
-          confirmedAdmin.current = shouldRedirect;
-          window.localStorage.setItem('redirect_to_admin', shouldRedirect ? 'true' : 'false');
-          
-          if (shouldRedirect) {
-            navigate('/admin-dashboard');
-          }
-          setShowingConfirmation(false);
-        }, 0);
-      }
-    }
-  }, [profileLoading, authLoading, profile, navigate, showingConfirmation, location.state, isAdmin]);
-
-  useEffect(() => {
-    // Debug message to verify component mounting
-    console.log('HomePage mounted', {
-      pathname: window.location.pathname,
-      localStorage: window.localStorage.getItem('redirect_to_admin'),
-      state: location.state
-    });
-    
-    // Allow testing by clearing localStorage when adding a query parameter
-    if (window.location.search.includes('reset_admin_pref')) {
-      console.log('Resetting admin preference in localStorage');
-      window.localStorage.removeItem('redirect_to_admin');
-    }
-  }, [location]);
-
-  // Add fallback rendering state for debugging
-  if (authLoading || profileLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-puzzle-aqua border-t-transparent mx-auto"></div>
-          <p>Loading application data...</p>
-          <p className="text-sm text-gray-500">
-            {authLoading ? 'Authenticating...' : ''}
-            {profileLoading ? 'Loading profile...' : ''}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render content while showing confirmation to prevent any race conditions
-  if (showingConfirmation) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-puzzle-aqua border-t-transparent mx-auto"></div>
-          <p>Preparing your experience...</p>
-        </div>
-      </div>
-    );
-  }
-
+const HomePage = () => {
   return (
-    <main className="min-h-screen">
-      <h1 className="sr-only">The Puzzle Boss - Home</h1>
-      <Hero />
-      <ConceptSection />
-      <HowItWorks />
-      <FeaturedPuzzles />
-      <Categories />
-      <Benefits />
-      <Testimonials />
-      <RegistrationCTA />
-      <div className="mt-6 container mx-auto px-4 text-center">
-        <Link 
-          to="/puzzle-demo" 
-          className="inline-flex items-center px-4 py-2 bg-puzzle-aqua text-puzzle-black rounded-md hover:bg-puzzle-aqua/80 transition-colors"
-        >
-          Try Our Puzzle Demo
-        </Link>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      <h1 className="text-4xl font-bold mb-4">PuzzleBoss.com</h1>
+      <p className="text-xl mb-8 text-center max-w-2xl">
+        Welcome to the Jigsaw Puzzle Engine
+      </p>
+      <div className="bg-blue-100 p-6 rounded-lg shadow-md max-w-2xl text-center">
+        <h2 className="text-2xl font-semibold mb-2">Getting Started</h2>
+        <p className="mb-4">
+          The application is being set up. Please navigate to the appropriate sections
+          once the routes are fully configured.
+        </p>
       </div>
-      <PageDebugger componentName="HomePage" />
-    </main>
+    </div>
   );
-}
+};
 
 export default HomePage;
