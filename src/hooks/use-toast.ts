@@ -161,22 +161,27 @@ export function useToast() {
   }
 }
 
-// Helper functions for common toast types
-toast.success = (options: Omit<ToasterToast, "id" | "variant">) => {
-  return useToast().toast({
-    ...options,
-    variant: "success",
-  })
+// Create a separate toast object with helper methods
+const toast = {
+  // Default toast function (will be used via useToast hook)
+  default: (options: Omit<ToasterToast, "id" | "variant">) => {
+    const { toast } = useToast()
+    return toast({ ...options })
+  },
+  
+  // Helper functions for common toast types
+  success: (options: Omit<ToasterToast, "id" | "variant">) => {
+    const { toast } = useToast()
+    return toast({ ...options, variant: "success" })
+  },
+  
+  error: (options: Omit<ToasterToast, "id" | "variant">) => {
+    const { toast } = useToast()
+    return toast({ ...options, variant: "destructive" })
+  }
 }
 
-toast.error = (options: Omit<ToasterToast, "id" | "variant">) => {
-  return useToast().toast({
-    ...options,
-    variant: "destructive",
-  })
-}
-
-// Export the toast function
+// Export the toast object
 export { toast }
 
 // Define toast types

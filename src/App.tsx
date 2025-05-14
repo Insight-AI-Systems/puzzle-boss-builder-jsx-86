@@ -6,9 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/auth';
 import { SecurityProvider } from '@/hooks/useSecurityContext';
 import { ThemeProvider } from '@/components/theme-provider';
-// Create a simple AppRoutes component until we have proper routes
-import { Routes, Route } from 'react-router-dom';
-import { HomePage } from '@/pages';
+import AppRoutes from '@/routes';
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -20,16 +18,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-// Simple AppRoutes component until we have proper routes
-const AppRoutes = () => {
-  return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      {/* Add more routes as needed */}
-    </Routes>
-  );
-};
 
 function App() {
   return (
