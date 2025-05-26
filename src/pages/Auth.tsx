@@ -1,80 +1,123 @@
 
-import React, { useEffect } from 'react';
-import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
-import { AuthForm } from '@/components/auth/AuthForm';
-import { useAuthState } from '@/contexts/auth/AuthStateContext';
-import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Navigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/hooks/auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const Auth = () => {
-  const { isAuthenticated, isLoading, error } = useAuthState();
   const [searchParams] = useSearchParams();
-  const location = useLocation();
+  const isSignUp = searchParams.get('signup') === 'true';
+  const { signIn, signUp, isAuthenticated } = useAuth();
   
-  // Get the intended destination from location state, or default to home
-  const from = location.state?.from?.pathname || '/';
-  
-  // Detect verification and recovery flows
-  const isInVerificationFlow = searchParams.get('verificationSuccess') === 'true';
-  const isInPasswordRecovery = searchParams.get('type') === 'recovery';
-  
-  // Handle authentication errors
-  useEffect(() => {
-    if (error) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      if (isSignUp) {
+        if (password !== confirmPassword) {
+          alert('Passwords do not match');
+          return;
+        }
+        await signUp(email, password);
+      } else {
+        await signIn(email, password);
+      }
+    } catch (error) {
       console.error('Auth error:', error);
-      toast({
-        title: 'Authentication Error',
-        description: 'There was a problem with authentication. Please try again.',
-        variant: 'destructive',
-      });
+    } finally {
+      setIsLoading(false);
     }
-  }, [error]);
-  
-  // Show success toast when email is verified
-  useEffect(() => {
-    if (isInVerificationFlow) {
-      toast({
-        title: 'Email Verified',
-        description: 'Your email has been successfully verified. Please log in with your credentials.',
-      });
-    }
-  }, [isInVerificationFlow]);
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-puzzle-black flex items-center justify-center p-4">
-        <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
-      </div>
-    );
-  }
-
-  // Redirect if already authenticated and not in recovery mode
-  if (isAuthenticated && !isInPasswordRecovery && !isInVerificationFlow) {
-    return <Navigate to={from} replace />;
-  }
-
-  // Force the login view after verification
-  const defaultView = isInVerificationFlow ? 'signin' : searchParams.get('signup') === 'true' ? 'signup' : 'signin';
+  };
 
   return (
-    <div className="min-h-screen bg-puzzle-black flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-puzzle-white">
-            Welcome to <span className="text-puzzle-aqua">The</span>{' '}
-            <span className="text-puzzle-white">Puzzle</span>{' '}
-            <span className="text-puzzle-gold">Boss</span>
-          </h2>
-          <p className="mt-2 text-muted-foreground">
-            {isInVerificationFlow 
-              ? 'Please log in with your verified email'
-              : searchParams.get('signup') === 'true' 
-                ? 'Create an account to start playing' 
-                : 'Sign in to continue to your account'}
+          <h1 className="text-3xl font-bold text-puzzle-white">
+            {isSignUp ? 'Sign Up' : 'Sign In'}
+          </h1>
+          <p className="mt-2 text-puzzle-white/70">
+            {isSignUp ? 'Create your account' : 'Welcome back'}
           </p>
         </div>
-        <AuthForm initialView={defaultView as any} />
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <Label htmlFor="email" className="text-puzzle-white">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="mt-1 bg-puzzle-black/50 border-puzzle-aqua/20 text-puzzle-white"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="password" className="text-puzzle-white">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="mt-1 bg-puzzle-black/50 border-puzzle-aqua/20 text-puzzle-white"
+            />
+          </div>
+
+          {isSignUp && (
+            <div>
+              <Label htmlFor="confirmPassword" className="text-puzzle-white">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="mt-1 bg-puzzle-black/50 border-puzzle-aqua/20 text-puzzle-white"
+              />
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black"
+          >
+            {isLoading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+          </Button>
+        </form>
+
+        <div className="text-center">
+          <p className="text-puzzle-white/70">
+            {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+          </p>
+          <Button
+            variant="link"
+            onClick={() => {
+              const newUrl = isSignUp ? '/auth' : '/auth?signup=true';
+              window.history.pushState({}, '', newUrl);
+              window.location.reload();
+            }}
+            className="text-puzzle-aqua hover:text-puzzle-aqua/80"
+          >
+            {isSignUp ? 'Sign In' : 'Sign Up'}
+          </Button>
+        </div>
       </div>
     </div>
   );

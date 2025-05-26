@@ -1,10 +1,7 @@
 
 import React, { createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AuthError } from '@supabase/supabase-js';
-import { useAuthState } from './AuthStateContext';
-import { toast } from '@/hooks/use-toast';
-import { handleAuthError } from '@/utils/auth/authErrorHandler';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthOperationsContextType {
   signIn: (email: string, password: string, options?: { rememberMe?: boolean }) => Promise<void>;
@@ -17,214 +14,189 @@ interface AuthOperationsContextType {
 
 const AuthOperationsContext = createContext<AuthOperationsContextType | undefined>(undefined);
 
-// Minimum time between auth attempts to prevent abuse
-const MIN_TIME_BETWEEN_AUTH_ATTEMPTS = 2000;
-
 export function AuthOperationsProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuthState();
-  let lastAuthAttempt = 0;
+  const { toast } = useToast();
 
-  // Sign in a user with email and password
   const signIn = async (email: string, password: string, options?: { rememberMe?: boolean }) => {
     try {
-      // Rate limiting
-      const now = Date.now();
-      if (now - lastAuthAttempt < MIN_TIME_BETWEEN_AUTH_ATTEMPTS) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('Sign in error:', error);
         toast({
-          title: "Too many attempts",
-          description: "Please wait a moment before trying again",
-          variant: "destructive",
+          title: 'Authentication failed',
+          description: error.message,
+          variant: 'destructive',
         });
         return;
       }
-      
-      lastAuthAttempt = now;
-      
-      // Sign in with Supabase
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-        options: {
-          // Set session duration based on remember me option
-          expiresIn: options?.rememberMe ? 60 * 60 * 24 * 7 : 60 * 60 * 24,
-        },
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Success message
+
+      console.log('Sign in successful:', data);
       toast({
-        title: "Signed in",
-        description: "You have been signed in successfully",
+        title: 'Welcome back!',
+        description: 'You have successfully signed in.',
       });
-      
-      // Update the last_sign_in time in the database
-      if (user) {
-        try {
-          await supabase.functions.invoke('handle_user_signin', {
-            body: { userId: user.id }
-          });
-        } catch (error) {
-          console.error('Error updating last sign in time:', error);
-        }
-      }
     } catch (error) {
-      console.error('Sign in error:', error);
-      handleAuthError(error as AuthError, (message) => {
-        toast({
-          title: "Sign in failed",
-          description: message,
-          variant: "destructive",
-        });
+      console.error('Exception during sign in:', error);
+      toast({
+        title: 'Authentication error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
       });
     }
   };
 
-  // Sign up a new user
   const signUp = async (email: string, password: string, metadata?: { [key: string]: any }) => {
     try {
-      // Rate limiting
-      const now = Date.now();
-      if (now - lastAuthAttempt < MIN_TIME_BETWEEN_AUTH_ATTEMPTS) {
-        toast({
-          title: "Too many attempts",
-          description: "Please wait a moment before trying again",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      lastAuthAttempt = now;
-      
-      // Sign up with Supabase
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: metadata,
+          data: {
+            ...metadata,
+            display_name: metadata?.username || email.split('@')[0],
+          },
         },
       });
-      
+
       if (error) {
-        throw error;
-      }
-      
-      // Success message
-      toast({
-        title: "Account created",
-        description: "Please verify your email to complete registration",
-      });
-    } catch (error) {
-      console.error('Sign up error:', error);
-      handleAuthError(error as AuthError, (message) => {
+        console.error('Sign up error:', error);
         toast({
-          title: "Sign up failed",
-          description: message,
-          variant: "destructive",
+          title: 'Registration failed',
+          description: error.message,
+          variant: 'destructive',
         });
+        return;
+      }
+
+      console.log('Sign up successful:', data);
+
+      if (data.user && !data.session) {
+        toast({
+          title: 'Verification required',
+          description: 'Please check your email to verify your account.',
+        });
+      } else if (data.user) {
+        toast({
+          title: 'Welcome!',
+          description: 'Your account has been created successfully.',
+        });
+      }
+    } catch (error) {
+      console.error('Exception during sign up:', error);
+      toast({
+        title: 'Registration error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
       });
     }
   };
 
-  // Sign out the current user
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        console.error('Sign out error:', error);
+        toast({
+          title: 'Sign out failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+
       toast({
-        title: "Signed out",
-        description: "You have been signed out successfully",
+        title: 'Signed out',
+        description: 'You have been successfully signed out.',
       });
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('Exception during sign out:', error);
       toast({
-        title: "Sign out failed",
-        description: "There was a problem signing you out",
-        variant: "destructive",
+        title: 'Sign out error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
       });
     }
   };
 
-  // Request a password reset for an email
   const resetPassword = async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth?type=recovery`,
       });
-      
+
       if (error) {
-        throw error;
+        console.error('Password reset request error:', error);
+        toast({
+          title: 'Password reset failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
       }
-      
+
       toast({
-        title: "Password reset email sent",
-        description: "Check your email for a password reset link",
+        title: 'Password reset email sent',
+        description: 'Check your email for the password reset link.',
       });
     } catch (error) {
-      console.error('Password reset error:', error);
-      handleAuthError(error as AuthError, (message) => {
-        toast({
-          title: "Password reset failed",
-          description: message,
-          variant: "destructive",
-        });
+      console.error('Exception during password reset request:', error);
+      toast({
+        title: 'Password reset error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
       });
     }
   };
 
-  // Update the current user's password
   const updatePassword = async (password: string) => {
     try {
       const { error } = await supabase.auth.updateUser({
         password,
       });
-      
+
       if (error) {
-        throw error;
+        console.error('Password update error:', error);
+        toast({
+          title: 'Password update failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
       }
-      
+
       toast({
-        title: "Password updated",
-        description: "Your password has been updated successfully",
+        title: 'Password updated',
+        description: 'Your password has been updated successfully.',
       });
     } catch (error) {
-      console.error('Update password error:', error);
-      handleAuthError(error as AuthError, (message) => {
-        toast({
-          title: "Password update failed",
-          description: message,
-          variant: "destructive",
-        });
+      console.error('Exception during password update:', error);
+      toast({
+        title: 'Password update error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
       });
     }
   };
 
-  // Refresh the current session
   const refreshSession = async () => {
     try {
       const { error } = await supabase.auth.refreshSession();
-      
+
       if (error) {
-        throw error;
+        console.error('Session refresh error:', error);
+        return;
       }
-      
-      console.log('Session refreshed successfully');
     } catch (error) {
-      console.error('Session refresh error:', error);
-      
-      // Only show a toast for certain errors that indicate session problems
-      if ((error as AuthError).status === 401) {
-        toast({
-          title: "Session expired",
-          description: "Your session has expired. Please sign in again.",
-          variant: "destructive",
-        });
-      }
+      console.error('Exception during session refresh:', error);
     }
   };
 
-  const value = {
+  const value: AuthOperationsContextType = {
     signIn,
     signUp,
     signOut,
@@ -242,10 +214,8 @@ export function AuthOperationsProvider({ children }: { children: React.ReactNode
 
 export function useAuthOperations() {
   const context = useContext(AuthOperationsContext);
-  
   if (context === undefined) {
     throw new Error('useAuthOperations must be used within an AuthOperationsProvider');
   }
-  
   return context;
 }
