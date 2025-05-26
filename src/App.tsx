@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/auth';
 import { SecurityProvider } from '@/hooks/useSecurityContext';
 import { ThemeProvider } from '@/components/theme-provider';
+import Navbar from '@/components/Navbar';
 import AppRoutes from '@/routes';
 
 // Create React Query client
@@ -26,8 +27,11 @@ function App() {
         <ThemeProvider defaultTheme="light" storageKey="ui-theme">
           <AuthProvider>
             <SecurityProvider>
-              <AppRoutes />
-              <Toaster />
+              <div className="min-h-screen bg-puzzle-black text-puzzle-white">
+                <Navbar />
+                <AppRoutes />
+                <Toaster />
+              </div>
             </SecurityProvider>
           </AuthProvider>
         </ThemeProvider>

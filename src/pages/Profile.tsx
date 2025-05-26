@@ -1,80 +1,39 @@
 
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProfileInfoTab } from '@/components/profile/tabs/ProfileInfoTab';
-import { MyPuzzlesTab } from '@/components/profile/tabs/MyPuzzlesTab';
-import { AchievementsTab } from '@/components/profile/tabs/AchievementsTab';
-import { SecuritySettings } from '@/components/profile/SecuritySettings';
-import { UserProfileForm } from '@/components/profile/UserProfileForm';
-import { useUserProfile } from '@/hooks/useUserProfile';
-import { useMemberProfile } from '@/hooks/useMemberProfile';
-import { Loader2, User, Trophy, Settings, Puzzle } from 'lucide-react';
+import React from 'react';
+import { useAuth } from '@/hooks/auth';
+import { Navigate } from 'react-router-dom';
 
-const Profile: React.FC = () => {
-  const { isLoading: isLoadingUserProfile } = useUserProfile();
-  const { profile, isLoading: isLoadingMemberProfile, updateProfile, acceptTerms } = useMemberProfile();
-  const [activeTab, setActiveTab] = useState('profile');
-  
-  const isLoading = isLoadingUserProfile || isLoadingMemberProfile;
+const Profile = () => {
+  const { isAuthenticated, user, signOut } = useAuth();
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
-      </div>
-    );
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" replace />;
   }
 
   return (
-    <div className="min-h-screen bg-puzzle-black text-white">
-      <div className="container mx-auto p-6">
-        <div className="max-w-6xl mx-auto space-y-8">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-game text-puzzle-aqua">User Profile</h1>
+    <div className="min-h-screen p-4">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold text-puzzle-white mb-8">Profile</h1>
+        
+        <div className="bg-puzzle-black/50 border border-puzzle-aqua/20 p-6 rounded-lg space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-puzzle-aqua mb-2">Email</label>
+            <p className="text-puzzle-white">{user?.email}</p>
           </div>
           
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="bg-puzzle-black/50 border border-puzzle-aqua/20 mb-6">
-              <TabsTrigger value="profile" className="data-[state=active]:bg-puzzle-aqua/10">
-                <User className="h-4 w-4 mr-2" />
-                Profile Info
-              </TabsTrigger>
-              <TabsTrigger value="puzzles" className="data-[state=active]:bg-puzzle-aqua/10">
-                <Puzzle className="h-4 w-4 mr-2" />
-                My Puzzles
-              </TabsTrigger>
-              <TabsTrigger value="achievements" className="data-[state=active]:bg-puzzle-aqua/10">
-                <Trophy className="h-4 w-4 mr-2" />
-                Achievements
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="data-[state=active]:bg-puzzle-aqua/10">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="profile" className="pt-4">
-              {profile && (
-                <ProfileInfoTab 
-                  profile={profile} 
-                  updateProfile={updateProfile} 
-                  acceptTerms={acceptTerms}
-                />
-              )}
-            </TabsContent>
-            
-            <TabsContent value="puzzles" className="pt-4">
-              <MyPuzzlesTab />
-            </TabsContent>
-            
-            <TabsContent value="achievements" className="pt-4">
-              <AchievementsTab />
-            </TabsContent>
-            
-            <TabsContent value="settings" className="pt-4">
-              <SecuritySettings />
-            </TabsContent>
-          </Tabs>
+          <div>
+            <label className="block text-sm font-medium text-puzzle-aqua mb-2">User ID</label>
+            <p className="text-puzzle-white/70 font-mono text-sm">{user?.id}</p>
+          </div>
+          
+          <div className="pt-4 border-t border-puzzle-aqua/20">
+            <button
+              onClick={() => signOut()}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
       </div>
     </div>
