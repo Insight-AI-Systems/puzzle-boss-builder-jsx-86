@@ -3,7 +3,6 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import { AuthProvider } from './contexts/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Create a new QueryClient instance
@@ -112,9 +111,7 @@ root.render(
   <React.StrictMode>
     <ErrorFallback>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <App />
       </QueryClientProvider>
     </ErrorFallback>
   </React.StrictMode>
