@@ -10,6 +10,9 @@ interface RoleContextType {
   isAdmin: boolean;
   hasRole: (role: string) => boolean;
   rolesLoaded: boolean;
+  hasPermission: (permission: string) => boolean;
+  hasAllPermissions: (permissions: string[]) => boolean;
+  hasAnyPermission: (permissions: string[]) => boolean;
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
@@ -95,12 +98,38 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     return userRoles.includes(role);
   };
 
+  const hasPermission = (permission: string): boolean => {
+    // Always give access to the protected admin email
+    if (user?.email === PROTECTED_ADMIN_EMAIL) {
+      return true;
+    }
+    
+    // Super admin has all permissions
+    if (userRole === 'super_admin') {
+      return true;
+    }
+    
+    // Basic permission check (simplified for now)
+    return userRole !== null;
+  };
+
+  const hasAllPermissions = (permissions: string[]): boolean => {
+    return permissions.every(permission => hasPermission(permission));
+  };
+
+  const hasAnyPermission = (permissions: string[]): boolean => {
+    return permissions.some(permission => hasPermission(permission));
+  };
+
   const value: RoleContextType = {
     userRole,
     userRoles,
     isAdmin: userRole === 'super_admin' || user?.email === PROTECTED_ADMIN_EMAIL,
     hasRole,
     rolesLoaded,
+    hasPermission,
+    hasAllPermissions,
+    hasAnyPermission,
   };
 
   return (
