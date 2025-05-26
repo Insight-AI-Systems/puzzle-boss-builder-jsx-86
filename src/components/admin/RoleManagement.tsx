@@ -18,19 +18,16 @@ export function RoleManagement() {
   const currentUserRole: UserRole = currentUserProfile?.role || 'player';
   const currentUserEmail = currentUserProfile?.id;
   
-  // Fix the type comparison by using type assertion
   const isSuperAdmin = currentUserRole === 'super_admin' as UserRole;
   const isCurrentUserProtectedAdmin = currentUserEmail === PROTECTED_ADMIN_EMAIL;
   const canAssignAnyRole = isSuperAdmin || isCurrentUserProtectedAdmin;
 
-  // Filter profiles based on search term
   const profilesData: UserProfile[] = allProfiles?.data || [];
   const filteredProfiles = profilesData.filter(profile =>
     profile.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     profile.id.includes(searchTerm)
   );
 
-  // Handle role change action
   const handleRoleChange = (userId: string, newRole: UserRole) => {
     updateUserRole.mutate({ targetUserId: userId, newRole }, {
       onSuccess: () => {
@@ -49,7 +46,6 @@ export function RoleManagement() {
     });
   };
 
-  // Helper function to determine if current user can assign a role
   const canAssignRole = (role: UserRole, userId: string): boolean => {
     if (userId === PROTECTED_ADMIN_EMAIL) {
       return canAssignAnyRole;

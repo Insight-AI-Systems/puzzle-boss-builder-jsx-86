@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { CategoryTable } from './CategoryTable';
 import { AddCategoryDialog } from './AddCategoryDialog';
 import { useCategoryOperations } from '@/hooks/admin/useCategoryOperations';
+import { AdminCategory } from '@/types/categoryTypes';
 
 export const CategoryManagement: React.FC = () => {
   const {
@@ -30,9 +31,16 @@ export const CategoryManagement: React.FC = () => {
     handleDeletePuzzle
   } = useCategoryOperations();
 
-  // Create wrapper functions for the refetch calls to fix TypeScript errors
   const handleRefresh = () => {
     refetch();
+  };
+
+  const handleEditCategoryWrapper = (category: AdminCategory) => {
+    handleEditCategory(category);
+  };
+
+  const handleDeleteCategoryWrapper = (categoryId: string) => {
+    handleDeleteCategory(categoryId, 'Category');
   };
 
   if (isLoading) {
@@ -104,8 +112,8 @@ export const CategoryManagement: React.FC = () => {
               categories={categories}
               editingCategory={editingCategory}
               setEditingCategory={setEditingCategory}
-              handleEditCategory={handleEditCategory}
-              handleDeleteCategory={handleDeleteCategory}
+              handleEditCategory={handleEditCategoryWrapper}
+              handleDeleteCategory={handleDeleteCategoryWrapper}
               handleSaveCategory={handleSaveCategory}
               isDeleteConfirmOpen={isDeleteConfirmOpen}
               confirmDeleteCategory={confirmDeleteCategory}

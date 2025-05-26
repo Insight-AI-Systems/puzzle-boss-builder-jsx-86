@@ -1,7 +1,7 @@
 
 export type UserRole = 'player' | 'admin' | 'super_admin' | 'category_manager' | 'social_media_manager' | 'partner_manager' | 'cfo';
 
-export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say';
+export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say' | 'non_binary' | 'custom';
 
 export type AgeGroup = '18-24' | '25-34' | '35-44' | '45-54' | '55-64' | '65+';
 

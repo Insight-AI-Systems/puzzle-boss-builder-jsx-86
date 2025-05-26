@@ -24,18 +24,23 @@ export function useDeviceInfo() {
     isTablet: false,
     isDesktop: false,
     userAgent: '',
+    width: 0,
+    isTouchDevice: false,
   });
 
   useEffect(() => {
     const checkDevice = () => {
       const width = window.innerWidth;
       const userAgent = navigator.userAgent;
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
       
       setDeviceInfo({
         isMobile: width < 768,
         isTablet: width >= 768 && width < 1024,
         isDesktop: width >= 1024,
         userAgent,
+        width,
+        isTouchDevice,
       });
     };
 

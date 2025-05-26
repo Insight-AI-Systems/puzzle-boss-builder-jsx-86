@@ -2,20 +2,17 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from './client';
 import { Database } from './types';
-import { ApiErrorDetails } from '@/types/api-responses';
-import { parseError } from '@/utils/error-handling';
 
-export type ApiError = ApiErrorDetails;
+export interface ApiError {
+  message: string;
+  code?: string;
+}
 
-export type ApiResponse<T> = {
+export interface ApiResponse<T> {
   data: T | null;
   error: ApiError | null;
-};
+}
 
-/**
- * Standardized API client wrapping Supabase calls
- * with consistent error handling and response formatting
- */
 class ApiClient {
   private client: SupabaseClient<Database>;
 
@@ -23,21 +20,22 @@ class ApiClient {
     this.client = supabaseClient;
   }
 
-  /**
-   * Standardized error formatting for consistent error handling
-   */
   private formatError(error: unknown): ApiError {
-    return parseError(error);
+    if (error && typeof error === 'object' && 'message' in error) {
+      return {
+        message: (error as any).message,
+        code: (error as any).code
+      };
+    }
+    return {
+      message: 'An unknown error occurred'
+    };
   }
 
-  /**
-   * Standardized GET request
-   */
-  async get<T>(path: string, options?: any): Promise<ApiResponse<T>> {
+  async get<T>(tableName: string, options?: any): Promise<ApiResponse<T>> {
     try {
-      const query = this.client.from(path).select(options?.query || '*');
+      const query = this.client.from(tableName as any).select(options?.query || '*');
       
-      // Apply filters if provided
       if (options?.filters) {
         Object.entries(options.filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
@@ -46,14 +44,12 @@ class ApiClient {
         });
       }
       
-      // Apply pagination if provided
       if (options?.page !== undefined && options?.pageSize) {
         const from = options.page * options.pageSize;
         const to = from + options.pageSize - 1;
         query.range(from, to);
       }
       
-      // Apply ordering if provided
       if (options?.orderBy) {
         query.order(options.orderBy, { 
           ascending: options?.ascending !== false
@@ -81,13 +77,10 @@ class ApiClient {
     }
   }
 
-  /**
-   * Standardized GET request for a single record
-   */
-  async getById<T>(path: string, id: string | number, options?: any): Promise<ApiResponse<T>> {
+  async getById<T>(tableName: string, id: string | number, options?: any): Promise<ApiResponse<T>> {
     try {
       const response = await this.client
-        .from(path)
+        .from(tableName as any)
         .select(options?.query || '*')
         .eq('id', id)
         .maybeSingle();
@@ -111,13 +104,10 @@ class ApiClient {
     }
   }
 
-  /**
-   * Standardized POST request
-   */
-  async create<T>(path: string, data: any): Promise<ApiResponse<T>> {
+  async create<T>(tableName: string, data: any): Promise<ApiResponse<T>> {
     try {
       const response = await this.client
-        .from(path)
+        .from(tableName as any)
         .insert([data])
         .select();
       
@@ -140,13 +130,10 @@ class ApiClient {
     }
   }
 
-  /**
-   * Standardized PUT request
-   */
-  async update<T>(path: string, id: string | number, data: any): Promise<ApiResponse<T>> {
+  async update<T>(tableName: string, id: string | number, data: any): Promise<ApiResponse<T>> {
     try {
       const response = await this.client
-        .from(path)
+        .from(tableName as any)
         .update(data)
         .eq('id', id)
         .select();
@@ -170,13 +157,10 @@ class ApiClient {
     }
   }
 
-  /**
-   * Standardized DELETE request
-   */
-  async delete(path: string, id: string | number): Promise<ApiResponse<null>> {
+  async delete(tableName: string, id: string | number): Promise<ApiResponse<null>> {
     try {
       const response = await this.client
-        .from(path)
+        .from(tableName as any)
         .delete()
         .eq('id', id);
       
@@ -199,20 +183,13 @@ class ApiClient {
     }
   }
 
-  /**
-   * Advanced query using builder pattern
-   */
   query(table: string) {
-    return this.client.from(table);
+    return this.client.from(table as any);
   }
 
-  /**
-   * Get the raw Supabase client for advanced operations
-   */
   getRawClient() {
     return this.client;
   }
 }
 
-// Export singleton instance
 export const apiClient = new ApiClient(supabase);

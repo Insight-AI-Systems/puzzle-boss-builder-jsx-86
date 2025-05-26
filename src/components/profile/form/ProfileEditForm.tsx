@@ -28,7 +28,6 @@ export function ProfileEditForm({
   onChange,
   onSubmit
 }: ProfileEditFormProps) {
-  // Handle select change for gender and age group
   const handleSelectChange = (field: string, value: string) => {
     const simulatedEvent = {
       target: { name: field, value }
@@ -36,19 +35,16 @@ export function ProfileEditForm({
     onChange(simulatedEvent);
   };
 
-  // Map the display values to our actual AgeGroup type values
   const ageGroupMapping: Record<string, AgeGroup> = {
-    '13-17': 'under_18',
-    '18-24': '18_24',
-    '25-34': '25_34',
-    '35-44': '35_44',
-    '45-54': '45_54',
-    '55-64': '55_64',
-    '60+': '65_plus'
+    '18-24': '18-24',
+    '25-34': '25-34',
+    '35-44': '35-44',
+    '45-54': '45-54',
+    '55-64': '55-64',
+    '65+': '65+'
   };
 
-  // The display values for age groups that will appear in the UI
-  const ageGroupDisplayValues = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '60+'];
+  const ageGroupDisplayValues = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
 
   if (!isEditing) {
     return (
@@ -79,9 +75,9 @@ export function ProfileEditForm({
               <p className="text-puzzle-white/80">
                 {profile.gender === 'custom' && profile.custom_gender
                   ? profile.custom_gender
-                  : profile.gender === 'prefer-not-to-say'
+                  : profile.gender === 'prefer_not_to_say'
                     ? 'Prefer not to say'
-                    : profile.gender === 'non-binary'
+                    : profile.gender === 'non_binary'
                       ? 'Non-binary'
                       : profile.gender}
               </p>
@@ -157,9 +153,9 @@ export function ProfileEditForm({
           <SelectContent>
             <SelectItem value="male">Male</SelectItem>
             <SelectItem value="female">Female</SelectItem>
-            <SelectItem value="non-binary">Non-binary</SelectItem>
+            <SelectItem value="non_binary">Non-binary</SelectItem>
             <SelectItem value="custom">Custom</SelectItem>
-            <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+            <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
           </SelectContent>
         </Select>
         
@@ -180,8 +176,8 @@ export function ProfileEditForm({
       <div className="space-y-2">
         <Label htmlFor="age_group" className="text-puzzle-white">Age Range</Label>
         <Select 
-          value={Object.entries(ageGroupMapping).find(([_, value]) => value === formData.age_group)?.[0] || undefined}
-          onValueChange={(displayValue) => handleSelectChange('age_group', ageGroupMapping[displayValue])}
+          value={formData.age_group || undefined}
+          onValueChange={(value) => handleSelectChange('age_group', value)}
         >
           <SelectTrigger className="bg-puzzle-black/50 border-puzzle-aqua/30 text-puzzle-white w-full">
             <SelectValue placeholder="Select your age range" />

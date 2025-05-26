@@ -33,7 +33,8 @@ export function useUserProfile() {
           setProfile({
             ...data,
             email: user.email,
-          });
+            role: data.role as UserRole,
+          } as UserProfile);
         } else {
           setProfile({
             id: user.id,
@@ -65,7 +66,11 @@ export function useUserProfile() {
         console.error('Error fetching all profiles:', error);
         setAllProfiles({ data: [] });
       } else {
-        setAllProfiles({ data: data || [] });
+        const mappedProfiles = (data || []).map(item => ({
+          ...item,
+          role: item.role as UserRole,
+        })) as UserProfile[];
+        setAllProfiles({ data: mappedProfiles });
       }
     } catch (error) {
       console.error('Error fetching all profiles:', error);
@@ -87,7 +92,6 @@ export function useUserProfile() {
           throw error;
         }
 
-        // Refresh profiles after update
         await fetchAllProfiles();
       } catch (error) {
         console.error('Error updating user role:', error);
