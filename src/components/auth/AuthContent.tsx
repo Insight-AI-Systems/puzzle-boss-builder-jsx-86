@@ -7,127 +7,70 @@ import ResetPasswordConfirmView from './views/ResetPasswordConfirmView';
 import ResetPasswordSuccessView from './views/ResetPasswordSuccessView';
 import VerificationPendingView from './views/VerificationPendingView';
 import { useAuthState } from '@/contexts/auth/AuthStateContext';
+import { AuthView } from '@/types/auth';
 
-/**
- * Auth view type definitions
- */
-type AuthViewType =
-  | 'signIn'
-  | 'signUp'
-  | 'resetRequest'
-  | 'resetConfirm'
-  | 'resetSuccess'
-  | 'verificationPending'
-  | 'verificationSuccess';
-
-/**
- * Props for the AuthContent component
- */
 interface AuthContentProps {
-  defaultView?: AuthViewType;
-  allowedViews?: AuthViewType[];
-  redirectAuthenticated?: string;
-  showTitle?: boolean;
+  currentView: AuthView;
+  setCurrentView: (view: AuthView) => void;
+  lastEnteredEmail: string;
 }
 
-/**
- * Props for the VerificationPendingView component
- */
-interface VerificationPendingViewProps {
-  email: string;
-  onBackToSignIn?: () => void;
-}
-
-/**
- * AuthContent component that manages different authentication views
- * such as sign in, sign up, and password reset flows.
- */
 const AuthContent: React.FC<AuthContentProps> = ({
-  defaultView = 'signIn',
-  allowedViews = ['signIn', 'signUp', 'resetRequest', 'resetConfirm', 'resetSuccess', 'verificationPending', 'verificationSuccess'],
-  redirectAuthenticated,
-  showTitle = true,
+  currentView,
+  setCurrentView,
+  lastEnteredEmail
 }) => {
-  // Authentication state
   const { isAuthenticated } = useAuthState();
-  
-  // View state management
-  const [currentView, setCurrentView] = React.useState<AuthViewType>(defaultView);
-  const [email, setEmail] = React.useState<string>('');
-  const [token, setToken] = React.useState<string | null>(null);
   
   // Redirect authenticated users if needed
   React.useEffect(() => {
-    if (isAuthenticated && redirectAuthenticated) {
-      window.location.href = redirectAuthenticated;
+    if (isAuthenticated) {
+      window.location.href = '/';
     }
-  }, [isAuthenticated, redirectAuthenticated]);
-  
-  // Check for reset password token in URL
-  React.useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const resetToken = urlParams.get('token');
-    
-    if (resetToken) {
-      setToken(resetToken);
-      if (allowedViews.includes('resetConfirm')) {
-        setCurrentView('resetConfirm');
-      }
-    }
-  }, [allowedViews]);
+  }, [isAuthenticated]);
   
   // Handler for going to sign in view
   const handleGoToSignIn = () => {
-    if (allowedViews.includes('signIn')) {
-      setCurrentView('signIn');
-    }
+    setCurrentView('signin');
   };
   
   // Handler for going to sign up view
   const handleGoToSignUp = () => {
-    if (allowedViews.includes('signUp')) {
-      setCurrentView('signUp');
-    }
+    setCurrentView('signup');
   };
   
   // Handler for going to reset password request view
   const handleGoToResetRequest = () => {
-    if (allowedViews.includes('resetRequest')) {
-      setCurrentView('resetRequest');
-    }
+    setCurrentView('reset-request');
   };
   
   // Handler for completing a reset password request
-  const handleResetRequestComplete = (requestEmail: string) => {
-    setEmail(requestEmail);
-    setCurrentView('verificationPending');
+  const handleResetRequestComplete = (email: string) => {
+    setCurrentView('verification-pending');
   };
   
   // Handler for completing a reset password confirmation
   const handleResetComplete = () => {
-    if (allowedViews.includes('resetSuccess')) {
-      setCurrentView('resetSuccess');
-    }
+    setCurrentView('reset-success');
   };
   
   // Handler for completing sign up
-  const handleSignUpComplete = (signUpEmail: string) => {
-    setEmail(signUpEmail);
-    setCurrentView('verificationPending');
+  const handleSignUpComplete = (email: string) => {
+    setCurrentView('verification-pending');
   };
   
   // Render the current view based on state
   const renderView = () => {
     switch (currentView) {
-      case 'signIn':
+      case 'signin':
         return (
           <SignInView
-            onGoToSignUp={allowedViews.includes('signUp') ? handleGoToSignUp : undefined}
-            onGoToResetPassword={allowedViews.includes('resetRequest') ? handleGoToResetRequest : undefined}
+            onGoToSignUp={handleGoToSignUp}
+            onGoToResetPassword={handleGoToResetRequest}
           />
         );
         
-      case 'signUp':
+      case 'signup':
         return (
           <SignUpView
             onGoToSignIn={handleGoToSignIn}
@@ -135,7 +78,7 @@ const AuthContent: React.FC<AuthContentProps> = ({
           />
         );
         
-      case 'resetRequest':
+      case 'reset-request':
         return (
           <ResetPasswordRequestView
             onBackToSignIn={handleGoToSignIn}
@@ -143,30 +86,28 @@ const AuthContent: React.FC<AuthContentProps> = ({
           />
         );
         
-      case 'resetConfirm':
+      case 'reset-confirm':
         return (
           <ResetPasswordConfirmView
-            token={token}
+            token={null}
             onResetComplete={handleResetComplete}
           />
         );
         
-      case 'resetSuccess':
+      case 'reset-success':
         return (
           <ResetPasswordSuccessView
             onBackToSignIn={handleGoToSignIn}
           />
         );
         
-      case 'verificationPending':
+      case 'verification-pending':
         return (
           <VerificationPendingView
-            email={email}
+            email={lastEnteredEmail}
             onBackToSignIn={handleGoToSignIn}
           />
         );
-
-      // Add other cases as needed
         
       default:
         return (
@@ -185,17 +126,15 @@ const AuthContent: React.FC<AuthContentProps> = ({
   
   return (
     <div className="w-full max-w-md mx-auto">
-      {showTitle && (
-        <h1 className="text-2xl font-bold mb-6 text-center text-gray-800 dark:text-gray-100">
-          {currentView === 'signIn' && 'Sign In'}
-          {currentView === 'signUp' && 'Create Account'}
-          {currentView === 'resetRequest' && 'Reset Password'}
-          {currentView === 'resetConfirm' && 'Set New Password'}
-          {currentView === 'resetSuccess' && 'Password Updated'}
-          {currentView === 'verificationPending' && 'Check Your Email'}
-          {currentView === 'verificationSuccess' && 'Email Verified'}
-        </h1>
-      )}
+      <h1 className="text-2xl font-bold mb-6 text-center text-gray-800 dark:text-gray-100">
+        {currentView === 'signin' && 'Sign In'}
+        {currentView === 'signup' && 'Create Account'}
+        {currentView === 'reset-request' && 'Reset Password'}
+        {currentView === 'reset-confirm' && 'Set New Password'}
+        {currentView === 'reset-success' && 'Password Updated'}
+        {currentView === 'verification-pending' && 'Check Your Email'}
+        {currentView === 'verification-success' && 'Email Verified'}
+      </h1>
       {renderView()}
     </div>
   );

@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { AuthContent } from './AuthContent';
+import AuthContent from './AuthContent';
 import { useSearchParams } from 'react-router-dom';
 import { AuthView } from '@/types/auth';
 

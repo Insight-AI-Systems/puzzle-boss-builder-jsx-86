@@ -161,28 +161,12 @@ export function useToast() {
   }
 }
 
-// Create a separate toast object with helper methods
-const toast = {
-  // Default toast function (will be used via useToast hook)
-  default: (options: Omit<ToasterToast, "id" | "variant">) => {
-    const { toast } = useToast()
-    return toast({ ...options })
-  },
-  
-  // Helper functions for common toast types
-  success: (options: Omit<ToasterToast, "id" | "variant">) => {
-    const { toast } = useToast()
-    return toast({ ...options, variant: "success" })
-  },
-  
-  error: (options: Omit<ToasterToast, "id" | "variant">) => {
-    const { toast } = useToast()
-    return toast({ ...options, variant: "destructive" })
-  }
+// Export a standalone toast function that can be used directly
+export const toast = (props: Omit<ToasterToast, "id">) => {
+  // For standalone usage, create a temporary hook instance
+  const { toast: toastFn } = useToast()
+  return toastFn(props)
 }
-
-// Export the toast object
-export { toast }
 
 // Define toast types
 export type { ToasterToast }
