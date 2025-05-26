@@ -6,7 +6,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initCsrfProtection, refreshCsrfToken, getCsrfToken } from '@/utils/security/csrf';
 import { logSecurityEvent, SecurityEventType } from '@/utils/security/logging';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/auth';
 
 interface SecurityContextType {
   // CSRF Protection
