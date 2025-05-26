@@ -1,6 +1,10 @@
 
 export type UserRole = 'player' | 'admin' | 'super_admin' | 'category_manager' | 'social_media_manager' | 'partner_manager' | 'cfo';
 
+export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say';
+
+export type AgeGroup = '18-24' | '25-34' | '35-44' | '45-54' | '55-64' | '65+';
+
 export interface UserProfile {
   id: string;
   username?: string;
@@ -23,9 +27,9 @@ export interface UserProfile {
   achievements?: string[];
   referral_code?: string;
   updated_at?: string;
-  gender?: string;
+  gender?: Gender;
   custom_gender?: string;
-  age_group?: string;
+  age_group?: AgeGroup;
 }
 
 export interface RoleDefinition {

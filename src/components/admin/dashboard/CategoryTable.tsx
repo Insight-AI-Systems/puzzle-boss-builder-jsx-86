@@ -1,34 +1,36 @@
 
 import React from 'react';
-import { useCategories, useDeleteCategory, Category } from '@/hooks/api/useCategoryApi';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
 
-interface CategoryTableProps {
-  onEdit: (category: Category) => void;
+interface Category {
+  id: string;
+  name: string;
+  status: string;
 }
 
-export const CategoryTable: React.FC<CategoryTableProps> = ({ onEdit }) => {
-  const { data: categories, isLoading, error } = useCategories();
+interface CategoryTableProps {
+  categories: Category[];
+  editingCategory: Category | null;
+  setEditingCategory: (category: Category | null) => void;
+  handleEditCategory: (category: Category) => void;
+  handleDeleteCategory: (id: string, name: string) => void;
+  handleSaveCategory: (category: Category) => void;
+  isDeleteConfirmOpen: boolean;
+  confirmDeleteCategory: () => void;
+  cancelDeleteCategory: () => void;
+  categoryToDelete: Category | null;
+  handleDeletePuzzle: (puzzleId: string) => Promise<void>;
+}
+
+export const CategoryTable: React.FC<CategoryTableProps> = ({ 
+  categories,
+  handleEditCategory,
+  handleDeleteCategory
+}) => {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  
-  const { mutate: deleteCategory, isPending: isDeleting } = useDeleteCategory();
-
-  if (isLoading) {
-    return <div className="flex justify-center p-8">Loading categories...</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="p-8 text-center text-red-500">
-        Error loading categories: {error.message}
-      </div>
-    );
-  }
 
   if (!categories || categories.length === 0) {
     return (
@@ -37,28 +39,6 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({ onEdit }) => {
       </div>
     );
   }
-
-  const handleDelete = async (id: string, name: string) => {
-    if (window.confirm(`Are you sure you want to delete the "${name}" category?`)) {
-      deleteCategory(id, {
-        onSuccess: () => {
-          toast({
-            title: 'Category deleted',
-            description: `'${name}' has been deleted successfully.`,
-            variant: "default",
-          });
-          queryClient.invalidateQueries({ queryKey: ['categories'] });
-        },
-        onError: (error) => {
-          toast({
-            title: 'Failed to delete category',
-            description: error.message,
-            variant: "destructive",
-          });
-        }
-      });
-    }
-  };
 
   return (
     <Table>
@@ -85,15 +65,14 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({ onEdit }) => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onEdit(category)}
+                  onClick={() => handleEditCategory(category)}
                 >
                   <Edit className="h-4 w-4 mr-1" /> Edit
                 </Button>
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => handleDelete(category.id, category.name)}
-                  disabled={isDeleting}
+                  onClick={() => handleDeleteCategory(category.id, category.name)}
                 >
                   <Trash className="h-4 w-4 mr-1" /> Delete
                 </Button>

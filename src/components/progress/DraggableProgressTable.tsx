@@ -1,147 +1,107 @@
-
-import React, { useState, useEffect } from 'react';
-import { 
-  DndContext, 
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { ProgressItem } from '@/types/progressTypes';
-import { DraggableTableRow } from './DraggableTableRow';
+import React, { useState } from 'react';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Plus, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Save } from 'lucide-react';
+
+interface ProgressItem {
+  id: string;
+  title: string;
+  description: string;
+  status: 'pending' | 'in-progress' | 'completed';
+  priority: 'low' | 'medium' | 'high';
+  order_index: number;
+}
 
 interface DraggableProgressTableProps {
   items: ProgressItem[];
-  onUpdateItemsOrder: (itemIds: string[]) => Promise<boolean>;
+  onReorder: (items: ProgressItem[]) => void;
+  onSave: () => void;
+  onAddItem: () => void;
 }
 
-export function DraggableProgressTable({ items, onUpdateItemsOrder }: DraggableProgressTableProps) {
-  const [sortedItems, setSortedItems] = useState<ProgressItem[]>([...items]);
-  const [isUpdating, setIsUpdating] = useState(false);
+export function DraggableProgressTable({ items, onReorder, onSave, onAddItem }: DraggableProgressTableProps) {
+  const [progressItems, setProgressItems] = useState<ProgressItem[]>(items);
   const { toast } = useToast();
   
-  useEffect(() => {
-    if (!isUpdating) {
-      setSortedItems([...items]);
-    }
-  }, [items, isUpdating]);
-
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      }
-    }),
+    useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = (event: any) => {
     const { active, over } = event;
-    
-    if (!over || active.id === over.id) {
-      console.log('Drag ended but no change needed');
-      return;
-    }
 
-    if (isUpdating) {
-      console.log('Ignoring drag - update in progress');
+    if (active.id !== over.id) {
+      const oldIndex = progressItems.findIndex((item) => item.id === active.id);
+      const newIndex = progressItems.findIndex((item) => item.id === over.id);
+      
+      const newItems = arrayMove(progressItems, oldIndex, newIndex);
+      const reorderedItems = newItems.map((item, index) => ({
+        ...item,
+        order_index: index
+      }));
+      
+      setProgressItems(reorderedItems);
+      onReorder(reorderedItems);
+      
       toast({
-        variant: "destructive",
-        title: "Please wait",
-        description: "Another update is in progress",
-        duration: 2000,
+        title: "Items reordered",
+        description: "Progress items have been reordered successfully.",
       });
-      return;
-    }
-
-    setIsUpdating(true);
-    
-    try {
-      const oldIndex = sortedItems.findIndex(item => item.id === active.id);
-      const newIndex = sortedItems.findIndex(item => item.id === over.id);
-      
-      if (oldIndex === -1 || newIndex === -1) {
-        console.error('Could not find dragged items');
-        setIsUpdating(false);
-        return;
-      }
-
-      const updatedItems = arrayMove(sortedItems, oldIndex, newIndex);
-      const movedItem = sortedItems[oldIndex];
-      
-      console.log('Reordered task:', movedItem.title);
-      console.log(`From index ${oldIndex} to ${newIndex}`);
-      
-      setSortedItems(updatedItems);
-      
-      const itemIds = updatedItems.map(item => item.id);
-      const success = await onUpdateItemsOrder(itemIds);
-      
-      if (success) {
-        toast({
-          title: "Order Saved",
-          description: `Moved "${movedItem.title}" ${oldIndex > newIndex ? 'up' : 'down'} the list`,
-          icon: <Save className="h-4 w-4" />,
-          className: "bg-green-800 border-green-900 text-white",
-          duration: 3000,
-        });
-      } else {
-        throw new Error('Failed to save new order');
-      }
-    } catch (error) {
-      console.error('Error during drag end:', error);
-      setSortedItems([...items]);
-      toast({
-        variant: "destructive",
-        title: "Save Failed",
-        description: "Failed to save the new order. Please try again.",
-        duration: 3000,
-      });
-    } finally {
-      setIsUpdating(false);
     }
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <Table>
-        <TableHeader>
-          <TableRow className="border-puzzle-aqua/20">
-            <TableHead className="text-puzzle-aqua">Task</TableHead>
-            <TableHead className="text-puzzle-aqua">Status</TableHead>
-            <TableHead className="text-puzzle-aqua">Priority</TableHead>
-            <TableHead className="text-puzzle-aqua">Last Updated</TableHead>
-            <TableHead className="text-puzzle-aqua">Comments</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <SortableContext
-            items={sortedItems.map(item => item.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            {sortedItems.map((item) => (
-              <DraggableTableRow key={item.id} item={item} />
-            ))}
-          </SortableContext>
-        </TableBody>
-      </Table>
-    </DndContext>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Progress Items</h3>
+        <div className="flex gap-2">
+          <Button onClick={onAddItem} variant="outline" size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Item
+          </Button>
+          <Button onClick={onSave} size="sm">
+            <Save className="h-4 w-4 mr-2" />
+            Save Order
+          </Button>
+        </div>
+      </div>
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+        modifiers={[restrictToVerticalAxis]}
+      >
+        <SortableContext items={progressItems} strategy={verticalListSortingStrategy}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Priority</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {progressItems.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{item.title}</TableCell>
+                  <TableCell>{item.description}</TableCell>
+                  <TableCell>{item.status}</TableCell>
+                  <TableCell>{item.priority}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </SortableContext>
+      </DndContext>
+    </div>
   );
 }

@@ -2,12 +2,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { UserProfile } from '@/types/userTypes';
+import { UserProfile, UserRole } from '@/types/userTypes';
 
 export function useUserProfile() {
   const { user, isAuthenticated } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [allProfiles, setAllProfiles] = useState<{ data: UserProfile[] }>({ data: [] });
+  const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated || !user) {
@@ -33,7 +35,6 @@ export function useUserProfile() {
             email: user.email,
           });
         } else {
-          // Create a basic profile if none exists
           setProfile({
             id: user.id,
             email: user.email,
@@ -52,5 +53,60 @@ export function useUserProfile() {
     fetchProfile();
   }, [user, isAuthenticated]);
 
-  return { profile, isLoading };
+  const fetchAllProfiles = async () => {
+    setIsLoadingProfiles(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching all profiles:', error);
+        setAllProfiles({ data: [] });
+      } else {
+        setAllProfiles({ data: data || [] });
+      }
+    } catch (error) {
+      console.error('Error fetching all profiles:', error);
+      setAllProfiles({ data: [] });
+    } finally {
+      setIsLoadingProfiles(false);
+    }
+  };
+
+  const updateUserRole = {
+    mutate: async ({ targetUserId, newRole }: { targetUserId: string; newRole: UserRole }) => {
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ role: newRole })
+          .eq('id', targetUserId);
+
+        if (error) {
+          throw error;
+        }
+
+        // Refresh profiles after update
+        await fetchAllProfiles();
+      } catch (error) {
+        console.error('Error updating user role:', error);
+        throw error;
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchAllProfiles();
+    }
+  }, [isAuthenticated]);
+
+  return { 
+    profile, 
+    isLoading, 
+    allProfiles, 
+    isLoadingProfiles, 
+    updateUserRole 
+  };
 }

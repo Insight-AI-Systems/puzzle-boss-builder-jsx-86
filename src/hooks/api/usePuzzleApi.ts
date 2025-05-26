@@ -3,9 +3,6 @@ import { apiClient } from '@/integrations/supabase/api-client';
 import { useApiQuery, useApiMutation } from './useQueryHelpers';
 import { Puzzle } from '@/hooks/puzzles/puzzleTypes';
 
-/**
- * Get all puzzles with optional filtering
- */
 export function usePuzzles(filters?: { status?: string, category_id?: string }) {
   return useApiQuery<Puzzle[]>(
     ['puzzles', filters],
@@ -33,8 +30,12 @@ export function usePuzzles(filters?: { status?: string, category_id?: string }) 
       
       const { data, error } = await query;
       
+      if (error) {
+        throw error;
+      }
+      
       return {
-        data: data ? data.map(item => ({
+        data: data ? data.map((item: any) => ({
           id: item.id,
           name: item.title,
           category: item.categories?.name || '',
@@ -54,9 +55,6 @@ export function usePuzzles(filters?: { status?: string, category_id?: string }) 
   );
 }
 
-/**
- * Get a single puzzle by ID
- */
 export function usePuzzleById(id: string) {
   return useApiQuery<Puzzle>(
     ['puzzle', id],
@@ -75,9 +73,6 @@ export function usePuzzleById(id: string) {
   );
 }
 
-/**
- * Create a new puzzle
- */
 export function useCreatePuzzle() {
   return useApiMutation<Puzzle, Omit<Puzzle, 'id'>>(
     async (newPuzzle) => {
@@ -98,9 +93,6 @@ export function useCreatePuzzle() {
   );
 }
 
-/**
- * Update an existing puzzle
- */
 export function useUpdatePuzzle() {
   return useApiMutation<Puzzle, { id: string, puzzle: Partial<Puzzle> }>(
     async ({ id, puzzle }) => {
@@ -119,9 +111,6 @@ export function useUpdatePuzzle() {
   );
 }
 
-/**
- * Delete a puzzle
- */
 export function useDeletePuzzle() {
   return useApiMutation<null, string>(
     async (id) => {

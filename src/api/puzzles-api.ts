@@ -43,14 +43,7 @@ export interface PuzzleUpdateDTO {
   status?: string;
 }
 
-/**
- * Puzzles API Module
- * Provides type-safe access to puzzle data
- */
 export const puzzlesApi = {
-  /**
-   * Map database puzzle to frontend model
-   */
   mapDatabaseToPuzzle(dbPuzzle: any): PuzzleModel {
     return {
       id: dbPuzzle.id,
@@ -71,9 +64,6 @@ export const puzzlesApi = {
     };
   },
 
-  /**
-   * Fetch all puzzles with optional filtering
-   */
   async getPuzzles(options?: {
     status?: string | string[];
     categoryId?: string;
@@ -89,7 +79,6 @@ export const puzzlesApi = {
         categories:category_id(name)
       `);
 
-      // Apply filters
       if (options?.status) {
         if (Array.isArray(options.status)) {
           query = query.in('status', options.status);
@@ -106,7 +95,6 @@ export const puzzlesApi = {
         query = query.eq('difficulty_level', options.difficulty);
       }
       
-      // Apply ordering
       if (options?.orderBy) {
         query = query.order(options.orderBy, { 
           ascending: options.ascending !== false 
@@ -115,7 +103,6 @@ export const puzzlesApi = {
         query = query.order('created_at', { ascending: false });
       }
       
-      // Apply pagination
       if (options?.page !== undefined && options?.pageSize) {
         const from = options.page * options.pageSize;
         const to = from + options.pageSize - 1;
@@ -136,9 +123,6 @@ export const puzzlesApi = {
     }
   },
   
-  /**
-   * Get puzzles by category ID with improved type safety
-   */
   async getPuzzlesByCategoryId(categoryId: string): Promise<PuzzleModel[]> {
     try {
       const { data, error } = await supabase.from('puzzles')
@@ -161,9 +145,6 @@ export const puzzlesApi = {
     }
   },
   
-  /**
-   * Fetch a single puzzle by ID
-   */
   async getPuzzleById(id: string): Promise<PuzzleModel | null> {
     try {
       const { data, error } = await supabase
@@ -185,9 +166,6 @@ export const puzzlesApi = {
     }
   },
   
-  /**
-   * Create a new puzzle
-   */
   async createPuzzle(puzzle: PuzzleCreateDTO): Promise<PuzzleModel | null> {
     try {
       const dbPuzzle = {
@@ -199,7 +177,9 @@ export const puzzlesApi = {
         pieces: puzzle.pieces,
         cost_per_play: puzzle.costPerPlay,
         prize_value: puzzle.prizeValue,
-        status: 'draft'
+        status: 'draft',
+        income_target: 0,
+        release_date: new Date().toISOString()
       };
       
       const { data, error } = await supabase
@@ -220,9 +200,6 @@ export const puzzlesApi = {
     }
   },
   
-  /**
-   * Update an existing puzzle
-   */
   async updatePuzzle(puzzle: PuzzleUpdateDTO): Promise<PuzzleModel | null> {
     try {
       const dbPuzzle: Record<string, any> = {};
@@ -237,7 +214,6 @@ export const puzzlesApi = {
       if (puzzle.prizeValue !== undefined) dbPuzzle.prize_value = puzzle.prizeValue;
       if (puzzle.status !== undefined) dbPuzzle.status = puzzle.status;
       
-      // Only update if there are changes
       if (Object.keys(dbPuzzle).length === 0) {
         console.warn('No fields to update for puzzle');
         return await this.getPuzzleById(puzzle.id);
@@ -262,9 +238,6 @@ export const puzzlesApi = {
     }
   },
   
-  /**
-   * Delete a puzzle
-   */
   async deletePuzzle(id: string): Promise<boolean> {
     try {
       const { error } = await supabase
