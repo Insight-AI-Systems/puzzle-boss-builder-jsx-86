@@ -42,11 +42,19 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({ onEdit }) => {
     if (window.confirm(`Are you sure you want to delete the "${name}" category?`)) {
       deleteCategory(id, {
         onSuccess: () => {
-          toast.success('Category deleted', `'${name}' has been deleted successfully.`);
+          toast({
+            title: 'Category deleted',
+            description: `'${name}' has been deleted successfully.`,
+            variant: "default",
+          });
           queryClient.invalidateQueries({ queryKey: ['categories'] });
         },
         onError: (error) => {
-          toast.error('Failed to delete category', error.message);
+          toast({
+            title: 'Failed to delete category',
+            description: error.message,
+            variant: "destructive",
+          });
         }
       });
     }

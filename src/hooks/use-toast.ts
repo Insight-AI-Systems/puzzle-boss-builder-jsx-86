@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useReducer } from "react"
 import type {
   ToastActionElement,
   ToastProps,
@@ -111,12 +111,12 @@ const reducer = (state: State, action: Action): State => {
 }
 
 export function useToast() {
-  const [state, dispatch] = useState<State>({ toasts: [] })
+  const [state, dispatch] = useReducer(reducer, { toasts: [] })
   const scheduled = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
   const { toasts } = state
 
   const toast = (props: Omit<ToasterToast, "id">) => {
-    const id = props.id || generateId()
+    const id = generateId()
     const newToast = { id, open: true, ...props }
 
     // Add toast
@@ -151,7 +151,7 @@ export function useToast() {
         }, TOAST_REMOVE_DELAY)
       }
     })
-  }, [toasts, remove])
+  }, [toasts])
 
   return {
     toasts,
@@ -162,10 +162,19 @@ export function useToast() {
 }
 
 // Export a standalone toast function that can be used directly
+let globalToastState: ReturnType<typeof useToast> | null = null
+
 export const toast = (props: Omit<ToasterToast, "id">) => {
-  // For standalone usage, create a temporary hook instance
-  const { toast: toastFn } = useToast()
-  return toastFn(props)
+  if (globalToastState) {
+    return globalToastState.toast(props)
+  }
+  console.warn('Toast called before useToast hook initialized')
+  return ''
+}
+
+// Helper function to initialize global toast state
+export const initializeToast = (toastState: ReturnType<typeof useToast>) => {
+  globalToastState = toastState
 }
 
 // Define toast types

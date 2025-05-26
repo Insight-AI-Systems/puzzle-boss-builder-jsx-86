@@ -6,7 +6,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initCsrfProtection, refreshCsrfToken, getCsrfToken } from '@/utils/security/csrf';
 import { logSecurityEvent, SecurityEventType } from '@/utils/security/logging';
-import { useAuth } from '@/hooks/auth';
+import { useAuthState } from '@/contexts/auth/AuthStateContext';
 
 interface SecurityContextType {
   // CSRF Protection
@@ -30,7 +30,7 @@ interface SecurityContextType {
 const SecurityContext = createContext<SecurityContextType | undefined>(undefined);
 
 export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, session, isAuthenticated } = useAuth();
+  const { user, session, isAuthenticated } = useAuthState();
   const [csrfToken, setCsrfToken] = useState<string>('');
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [securityLevel, setSecurityLevel] = useState<'normal' | 'elevated' | 'lockdown'>('normal');

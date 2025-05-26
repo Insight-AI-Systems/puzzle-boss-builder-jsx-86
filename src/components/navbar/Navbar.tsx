@@ -10,6 +10,7 @@ import UserMenu from './UserMenu';
 import AuthButtons from './AuthButtons';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAuthState } from '@/contexts/auth/AuthStateContext';
+import { mainNavItems } from './NavbarData';
 
 const Navbar = () => {
   const { isAuthenticated } = useAuthState();
@@ -66,7 +67,11 @@ const Navbar = () => {
                     </Button>
                   </div>
                   <nav className="flex flex-col space-y-4 mt-4">
-                    <NavLinks isMobile closeMenu={() => setMobileMenuOpen(false)} />
+                    <NavLinks 
+                      items={mainNavItems}
+                      className="block px-3 py-2 rounded-md text-base font-medium"
+                      onClick={() => setMobileMenuOpen(false)} 
+                    />
                   </nav>
                 </SheetContent>
               </Sheet>
@@ -76,7 +81,7 @@ const Navbar = () => {
           <>
             <div className="flex-1">
               <nav className="flex items-center space-x-6 text-sm font-medium">
-                <NavLinks />
+                <NavLinks items={mainNavItems} />
               </nav>
             </div>
             <div className="flex items-center space-x-4">
