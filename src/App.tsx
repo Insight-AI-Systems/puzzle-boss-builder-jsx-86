@@ -6,7 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SecurityProvider } from '@/hooks/useSecurityContext';
 import { ThemeProvider } from '@/components/theme-provider';
-import Navbar from '@/components/Navbar';
+import Navbar from '@/components/navbar/Navbar';
 import AppRoutes from '@/routes';
 
 // Create React Query client
