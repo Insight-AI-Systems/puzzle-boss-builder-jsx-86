@@ -33,7 +33,7 @@ export function useUserProfile() {
           setProfile({
             ...data,
             email: user.email,
-            role: data.role as UserRole,
+            role: (data.role || 'player') as UserRole,
           } as UserProfile);
         } else {
           setProfile({
@@ -41,6 +41,7 @@ export function useUserProfile() {
             email: user.email,
             username: user.email?.split('@')[0],
             display_name: user.email?.split('@')[0],
+            role: 'player'
           });
         }
       } catch (error) {
@@ -68,7 +69,7 @@ export function useUserProfile() {
       } else {
         const mappedProfiles = (data || []).map(item => ({
           ...item,
-          role: item.role as UserRole,
+          role: (item.role || 'player') as UserRole,
         })) as UserProfile[];
         setAllProfiles({ data: mappedProfiles });
       }

@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 .single();
               
               if (profile) {
-                const role = profile.role as UserRole;
+                const role = (profile.role || 'player') as UserRole;
                 setUserRole(role);
                 setUserRoles([role]);
               }
