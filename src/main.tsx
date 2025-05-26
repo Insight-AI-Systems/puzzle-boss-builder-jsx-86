@@ -3,17 +3,6 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-// Create a new QueryClient instance
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
 
 // Enhanced error handling
 window.addEventListener('error', (event) => {
@@ -110,9 +99,7 @@ const root = createRoot(container);
 root.render(
   <React.StrictMode>
     <ErrorFallback>
-      <QueryClientProvider client={queryClient}>
-        <App />
-      </QueryClientProvider>
+      <App />
     </ErrorFallback>
   </React.StrictMode>
 );
