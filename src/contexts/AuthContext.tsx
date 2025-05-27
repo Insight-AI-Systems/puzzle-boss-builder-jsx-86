@@ -1,149 +1,154 @@
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session, AuthError } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import React, { createContext, useContext, useEffect } from 'react';
+import { AuthError, User, Session } from '@supabase/supabase-js';
 import { UserRole } from '@/types/userTypes';
+import { useAuthProvider } from '@/hooks/auth/useAuthProvider';
+import { useAuthOperations } from '@/hooks/auth/useAuthOperations';
+import { supabase } from '@/integrations/supabase/client';
+
+// Special admin email that should always have access
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 export interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  error: AuthError | null;
-  isAuthenticated: boolean;
-  userRole: UserRole | null;
-  userRoles: UserRole[];
-  isAdmin: boolean;
-  rolesLoaded: boolean;
-  hasRole: (role: UserRole) => boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  error: AuthError | Error | null;
+  
+  signIn: (email: string, password: string, options?: { rememberMe?: boolean }) => Promise<void>;
+  signUp: (email: string, password: string, metadata?: { [key: string]: any }) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
   refreshSession: () => Promise<void>;
+  
+  isAuthenticated: boolean;
+  isAdmin: boolean;
+  hasRole: (role: string) => boolean;
+  userRole: UserRole | null;
+  userRoles: string[];
+  rolesLoaded: boolean;
+  
   clearAuthError: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
-
-export { AuthContext };
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<AuthError | null>(null);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
-  const [rolesLoaded, setRolesLoaded] = useState(false);
+export function AuthProvider({ children }: AuthProviderProps) {
+  const {
+    user,
+    session,
+    isLoading,
+    error,
+    isAuthenticated,
+    isAdmin,
+    userRole,
+    userRoles,
+    rolesLoaded,
+    clearAuthError,
+    fetchUserRoles,
+    setError,
+    lastAuthAttempt,
+    setLastAuthAttempt,
+    MIN_TIME_BETWEEN_AUTH_ATTEMPTS,
+    toast,
+    roleCache
+  } = useAuthProvider();
 
-  const isAuthenticated = !!user;
-  const isAdmin = userRole === 'admin' || userRole === 'super_admin';
+  // Implement authentication operations without useNavigate dependencies
+  const auth = useAuthOperations({
+    lastAuthAttempt,
+    setLastAuthAttempt,
+    MIN_TIME_BETWEEN_AUTH_ATTEMPTS,
+    setError,
+    toast,
+    fetchUserRoles
+  });
 
-  const hasRole = (role: UserRole): boolean => {
-    return userRoles.includes(role);
-  };
-
+  // Role initialization - only fetch roles if not loaded
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setIsLoading(false);
+    if (session?.user && !rolesLoaded) {
+      console.log('AuthProvider - Fetching roles for user:', session.user.id);
+      setTimeout(() => {
+        fetchUserRoles(session.user.id);
+      }, 0);
+    }
+  }, [session?.user, fetchUserRoles, rolesLoaded]);
+
+  const handleSignIn = async (email: string, password: string, options?: { rememberMe?: boolean }) => {
+    await auth.signIn(email, password, options);
+    
+    // If sign-in was successful and we have a user session, update the last_sign_in
+    if (session?.user) {
+      try {
+        console.log('Calling handle_user_signin edge function for user:', session.user.id);
+        const response = await supabase.functions.invoke('handle_user_signin', {
+          body: { userId: session.user.id }
+        });
         
-        if (session?.user) {
-          setTimeout(async () => {
-            try {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', session.user.id)
-                .single();
-              
-              if (profile) {
-                const role = (profile.role || 'player') as UserRole;
-                setUserRole(role);
-                setUserRoles([role]);
-              }
-              setRolesLoaded(true);
-            } catch (error) {
-              console.error('Error fetching user role:', error);
-              setRolesLoaded(true);
-            }
-          }, 0);
+        if (response.error) {
+          console.error('Error updating last sign in time:', response.error);
         } else {
-          setUserRole(null);
-          setUserRoles([]);
-          setRolesLoaded(false);
+          console.log('Successfully updated last sign in time:', response.data);
         }
+      } catch (error) {
+        console.error('Exception calling handle_user_signin function:', error);
       }
-    );
+    }
+  };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
+  const hasRole = (role: string): boolean => {
+    // Check cache first
+    const cacheKey = `${user?.id || 'anonymous'}-${role}`;
+    
+    if (roleCache.current[cacheKey] !== undefined) {
+      console.log(`DEBUG - Using cached hasRole result for ${role}:`, roleCache.current[cacheKey]);
+      return roleCache.current[cacheKey];
+    }
+    
+    // Enhanced debug logging
+    console.log('DEBUG - hasRole check:', {
+      requestedRole: role,
+      currentUserEmail: user?.email,
+      protectedAdminEmail: PROTECTED_ADMIN_EMAIL,
+      isProtectedAdmin: user?.email === PROTECTED_ADMIN_EMAIL,
+      currentUserRole: userRole,
+      availableRoles: userRoles,
+      rolesLoaded
     });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const signIn = async (email: string, password: string) => {
-    setError(null);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) setError(error);
-  };
-
-  const signUp = async (email: string, password: string) => {
-    setError(null);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    if (error) setError(error);
-  };
-
-  const signOut = async () => {
-    setError(null);
-    const { error } = await supabase.auth.signOut();
-    if (error) setError(error);
-  };
-
-  const resetPassword = async (email: string) => {
-    setError(null);
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
-    if (error) setError(error);
-  };
-
-  const updatePassword = async (password: string) => {
-    setError(null);
-    const { error } = await supabase.auth.updateUser({ password });
-    if (error) setError(error);
-  };
-
-  const refreshSession = async () => {
-    setError(null);
-    const { error } = await supabase.auth.refreshSession();
-    if (error) setError(error);
-  };
-
-  const clearAuthError = () => {
-    setError(null);
+    
+    // Always give access to the protected admin email
+    if (user?.email === PROTECTED_ADMIN_EMAIL) {
+      console.log('DEBUG - Protected admin email detected, granting access');
+      roleCache.current[cacheKey] = true;
+      return true;
+    }
+    
+    // Super admin can access all roles
+    if (userRole === 'super_admin') {
+      console.log('DEBUG - Super admin detected, granting access');
+      roleCache.current[cacheKey] = true;
+      return true;
+    }
+    
+    // Exact role match
+    if (userRole === role) {
+      console.log(`DEBUG - Exact role match: ${userRole} = ${role}`);
+      roleCache.current[cacheKey] = true;
+      return true;
+    }
+    
+    // Check role array as fallback
+    const hasRoleInArray = userRoles.includes(role);
+    console.log(`DEBUG - Role array check: ${role} in [${userRoles.join(', ')}] = ${hasRoleInArray}`);
+    
+    // Cache result
+    roleCache.current[cacheKey] = hasRoleInArray;
+    return hasRoleInArray;
   };
 
   const value: AuthContextType = {
@@ -151,24 +156,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     session,
     isLoading,
     error,
+    signIn: handleSignIn,
+    signUp: auth.signUp,
+    signOut: auth.signOut,
+    resetPassword: auth.resetPassword,
+    updatePassword: auth.updatePassword,
+    refreshSession: auth.refreshSession,
     isAuthenticated,
+    isAdmin: userRole === 'super_admin' || user?.email === PROTECTED_ADMIN_EMAIL,
+    hasRole,
     userRole,
     userRoles,
-    isAdmin,
     rolesLoaded,
-    hasRole,
-    signIn,
-    signUp,
-    signOut,
-    resetPassword,
-    updatePassword,
-    refreshSession,
-    clearAuthError,
+    clearAuthError
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  
+  return context;
+}

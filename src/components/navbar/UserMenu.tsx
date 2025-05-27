@@ -13,17 +13,30 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { UserProfile } from '@/types/userTypes';
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UserMenuProps {
   profile: UserProfile | null;
   isMobile?: boolean;
 }
 
-const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
-  const { user, isAdmin, signOut } = useAuth();
+// Special admin email that should always have access
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
-  // Profile is required for menu
+const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
+  const { user, hasRole, signOut } = useAuth();
+
+  // Simplified admin check
+  const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
+  const isAdminUser = isProtectedAdmin || hasRole('super_admin');
+  
+  console.log('UserMenu - Admin Check:', {
+    userEmail: user?.email,
+    isProtectedAdmin,
+    isAdminUser,
+    profileRole: profile?.role
+  });
+
   if (!profile) return null;
 
   return (
@@ -51,17 +64,14 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
           <Link to="/settings">Settings</Link>
         </DropdownMenuItem>
         
-        {/* Admin Menu Section */}
-        {isAdmin && (
+        {/* Admin Menu Section - No dropdown item but kept link in separate section */}
+        {isAdminUser && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="flex items-center text-puzzle-aqua">
               <ShieldCheck className="mr-2 h-4 w-4" />
               Admin Access
             </DropdownMenuLabel>
-            <DropdownMenuItem asChild>
-              <Link to="/admin">Dashboard</Link>
-            </DropdownMenuItem>
           </>
         )}
         

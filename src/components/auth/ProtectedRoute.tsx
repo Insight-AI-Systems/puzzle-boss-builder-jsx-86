@@ -1,37 +1,33 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuthState } from '@/contexts/auth/AuthStateContext';
-import { useRoles } from '@/contexts/auth/RoleContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types/userTypes';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRoles?: UserRole[];
-  requiredPermissions?: string[];
-  requireAll?: boolean; // If true, user must have all required roles/permissions
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
-  requiredRoles = [], 
-  requiredPermissions = [],
-  requireAll = false
+  requiredRoles = [] 
 }) => {
-  const { isAuthenticated, isLoading: authLoading } = useAuthState();
-  const { 
-    hasRole, 
-    hasPermission, 
-    hasAllPermissions, 
-    hasAnyPermission, 
-    rolesLoaded 
-  } = useRoles();
+  const { isAuthenticated, isLoading, hasRole, rolesLoaded } = useAuth();
   
-  // Combined loading state
-  const isLoading = authLoading || (!rolesLoaded && isAuthenticated);
+  // Enhanced debugging to see why routes aren't rendering
+  useEffect(() => {
+    console.log('ProtectedRoute mounted - Debug:', {
+      isAuthenticated,
+      isLoading,
+      rolesLoaded,
+      requiredRoles
+    });
+  }, [isAuthenticated, isLoading, rolesLoaded, requiredRoles]);
 
-  if (isLoading) {
+  if (isLoading || !rolesLoaded) {
+    console.log('ProtectedRoute - Still loading auth state');
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="flex flex-col items-center">
@@ -43,37 +39,25 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthenticated) {
-    // Redirect to auth page, save the current path for redirect after login
-    return <Navigate to="/auth" state={{ from: window.location }} replace />;
+    console.log('ProtectedRoute - User not authenticated, redirecting to auth page');
+    return <Navigate to="/auth" replace />;
   }
 
-  // Check role requirements if specified
-  let hasRequiredRoles = true;
+  // If roles are specified, check if user has any of them
   if (requiredRoles.length > 0) {
-    hasRequiredRoles = requireAll
-      ? requiredRoles.every(role => hasRole(role))
-      : requiredRoles.some(role => hasRole(role));
-      
-    if (!hasRequiredRoles) {
-      console.log('ProtectedRoute - Access denied: missing required roles');
+    const hasRequiredRole = requiredRoles.some(role => hasRole(role));
+    console.log('ProtectedRoute - Role check:', {
+      requiredRoles,
+      hasRequiredRole
+    });
+
+    if (!hasRequiredRole) {
+      console.log('ProtectedRoute - User lacks required role, redirecting to unauthorized page');
       return <Navigate to="/unauthorized" replace />;
     }
   }
 
-  // Check permission requirements if specified
-  let hasRequiredPermissions = true;
-  if (requiredPermissions.length > 0) {
-    hasRequiredPermissions = requireAll
-      ? hasAllPermissions(requiredPermissions)
-      : hasAnyPermission(requiredPermissions);
-      
-    if (!hasRequiredPermissions) {
-      console.log('ProtectedRoute - Access denied: missing required permissions');
-      return <Navigate to="/unauthorized" replace />;
-    }
-  }
-
-  // User has all required roles and permissions
+  console.log('ProtectedRoute - Access granted, rendering children');
   return <>{children}</>;
 };
 

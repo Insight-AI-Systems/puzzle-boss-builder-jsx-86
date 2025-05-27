@@ -7,7 +7,6 @@ import { Loader2 } from 'lucide-react';
 import { CategoryTable } from './CategoryTable';
 import { AddCategoryDialog } from './AddCategoryDialog';
 import { useCategoryOperations } from '@/hooks/admin/useCategoryOperations';
-import { AdminCategory } from '@/types/categoryTypes';
 
 export const CategoryManagement: React.FC = () => {
   const {
@@ -31,20 +30,9 @@ export const CategoryManagement: React.FC = () => {
     handleDeletePuzzle
   } = useCategoryOperations();
 
+  // Create wrapper functions for the refetch calls to fix TypeScript errors
   const handleRefresh = () => {
     refetch();
-  };
-
-  const handleEditCategoryWrapper = (category: AdminCategory) => {
-    handleEditCategory(category);
-  };
-
-  const handleDeleteCategoryWrapper = (categoryId: string) => {
-    handleDeleteCategory(categoryId, 'Category');
-  };
-
-  const handleSaveCategoryWrapper = (category: AdminCategory) => {
-    handleSaveCategory(category);
   };
 
   if (isLoading) {
@@ -116,9 +104,9 @@ export const CategoryManagement: React.FC = () => {
               categories={categories}
               editingCategory={editingCategory}
               setEditingCategory={setEditingCategory}
-              handleEditCategory={handleEditCategoryWrapper}
-              handleDeleteCategory={handleDeleteCategoryWrapper}
-              handleSaveCategory={handleSaveCategoryWrapper}
+              handleEditCategory={handleEditCategory}
+              handleDeleteCategory={handleDeleteCategory}
+              handleSaveCategory={handleSaveCategory}
               isDeleteConfirmOpen={isDeleteConfirmOpen}
               confirmDeleteCategory={confirmDeleteCategory}
               cancelDeleteCategory={cancelDeleteCategory}
@@ -139,7 +127,7 @@ export const CategoryManagement: React.FC = () => {
         onOpenChange={setIsAddDialogOpen}
         editingCategory={editingCategory}
         setEditingCategory={setEditingCategory}
-        handleSaveCategory={handleSaveCategoryWrapper}
+        handleSaveCategory={handleSaveCategory}
       />
     </div>
   );

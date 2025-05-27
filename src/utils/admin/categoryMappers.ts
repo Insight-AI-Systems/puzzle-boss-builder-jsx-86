@@ -6,9 +6,12 @@ export const mapDbCategory = (category: Record<string, any>): AdminCategory => (
   name: category.name,
   slug: category.slug,
   description: category.description || '',
-  image_url: category.image_url || "/placeholder.svg",
+  image_url: category.image_url,
+  imageUrl: typeof category.image_url === "string" ? category.image_url : "/placeholder.svg",
   status:
     category.status === "active" || category.status === "inactive"
       ? category.status
       : "inactive",
+  puzzleCount: 0,
+  activeCount: 0,
 });

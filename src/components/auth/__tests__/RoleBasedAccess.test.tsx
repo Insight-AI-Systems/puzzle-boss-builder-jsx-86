@@ -7,6 +7,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { UserRole } from '@/types/userTypes';
 import '@testing-library/jest-dom';
 
+// Mock user and session
 const mockUser: User = {
   id: 'test-user-id',
   email: 'test@example.com',
@@ -27,6 +28,7 @@ const mockSession: Session = {
 
 describe('RoleBasedAccess Component', () => {
   test('renders children when user has required role', () => {
+    // Mock auth context with admin role
     const mockAuthContext: AuthContextType = {
       user: mockUser,
       session: mockSession,
@@ -35,7 +37,7 @@ describe('RoleBasedAccess Component', () => {
       error: null,
       userRole: 'super_admin' as UserRole,
       userRoles: ['super_admin'] as UserRole[],
-      hasRole: (role: UserRole) => role === 'super_admin',
+      hasRole: (role: string) => role === 'super_admin',
       isAdmin: true,
       rolesLoaded: true,
       signIn: jest.fn(),
@@ -59,6 +61,7 @@ describe('RoleBasedAccess Component', () => {
   });
 
   test('does not render children when user lacks required role', () => {
+    // Mock auth context with player role
     const mockAuthContext: AuthContextType = {
       user: mockUser,
       session: mockSession,
@@ -67,7 +70,7 @@ describe('RoleBasedAccess Component', () => {
       error: null,
       userRole: 'player' as UserRole,
       userRoles: ['player'] as UserRole[],
-      hasRole: (role: UserRole) => role === 'player',
+      hasRole: (role: string) => role === 'player',
       isAdmin: false,
       rolesLoaded: true,
       signIn: jest.fn(),
@@ -91,6 +94,7 @@ describe('RoleBasedAccess Component', () => {
   });
 
   test('renders children when user has any of the multiple required roles', () => {
+    // Mock auth context with custom hasRole implementation
     const mockAuthContext: AuthContextType = {
       user: mockUser,
       session: mockSession,
@@ -98,8 +102,8 @@ describe('RoleBasedAccess Component', () => {
       isLoading: false,
       error: null,
       userRole: 'admin' as UserRole,
-      userRoles: ['admin'] as UserRole[],
-      hasRole: (testRole: UserRole) => testRole === 'admin',
+      userRoles: ['admin', 'editor'] as UserRole[],
+      hasRole: (testRole: string) => ['admin', 'editor'].includes(testRole),
       isAdmin: false,
       rolesLoaded: true,
       signIn: jest.fn(),

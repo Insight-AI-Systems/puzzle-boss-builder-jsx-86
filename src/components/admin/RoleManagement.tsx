@@ -1,61 +1,95 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Users } from 'lucide-react';
-import { useAuth } from '@/hooks/auth';
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { UserProfile, UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { RoleUserTable } from './RoleUserTable';
 
+const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+
 export function RoleManagement() {
-  const { userRole } = useAuth();
-  const { allProfiles, isLoadingProfiles, updateUserRole } = useUserProfile();
+  const { allProfiles, isLoadingProfiles, updateUserRole, profile: currentUserProfile } = useUserProfile();
+  const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
 
-  if (!userRole || (userRole !== 'super_admin' && userRole !== 'admin')) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <p className="text-muted-foreground">You don't have permission to access role management.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const currentUserRole: UserRole = currentUserProfile?.role || 'player';
+  const currentUserEmail = currentUserProfile?.id;
+  
+  // Fix the type comparison by using type assertion
+  const isSuperAdmin = currentUserRole === 'super_admin' as UserRole;
+  const isCurrentUserProtectedAdmin = currentUserEmail === PROTECTED_ADMIN_EMAIL;
+  const canAssignAnyRole = isSuperAdmin || isCurrentUserProtectedAdmin;
 
-  const handleRoleUpdate = async (targetUserId: string, newRole: string) => {
-    try {
-      await updateUserRole.mutate({ targetUserId, newRole });
-    } catch (error) {
-      console.error('Error updating user role:', error);
-    }
+  // Filter profiles based on search term
+  const profilesData: UserProfile[] = allProfiles?.data || [];
+  const filteredProfiles = profilesData.filter(profile =>
+    profile.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    profile.id.includes(searchTerm)
+  );
+
+  // Handle role change action
+  const handleRoleChange = (userId: string, newRole: UserRole) => {
+    updateUserRole.mutate({ targetUserId: userId, newRole }, {
+      onSuccess: () => {
+        toast({
+          title: "Role updated",
+          description: `User role has been updated to ${newRole}`,
+        });
+      },
+      onError: (error) => {
+        toast({
+          title: "Role update failed",
+          description: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          variant: "destructive",
+        });
+      }
+    });
   };
 
+  // Helper function to determine if current user can assign a role
+  const canAssignRole = (role: UserRole, userId: string): boolean => {
+    if (userId === PROTECTED_ADMIN_EMAIL) {
+      return canAssignAnyRole;
+    }
+    if (canAssignAnyRole) return true;
+    if (currentUserRole === 'super_admin' as UserRole && role !== 'super_admin' as UserRole) return true;
+    return false;
+  };
+
+  if (isLoadingProfiles) {
+    return <div>Loading users...</div>;
+  }
+
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center">
-          <Users className="h-5 w-5 mr-2" />
           Role Management
         </CardTitle>
-        <CardDescription>
-          Manage user roles and permissions
-        </CardDescription>
+        <CardDescription>Manage user roles and permissions</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">User Roles</h3>
-            <Badge variant="secondary">
-              {allProfiles.data.length} total users
-            </Badge>
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 bg-background/50"
+            />
           </div>
-
-          <RoleUserTable
-            users={allProfiles.data}
-            isLoading={isLoadingProfiles}
-            onRoleUpdate={handleRoleUpdate}
-            currentUserRole={userRole}
-          />
         </div>
+        <RoleUserTable
+          profiles={filteredProfiles}
+          currentUserRole={currentUserRole}
+          currentUserEmail={currentUserEmail}
+          handleRoleChange={handleRoleChange}
+          canAssignRole={canAssignRole}
+        />
       </CardContent>
     </Card>
   );

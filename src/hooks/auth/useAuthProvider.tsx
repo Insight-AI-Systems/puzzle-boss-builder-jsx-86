@@ -3,11 +3,11 @@ import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { UserRole } from '@/types/userTypes';
-import { useAuthState } from '@/contexts/auth/AuthStateContext';
+import { useAuthState } from './useAuthState';
 import { useToast } from '@/hooks/use-toast';
 
 export function useAuthProvider() {
-  const { user, session, isLoading: authStateLoading, error: authStateError } = useAuthState();
+  const { currentUserId, session, isLoading: authStateLoading, error: authStateError } = useAuthState();
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [lastAuthAttempt, setLastAuthAttempt] = useState<number>(0);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -21,7 +21,7 @@ export function useAuthProvider() {
 
   const MIN_TIME_BETWEEN_AUTH_ATTEMPTS = 2000;
   
-  const isAuthenticated = useMemo(() => !!user && !!session, [user, session]);
+  const isAuthenticated = useMemo(() => !!currentUserId && !!session, [currentUserId, session]);
   const isAdmin = useMemo(() => userRole === 'super_admin', [userRole]);
 
   const clearAuthError = () => setError(null);

@@ -1,86 +1,85 @@
 
 import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Edit, Trash } from "lucide-react";
-import { useToast } from '@/hooks/use-toast';
-
-interface Category {
-  id: string;
-  name: string;
-  status: string;
-}
+import { Table, TableBody } from "@/components/ui/table";
+import { AdminCategory } from '@/types/categoryTypes';
+import { usePuzzlesByCategoryId } from '@/hooks/admin/usePuzzlesByCategory';
+import { CategoryRow } from './table/CategoryRow';
+import { AssignedPuzzlesRow } from './table/AssignedPuzzlesRow';
+import { DeleteConfirmDialog } from './table/DeleteConfirmDialog';
+import { CategoryTableHeader } from './table/CategoryTableHeader';
 
 interface CategoryTableProps {
-  categories: Category[];
-  editingCategory: Category | null;
-  setEditingCategory: (category: Category | null) => void;
-  handleEditCategory: (category: Category) => void;
-  handleDeleteCategory: (id: string, name: string) => void;
-  handleSaveCategory: (category: Category) => void;
+  categories: AdminCategory[];
+  editingCategory: AdminCategory | null;
+  setEditingCategory: (category: AdminCategory | null) => void;
+  handleEditCategory: (category: AdminCategory) => void;
+  handleDeleteCategory: (categoryId: string) => void;
+  handleSaveCategory: () => void;
   isDeleteConfirmOpen: boolean;
   confirmDeleteCategory: () => void;
   cancelDeleteCategory: () => void;
-  categoryToDelete: Category | null;
-  handleDeletePuzzle: (puzzleId: string) => Promise<void>;
+  categoryToDelete: string | null;
+  handleDeletePuzzle?: (puzzleId: string) => void;
 }
 
-export const CategoryTable: React.FC<CategoryTableProps> = ({ 
+export const CategoryTable: React.FC<CategoryTableProps> = ({
   categories,
+  editingCategory,
+  setEditingCategory,
   handleEditCategory,
-  handleDeleteCategory
+  handleDeleteCategory,
+  handleSaveCategory,
+  isDeleteConfirmOpen,
+  confirmDeleteCategory,
+  cancelDeleteCategory,
+  categoryToDelete,
+  handleDeletePuzzle
 }) => {
-  const { toast } = useToast();
-
-  if (!categories || categories.length === 0) {
-    return (
-      <div className="p-8 text-center text-gray-500">
-        No categories found. Create your first category to get started!
-      </div>
-    );
-  }
+  // Find the category being deleted (for showing puzzle count in warning)
+  const categoryBeingDeleted = categoryToDelete 
+    ? categories.find(cat => cat.id === categoryToDelete) 
+    : null;
+    
+  // Use custom hook to fetch puzzles for the editing category
+  const { puzzles, isLoading } = usePuzzlesByCategoryId(
+    editingCategory?.id || null
+  );
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {categories.map((category) => (
-          <TableRow key={category.id}>
-            <TableCell className="font-medium">{category.name}</TableCell>
-            <TableCell>
-              <span className={`px-2 py-1 rounded text-xs ${
-                category.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-              }`}>
-                {category.status}
-              </span>
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEditCategory(category)}
-                >
-                  <Edit className="h-4 w-4 mr-1" /> Edit
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDeleteCategory(category.id, category.name)}
-                >
-                  <Trash className="h-4 w-4 mr-1" /> Delete
-                </Button>
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <>
+      <div className="rounded-md border">
+        <Table>
+          <CategoryTableHeader />
+          <TableBody>
+            {categories.map((category) => (
+              <React.Fragment key={category.id}>
+                <CategoryRow
+                  category={category}
+                  editingCategory={editingCategory}
+                  setEditingCategory={setEditingCategory}
+                  handleEditCategory={handleEditCategory}
+                  handleDeleteCategory={handleDeleteCategory}
+                  handleSaveCategory={handleSaveCategory}
+                />
+                <AssignedPuzzlesRow
+                  categoryId={category.id}
+                  isEditing={editingCategory?.id === category.id}
+                  puzzles={puzzles}
+                  isLoading={isLoading}
+                  handleDeletePuzzle={handleDeletePuzzle}
+                />
+              </React.Fragment>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <DeleteConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        onCancel={cancelDeleteCategory}
+        onConfirm={confirmDeleteCategory}
+        categoryBeingDeleted={categoryBeingDeleted}
+      />
+    </>
   );
 };

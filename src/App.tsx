@@ -1,41 +1,83 @@
 
 import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/contexts/auth';
-import { SecurityProvider } from '@/hooks/useSecurityContext';
-import { ThemeProvider } from '@/components/theme-provider';
-import Navbar from '@/components/navbar/Navbar';
-import AppRoutes from '@/routes';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 30000,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+// Public Pages
+import Index from './pages/Index';
+import Puzzles from './pages/Puzzles';
+import PrizesWonPage from './pages/PrizesWonPage';
+import SupportPage from './pages/SupportPage';
+import HowItWorksPage from './pages/HowItWorksPage';
+import Contact from './pages/Contact';
+import About from './pages/About';
+import FAQ from './pages/FAQ';
+import Terms from './pages/legal/Terms';
+import Privacy from './pages/legal/Privacy';
+import ContestRules from './pages/legal/ContestRules';
+import CookiePolicy from './pages/legal/CookiePolicy';
+import Partnerships from './pages/Partnerships';
+import Careers from './pages/Careers';
+import Press from './pages/Press';
+import PressKit from './pages/PressKit'; // Import the new PressKit component
+import PuzzlePage from './pages/PuzzlePage'; // Keep for backward compatibility
+import Auth from './pages/Auth';
+import Categories from './components/Categories';
+import PuzzlePlay from './pages/PuzzlePlay'; // Import the PuzzlePlay component
+import PuzzleTestPlayground from './pages/PuzzleTestPlayground'; // Import the PuzzleTestPlayground component
+import PhaserPuzzlePage from './pages/PhaserPuzzlePage'; // Import the new Phaser puzzle page
+
+// Admin Pages
+import AdminDashboard from './pages/AdminDashboard';
+import CFODashboard from './pages/CFODashboard';
+import AdminCFOPage from './pages/AdminCFOPage';
+import SupportAdmin from './pages/SupportAdmin';
+
+// Layouts
+import { MainLayout } from './components/MainLayout';
+import AdminLayout from './components/AdminLayout';
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <ThemeProvider defaultTheme="light" storageKey="ui-theme">
-          <AuthProvider>
-            <SecurityProvider>
-              <div className="min-h-screen bg-puzzle-black text-puzzle-white">
-                <Navbar />
-                <AppRoutes />
-                <Toaster />
-              </div>
-            </SecurityProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <Router>
+      <Routes>
+        {/* Public Pages using MainLayout with Outlet */}
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<Index />} />
+          <Route path="/puzzles" element={<Puzzles />} />
+          <Route path="/puzzle/:puzzleId" element={<PuzzlePlay />} /> {/* Add the proper route for puzzle play */}
+          <Route path="/puzzle" element={<PuzzlePage />} /> {/* Redirects to /puzzles */}
+          <Route path="/prizes-won" element={<PrizesWonPage />} />
+          <Route path="/support" element={<SupportPage />} />
+          <Route path="/how-it-works" element={<HowItWorksPage />} />
+          <Route path="/categories" element={<Categories />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/cookie-policy" element={<CookiePolicy />} />
+          <Route path="/contest-rules" element={<ContestRules />} />
+          <Route path="/partnerships" element={<Partnerships />} />
+          <Route path="/careers" element={<Careers />} />
+          <Route path="/press" element={<Press />} />
+          <Route path="/press-kit" element={<PressKit />} /> {/* Add route for the new press kit page */}
+          <Route path="/puzzle-test-playground" element={<PuzzleTestPlayground />} /> {/* Add the route for puzzle test playground */}
+          <Route path="/phaser-puzzle" element={<PhaserPuzzlePage />} /> {/* Add the new route for Phaser puzzle page */}
+        </Route>
+
+        {/* Auth page with no layout */}
+        <Route path="/auth" element={<Auth />} />
+
+        {/* Admin Pages Use AdminLayout */}
+        <Route element={<AdminLayout />}>
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin-cfo" element={<AdminCFOPage />} />
+          <Route path="/support-admin" element={<SupportAdmin />} />
+          {/* CFO dashboard now redirects to admin-dashboard?tab=finance */}
+          <Route path="/cfo-dashboard" element={<CFODashboard />} />
+        </Route>
+      </Routes>
+    </Router>
   );
 }
 

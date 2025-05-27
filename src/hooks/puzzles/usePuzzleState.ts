@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { DifficultyLevel, PuzzleState, GameMode } from '@/components/puzzles/types/puzzle-types';
@@ -80,8 +81,6 @@ export const usePuzzleState = (
     }
     return false;
   }, [state.isComplete, state.moveCount, state.timeSpent, state.gameMode, state.timeLimit, toast]);
-  
-
   
   const updateCorrectPieces = useCallback((count: number) => {
     setState(prev => ({ ...prev, correctPieces: count }));

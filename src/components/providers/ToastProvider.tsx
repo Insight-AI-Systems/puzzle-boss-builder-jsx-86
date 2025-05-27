@@ -1,19 +1,6 @@
 
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/toaster";
 
 export function ToastProvider() {
-  return (
-    <Toaster 
-      closeButton
-      richColors
-      position="bottom-right"
-      toastOptions={{
-        className: "rounded-md border shadow-md p-4",
-        style: { 
-          backgroundColor: "hsl(var(--background))",
-          color: "hsl(var(--foreground))"
-        },
-      }}
-    />
-  );
+  return <Toaster />;
 }

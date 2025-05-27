@@ -1,37 +1,53 @@
-export type UserRole = 'player' | 'admin' | 'super_admin' | 'category_manager' | 'social_media_manager' | 'partner_manager' | 'cfo';
 
-export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say' | 'non_binary' | 'custom';
+export type UserRole = 
+  | 'super_admin' 
+  | 'admin' 
+  | 'category_manager' 
+  | 'social_media_manager' 
+  | 'partner_manager' 
+  | 'cfo' 
+  | 'player';
 
-export type AgeGroup = '18-24' | '25-34' | '35-44' | '45-54' | '55-64' | '65+';
+export type Gender = 'male' | 'female' | 'non-binary' | 'custom' | 'prefer-not-to-say' | 'other';
 
-export interface UserProfile {
+export type AgeGroup = 'under_18' | '18_24' | '25_34' | '35_44' | '45_54' | '55_64' | '65_plus';
+
+export interface Profile {
   id: string;
+  email?: string;
   username?: string;
-  display_name?: string;
+  full_name?: string;
   avatar_url?: string;
   role?: UserRole;
-  email?: string;
-  created_at?: string;
-  last_sign_in?: string;
-  country?: string;
   bio?: string;
-  phone?: string;
-  address_line1?: string;
-  address_line2?: string;
-  city?: string;
-  state?: string;
-  postal_code?: string;
-  categories_played?: string[];
-  credits?: number;
-  achievements?: string[];
-  referral_code?: string;
+  status?: string;
+  created_at?: string;
   updated_at?: string;
-  gender?: Gender;
-  custom_gender?: string;
-  age_group?: AgeGroup;
 }
 
-export interface RoleDefinition {
+// UserProfile extends Profile with additional properties needed in various components
+export interface UserProfile {
+  id: string;
+  display_name: string | null;
+  email: string | null;
+  bio: string | null;
+  avatar_url?: string | null;
+  role: UserRole;
+  country: string | null;
+  categories_played: string[];
+  credits: number;
+  achievements: string[];
+  referral_code: string | null;
+  gender?: Gender;
+  custom_gender?: string | null;
+  age_group?: AgeGroup;
+  created_at: string;
+  updated_at: string;
+  last_sign_in?: string | null;
+}
+
+// Define the interface for role definition
+interface RoleDefinition {
   role: UserRole;
   label: string;
   description: string;
@@ -39,54 +55,96 @@ export interface RoleDefinition {
   canBeAssignedBy: UserRole[];
 }
 
+// Export the ROLE_DEFINITIONS object with roles and their permissions
 export const ROLE_DEFINITIONS: Record<UserRole, RoleDefinition> = {
-  player: {
-    role: 'player',
-    label: 'Player',
-    description: 'Regular user who can play puzzles',
-    permissions: ['play_puzzles', 'view_profile'],
-    canBeAssignedBy: ['admin', 'super_admin']
+  super_admin: {
+    role: 'super_admin',
+    label: 'Super Admin',
+    description: 'Complete administrative access to all site features and functions.',
+    permissions: [
+      'manage_users',
+      'manage_roles',
+      'manage_puzzles',
+      'manage_categories',
+      'manage_partners',
+      'manage_finances',
+      'manage_site_settings',
+      'access_analytics',
+      'manage_emails',
+      'manage_security'
+    ],
+    canBeAssignedBy: ['super_admin']
   },
   admin: {
     role: 'admin',
     label: 'Admin',
-    description: 'Administrator with broad system access',
-    permissions: ['manage_users', 'manage_puzzles', 'view_analytics', 'play_puzzles', 'view_profile'],
-    canBeAssignedBy: ['super_admin']
-  },
-  super_admin: {
-    role: 'super_admin',
-    label: 'Super Admin',
-    description: 'Highest level administrator with full system access',
-    permissions: ['manage_users', 'manage_puzzles', 'view_analytics', 'manage_system', 'assign_roles', 'play_puzzles', 'view_profile'],
+    description: 'General administrative access without some sensitive operations.',
+    permissions: [
+      'manage_users',
+      'manage_puzzles',
+      'manage_categories',
+      'manage_partners',
+      'access_analytics',
+      'manage_emails'
+    ],
     canBeAssignedBy: ['super_admin']
   },
   category_manager: {
     role: 'category_manager',
     label: 'Category Manager',
-    description: 'Manages puzzle categories and content',
-    permissions: ['manage_categories', 'manage_puzzles', 'view_analytics', 'play_puzzles', 'view_profile'],
-    canBeAssignedBy: ['admin', 'super_admin']
+    description: 'Manages specific puzzle categories and content.',
+    permissions: [
+      'manage_assigned_categories',
+      'create_puzzles',
+      'edit_puzzles',
+      'view_analytics'
+    ],
+    canBeAssignedBy: ['super_admin', 'admin']
   },
   social_media_manager: {
     role: 'social_media_manager',
     label: 'Social Media Manager',
-    description: 'Manages social media content and campaigns',
-    permissions: ['manage_content', 'view_analytics', 'play_puzzles', 'view_profile'],
-    canBeAssignedBy: ['admin', 'super_admin']
+    description: 'Manages social media content and promotions.',
+    permissions: [
+      'create_content',
+      'schedule_posts',
+      'view_analytics',
+      'manage_winners'
+    ],
+    canBeAssignedBy: ['super_admin', 'admin']
   },
   partner_manager: {
     role: 'partner_manager',
     label: 'Partner Manager',
-    description: 'Manages partnerships and business relationships',
-    permissions: ['manage_partners', 'view_analytics', 'play_puzzles', 'view_profile'],
-    canBeAssignedBy: ['admin', 'super_admin']
+    description: 'Manages partnerships and prize suppliers.',
+    permissions: [
+      'manage_partners',
+      'manage_prizes',
+      'view_analytics'
+    ],
+    canBeAssignedBy: ['super_admin', 'admin']
   },
   cfo: {
     role: 'cfo',
     label: 'CFO',
-    description: 'Chief Financial Officer with financial oversight',
-    permissions: ['view_financials', 'manage_finances', 'view_analytics', 'play_puzzles', 'view_profile'],
+    description: 'Access to financial data and reporting.',
+    permissions: [
+      'manage_finances',
+      'view_analytics',
+      'approve_payments',
+      'export_financial_data'
+    ],
     canBeAssignedBy: ['super_admin']
+  },
+  player: {
+    role: 'player',
+    label: 'Player',
+    description: 'Standard user with puzzle access.',
+    permissions: [
+      'play_puzzles',
+      'manage_profile',
+      'view_leaderboards'
+    ],
+    canBeAssignedBy: ['super_admin', 'admin']
   }
 };

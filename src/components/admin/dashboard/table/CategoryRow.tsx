@@ -33,10 +33,10 @@ export const CategoryRow: React.FC<CategoryRowProps> = ({
     <TableRow>
       <TableCell>
         <CategoryImageUpload
-          imageUrl={category.image_url}
+          imageUrl={category.imageUrl}
           onChange={(url) => {
             if (isEditing) {
-              setEditingCategory({ ...editingCategory, image_url: url });
+              setEditingCategory({ ...editingCategory, imageUrl: url });
             }
           }}
           disabled={!isEditing}
