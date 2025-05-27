@@ -3,10 +3,10 @@ import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { AuthProvider } from '@/contexts/auth';
 import { SecurityProvider } from '@/hooks/useSecurityContext';
 import { ThemeProvider } from '@/components/theme-provider';
-import Navbar from '@/components/Navbar';
+import Navbar from '@/components/navbar/Navbar';
 import AppRoutes from '@/routes';
 
 const queryClient = new QueryClient({

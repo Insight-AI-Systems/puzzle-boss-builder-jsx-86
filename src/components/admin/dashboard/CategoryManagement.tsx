@@ -43,6 +43,10 @@ export const CategoryManagement: React.FC = () => {
     handleDeleteCategory(categoryId, 'Category');
   };
 
+  const handleSaveCategoryWrapper = (category: AdminCategory) => {
+    handleSaveCategory(category);
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -114,7 +118,7 @@ export const CategoryManagement: React.FC = () => {
               setEditingCategory={setEditingCategory}
               handleEditCategory={handleEditCategoryWrapper}
               handleDeleteCategory={handleDeleteCategoryWrapper}
-              handleSaveCategory={handleSaveCategory}
+              handleSaveCategory={handleSaveCategoryWrapper}
               isDeleteConfirmOpen={isDeleteConfirmOpen}
               confirmDeleteCategory={confirmDeleteCategory}
               cancelDeleteCategory={cancelDeleteCategory}
@@ -135,7 +139,7 @@ export const CategoryManagement: React.FC = () => {
         onOpenChange={setIsAddDialogOpen}
         editingCategory={editingCategory}
         setEditingCategory={setEditingCategory}
-        handleSaveCategory={handleSaveCategory}
+        handleSaveCategory={handleSaveCategoryWrapper}
       />
     </div>
   );

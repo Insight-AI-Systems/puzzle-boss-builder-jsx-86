@@ -6,6 +6,7 @@ export interface PuzzlePiece {
   id: string;
   position: number;
   correctPosition: number;
+  originalPosition: number;
   isCorrect: boolean;
   isDragging: boolean;
 }
@@ -46,6 +47,7 @@ export function usePuzzleState(rows: number = 3, columns: number = 3) {
         id: `piece-${i}`,
         position: -1, // Start in staging area
         correctPosition: i,
+        originalPosition: i,
         isCorrect: false,
         isDragging: false
       });
