@@ -6,7 +6,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMobileMenu } from '@/hooks/use-mobile-menu';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/auth/useAuth';
 import Logo from './Logo';
 import NavLinks from './NavLinks';
 import UserMenu from './UserMenu';
