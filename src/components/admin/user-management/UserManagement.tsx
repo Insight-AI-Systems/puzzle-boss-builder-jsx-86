@@ -34,7 +34,7 @@ export const UserManagement: React.FC = () => {
     filterOptions: {},
     totalPages: 1,
     userType: 'regular' as 'regular' | 'admin',
-    setUserType: (type: 'regular' | 'admin') => {},
+    setUserType: () => {},
     allProfilesData: null,
     isLoadingProfiles: false,
     profileError: null,
@@ -42,7 +42,7 @@ export const UserManagement: React.FC = () => {
     selectedUsers: new Set<string>(),
     handleUserSelection: () => {},
     handleSelectAllUsers: () => {},
-    setSelectedUsers: (users: Set<string>) => {},
+    setSelectedUsers: () => {},
     handleExportUsers: () => {},
     sendBulkEmail: null,
     bulkUpdateRoles: null,
@@ -57,7 +57,7 @@ export const UserManagement: React.FC = () => {
   // Handle search submission
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    mockUserManagement.setSearchTerm(localSearchTerm);
+    mockUserManagement.setSearchTerm();
   };
 
   // Handle sending bulk emails
