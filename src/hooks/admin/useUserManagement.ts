@@ -57,9 +57,13 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     }
   };
 
-  // Properly typed setBulkRole function
-  const setBulkRole = (role: UserRole) => {
-    setBulkRoleState(role);
+  // Properly typed setBulkRole function that accepts string and converts to UserRole
+  const setBulkRole = (role: string | UserRole) => {
+    if (typeof role === 'string') {
+      setBulkRoleState(role as UserRole);
+    } else {
+      setBulkRoleState(role);
+    }
   };
 
   // Calculate user statistics when data changes

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { UsersTable } from './UsersTable';
@@ -53,11 +54,6 @@ export const UserManagement: React.FC = () => {
         console.error('Failed to update roles:', error);
       }
     }
-  };
-
-  // Handle bulk role selection with proper string-to-UserRole conversion
-  const handleBulkRoleSelect = (role: string) => {
-    userManagement.setBulkRole(role as UserRole);
   };
 
   if (!isAdmin) {
@@ -178,7 +174,7 @@ export const UserManagement: React.FC = () => {
         onOpenChange={setConfirmRoleDialogOpen}
         selectedCount={userManagement.selectedUsers.size}
         bulkRole={userManagement.bulkRole}
-        setBulkRole={handleBulkRoleSelect}
+        setBulkRole={userManagement.setBulkRole}
         onUpdateRoles={handleBulkRoleChange}
         isUpdating={userManagement.isBulkRoleChanging}
       />
