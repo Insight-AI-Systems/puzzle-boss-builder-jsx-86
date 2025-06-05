@@ -30,7 +30,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ initialView }) => {
     // Check for password reset
     const type = searchParams.get('type');
     if (type === 'recovery') {
-      setCurrentView('reset-confirm');
+      setCurrentView('reset-password-confirm');
       return;
     }
     

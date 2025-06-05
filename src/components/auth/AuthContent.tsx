@@ -64,9 +64,9 @@ export const AuthContent: React.FC<AuthContentProps> = ({
     console.log("Google auth not implemented");
   };
   
-  const handlePasswordResetRequest = async (resetEmail: string) => {
+  const handlePasswordResetRequest = async () => {
     try {
-      await auth.resetPassword(resetEmail);
+      await auth.resetPassword(resetPasswordVal);
       setResetSuccessMessage('Password reset email sent successfully');
       setCurrentView('reset-password-success');
     } catch (err) {
@@ -75,9 +75,9 @@ export const AuthContent: React.FC<AuthContentProps> = ({
     }
   };
 
-  const handlePasswordUpdate = async (newPassword: string) => {
+  const handlePasswordUpdate = async () => {
     try {
-      await auth.updatePassword(newPassword);
+      await auth.updatePassword(resetPasswordVal);
       setResetSuccessMessage('Password updated successfully');
       setCurrentView('reset-password-success');
     } catch (err) {
@@ -88,6 +88,10 @@ export const AuthContent: React.FC<AuthContentProps> = ({
 
   const handleForgotPassword = () => {
     setCurrentView('reset-password-request');
+  };
+
+  const handleGoToSignIn = () => {
+    setCurrentView('signin');
   };
 
   // Render different views based on current state
@@ -132,26 +136,27 @@ export const AuthContent: React.FC<AuthContentProps> = ({
     case 'reset-password-confirm':
       return (
         <ResetPasswordConfirmView
-          newPassword={resetPasswordVal}
-          setNewPassword={setResetPassword}
-          confirmNewPassword={resetConfirmPassword}
-          setConfirmNewPassword={setResetConfirmPassword}
-          resetErrorMessage={resetErrorMessage}
-          handlePasswordUpdate={handlePasswordUpdate}
+          password={resetPasswordVal}
+          confirmPassword={resetConfirmPassword}
+          errorMessage={resetErrorMessage}
+          successMessage={resetSuccessMessage}
+          isLoading={auth.isLoading}
+          setPassword={setResetPassword}
+          setConfirmPassword={setResetConfirmPassword}
+          handlePasswordReset={handlePasswordUpdate}
         />
       );
 
     case 'reset-password-success':
       return (
-        <ResetPasswordSuccessView
-          successMessage={resetSuccessMessage}
-        />
+        <ResetPasswordSuccessView />
       );
 
     case 'verification-pending':
       return (
         <VerificationPendingView
           email={lastEnteredEmail || email}
+          goToSignIn={handleGoToSignIn}
         />
       );
 
