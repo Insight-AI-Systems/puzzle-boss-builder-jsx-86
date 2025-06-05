@@ -1,74 +1,112 @@
 
 import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/auth/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
+import { UserProfile, UserRole } from '@/types/userTypes';
 
-interface UserProfile {
-  id: string;
-  username?: string;
-  full_name?: string;
-  email?: string;
-  avatar_url?: string;
-  roles?: string[];
+interface UserProfileReturn {
+  profile: UserProfile | null;
+  isLoading: boolean;
+  error: string | null;
+  isAdmin: boolean;
+  currentUserId: string | null;
+  allProfiles: { data: UserProfile[] | null };
+  isLoadingProfiles: boolean;
+  updateUserRole: {
+    mutate: (params: { targetUserId: string; newRole: UserRole }) => void;
+    mutateAsync: (params: { targetUserId: string; newRole: UserRole }) => Promise<any>;
+  };
+  refetch: () => void;
 }
 
-export function useUserProfile() {
+export function useUserProfile(): UserProfileReturn {
   const { user, isAuthenticated } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    async function fetchProfile() {
-      if (!isAuthenticated || !user) {
-        setProfile(null);
-        setIsLoading(false);
-        return;
-      }
+  const profileQuery = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
 
       try {
-        setIsLoading(true);
-        setError(null);
-
-        // Check if we have a valid session before making requests
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          console.log('useUserProfile - No session available');
-          setProfile(null);
-          setIsLoading(false);
-          return;
-        }
-
-        const { data, error: profileError } = await supabase
+        console.log('Profile data request for ID:', user.id);
+        const { data, error } = await supabase
           .from('profiles')
-          .select(`
-            id,
-            username,
-            full_name,
-            email,
-            avatar_url
-          `)
+          .select('*')
           .eq('id', user.id)
           .single();
 
-        if (profileError) {
-          console.error('Error fetching profile:', profileError);
-          setError(profileError.message);
-          setProfile(null);
-        } else {
-          setProfile(data);
+        if (error) {
+          console.error('Error fetching profile:', error);
+          throw new Error(`Failed to fetch profile: ${error.message}`);
         }
+
+        console.log('Profile data retrieved:', data);
+        
+        const userProfile: UserProfile = {
+          id: data.id,
+          email: user.email || null,
+          display_name: data.username || data.full_name || null,
+          bio: data.bio || null,
+          avatar_url: data.avatar_url,
+          role: (data.role || 'player') as UserRole,
+          country: data.country || null,
+          categories_played: data.categories_played || [],
+          credits: data.credits || 0,
+          achievements: [],
+          referral_code: null,
+          created_at: data.created_at,
+          updated_at: data.updated_at || data.created_at
+        };
+
+        return userProfile;
       } catch (err) {
-        console.error('Exception in fetchProfile:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
-        setProfile(null);
-      } finally {
-        setIsLoading(false);
+        console.error('Error in useUserProfile:', err);
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        return null;
       }
-    }
+    },
+    enabled: !!user && isAuthenticated,
+  });
 
-    fetchProfile();
-  }, [user, isAuthenticated]);
+  // Mock implementation for allProfiles to satisfy interface
+  const allProfiles = { data: null };
+  const isLoadingProfiles = false;
 
-  return { profile, isLoading, error };
+  const updateUserRole = useMutation({
+    mutationFn: async ({ targetUserId, newRole }: { targetUserId: string; newRole: UserRole }) => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', targetUserId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
+    },
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : 'Failed to update user role');
+    },
+  });
+
+  const isAdmin = profileQuery.data?.role === 'admin' || profileQuery.data?.role === 'super_admin';
+
+  return {
+    profile: profileQuery.data,
+    isLoading: profileQuery.isLoading,
+    error: error || (profileQuery.error instanceof Error ? profileQuery.error.message : null),
+    isAdmin,
+    currentUserId: user?.id || null,
+    allProfiles,
+    isLoadingProfiles,
+    updateUserRole,
+    refetch: profileQuery.refetch
+  };
 }

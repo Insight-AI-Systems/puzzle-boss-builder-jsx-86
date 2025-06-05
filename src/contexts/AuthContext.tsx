@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,14 +9,20 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
+  error: string | null;
   userRoles: UserRole[];
+  userRole: UserRole | null;
   rolesLoaded: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string, options?: any) => Promise<void>;
   signUp: (email: string, password: string, options?: any) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   hasRole: (role: UserRole) => boolean;
+  clearAuthError: () => void;
+  refreshSession: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,6 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [rolesLoaded, setRolesLoaded] = useState(false);
   const { toast } = useToast();
@@ -42,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error("Error getting initial session:", error);
+        setError(error instanceof Error ? error.message : 'Unknown error');
         setRolesLoaded(true);
       } finally {
         setIsLoading(false);
@@ -54,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (event: AuthChangeEvent, currentSession: Session | null) => {
         setSession(currentSession);
         setUser(currentSession?.user || null);
+        setError(null);
         if (currentSession?.user) {
           await fetchUserRoles(currentSession.user.id);
         } else {
@@ -102,12 +112,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, options?: any) => {
     setIsLoading(true);
+    setError(null);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         console.error('Authentication error:', error.message);
+        setError(error.message);
         toast({
           title: 'Authentication Failed',
           description: error.message,
@@ -119,9 +131,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Authentication error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+      setError(errorMessage);
       toast({
         title: 'Authentication Failed',
-        description: 'An unexpected error occurred.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -131,6 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, options?: any) => {
     setIsLoading(true);
+    setError(null);
     try {
       const { data, error } = await supabase.auth.signUp({
         email: email,
@@ -142,6 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Signup error:', error.message);
+        setError(error.message);
         toast({
           title: 'Signup Failed',
           description: error.message,
@@ -157,9 +173,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Signup error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+      setError(errorMessage);
       toast({
         title: 'Signup Failed',
-        description: 'An unexpected error occurred.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -169,10 +187,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Signout error:', error.message);
+        setError(error.message);
         toast({
           title: 'Signout Failed',
           description: error.message,
@@ -184,9 +204,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUserRoles([]);
     } catch (error) {
       console.error('Signout error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+      setError(errorMessage);
       toast({
         title: 'Signout Failed',
-        description: 'An unexpected error occurred.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -194,23 +216,80 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    setError(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) {
+        setError(error.message);
+        throw error;
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+      setError(errorMessage);
+      throw error;
+    }
+  };
+
+  const updatePassword = async (password: string) => {
+    setError(null);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        setError(error.message);
+        throw error;
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+      setError(errorMessage);
+      throw error;
+    }
+  };
+
+  const refreshSession = async () => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.error('Session refresh error:', error);
+        setError(error.message);
+      } else {
+        setSession(data.session);
+        setUser(data.user);
+      }
+    } catch (error) {
+      console.error('Session refresh error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to refresh session');
+    }
+  };
+
+  const clearAuthError = () => {
+    setError(null);
+  };
+
   const hasRole = (role: UserRole): boolean => {
     return userRoles.includes(role);
   };
 
+  const userRole = userRoles.length > 0 ? userRoles[0] : null;
   const isAdmin = userRoles.includes('admin') || userRoles.includes('super_admin');
 
   const value: AuthContextType = {
     user,
     session,
     isLoading,
+    error,
     userRoles,
+    userRole,
     rolesLoaded,
     isAuthenticated: !!user,
     isAdmin,
     signIn,
     signUp,
     signOut,
+    resetPassword,
+    updatePassword,
+    refreshSession,
+    clearAuthError,
     hasRole,
   };
 
@@ -228,3 +307,5 @@ export function useAuth() {
   }
   return context;
 }
+
+export type { AuthContextType };
