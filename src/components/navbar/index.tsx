@@ -24,26 +24,19 @@ const Navbar: React.FC = () => {
   const isMobile = useIsMobile();
   const { isMenuOpen, toggleMenu, closeMenu } = useMobileMenu();
   
-  // Handle potential errors from useUserProfile
-  let profileData = { profile: null, isLoading: true, error: null };
-  try {
-    // Only call useUserProfile if we're authenticated
-    if (isAuthenticated) {
-      profileData = useUserProfile();
-    } else {
-      profileData = { profile: null, isLoading: false, error: null };
-    }
-  } catch (error) {
-    console.error('Error using useUserProfile in Navbar:', error);
-    profileData = { profile: null, isLoading: false, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
+  // Always call useUserProfile - this is required by Rules of Hooks
+  const profileData = useUserProfile();
   
   useEffect(() => {
-    if (!profileData.isLoading) {
+    // Only use profile data if we're authenticated
+    if (isAuthenticated && !profileData.isLoading) {
       setUserProfile(profileData.profile);
       setLoading(false);
+    } else if (!isAuthenticated) {
+      setUserProfile(null);
+      setLoading(false);
     }
-  }, [profileData.isLoading, profileData.profile]);
+  }, [isAuthenticated, profileData.isLoading, profileData.profile]);
   
   // Enhanced admin check
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
