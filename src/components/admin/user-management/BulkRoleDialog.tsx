@@ -44,7 +44,11 @@ export function BulkRoleDialog({
   ];
 
   const handleRoleChange = (value: string) => {
-    setBulkRole(value as UserRole);
+    // Type-safe conversion from string to UserRole
+    const roleValue = roles.find(role => role.value === value)?.value;
+    if (roleValue) {
+      setBulkRole(roleValue);
+    }
   };
 
   return (
