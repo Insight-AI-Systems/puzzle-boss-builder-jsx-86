@@ -15,19 +15,15 @@ import { PageDebugger } from '@/components/debug/PageDebugger';
 import { useAuth } from '@/contexts/AuthContext';
 
 function Index() {
-  const { isAdmin, profile, isLoading: profileLoading } = useUserProfile();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, userRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showingConfirmation, setShowingConfirmation] = useState<boolean>(false);
   const confirmedAdmin = useRef<boolean | null>(null);
   
   console.log("Index page rendering", { 
-    isAdmin, 
-    hasProfile: !!profile, 
-    profileRole: profile?.role,
-    isLoading: profileLoading,
-    authLoading,
+    userRole,
+    isLoading: authLoading,
     isAuthenticated,
     showingConfirmation,
     navigatedFrom: location.state?.from,
@@ -37,7 +33,7 @@ function Index() {
   // Use separate useEffect for redirect logic to ensure it runs correctly
   useEffect(() => {
     // Skip this effect if we're already showing the confirmation or still loading
-    if (showingConfirmation || profileLoading || authLoading) return;
+    if (showingConfirmation || authLoading) return;
     
     // Check if we're coming directly from an admin page - if so, don't redirect
     const comingFromAdmin = location.state?.from?.startsWith('/admin');
@@ -46,9 +42,8 @@ function Index() {
     const skipRedirect = location.state?.skipAdminRedirect === true;
     
     console.log('Index page admin redirect check', {
-      profileLoading,
-      profileRole: profile?.role,
-      isAdmin,
+      authLoading,
+      userRole,
       hasConfirmedAdmin: confirmedAdmin.current !== null,
       confirmedAdminValue: confirmedAdmin.current,
       comingFromAdmin,
@@ -56,7 +51,7 @@ function Index() {
     });
     
     // Only proceed if loading is done, there's no skip flag, and we're not coming from admin pages
-    if (!profileLoading && !authLoading && profile?.role === 'super_admin' && !skipRedirect && !comingFromAdmin) {
+    if (!authLoading && userRole === 'super_admin' && !skipRedirect && !comingFromAdmin) {
       // Check localStorage for user preference
       const userWantsAdmin = window.localStorage.getItem('redirect_to_admin');
       
@@ -87,7 +82,7 @@ function Index() {
         }, 0);
       }
     }
-  }, [profileLoading, authLoading, profile, navigate, showingConfirmation, location.state, isAdmin]);
+  }, [authLoading, userRole, navigate, showingConfirmation, location.state]);
 
   useEffect(() => {
     // Debug message to verify component mounting
@@ -105,16 +100,13 @@ function Index() {
   }, [location]);
 
   // Add fallback rendering state for debugging
-  if (authLoading || profileLoading) {
+  if (authLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
           <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-puzzle-aqua border-t-transparent mx-auto"></div>
           <p>Loading application data...</p>
-          <p className="text-sm text-gray-500">
-            {authLoading ? 'Authenticating...' : ''}
-            {profileLoading ? 'Loading profile...' : ''}
-          </p>
+          <p className="text-sm text-gray-500">Authenticating...</p>
         </div>
       </div>
     );

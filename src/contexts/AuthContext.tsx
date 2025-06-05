@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/userTypes';
 
-// Update the protected admin email to match the actual user
+// Updated protected admin email
 const PROTECTED_ADMIN_EMAIL = 'alantbooth@xtra.co.nz';
 
 interface AuthContextType {
@@ -39,50 +39,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [rolesLoaded, setRolesLoaded] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const getInitialSession = async () => {
-      setIsLoading(true);
-      try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
-        setSession(initialSession);
-        setUser(initialSession?.user || null);
-        if (initialSession?.user) {
-          await fetchUserRole(initialSession.user.id, initialSession.user.email);
-        } else {
-          setRolesLoaded(true);
-        }
-      } catch (error) {
-        console.error("Error getting initial session:", error);
-        setError(error instanceof Error ? error.message : 'Unknown error');
-        setRolesLoaded(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    getInitialSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, currentSession: Session | null) => {
-        console.log('Auth state change:', event, currentSession?.user?.email);
-        setSession(currentSession);
-        setUser(currentSession?.user || null);
-        setError(null);
-        
-        if (currentSession?.user) {
-          await fetchUserRole(currentSession.user.id, currentSession.user.email);
-        } else {
-          setUserRole(null);
-          setRolesLoaded(true);
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
   const fetchUserRole = async (userId: string, email: string | undefined) => {
     try {
       console.log('AuthContext - Fetching role for user:', { userId, email });
@@ -99,9 +55,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('profiles')
         .select('role')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('AuthContext - Error fetching user profile:', error);
         setUserRole('player'); // Default fallback
       } else if (profile?.role) {
@@ -119,6 +75,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  useEffect(() => {
+    let mounted = true;
+
+    const getInitialSession = async () => {
+      try {
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error getting initial session:", error);
+          setError(error.message);
+        }
+        
+        if (mounted) {
+          setSession(initialSession);
+          setUser(initialSession?.user || null);
+          
+          if (initialSession?.user) {
+            await fetchUserRole(initialSession.user.id, initialSession.user.email);
+          } else {
+            setRolesLoaded(true);
+          }
+        }
+      } catch (error) {
+        console.error("Error getting initial session:", error);
+        if (mounted) {
+          setError(error instanceof Error ? error.message : 'Unknown error');
+          setRolesLoaded(true);
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    getInitialSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event: AuthChangeEvent, currentSession: Session | null) => {
+        console.log('Auth state change:', event, currentSession?.user?.email);
+        
+        if (mounted) {
+          setSession(currentSession);
+          setUser(currentSession?.user || null);
+          setError(null);
+          
+          if (currentSession?.user) {
+            // Use setTimeout to prevent potential recursive issues
+            setTimeout(() => {
+              if (mounted) {
+                fetchUserRole(currentSession.user.id, currentSession.user.email);
+              }
+            }, 0);
+          } else {
+            setUserRole(null);
+            setRolesLoaded(true);
+          }
+        }
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
   const signIn = async (email: string, password: string, options?: any) => {
     setIsLoading(true);
     setError(null);
@@ -134,7 +157,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       } else {
         console.log('Sign in successful for:', email);
-        // Session state will be updated by onAuthStateChange
       }
     } catch (error) {
       console.error('Authentication error:', error);
@@ -206,7 +228,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           variant: 'destructive',
         });
       }
-      // Clear state - will be handled by onAuthStateChange
     } catch (error) {
       console.error('Signout error:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
