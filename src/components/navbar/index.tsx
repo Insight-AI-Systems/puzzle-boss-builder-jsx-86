@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Menu, X, LayoutDashboard, TicketIcon } from 'lucide-react';
+import { Menu, X, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -20,16 +20,22 @@ const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 const Navbar: React.FC = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, isAuthenticated } = useAuth();
   const isMobile = useIsMobile();
   const { isMenuOpen, toggleMenu, closeMenu } = useMobileMenu();
   
   // Handle potential errors from useUserProfile
-  let profileData = { profile: null, isLoading: true };
+  let profileData = { profile: null, isLoading: true, error: null };
   try {
-    profileData = useUserProfile();
+    // Only call useUserProfile if we're authenticated
+    if (isAuthenticated) {
+      profileData = useUserProfile();
+    } else {
+      profileData = { profile: null, isLoading: false, error: null };
+    }
   } catch (error) {
     console.error('Error using useUserProfile in Navbar:', error);
+    profileData = { profile: null, isLoading: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
   
   useEffect(() => {

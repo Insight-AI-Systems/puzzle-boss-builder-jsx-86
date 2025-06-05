@@ -1,185 +1,230 @@
-
-import React, { createContext, useContext, useEffect } from 'react';
-import { AuthError, User, Session } from '@supabase/supabase-js';
-import { UserRole } from '@/types/userTypes';
-import { useAuthProvider } from '@/hooks/auth/useAuthProvider';
-import { useAuthOperations } from '@/hooks/auth/useAuthOperations';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { UserRole } from '@/types/userTypes';
 
-// Special admin email that should always have access
-const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
-
-export interface AuthContextType {
+interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  error: AuthError | Error | null;
-  
-  signIn: (email: string, password: string, options?: { rememberMe?: boolean }) => Promise<void>;
-  signUp: (email: string, password: string, metadata?: { [key: string]: any }) => Promise<void>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updatePassword: (password: string) => Promise<void>;
-  refreshSession: () => Promise<void>;
-  
+  userRoles: UserRole[];
+  rolesLoaded: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  hasRole: (role: string) => boolean;
-  userRole: UserRole | null;
-  userRoles: string[];
-  rolesLoaded: boolean;
-  
-  clearAuthError: () => void;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, options?: any) => Promise<void>;
+  signOut: () => Promise<void>;
+  hasRole: (role: UserRole) => boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: React.ReactNode;
-}
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
+  const [rolesLoaded, setRolesLoaded] = useState(false);
+  const { toast } = useToast();
 
-export function AuthProvider({ children }: AuthProviderProps) {
-  const {
-    user,
-    session,
-    isLoading,
-    error,
-    isAuthenticated,
-    isAdmin,
-    userRole,
-    userRoles,
-    rolesLoaded,
-    clearAuthError,
-    fetchUserRoles,
-    setError,
-    lastAuthAttempt,
-    setLastAuthAttempt,
-    MIN_TIME_BETWEEN_AUTH_ATTEMPTS,
-    toast,
-    roleCache
-  } = useAuthProvider();
-
-  // Implement authentication operations without useNavigate dependencies
-  const auth = useAuthOperations({
-    lastAuthAttempt,
-    setLastAuthAttempt,
-    MIN_TIME_BETWEEN_AUTH_ATTEMPTS,
-    setError,
-    toast,
-    fetchUserRoles
-  });
-
-  // Role initialization - only fetch roles if not loaded
   useEffect(() => {
-    if (session?.user && !rolesLoaded) {
-      console.log('AuthProvider - Fetching roles for user:', session.user.id);
-      setTimeout(() => {
-        fetchUserRoles(session.user.id);
-      }, 0);
-    }
-  }, [session?.user, fetchUserRoles, rolesLoaded]);
-
-  const handleSignIn = async (email: string, password: string, options?: { rememberMe?: boolean }) => {
-    await auth.signIn(email, password, options);
-    
-    // If sign-in was successful and we have a user session, update the last_sign_in
-    if (session?.user) {
+    const getInitialSession = async () => {
+      setIsLoading(true);
       try {
-        console.log('Calling handle_user_signin edge function for user:', session.user.id);
-        const response = await supabase.functions.invoke('handle_user_signin', {
-          body: { userId: session.user.id }
-        });
-        
-        if (response.error) {
-          console.error('Error updating last sign in time:', response.error);
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        setSession(initialSession);
+        setUser(initialSession?.user || null);
+        if (initialSession?.user) {
+          await fetchUserRoles(initialSession.user.id);
         } else {
-          console.log('Successfully updated last sign in time:', response.data);
+          setRolesLoaded(true);
         }
       } catch (error) {
-        console.error('Exception calling handle_user_signin function:', error);
+        console.error("Error getting initial session:", error);
+        setRolesLoaded(true);
+      } finally {
+        setIsLoading(false);
       }
+    };
+
+    getInitialSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event: AuthChangeEvent, currentSession: Session | null) => {
+        setSession(currentSession);
+        setUser(currentSession?.user || null);
+        if (currentSession?.user) {
+          await fetchUserRoles(currentSession.user.id);
+        } else {
+          setUserRoles([]);
+          setRolesLoaded(true);
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const fetchUserRoles = async (userId: string) => {
+    try {
+      console.log('AuthContext - Fetching roles for user:', userId);
+      
+      // Only make the request if we have a valid session
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!currentSession) {
+        console.log('AuthContext - No session available, skipping role fetch');
+        setUserRoles([]);
+        setRolesLoaded(true);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('AuthContext - Error fetching user roles:', error);
+        setUserRoles([]);
+      } else {
+        const roles = data?.map(item => item.role as UserRole) || [];
+        console.log('AuthContext - Fetched roles:', roles);
+        setUserRoles(roles);
+      }
+    } catch (error) {
+      console.error('AuthContext - Exception fetching user roles:', error);
+      setUserRoles([]);
+    } finally {
+      setRolesLoaded(true);
     }
   };
 
-  const hasRole = (role: string): boolean => {
-    // Check cache first
-    const cacheKey = `${user?.id || 'anonymous'}-${role}`;
-    
-    if (roleCache.current[cacheKey] !== undefined) {
-      console.log(`DEBUG - Using cached hasRole result for ${role}:`, roleCache.current[cacheKey]);
-      return roleCache.current[cacheKey];
+  const signIn = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        console.error('Authentication error:', error.message);
+        toast({
+          title: 'Authentication Failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        setUser(data.user);
+        setSession(data.session);
+      }
+    } catch (error) {
+      console.error('Authentication error:', error);
+      toast({
+        title: 'Authentication Failed',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Enhanced debug logging
-    console.log('DEBUG - hasRole check:', {
-      requestedRole: role,
-      currentUserEmail: user?.email,
-      protectedAdminEmail: PROTECTED_ADMIN_EMAIL,
-      isProtectedAdmin: user?.email === PROTECTED_ADMIN_EMAIL,
-      currentUserRole: userRole,
-      availableRoles: userRoles,
-      rolesLoaded
-    });
-    
-    // Always give access to the protected admin email
-    if (user?.email === PROTECTED_ADMIN_EMAIL) {
-      console.log('DEBUG - Protected admin email detected, granting access');
-      roleCache.current[cacheKey] = true;
-      return true;
-    }
-    
-    // Super admin can access all roles
-    if (userRole === 'super_admin') {
-      console.log('DEBUG - Super admin detected, granting access');
-      roleCache.current[cacheKey] = true;
-      return true;
-    }
-    
-    // Exact role match
-    if (userRole === role) {
-      console.log(`DEBUG - Exact role match: ${userRole} = ${role}`);
-      roleCache.current[cacheKey] = true;
-      return true;
-    }
-    
-    // Check role array as fallback
-    const hasRoleInArray = userRoles.includes(role);
-    console.log(`DEBUG - Role array check: ${role} in [${userRoles.join(', ')}] = ${hasRoleInArray}`);
-    
-    // Cache result
-    roleCache.current[cacheKey] = hasRoleInArray;
-    return hasRoleInArray;
   };
+
+  const signUp = async (email: string, password: string, options?: any) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: options,
+        },
+      });
+
+      if (error) {
+        console.error('Signup error:', error.message);
+        toast({
+          title: 'Signup Failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        setUser(data.user);
+        setSession(data.session);
+        toast({
+          title: 'Signup Successful',
+          description: 'Please check your email to verify your account.',
+        });
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      toast({
+        title: 'Signup Failed',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Signout error:', error.message);
+        toast({
+          title: 'Signout Failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
+      setUser(null);
+      setSession(null);
+      setUserRoles([]);
+    } catch (error) {
+      console.error('Signout error:', error);
+      toast({
+        title: 'Signout Failed',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const hasRole = (role: UserRole): boolean => {
+    return userRoles.includes(role);
+  };
+
+  const isAdmin = userRoles.includes('admin') || userRoles.includes('super_admin');
 
   const value: AuthContextType = {
     user,
     session,
     isLoading,
-    error,
-    signIn: handleSignIn,
-    signUp: auth.signUp,
-    signOut: auth.signOut,
-    resetPassword: auth.resetPassword,
-    updatePassword: auth.updatePassword,
-    refreshSession: auth.refreshSession,
-    isAuthenticated,
-    isAdmin: userRole === 'super_admin' || user?.email === PROTECTED_ADMIN_EMAIL,
-    hasRole,
-    userRole,
     userRoles,
     rolesLoaded,
-    clearAuthError
+    isAuthenticated: !!user,
+    isAdmin,
+    signIn,
+    signUp,
+    signOut,
+    hasRole,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  
   return context;
 }
