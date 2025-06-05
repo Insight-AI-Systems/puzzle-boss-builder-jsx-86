@@ -43,7 +43,7 @@ export const UserManagement: React.FC = () => {
     }
   };
 
-  // Handle bulk role updates
+  // Handle bulk role updates with proper null check
   const handleBulkRoleChange = async () => {
     if (userManagement.bulkRole && userManagement.bulkUpdateRoles && userManagement.selectedUsers.size > 0) {
       try {
