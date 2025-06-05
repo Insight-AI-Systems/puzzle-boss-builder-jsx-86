@@ -9,6 +9,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { MainLayout } from '@/components/MainLayout';
 import AdminLayout from '@/components/AdminLayout';
 import { PageDebugger } from '@/components/debug/PageDebugger';
+import AdminDashboard from '@/pages/AdminDashboard';
 
 // Import all pages
 import Auth from '@/pages/Auth';
@@ -62,8 +63,12 @@ function App() {
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/unauthorized" element={<Unauthorized />} />
                 
-                {/* Admin Routes */}
-                <Route path="/admin-dashboard" element={<AdminLayout />} />
+                {/* Admin Routes - Fixed to use specific AdminDashboard component */}
+                <Route path="/admin-dashboard" element={
+                  <AdminLayout>
+                    <AdminDashboard />
+                  </AdminLayout>
+                } />
                 <Route path="/admin/*" element={<AdminLayout />} />
                 
                 {/* Main App Routes with Layout */}

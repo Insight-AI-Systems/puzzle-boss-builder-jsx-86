@@ -9,8 +9,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AdminAccessCheck } from '@/components/admin/dashboard/AdminAccessCheck';
 import { AdminToolbar } from '@/components/admin/dashboard/AdminToolbar';
 
-// Special admin email that should always have access
-const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+// Updated to use the correct admin email
+const PROTECTED_ADMIN_EMAIL = 'alantbooth@xtra.co.nz';
 
 const AdminDashboard = () => {
   const { profile, isLoading } = useUserProfile();
@@ -19,7 +19,7 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
-  // Simple admin access check
+  // Simple admin access check using the correct email
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
   const isSuperAdmin = isProtectedAdmin || hasRole('super_admin');
   

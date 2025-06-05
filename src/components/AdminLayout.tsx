@@ -15,7 +15,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       <div className="flex-1 min-h-[calc(100vh-4rem)]">
         <main className="p-6">
           <div className="max-w-6xl mx-auto">
-            {children || <Outlet />}
+            {children ? children : <Outlet />}
           </div>
         </main>
       </div>
