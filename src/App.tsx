@@ -6,7 +6,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { AuthProvider } from '@/contexts/AuthContext';
-import MainLayout from '@/components/MainLayout';
+import { MainLayout } from '@/components/MainLayout';
 import AdminLayout from '@/components/AdminLayout';
 import { PageDebugger } from '@/components/debug/PageDebugger';
 
