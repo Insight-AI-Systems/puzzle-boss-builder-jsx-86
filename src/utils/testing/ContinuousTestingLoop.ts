@@ -68,9 +68,9 @@ export class ContinuousTestingLoop {
     // Phase 2: Continuous fix-and-verify loop
     console.log('\n🔄 Phase 2: Continuous Fix-and-Verify Loop');
     
-    while (iteration < this.MAX_ITERATIONS) {
+    while (iteration < ContinuousTestingLoop.MAX_ITERATIONS) {
       iteration++;
-      console.log(`\n🧪 Iteration ${iteration}/${this.MAX_ITERATIONS}`);
+      console.log(`\n🧪 Iteration ${iteration}/${ContinuousTestingLoop.MAX_ITERATIONS}`);
       
       // Get current error state
       const currentErrors = await this.errorTracker.getAllActiveErrors();
@@ -137,9 +137,9 @@ export class ContinuousTestingLoop {
   private async attemptErrorFix(error: any): Promise<FixResult> {
     let attempts = 0;
     
-    while (attempts < this.MAX_FIX_ATTEMPTS_PER_ERROR) {
+    while (attempts < ContinuousTestingLoop.MAX_FIX_ATTEMPTS_PER_ERROR) {
       attempts++;
-      console.log(`  🔧 Fix attempt ${attempts}/${this.MAX_FIX_ATTEMPTS_PER_ERROR} for: ${error.description}`);
+      console.log(`  🔧 Fix attempt ${attempts}/${ContinuousTestingLoop.MAX_FIX_ATTEMPTS_PER_ERROR} for: ${error.description}`);
       
       // Take snapshot before attempting fix
       const snapshot = await this.autoFixer.createSnapshot();
@@ -185,7 +185,7 @@ export class ContinuousTestingLoop {
       success: false,
       errorId: error.id,
       fixDescription: error.description,
-      rollbackReason: `All ${this.MAX_FIX_ATTEMPTS_PER_ERROR} fix attempts failed`,
+      rollbackReason: `All ${ContinuousTestingLoop.MAX_FIX_ATTEMPTS_PER_ERROR} fix attempts failed`,
       compilationStatus: 'failed'
     };
   }
