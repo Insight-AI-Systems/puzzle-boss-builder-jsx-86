@@ -12,6 +12,7 @@ import { Loader2 } from 'lucide-react';
 import { EmailDialog } from './EmailDialog';
 import { BulkRoleDialog } from './BulkRoleDialog';
 import { UserInsightsDashboard } from './UserInsightsDashboard';
+import { UserRole } from '@/types/userTypes';
 
 export const UserManagement: React.FC = () => {
   const { user, userRole: authUserRole } = useAuth();
@@ -43,7 +44,7 @@ export const UserManagement: React.FC = () => {
     }
   };
 
-  // Handle bulk role updates with proper null check
+  // Type-safe bulk role change handler
   const handleBulkRoleChange = async () => {
     if (userManagement.bulkRole && userManagement.bulkUpdateRoles && userManagement.selectedUsers.size > 0) {
       try {
@@ -53,6 +54,11 @@ export const UserManagement: React.FC = () => {
         console.error('Failed to update roles:', error);
       }
     }
+  };
+
+  // Type-safe role setter that validates input
+  const handleSetBulkRole = (role: UserRole | null) => {
+    userManagement.setBulkRole(role);
   };
 
   if (!isAdmin) {
@@ -173,7 +179,7 @@ export const UserManagement: React.FC = () => {
         onOpenChange={setConfirmRoleDialogOpen}
         selectedCount={userManagement.selectedUsers.size}
         bulkRole={userManagement.bulkRole}
-        setBulkRole={userManagement.setBulkRole}
+        setBulkRole={handleSetBulkRole}
         onUpdateRoles={handleBulkRoleChange}
         isUpdating={userManagement.isBulkRoleChanging}
       />

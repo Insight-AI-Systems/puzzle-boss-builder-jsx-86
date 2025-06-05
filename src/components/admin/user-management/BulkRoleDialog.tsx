@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { UserRole } from '@/types/userTypes';
 import { Loader2 } from 'lucide-react';
+import { validateUserRole } from '@/utils/typeValidation/roleValidators';
 
 interface BulkRoleDialogProps {
   open: boolean;
@@ -43,12 +44,10 @@ export function BulkRoleDialog({
     { value: 'cfo', label: 'CFO' }
   ];
 
+  // Type-safe role change handler with validation
   const handleRoleChange = (value: string) => {
-    // Type-safe conversion from string to UserRole
-    const roleValue = roles.find(role => role.value === value)?.value;
-    if (roleValue) {
-      setBulkRole(roleValue);
-    }
+    const validatedRole = validateUserRole(value);
+    setBulkRole(validatedRole);
   };
 
   return (
