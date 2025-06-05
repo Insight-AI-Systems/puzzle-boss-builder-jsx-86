@@ -149,11 +149,13 @@ export const UserManagement: React.FC = () => {
           
           {/* Pagination */}
           <UserPagination
-            currentPage={userManagement.page}
+            page={userManagement.page}
             totalPages={userManagement.totalPages}
             onPageChange={userManagement.setPage}
             pageSize={userManagement.pageSize}
             onPageSizeChange={userManagement.setPageSize}
+            currentCount={userManagement.allProfilesData?.data?.length || 0}
+            totalCount={userManagement.allProfilesData?.count || 0}
           />
         </CardContent>
       </Card>
@@ -172,7 +174,7 @@ export const UserManagement: React.FC = () => {
         onOpenChange={setConfirmRoleDialogOpen}
         selectedCount={userManagement.selectedUsers.size}
         bulkRole={userManagement.bulkRole}
-        setBulkRole={userManagement.setBulkRole}
+        setBulkRole={(role: UserRole) => userManagement.setBulkRole(role)}
         onUpdateRoles={handleBulkRoleChange}
         isUpdating={userManagement.isBulkRoleChanging}
       />

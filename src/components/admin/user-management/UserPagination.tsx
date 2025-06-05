@@ -4,19 +4,25 @@ import { Button } from "@/components/ui/button";
 
 interface UserPaginationProps {
   page: number;
-  setPage: (page: number) => void;
+  setPage?: (page: number) => void;
+  onPageChange?: (page: number) => void;
   totalPages: number;
   currentCount: number;
   totalCount: number;
+  pageSize?: number;
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
 export function UserPagination({ 
   page, 
-  setPage, 
+  setPage,
+  onPageChange,
   totalPages,
   currentCount,
   totalCount
 }: UserPaginationProps) {
+  const handlePageChange = setPage || onPageChange || (() => {});
+  
   return (
     <div className="flex items-center justify-between mt-4">
       <div className="text-sm text-muted-foreground">
@@ -26,7 +32,7 @@ export function UserPagination({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setPage(Math.max(0, page - 1))}
+          onClick={() => handlePageChange(Math.max(0, page - 1))}
           disabled={page === 0}
         >
           Previous
@@ -37,7 +43,7 @@ export function UserPagination({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+          onClick={() => handlePageChange(Math.min(totalPages - 1, page + 1))}
           disabled={page >= totalPages - 1}
         >
           Next
