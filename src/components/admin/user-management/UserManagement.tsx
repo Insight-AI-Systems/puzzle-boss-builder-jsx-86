@@ -56,6 +56,11 @@ export const UserManagement: React.FC = () => {
     }
   };
 
+  // Handle setting bulk role with proper type casting
+  const handleSetBulkRole = (role: UserRole | null) => {
+    userManagement.setBulkRole(role);
+  };
+
   if (!isAdmin) {
     return (
       <Card>
@@ -174,7 +179,7 @@ export const UserManagement: React.FC = () => {
         onOpenChange={setConfirmRoleDialogOpen}
         selectedCount={userManagement.selectedUsers.size}
         bulkRole={userManagement.bulkRole}
-        setBulkRole={userManagement.setBulkRole}
+        setBulkRole={handleSetBulkRole}
         onUpdateRoles={handleBulkRoleChange}
         isUpdating={userManagement.isBulkRoleChanging}
       />
