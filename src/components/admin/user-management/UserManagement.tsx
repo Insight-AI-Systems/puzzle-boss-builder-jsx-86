@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { UsersTable } from './UsersTable';
@@ -12,6 +11,7 @@ import { Loader2 } from 'lucide-react';
 import { EmailDialog } from './EmailDialog';
 import { BulkRoleDialog } from './BulkRoleDialog';
 import { UserInsightsDashboard } from './UserInsightsDashboard';
+import { UserRole } from '@/types/userTypes';
 
 export const UserManagement: React.FC = () => {
   const { user, userRole: authUserRole } = useAuth();
@@ -53,6 +53,11 @@ export const UserManagement: React.FC = () => {
         console.error('Failed to update roles:', error);
       }
     }
+  };
+
+  // Handle bulk role selection with proper type casting
+  const handleBulkRoleSelect = (role: UserRole) => {
+    userManagement.setBulkRole(role);
   };
 
   if (!isAdmin) {
@@ -173,7 +178,7 @@ export const UserManagement: React.FC = () => {
         onOpenChange={setConfirmRoleDialogOpen}
         selectedCount={userManagement.selectedUsers.size}
         bulkRole={userManagement.bulkRole}
-        setBulkRole={userManagement.setBulkRole}
+        setBulkRole={handleBulkRoleSelect}
         onUpdateRoles={handleBulkRoleChange}
         isUpdating={userManagement.isBulkRoleChanging}
       />
