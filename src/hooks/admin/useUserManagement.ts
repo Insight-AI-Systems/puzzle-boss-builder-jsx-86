@@ -12,7 +12,7 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
   const selection = useUserSelection();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [lastLoginSortDirection, setLastLoginSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [bulkRole, setBulkRole] = useState<UserRole | null>(null);
+  const [bulkRole, setBulkRoleState] = useState<UserRole | null>(null);
   const [isBulkRoleChanging, setIsBulkRoleChanging] = useState(false);
   
   const { 
@@ -55,6 +55,11 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
       const userIds = Array.from(selection.selectedUsers);
       await sendEmail.mutateAsync({ userIds, subject, body: message });
     }
+  };
+
+  // Properly typed setBulkRole function
+  const setBulkRole = (role: UserRole) => {
+    setBulkRoleState(role);
   };
 
   // Calculate user statistics when data changes
@@ -112,7 +117,7 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     // Sorting props
     lastLoginSortDirection,
     setLastLoginSortDirection,
-    // Bulk role props
+    // Bulk role props with proper typing
     bulkRole,
     setBulkRole,
     isBulkRoleChanging
