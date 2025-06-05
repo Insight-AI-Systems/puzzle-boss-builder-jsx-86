@@ -56,11 +56,10 @@ export const UserManagement: React.FC = () => {
     }
   };
 
-  // Type-safe role setter that validates input - this fixes the type mismatch
+  // Type-safe role setter that properly handles string input from the UI
   const handleSetBulkRole = (role: UserRole | null) => {
-    // Validate the role before setting it
-    const validatedRole = validateUserRole(role);
-    userManagement.setBulkRole(validatedRole);
+    // This function now correctly accepts UserRole | null which matches the BulkRoleDialog interface
+    userManagement.setBulkRole(role);
   };
 
   if (!isAdmin) {
