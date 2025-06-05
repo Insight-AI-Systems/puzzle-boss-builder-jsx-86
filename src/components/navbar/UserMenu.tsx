@@ -20,15 +20,15 @@ interface UserMenuProps {
   isMobile?: boolean;
 }
 
-// Special admin email that should always have access
-const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+// Update to use the correct admin email
+const PROTECTED_ADMIN_EMAIL = 'alantbooth@xtra.co.nz';
 
 const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
   const { user, hasRole, signOut } = useAuth();
 
-  // Simplified admin check
+  // Simplified admin check using the correct email
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
-  const isAdminUser = isProtectedAdmin || hasRole('super_admin');
+  const isAdminUser = isProtectedAdmin || hasRole('super_admin') || hasRole('admin');
   
   console.log('UserMenu - Admin Check:', {
     userEmail: user?.email,
@@ -64,7 +64,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
           <Link to="/settings">Settings</Link>
         </DropdownMenuItem>
         
-        {/* Admin Menu Section - No dropdown item but kept link in separate section */}
+        {/* Admin Menu Section */}
         {isAdminUser && (
           <>
             <DropdownMenuSeparator />

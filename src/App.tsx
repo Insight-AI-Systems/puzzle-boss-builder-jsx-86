@@ -12,8 +12,8 @@ import { PageDebugger } from '@/components/debug/PageDebugger';
 import Auth from '@/pages/Auth';
 import Index from '@/pages/Index';
 
-// Import admin setup to trigger role assignment
-import '@/utils/admin/executeAdminSetup';
+// Remove the automatic admin setup import that was causing issues
+// import '@/utils/admin/executeAdminSetup';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,6 +33,7 @@ function App() {
             <Suspense fallback={<div className="min-h-screen bg-puzzle-black flex items-center justify-center text-white">Loading...</div>}>
               <Routes>
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/admin-dashboard" element={<AdminLayout />} />
                 <Route path="/admin/*" element={<AdminLayout />} />
                 <Route path="/" element={
                   <MainLayout>

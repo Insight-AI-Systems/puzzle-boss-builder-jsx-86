@@ -37,61 +37,34 @@ serve(async (req) => {
       );
     }
 
-    // Special case for protected admin email
-    const isProtectedAdmin = email === 'alan@insight-ai-systems.com';
+    // Update to use the correct protected admin email
+    const isProtectedAdmin = email === 'alantbooth@xtra.co.nz';
     console.log(`Processing request for email: ${email}, isProtectedAdmin: ${isProtectedAdmin}`);
 
-    // First, get the user ID from auth.users
-    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserByEmail(email);
+    // Use the Admin Auth API correctly
+    const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     
-    if (userError || !userData?.user) {
-      console.error("Error finding user:", userError);
+    if (listError) {
+      console.error("Error listing users:", listError);
+      return new Response(
+        JSON.stringify({ error: "Failed to list users" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const userData = users.find(user => user.email === email);
+    
+    if (!userData) {
+      console.error("User not found for email:", email);
       
       // Special case for protected admin - create user if needed
       if (isProtectedAdmin) {
         console.log(`Protected admin user not found. This isn't an error for the protected admin.`);
         
-        // We'll create a placeholder and set it up for future use
-        // First, check if there's already a profile with this email
-        const { data: existingProfiles, error: profileFindError } = await supabaseAdmin
-          .from("profiles")
-          .select("id, email")
-          .eq("email", email);
-        
-        if (profileFindError) {
-          console.error("Error checking for existing profiles:", profileFindError);
-        }
-        
-        if (existingProfiles && existingProfiles.length > 0) {
-          console.log("Found existing profile for protected admin:", existingProfiles[0]);
-          
-          // Update the role on the existing profile
-          const { data: updateData, error: updateError } = await supabaseAdmin
-            .from("profiles")
-            .update({ role: "super_admin" })
-            .eq("id", existingProfiles[0].id);
-          
-          if (updateError) {
-            console.error("Error updating existing profile:", updateError);
-          } else {
-            console.log("Updated existing profile for protected admin");
-          }
-          
-          return new Response(
-            JSON.stringify({ 
-              success: true, 
-              message: "Protected admin profile updated with super_admin role",
-              profile: existingProfiles[0]
-            }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        
-        // Generate a placeholder UUID for the profile
+        // Create a placeholder profile for the protected admin
         const randomUuid = crypto.randomUUID();
         
-        // Create a placeholder profile for the protected admin
-        const { data: profileData, error: profileError } = await supabaseAdmin
+        const { error: profileError } = await supabaseAdmin
           .from("profiles")
           .insert({
             id: randomUuid,
@@ -123,12 +96,12 @@ serve(async (req) => {
       
       // For non-protected users, return error
       return new Response(
-        JSON.stringify({ error: userError?.message || "User not found" }),
+        JSON.stringify({ error: "User not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const userId = userData.user.id;
+    const userId = userData.id;
     console.log(`Found user with ID ${userId} for email ${email}`);
     
     // Check if profile exists
@@ -146,7 +119,7 @@ serve(async (req) => {
       // Profile doesn't exist, need to create it
       console.log(`Profile doesn't exist for user ${userId}, creating it`);
       
-      const { data: insertData, error: insertError } = await supabaseAdmin
+      const { error: insertError } = await supabaseAdmin
         .from("profiles")
         .insert({
           id: userId,
@@ -178,7 +151,7 @@ serve(async (req) => {
       // Profile exists, update the role
       console.log(`Updating role for existing profile (${userId}) from ${existingProfile.role} to ${role}`);
       
-      const { data: updateData, error: updateError } = await supabaseAdmin
+      const { error: updateError } = await supabaseAdmin
         .from("profiles")
         .update({ role })
         .eq("id", userId);

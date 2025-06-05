@@ -13,20 +13,21 @@ import AuthButtons from './AuthButtons';
 import MobileMenu from './MobileMenu';
 import { mainNavItems } from './NavbarData';
 
-// Special admin email that should always have access
-const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+// Update to use the correct admin email
+const PROTECTED_ADMIN_EMAIL = 'alantbooth@xtra.co.nz';
 
 const Navbar: React.FC = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
-  const { user, hasRole, isAuthenticated, isLoading } = useAuth();
+  const { user, hasRole, isAuthenticated, isLoading, userRole } = useAuth();
   const isMobile = useIsMobile();
   const { isMenuOpen, toggleMenu, closeMenu } = useMobileMenu();
   
   useEffect(() => {
-    console.log('Navbar - Auth state:', { 
+    console.log('Navbar - Auth state changed:', { 
       isAuthenticated, 
       user: !!user, 
       userEmail: user?.email,
+      userRole,
       isLoading 
     });
     
@@ -37,14 +38,14 @@ const Navbar: React.FC = () => {
         email: user.email,
         display_name: user.email?.split('@')[0] || 'User',
         avatar_url: null,
-        role: 'player' // Default role
+        role: userRole || 'player'
       });
     } else {
       setUserProfile(null);
     }
-  }, [isAuthenticated, user, isLoading]);
+  }, [isAuthenticated, user, isLoading, userRole]);
   
-  // Enhanced admin check
+  // Enhanced admin check using the correct email
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
   const isAdminUser = isProtectedAdmin || hasRole('admin') || hasRole('super_admin');
   
@@ -53,7 +54,8 @@ const Navbar: React.FC = () => {
     isAuthenticated,
     hasUser: !!user,
     hasProfile: !!userProfile,
-    isAdminUser
+    isAdminUser,
+    userRole
   });
 
   return (

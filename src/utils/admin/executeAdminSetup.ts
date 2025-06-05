@@ -5,7 +5,7 @@ import { setUserAsSuperAdmin } from './setUserRole';
  * Sets up alantbooth@xtra.co.nz as super admin
  */
 export async function setupAlanAsAdmin() {
-  const email = 'alantbooth@xtra.co.nz';
+  const email = 'alantbooth@xtra.co.nz'; // Updated to correct email
   console.log('Setting up Alan as super admin...');
   
   const result = await setUserAsSuperAdmin(email);
@@ -19,8 +19,8 @@ export async function setupAlanAsAdmin() {
   return result;
 }
 
-// Auto-execute when this module is imported
-setupAlanAsAdmin();
+// Don't auto-execute to prevent auth state issues
+// setupAlanAsAdmin();
 
 // Make function available globally
 if (typeof window !== 'undefined') {

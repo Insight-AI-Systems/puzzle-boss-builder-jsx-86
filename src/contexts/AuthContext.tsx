@@ -5,6 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/userTypes';
 
+// Update the protected admin email to match the actual user
+const PROTECTED_ADMIN_EMAIL = 'alantbooth@xtra.co.nz';
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -32,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [rolesLoaded, setRolesLoaded] = useState(false);
   const { toast } = useToast();
 
@@ -44,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(initialSession);
         setUser(initialSession?.user || null);
         if (initialSession?.user) {
-          await fetchUserRoles(initialSession.user.id);
+          await fetchUserRole(initialSession.user.id, initialSession.user.email);
         } else {
           setRolesLoaded(true);
         }
@@ -61,13 +64,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, currentSession: Session | null) => {
+        console.log('Auth state change:', event, currentSession?.user?.email);
         setSession(currentSession);
         setUser(currentSession?.user || null);
         setError(null);
+        
         if (currentSession?.user) {
-          await fetchUserRoles(currentSession.user.id);
+          await fetchUserRole(currentSession.user.id, currentSession.user.email);
         } else {
-          setUserRoles([]);
+          setUserRole(null);
           setRolesLoaded(true);
         }
       }
@@ -78,35 +83,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const fetchUserRoles = async (userId: string) => {
+  const fetchUserRole = async (userId: string, email: string | undefined) => {
     try {
-      console.log('AuthContext - Fetching roles for user:', userId);
+      console.log('AuthContext - Fetching role for user:', { userId, email });
       
-      // Only make the request if we have a valid session
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      if (!currentSession) {
-        console.log('AuthContext - No session available, skipping role fetch');
-        setUserRoles([]);
+      // Special case for protected admin - always grant super_admin role
+      if (email === PROTECTED_ADMIN_EMAIL) {
+        console.log('AuthContext - Protected admin detected, granting super_admin role');
+        setUserRole('super_admin');
         setRolesLoaded(true);
         return;
       }
 
-      const { data, error } = await supabase
-        .from('user_roles')
+      const { data: profile, error } = await supabase
+        .from('profiles')
         .select('role')
-        .eq('user_id', userId);
+        .eq('id', userId)
+        .single();
 
-      if (error) {
-        console.error('AuthContext - Error fetching user roles:', error);
-        setUserRoles([]);
+      if (error && error.code !== 'PGRST116') {
+        console.error('AuthContext - Error fetching user profile:', error);
+        setUserRole('player'); // Default fallback
+      } else if (profile?.role) {
+        console.log('AuthContext - Role found in profile:', profile.role);
+        setUserRole(profile.role as UserRole);
       } else {
-        const roles = data?.map(item => item.role as UserRole) || [];
-        console.log('AuthContext - Fetched roles:', roles);
-        setUserRoles(roles);
+        console.log('AuthContext - No role found, defaulting to player');
+        setUserRole('player');
       }
     } catch (error) {
-      console.error('AuthContext - Exception fetching user roles:', error);
-      setUserRoles([]);
+      console.error('AuthContext - Exception fetching user role:', error);
+      setUserRole('player');
     } finally {
       setRolesLoaded(true);
     }
@@ -126,8 +133,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           variant: 'destructive',
         });
       } else {
-        setUser(data.user);
-        setSession(data.session);
+        console.log('Sign in successful for:', email);
+        // Session state will be updated by onAuthStateChange
       }
     } catch (error) {
       console.error('Authentication error:', error);
@@ -152,6 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password: password,
         options: {
           data: options,
+          emailRedirectTo: `${window.location.origin}/`
         },
       });
 
@@ -164,8 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           variant: 'destructive',
         });
       } else {
-        setUser(data.user);
-        setSession(data.session);
+        console.log('Sign up successful for:', email);
         toast({
           title: 'Signup Successful',
           description: 'Please check your email to verify your account.',
@@ -199,9 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           variant: 'destructive',
         });
       }
-      setUser(null);
-      setSession(null);
-      setUserRoles([]);
+      // Clear state - will be handled by onAuthStateChange
     } catch (error) {
       console.error('Signout error:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
@@ -219,7 +224,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const resetPassword = async (email: string) => {
     setError(null);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
       if (error) {
         setError(error.message);
         throw error;
@@ -267,11 +274,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const hasRole = (role: UserRole): boolean => {
-    return userRoles.includes(role);
+    // Special case for protected admin
+    if (user?.email === PROTECTED_ADMIN_EMAIL) {
+      return role === 'super_admin' || role === 'admin';
+    }
+    return userRole === role;
   };
 
-  const userRole = userRoles.length > 0 ? userRoles[0] : null;
-  const isAdmin = userRoles.includes('admin') || userRoles.includes('super_admin');
+  // Computed values
+  const userRoles: UserRole[] = userRole ? [userRole] : [];
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin' || user?.email === PROTECTED_ADMIN_EMAIL;
 
   const value: AuthContextType = {
     user,
