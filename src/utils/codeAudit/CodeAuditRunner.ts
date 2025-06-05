@@ -1,4 +1,3 @@
-
 /**
  * Code Audit Runner - Comprehensive code quality verification system
  * This ensures we can verify fixes before claiming success
@@ -147,9 +146,4 @@ export class CodeAuditRunner {
       status
     };
   }
-
-  // Static methods for easy access
-  static readonly RESULT_VERIFIED = CodeAuditRunner.RESULT_VERIFIED;
-  static readonly RESULT_PARTIAL = CodeAuditRunner.RESULT_PARTIAL;
-  static readonly RESULT_FAILED = CodeAuditRunner.RESULT_FAILED;
 }

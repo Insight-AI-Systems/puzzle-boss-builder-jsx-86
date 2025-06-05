@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { UsersTable } from './UsersTable';
@@ -13,6 +12,7 @@ import { EmailDialog } from './EmailDialog';
 import { BulkRoleDialog } from './BulkRoleDialog';
 import { UserInsightsDashboard } from './UserInsightsDashboard';
 import { UserRole } from '@/types/userTypes';
+import { validateUserRole } from '@/utils/typeValidation/roleValidators';
 
 export const UserManagement: React.FC = () => {
   const { user, userRole: authUserRole } = useAuth();
@@ -56,9 +56,11 @@ export const UserManagement: React.FC = () => {
     }
   };
 
-  // Type-safe role setter that validates input
+  // Type-safe role setter that validates input - this fixes the type mismatch
   const handleSetBulkRole = (role: UserRole | null) => {
-    userManagement.setBulkRole(role);
+    // Validate the role before setting it
+    const validatedRole = validateUserRole(role);
+    userManagement.setBulkRole(validatedRole);
   };
 
   if (!isAdmin) {

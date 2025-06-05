@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -104,7 +103,7 @@ export function CodeAuditDashboard() {
                     <XCircle className="h-5 w-5 text-orange-500 mr-2" />
                     <div>
                       <p className="text-sm font-medium">High Priority</p>
-                      <p className="text-2xl font-bold">{auditSummary.highIssues}</p>
+                      <p className="text-2xl font-bold">{auditSummary.highPriorityIssues}</p>
                     </div>
                   </div>
                 </CardContent>
