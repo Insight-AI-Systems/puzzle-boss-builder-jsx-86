@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { UsersTable } from './UsersTable';
@@ -62,6 +63,12 @@ export const UserManagement: React.FC = () => {
     userManagement.setBulkRole(role);
   };
 
+  // Type-safe role filter handler that converts string to UserRole | null
+  const handleRoleFilterChange = (roleString: string) => {
+    const validatedRole = validateUserRole(roleString);
+    userManagement.setSelectedRole(validatedRole);
+  };
+
   if (!isAdmin) {
     return (
       <Card>
@@ -120,7 +127,7 @@ export const UserManagement: React.FC = () => {
             onDateRangeChange={(range) => userManagement.setDateRange(range)}
             onCountryChange={(country) => userManagement.setSelectedCountry(country)}
             onCategoryChange={(category) => userManagement.setSelectedCategory(category)}
-            onRoleChange={(role) => userManagement.setSelectedRole(role)}
+            onRoleChange={handleRoleFilterChange}
             countries={userManagement.allProfilesData?.countries || []}
             categories={userManagement.allProfilesData?.categories || []}
             dateRange={userManagement.dateRange}
