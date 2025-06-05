@@ -1,83 +1,47 @@
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { AuthProvider } from '@/contexts/AuthContext';
+import MainLayout from '@/components/MainLayout';
+import AdminLayout from '@/components/AdminLayout';
+import { PageDebugger } from '@/components/debug/PageDebugger';
 
-// Public Pages
-import Index from './pages/Index';
-import Puzzles from './pages/Puzzles';
-import PrizesWonPage from './pages/PrizesWonPage';
-import SupportPage from './pages/SupportPage';
-import HowItWorksPage from './pages/HowItWorksPage';
-import Contact from './pages/Contact';
-import About from './pages/About';
-import FAQ from './pages/FAQ';
-import Terms from './pages/legal/Terms';
-import Privacy from './pages/legal/Privacy';
-import ContestRules from './pages/legal/ContestRules';
-import CookiePolicy from './pages/legal/CookiePolicy';
-import Partnerships from './pages/Partnerships';
-import Careers from './pages/Careers';
-import Press from './pages/Press';
-import PressKit from './pages/PressKit'; // Import the new PressKit component
-import PuzzlePage from './pages/PuzzlePage'; // Keep for backward compatibility
-import Auth from './pages/Auth';
-import Categories from './components/Categories';
-import PuzzlePlay from './pages/PuzzlePlay'; // Import the PuzzlePlay component
-import PuzzleTestPlayground from './pages/PuzzleTestPlayground'; // Import the PuzzleTestPlayground component
-import PhaserPuzzlePage from './pages/PhaserPuzzlePage'; // Import the new Phaser puzzle page
+// Import admin setup to trigger role assignment
+import '@/utils/admin/executeAdminSetup';
 
-// Admin Pages
-import AdminDashboard from './pages/AdminDashboard';
-import CFODashboard from './pages/CFODashboard';
-import AdminCFOPage from './pages/AdminCFOPage';
-import SupportAdmin from './pages/SupportAdmin';
-
-// Layouts
-import { MainLayout } from './components/MainLayout';
-import AdminLayout from './components/AdminLayout';
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Public Pages using MainLayout with Outlet */}
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<Index />} />
-          <Route path="/puzzles" element={<Puzzles />} />
-          <Route path="/puzzle/:puzzleId" element={<PuzzlePlay />} /> {/* Add the proper route for puzzle play */}
-          <Route path="/puzzle" element={<PuzzlePage />} /> {/* Redirects to /puzzles */}
-          <Route path="/prizes-won" element={<PrizesWonPage />} />
-          <Route path="/support" element={<SupportPage />} />
-          <Route path="/how-it-works" element={<HowItWorksPage />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/cookie-policy" element={<CookiePolicy />} />
-          <Route path="/contest-rules" element={<ContestRules />} />
-          <Route path="/partnerships" element={<Partnerships />} />
-          <Route path="/careers" element={<Careers />} />
-          <Route path="/press" element={<Press />} />
-          <Route path="/press-kit" element={<PressKit />} /> {/* Add route for the new press kit page */}
-          <Route path="/puzzle-test-playground" element={<PuzzleTestPlayground />} /> {/* Add the route for puzzle test playground */}
-          <Route path="/phaser-puzzle" element={<PhaserPuzzlePage />} /> {/* Add the new route for Phaser puzzle page */}
-        </Route>
-
-        {/* Auth page with no layout */}
-        <Route path="/auth" element={<Auth />} />
-
-        {/* Admin Pages Use AdminLayout */}
-        <Route element={<AdminLayout />}>
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route path="/admin-cfo" element={<AdminCFOPage />} />
-          <Route path="/support-admin" element={<SupportAdmin />} />
-          {/* CFO dashboard now redirects to admin-dashboard?tab=finance */}
-          <Route path="/cfo-dashboard" element={<CFODashboard />} />
-        </Route>
-      </Routes>
-    </Router>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router>
+          <div className="min-h-screen bg-puzzle-black">
+            <Suspense fallback={<div className="min-h-screen bg-puzzle-black flex items-center justify-center text-white">Loading...</div>}>
+              <Routes>
+                <Route path="/admin/*" element={<AdminLayout />} />
+                <Route path="/*" element={<MainLayout />} />
+              </Routes>
+            </Suspense>
+            <PageDebugger componentName="App" />
+          </div>
+          <Toaster />
+          <Sonner />
+        </Router>
+      </AuthProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 }
 
