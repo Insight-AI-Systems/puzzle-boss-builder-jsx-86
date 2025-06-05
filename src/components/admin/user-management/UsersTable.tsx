@@ -6,7 +6,8 @@ import { UserTableRow } from './UserTableRow';
 import { UserTableProps } from '@/types/userTableTypes';
 import { UserRole } from '@/types/userTypes';
 
-const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+// Updated to use the correct admin email
+const PROTECTED_ADMIN_EMAIL = 'alantbooth@xtra.co.nz';
 
 export function UsersTable({ 
   users, 

@@ -8,7 +8,8 @@ import { UserProfile, UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { RoleUserTable } from './RoleUserTable';
 
-const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+// Updated to use the correct admin email
+const PROTECTED_ADMIN_EMAIL = 'alantbooth@xtra.co.nz';
 
 export function RoleManagement() {
   const { profile: currentUserProfile } = useUserProfile();
@@ -16,7 +17,7 @@ export function RoleManagement() {
   const { toast } = useToast();
 
   const currentUserRole: UserRole = currentUserProfile?.role || 'player';
-  const currentUserEmail = currentUserProfile?.id;
+  const currentUserEmail = currentUserProfile?.email;
   
   // Fix the type comparison by using type assertion
   const isSuperAdmin = currentUserRole === 'super_admin' as UserRole;

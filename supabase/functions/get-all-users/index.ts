@@ -64,8 +64,7 @@ serve(async (req) => {
     }
 
     // Build a safe select query that only includes columns we know exist
-    // This avoids the "column profiles.gender does not exist" error
-    const selectQuery = "id, role, username, country, last_sign_in";
+    const selectQuery = "id, role, username, email, country, last_sign_in, created_at, updated_at";
     
     // Fetch profiles with a safe query
     const { data: profiles, error: profilesError } = await supabaseAdmin
@@ -96,20 +95,32 @@ serve(async (req) => {
       return {
         id: user.id,
         email: user.email,
-        created_at: user.created_at,
-        display_name: profile.username || user.email?.split('@')[0] || 'N/A',
+        display_name: profile.username || user.email?.split('@')[0] || 'Anonymous User',
         role: profile.role || 'player',
         country: profile.country || null,
-        last_sign_in: lastSignIn
+        created_at: user.created_at,
+        updated_at: profile.updated_at || user.updated_at || user.created_at,
+        last_sign_in: lastSignIn,
+        // Add any additional fields that might be needed
+        categories_played: [],
+        gender: null,
+        custom_gender: null,
+        age_group: null
       };
     });
 
     console.log(`Returning ${combinedUsers.length} users`);
-
+    
     return new Response(
       JSON.stringify(combinedUsers),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json" 
+        } 
+      }
     );
+
   } catch (error) {
     console.error("Unexpected error:", error);
     return new Response(

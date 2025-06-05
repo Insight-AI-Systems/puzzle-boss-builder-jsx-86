@@ -24,53 +24,68 @@ export const UserManagement: React.FC = () => {
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
   const userId = user?.id || null;
   
-  // Mock implementation since useUserManagement may not exist
-  const mockUserManagement = {
-    searchTerm: '',
-    setSearchTerm: () => {},
-    page: 1,
-    setPage: () => {},
-    pageSize: 10,
-    filterOptions: {},
-    totalPages: 1,
-    userType: 'regular' as 'regular' | 'admin',
-    setUserType: () => {},
-    allProfilesData: null,
-    isLoadingProfiles: false,
-    profileError: null,
-    userStats: null,
-    selectedUsers: new Set<string>(),
-    handleUserSelection: () => {},
-    handleSelectAllUsers: () => {},
-    setSelectedUsers: () => {},
-    handleExportUsers: () => {},
-    sendBulkEmail: null,
-    bulkUpdateRoles: null,
-    handleRoleChange: () => {},
-    bulkRole: null,
-    setBulkRole: () => {},
-    isBulkRoleChanging: false,
-    lastLoginSortDirection: null,
-    setLastLoginSortDirection: () => {}
-  };
+  const userManagement = useUserManagement(isAdmin, userId);
   
   // Handle search submission
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    mockUserManagement.setSearchTerm();
+    userManagement.setSearchTerm(localSearchTerm);
   };
 
   // Handle sending bulk emails
-  const handleSendBulkEmail = (subject: string, message: string) => {
-    console.log('Bulk email not implemented');
-    setEmailDialogOpen(false);
+  const handleSendBulkEmail = async (subject: string, message: string) => {
+    if (userManagement.sendBulkEmail) {
+      try {
+        await userManagement.sendBulkEmail(subject, message);
+        setEmailDialogOpen(false);
+      } catch (error) {
+        console.error('Failed to send bulk email:', error);
+      }
+    }
   };
 
   // Handle bulk role updates
-  const handleBulkRoleChange = () => {
-    console.log('Bulk role change not implemented');
-    setConfirmRoleDialogOpen(false);
+  const handleBulkRoleChange = async () => {
+    if (userManagement.bulkRole && userManagement.bulkUpdateRoles && userManagement.selectedUsers.size > 0) {
+      try {
+        await userManagement.bulkUpdateRoles(Array.from(userManagement.selectedUsers), userManagement.bulkRole);
+        setConfirmRoleDialogOpen(false);
+      } catch (error) {
+        console.error('Failed to update roles:', error);
+      }
+    }
   };
+
+  if (!isAdmin) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <p className="text-muted-foreground">You do not have permission to access user management.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (userManagement.isLoadingProfiles) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading user data...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (userManagement.profileError) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <p className="text-red-500">Error loading users: {userManagement.profileError.message}</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -81,23 +96,28 @@ export const UserManagement: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* User insights dashboard */}
-          {mockUserManagement.userStats && <UserInsightsDashboard userStats={mockUserManagement.userStats} signupStats={[]} />}
+          {userManagement.userStats && (
+            <UserInsightsDashboard 
+              userStats={userManagement.userStats} 
+              signupStats={userManagement.allProfilesData?.signup_stats || []} 
+            />
+          )}
           
           {/* User type toggle */}
           <UserTypeToggle 
-            value={mockUserManagement.userType} 
-            onChange={mockUserManagement.setUserType} 
+            value={userManagement.userType} 
+            onChange={userManagement.setUserType} 
           />
           
           {/* User filters and actions */}
           <UserTableFilters
-            onDateRangeChange={(range) => console.log("Date range changed", range)}
-            onCountryChange={(country) => console.log("Country changed", country)}
-            onCategoryChange={(category) => console.log("Category changed", category)}
-            onRoleChange={(role) => console.log("Role filter changed", role)}
-            countries={[]}
-            categories={[]}
-            dateRange={undefined}
+            onDateRangeChange={(range) => userManagement.setDateRange(range)}
+            onCountryChange={(country) => userManagement.setSelectedCountry(country)}
+            onCategoryChange={(category) => userManagement.setSelectedCategory(category)}
+            onRoleChange={(role) => userManagement.setSelectedRole(role)}
+            countries={userManagement.allProfilesData?.countries || []}
+            categories={userManagement.allProfilesData?.categories || []}
+            dateRange={userManagement.dateRange}
           />
           
           {/* User actions */}
@@ -105,15 +125,36 @@ export const UserManagement: React.FC = () => {
             localSearchTerm={localSearchTerm}
             setLocalSearchTerm={setLocalSearchTerm}
             handleSearchSubmit={handleSearchSubmit}
-            selectedUsers={mockUserManagement.selectedUsers}
+            selectedUsers={userManagement.selectedUsers}
             setEmailDialogOpen={setEmailDialogOpen}
             setConfirmRoleDialogOpen={setConfirmRoleDialogOpen}
-            handleExportUsers={mockUserManagement.handleExportUsers}
+            handleExportUsers={userManagement.handleExportUsers}
           />
           
-          <div className="text-center p-8 text-muted-foreground">
-            User management functionality is being implemented.
-          </div>
+          {/* Users table */}
+          {userManagement.allProfilesData?.data && (
+            <UsersTable
+              users={userManagement.allProfilesData.data}
+              currentUserRole={userRole}
+              currentUserEmail={user?.email}
+              onRoleChange={userManagement.handleRoleChange}
+              onSortByRole={() => {}} // Implement if needed
+              onSortByLastLogin={userManagement.setLastLoginSortDirection}
+              selectedUsers={userManagement.selectedUsers}
+              onUserSelection={userManagement.handleUserSelection}
+              onSelectAll={userManagement.handleSelectAllUsers}
+              lastLoginSortDirection={userManagement.lastLoginSortDirection}
+            />
+          )}
+          
+          {/* Pagination */}
+          <UserPagination
+            currentPage={userManagement.page}
+            totalPages={userManagement.totalPages}
+            onPageChange={userManagement.setPage}
+            pageSize={userManagement.pageSize}
+            onPageSizeChange={userManagement.setPageSize}
+          />
         </CardContent>
       </Card>
       
@@ -121,7 +162,7 @@ export const UserManagement: React.FC = () => {
       <EmailDialog 
         open={emailDialogOpen} 
         onOpenChange={setEmailDialogOpen}
-        selectedCount={mockUserManagement.selectedUsers.size}
+        selectedCount={userManagement.selectedUsers.size}
         onSend={handleSendBulkEmail}
       />
       
@@ -129,11 +170,11 @@ export const UserManagement: React.FC = () => {
       <BulkRoleDialog
         open={confirmRoleDialogOpen}
         onOpenChange={setConfirmRoleDialogOpen}
-        selectedCount={mockUserManagement.selectedUsers.size}
-        bulkRole={mockUserManagement.bulkRole}
-        setBulkRole={mockUserManagement.setBulkRole}
+        selectedCount={userManagement.selectedUsers.size}
+        bulkRole={userManagement.bulkRole}
+        setBulkRole={userManagement.setBulkRole}
         onUpdateRoles={handleBulkRoleChange}
-        isUpdating={mockUserManagement.isBulkRoleChanging}
+        isUpdating={userManagement.isBulkRoleChanging}
       />
     </div>
   );

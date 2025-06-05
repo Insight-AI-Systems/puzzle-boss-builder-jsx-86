@@ -15,7 +15,8 @@ import { Shield, ChevronDown } from "lucide-react";
 import { ROLE_DEFINITIONS, UserProfile, UserRole } from '@/types/userTypes';
 import { RoleDropdownMenu } from './RoleDropdownMenu';
 
-const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
+// Updated to use the correct admin email
+const PROTECTED_ADMIN_EMAIL = 'alantbooth@xtra.co.nz';
 
 interface RoleUserTableProps {
   profiles: UserProfile[];

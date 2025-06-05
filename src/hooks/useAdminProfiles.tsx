@@ -28,7 +28,18 @@ export function useAdminProfiles(
 
     try {
       console.log('Fetching users with get-all-users edge function');
-      const { data: rpcData, error } = await supabase.functions.invoke<RpcUserData[]>('get-all-users');
+      
+      // Get the current session to include auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No valid session found');
+      }
+
+      const { data: rpcData, error } = await supabase.functions.invoke<RpcUserData[]>('get-all-users', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
 
       if (error) {
         console.error('Error fetching users:', error);
@@ -130,6 +141,7 @@ export function useAdminProfiles(
       queryKey: ['all-users', page, pageSize, options, lastLoginSortDirection],
       queryFn: fetchUsers,
       enabled: !!currentUserId && isAdmin,
+      retry: 1,
     });
   } catch (error) {
     console.error('React Query error in useAdminProfiles:', error);
