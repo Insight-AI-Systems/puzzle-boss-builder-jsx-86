@@ -94,6 +94,10 @@ export const AuthContent: React.FC<AuthContentProps> = ({
     setCurrentView('signin');
   };
 
+  const handleGoBack = () => {
+    setCurrentView('signin');
+  };
+
   // Render different views based on current state
   switch (currentView) {
     case 'signin':
@@ -125,11 +129,13 @@ export const AuthContent: React.FC<AuthContentProps> = ({
     case 'reset-password-request':
       return (
         <ResetPasswordRequestView
-          setCurrentView={setCurrentView}
-          resetEmail={resetPasswordVal}
-          setResetEmail={setResetPassword}
-          resetErrorMessage={resetErrorMessage}
+          email={resetPasswordVal}
+          errorMessage={resetErrorMessage}
+          successMessage={resetSuccessMessage}
+          isLoading={auth.isLoading}
+          setEmail={setResetPassword}
           handlePasswordResetRequest={handlePasswordResetRequest}
+          goBack={handleGoBack}
         />
       );
 
@@ -149,7 +155,9 @@ export const AuthContent: React.FC<AuthContentProps> = ({
 
     case 'reset-password-success':
       return (
-        <ResetPasswordSuccessView />
+        <ResetPasswordSuccessView 
+          goToSignIn={handleGoToSignIn}
+        />
       );
 
     case 'verification-pending':
