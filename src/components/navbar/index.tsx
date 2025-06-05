@@ -2,11 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { Menu, X, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUserProfile } from '@/hooks/useUserProfile';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMobileMenu } from '@/hooks/use-mobile-menu';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/hooks/auth/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import Logo from './Logo';
 import NavLinks from './NavLinks';
 import UserMenu from './UserMenu';
@@ -19,29 +18,44 @@ const PROTECTED_ADMIN_EMAIL = 'alan@insight-ai-systems.com';
 
 const Navbar: React.FC = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const { user, hasRole, isAuthenticated } = useAuth();
+  const { user, hasRole, isAuthenticated, isLoading } = useAuth();
   const isMobile = useIsMobile();
   const { isMenuOpen, toggleMenu, closeMenu } = useMobileMenu();
   
-  // Always call useUserProfile - this is required by Rules of Hooks
-  const profileData = useUserProfile();
-  
   useEffect(() => {
-    // Only use profile data if we're authenticated
-    if (isAuthenticated && !profileData.isLoading) {
-      setUserProfile(profileData.profile);
-      setLoading(false);
-    } else if (!isAuthenticated) {
+    console.log('Navbar - Auth state:', { 
+      isAuthenticated, 
+      user: !!user, 
+      userEmail: user?.email,
+      isLoading 
+    });
+    
+    if (isAuthenticated && user) {
+      // Create a simple profile object from auth user
+      setUserProfile({
+        id: user.id,
+        email: user.email,
+        display_name: user.email?.split('@')[0] || 'User',
+        avatar_url: null,
+        role: 'player' // Default role
+      });
+    } else {
       setUserProfile(null);
-      setLoading(false);
     }
-  }, [isAuthenticated, profileData.isLoading, profileData.profile]);
+  }, [isAuthenticated, user, isLoading]);
   
   // Enhanced admin check
   const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
   const isAdminUser = isProtectedAdmin || hasRole('admin') || hasRole('super_admin');
   
+  console.log('Navbar render state:', {
+    isLoading,
+    isAuthenticated,
+    hasUser: !!user,
+    hasProfile: !!userProfile,
+    isAdminUser
+  });
+
   return (
     <nav className="bg-puzzle-black border-b border-puzzle-aqua/20">
       <div className="container mx-auto px-4">
@@ -59,18 +73,16 @@ const Navbar: React.FC = () => {
           
           {/* User Menu / Auth Buttons */}
           <div className="hidden md:flex items-center space-x-2">
-            {!loading && userProfile && isAdminUser && (
-              <>
-                <Link 
-                  to="/admin-dashboard"
-                  className="flex items-center px-3 py-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
-                >
-                  <LayoutDashboard className="h-5 w-5 mr-2" />
-                  Admin
-                </Link>
-              </>
+            {!isLoading && userProfile && isAdminUser && (
+              <Link 
+                to="/admin-dashboard"
+                className="flex items-center px-3 py-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
+              >
+                <LayoutDashboard className="h-5 w-5 mr-2" />
+                Admin
+              </Link>
             )}
-            {!loading && userProfile ? (
+            {!isLoading && userProfile ? (
               <UserMenu profile={userProfile} />
             ) : (
               <AuthButtons />
@@ -79,17 +91,15 @@ const Navbar: React.FC = () => {
           
           {/* Mobile Navigation Toggle */}
           <div className="md:hidden flex items-center">
-            {!loading && userProfile ? (
+            {!isLoading && userProfile ? (
               <>
                 {isAdminUser && (
-                  <>
-                    <Link 
-                      to="/admin-dashboard"
-                      className="flex items-center px-3 py-2 mr-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
-                    >
-                      <LayoutDashboard className="h-5 w-5" />
-                    </Link>
-                  </>
+                  <Link 
+                    to="/admin-dashboard"
+                    className="flex items-center px-3 py-2 mr-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
+                  >
+                    <LayoutDashboard className="h-5 w-5" />
+                  </Link>
                 )}
                 <UserMenu profile={userProfile} isMobile={true} />
               </>

@@ -9,6 +9,8 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { MainLayout } from '@/components/MainLayout';
 import AdminLayout from '@/components/AdminLayout';
 import { PageDebugger } from '@/components/debug/PageDebugger';
+import Auth from '@/pages/Auth';
+import Index from '@/pages/Index';
 
 // Import admin setup to trigger role assignment
 import '@/utils/admin/executeAdminSetup';
@@ -30,7 +32,13 @@ function App() {
           <div className="min-h-screen bg-puzzle-black">
             <Suspense fallback={<div className="min-h-screen bg-puzzle-black flex items-center justify-center text-white">Loading...</div>}>
               <Routes>
+                <Route path="/auth" element={<Auth />} />
                 <Route path="/admin/*" element={<AdminLayout />} />
+                <Route path="/" element={
+                  <MainLayout>
+                    <Index />
+                  </MainLayout>
+                } />
                 <Route path="/*" element={<MainLayout />} />
               </Routes>
             </Suspense>
