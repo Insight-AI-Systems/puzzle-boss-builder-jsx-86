@@ -29,13 +29,14 @@ import AccountDashboard from '@/pages/AccountDashboard';
 import Progress from '@/pages/Progress';
 import NotFound from '@/pages/NotFound';
 import Unauthorized from '@/pages/Unauthorized';
-import { Terms, Privacy, ContestRules, CookiePolicy } from '@/pages/legal';
-import { 
-  GettingStartedGuide, 
-  AccountManagement, 
-  PuzzleTechniques, 
-  PrizeClaimProcess 
-} from '@/pages/guides';
+import Terms from '@/pages/legal/Terms';
+import Privacy from '@/pages/legal/Privacy';
+import ContestRules from '@/pages/legal/ContestRules';
+import CookiePolicy from '@/pages/legal/CookiePolicy';
+import GettingStartedGuide from '@/pages/guides/GettingStartedGuide';
+import AccountManagement from '@/pages/guides/AccountManagement';
+import PuzzleTechniques from '@/pages/guides/PuzzleTechniques';
+import PrizeClaimProcess from '@/pages/guides/PrizeClaimProcess';
 import Careers from '@/pages/Careers';
 import Press from '@/pages/Press';
 import Partnerships from '@/pages/Partnerships';
