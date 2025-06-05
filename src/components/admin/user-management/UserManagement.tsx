@@ -55,9 +55,9 @@ export const UserManagement: React.FC = () => {
     }
   };
 
-  // Handle bulk role selection with proper type casting
-  const handleBulkRoleSelect = (role: UserRole) => {
-    userManagement.setBulkRole(role);
+  // Handle bulk role selection with proper string-to-UserRole conversion
+  const handleBulkRoleSelect = (role: string) => {
+    userManagement.setBulkRole(role as UserRole);
   };
 
   if (!isAdmin) {
