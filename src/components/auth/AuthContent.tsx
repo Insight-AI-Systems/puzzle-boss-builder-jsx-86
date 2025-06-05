@@ -86,6 +86,10 @@ export const AuthContent: React.FC<AuthContentProps> = ({
     }
   };
 
+  const handleForgotPassword = () => {
+    setCurrentView('reset-password-request');
+  };
+
   // Render different views based on current state
   switch (currentView) {
     case 'signin':
@@ -109,6 +113,7 @@ export const AuthContent: React.FC<AuthContentProps> = ({
           errorMessage={errorMessage}
           handleEmailAuth={handleEmailAuth}
           handleGoogleAuth={handleGoogleAuth}
+          onForgotPassword={handleForgotPassword}
           isLoading={auth.isLoading}
         />
       );
@@ -127,7 +132,6 @@ export const AuthContent: React.FC<AuthContentProps> = ({
     case 'reset-password-confirm':
       return (
         <ResetPasswordConfirmView
-          setCurrentView={setCurrentView}
           newPassword={resetPasswordVal}
           setNewPassword={setResetPassword}
           confirmNewPassword={resetConfirmPassword}
@@ -140,7 +144,6 @@ export const AuthContent: React.FC<AuthContentProps> = ({
     case 'reset-password-success':
       return (
         <ResetPasswordSuccessView
-          setCurrentView={setCurrentView}
           successMessage={resetSuccessMessage}
         />
       );
@@ -148,7 +151,6 @@ export const AuthContent: React.FC<AuthContentProps> = ({
     case 'verification-pending':
       return (
         <VerificationPendingView
-          setCurrentView={setCurrentView}
           email={lastEnteredEmail || email}
         />
       );
@@ -173,6 +175,7 @@ export const AuthContent: React.FC<AuthContentProps> = ({
           errorMessage={errorMessage}
           handleEmailAuth={handleEmailAuth}
           handleGoogleAuth={handleGoogleAuth}
+          onForgotPassword={handleForgotPassword}
           isLoading={auth.isLoading}
         />
       );
