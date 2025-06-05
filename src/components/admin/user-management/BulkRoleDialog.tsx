@@ -43,6 +43,10 @@ export function BulkRoleDialog({
     { value: 'cfo', label: 'CFO' }
   ];
 
+  const handleRoleChange = (value: string) => {
+    setBulkRole(value as UserRole);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -54,7 +58,7 @@ export function BulkRoleDialog({
         </DialogHeader>
 
         <div className="py-4">
-          <RadioGroup value={bulkRole || undefined} onValueChange={(value) => setBulkRole(value as UserRole)}>
+          <RadioGroup value={bulkRole || undefined} onValueChange={handleRoleChange}>
             {roles.map((role) => (
               <div className="flex items-center space-x-2" key={role.value}>
                 <RadioGroupItem value={role.value} id={`role-${role.value}`} />
