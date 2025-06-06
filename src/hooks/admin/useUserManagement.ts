@@ -4,8 +4,14 @@ import { useUserSelection } from './useUserSelection';
 import { useUserExport } from './useUserExport';
 import { useAdminProfiles } from '@/hooks/useAdminProfiles';
 import { UserRole } from '@/types/userTypes';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { UserStats } from '@/types/adminTypes';
+
+// Helper function to categorize user roles
+const isAdminRole = (role: UserRole): boolean => {
+  const adminRoles: UserRole[] = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
+  return adminRoles.includes(role);
+};
 
 export function useUserManagement(isAdmin: boolean, currentUserId: string | null) {
   const filters = useUserFilters();
@@ -24,6 +30,25 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     sendBulkEmail: sendEmail,
     refetch 
   } = useAdminProfiles(isAdmin, currentUserId);
+
+  // Filter users based on the selected user type (regular/admin)
+  const filteredData = useMemo(() => {
+    if (!allProfilesData?.data) return null;
+
+    const filteredUsers = allProfilesData.data.filter(user => {
+      if (filters.userType === 'regular') {
+        return user.role === 'player';
+      } else {
+        return isAdminRole(user.role);
+      }
+    });
+
+    return {
+      ...allProfilesData,
+      data: filteredUsers,
+      count: filteredUsers.length
+    };
+  }, [allProfilesData, filters.userType]);
 
   // Handle role change for a single user
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
@@ -58,13 +83,13 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     setBulkRoleState(role);
   };
 
-  // Calculate user statistics when data changes
+  // Calculate user statistics when data changes - use filtered data
   useEffect(() => {
-    if (allProfilesData?.data) {
+    if (filteredData?.data) {
       // Calculate gender breakdown
       const genderBreakdown: { [key: string]: number } = {};
       
-      allProfilesData.data.forEach(user => {
+      filteredData.data.forEach(user => {
         const gender = user.gender || 'null';
         genderBreakdown[gender] = (genderBreakdown[gender] || 0) + 1;
       });
@@ -72,20 +97,20 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
       // Calculate age breakdown if available
       const ageBreakdown: { [key: string]: number } = {};
       
-      allProfilesData.data.forEach(user => {
+      filteredData.data.forEach(user => {
         if (user.age_group) {
           ageBreakdown[user.age_group] = (ageBreakdown[user.age_group] || 0) + 1;
         }
       });
 
-      // Set the complete stats object
+      // Set the complete stats object using filtered data
       setUserStats({
-        total: allProfilesData.count,
+        total: filteredData.count,
         genderBreakdown,
         ageBreakdown: Object.keys(ageBreakdown).length > 0 ? ageBreakdown : undefined
       });
     }
-  }, [allProfilesData]);
+  }, [filteredData]);
 
   const { handleExportUsers } = useUserExport();
 
@@ -101,14 +126,14 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     sendBulkEmail,
     bulkUpdateRoles,
     handleRoleChange,
-    // Data props
-    allProfilesData,
+    // Data props - use filtered data instead of raw data
+    allProfilesData: filteredData,
     isLoadingProfiles,
     profileError,
-    // Export functionality
-    handleExportUsers: () => handleExportUsers(allProfilesData?.data),
-    // Stats and calculated values
-    totalPages: Math.ceil((allProfilesData?.count || 0) / filters.pageSize),
+    // Export functionality - use filtered data
+    handleExportUsers: () => handleExportUsers(filteredData?.data),
+    // Stats and calculated values - use filtered data count
+    totalPages: Math.ceil((filteredData?.count || 0) / filters.pageSize),
     userStats,
     // Sorting props
     lastLoginSortDirection,
