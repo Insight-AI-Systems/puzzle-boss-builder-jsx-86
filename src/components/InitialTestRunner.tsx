@@ -4,10 +4,10 @@ import { runInitialTests, runComponentTestSuite } from '@/utils/testing';
 
 const InitialTestRunner: React.FC = () => {
   React.useEffect(() => {
-    // Run the existing tests
+    // Run the unified initial tests
     runInitialTests();
     
-    // Run our new component tests
+    // Run component tests in development
     if (process.env.NODE_ENV === 'development') {
       console.log('🧪 Running component test suite...');
       runComponentTestSuite();

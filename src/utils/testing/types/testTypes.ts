@@ -1,5 +1,11 @@
 
-export type TestCategory = 'unit' | 'integration' | 'e2e' | 'performance' | 'browser';
+/**
+ * Unified Testing Types - Single source of truth for all test types
+ */
+
+export type TestResult = 'VERIFIED' | 'PARTIAL' | 'FAILED' | 'SKIPPED';
+export type TestCategory = 'unit' | 'integration' | 'performance' | 'security' | 'build';
+export type TestStatus = 'pending' | 'running' | 'completed' | 'failed';
 
 export interface TestReport {
   testId: string;
@@ -11,6 +17,15 @@ export interface TestReport {
   details: Record<string, any>;
 }
 
+export interface TestSummary {
+  totalTests: number;
+  passedTests: number;
+  failedTests: number;
+  duration: number;
+  timestamp: Date;
+  status: TestResult;
+}
+
 export interface TestSuite {
   id: string;
   name: string;
@@ -19,42 +34,35 @@ export interface TestSuite {
   description?: string;
 }
 
-export interface TestSummary {
-  totalTests: number;
-  passedTests: number;
-  failedTests: number;
-  duration: number;
-  timestamp: Date;
-  status: string;
-}
-
 export interface VerificationResult {
-  status: 'VERIFIED' | 'PARTIAL' | 'FAILED' | 'SKIPPED';
+  status: TestResult;
   message: string;
   changeId: string;
   description: string;
-  details?: Record<string, any>;
+  details?: {
+    summary?: TestSummary;
+    reports?: TestReport[];
+    dbConnectionError?: boolean;
+  };
 }
 
-export interface BrowserInfo {
-  name: string;
-  version: string;
-  os: string;
-  mobile: boolean;
-  touchEnabled: boolean;
-  screenWidth: number;
-  screenHeight: number;
-}
-
-export interface CompatibilityTest {
-  testName: string;
-  result: boolean;
-  details?: string;
-}
-
-export interface CompatibilityTestResult {
+export interface ComprehensiveTestResult {
+  totalIssuesFound: number;
+  totalIssuesFixed: number;
+  remainingIssues: number;
+  iterationCount: number;
   success: boolean;
-  browser: BrowserInfo;
-  tests: CompatibilityTest[];
-  failureReason?: string;
+  finalReport: string[];
+  duration: number;
+}
+
+export interface ProjectTest {
+  id: string;
+  name: string;
+  description?: string;
+  category: TestCategory;
+  run: () => Promise<boolean>;
+  lastRun?: Date;
+  lastResult?: boolean;
+  details?: Record<string, any>;
 }
