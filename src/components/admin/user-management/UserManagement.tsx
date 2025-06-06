@@ -152,11 +152,9 @@ export const UserManagement: React.FC = () => {
               currentUserEmail={user?.email}
               onRoleChange={userManagement.handleRoleChange}
               onSortByRole={() => {}} // Implement if needed
-              onSortByLastLogin={userManagement.setLastLoginSortDirection}
               selectedUsers={userManagement.selectedUsers}
               onUserSelection={userManagement.handleUserSelection}
               onSelectAll={userManagement.handleSelectAllUsers}
-              lastLoginSortDirection={userManagement.lastLoginSortDirection}
             />
           )}
           

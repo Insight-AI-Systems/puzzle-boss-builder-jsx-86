@@ -17,7 +17,6 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
   const filters = useUserFilters();
   const selection = useUserSelection();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [lastLoginSortDirection, setLastLoginSortDirection] = useState<'asc' | 'desc'>('desc');
   const [bulkRole, setBulkRoleState] = useState<UserRole | null>(null);
   const [isBulkRoleChanging, setIsBulkRoleChanging] = useState(false);
   
@@ -135,9 +134,6 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     // Stats and calculated values - use filtered data count
     totalPages: Math.ceil((filteredData?.count || 0) / filters.pageSize),
     userStats,
-    // Sorting props
-    lastLoginSortDirection,
-    setLastLoginSortDirection,
     // Bulk role props with proper typing
     bulkRole,
     setBulkRole,

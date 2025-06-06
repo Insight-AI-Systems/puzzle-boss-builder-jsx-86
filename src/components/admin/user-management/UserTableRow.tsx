@@ -5,7 +5,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from './UserAvatar';
 import { UserRoleMenu } from './UserRoleMenu';
-import { UserLastLogin } from './UserLastLogin';
+import { UserLoginStatus } from './UserLoginStatus';
 import { UserRowProps } from '@/types/userTableTypes';
 import { ROLE_DEFINITIONS } from '@/types/userTypes';
 
@@ -57,9 +57,12 @@ export const UserTableRow: React.FC<UserRowProps> = ({
       </TableCell>
       <TableCell>{user.country || 'Not specified'}</TableCell>
       <TableCell>
-        <UserLastLogin lastSignIn={user.last_sign_in} />
+        <UserLoginStatus 
+          lastSignIn={user.last_sign_in} 
+          createdAt={user.created_at}
+          displayName={user.display_name}
+        />
       </TableCell>
-      <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
       <TableCell className="text-right">
         <UserRoleMenu 
           user={user}

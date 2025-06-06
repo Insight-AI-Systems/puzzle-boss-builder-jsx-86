@@ -7,11 +7,9 @@ export interface UserTableProps {
   currentUserEmail?: string;
   onRoleChange: (userId: string, newRole: UserRole) => void;
   onSortByRole: () => void;
-  onSortByLastLogin?: (direction: 'asc' | 'desc') => void;
   selectedUsers?: Set<string>;
   onUserSelection?: (userId: string, isSelected: boolean) => void;
   onSelectAll?: (isSelected: boolean) => void;
-  lastLoginSortDirection?: 'asc' | 'desc';
 }
 
 export interface UserRowProps {
@@ -29,6 +27,8 @@ export interface UserRoleMenuProps {
   onRoleChange: (userId: string, newRole: UserRole) => void;
 }
 
-export interface UserLastLoginProps {
+export interface UserLoginStatusProps {
   lastSignIn: string | null;
+  createdAt: string;
+  displayName?: string | null;
 }

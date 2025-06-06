@@ -15,11 +15,9 @@ export function UsersTable({
   currentUserEmail,
   onRoleChange,
   onSortByRole,
-  onSortByLastLogin,
   selectedUsers = new Set(),
   onUserSelection,
-  onSelectAll,
-  lastLoginSortDirection
+  onSelectAll
 }: UserTableProps) {
   const selectionEnabled = !!onUserSelection && !!onSelectAll;
   
@@ -42,13 +40,11 @@ export function UsersTable({
           selectionEnabled={selectionEnabled}
           onSelectAll={onSelectAll}
           onSortByRole={onSortByRole}
-          onSortByLastLogin={() => onSortByLastLogin?.(lastLoginSortDirection === 'asc' ? 'desc' : 'asc')}
-          lastLoginSortDirection={lastLoginSortDirection}
         />
         <TableBody>
           {users.length === 0 ? (
             <tr>
-              <td colSpan={selectionEnabled ? 8 : 7} className="text-center py-6">
+              <td colSpan={selectionEnabled ? 7 : 6} className="text-center py-6">
                 No users found matching your search.
               </td>
             </tr>

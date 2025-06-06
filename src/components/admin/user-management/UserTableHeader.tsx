@@ -9,16 +9,12 @@ interface UserTableHeaderProps {
   selectionEnabled: boolean;
   onSelectAll?: (checked: boolean) => void;
   onSortByRole: () => void;
-  onSortByLastLogin: () => void;
-  lastLoginSortDirection?: 'asc' | 'desc';
 }
 
 export const UserTableHeader: React.FC<UserTableHeaderProps> = ({
   selectionEnabled,
   onSelectAll,
-  onSortByRole,
-  onSortByLastLogin,
-  lastLoginSortDirection
+  onSortByRole
 }) => {
   return (
     <TableHeader>
@@ -40,15 +36,7 @@ export const UserTableHeader: React.FC<UserTableHeaderProps> = ({
           </Button>
         </TableHead>
         <TableHead>Country</TableHead>
-        <TableHead>
-          <Button variant="ghost" onClick={onSortByLastLogin} className="flex items-center gap-1">
-            Last Login
-            {lastLoginSortDirection && (
-              <ArrowUpDown className="h-4 w-4" />
-            )}
-          </Button>
-        </TableHead>
-        <TableHead>Joined</TableHead>
+        <TableHead>Login Status</TableHead>
         <TableHead className="text-right">Actions</TableHead>
       </TableRow>
     </TableHeader>
