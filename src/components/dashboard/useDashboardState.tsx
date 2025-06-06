@@ -51,7 +51,7 @@ export function useDashboardState() {
     setIsTestRunning(true);
     console.log('Running tests for task:', taskId);
     try {
-      await TestRunner.runAllTaskTests(taskId);
+      await TestRunner.runAllTests();
       
       // Refresh tasks after tests
       loadData();
