@@ -91,27 +91,41 @@ serve(async (req) => {
 
     console.log(`Retrieved ${authUsers.users.length} users from auth system`);
 
-    // Build a safe select query that only includes columns we know exist
-    const selectQuery = "id, role, username, email, country, last_sign_in, created_at, updated_at, gender, age_group";
-    
-    // Fetch profiles with a safe query
-    const { data: profiles, error: profilesError } = await supabaseAdmin
-      .from("profiles")
-      .select(selectQuery);
-    
-    if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
+    // Fetch profiles with error handling for missing columns
+    let profiles = [];
+    try {
+      const { data: profilesData, error: profilesError } = await supabaseAdmin
+        .from("profiles")
+        .select("id, role, username, email, country, last_sign_in, created_at, updated_at, gender, age_group, custom_gender");
+      
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        // Fallback: try with minimal columns if the full query fails
+        const { data: fallbackData, error: fallbackError } = await supabaseAdmin
+          .from("profiles")
+          .select("id, role, username, email, created_at, updated_at");
+        
+        if (fallbackError) {
+          throw fallbackError;
+        }
+        profiles = fallbackData || [];
+        console.log('Used fallback profile query due to column issues');
+      } else {
+        profiles = profilesData || [];
+      }
+    } catch (error) {
+      console.error("Critical error fetching profiles:", error);
       return new Response(
-        JSON.stringify({ error: "Error fetching user profiles", details: profilesError.message }),
+        JSON.stringify({ error: "Error fetching user profiles", details: error.message }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Retrieved ${profiles?.length || 0} profiles from database`);
+    console.log(`Retrieved ${profiles.length} profiles from database`);
 
     // Create a map of profiles by user id for easy lookup
     const profileMap = new Map();
-    profiles?.forEach(profile => {
+    profiles.forEach(profile => {
       profileMap.set(profile.id, profile);
     });
 

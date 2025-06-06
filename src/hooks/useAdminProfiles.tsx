@@ -1,193 +1,171 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { AdminProfilesOptions, ProfilesResult, RpcUserData } from '@/types/adminTypes';
-import { useRoleManagement } from './admin/useRoleManagement';
-import { useEmailManagement } from './admin/useEmailManagement';
-import { filterUserData, transformToUserProfile, extractUniqueValues } from '@/utils/admin/userDataProcessing';
+import { UserProfile, UserRole } from '@/types/userTypes';
+import { useToast } from '@/hooks/use-toast';
 
-export function useAdminProfiles(
-  isAdmin: boolean, 
-  currentUserId: string | null,
-  options: AdminProfilesOptions = {}
-) {
-  const { page = 0, pageSize = 10, roleSortDirection = 'asc', lastLoginSortDirection } = options;
-  
-  const fetchUsers = async (): Promise<ProfilesResult> => {
-    if (!isAdmin || !currentUserId) {
-      console.log('Not authorized to fetch profiles or no user ID');
-      return { 
-        data: [], 
-        count: 0, 
-        countries: [], 
-        categories: [],
-        genders: [],
-        signup_stats: []
-      };
-    }
+export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-    try {
-      console.log('Fetching users with get-all-users edge function');
-      
-      // Get the current session to include auth token
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new Error('No valid session found');
+  const query = useQuery({
+    queryKey: ['admin-all-users'],
+    queryFn: async () => {
+      if (!isAdmin || !currentUserId) {
+        console.log('Not authorized to fetch profiles or no user ID');
+        return [];
       }
-
-      const { data: rpcData, error } = await supabase.functions.invoke<RpcUserData[]>('get-all-users', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) {
-        console.error('Error fetching users:', error);
+      
+      console.log('Fetching all users from edge function');
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('get-all-users', {
+          headers: {
+            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          },
+        });
+        
+        if (error) {
+          console.error('Edge function error:', error);
+          throw new Error(`Failed to fetch users: ${error.message}`);
+        }
+        
+        if (!data) {
+          console.log('No data returned from edge function');
+          return [];
+        }
+        
+        console.log('Users fetched successfully:', data.length || 0);
+        
+        // Transform the data to match UserProfile interface
+        return (data as any[]).map(user => ({
+          id: user.id,
+          email: user.email,
+          display_name: user.display_name || null,
+          bio: null,
+          avatar_url: null,
+          role: (user.role || 'player') as UserRole,
+          country: user.country || null,
+          categories_played: user.categories_played || [],
+          credits: 0,
+          achievements: [],
+          referral_code: null,
+          created_at: user.created_at || new Date().toISOString(),
+          updated_at: user.updated_at || new Date().toISOString(),
+          last_sign_in: user.last_sign_in || null,
+          gender: user.gender || null,
+          custom_gender: user.custom_gender || null,
+          age_group: user.age_group || null,
+        } as UserProfile));
+        
+      } catch (error: any) {
+        console.error('Error in useAdminProfiles:', error);
+        toast({
+          title: "Error loading users",
+          description: error.message || "Failed to load user data",
+          variant: "destructive",
+        });
         throw error;
       }
+    },
+    enabled: !!currentUserId && isAdmin,
+    retry: 2,
+    retryDelay: 1000,
+  });
 
-      if (!rpcData || !Array.isArray(rpcData)) {
-        console.error('Invalid response from get-all-users:', rpcData);
-        return { 
-          data: [], 
-          count: 0, 
-          countries: [], 
-          categories: [],
-          genders: [],
-          signup_stats: []
-        };
-      }
-
-      console.log(`Retrieved ${rpcData.length} users from get-all-users`);
-
-      // Apply filters
-      let filteredData = filterUserData(rpcData, options);
+  // Mutation for updating user roles
+  const updateUserRole = useMutation({
+    mutationFn: async ({ userId, newRole }: { userId: string; newRole: UserRole }) => {
+      const { data, error } = await supabase.functions.invoke('admin-update-roles', {
+        body: { userIds: [userId], newRole },
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
       
-      // Sort by role if requested
-      if (options.role || roleSortDirection) {
-        filteredData.sort((a, b) => {
-          const roleA = a.role || 'player';
-          const roleB = b.role || 'player';
-          
-          if (roleSortDirection === 'asc') {
-            return roleA.localeCompare(roleB);
-          } else {
-            return roleB.localeCompare(roleA);
-          }
-        });
-      }
-      
-      // Sort by last login if requested
-      if (lastLoginSortDirection) {
-        filteredData.sort((a, b) => {
-          const dateA = a.last_sign_in ? new Date(a.last_sign_in).getTime() : 0;
-          const dateB = b.last_sign_in ? new Date(b.last_sign_in).getTime() : 0;
-          return lastLoginSortDirection === 'asc' ? dateA - dateB : dateB - dateA;
-        });
-      }
-      
-      const totalCount = filteredData.length;
-      
-      // Apply pagination
-      const start = page * pageSize;
-      const paginatedData = filteredData.slice(start, start + pageSize);
-      
-      // Transform to UserProfile format
-      const profiles = paginatedData.map(transformToUserProfile);
-      
-      // Extract unique values
-      const { countries, categories, genders } = extractUniqueValues(rpcData);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-all-users'] });
+      toast({
+        title: "Role updated",
+        description: "User role has been updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error updating role",
+        description: error.message || "Failed to update user role",
+        variant: "destructive",
+      });
+    },
+  });
 
-      // Calculate signup stats by month
-      const signupStats = calculateSignupStats(rpcData);
-
-      return { 
-        data: profiles,
-        count: totalCount,
-        countries,
-        categories,
-        genders: genders || [],
-        signup_stats: signupStats
-      };
+  // Mutation for bulk role updates
+  const bulkUpdateRoles = useMutation({
+    mutationFn: async ({ userIds, newRole }: { userIds: string[]; newRole: UserRole }) => {
+      const { data, error } = await supabase.functions.invoke('admin-update-roles', {
+        body: { userIds, newRole },
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
       
-    } catch (error) {
-      console.error('Error in useAdminProfiles:', error);
-      throw error;
-    }
-  };
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-all-users'] });
+      toast({
+        title: "Roles updated",
+        description: "User roles have been updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error updating roles",
+        description: error.message || "Failed to update user roles",
+        variant: "destructive",
+      });
+    },
+  });
 
-  // Calculate signup statistics by month
-  const calculateSignupStats = (userData: RpcUserData[]) => {
-    const monthStats: { [key: string]: number } = {};
-    
-    userData.forEach(user => {
-      if (user.created_at) {
-        const date = new Date(user.created_at);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        
-        monthStats[monthKey] = (monthStats[monthKey] || 0) + 1;
-      }
-    });
-    
-    return Object.entries(monthStats)
-      .map(([month, count]) => ({ month, count }))
-      .sort((a, b) => a.month.localeCompare(b.month));
-  };
-
-  // Use try-catch to handle potential React Query context errors
-  let usersQuery;
-  try {
-    usersQuery = useQuery({
-      queryKey: ['all-users', page, pageSize, options, lastLoginSortDirection],
-      queryFn: fetchUsers,
-      enabled: !!currentUserId && isAdmin,
-      retry: 1,
-    });
-  } catch (error) {
-    console.error('React Query error in useAdminProfiles:', error);
-    // Provide a fallback empty result if useQuery fails
-    usersQuery = {
-      data: { 
-        data: [], 
-        count: 0, 
-        countries: [], 
-        categories: [],
-        genders: [],
-        signup_stats: [] 
-      },
-      isLoading: false,
-      error: error,
-      refetch: () => Promise.resolve()
-    };
-  }
-
-  // Get role management functions safely
-  let roleManagementFns;
-  try {
-    roleManagementFns = useRoleManagement();
-  } catch (error) {
-    console.error('React Query error in useRoleManagement:', error);
-    roleManagementFns = {
-      updateUserRole: null,
-      bulkUpdateRoles: null
-    };
-  }
-
-  // Get email management functions safely
-  let emailManagementFns;
-  try {
-    emailManagementFns = useEmailManagement();
-  } catch (error) {
-    console.error('React Query error in useEmailManagement:', error);
-    emailManagementFns = {
-      sendBulkEmail: null
-    };
-  }
+  // Mutation for sending bulk emails
+  const sendBulkEmail = useMutation({
+    mutationFn: async ({ userIds, subject, body }: { userIds: string[]; subject: string; body: string }) => {
+      const { data, error } = await supabase.functions.invoke('admin-email-users', {
+        body: { userIds, subject, body },
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Emails sent",
+        description: "Bulk email has been sent successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error sending emails",
+        description: error.message || "Failed to send bulk email",
+        variant: "destructive",
+      });
+    },
+  });
 
   return {
-    ...usersQuery,
-    updateUserRole: roleManagementFns?.updateUserRole,
-    bulkUpdateRoles: roleManagementFns?.bulkUpdateRoles,
-    sendBulkEmail: emailManagementFns?.sendBulkEmail
+    data: query.data,
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+    updateUserRole,
+    bulkUpdateRoles,
+    sendBulkEmail,
   };
 }

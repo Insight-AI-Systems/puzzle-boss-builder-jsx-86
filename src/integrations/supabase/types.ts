@@ -1136,6 +1136,7 @@ export type Database = {
           country: string | null
           created_at: string | null
           credits: number | null
+          custom_gender: string | null
           date_of_birth: string | null
           email: string | null
           email_change_new_email: string | null
@@ -1143,6 +1144,7 @@ export type Database = {
           email_change_token_expires_at: string | null
           failed_login_attempts: number | null
           full_name: string | null
+          gender: string | null
           id: string
           last_password_change: string | null
           last_sign_in: string | null
@@ -1172,6 +1174,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           credits?: number | null
+          custom_gender?: string | null
           date_of_birth?: string | null
           email?: string | null
           email_change_new_email?: string | null
@@ -1179,6 +1182,7 @@ export type Database = {
           email_change_token_expires_at?: string | null
           failed_login_attempts?: number | null
           full_name?: string | null
+          gender?: string | null
           id: string
           last_password_change?: string | null
           last_sign_in?: string | null
@@ -1208,6 +1212,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           credits?: number | null
+          custom_gender?: string | null
           date_of_birth?: string | null
           email?: string | null
           email_change_new_email?: string | null
@@ -1215,6 +1220,7 @@ export type Database = {
           email_change_token_expires_at?: string | null
           failed_login_attempts?: number | null
           full_name?: string | null
+          gender?: string | null
           id?: string
           last_password_change?: string | null
           last_sign_in?: string | null
