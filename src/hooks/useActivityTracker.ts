@@ -1,10 +1,11 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useActivityTracker() {
   const { user, isAuthenticated } = useAuth();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated || !user) return;
@@ -40,8 +41,10 @@ export function useActivityTracker() {
     // Track user interactions
     const handleUserActivity = () => {
       // Debounce updates to avoid too frequent calls
-      clearTimeout(handleUserActivity.timeoutId);
-      handleUserActivity.timeoutId = setTimeout(updateActivity, 30000); // 30 seconds
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = setTimeout(updateActivity, 30000); // 30 seconds
     };
 
     // Add event listeners for user activity
@@ -52,7 +55,9 @@ export function useActivityTracker() {
 
     return () => {
       clearInterval(intervalId);
-      clearTimeout(handleUserActivity.timeoutId);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
       events.forEach(event => {
         document.removeEventListener(event, handleUserActivity);
       });
