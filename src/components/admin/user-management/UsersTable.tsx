@@ -44,7 +44,7 @@ export function UsersTable({
         <TableBody>
           {users.length === 0 ? (
             <tr>
-              <td colSpan={selectionEnabled ? 7 : 6} className="text-center py-6">
+              <td colSpan={selectionEnabled ? 6 : 5} className="text-center py-6">
                 No users found matching your search.
               </td>
             </tr>

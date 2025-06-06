@@ -55,7 +55,6 @@ export const UserTableRow: React.FC<UserRowProps> = ({
           {user.role ? (ROLE_DEFINITIONS[user.role]?.label || user.role) : 'Player'}
         </Badge>
       </TableCell>
-      <TableCell>{user.country || 'Not specified'}</TableCell>
       <TableCell>
         <UserLoginStatus 
           lastSignIn={user.last_sign_in} 
