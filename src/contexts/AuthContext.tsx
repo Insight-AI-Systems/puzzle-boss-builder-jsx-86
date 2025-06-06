@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,30 +35,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [rolesLoaded, setRolesLoaded] = useState(false);
   const { toast } = useToast();
 
-  const updateLastSignIn = async (userId: string) => {
+  const updateLastSignIn = async (userId: string, isSignIn: boolean = false) => {
     try {
-      console.log('AuthContext - Updating last_sign_in for user:', userId);
+      console.log('AuthContext - Updating last_sign_in for user:', userId, isSignIn ? '(SIGN_IN)' : '(ACTIVITY)');
       
-      // Call the handle_user_signin function
-      const { error } = await supabase.functions.invoke('handle_user_signin', {
-        body: { userId }
-      });
-
-      if (error) {
-        console.error('AuthContext - Error calling handle_user_signin:', error);
-        // Fallback: Update directly in profiles table
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ last_sign_in: new Date().toISOString() })
-          .eq('id', userId);
-        
-        if (updateError) {
-          console.error('AuthContext - Error updating last_sign_in directly:', updateError);
-        } else {
-          console.log('AuthContext - Successfully updated last_sign_in directly');
-        }
+      // Always update directly to profiles table for immediate effect
+      const { error: directError } = await supabase
+        .from('profiles')
+        .update({ last_sign_in: new Date().toISOString() })
+        .eq('id', userId);
+      
+      if (directError) {
+        console.error('AuthContext - Error updating last_sign_in directly:', directError);
       } else {
-        console.log('AuthContext - Successfully called handle_user_signin function');
+        console.log('AuthContext - Successfully updated last_sign_in directly');
+      }
+
+      // For sign-in events, also try the edge function as backup
+      if (isSignIn) {
+        try {
+          const { error: functionError } = await supabase.functions.invoke('handle_user_signin', {
+            body: { userId }
+          });
+          
+          if (functionError) {
+            console.error('AuthContext - Edge function error (non-critical):', functionError);
+          }
+        } catch (functionException) {
+          console.error('AuthContext - Edge function exception (non-critical):', functionException);
+        }
       }
     } catch (error) {
       console.error('AuthContext - Exception updating last_sign_in:', error);
@@ -111,6 +115,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(initialSession?.user || null);
           
           if (initialSession?.user) {
+            // Update activity for existing session
+            updateLastSignIn(initialSession.user.id, false);
             await fetchUserRole(initialSession.user.id, initialSession.user.email);
           } else {
             setRolesLoaded(true);
@@ -141,11 +147,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setError(null);
           
           if (currentSession?.user) {
-            // Update last_sign_in when user signs in
-            if (event === 'SIGNED_IN') {
-              console.log('AuthContext - User signed in, updating last_sign_in');
+            // Update last_sign_in when user signs in or token refreshes
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+              console.log('AuthContext - User activity detected, updating last_sign_in');
               setTimeout(() => {
-                updateLastSignIn(currentSession.user.id);
+                updateLastSignIn(currentSession.user.id, event === 'SIGNED_IN');
               }, 100);
             }
             
