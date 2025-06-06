@@ -36,6 +36,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [rolesLoaded, setRolesLoaded] = useState(false);
   const { toast } = useToast();
 
+  const updateLastSignIn = async (userId: string) => {
+    try {
+      console.log('AuthContext - Updating last_sign_in for user:', userId);
+      
+      // Call the handle_user_signin function
+      const { error } = await supabase.functions.invoke('handle_user_signin', {
+        body: { userId }
+      });
+
+      if (error) {
+        console.error('AuthContext - Error calling handle_user_signin:', error);
+        // Fallback: Update directly in profiles table
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ last_sign_in: new Date().toISOString() })
+          .eq('id', userId);
+        
+        if (updateError) {
+          console.error('AuthContext - Error updating last_sign_in directly:', updateError);
+        } else {
+          console.log('AuthContext - Successfully updated last_sign_in directly');
+        }
+      } else {
+        console.log('AuthContext - Successfully called handle_user_signin function');
+      }
+    } catch (error) {
+      console.error('AuthContext - Exception updating last_sign_in:', error);
+    }
+  };
+
   const fetchUserRole = async (userId: string, email: string | undefined) => {
     try {
       console.log('AuthContext - Fetching role for user:', { userId, email });
@@ -111,6 +141,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setError(null);
           
           if (currentSession?.user) {
+            // Update last_sign_in when user signs in
+            if (event === 'SIGNED_IN') {
+              console.log('AuthContext - User signed in, updating last_sign_in');
+              setTimeout(() => {
+                updateLastSignIn(currentSession.user.id);
+              }, 100);
+            }
+            
             // Use setTimeout to prevent potential recursive issues
             setTimeout(() => {
               if (mounted) {
@@ -146,6 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       } else {
         console.log('Sign in successful for:', email);
+        // The onAuthStateChange handler will update last_sign_in
       }
     } catch (error) {
       console.error('Authentication error:', error);
