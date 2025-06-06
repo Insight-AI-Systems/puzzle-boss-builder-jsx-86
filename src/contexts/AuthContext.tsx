@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -252,6 +253,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
+      // Update last_sign_in timestamp before logging out to mark user as offline
+      if (user?.id) {
+        console.log('AuthContext - Updating last_sign_in timestamp for logout:', user.id);
+        try {
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ last_sign_in: new Date().toISOString() })
+            .eq('id', user.id);
+          
+          if (updateError) {
+            console.error('AuthContext - Error updating last_sign_in on logout:', updateError);
+          } else {
+            console.log('AuthContext - Successfully updated last_sign_in on logout');
+          }
+        } catch (updateException) {
+          console.error('AuthContext - Exception updating last_sign_in on logout:', updateException);
+        }
+      }
+
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Signout error:', error.message);

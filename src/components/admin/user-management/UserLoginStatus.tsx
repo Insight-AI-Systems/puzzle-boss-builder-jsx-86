@@ -41,7 +41,7 @@ export const UserLoginStatus: React.FC<UserLoginStatusProps> = ({
       const diffInMinutes = Math.floor((now.getTime() - loginDate.getTime()) / (1000 * 60));
       const diffInDays = Math.floor(diffInMinutes / (60 * 24));
       
-      if (diffInMinutes < 15) {
+      if (diffInMinutes < 3) {
         return { 
           indicator: '🟢', 
           text: 'Online', 

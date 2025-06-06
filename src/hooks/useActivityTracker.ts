@@ -10,8 +10,8 @@ export function useActivityTracker() {
   useEffect(() => {
     if (!isAuthenticated || !user) return;
 
-    // Track activity every 5 minutes
-    const ACTIVITY_INTERVAL = 5 * 60 * 1000; // 5 minutes
+    // Track activity every 2 minutes (reduced from 5 minutes)
+    const ACTIVITY_INTERVAL = 2 * 60 * 1000; // 2 minutes
 
     const updateActivity = async () => {
       try {
@@ -40,11 +40,11 @@ export function useActivityTracker() {
 
     // Track user interactions
     const handleUserActivity = () => {
-      // Debounce updates to avoid too frequent calls
+      // Debounce updates to avoid too frequent calls (reduced from 30 to 20 seconds)
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      timeoutRef.current = setTimeout(updateActivity, 30000); // 30 seconds
+      timeoutRef.current = setTimeout(updateActivity, 20000); // 20 seconds
     };
 
     // Add event listeners for user activity
