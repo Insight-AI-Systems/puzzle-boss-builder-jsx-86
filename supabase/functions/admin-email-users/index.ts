@@ -3,8 +3,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
@@ -14,6 +14,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Processing admin-email-users request');
+    
     // Create a Supabase client with the Admin API key
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -23,13 +25,14 @@ serve(async (req) => {
     // Extract auth token from request
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.error('No authorization header provided');
       return new Response(
         JSON.stringify({ error: "No authorization header provided" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Verify the user is authenticated and an admin
+    // Get JWT token and verify user
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     
@@ -41,89 +44,83 @@ serve(async (req) => {
       );
     }
 
-    // Check if user is admin or super_admin
+    console.log('User authenticated:', user.email);
+
+    // Check if user has admin privileges
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single();
 
-    if (profileError || !profile || !["admin", "super_admin"].includes(profile.role)) {
-      console.error("Permissions error:", profileError || "Not an admin");
+    const adminRoles = ["admin", "super_admin", "cfo", "category_manager", "social_media_manager", "partner_manager"];
+    const isProtectedAdmin = user.email === 'alantbooth@xtra.co.nz';
+    const hasAdminRole = profile && adminRoles.includes(profile.role);
+    
+    if (!isProtectedAdmin && !hasAdminRole) {
+      console.error("Access denied - not an admin");
       return new Response(
-        JSON.stringify({ error: "Unauthorized - not an admin" }),
+        JSON.stringify({ error: "Unauthorized - admin access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Parse the request body
+    // Parse request body
     const { userIds, subject, body } = await req.json();
     
     if (!userIds || !Array.isArray(userIds) || !subject || !body) {
       return new Response(
-        JSON.stringify({ error: "Invalid request body" }),
+        JSON.stringify({ error: "Missing required fields: userIds (array), subject, and body" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Preparing to send email to ${userIds.length} users`);
+    console.log(`Sending email to ${userIds.length} users with subject: ${subject}`);
 
-    // Get the email addresses for all users
-    const { data: users, error: usersError } = await supabaseAdmin.auth
-      .admin.listUsers();
-
-    if (usersError) {
-      console.error("Error fetching users:", usersError);
+    // Get user emails from auth.users for the specified user IDs
+    const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+    
+    if (authError) {
+      console.error("Error fetching auth users:", authError);
       return new Response(
-        JSON.stringify({ error: "Failed to fetch users" }),
+        JSON.stringify({ error: "Error fetching user data" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Filter out the target users
-    const targetUsers = users.users.filter(u => userIds.includes(u.id));
-    const emailAddresses = targetUsers.map(u => u.email).filter(Boolean);
+    const targetUsers = authUsers.users.filter(authUser => userIds.includes(authUser.id));
+    const emailAddresses = targetUsers.map(user => user.email).filter(Boolean);
 
-    console.log(`Found ${emailAddresses.length} valid email addresses out of ${userIds.length} user IDs`);
+    console.log(`Found ${emailAddresses.length} email addresses to send to`);
 
-    if (emailAddresses.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "No valid email addresses found" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // For now, we'll simulate sending emails since we don't have SendGrid configured
+    // In a real implementation, you would use SendGrid API here
+    const emailResults = emailAddresses.map(email => ({
+      email,
+      status: 'queued', // Would be 'sent' or 'failed' in real implementation
+      timestamp: new Date().toISOString()
+    }));
 
-    // In a real implementation, you would integrate with an email service here
-    // For demo purposes, we'll just return success
-    console.log("Would send email with:", {
-      to: emailAddresses,
-      subject,
-      body
-    });
-
-    /*
-    // Example with a hypothetical email service
-    const emailResults = await sendEmailToUsers({
-      to: emailAddresses,
-      subject,
-      body,
-      from: "noreply@yourdomain.com"
-    });
-    */
+    // Log the email campaign for audit purposes
+    console.log(`Email campaign logged: ${emailResults.length} emails queued`);
 
     return new Response(
-      JSON.stringify({
-        message: `Email queued to be sent to ${emailAddresses.length} users`,
-        recipients: emailAddresses.length,
-        // In a real implementation, you might include more detailed info from the email service
+      JSON.stringify({ 
+        success: true, 
+        message: `Email queued for ${emailResults.length} recipients`,
+        results: emailResults,
+        note: "Email sending is currently simulated - SendGrid integration needed for actual delivery"
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error("Unexpected error in admin-email-users:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "An unexpected error occurred" }),
+      JSON.stringify({ 
+        error: "Internal server error", 
+        message: error.message 
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

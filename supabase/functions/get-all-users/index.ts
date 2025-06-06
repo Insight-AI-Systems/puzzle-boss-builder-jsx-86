@@ -1,7 +1,11 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { corsHeaders } from "../_shared/cors.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -10,6 +14,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Processing get-all-users request');
+    
     // Create a Supabase client with the Admin API key for full access
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -19,6 +25,7 @@ serve(async (req) => {
     // Extract auth token from request
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.error('No authorization header provided');
       return new Response(
         JSON.stringify({ error: "No authorization header provided" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -27,15 +34,19 @@ serve(async (req) => {
 
     // Get JWT token from header and verify user
     const token = authHeader.replace("Bearer ", "");
+    console.log('Verifying user token...');
+    
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     
     if (userError || !user) {
       console.error("Auth error:", userError);
       return new Response(
-        JSON.stringify({ error: "Unauthorized - invalid token" }),
+        JSON.stringify({ error: "Unauthorized - invalid or expired token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log('User authenticated:', user.email);
 
     // Check if user is admin or super_admin
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -44,13 +55,28 @@ serve(async (req) => {
       .eq("id", user.id)
       .single();
 
-    if (profileError || !profile || !["admin", "super_admin", "cfo"].includes(profile.role)) {
-      console.error("Permissions error:", profileError || "Not an admin");
+    if (profileError) {
+      console.error("Profile error:", profileError);
       return new Response(
-        JSON.stringify({ error: "Unauthorized - not an admin" }),
+        JSON.stringify({ error: "Error fetching user profile" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check for admin roles including the protected admin email
+    const adminRoles = ["admin", "super_admin", "cfo", "category_manager", "social_media_manager", "partner_manager"];
+    const isProtectedAdmin = user.email === 'alantbooth@xtra.co.nz';
+    const hasAdminRole = profile && adminRoles.includes(profile.role);
+    
+    if (!isProtectedAdmin && !hasAdminRole) {
+      console.error("Access denied - not an admin. User role:", profile?.role);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - admin access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log('Admin access granted. Fetching users...');
 
     // Fetch all users from auth.users
     const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
@@ -58,13 +84,15 @@ serve(async (req) => {
     if (authError) {
       console.error("Error fetching auth users:", authError);
       return new Response(
-        JSON.stringify({ error: "Error fetching users" }),
+        JSON.stringify({ error: "Error fetching users from auth system" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log(`Retrieved ${authUsers.users.length} users from auth system`);
+
     // Build a safe select query that only includes columns we know exist
-    const selectQuery = "id, role, username, email, country, last_sign_in, created_at, updated_at";
+    const selectQuery = "id, role, username, email, country, last_sign_in, created_at, updated_at, gender, age_group";
     
     // Fetch profiles with a safe query
     const { data: profiles, error: profilesError } = await supabaseAdmin
@@ -74,10 +102,12 @@ serve(async (req) => {
     if (profilesError) {
       console.error("Error fetching profiles:", profilesError);
       return new Response(
-        JSON.stringify({ error: "Error fetching profiles", details: profilesError }),
+        JSON.stringify({ error: "Error fetching user profiles", details: profilesError.message }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log(`Retrieved ${profiles?.length || 0} profiles from database`);
 
     // Create a map of profiles by user id for easy lookup
     const profileMap = new Map();
@@ -101,15 +131,14 @@ serve(async (req) => {
         created_at: user.created_at,
         updated_at: profile.updated_at || user.updated_at || user.created_at,
         last_sign_in: lastSignIn,
-        // Add any additional fields that might be needed
-        categories_played: [],
-        gender: null,
-        custom_gender: null,
-        age_group: null
+        gender: profile.gender || null,
+        custom_gender: profile.custom_gender || null,
+        age_group: profile.age_group || null,
+        categories_played: profile.categories_played || []
       };
     });
 
-    console.log(`Returning ${combinedUsers.length} users`);
+    console.log(`Returning ${combinedUsers.length} users successfully`);
     
     return new Response(
       JSON.stringify(combinedUsers),
@@ -122,9 +151,13 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error("Unexpected error in get-all-users:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "An unexpected error occurred" }),
+      JSON.stringify({ 
+        error: "Internal server error", 
+        message: error.message,
+        stack: error.stack 
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

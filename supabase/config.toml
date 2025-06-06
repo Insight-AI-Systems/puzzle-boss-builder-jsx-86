@@ -4,44 +4,42 @@ project_id = "vcacfysfjgoahledqdwa"
 [api]
 enabled = true
 port = 54321
-schemas = ["public", "storage", "graphql_public"]
-
-[db]
-port = 54322
-
-[studio]
-enabled = true
-port = 54323
-
-[inbucket]
-enabled = true
-port = 54324
-
-[storage]
-enabled = true
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
 
 [auth]
 enabled = true
-site_url = "https://thepuzzleboss.com"
+port = 54324
+site_url = "https://www.thepuzzleboss.com"
+additional_redirect_urls = ["https://loving-husky-78.lovableproject.com"]
+jwt_expiry = 3600
+refresh_token_rotation_enabled = true
+security_refresh_token_reuse_interval = 10
+password_min_length = 6
 
-[functions]
-[functions.xero-auth]
-verify_jwt = true
-[functions.xero-callback]
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[functions.get-all-users]
 verify_jwt = false
-[functions.xero-refresh-token]
-verify_jwt = true
-[functions.xero-sync]
-verify_jwt = true
-[functions.xero-create-contact]
-verify_jwt = true
-[functions.xero-update-contact]
-verify_jwt = true
-[functions.xero-member-sync]
-verify_jwt = true
-[functions.xero-get-syncable-members]
-verify_jwt = true
-[functions.xero-webhook]
+
+[functions.admin-update-roles]
 verify_jwt = false
-[functions.xero-webhook-register]
-verify_jwt = true
+
+[functions.admin-email-users]
+verify_jwt = false
+
+[functions.set-admin-role]
+verify_jwt = false
+
+[functions.handle_user_signin]
+verify_jwt = false
+
+[functions.get-opensupports-token]
+verify_jwt = false
+
+[functions.count-segmented-users]
+verify_jwt = false

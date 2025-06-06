@@ -3,8 +3,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
@@ -14,7 +14,9 @@ serve(async (req) => {
   }
 
   try {
-    // Create a Supabase client with the Admin API key for full access
+    console.log('Processing admin-update-roles request');
+    
+    // Create a Supabase client with the Admin API key
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -23,14 +25,14 @@ serve(async (req) => {
     // Extract auth token from request
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      console.error("No authorization header provided");
+      console.error('No authorization header provided');
       return new Response(
         JSON.stringify({ error: "No authorization header provided" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get JWT token from header and verify user
+    // Get JWT token and verify user
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     
@@ -42,130 +44,71 @@ serve(async (req) => {
       );
     }
 
-    // Log user trying to perform action
-    console.log(`User ${user.id} (${user.email}) attempting to update roles`);
+    console.log('User authenticated:', user.email);
 
-    // Check if user is super_admin
+    // Check if user is super_admin or protected admin
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single();
 
-    if (profileError || !profile) {
-      console.error("Profile error:", profileError);
+    const isProtectedAdmin = user.email === 'alantbooth@xtra.co.nz';
+    const isSuperAdmin = profile?.role === 'super_admin';
+    
+    if (!isProtectedAdmin && !isSuperAdmin) {
+      console.error("Access denied - not a super admin");
       return new Response(
-        JSON.stringify({ error: "Unauthorized - profile not found" }),
+        JSON.stringify({ error: "Unauthorized - super admin access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Special case for specific super admin email
-    const isSpecificAdminEmail = user.email === "alan@insight-ai-systems.com";
-    const isSuperAdmin = profile.role === "super_admin" || isSpecificAdminEmail;
-
-    console.log(`User permissions check: isSuperAdmin=${isSuperAdmin}, isSpecificAdminEmail=${isSpecificAdminEmail}, role=${profile.role}, email=${user.email}`);
-
-    if (!isSuperAdmin) {
-      console.error("Permissions error: Not an admin");
-      return new Response(
-        JSON.stringify({ error: "Unauthorized - not a super_admin" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Parse the request body
+    // Parse request body
     const { userIds, newRole } = await req.json();
     
-    console.log(`Attempting to update roles: userIds=${JSON.stringify(userIds)}, newRole=${newRole}`);
-    
     if (!userIds || !Array.isArray(userIds) || !newRole) {
-      console.error("Invalid request body:", { userIds, newRole });
       return new Response(
-        JSON.stringify({ error: "Invalid request body" }),
+        JSON.stringify({ error: "Missing required fields: userIds (array) and newRole" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Validate the role before proceeding
-    const validRoles = ["super_admin", "category_manager", "social_media_manager", "partner_manager", "cfo", "player"];
-    if (!validRoles.includes(newRole)) {
-      console.error("Invalid role specified:", newRole);
+    console.log(`Updating role to ${newRole} for ${userIds.length} users`);
+
+    // Update roles for all specified users
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .update({ role: newRole })
+      .in("id", userIds)
+      .select();
+
+    if (error) {
+      console.error("Error updating roles:", error);
       return new Response(
-        JSON.stringify({ error: "Invalid role specified" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Failed to update user roles", details: error.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Only super admins can assign super_admin role
-    if (newRole === "super_admin" && !isSuperAdmin) {
-      console.error("Permission denied: Only super_admin can assign super_admin role");
-      return new Response(
-        JSON.stringify({ error: "Permission denied: Only super_admin can assign super_admin role" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Update roles with upsert in case profiles don't exist yet
-    const results = [];
-    for (const userId of userIds) {
-      // Special protection for protected admin - only the protected admin itself or super admins can change its role
-      if (userId === "alan@insight-ai-systems.com" && !isSpecificAdminEmail && !isSuperAdmin) {
-        console.error(`Cannot modify protected admin account. Requester: ${user.email}, isSpecificAdminEmail: ${isSpecificAdminEmail}, isSuperAdmin: ${isSuperAdmin}`);
-        results.push({
-          id: userId,
-          success: false,
-          error: "Cannot modify protected admin account",
-          data: null
-        });
-        continue;
-      }
-      
-      console.log(`Updating role for user ${userId} to ${newRole} by ${user.email} (${isSuperAdmin ? 'super_admin' : profile.role})`);
-      
-      try {
-        const { data, error } = await supabaseAdmin
-          .from("profiles")
-          .upsert({
-            id: userId,
-            role: newRole,
-          })
-          .select("id, role");
-
-        results.push({
-          id: userId,
-          success: !error,
-          error: error ? error.message : null,
-          data
-        });
-
-        if (error) {
-          console.error(`Error updating role for user ${userId}:`, error);
-        } else {
-          console.log(`Successfully updated role for user ${userId} to ${newRole}`);
-        }
-      } catch (err) {
-        console.error(`Exception updating role for user ${userId}:`, err);
-        results.push({
-          id: userId,
-          success: false, 
-          error: err.message || "Unknown error",
-          data: null
-        });
-      }
-    }
+    console.log(`Successfully updated ${data?.length || 0} user roles`);
 
     return new Response(
-      JSON.stringify({
-        message: `Updated ${results.filter(r => r.success).length} users to role: ${newRole}`,
-        results
+      JSON.stringify({ 
+        success: true, 
+        message: `Updated ${data?.length || 0} user roles to ${newRole}`,
+        updated_users: data
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error("Unexpected error in admin-update-roles:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "An unexpected error occurred" }),
+      JSON.stringify({ 
+        error: "Internal server error", 
+        message: error.message 
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
