@@ -35,7 +35,7 @@ export const UserTableHeader: React.FC<UserTableHeaderProps> = ({
             <ArrowUpDown className="h-4 w-4" />
           </Button>
         </TableHead>
-        <TableHead>Login Status</TableHead>
+        <TableHead>Online Status</TableHead>
         <TableHead className="text-right">Actions</TableHead>
       </TableRow>
     </TableHeader>
