@@ -6,9 +6,6 @@ import { UserTableRow } from './UserTableRow';
 import { UserTableProps } from '@/types/userTableTypes';
 import { UserRole } from '@/types/userTypes';
 
-// Updated to use the correct admin email
-const PROTECTED_ADMIN_EMAIL = 'alantbooth@xtra.co.nz';
-
 export function UsersTable({ 
   users, 
   currentUserRole, 
@@ -21,15 +18,18 @@ export function UsersTable({
 }: UserTableProps) {
   const selectionEnabled = !!onUserSelection && !!onSelectAll;
   
-  // Fix the type comparison by using type assertion or checking equality
+  // Check if current user has admin privileges based on role
   const isSuperAdmin = currentUserRole === 'super_admin' as UserRole;
-  const isCurrentUserProtectedAdmin = currentUserEmail === PROTECTED_ADMIN_EMAIL;
-  const canAssignAnyRole = isSuperAdmin || isCurrentUserProtectedAdmin;
+  const isAdmin = currentUserRole === 'admin' as UserRole;
+  const canAssignAnyRole = isSuperAdmin;
   
   const canAssignRole = (role: UserRole, userId: string): boolean => {
-    if (canAssignAnyRole) return true;
-    if (userId === PROTECTED_ADMIN_EMAIL) return isCurrentUserProtectedAdmin;
-    if (currentUserRole === 'super_admin' as UserRole && role !== 'super_admin' as UserRole) return true;
+    // Super admins can assign any role
+    if (isSuperAdmin) return true;
+    
+    // Regular admins can assign roles except super_admin
+    if (isAdmin && role !== 'super_admin' as UserRole) return true;
+    
     return false;
   };
 

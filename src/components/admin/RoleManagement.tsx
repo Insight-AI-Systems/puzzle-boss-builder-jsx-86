@@ -8,9 +8,6 @@ import { UserProfile, UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { RoleUserTable } from './RoleUserTable';
 
-// Updated to use the correct admin email
-const PROTECTED_ADMIN_EMAIL = 'alantbooth@xtra.co.nz';
-
 export function RoleManagement() {
   const { profile: currentUserProfile } = useUserProfile();
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,10 +16,10 @@ export function RoleManagement() {
   const currentUserRole: UserRole = currentUserProfile?.role || 'player';
   const currentUserEmail = currentUserProfile?.email;
   
-  // Fix the type comparison by using type assertion
+  // Check admin privileges based on role, not hardcoded emails
   const isSuperAdmin = currentUserRole === 'super_admin' as UserRole;
-  const isCurrentUserProtectedAdmin = currentUserEmail === PROTECTED_ADMIN_EMAIL;
-  const canAssignAnyRole = isSuperAdmin || isCurrentUserProtectedAdmin;
+  const isAdmin = currentUserRole === 'admin' as UserRole;
+  const canAssignAnyRole = isSuperAdmin;
 
   // Mock profiles data for now since we don't have allProfiles working yet
   const profilesData: UserProfile[] = [];
@@ -42,11 +39,12 @@ export function RoleManagement() {
 
   // Helper function to determine if current user can assign a role
   const canAssignRole = (role: UserRole, userId: string): boolean => {
-    if (userId === PROTECTED_ADMIN_EMAIL) {
-      return canAssignAnyRole;
-    }
-    if (canAssignAnyRole) return true;
-    if (currentUserRole === 'super_admin' as UserRole && role !== 'super_admin' as UserRole) return true;
+    // Super admins can assign any role
+    if (isSuperAdmin) return true;
+    
+    // Regular admins can assign roles except super_admin
+    if (isAdmin && role !== 'super_admin' as UserRole) return true;
+    
     return false;
   };
 

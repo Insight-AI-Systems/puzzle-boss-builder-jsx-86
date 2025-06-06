@@ -20,19 +20,15 @@ interface UserMenuProps {
   isMobile?: boolean;
 }
 
-// Update to use the correct admin email
-const PROTECTED_ADMIN_EMAIL = 'alantbooth@xtra.co.nz';
-
 const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
   const { user, hasRole, signOut } = useAuth();
 
-  // Simplified admin check using the correct email
-  const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
-  const isAdminUser = isProtectedAdmin || hasRole('super_admin') || hasRole('admin');
+  // Check admin privileges based on role, not hardcoded emails
+  const isAdminUser = hasRole('super_admin') || hasRole('admin') || hasRole('category_manager') || 
+                     hasRole('social_media_manager') || hasRole('partner_manager') || hasRole('cfo');
   
   console.log('UserMenu - Admin Check:', {
     userEmail: user?.email,
-    isProtectedAdmin,
     isAdminUser,
     profileRole: profile?.role
   });
