@@ -7,7 +7,6 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badge";
 
 interface UserLoginStatusProps {
   lastSignIn: string | null;
@@ -24,9 +23,7 @@ export const UserLoginStatus: React.FC<UserLoginStatusProps> = ({
     if (!date) return { 
       indicator: '⚫', 
       text: 'Never', 
-      color: 'text-gray-500',
-      isOnline: false,
-      badge: 'offline'
+      color: 'text-gray-500'
     };
     
     try {
@@ -36,9 +33,7 @@ export const UserLoginStatus: React.FC<UserLoginStatusProps> = ({
         return { 
           indicator: '⚫', 
           text: 'Never', 
-          color: 'text-gray-500',
-          isOnline: false,
-          badge: 'offline'
+          color: 'text-gray-500'
         };
       }
       
@@ -50,41 +45,31 @@ export const UserLoginStatus: React.FC<UserLoginStatusProps> = ({
         return { 
           indicator: '🟢', 
           text: 'Online', 
-          color: 'text-green-600',
-          isOnline: true,
-          badge: 'online'
+          color: 'text-green-600'
         };
       } else if (isToday(loginDate)) {
         return { 
           indicator: '🟡', 
           text: 'Today', 
-          color: 'text-yellow-600',
-          isOnline: false,
-          badge: 'today'
+          color: 'text-yellow-600'
         };
       } else if (diffInDays === 1) {
         return { 
           indicator: '🟠', 
           text: '1d ago', 
-          color: 'text-orange-600',
-          isOnline: false,
-          badge: 'recent'
+          color: 'text-orange-600'
         };
       } else if (diffInDays < 7) {
         return { 
           indicator: '🟠', 
           text: `${diffInDays}d ago`, 
-          color: 'text-orange-600',
-          isOnline: false,
-          badge: 'recent'
+          color: 'text-orange-600'
         };
       } else {
         return { 
           indicator: '🔴', 
           text: `${diffInDays}d ago`, 
-          color: 'text-red-600',
-          isOnline: false,
-          badge: 'inactive'
+          color: 'text-red-600'
         };
       }
     } catch (error) {
@@ -92,9 +77,7 @@ export const UserLoginStatus: React.FC<UserLoginStatusProps> = ({
       return { 
         indicator: '⚫', 
         text: 'Error', 
-        color: 'text-gray-500',
-        isOnline: false,
-        badge: 'offline'
+        color: 'text-gray-500'
       };
     }
   };
@@ -143,43 +126,15 @@ export const UserLoginStatus: React.FC<UserLoginStatusProps> = ({
     }
   };
 
-  const getBadgeVariant = (badge: string) => {
-    switch (badge) {
-      case 'online': return 'default';
-      case 'today': return 'secondary';
-      case 'recent': return 'outline';
-      case 'inactive': return 'destructive';
-      default: return 'outline';
-    }
-  };
-
-  const getBadgeColor = (badge: string) => {
-    switch (badge) {
-      case 'online': return 'bg-green-100 text-green-800 border-green-200';
-      case 'today': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'recent': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'inactive': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
   const status = getLoginStatus(lastSignIn);
 
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-2 cursor-help">
-            <div className={`flex items-center gap-2 ${status.color}`}>
-              <span className="text-sm">{status.indicator}</span>
-              <span className="text-sm font-medium">{status.text}</span>
-            </div>
-            <Badge 
-              variant={getBadgeVariant(status.badge)}
-              className={`text-xs ${getBadgeColor(status.badge)}`}
-            >
-              {status.isOnline ? 'ONLINE' : status.badge.toUpperCase()}
-            </Badge>
+          <div className={`flex items-center gap-2 cursor-help ${status.color}`}>
+            <span className="text-sm">{status.indicator}</span>
+            <span className="text-sm font-medium">{status.text}</span>
           </div>
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs">
