@@ -5,9 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/userTypes';
 
-// Updated protected admin email
-const PROTECTED_ADMIN_EMAIL = 'alantbooth@xtra.co.nz';
-
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -43,14 +40,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('AuthContext - Fetching role for user:', { userId, email });
       
-      // Special case for protected admin - always grant super_admin role
-      if (email === PROTECTED_ADMIN_EMAIL) {
-        console.log('AuthContext - Protected admin detected, granting super_admin role');
-        setUserRole('super_admin');
-        setRolesLoaded(true);
-        return;
-      }
-
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('role')
@@ -295,16 +284,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const hasRole = (role: UserRole): boolean => {
-    // Special case for protected admin
-    if (user?.email === PROTECTED_ADMIN_EMAIL) {
-      return role === 'super_admin' || role === 'admin';
-    }
     return userRole === role;
   };
 
-  // Computed values
+  // Computed values - now based purely on database role
   const userRoles: UserRole[] = userRole ? [userRole] : [];
-  const isAdmin = userRole === 'admin' || userRole === 'super_admin' || user?.email === PROTECTED_ADMIN_EMAIL;
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin';
 
   const value: AuthContextType = {
     user,

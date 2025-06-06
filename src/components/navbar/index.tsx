@@ -13,12 +13,9 @@ import AuthButtons from './AuthButtons';
 import MobileMenu from './MobileMenu';
 import { mainNavItems } from './NavbarData';
 
-// Update to use the correct admin email
-const PROTECTED_ADMIN_EMAIL = 'alantbooth@xtra.co.nz';
-
 const Navbar: React.FC = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
-  const { user, hasRole, isAuthenticated, isLoading, userRole } = useAuth();
+  const { user, hasRole, isAuthenticated, isLoading, userRole, isAdmin } = useAuth();
   const isMobile = useIsMobile();
   const { isMenuOpen, toggleMenu, closeMenu } = useMobileMenu();
   
@@ -28,6 +25,7 @@ const Navbar: React.FC = () => {
       user: !!user, 
       userEmail: user?.email,
       userRole,
+      isAdmin,
       isLoading 
     });
     
@@ -43,11 +41,10 @@ const Navbar: React.FC = () => {
     } else {
       setUserProfile(null);
     }
-  }, [isAuthenticated, user, isLoading, userRole]);
+  }, [isAuthenticated, user, isLoading, userRole, isAdmin]);
   
-  // Enhanced admin check using the correct email
-  const isProtectedAdmin = user?.email === PROTECTED_ADMIN_EMAIL;
-  const isAdminUser = isProtectedAdmin || hasRole('admin') || hasRole('super_admin');
+  // Use the isAdmin from AuthContext which is based on database role
+  const isAdminUser = isAdmin;
   
   console.log('Navbar render state:', {
     isLoading,

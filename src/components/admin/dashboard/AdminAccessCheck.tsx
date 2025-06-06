@@ -5,7 +5,6 @@ import { ShieldAlert, Bug } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';
-import { debugAuthState, forceProtectedAdminAccess } from '@/utils/admin/debugAuth';
 
 interface AdminAccessCheckProps {
   user: any;
@@ -40,6 +39,7 @@ export const AdminAccessCheck: React.FC<AdminAccessCheckProps> = ({
       } : null,
       hasRoles: {
         superAdmin: hasRole('super_admin'),
+        admin: hasRole('admin'),
         player: hasRole('player')
       }
     };
@@ -60,6 +60,7 @@ export const AdminAccessCheck: React.FC<AdminAccessCheckProps> = ({
             <li>Email: {user.email}</li>
             <li>Role: {userRole || profile?.role || 'Unknown'}</li>
             <li>Has Super Admin Role: {hasRole('super_admin') ? 'Yes' : 'No'}</li>
+            <li>Has Admin Role: {hasRole('admin') ? 'Yes' : 'No'}</li>
           </ul>
         </AlertDescription>
       </Alert>
@@ -68,12 +69,6 @@ export const AdminAccessCheck: React.FC<AdminAccessCheckProps> = ({
         <Button onClick={showDebugInfo} variant="outline" size="sm">
           <Bug className="h-4 w-4 mr-1" />
           Show Debug Info
-        </Button>
-        <Button onClick={() => debugAuthState()} variant="outline" size="sm">
-          Debug Auth State
-        </Button>
-        <Button onClick={() => forceProtectedAdminAccess()} variant="outline" size="sm">
-          Force Admin Access
         </Button>
         <Button asChild variant="default" size="sm">
           <Link to="/">Return Home</Link>
