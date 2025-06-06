@@ -23,11 +23,7 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     bulkUpdateRoles: updateRoles,
     sendBulkEmail: sendEmail,
     refetch 
-  } = useAdminProfiles(isAdmin, currentUserId, {
-    ...filters.filterOptions,
-    lastLoginSortDirection,
-    userType: filters.userType
-  });
+  } = useAdminProfiles(isAdmin, currentUserId);
 
   // Handle role change for a single user
   const handleRoleChange = async (userId: string, newRole: UserRole) => {

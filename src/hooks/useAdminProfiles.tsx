@@ -4,16 +4,31 @@ import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types/userTypes';
 import { useToast } from '@/hooks/use-toast';
 
+// Define the return type for the hook
+interface AdminProfilesData {
+  data: UserProfile[];
+  count: number;
+  countries: string[];
+  categories: string[];
+  signup_stats: Array<{month: string; count: number}>;
+}
+
 export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: ['admin-all-users'],
-    queryFn: async () => {
+    queryFn: async (): Promise<AdminProfilesData> => {
       if (!isAdmin || !currentUserId) {
         console.log('Not authorized to fetch profiles or no user ID');
-        return [];
+        return {
+          data: [],
+          count: 0,
+          countries: [],
+          categories: [],
+          signup_stats: []
+        };
       }
       
       console.log('Fetching all users from edge function');
@@ -32,13 +47,19 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
         
         if (!data) {
           console.log('No data returned from edge function');
-          return [];
+          return {
+            data: [],
+            count: 0,
+            countries: [],
+            categories: [],
+            signup_stats: []
+          };
         }
         
         console.log('Users fetched successfully:', data.length || 0);
         
         // Transform the data to match UserProfile interface
-        return (data as any[]).map(user => ({
+        const userProfiles = (data as any[]).map(user => ({
           id: user.id,
           email: user.email,
           display_name: user.display_name || null,
@@ -57,6 +78,36 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
           custom_gender: user.custom_gender || null,
           age_group: user.age_group || null,
         } as UserProfile));
+
+        // Extract unique countries and categories
+        const countries = [...new Set(userProfiles.map(user => user.country).filter(Boolean))] as string[];
+        const categoriesSet = new Set<string>();
+        userProfiles.forEach(user => {
+          if (user.categories_played && Array.isArray(user.categories_played)) {
+            user.categories_played.forEach(category => {
+              if (category) categoriesSet.add(category);
+            });
+          }
+        });
+        const categories = Array.from(categoriesSet);
+
+        // Generate mock signup stats (replace with real data when available)
+        const signup_stats = Array.from({length: 6}, (_, i) => {
+          const date = new Date();
+          date.setMonth(date.getMonth() - i);
+          return {
+            month: date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
+            count: Math.floor(Math.random() * 10) + 1
+          };
+        }).reverse();
+
+        return {
+          data: userProfiles,
+          count: userProfiles.length,
+          countries,
+          categories,
+          signup_stats
+        };
         
       } catch (error: any) {
         console.error('Error in useAdminProfiles:', error);
