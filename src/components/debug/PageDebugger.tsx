@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { debugLog, DebugLevel } from '@/utils/debug';
 
 interface PageDebuggerProps {
   componentName: string;
@@ -10,6 +11,16 @@ export const PageDebugger: React.FC<PageDebuggerProps> = ({ componentName }) => 
   const { user, userRole: authUserRole, isAuthenticated, isLoading } = useAuth();
   
   const userRole = authUserRole || 'player';
+
+  // Log debug info when component mounts or updates
+  React.useEffect(() => {
+    debugLog('PageDebugger', `${componentName} rendered`, DebugLevel.DEBUG, {
+      user: user?.email,
+      role: userRole,
+      authenticated: isAuthenticated,
+      loading: isLoading
+    });
+  }, [componentName, user?.email, userRole, isAuthenticated, isLoading]);
 
   // Only show in development
   if (process.env.NODE_ENV !== 'development') {

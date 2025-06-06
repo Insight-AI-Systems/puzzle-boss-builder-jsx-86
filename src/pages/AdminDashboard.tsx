@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminAccessCheck } from '@/components/admin/dashboard/AdminAccessCheck';
 import { AdminToolbar } from '@/components/admin/dashboard/AdminToolbar';
+import { adminLog, DebugLevel } from '@/utils/debug';
 
 // Updated to use the correct admin email
 const PROTECTED_ADMIN_EMAIL = 'alantbooth@xtra.co.nz';
@@ -26,7 +27,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (isLoading) return;
     
-    console.log('AdminDashboard - Access Check:', { 
+    adminLog('AdminDashboard', 'Access Check', DebugLevel.INFO, { 
       isLoggedIn: !!user,
       userEmail: user?.email,
       isProtectedAdmin,
@@ -36,14 +37,14 @@ const AdminDashboard = () => {
 
     // Special case for protected admin - always grant access
     if (isProtectedAdmin) {
-      console.log('AdminDashboard - Protected admin detected, granting full access');
+      adminLog('AdminDashboard', 'Protected admin detected, granting full access', DebugLevel.INFO);
       return;
     }
     
     // Check access for regular users
     if (!isSuperAdmin && !hasRole('category_manager') && !hasRole('social_media_manager') && 
         !hasRole('partner_manager') && !hasRole('cfo') && user) {
-      console.log('AdminDashboard - Access denied, redirecting to homepage');
+      adminLog('AdminDashboard', 'Access denied, redirecting to homepage', DebugLevel.WARN);
       toast({
         title: "Access Denied",
         description: `You don't have admin privileges. Current role: ${profile?.role || 'unknown'}`,

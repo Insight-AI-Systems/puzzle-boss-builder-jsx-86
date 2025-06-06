@@ -1,17 +1,21 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { adminLog, DebugLevel } from '@/utils/debug';
 
 export const debugAuthState = async () => {
-  console.log('=== DEBUG AUTH STATE ===');
+  adminLog('DebugAuth', 'Starting auth state debug...', DebugLevel.INFO);
   
   try {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    console.log('Current session:', session);
-    console.log('Session error:', sessionError);
+    adminLog('DebugAuth', 'Current session', DebugLevel.INFO, session);
+    
+    if (sessionError) {
+      adminLog('DebugAuth', 'Session error', DebugLevel.ERROR, sessionError);
+    }
     
     if (session?.user) {
-      console.log('User email:', session.user.email);
-      console.log('User ID:', session.user.id);
+      adminLog('DebugAuth', `User email: ${session.user.email}`, DebugLevel.INFO);
+      adminLog('DebugAuth', `User ID: ${session.user.id}`, DebugLevel.INFO);
       
       // Check profile
       const { data: profile, error: profileError } = await supabase
@@ -20,19 +24,22 @@ export const debugAuthState = async () => {
         .eq('id', session.user.id)
         .single();
         
-      console.log('Profile data:', profile);
-      console.log('Profile error:', profileError);
+      adminLog('DebugAuth', 'Profile data', DebugLevel.INFO, profile);
+      
+      if (profileError) {
+        adminLog('DebugAuth', 'Profile error', DebugLevel.ERROR, profileError);
+      }
     }
   } catch (error) {
-    console.error('Debug auth error:', error);
+    adminLog('DebugAuth', 'Debug auth error', DebugLevel.ERROR, error);
   }
   
-  console.log('=== END DEBUG ===');
+  adminLog('DebugAuth', 'Auth state debug complete', DebugLevel.INFO);
 };
 
 export const forceProtectedAdminAccess = () => {
-  console.log('Force admin access requested');
+  adminLog('DebugAuth', 'Force admin access requested', DebugLevel.WARN);
   // This is just for debugging - in real implementation, 
   // the access should be properly managed through the database
-  console.log('Please ensure user alantbooth@xtra.co.nz has super_admin role in the database');
+  adminLog('DebugAuth', 'Please ensure user alantbooth@xtra.co.nz has super_admin role in the database', DebugLevel.INFO);
 };

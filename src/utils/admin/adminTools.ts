@@ -1,5 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { adminLog, DebugLevel } from '@/utils/debug';
 
 /**
  * Sets a user's role to super_admin in the database
@@ -9,7 +11,7 @@ import { toast } from 'sonner';
  */
 export async function setUserAsAdmin(email: string) {
   try {
-    console.log(`Attempting to set user ${email} as super_admin...`);
+    adminLog('AdminTools', `Attempting to set user ${email} as super_admin...`, DebugLevel.INFO);
     
     // Display a toast notification to show the operation is in progress
     toast.loading(`Setting ${email} as super_admin...`);
@@ -19,25 +21,25 @@ export async function setUserAsAdmin(email: string) {
     });
     
     if (error) {
-      console.error('Error setting admin role:', error);
+      adminLog('AdminTools', 'Error setting admin role', DebugLevel.ERROR, error);
       toast.error(`Failed to set ${email} as super_admin. Error: ${error.message}`);
       return { success: false, error };
     }
     
-    console.log(`Successfully set ${email} as super_admin`, data);
+    adminLog('AdminTools', `Successfully set ${email} as super_admin`, DebugLevel.INFO, data);
     toast.success(`Successfully set ${email} as super_admin`);
     
     // Force refresh if we're modifying the current user
     const { data: authData } = await supabase.auth.getUser();
     if (authData?.user?.email === email) {
-      console.log('Current user role was changed. Refreshing session...');
+      adminLog('AdminTools', 'Current user role was changed. Refreshing session...', DebugLevel.INFO);
       await supabase.auth.refreshSession();
       window.location.reload(); // Reload to apply new permissions
     }
     
     return { success: true, data };
   } catch (err) {
-    console.error('Exception in setUserAsAdmin:', err);
+    adminLog('AdminTools', 'Exception in setUserAsAdmin', DebugLevel.ERROR, err);
     toast.error(`Error setting user as super_admin: ${err instanceof Error ? err.message : String(err)}`);
     return { success: false, error: err };
   }
@@ -52,11 +54,11 @@ export async function getCurrentUserRole() {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      console.error('No authenticated user found');
+      adminLog('AdminTools', 'No authenticated user found', DebugLevel.ERROR);
       return { success: false, error: 'No authenticated user' };
     }
     
-    console.log('Current user:', user.email);
+    adminLog('AdminTools', `Current user: ${user.email}`, DebugLevel.INFO);
     
     const { data, error } = await supabase
       .from('profiles')
@@ -65,14 +67,14 @@ export async function getCurrentUserRole() {
       .single();
     
     if (error) {
-      console.error('Error getting user role:', error);
+      adminLog('AdminTools', 'Error getting user role', DebugLevel.ERROR, error);
       return { success: false, error };
     }
     
-    console.log(`Current user role:`, data.role);
+    adminLog('AdminTools', `Current user role: ${data.role}`, DebugLevel.INFO);
     return { success: true, data: data.role };
   } catch (err) {
-    console.error('Exception in getCurrentUserRole:', err);
+    adminLog('AdminTools', 'Exception in getCurrentUserRole', DebugLevel.ERROR, err);
     return { success: false, error: err };
   }
 }
@@ -89,14 +91,14 @@ export async function listAdminUsers() {
       .eq('role', 'super_admin');
     
     if (error) {
-      console.error('Error listing admin users:', error);
+      adminLog('AdminTools', 'Error listing admin users', DebugLevel.ERROR, error);
       return { success: false, error };
     }
     
-    console.log('Admin users:', data);
+    adminLog('AdminTools', 'Admin users', DebugLevel.INFO, data);
     return { success: true, data };
   } catch (err) {
-    console.error('Exception in listAdminUsers:', err);
+    adminLog('AdminTools', 'Exception in listAdminUsers', DebugLevel.ERROR, err);
     return { success: false, error: err };
   }
 }
@@ -106,9 +108,9 @@ export async function listAdminUsers() {
  */
 export async function makeRobAdmin() {
   const email = 'rob.small.1234@gmail.com';
-  console.log('Setting Rob as admin...');
+  adminLog('AdminTools', 'Setting Rob as admin...', DebugLevel.INFO);
   const result = await setUserAsAdmin(email);
-  console.log('Result:', result);
+  adminLog('AdminTools', 'Result', DebugLevel.INFO, result);
   return result;
 }
 
