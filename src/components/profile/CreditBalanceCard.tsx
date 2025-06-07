@@ -23,17 +23,28 @@ export function CreditBalanceCard({ profile, awardCredits }: CreditBalanceCardPr
   const [adminNote, setAdminNote] = useState('');
   const [isAwardDialogOpen, setIsAwardDialogOpen] = useState(false);
 
-  const handleAwardCredits = () => {
+  const handleAwardCredits = async () => {
     const credits = parseInt(creditAmount);
     if (credits > 0) {
-      awardCredits.mutate({
-        targetUserId: profile.id,
-        credits,
-        adminNote: adminNote || undefined
-      });
-      setCreditAmount('');
-      setAdminNote('');
-      setIsAwardDialogOpen(false);
+      console.log('Submitting credit award:', { targetUserId: profile.id, credits, adminNote });
+      
+      try {
+        await awardCredits.mutateAsync({
+          targetUserId: profile.id,
+          credits,
+          adminNote: adminNote || undefined
+        });
+        
+        // Reset form and close dialog only on success
+        setCreditAmount('');
+        setAdminNote('');
+        setIsAwardDialogOpen(false);
+        
+        console.log('Credit award completed successfully');
+      } catch (error) {
+        console.error('Credit award failed:', error);
+        // Don't close dialog on error so user can retry
+      }
     }
   };
 
@@ -43,6 +54,8 @@ export function CreditBalanceCard({ profile, awardCredits }: CreditBalanceCardPr
       currency: 'USD'
     }).format(amount);
   };
+
+  console.log('CreditBalanceCard rendering with profile credits:', profile.credits);
 
   return (
     <Card className="bg-puzzle-black/50 border-puzzle-aqua/30">

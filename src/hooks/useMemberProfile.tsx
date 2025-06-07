@@ -29,6 +29,8 @@ export function useMemberProfile(userId?: string) {
       if (!targetUserId) return null;
 
       try {
+        console.log('Fetching profile for user:', targetUserId);
+        
         // Fetch the basic profile
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -39,6 +41,8 @@ export function useMemberProfile(userId?: string) {
         if (profileError) {
           throw new Error(`Failed to fetch profile: ${profileError.message}`);
         }
+
+        console.log('Profile data fetched:', profileData);
 
         // Fetch wallet information
         const { data: walletData, error: walletError } = await supabase
@@ -124,6 +128,7 @@ export function useMemberProfile(userId?: string) {
           wallet: walletData || undefined,
         };
 
+        console.log('Final member profile:', memberProfile);
         return memberProfile;
       } catch (err) {
         console.error('Error in useMemberProfile:', err);
@@ -302,26 +307,43 @@ export function useMemberProfile(userId?: string) {
     },
   });
 
-  // Award credits mutation (admin only)
+  // Award credits mutation (admin only) - Enhanced with better error handling and logging
   const awardCredits = useMutation({
     mutationFn: async ({ targetUserId, credits, adminNote }: { targetUserId: string; credits: number; adminNote?: string }) => {
+      console.log('Awarding credits:', { targetUserId, credits, adminNote });
+      
       const { error } = await supabase.rpc('award_credits', {
         target_user_id: targetUserId,
         credits_to_add: credits,
         admin_note: adminNote || null
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error awarding credits:', error);
+        throw error;
+      }
+      
+      console.log('Credits awarded successfully');
       return true;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      console.log('Credits award mutation succeeded, invalidating queries');
       toast({
         title: "Credits Awarded",
         description: "Free credits have been successfully awarded to the user.",
       });
-      queryClient.invalidateQueries({ queryKey: ['member-profile', targetUserId] });
+      
+      // Invalidate multiple related queries to ensure UI updates
+      queryClient.invalidateQueries({ queryKey: ['member-profile', variables.targetUserId] });
+      queryClient.invalidateQueries({ queryKey: ['profile', variables.targetUserId] });
+      
+      // Also refetch the current profile data immediately
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ['member-profile', variables.targetUserId] });
+      }, 100);
     },
     onError: (err) => {
+      console.error('Credits award mutation failed:', err);
       toast({
         title: "Award Failed",
         description: err instanceof Error ? err.message : 'Failed to award credits',
