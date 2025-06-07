@@ -1,11 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Users, Trophy, Zap, Search, Play } from 'lucide-react';
+import { Clock, Users, Trophy, Zap, Search, Play, CreditCard } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { useMemberProfile } from '@/hooks/useMemberProfile';
+import { usePaymentSystem } from '@/hooks/usePaymentSystem';
+import { CreditBalanceDisplay } from '@/components/games/CreditBalanceDisplay';
 import WordSearchGame from '@/components/games/word-search/WordSearchGame';
 
 interface CompetitionTier {
@@ -21,6 +23,8 @@ interface CompetitionTier {
 
 const WordSearchArena: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const { profile } = useMemberProfile();
+  const { wallet, fetchWallet } = usePaymentSystem();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedTier, setSelectedTier] = useState<CompetitionTier | null>(null);
   const [showGame, setShowGame] = useState(false);
@@ -66,6 +70,12 @@ const WordSearchArena: React.FC = () => {
 
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchWallet();
+    }
+  }, [isAuthenticated, fetchWallet]);
 
   const formatCountdown = (targetDate: Date) => {
     const now = currentTime.getTime();
@@ -153,6 +163,19 @@ const WordSearchArena: React.FC = () => {
               Compete for Cash Prizes in Real-Time Tournaments
             </p>
             
+            {/* Credit Balance Display for Authenticated Users */}
+            {isAuthenticated && (profile || wallet) && (
+              <div className="mb-8 max-w-md mx-auto">
+                <CreditBalanceDisplay
+                  credits={profile?.credits || 0}
+                  balance={wallet?.balance || 0}
+                  entryFee={0}
+                  willUseCredits={false}
+                  compact={true}
+                />
+              </div>
+            )}
+            
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
@@ -178,9 +201,10 @@ const WordSearchArena: React.FC = () => {
                 size="lg" 
                 className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold px-8 py-3"
                 onClick={() => handleEnterTournament(tiers[0])}
+                disabled={!isAuthenticated}
               >
                 <Zap className="h-5 w-5 mr-2" />
-                Quick Play
+                {isAuthenticated ? 'Quick Play' : 'Login to Play'}
               </Button>
               <Button 
                 size="lg" 
@@ -207,66 +231,100 @@ const WordSearchArena: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {tiers.map((tier) => (
-              <Card key={tier.id} className="bg-gray-900 border-gray-700 hover:border-puzzle-aqua/50 transition-all duration-300">
-                <CardHeader className="text-center">
-                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${tier.color} text-white mb-4`}>
-                    {tier.difficulty.charAt(0).toUpperCase() + tier.difficulty.slice(1)}
-                  </div>
-                  <CardTitle className="text-2xl text-puzzle-white">{tier.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Entry Fee & Prize Pool */}
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-puzzle-aqua mb-2">
-                      ${tier.entryFee}
+            {tiers.map((tier) => {
+              const credits = profile?.credits || 0;
+              const balance = wallet?.balance || 0;
+              const canPlayWithCredits = credits >= tier.entryFee;
+              const canPlayWithWallet = balance >= tier.entryFee;
+              const canPlay = canPlayWithCredits || canPlayWithWallet;
+
+              return (
+                <Card key={tier.id} className="bg-gray-900 border-gray-700 hover:border-puzzle-aqua/50 transition-all duration-300">
+                  <CardHeader className="text-center">
+                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${tier.color} text-white mb-4`}>
+                      {tier.difficulty.charAt(0).toUpperCase() + tier.difficulty.slice(1)}
                     </div>
-                    <div className="text-sm text-gray-400">Entry Fee</div>
-                    <div className="mt-4">
-                      <div className="text-xl font-semibold text-puzzle-gold">
-                        ${tier.prizePool} Prize Pool
+                    <CardTitle className="text-2xl text-puzzle-white">{tier.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Entry Fee & Prize Pool */}
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-puzzle-aqua mb-2">
+                        ${tier.entryFee}
+                      </div>
+                      <div className="text-sm text-gray-400">Entry Fee</div>
+                      
+                      {/* Payment Method Indicator */}
+                      {isAuthenticated && (
+                        <div className="mt-2">
+                          {canPlayWithCredits ? (
+                            <Badge className="bg-puzzle-gold/20 text-puzzle-gold border-puzzle-gold/50">
+                              <CreditCard className="h-3 w-3 mr-1" />
+                              Use {tier.entryFee} Credits
+                            </Badge>
+                          ) : canPlayWithWallet ? (
+                            <Badge className="bg-puzzle-aqua/20 text-puzzle-aqua border-puzzle-aqua/50">
+                              Pay ${tier.entryFee}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-red-500/50 text-red-400">
+                              Insufficient Funds
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                      
+                      <div className="mt-4">
+                        <div className="text-xl font-semibold text-puzzle-gold">
+                          ${tier.prizePool} Prize Pool
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Tournament Countdown */}
-                  <div className="bg-gray-800 rounded-lg p-4 text-center">
-                    <div className="flex items-center justify-center mb-2">
-                      <Clock className="h-4 w-4 text-puzzle-aqua mr-2" />
-                      <span className="text-sm text-gray-300">Next Tournament</span>
+                    {/* Tournament Countdown */}
+                    <div className="bg-gray-800 rounded-lg p-4 text-center">
+                      <div className="flex items-center justify-center mb-2">
+                        <Clock className="h-4 w-4 text-puzzle-aqua mr-2" />
+                        <span className="text-sm text-gray-300">Next Tournament</span>
+                      </div>
+                      <div className="text-2xl font-mono font-bold text-puzzle-white">
+                        {formatCountdown(tier.nextTournament)}
+                      </div>
                     </div>
-                    <div className="text-2xl font-mono font-bold text-puzzle-white">
-                      {formatCountdown(tier.nextTournament)}
+
+                    {/* Active Players */}
+                    <div className="flex items-center justify-center text-gray-300">
+                      <Users className="h-4 w-4 mr-2" />
+                      <span className="text-sm">{tier.activePlayers} players active</span>
                     </div>
-                  </div>
 
-                  {/* Active Players */}
-                  <div className="flex items-center justify-center text-gray-300">
-                    <Users className="h-4 w-4 mr-2" />
-                    <span className="text-sm">{tier.activePlayers} players active</span>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="space-y-3">
-                    <Button 
-                      className="w-full bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold"
-                      disabled={!isAuthenticated}
-                      onClick={() => handleEnterTournament(tier)}
-                    >
-                      <Play className="h-4 w-4 mr-2" />
-                      {isAuthenticated ? 'Enter Tournament' : 'Login to Enter'}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
-                      onClick={() => handleEnterTournament({ ...tier, entryFee: 0 })}
-                    >
-                      Practice Mode
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    {/* Action Buttons */}
+                    <div className="space-y-3">
+                      <Button 
+                        className="w-full bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold"
+                        disabled={!isAuthenticated || !canPlay}
+                        onClick={() => handleEnterTournament(tier)}
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        {!isAuthenticated 
+                          ? 'Login to Enter' 
+                          : canPlay 
+                            ? 'Enter Tournament' 
+                            : 'Insufficient Funds'
+                        }
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
+                        onClick={() => handleEnterTournament({ ...tier, entryFee: 0 })}
+                      >
+                        Practice Mode
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </section>

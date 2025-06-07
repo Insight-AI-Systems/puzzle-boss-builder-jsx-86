@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -125,11 +124,12 @@ export function usePaymentSystem() {
     }
   }, [user]);
 
-  // Verify payment for game entry
+  // Verify payment for game entry - updated to handle credits
   const verifyGameEntry = useCallback(async (
     gameId: string,
     entryFee: number,
-    testMode: boolean = false
+    testMode: boolean = false,
+    useCredits: boolean = false
   ): Promise<PaymentVerificationResult> => {
     if (!user) {
       return {
@@ -154,95 +154,157 @@ export function usePaymentSystem() {
         };
       }
 
-      // Get current wallet balance
-      const currentWallet = await fetchWallet();
-      if (!currentWallet) {
-        throw new Error('Wallet not found');
-      }
+      if (useCredits) {
+        // Handle credit-based payment
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('credits')
+          .eq('id', user.id)
+          .single();
 
-      // Check if user has sufficient balance
-      if (currentWallet.balance < entryFee) {
+        if (profileError) throw profileError;
+
+        const currentCredits = profile.credits || 0;
+        if (currentCredits < entryFee) {
+          return {
+            success: false,
+            canPlay: false,
+            balance: wallet?.balance || 0,
+            entryFee,
+            error: 'Insufficient credits'
+          };
+        }
+
+        // Create credit transaction
+        const { data: transaction, error: transactionError } = await supabase
+          .from('financial_transactions')
+          .insert({
+            user_id: user.id,
+            member_id: user.id,
+            transaction_type: 'puzzle',
+            amount: entryFee,
+            currency: 'CREDITS',
+            status: 'completed',
+            description: `Game entry fee for game ${gameId} (Credits)`,
+            metadata: { game_id: gameId, payment_method: 'credits' }
+          })
+          .select()
+          .single();
+
+        if (transactionError) throw transactionError;
+
+        // Deduct credits from profile
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            credits: currentCredits - entryFee,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user.id);
+
+        if (updateError) throw updateError;
+
+        toast({
+          title: "Credits Used",
+          description: `${entryFee} credits deducted for game entry`,
+        });
+
         return {
-          success: false,
-          canPlay: false,
-          balance: currentWallet.balance,
+          success: true,
+          canPlay: true,
+          balance: wallet?.balance || 0,
           entryFee,
-          error: 'Insufficient balance'
+          transactionId: transaction.id
         };
-      }
+      } else {
+        // Handle wallet-based payment (existing logic)
+        const currentWallet = await fetchWallet();
+        if (!currentWallet) {
+          throw new Error('Wallet not found');
+        }
 
-      // Perform fraud detection check
-      const riskScore = await performFraudCheck(user.id, entryFee);
-      if (riskScore > 80) {
+        if (currentWallet.balance < entryFee) {
+          return {
+            success: false,
+            canPlay: false,
+            balance: currentWallet.balance,
+            entryFee,
+            error: 'Insufficient balance'
+          };
+        }
+
+        // Perform fraud detection check
+        const riskScore = await performFraudCheck(user.id, entryFee);
+        if (riskScore > 80) {
+          return {
+            success: false,
+            canPlay: false,
+            balance: currentWallet.balance,
+            entryFee,
+            error: 'Transaction flagged for review'
+          };
+        }
+
+        // Create entry fee transaction
+        const { data: transaction, error: transactionError } = await supabase
+          .from('game_transactions')
+          .insert({
+            user_id: user.id,
+            game_id: gameId,
+            transaction_type: 'entry_fee',
+            amount: entryFee,
+            status: 'pending',
+            description: `Game entry fee for game ${gameId}`,
+            currency: 'USD',
+            metadata: {}
+          })
+          .select()
+          .single();
+
+        if (transactionError) throw transactionError;
+
+        // Deduct from wallet balance
+        const { error: walletError } = await supabase
+          .from('user_wallets')
+          .update({ 
+            balance: currentWallet.balance - entryFee,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+
+        if (walletError) throw walletError;
+
+        // Update transaction to completed
+        await supabase
+          .from('game_transactions')
+          .update({ status: 'completed' })
+          .eq('id', transaction.id);
+
+        // Generate receipt
+        const receipt = await generateReceipt(transaction.id);
+
+        // Update local wallet state
+        setWallet(prev => prev ? { ...prev, balance: prev.balance - entryFee } : null);
+
+        toast({
+          title: "Payment Successful",
+          description: `Entry fee of $${entryFee.toFixed(2)} has been deducted`,
+        });
+
         return {
-          success: false,
-          canPlay: false,
-          balance: currentWallet.balance,
-          entryFee,
-          error: 'Transaction flagged for review'
-        };
-      }
-
-      // Create entry fee transaction
-      const { data: transaction, error: transactionError } = await supabase
-        .from('game_transactions')
-        .insert({
-          user_id: user.id,
-          game_id: gameId,
-          transaction_type: 'entry_fee',
-          amount: entryFee,
-          status: 'pending',
-          description: `Game entry fee for game ${gameId}`,
-          currency: 'USD',
-          metadata: {}
-        })
-        .select()
-        .single();
-
-      if (transactionError) throw transactionError;
-
-      // Deduct from wallet balance
-      const { error: walletError } = await supabase
-        .from('user_wallets')
-        .update({ 
+          success: true,
+          canPlay: true,
           balance: currentWallet.balance - entryFee,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id);
-
-      if (walletError) throw walletError;
-
-      // Update transaction to completed
-      await supabase
-        .from('game_transactions')
-        .update({ status: 'completed' })
-        .eq('id', transaction.id);
-
-      // Generate receipt - simplified approach
-      const receipt = await generateReceipt(transaction.id);
-
-      // Update local wallet state
-      setWallet(prev => prev ? { ...prev, balance: prev.balance - entryFee } : null);
-
-      toast({
-        title: "Payment Successful",
-        description: `Entry fee of $${entryFee.toFixed(2)} has been deducted`,
-      });
-
-      return {
-        success: true,
-        canPlay: true,
-        balance: currentWallet.balance - entryFee,
-        entryFee,
-        transactionId: transaction.id,
-        receipt: receipt || undefined
-      };
-
+          entryFee,
+          transactionId: transaction.id,
+          receipt: receipt || undefined
+        };
+      }
     } catch (error) {
       console.error('Payment verification error:', error);
       toast({
         title: "Payment Failed",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        description: error instanceof Error ? error.message : 'Payment verification failed',
         variant: "destructive"
       });
 
