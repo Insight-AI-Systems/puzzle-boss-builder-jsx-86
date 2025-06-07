@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { MainNavItem } from './NavbarData';
 import { useAuth } from '@/contexts/AuthContext';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Search, Grid3X3, Brain, Zap, Square, BookOpen, Puzzle } from 'lucide-react';
 
 interface NavLinksProps {
   items: MainNavItem[];
@@ -90,10 +89,14 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
 
   // Define dropdown items for Puzzles
   const getPuzzleDropdownItems = () => [
-    { name: 'All Puzzles', path: '/puzzles' },
-    { name: 'Categories', path: '/categories' },
-    { name: 'Featured', path: '/puzzles?featured=true' },
-    { name: 'New Arrivals', path: '/puzzles?sort=newest' }
+    { name: 'Word Search Arena', path: '/puzzles/word-search', icon: Search },
+    { name: 'Speed Sudoku', path: '/puzzles/sudoku', icon: Grid3X3 },
+    { name: 'Memory Master', path: '/puzzles/memory', icon: Brain },
+    { name: 'Trivia Lightning', path: '/puzzles/trivia', icon: Zap },
+    { name: 'Block Puzzle Pro', path: '/puzzles/blocks', icon: Square },
+    { name: 'Daily Crossword', path: '/puzzles/crossword', icon: BookOpen },
+    { name: 'divider', path: '', icon: null },
+    { name: 'All Puzzles', path: '/puzzles', icon: Puzzle, isBold: true }
   ];
 
   const handleItemMouseEnter = (itemName: string) => {
@@ -149,16 +152,28 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
                 onMouseLeave={handleDropdownMouseLeave}
               >
                 <div className="py-2">
-                  {getPuzzleDropdownItems().map((dropdownItem) => (
-                    <Link
-                      key={dropdownItem.path}
-                      to={dropdownItem.path}
-                      className="block px-4 py-2 text-sm text-muted-foreground hover:text-puzzle-white hover:bg-white/10 transition-colors"
-                      onClick={onClick}
-                      data-testid={`dropdown-link-${dropdownItem.name.toLowerCase().replace(/\s+/g, '-')}`}
-                    >
-                      {dropdownItem.name}
-                    </Link>
+                  {getPuzzleDropdownItems().map((dropdownItem, index) => (
+                    dropdownItem.name === 'divider' ? (
+                      <div 
+                        key={`divider-${index}`}
+                        className="my-1 h-px bg-puzzle-aqua/20 mx-2"
+                      />
+                    ) : (
+                      <Link
+                        key={dropdownItem.path}
+                        to={dropdownItem.path}
+                        className={`flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-puzzle-white hover:bg-white/10 transition-colors ${
+                          dropdownItem.isBold ? 'font-semibold' : ''
+                        }`}
+                        onClick={onClick}
+                        data-testid={`dropdown-link-${dropdownItem.name.toLowerCase().replace(/\s+/g, '-')}`}
+                      >
+                        {dropdownItem.icon && (
+                          <dropdownItem.icon className="h-4 w-4 flex-shrink-0" />
+                        )}
+                        <span>{dropdownItem.name}</span>
+                      </Link>
+                    )
                   ))}
                 </div>
               </div>
