@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,6 +27,7 @@ import TriviaLightning from "./pages/TriviaLightning";
 import BlockPuzzlePro from "./pages/BlockPuzzlePro";
 import DailyCrossword from "./pages/DailyCrossword";
 import CompetitionRoom from "./pages/CompetitionRoom";
+import Leaderboard from "./pages/Leaderboard";
 import DevelopmentDashboard from "@/components/DevelopmentDashboard";
 
 const queryClient = new QueryClient({
@@ -55,6 +57,7 @@ function AppContent() {
         <Route path="/puzzles/block-puzzle" element={<BlockPuzzlePro />} />
         <Route path="/puzzles/crossword" element={<DailyCrossword />} />
         <Route path="/competition/:competitionId" element={<CompetitionRoom />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/categories/:categoryId" element={<CategoryPuzzles />} />
         <Route path="/profile" element={<Profile />} />
