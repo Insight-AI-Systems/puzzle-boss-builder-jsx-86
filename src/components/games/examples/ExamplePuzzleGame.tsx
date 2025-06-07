@@ -110,14 +110,11 @@ export function ExampleGameWithWrapper() {
     hasScore: true,
     hasMoves: true,
     timeLimit: 300, // 5 minutes
-    entryFee: 10,
-    prizePool: 100
+    entryFee: 10
   };
 
   const gameHooks: GameHooks = {
     onGameStart: () => console.log('Game started!'),
-    onGamePause: () => console.log('Game paused'),
-    onGameResume: () => console.log('Game resumed'),
     onGameComplete: (result) => console.log('Game completed:', result),
     onScoreUpdate: (score) => console.log('Score updated:', score),
     onMoveUpdate: (moves) => console.log('Moves updated:', moves),
