@@ -67,8 +67,8 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
     });
     
     setGameInitialized(true);
-    console.log(`Memory game initialized: ${newLayout} ${newTheme}`);
-  }, [gameState.layout, gameState.theme, generateCards]);
+    console.log(`Memory game initialized: ${newLayout} ${newTheme}`, { cardsCount: cards.length });
+  }, [generateCards]);
 
   // Handle card click
   const handleCardClick = useCallback((cardId: string) => {
@@ -114,6 +114,7 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
               card.isMatched = true;
             }
           });
+          console.log('Match found!', { newMatchedPairs, totalPairs: LAYOUT_CONFIGS[prevState.layout].totalCards / 2 });
         }
       }
       
@@ -160,6 +161,7 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
     
     const totalPairs = LAYOUT_CONFIGS[gameState.layout].totalCards / 2;
     if (gameState.matchedPairs === totalPairs && totalPairs > 0) {
+      console.log('Game completed!', { matchedPairs: gameState.matchedPairs, totalPairs });
       setGameState(prevState => ({
         ...prevState,
         isGameComplete: true
@@ -182,12 +184,11 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
     };
   }, [gameState]);
 
-  // Initialize game on first mount only
+  // Initialize game immediately on mount
   useEffect(() => {
-    if (!gameInitialized) {
-      initializeGame();
-    }
-  }, [initializeGame, gameInitialized]);
+    console.log('Initializing memory game on mount');
+    initializeGame();
+  }, []);
 
   return {
     gameState,
