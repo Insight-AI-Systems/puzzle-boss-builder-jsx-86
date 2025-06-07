@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { MemoryCard, MemoryGameState, MemoryLayout, MemoryTheme, LAYOUT_CONFIGS, THEME_CONFIGS } from '../types/memoryTypes';
 
 export function useMemoryGameLogic(initialLayout: MemoryLayout, initialTheme: MemoryTheme) {
@@ -49,9 +49,15 @@ export function useMemoryGameLogic(initialLayout: MemoryLayout, initialTheme: Me
     const targetLayout = newLayout || layout;
     const targetTheme = newTheme || theme;
     
+    console.log('Initializing memory game:', { targetLayout, targetTheme });
+    
     setLayout(targetLayout);
     setTheme(targetTheme);
-    setCards(generateCards(targetLayout, targetTheme));
+    
+    const newCards = generateCards(targetLayout, targetTheme);
+    console.log('Generated cards:', newCards.length);
+    
+    setCards(newCards);
     setGameState('waiting');
     setFlippedCards([]);
     setMatchedPairs([]);
@@ -59,64 +65,121 @@ export function useMemoryGameLogic(initialLayout: MemoryLayout, initialTheme: Me
     setGameInitialized(true);
   }, [layout, theme, generateCards]);
 
-  const handleCardFlip = useCallback((cardId: string) => {
-    if (gameState !== 'playing' || flippedCards.length >= 2) return;
-    if (flippedCards.includes(cardId) || matchedPairs.includes(cardId)) return;
+  // Auto-initialize on mount
+  useEffect(() => {
+    if (!gameInitialized) {
+      console.log('Auto-initializing memory game on mount');
+      initializeGame();
+    }
+  }, [initializeGame, gameInitialized]);
 
-    const newFlippedCards = [...flippedCards, cardId];
-    setFlippedCards(newFlippedCards);
+  const handleCardFlip = useCallback((cardId: string) => {
+    console.log('Card flip attempt:', cardId, 'gameState:', gameState, 'flippedCards:', flippedCards.length);
+    
+    if (gameState !== 'playing') {
+      console.log('Game not in playing state');
+      return;
+    }
+    
+    if (flippedCards.length >= 2) {
+      console.log('Already have 2 flipped cards');
+      return;
+    }
+    
+    if (flippedCards.includes(cardId)) {
+      console.log('Card already flipped');
+      return;
+    }
+
+    setFlippedCards(prev => {
+      const newFlippedCards = [...prev, cardId];
+      console.log('New flipped cards:', newFlippedCards);
+      return newFlippedCards;
+    });
+    
     setCards(prev => prev.map(card => 
       card.id === cardId ? { ...card, isFlipped: true } : card
     ));
 
-    if (newFlippedCards.length === 2) {
-      setMoves(prev => prev + 1);
-      
-      // Check for match after delay
-      setTimeout(() => {
-        const [firstId, secondId] = newFlippedCards;
-        const firstCard = cards.find(c => c.id === firstId);
-        const secondCard = cards.find(c => c.id === secondId);
-
-        if (firstCard && secondCard && firstCard.value === secondCard.value) {
-          // Match found
-          const newMatchedPairs = [...matchedPairs, firstId, secondId];
-          setMatchedPairs(newMatchedPairs);
-          setCards(prev => prev.map(card => 
-            (card.id === firstId || card.id === secondId) 
-              ? { ...card, isMatched: true }
-              : card
-          ));
+    // Use setTimeout to handle match checking after state updates
+    setTimeout(() => {
+      setFlippedCards(currentFlipped => {
+        if (currentFlipped.length === 2) {
+          setMoves(prev => prev + 1);
           
-          // Check for game completion
-          const config = LAYOUT_CONFIGS[layout];
-          if (newMatchedPairs.length === config.totalCards) {
-            setGameState('completed');
-          }
-        } else {
-          // No match - flip cards back
-          setTimeout(() => {
-            setCards(prev => prev.map(card => 
-              (card.id === firstId || card.id === secondId) 
-                ? { ...card, isFlipped: false }
-                : card
-            ));
-          }, 1000);
+          const [firstId, secondId] = currentFlipped;
+          
+          // Get current card values
+          setCards(currentCards => {
+            const firstCard = currentCards.find(c => c.id === firstId);
+            const secondCard = currentCards.find(c => c.id === secondId);
+
+            if (firstCard && secondCard && firstCard.value === secondCard.value) {
+              console.log('Match found!', firstCard.value);
+              
+              // Match found - mark as matched
+              const updatedCards = currentCards.map(card => 
+                (card.id === firstId || card.id === secondId) 
+                  ? { ...card, isMatched: true }
+                  : card
+              );
+              
+              // Update matched pairs and check for completion
+              setMatchedPairs(prevMatched => {
+                const newMatchedPairs = [...prevMatched, firstId, secondId];
+                console.log('Matched pairs count:', newMatchedPairs.length);
+                
+                // Check for game completion
+                const config = LAYOUT_CONFIGS[layout];
+                if (newMatchedPairs.length === config.totalCards) {
+                  console.log('Game completed!');
+                  setGameState('completed');
+                }
+                
+                return newMatchedPairs;
+              });
+              
+              return updatedCards;
+            } else {
+              console.log('No match, flipping cards back');
+              
+              // No match - flip cards back after delay
+              setTimeout(() => {
+                setCards(prev => prev.map(card => 
+                  (card.id === firstId || card.id === secondId) 
+                    ? { ...card, isFlipped: false }
+                    : card
+                ));
+              }, 1000);
+              
+              return currentCards;
+            }
+          });
+          
+          return []; // Clear flipped cards
         }
-        setFlippedCards([]);
-      }, 500);
-    }
-  }, [gameState, flippedCards, matchedPairs, cards, layout]);
+        
+        return currentFlipped;
+      });
+    }, 100); // Small delay to ensure state is updated
+  }, [gameState, layout]);
 
   const startGame = useCallback(() => {
+    console.log('Starting game');
     setGameState('playing');
   }, []);
 
   const resetGame = useCallback(() => {
+    console.log('Resetting game');
     setGameState('waiting');
     setFlippedCards([]);
     setMatchedPairs([]);
     setMoves(0);
+    setCards(prev => prev.map(card => ({ 
+      ...card, 
+      isFlipped: false, 
+      isMatched: false 
+    })));
   }, []);
 
   return {
