@@ -13,10 +13,23 @@ import { GameConfig, GameHooks, GameResult } from './types/GameTypes';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
+interface GameStateProps {
+  gameState: string;
+  startGame: () => void;
+  timer: any;
+  payment: any;
+  session: any;
+  onScoreUpdate: (score: number) => void;
+  onMoveUpdate: (moves: number) => void;
+  onComplete: () => void;
+  onError: (error: string) => void;
+  isActive: boolean;
+}
+
 interface BaseGameWrapperProps {
   config: GameConfig;
   hooks?: GameHooks;
-  children: React.ReactNode;
+  children: React.ReactNode | ((props: GameStateProps) => React.ReactNode);
   className?: string;
 }
 
@@ -144,6 +157,19 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
   const canPlay = !config.requiresPayment || payment.paymentStatus.hasAccess;
   const gameState = session.session?.state || 'not_started';
 
+  const gameStateProps: GameStateProps = {
+    gameState,
+    startGame,
+    timer,
+    payment,
+    session: session.session,
+    onScoreUpdate: updateScore,
+    onMoveUpdate: updateMoves,
+    onComplete: completeGame,
+    onError: handleError,
+    isActive: gameState === 'playing'
+  };
+
   return (
     <div className={`w-full h-full ${className}`}>
       {/* Game Header */}
@@ -243,18 +269,7 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
 
       {/* Game Content */}
       <div className="relative">
-        {React.cloneElement(children as React.ReactElement, {
-          gameState,
-          onScoreUpdate: updateScore,
-          onMoveUpdate: updateMoves,
-          onComplete: completeGame,
-          onError: handleError,
-          isActive: gameState === 'playing',
-          session: session.session,
-          startGame, // Pass startGame function to children
-          timer, // Pass timer object to children
-          payment // Pass payment object to children
-        })}
+        {typeof children === 'function' ? children(gameStateProps) : children}
         
         {/* Game Overlay for non-playing states */}
         {gameState !== 'playing' && gameState !== 'not_started' && (
