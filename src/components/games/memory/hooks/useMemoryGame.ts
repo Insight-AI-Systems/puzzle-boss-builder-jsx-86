@@ -1,6 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
-import { MemoryCard, MemoryGameState, MemoryLayout, MemoryTheme, LAYOUT_CONFIGS, THEME_CONFIGS } from '../types/memoryTypes';
+import { MemoryCard, MemoryGameState, MemoryLayout, MemoryTheme, LAYOUT_CONFIGS } from '../types/memoryTypes';
+import { generateCards, processCardMatch, calculateGameStats } from './useMemoryGameHelpers';
 
 export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme: MemoryTheme = 'animals') {
   const [gameState, setGameState] = useState<MemoryGameState>(() => ({
@@ -15,39 +16,6 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
   }));
 
   const [gameInitialized, setGameInitialized] = useState(false);
-
-  // Shuffle algorithm for random card placement
-  const shuffleArray = <T>(array: T[]): T[] => {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  };
-
-  // Generate cards for the current layout and theme
-  const generateCards = useCallback((layout: MemoryLayout, theme: MemoryTheme): MemoryCard[] => {
-    const { totalCards } = LAYOUT_CONFIGS[layout];
-    const themeItems = THEME_CONFIGS[theme].items;
-    const pairsNeeded = totalCards / 2;
-    
-    // Select random items from theme
-    const selectedItems = shuffleArray(themeItems).slice(0, pairsNeeded);
-    
-    // Create pairs
-    const cardValues = [...selectedItems, ...selectedItems];
-    
-    // Shuffle and create card objects
-    const shuffledValues = shuffleArray(cardValues);
-    
-    return shuffledValues.map((value, index) => ({
-      id: `card-${index}`,
-      value,
-      isFlipped: false,
-      isMatched: false
-    }));
-  }, []);
 
   // Initialize or restart game
   const initializeGame = useCallback((layout?: MemoryLayout, theme?: MemoryTheme) => {
@@ -68,7 +36,7 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
     
     setGameInitialized(true);
     console.log(`Memory game initialized: ${newLayout} ${newTheme}`, { cardsCount: cards.length });
-  }, [generateCards]);
+  }, [gameState.layout, gameState.theme]);
 
   // Handle card click
   const handleCardClick = useCallback((cardId: string) => {
@@ -103,17 +71,11 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
       if (newSelectedCards.length === 2) {
         newMoves += 1;
         const [firstCardId, secondCardId] = newSelectedCards;
-        const firstCard = newCards.find(card => card.id === firstCardId);
-        const secondCard = newCards.find(card => card.id === secondCardId);
+        const { updatedCards, isMatch } = processCardMatch(newCards, firstCardId, secondCardId);
         
-        if (firstCard && secondCard && firstCard.value === secondCard.value) {
-          // Match found
+        if (isMatch) {
           newMatchedPairs += 1;
-          newCards.forEach(card => {
-            if (card.id === firstCardId || card.id === secondCardId) {
-              card.isMatched = true;
-            }
-          });
+          newCards.splice(0, newCards.length, ...updatedCards);
           console.log('Match found!', { newMatchedPairs, totalPairs: LAYOUT_CONFIGS[prevState.layout].totalCards / 2 });
         }
       }
@@ -171,17 +133,7 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
 
   // Calculate game stats
   const getGameStats = useCallback(() => {
-    const totalPairs = LAYOUT_CONFIGS[gameState.layout].totalCards / 2;
-    const timeElapsed = gameState.startTime ? Date.now() - gameState.startTime : 0;
-    const accuracy = gameState.moves > 0 ? (gameState.matchedPairs / gameState.moves) * 100 : 0;
-    
-    return {
-      moves: gameState.moves,
-      timeElapsed,
-      matchedPairs: gameState.matchedPairs,
-      totalPairs,
-      accuracy
-    };
+    return calculateGameStats(gameState, gameState.layout);
   }, [gameState]);
 
   // Initialize game immediately on mount
