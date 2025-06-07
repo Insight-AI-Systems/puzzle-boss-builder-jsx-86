@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { BaseGameWrapper } from '../BaseGameWrapper';
 import { ResponsiveGameContainer } from '../ResponsiveGameContainer';
@@ -31,6 +30,7 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
   const [showInstructions, setShowInstructions] = useState(true);
   const [wordsFound, setWordsFound] = useState(0);
   const [totalWords, setTotalWords] = useState(0);
+  const [enablePenalties] = useState(true); // Always enable penalties for competitive play
 
   const gameConfig: GameConfig = {
     gameType: 'word-search',
@@ -41,6 +41,9 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
     requiresPayment: entryFee > 0,
     entryFee
   };
+
+  // Generate unique session ID for game state persistence
+  const [sessionId] = useState(() => `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
 
   // Initialize words when category or difficulty changes
   useEffect(() => {
@@ -81,17 +84,29 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
     setTotalWords(total);
   };
 
-  const handleGameComplete = (stats: { timeElapsed: number; wordsFound: number; totalWords: number }) => {
-    const score = Math.max(0, 1000 - Math.floor(stats.timeElapsed / 1000) + (stats.wordsFound * 100));
+  const handleGameComplete = (stats: { 
+    timeElapsed: number; 
+    wordsFound: number; 
+    totalWords: number; 
+    incorrectSelections: number 
+  }) => {
+    // Calculate competitive score with penalties
+    const baseScore = 1000;
+    const timeBonus = Math.max(0, (gameConfig.timeLimit! - Math.floor(stats.timeElapsed / 1000)) * 10);
+    const completionBonus = stats.wordsFound === stats.totalWords ? 500 : 0;
+    const penaltyDeduction = stats.incorrectSelections * 50;
+    const finalScore = Math.max(0, baseScore + timeBonus + completionBonus - penaltyDeduction);
+
     onComplete?.({
-      sessionId: `word-search-${Date.now()}`,
-      score,
+      sessionId,
+      score: finalScore,
       timeElapsed: stats.timeElapsed,
       moves: 0,
-      completed: true,
+      completed: stats.wordsFound === stats.totalWords,
       gameType: 'word-search',
       wordsFound: stats.wordsFound,
-      totalWords: stats.totalWords
+      totalWords: stats.totalWords,
+      incorrectSelections: stats.incorrectSelections
     });
   };
 
@@ -104,7 +119,7 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
         hooks={{
           onGameStart: () => setGameStarted(true),
           onScoreUpdate: (score) => {
-            // Score is calculated based on words found and time
+            // Score is calculated based on words found, time, and penalties
           }
         }}
       >
@@ -114,7 +129,7 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
             <>
               <Card className="bg-gray-900 border-gray-700">
                 <CardHeader>
-                  <CardTitle className="text-puzzle-white">Game Setup</CardTitle>
+                  <CardTitle className="text-puzzle-white">Competitive Word Search</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -168,19 +183,33 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
                       </p>
                     </div>
                   )}
+
+                  {/* Competitive Features Info */}
+                  <div className="p-4 bg-puzzle-aqua/10 border border-puzzle-aqua/30 rounded-lg">
+                    <h4 className="text-puzzle-aqua font-semibold mb-2">Competitive Features:</h4>
+                    <ul className="text-sm text-gray-300 space-y-1">
+                      <li>• ⏱️ Precision timing to milliseconds</li>
+                      <li>• 🎯 All words must be found to complete</li>
+                      <li>• ⚠️ Penalty system for incorrect selections</li>
+                      <li>• 🏆 Real-time leaderboard tracking</li>
+                      <li>• 💾 Game state auto-saves (disconnect protection)</li>
+                      <li>• ✅ Auto-submit when all words found</li>
+                    </ul>
+                  </div>
                 </CardContent>
               </Card>
 
-              {/* Instructions */}
+              {/* Enhanced Instructions */}
               <WordSearchInstructions
                 difficulty={difficulty}
                 category={categoryOptions?.name || 'Unknown'}
                 totalWords={totalWords}
+                competitive={true}
               />
             </>
           )}
 
-          {/* Word Search Engine */}
+          {/* Enhanced Word Search Engine */}
           {gameStarted && currentWords.length > 0 && (
             <WordSearchEngine
               key={gameKey}
@@ -189,6 +218,8 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
               wordList={currentWords}
               onComplete={handleGameComplete}
               onWordFound={handleWordFound}
+              enablePenalties={enablePenalties}
+              sessionId={sessionId}
             />
           )}
 

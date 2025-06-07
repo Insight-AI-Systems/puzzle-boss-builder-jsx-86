@@ -1,22 +1,42 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Clock, Trophy, Target, CheckCircle, Pause, Play } from 'lucide-react';
+import { Clock, Trophy, Target, CheckCircle, Pause, Play, AlertTriangle } from 'lucide-react';
 import { useGameTimer } from '../hooks/useGameTimer';
 import { WordSearchCongratulations } from './WordSearchCongratulations';
 import { WordSearchLeaderboard } from './WordSearchLeaderboard';
+import { useToast } from '@/hooks/use-toast';
 
 interface WordSearchEngineProps {
   difficulty: 'rookie' | 'pro' | 'master';
   category: string;
   wordList: string[];
-  onComplete?: (stats: { timeElapsed: number; wordsFound: number; totalWords: number }) => void;
+  onComplete?: (stats: { timeElapsed: number; wordsFound: number; totalWords: number; incorrectSelections: number }) => void;
   onWordFound?: (word: string, found: number, total: number) => void;
   onNewGame?: () => void;
   onBackToArena?: () => void;
+  enablePenalties?: boolean;
+  sessionId?: string;
+}
+
+interface FoundWord {
+  word: string;
+  startPos: [number, number];
+  endPos: [number, number];
+  direction: string;
+  foundAt: number;
+}
+
+interface GameState {
+  foundWords: FoundWord[];
+  incorrectSelections: number;
+  gameStarted: boolean;
+  gameComplete: boolean;
+  startTime: number | null;
+  completionTime: number | null;
 }
 
 const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
@@ -26,519 +46,539 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   onComplete,
   onWordFound,
   onNewGame,
-  onBackToArena
+  onBackToArena,
+  enablePenalties = true,
+  sessionId = `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }) => {
   const [foundWords, setFoundWords] = useState<Set<string>>(new Set());
+  const [foundWordDetails, setFoundWordDetails] = useState<FoundWord[]>([]);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  const [incorrectSelections, setIncorrectSelections] = useState(0);
   const [score, setScore] = useState(0);
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [grid, setGrid] = useState<string[][]>([]);
+  const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionStart, setSelectionStart] = useState<[number, number] | null>(null);
+  const [lastSaveTime, setLastSaveTime] = useState<number>(0);
   
   const gridSize = difficulty === 'master' ? 15 : difficulty === 'pro' ? 12 : 10;
   const timeLimit = difficulty === 'master' ? 600 : difficulty === 'pro' ? 480 : 360;
+  const { toast } = useToast();
   
   const { 
     timeElapsed, 
     isRunning, 
     start: startTimer, 
     pause: pauseTimer, 
-    resume: resumeTimer 
+    resume: resumeTimer,
+    stop: stopTimer
   } = useGameTimer(timeLimit);
 
-  // Create a stable grid that doesn't change on re-renders
-  const [grid, setGrid] = useState<string[][]>([]);
-  const [wordPositions, setWordPositions] = useState<Map<string, Array<[number, number]>>>(new Map());
-  const [actualWordList, setActualWordList] = useState<string[]>([]);
-  const gridInitialized = useRef(false);
-
-  // Initialize grid only once
-  useEffect(() => {
-    if (!gridInitialized.current && wordList.length > 0) {
-      console.log('Generating word search grid with words:', wordList);
-      const newGrid = generateWordSearchGrid(gridSize, wordList);
-      setGrid(newGrid.grid);
-      setWordPositions(newGrid.positions);
-      setActualWordList(newGrid.placedWords);
-      gridInitialized.current = true;
-      console.log('Grid generated. Placed words:', newGrid.placedWords);
-      console.log('Words that failed to place:', wordList.filter(w => !newGrid.placedWords.includes(w)));
-    }
-  }, [gridSize, wordList]);
-
-  // Reset game state when wordList changes
-  useEffect(() => {
-    setFoundWords(new Set());
-    setGameStarted(false);
-    setGameComplete(false);
-    setIsPaused(false);
-    setScore(0);
-    setShowCongratulations(false);
-    setShowLeaderboard(false);
-    gridInitialized.current = false;
-  }, [wordList]);
-
-  const handleGameStart = useCallback(() => {
-    if (!gameStarted && !gameComplete) {
-      setGameStarted(true);
-      startTimer();
-    }
-  }, [gameStarted, gameComplete, startTimer]);
-
-  const handlePauseToggle = useCallback(() => {
-    if (gameStarted && !gameComplete) {
-      if (isPaused) {
-        setIsPaused(false);
-        resumeTimer();
-      } else {
-        setIsPaused(true);
-        pauseTimer();
+  // Generate a stable grid based on wordList
+  const placedWords = useMemo(() => {
+    const newGrid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(''));
+    const placed: FoundWord[] = [];
+    
+    // Simple word placement algorithm
+    wordList.forEach((word, index) => {
+      const direction = ['horizontal', 'vertical', 'diagonal'][index % 3];
+      let placed_success = false;
+      let attempts = 0;
+      
+      while (!placed_success && attempts < 50) {
+        let startRow, startCol, deltaRow, deltaCol;
+        
+        if (direction === 'horizontal') {
+          startRow = Math.floor(Math.random() * gridSize);
+          startCol = Math.floor(Math.random() * (gridSize - word.length + 1));
+          deltaRow = 0;
+          deltaCol = 1;
+        } else if (direction === 'vertical') {
+          startRow = Math.floor(Math.random() * (gridSize - word.length + 1));
+          startCol = Math.floor(Math.random() * gridSize);
+          deltaRow = 1;
+          deltaCol = 0;
+        } else { // diagonal
+          startRow = Math.floor(Math.random() * (gridSize - word.length + 1));
+          startCol = Math.floor(Math.random() * (gridSize - word.length + 1));
+          deltaRow = 1;
+          deltaCol = 1;
+        }
+        
+        // Check if word can be placed
+        let canPlace = true;
+        for (let i = 0; i < word.length; i++) {
+          const row = startRow + i * deltaRow;
+          const col = startCol + i * deltaCol;
+          if (newGrid[row][col] !== '' && newGrid[row][col] !== word[i].toUpperCase()) {
+            canPlace = false;
+            break;
+          }
+        }
+        
+        if (canPlace) {
+          // Place the word
+          for (let i = 0; i < word.length; i++) {
+            const row = startRow + i * deltaRow;
+            const col = startCol + i * deltaCol;
+            newGrid[row][col] = word[i].toUpperCase();
+          }
+          
+          placed.push({
+            word: word.toUpperCase(),
+            startPos: [startRow, startCol],
+            endPos: [startRow + (word.length - 1) * deltaRow, startCol + (word.length - 1) * deltaCol],
+            direction,
+            foundAt: 0
+          });
+          placed_success = true;
+        }
+        attempts++;
+      }
+    });
+    
+    // Fill empty cells with random letters
+    for (let row = 0; row < gridSize; row++) {
+      for (let col = 0; col < gridSize; col++) {
+        if (newGrid[row][col] === '') {
+          newGrid[row][col] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+        }
       }
     }
-  }, [gameStarted, gameComplete, isPaused, resumeTimer, pauseTimer]);
+    
+    setGrid(newGrid);
+    return placed;
+  }, [wordList, gridSize]);
 
-  const handleGameComplete = useCallback(() => {
-    if (foundWords.size === actualWordList.length && !gameComplete) {
+  // Save game state periodically
+  const saveGameState = useCallback(() => {
+    if (!gameStarted || gameComplete) return;
+    
+    const gameState: GameState = {
+      foundWords: foundWordDetails,
+      incorrectSelections,
+      gameStarted,
+      gameComplete,
+      startTime: Date.now() - timeElapsed,
+      completionTime: null
+    };
+    
+    localStorage.setItem(`wordSearch_${sessionId}`, JSON.stringify(gameState));
+    setLastSaveTime(Date.now());
+  }, [foundWordDetails, incorrectSelections, gameStarted, gameComplete, timeElapsed, sessionId]);
+
+  // Load saved game state
+  const loadGameState = useCallback(() => {
+    const saved = localStorage.getItem(`wordSearch_${sessionId}`);
+    if (saved) {
+      try {
+        const gameState: GameState = JSON.parse(saved);
+        if (gameState.gameStarted && !gameState.gameComplete) {
+          setFoundWordDetails(gameState.foundWords);
+          setFoundWords(new Set(gameState.foundWords.map(w => w.word)));
+          setIncorrectSelections(gameState.incorrectSelections);
+          setGameStarted(gameState.gameStarted);
+          // Resume timer if needed
+          if (gameState.startTime) {
+            const elapsed = Date.now() - gameState.startTime;
+            if (elapsed < timeLimit * 1000) {
+              startTimer();
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load game state:', error);
+      }
+    }
+  }, [sessionId, timeLimit, startTimer]);
+
+  // Auto-save every 5 seconds
+  useEffect(() => {
+    if (gameStarted && !gameComplete) {
+      const interval = setInterval(saveGameState, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [gameStarted, gameComplete, saveGameState]);
+
+  // Check for word completion and auto-submit
+  useEffect(() => {
+    if (foundWords.size === wordList.length && gameStarted && !gameComplete) {
+      // All words found - auto submit
+      const completionTimeMs = timeElapsed;
       setGameComplete(true);
-      pauseTimer();
+      stopTimer();
+      
+      // Clear saved state
+      localStorage.removeItem(`wordSearch_${sessionId}`);
+      
+      // Calculate final score
+      const baseScore = 1000;
+      const timeBonus = Math.max(0, (timeLimit - Math.floor(completionTimeMs / 1000)) * 10);
+      const penaltyDeduction = enablePenalties ? incorrectSelections * 50 : 0;
+      const finalScore = Math.max(0, baseScore + timeBonus - penaltyDeduction);
+      
+      setScore(finalScore);
       setShowCongratulations(true);
       
       onComplete?.({
-        timeElapsed,
+        timeElapsed: completionTimeMs,
         wordsFound: foundWords.size,
-        totalWords: actualWordList.length
+        totalWords: wordList.length,
+        incorrectSelections
+      });
+      
+      toast({
+        title: "🎉 Puzzle Complete!",
+        description: `All ${wordList.length} words found in ${(completionTimeMs / 1000).toFixed(2)} seconds!`,
       });
     }
-  }, [foundWords.size, actualWordList.length, gameComplete, pauseTimer, onComplete, timeElapsed]);
+  }, [foundWords.size, wordList.length, gameStarted, gameComplete, timeElapsed, stopTimer, sessionId, timeLimit, incorrectSelections, enablePenalties, onComplete, toast]);
 
-  const handleWordFound = useCallback((word: string) => {
-    if (!foundWords.has(word)) {
-      const newFoundWords = new Set(foundWords);
-      newFoundWords.add(word);
-      setFoundWords(newFoundWords);
+  const handleCellMouseDown = (row: number, col: number) => {
+    if (!gameStarted || gameComplete) return;
+    
+    setIsSelecting(true);
+    setSelectionStart([row, col]);
+    setSelectedCells(new Set([`${row}-${col}`]));
+  };
+
+  const handleCellMouseEnter = (row: number, col: number) => {
+    if (!isSelecting || !selectionStart) return;
+    
+    const [startRow, startCol] = selectionStart;
+    const cells = new Set<string>();
+    
+    // Calculate direction and select cells in a line
+    const deltaRow = row - startRow;
+    const deltaCol = col - startCol;
+    
+    if (deltaRow === 0 || deltaCol === 0 || Math.abs(deltaRow) === Math.abs(deltaCol)) {
+      const steps = Math.max(Math.abs(deltaRow), Math.abs(deltaCol));
+      const stepRow = steps > 0 ? deltaRow / steps : 0;
+      const stepCol = steps > 0 ? deltaCol / steps : 0;
       
-      // Calculate score
-      const timeBonus = Math.max(0, timeLimit - timeElapsed);
-      const wordScore = 100 + Math.floor(timeBonus / 10);
-      setScore(prev => prev + wordScore);
-      
-      onWordFound?.(word, newFoundWords.size, actualWordList.length);
-      
-      // Check if game is complete
-      if (newFoundWords.size === actualWordList.length) {
-        setTimeout(() => handleGameComplete(), 500); // Small delay for better UX
+      for (let i = 0; i <= steps; i++) {
+        const currentRow = startRow + Math.round(i * stepRow);
+        const currentCol = startCol + Math.round(i * stepCol);
+        if (currentRow >= 0 && currentRow < gridSize && currentCol >= 0 && currentCol < gridSize) {
+          cells.add(`${currentRow}-${currentCol}`);
+        }
       }
     }
-  }, [foundWords, actualWordList.length, timeElapsed, timeLimit, onWordFound, handleGameComplete]);
+    
+    setSelectedCells(cells);
+  };
 
-  // Handler functions for congratulations and leaderboard
-  const handleContinueFromCongratulations = useCallback(() => {
-    setShowCongratulations(false);
-    setShowLeaderboard(true);
-  }, []);
-
-  const handlePlayAgain = useCallback(() => {
-    setShowLeaderboard(false);
-    onNewGame?.();
-  }, [onNewGame]);
-
-  const handleBackToArena = useCallback(() => {
-    setShowLeaderboard(false);
-    onBackToArena?.();
-  }, [onBackToArena]);
-
-  const progress = actualWordList.length > 0 ? (foundWords.size / actualWordList.length) * 100 : 0;
-  const timeRemaining = Math.max(0, timeLimit - timeElapsed);
-
-  if (grid.length === 0) {
-    return (
-      <Card className="bg-gray-900 border-gray-700">
-        <CardContent className="p-8 text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-puzzle-aqua border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-puzzle-white">Generating word search puzzle...</p>
-        </CardContent>
-      </Card>
+  const handleCellMouseUp = () => {
+    if (!isSelecting || !selectionStart || selectedCells.size === 0) {
+      setIsSelecting(false);
+      setSelectedCells(new Set());
+      return;
+    }
+    
+    // Check if selection forms a valid word
+    const selectedWord = Array.from(selectedCells)
+      .sort((a, b) => {
+        const [rowA, colA] = a.split('-').map(Number);
+        const [rowB, colB] = b.split('-').map(Number);
+        return rowA - rowB || colA - colB;
+      })
+      .map(cellId => {
+        const [row, col] = cellId.split('-').map(Number);
+        return grid[row][col];
+      })
+      .join('');
+    
+    const reverseWord = selectedWord.split('').reverse().join('');
+    
+    // Check if it's a valid word from our list
+    const targetWord = wordList.find(word => 
+      word.toUpperCase() === selectedWord || word.toUpperCase() === reverseWord
     );
-  }
+    
+    if (targetWord && !foundWords.has(targetWord.toUpperCase())) {
+      // Word found!
+      const newFoundWords = new Set(foundWords);
+      newFoundWords.add(targetWord.toUpperCase());
+      setFoundWords(newFoundWords);
+      
+      // Record detailed info
+      const [startRow, startCol] = selectionStart;
+      const lastCell = Array.from(selectedCells).pop();
+      const [endRow, endCol] = lastCell ? lastCell.split('-').map(Number) : [startRow, startCol];
+      
+      const newWordDetail: FoundWord = {
+        word: targetWord.toUpperCase(),
+        startPos: [startRow, startCol],
+        endPos: [endRow, endCol],
+        direction: 'custom',
+        foundAt: timeElapsed
+      };
+      
+      setFoundWordDetails(prev => [...prev, newWordDetail]);
+      
+      onWordFound?.(targetWord, newFoundWords.size, wordList.length);
+      
+      toast({
+        title: "Word Found!",
+        description: `${targetWord.toUpperCase()} - ${newFoundWords.size}/${wordList.length} words found`,
+      });
+    } else if (enablePenalties && selectedCells.size > 1) {
+      // Incorrect selection penalty
+      setIncorrectSelections(prev => prev + 1);
+      toast({
+        title: "Incorrect Selection",
+        description: "That's not a valid word. Penalty applied!",
+        variant: "destructive",
+      });
+    }
+    
+    setIsSelecting(false);
+    setSelectedCells(new Set());
+    setSelectionStart(null);
+  };
+
+  const handleStartGame = () => {
+    setGameStarted(true);
+    startTimer();
+    
+    toast({
+      title: "Game Started!",
+      description: `Find all ${wordList.length} words as quickly as possible!`,
+    });
+  };
+
+  const handleNewGame = () => {
+    setFoundWords(new Set());
+    setFoundWordDetails([]);
+    setGameStarted(false);
+    setGameComplete(false);
+    setIncorrectSelections(0);
+    setScore(0);
+    setShowCongratulations(false);
+    setSelectedCells(new Set());
+    setIsSelecting(false);
+    setSelectionStart(null);
+    localStorage.removeItem(`wordSearch_${sessionId}`);
+    onNewGame?.();
+  };
+
+  const progressPercentage = (foundWords.size / wordList.length) * 100;
+  const remainingWords = wordList.filter(word => !foundWords.has(word.toUpperCase()));
+
+  // Load saved state on component mount
+  useEffect(() => {
+    loadGameState();
+  }, [loadGameState]);
 
   return (
-    <>
-      <div className="space-y-4">
-        {/* Game Stats */}
-        <Card className="bg-gray-900 border-gray-700">
-          <CardContent className="p-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <Clock className="h-5 w-5 text-puzzle-aqua mx-auto mb-1" />
-                <div className="text-sm text-gray-400">Time Left</div>
-                <div className="text-lg font-bold text-puzzle-white">
-                  {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
-                </div>
+    <div className="w-full max-w-6xl mx-auto space-y-6">
+      {/* Game Header */}
+      <Card className="bg-gray-900 border-gray-700">
+        <CardHeader>
+          <CardTitle className="text-puzzle-white text-center">
+            Word Search - {category} ({difficulty})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Game Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="bg-gray-800 rounded-lg p-3">
+              <Clock className="h-5 w-5 mx-auto mb-1 text-puzzle-aqua" />
+              <div className="text-xl font-bold text-puzzle-white">
+                {(timeElapsed / 1000).toFixed(2)}s
               </div>
-              <div className="text-center">
-                <Target className="h-5 w-5 text-puzzle-gold mx-auto mb-1" />
-                <div className="text-sm text-gray-400">Found</div>
-                <div className="text-lg font-bold text-puzzle-white">
-                  {foundWords.size}/{actualWordList.length}
-                </div>
-              </div>
-              <div className="text-center">
-                <Trophy className="h-5 w-5 text-puzzle-gold mx-auto mb-1" />
-                <div className="text-sm text-gray-400">Score</div>
-                <div className="text-lg font-bold text-puzzle-white">{score}</div>
-              </div>
-              <div className="text-center">
-                <CheckCircle className="h-5 w-5 text-puzzle-aqua mx-auto mb-1" />
-                <div className="text-sm text-gray-400">Progress</div>
-                <div className="text-lg font-bold text-puzzle-white">{Math.round(progress)}%</div>
-              </div>
+              <div className="text-xs text-gray-400">Time</div>
             </div>
-            <Progress value={progress} className="mt-4" />
-          </CardContent>
-        </Card>
+            
+            <div className="bg-gray-800 rounded-lg p-3">
+              <Target className="h-5 w-5 mx-auto mb-1 text-puzzle-gold" />
+              <div className="text-xl font-bold text-puzzle-white">
+                {foundWords.size}/{wordList.length}
+              </div>
+              <div className="text-xs text-gray-400">Words Found</div>
+            </div>
+            
+            {enablePenalties && (
+              <div className="bg-gray-800 rounded-lg p-3">
+                <AlertTriangle className="h-5 w-5 mx-auto mb-1 text-red-400" />
+                <div className="text-xl font-bold text-puzzle-white">
+                  {incorrectSelections}
+                </div>
+                <div className="text-xs text-gray-400">Penalties</div>
+              </div>
+            )}
+            
+            <div className="bg-gray-800 rounded-lg p-3">
+              <Trophy className="h-5 w-5 mx-auto mb-1 text-puzzle-gold" />
+              <div className="text-xl font-bold text-puzzle-white">
+                {score}
+              </div>
+              <div className="text-xs text-gray-400">Score</div>
+            </div>
+          </div>
 
-        {/* Game Controls */}
-        {!gameStarted && (
-          <Card className="bg-gray-900 border-gray-700">
-            <CardContent className="p-4 text-center">
-              <Button 
-                onClick={handleGameStart}
+          {/* Progress Bar */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm text-gray-300">
+              <span>Progress</span>
+              <span>{progressPercentage.toFixed(1)}%</span>
+            </div>
+            <Progress value={progressPercentage} className="w-full" />
+          </div>
+
+          {/* Game Controls */}
+          <div className="flex justify-center gap-4">
+            {!gameStarted ? (
+              <Button
+                onClick={handleStartGame}
                 className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold"
               >
                 <Play className="h-4 w-4 mr-2" />
                 Start Game
               </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {gameStarted && !gameComplete && (
-          <Card className="bg-gray-900 border-gray-700">
-            <CardContent className="p-4 text-center">
-              <Button 
-                onClick={handlePauseToggle}
-                variant="outline"
-                className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black"
-              >
-                {isPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
-                {isPaused ? 'Resume' : 'Pause'}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Word List */}
-        <Card className="bg-gray-900 border-gray-700">
-          <CardHeader>
-            <CardTitle className="text-puzzle-white text-sm">
-              Words to Find ({category})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {actualWordList.map((word) => (
-                <Badge
-                  key={word}
-                  variant={foundWords.has(word) ? "default" : "outline"}
-                  className={
-                    foundWords.has(word)
-                      ? "bg-puzzle-gold text-puzzle-black"
-                      : "border-gray-600 text-gray-400"
-                  }
+            ) : (
+              <>
+                <Button
+                  onClick={isRunning ? pauseTimer : resumeTimer}
+                  variant="outline"
+                  className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black"
                 >
-                  {word}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                  {isRunning ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
+                  {isRunning ? 'Pause' : 'Resume'}
+                </Button>
+                
+                <Button
+                  onClick={handleNewGame}
+                  variant="outline"
+                  className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold hover:text-puzzle-black"
+                >
+                  New Game
+                </Button>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Game Grid */}
-        <Card className="bg-gray-900 border-gray-700">
-          <CardContent className="p-4">
-            <WordSearchGrid
-              grid={grid}
-              wordPositions={wordPositions}
-              foundWords={foundWords}
-              onWordFound={handleWordFound}
-              disabled={!gameStarted || gameComplete || isPaused}
-            />
-          </CardContent>
-        </Card>
+      {/* Game Grid */}
+      {gameStarted && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Word Search Grid */}
+          <div className="lg:col-span-2">
+            <Card className="bg-gray-900 border-gray-700">
+              <CardContent className="p-4">
+                <div 
+                  className="grid gap-1 mx-auto"
+                  style={{ 
+                    gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
+                    maxWidth: '500px'
+                  }}
+                  onMouseLeave={() => {
+                    setIsSelecting(false);
+                    setSelectedCells(new Set());
+                  }}
+                >
+                  {grid.map((row, rowIndex) =>
+                    row.map((letter, colIndex) => (
+                      <div
+                        key={`${rowIndex}-${colIndex}`}
+                        className={`
+                          w-8 h-8 border border-gray-600 flex items-center justify-center
+                          text-sm font-bold cursor-pointer transition-colors
+                          ${selectedCells.has(`${rowIndex}-${colIndex}`) 
+                            ? 'bg-puzzle-aqua text-puzzle-black' 
+                            : 'bg-gray-800 text-puzzle-white hover:bg-gray-700'
+                          }
+                        `}
+                        onMouseDown={() => handleCellMouseDown(rowIndex, colIndex)}
+                        onMouseEnter={() => handleCellMouseEnter(rowIndex, colIndex)}
+                        onMouseUp={handleCellMouseUp}
+                      >
+                        {letter}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        {gameComplete && (
-          <Card className="bg-green-900/20 border-green-500">
-            <CardContent className="p-6 text-center">
-              <Trophy className="h-12 w-12 text-puzzle-gold mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-puzzle-white mb-2">
-                Puzzle Completed!
-              </h3>
-              <p className="text-gray-300">
-                You found all {actualWordList.length} words in {Math.floor(timeElapsed / 60)}:{(timeElapsed % 60).toString().padStart(2, '0')}
-              </p>
-              <p className="text-puzzle-gold font-semibold mt-2">
-                Final Score: {score}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+          {/* Word List */}
+          <div className="space-y-4">
+            <Card className="bg-gray-900 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-puzzle-white text-lg">Words to Find</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 max-h-96 overflow-y-auto">
+                {wordList.map((word, index) => (
+                  <div
+                    key={index}
+                    className={`
+                      flex items-center justify-between p-2 rounded
+                      ${foundWords.has(word.toUpperCase())
+                        ? 'bg-green-900/50 text-green-300'
+                        : 'bg-gray-800 text-gray-300'
+                      }
+                    `}
+                  >
+                    <span className={foundWords.has(word.toUpperCase()) ? 'line-through' : ''}>
+                      {word.toUpperCase()}
+                    </span>
+                    {foundWords.has(word.toUpperCase()) && (
+                      <CheckCircle className="h-4 w-4 text-green-400" />
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
 
-      {/* Congratulations Splash Screen */}
+            {/* Remaining Words Count */}
+            {remainingWords.length > 0 && (
+              <Card className="bg-gray-900 border-gray-700">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-puzzle-aqua">
+                    {remainingWords.length}
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    words remaining
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Congratulations Modal */}
       {showCongratulations && (
         <WordSearchCongratulations
-          score={score}
+          isOpen={showCongratulations}
+          onClose={() => setShowCongratulations(false)}
           timeElapsed={timeElapsed}
           wordsFound={foundWords.size}
-          totalWords={actualWordList.length}
-          difficulty={difficulty}
-          onContinue={handleContinueFromCongratulations}
+          totalWords={wordList.length}
+          score={score}
+          incorrectSelections={incorrectSelections}
+          onPlayAgain={handleNewGame}
+          onViewLeaderboard={() => setShowLeaderboard(true)}
         />
       )}
 
       {/* Leaderboard */}
       {showLeaderboard && (
         <WordSearchLeaderboard
-          currentPlayerScore={{
-            score,
-            timeElapsed,
-            wordsFound: foundWords.size,
-            totalWords: actualWordList.length,
-            difficulty
-          }}
-          onPlayAgain={handlePlayAgain}
-          onBackToArena={handleBackToArena}
+          isOpen={showLeaderboard}
+          onClose={() => setShowLeaderboard(false)}
+          difficulty={difficulty}
+          category={category}
         />
-      )}
-    </>
-  );
-};
-
-// Simple word search grid component
-interface WordSearchGridProps {
-  grid: string[][];
-  wordPositions: Map<string, Array<[number, number]>>;
-  foundWords: Set<string>;
-  onWordFound: (word: string) => void;
-  disabled: boolean;
-}
-
-const WordSearchGrid: React.FC<WordSearchGridProps> = ({
-  grid,
-  wordPositions,
-  foundWords,
-  onWordFound,
-  disabled
-}) => {
-  const [selecting, setSelecting] = useState(false);
-  const [selectedCells, setSelectedCells] = useState<Array<[number, number]>>([]);
-
-  const handleMouseDown = (row: number, col: number) => {
-    if (disabled) return;
-    setSelecting(true);
-    setSelectedCells([[row, col]]);
-  };
-
-  const handleMouseEnter = (row: number, col: number) => {
-    if (disabled || !selecting) return;
-    
-    const start = selectedCells[0];
-    if (!start) return;
-    
-    const path = getLinePath(start[0], start[1], row, col);
-    setSelectedCells(path);
-  };
-
-  const handleMouseUp = () => {
-    if (disabled || !selecting) return;
-    
-    setSelecting(false);
-    
-    // Check if selected cells form a word
-    const selectedWord = selectedCells.map(([r, c]) => grid[r]?.[c] || '').join('');
-    const reverseWord = selectedWord.split('').reverse().join('');
-    
-    // Check both forward and backward
-    for (const [word, positions] of wordPositions.entries()) {
-      if ((selectedWord === word || reverseWord === word) && !foundWords.has(word)) {
-        onWordFound(word);
-        break;
-      }
-    }
-    
-    setSelectedCells([]);
-  };
-
-  const getLinePath = (startRow: number, startCol: number, endRow: number, endCol: number): Array<[number, number]> => {
-    const path: Array<[number, number]> = [];
-    const deltaRow = endRow - startRow;
-    const deltaCol = endCol - startCol;
-    
-    // Ensure we're moving in a straight line (horizontal, vertical, or diagonal)
-    if (deltaRow !== 0 && deltaCol !== 0 && Math.abs(deltaRow) !== Math.abs(deltaCol)) {
-      return [[startRow, startCol]];
-    }
-    
-    const steps = Math.max(Math.abs(deltaRow), Math.abs(deltaCol));
-    const stepRow = steps === 0 ? 0 : deltaRow / steps;
-    const stepCol = steps === 0 ? 0 : deltaCol / steps;
-    
-    for (let i = 0; i <= steps; i++) {
-      const row = Math.round(startRow + stepRow * i);
-      const col = Math.round(startCol + stepCol * i);
-      if (row >= 0 && row < grid.length && col >= 0 && col < grid[0].length) {
-        path.push([row, col]);
-      }
-    }
-    
-    return path;
-  };
-
-  const isCellSelected = (row: number, col: number) => {
-    return selectedCells.some(([r, c]) => r === row && c === col);
-  };
-
-  const isCellInFoundWord = (row: number, col: number) => {
-    for (const [word, positions] of wordPositions.entries()) {
-      if (foundWords.has(word)) {
-        if (positions.some(([r, c]) => r === row && c === col)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
-
-  return (
-    <div 
-      className="grid gap-1 mx-auto w-fit select-none"
-      style={{ gridTemplateColumns: `repeat(${grid[0]?.length || 0}, minmax(0, 1fr))` }}
-      onMouseLeave={() => {
-        setSelecting(false);
-        setSelectedCells([]);
-      }}
-    >
-      {grid.map((row, rowIndex) =>
-        row.map((cell, colIndex) => (
-          <div
-            key={`${rowIndex}-${colIndex}`}
-            className={`
-              w-8 h-8 flex items-center justify-center text-sm font-mono border border-gray-600 cursor-pointer
-              ${isCellInFoundWord(rowIndex, colIndex) 
-                ? 'bg-puzzle-gold text-puzzle-black' 
-                : isCellSelected(rowIndex, colIndex)
-                  ? 'bg-puzzle-aqua text-puzzle-black'
-                  : 'bg-gray-800 text-puzzle-white hover:bg-gray-700'
-              }
-              ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-            `}
-            onMouseDown={() => handleMouseDown(rowIndex, colIndex)}
-            onMouseEnter={() => handleMouseEnter(rowIndex, colIndex)}
-            onMouseUp={handleMouseUp}
-          >
-            {cell}
-          </div>
-        ))
       )}
     </div>
   );
 };
-
-// Enhanced word search grid generation with better placement validation
-function generateWordSearchGrid(size: number, words: string[]): { 
-  grid: string[][]; 
-  positions: Map<string, Array<[number, number]>>; 
-  placedWords: string[] 
-} {
-  const grid: string[][] = Array(size).fill(null).map(() => Array(size).fill(''));
-  const positions = new Map<string, Array<[number, number]>>();
-  const placedWords: string[] = [];
-  
-  // Sort words by length (longest first) for better placement success
-  const sortedWords = [...words].sort((a, b) => b.length - a.length);
-  
-  // Place words in the grid with enhanced algorithm
-  for (const word of sortedWords) {
-    let placed = false;
-    let attempts = 0;
-    const maxAttempts = 1000; // Increased from 100
-    
-    while (!placed && attempts < maxAttempts) {
-      const direction = Math.floor(Math.random() * 8); // 8 directions
-      const row = Math.floor(Math.random() * size);
-      const col = Math.floor(Math.random() * size);
-      
-      if (canPlaceWord(grid, word, row, col, direction, size)) {
-        placeWord(grid, word, row, col, direction, positions);
-        placedWords.push(word);
-        placed = true;
-        console.log(`Successfully placed word "${word}" at (${row}, ${col}) in direction ${direction}`);
-      }
-      attempts++;
-    }
-    
-    if (!placed) {
-      console.warn(`Failed to place word "${word}" after ${maxAttempts} attempts`);
-    }
-  }
-  
-  // Fill empty cells with random letters
-  for (let i = 0; i < size; i++) {
-    for (let j = 0; j < size; j++) {
-      if (grid[i][j] === '') {
-        grid[i][j] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
-      }
-    }
-  }
-  
-  console.log(`Grid generation complete. Placed ${placedWords.length} out of ${words.length} words.`);
-  return { grid, positions, placedWords };
-}
-
-function canPlaceWord(grid: string[][], word: string, row: number, col: number, direction: number, size: number): boolean {
-  const directions = [
-    [-1, -1], [-1, 0], [-1, 1],
-    [0, -1],           [0, 1],
-    [1, -1],  [1, 0],  [1, 1]
-  ];
-  
-  const [dRow, dCol] = directions[direction];
-  
-  for (let i = 0; i < word.length; i++) {
-    const newRow = row + dRow * i;
-    const newCol = col + dCol * i;
-    
-    if (newRow < 0 || newRow >= size || newCol < 0 || newCol >= size) {
-      return false;
-    }
-    
-    if (grid[newRow][newCol] !== '' && grid[newRow][newCol] !== word[i]) {
-      return false;
-    }
-  }
-  
-  return true;
-}
-
-function placeWord(grid: string[][], word: string, row: number, col: number, direction: number, positions: Map<string, Array<[number, number]>>) {
-  const directions = [
-    [-1, -1], [-1, 0], [-1, 1],
-    [0, -1],           [0, 1],
-    [1, -1],  [1, 0],  [1, 1]
-  ];
-  
-  const [dRow, dCol] = directions[direction];
-  const wordPositions: Array<[number, number]> = [];
-  
-  for (let i = 0; i < word.length; i++) {
-    const newRow = row + dRow * i;
-    const newCol = col + dCol * i;
-    grid[newRow][newCol] = word[i];
-    wordPositions.push([newRow, newCol]);
-  }
-  
-  positions.set(word.toUpperCase(), wordPositions);
-}
 
 export default WordSearchEngine;
