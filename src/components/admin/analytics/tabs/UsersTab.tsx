@@ -11,13 +11,13 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recha
 
 export const UsersTab: React.FC = () => {
   const { 
-    userDemographics, 
-    isLoadingUserDemographics,
+    memberDemographics, 
+    isLoadingMemberDemographics,
     dailyMetrics,
     isLoadingDailyMetrics
   } = useAnalytics();
 
-  if (isLoadingUserDemographics || isLoadingDailyMetrics) {
+  if (isLoadingMemberDemographics || isLoadingDailyMetrics) {
     return (
       <TabsContent value="users" className="space-y-6">
         <div className="flex justify-center items-center h-40">
@@ -28,8 +28,8 @@ export const UsersTab: React.FC = () => {
   }
 
   // Transform gender data for chart
-  const genderData = userDemographics?.gender_distribution
-    ? Object.entries(userDemographics.gender_distribution)
+  const genderData = memberDemographics?.gender_distribution
+    ? Object.entries(memberDemographics.gender_distribution)
         .filter(([name]) => name !== 'null' && name !== 'Not Specified')
         .map(([name, value]) => ({
           name: name === 'null' ? 'Not Specified' : name,
@@ -39,8 +39,8 @@ export const UsersTab: React.FC = () => {
 
   // Add a "Not Specified" entry if relevant
   const notSpecifiedCount = 
-    (userDemographics?.gender_distribution?.['null'] || 0) + 
-    (userDemographics?.gender_distribution?.['Not Specified'] || 0);
+    (memberDemographics?.gender_distribution?.['null'] || 0) + 
+    (memberDemographics?.gender_distribution?.['Not Specified'] || 0);
   
   if (notSpecifiedCount > 0 && genderData.length > 0) {
     genderData.push({
@@ -50,8 +50,8 @@ export const UsersTab: React.FC = () => {
   }
 
   // Transform age data for chart
-  const ageData = userDemographics?.age_distribution
-    ? Object.entries(userDemographics.age_distribution)
+  const ageData = memberDemographics?.age_distribution
+    ? Object.entries(memberDemographics.age_distribution)
         .filter(([name]) => name !== 'null' && name !== 'Not Specified')
         .map(([name, value]) => ({
           name,
@@ -61,8 +61,8 @@ export const UsersTab: React.FC = () => {
   
   // Add a "Not Specified" entry for age if relevant
   const notSpecifiedAgeCount = 
-    (userDemographics?.age_distribution?.['null'] || 0) + 
-    (userDemographics?.age_distribution?.['Not Specified'] || 0);
+    (memberDemographics?.age_distribution?.['null'] || 0) + 
+    (memberDemographics?.age_distribution?.['Not Specified'] || 0);
   
   if (notSpecifiedAgeCount > 0 && ageData.length > 0) {
     ageData.push({
@@ -71,26 +71,25 @@ export const UsersTab: React.FC = () => {
     });
   }
 
-  // Calculate totals for metrics, preferring userDemographics for total_users
-  // This ensures we have a consistent source of truth
-  const totalUsers = userDemographics?.total_users || dailyMetrics?.total_users || 0;
+  // Calculate totals for metrics, using memberDemographics for total_members
+  const totalMembers = memberDemographics?.total_members || dailyMetrics?.total_users || 0;
   const activePlayers = dailyMetrics?.active_users || 0;
   
-  console.log("User metrics:", {
-    totalUsers,
+  console.log("Member metrics:", {
+    totalMembers,
     activePlayers,
-    fromUserDemographics: userDemographics?.total_users,
+    fromMemberDemographics: memberDemographics?.total_members,
     fromDailyMetrics: dailyMetrics?.total_users
   });
   
   // Ensure conversion rate calculation uses the correct denominator
-  const conversionRate = totalUsers > 0 
-    ? (((dailyMetrics?.puzzles_completed || 0) / totalUsers) * 100).toFixed(1) 
+  const conversionRate = totalMembers > 0 
+    ? (((dailyMetrics?.puzzles_completed || 0) / totalMembers) * 100).toFixed(1) 
     : "0.0";
   
   // Ensure retention rate is properly calculated with a non-zero denominator
-  const retentionRate = totalUsers > 0 
-    ? ((activePlayers / totalUsers) * 100).toFixed(1) 
+  const retentionRate = totalMembers > 0 
+    ? ((activePlayers / totalMembers) * 100).toFixed(1) 
     : "0.0";
 
   // Colors for charts
@@ -100,8 +99,8 @@ export const UsersTab: React.FC = () => {
     <TabsContent value="users" className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
-          title="Total Users" 
-          value={totalUsers} 
+          title="Total Members" 
+          value={totalMembers} 
         />
         <StatCard 
           title="Active Players" 
@@ -141,7 +140,7 @@ export const UsersTab: React.FC = () => {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => [`${value} users`, 'Count']} />
+                    <Tooltip formatter={(value) => [`${value} members`, 'Count']} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
@@ -179,7 +178,7 @@ export const UsersTab: React.FC = () => {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => [`${value} users`, 'Count']} />
+                    <Tooltip formatter={(value) => [`${value} members`, 'Count']} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>

@@ -12,12 +12,12 @@ export const UserInsightsDashboard: React.FC<UserInsightsDashboardProps> = ({ us
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">User Insights</CardTitle>
+        <CardTitle className="text-lg">Member Insights</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-muted rounded-md p-4">
-            <h3 className="font-medium mb-1">Total Users</h3>
+            <h3 className="font-medium mb-1">Total Members</h3>
             <p className="text-2xl font-bold">{userStats.total || 0}</p>
           </div>
           

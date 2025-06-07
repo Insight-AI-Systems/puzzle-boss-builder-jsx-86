@@ -13,7 +13,7 @@ export function UserStatsDisplay({ stats }: UserStatsDisplayProps) {
       <CardContent className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <h3 className="text-sm font-medium mb-2">Total Users</h3>
+            <h3 className="text-sm font-medium mb-2">Total Members</h3>
             <p className="text-2xl font-bold">{stats.total}</p>
           </div>
           
