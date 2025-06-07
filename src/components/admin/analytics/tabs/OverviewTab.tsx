@@ -25,16 +25,16 @@ export const OverviewTab: React.FC = () => {
     isLoadingCategoryRevenue,
     dateRange,
     setDateRange,
-    getUserTrend,
+    getActiveMemberTrend,
     getSignupTrend,
     getPuzzlesTrend,
     getRevenueTrend,
-    userDemographics,
-    isLoadingUserDemographics
+    memberDemographics,
+    isLoadingMemberDemographics
   } = useAnalytics();
   
   const isLoading = isLoadingDailyMetrics || isLoadingMonthlyTrends || 
-                    isLoadingCategoryRevenue || isLoadingUserDemographics;
+                    isLoadingCategoryRevenue || isLoadingMemberDemographics;
 
   // Create a handler that conforms to the expected type
   const handleDateRangeChange = (range: DateRange) => {
@@ -59,8 +59,8 @@ export const OverviewTab: React.FC = () => {
     };
   };
 
-  // Ensure we're using the correct total users count from userDemographics as source of truth
-  const totalUsers = userDemographics?.total_users || dailyMetrics?.total_users || 0;
+  // Ensure we're using the correct total members count from memberDemographics as source of truth
+  const totalMembers = memberDemographics?.total_members || dailyMetrics?.total_users || 0;
 
   return (
     <TabsContent value="overview" className="space-y-6">
@@ -71,10 +71,10 @@ export const OverviewTab: React.FC = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <StatCard 
-          title="Active Users" 
+          title="Active Members" 
           value={dailyMetrics?.active_users || 0}
-          trend={formatTrend(getUserTrend())}
-          subtext={`of ${totalUsers} total users`}
+          trend={formatTrend(getActiveMemberTrend())}
+          subtext={`of ${totalMembers} total members`}
           tooltip="Members who have logged in and played at least one puzzle in the current month"
         />
         <StatCard 
@@ -144,7 +144,7 @@ export const OverviewTab: React.FC = () => {
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="active_users" fill="#0077B6" name="Active Users" />
+                      <Bar dataKey="active_users" fill="#0077B6" name="Active Members" />
                       <Bar dataKey="new_signups" fill="#00B4D8" name="New Signups" />
                       <Bar dataKey="puzzles_completed" fill="#90E0EF" name="Puzzles Completed" />
                     </BarChart>
@@ -152,7 +152,7 @@ export const OverviewTab: React.FC = () => {
                 </ChartContainer>
               ) : (
                 <ChartPlaceholder 
-                  title="User Activity" 
+                  title="Member Activity" 
                   description="No monthly activity data available"
                   type="line"
                   height="h-full"

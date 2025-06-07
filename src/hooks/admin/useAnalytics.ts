@@ -1,6 +1,7 @@
+
 import { useState } from 'react';
 import { useDailyMetrics } from './analytics/useDailyMetrics';
-import { useUserDemographics } from './analytics/useUserDemographics';
+import { useMemberDemographics } from './analytics/useMemberDemographics';
 import { useMonthlyTrends } from './analytics/useMonthlyTrends';
 import { useCategoryRevenue } from './analytics/useCategoryRevenue';
 import { usePuzzleMetrics } from './analytics/usePuzzleMetrics';
@@ -29,8 +30,8 @@ export const useAnalytics = () => {
   // Get daily metrics for the selected date
   const { data: dailyMetrics, isLoading: isLoadingDailyMetrics } = useDailyMetrics(selectedDate);
   
-  // Get user demographics data
-  const { data: userDemographics, isLoading: isLoadingUserDemographics } = useUserDemographics();
+  // Get member demographics data
+  const { data: memberDemographics, isLoading: isLoadingMemberDemographics } = useMemberDemographics();
   
   // Get monthly trends for comparison
   const { data: monthlyTrends, isLoading: isLoadingMonthlyTrends } = useMonthlyTrends(
@@ -60,7 +61,7 @@ export const useAnalytics = () => {
     return monthlyTrends[1]; // Second item is the previous month
   };
   
-  const getUserTrend = () => {
+  const getActiveMemberTrend = () => {
     const prevMonth = getPreviousMonthData();
     if (!prevMonth || !prevMonth.active_users) return 0;
     return calculatePercentChange(dailyMetrics?.active_users || 0, prevMonth.active_users);
@@ -95,22 +96,22 @@ export const useAnalytics = () => {
   };
   
   // Make sure we synchronize total_users between the two data sources to avoid discrepancies
-  if (dailyMetrics && userDemographics) {
-    // Ensure we have consistent total users count
-    // Trust the userDemographics.total_users value as the source of truth
-    if (userDemographics.total_users !== undefined && 
+  if (dailyMetrics && memberDemographics) {
+    // Ensure we have consistent total members count
+    // Trust the memberDemographics.total_members value as the source of truth
+    if (memberDemographics.total_members !== undefined && 
         (dailyMetrics.total_users === undefined || 
          dailyMetrics.total_users === 0 ||
-         dailyMetrics.total_users !== userDemographics.total_users)) {
+         dailyMetrics.total_users !== memberDemographics.total_members)) {
       
-      console.log("Synchronizing total users count:", {
+      console.log("Synchronizing total members count:", {
         dailyMetricsBefore: dailyMetrics.total_users,
-        userDemographicsValue: userDemographics.total_users
+        memberDemographicsValue: memberDemographics.total_members
       });
       
       // Force TS to recognize the type
       const metrics = dailyMetrics as any;
-      metrics.total_users = userDemographics.total_users;
+      metrics.total_users = memberDemographics.total_members;
     }
   }
   
@@ -120,7 +121,7 @@ export const useAnalytics = () => {
     dateRange,
     setDateRange,
     dailyMetrics,
-    userDemographics,
+    memberDemographics,
     monthlyTrends,
     categoryRevenue,
     activityBreakdown,
@@ -128,15 +129,19 @@ export const useAnalytics = () => {
     revenueMetrics,
     error,
     isLoadingDailyMetrics,
-    isLoadingUserDemographics,
+    isLoadingMemberDemographics,
     isLoadingMonthlyTrends,
     isLoadingCategoryRevenue,
     isLoadingPuzzleMetrics,
     isLoadingRevenueMetrics,
-    getUserTrend,
+    getActiveMemberTrend,
     getSignupTrend,
     getPuzzlesTrend,
     getRevenueTrend,
-    formatTime
+    formatTime,
+    // Backward compatibility
+    userDemographics: memberDemographics,
+    isLoadingUserDemographics: isLoadingMemberDemographics,
+    getUserTrend: getActiveMemberTrend
   };
 };

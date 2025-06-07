@@ -1,10 +1,9 @@
-
 export interface DailyMetrics {
   active_users: number;
   new_signups: number;
   puzzles_completed: number;
   revenue: number;
-  total_users: number; // Add total_users property
+  total_users: number; // Keep this for API compatibility but will display as "members"
 }
 
 export interface MonthlyTrend {
@@ -13,7 +12,7 @@ export interface MonthlyTrend {
   new_signups: number;
   puzzles_completed: number;
   revenue: number;
-  total_users: number; // Add total_users property
+  total_users: number;
 }
 
 export interface CategoryRevenue {
@@ -21,11 +20,11 @@ export interface CategoryRevenue {
   total_revenue: number;
 }
 
-export interface UserDemographics {
+export interface MemberDemographics {
   gender_distribution: Record<string, number>;
   age_distribution: Record<string, number>;
   country_distribution: Record<string, number>;
-  total_users: number; // Add total_users property
+  total_members: number;
 }
 
 export interface PuzzleMetrics {
@@ -53,3 +52,6 @@ export interface TrendValue {
   value: string | number;
   direction: "up" | "down";
 }
+
+// Backward compatibility - keep UserDemographics as alias
+export type UserDemographics = MemberDemographics;

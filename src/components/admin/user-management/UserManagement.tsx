@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { EmailDialog } from './EmailDialog';
 import { BulkRoleDialog } from './BulkRoleDialog';
-import { UserInsightsDashboard } from './UserInsightsDashboard';
+import { MemberInsightsDashboard } from './MemberInsightsDashboard';
 import { UserRole } from '@/types/userTypes';
 import { validateUserRole } from '@/utils/typeValidation/roleValidators';
 
@@ -73,7 +73,7 @@ export const UserManagement: React.FC = () => {
     return (
       <Card>
         <CardContent className="p-8 text-center">
-          <p className="text-muted-foreground">You do not have permission to access user management.</p>
+          <p className="text-muted-foreground">You do not have permission to access member management.</p>
         </CardContent>
       </Card>
     );
@@ -84,7 +84,7 @@ export const UserManagement: React.FC = () => {
       <Card>
         <CardContent className="p-8 text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Loading user data...</p>
+          <p>Loading member data...</p>
         </CardContent>
       </Card>
     );
@@ -94,7 +94,7 @@ export const UserManagement: React.FC = () => {
     return (
       <Card>
         <CardContent className="p-8 text-center">
-          <p className="text-red-500">Error loading users: {userManagement.profileError.message}</p>
+          <p className="text-red-500">Error loading members: {userManagement.profileError.message}</p>
         </CardContent>
       </Card>
     );
@@ -104,25 +104,25 @@ export const UserManagement: React.FC = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>User Management</CardTitle>
-          <CardDescription>Manage user accounts, permissions, and access</CardDescription>
+          <CardTitle>Member Management</CardTitle>
+          <CardDescription>Manage member accounts, permissions, and access</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* User insights dashboard */}
+          {/* Member insights dashboard */}
           {userManagement.userStats && (
-            <UserInsightsDashboard 
-              userStats={userManagement.userStats} 
+            <MemberInsightsDashboard 
+              memberStats={userManagement.userStats} 
               signupStats={userManagement.allProfilesData?.signup_stats || []} 
             />
           )}
           
-          {/* User type toggle */}
+          {/* Member type toggle */}
           <UserTypeToggle 
             value={userManagement.userType} 
             onChange={userManagement.setUserType} 
           />
           
-          {/* User filters and actions */}
+          {/* Member filters and actions */}
           <UserTableFilters
             onDateRangeChange={(range) => userManagement.setDateRange(range)}
             onCountryChange={(country) => userManagement.setSelectedCountry(country)}
@@ -133,7 +133,7 @@ export const UserManagement: React.FC = () => {
             dateRange={userManagement.dateRange}
           />
           
-          {/* User actions */}
+          {/* Member actions */}
           <UserActions
             localSearchTerm={localSearchTerm}
             setLocalSearchTerm={setLocalSearchTerm}
@@ -144,7 +144,7 @@ export const UserManagement: React.FC = () => {
             handleExportUsers={userManagement.handleExportUsers}
           />
           
-          {/* Users table */}
+          {/* Members table */}
           {userManagement.allProfilesData?.data && (
             <UsersTable
               users={userManagement.allProfilesData.data}
