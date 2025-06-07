@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, Users, Trophy, Zap, Brain, Target } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { MemoryGameLauncher } from '@/components/games/memory/MemoryGameLauncher';
+import { MemoryLayout, MemoryTheme } from '@/components/games/memory/types/memoryTypes';
 
 interface DifficultyTier {
   id: string;
@@ -17,6 +18,7 @@ interface DifficultyTier {
   activePlayers: number;
   difficulty: 'Beginner' | 'Intermediate' | 'Expert';
   color: string;
+  layout: MemoryLayout;
 }
 
 interface TournamentBracket {
@@ -37,9 +39,24 @@ interface CompletionTime {
   timestamp: Date;
 }
 
+interface GameSession {
+  isActive: boolean;
+  layout: MemoryLayout;
+  theme: MemoryTheme;
+  requiresPayment: boolean;
+  entryFee: number;
+}
+
 const MemoryMaster: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [gameSession, setGameSession] = useState<GameSession>({
+    isActive: false,
+    layout: '3x4',
+    theme: 'animals',
+    requiresPayment: false,
+    entryFee: 0
+  });
 
   // Mock data for difficulty tiers
   const [tiers] = useState<DifficultyTier[]>([
@@ -52,7 +69,8 @@ const MemoryMaster: React.FC = () => {
       nextTournament: new Date(Date.now() + 1 * 60 * 60 * 1000), // 1 hour from now
       activePlayers: 28,
       difficulty: 'Beginner',
-      color: 'bg-green-500'
+      color: 'bg-green-500',
+      layout: '3x4'
     },
     {
       id: 'intermediate',
@@ -63,7 +81,8 @@ const MemoryMaster: React.FC = () => {
       nextTournament: new Date(Date.now() + 2.5 * 60 * 60 * 1000), // 2.5 hours from now
       activePlayers: 20,
       difficulty: 'Intermediate',
-      color: 'bg-orange-500'
+      color: 'bg-orange-500',
+      layout: '4x5'
     },
     {
       id: 'expert',
@@ -74,7 +93,8 @@ const MemoryMaster: React.FC = () => {
       nextTournament: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4 hours from now
       activePlayers: 16,
       difficulty: 'Expert',
-      color: 'bg-red-500'
+      color: 'bg-red-500',
+      layout: '5x6'
     }
   ]);
 
@@ -157,6 +177,64 @@ const MemoryMaster: React.FC = () => {
     return `${hours}h ago`;
   };
 
+  // Game launching functions
+  const handleQuickMatch = () => {
+    console.log('Launching quick match game');
+    setGameSession({
+      isActive: true,
+      layout: '3x4',
+      theme: 'animals',
+      requiresPayment: false,
+      entryFee: 0
+    });
+  };
+
+  const handlePracticeMode = () => {
+    console.log('Launching practice mode game');
+    setGameSession({
+      isActive: true,
+      layout: '3x4',
+      theme: 'animals',
+      requiresPayment: false,
+      entryFee: 0
+    });
+  };
+
+  const handleJoinTournament = (tier: DifficultyTier) => {
+    console.log('Joining tournament:', tier.name);
+    setGameSession({
+      isActive: true,
+      layout: tier.layout,
+      theme: 'animals',
+      requiresPayment: true,
+      entryFee: tier.entryFee
+    });
+  };
+
+  const handleBackToTournament = () => {
+    console.log('Returning to tournament view');
+    setGameSession({
+      isActive: false,
+      layout: '3x4',
+      theme: 'animals',
+      requiresPayment: false,
+      entryFee: 0
+    });
+  };
+
+  // If game is active, show the game launcher
+  if (gameSession.isActive) {
+    return (
+      <MemoryGameLauncher
+        initialLayout={gameSession.layout}
+        initialTheme={gameSession.theme}
+        requiresPayment={gameSession.requiresPayment}
+        entryFee={gameSession.entryFee}
+        onBackToTournament={handleBackToTournament}
+      />
+    );
+  }
+
   return (
     <main className="min-h-screen bg-puzzle-black">
       {/* Hero Section */}
@@ -200,6 +278,7 @@ const MemoryMaster: React.FC = () => {
               <Button 
                 size="lg" 
                 className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold px-8 py-3"
+                onClick={handleQuickMatch}
               >
                 <Zap className="h-5 w-5 mr-2" />
                 Quick Match
@@ -208,6 +287,7 @@ const MemoryMaster: React.FC = () => {
                 size="lg" 
                 variant="outline" 
                 className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black px-8 py-3"
+                onClick={handlePracticeMode}
               >
                 Practice Mode
               </Button>
@@ -273,12 +353,14 @@ const MemoryMaster: React.FC = () => {
                     <Button 
                       className="w-full bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold"
                       disabled={!isAuthenticated}
+                      onClick={() => handleJoinTournament(tier)}
                     >
                       {isAuthenticated ? 'Join Tournament' : 'Login to Join'}
                     </Button>
                     <Button 
                       variant="outline" 
                       className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
+                      onClick={handlePracticeMode}
                     >
                       Practice Mode
                     </Button>
