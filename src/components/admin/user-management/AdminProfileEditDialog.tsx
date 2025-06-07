@@ -42,7 +42,7 @@ export const AdminProfileEditDialog: React.FC<AdminProfileEditDialogProps> = ({
     terms_accepted: false
   });
   
-  const [creditAmount, setCreditAmount] = useState<number>(0);
+  const [creditAmount, setCreditAmount] = useState<string>('');
   const [creditNote, setCreditNote] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isAwardingCredits, setIsAwardingCredits] = useState(false);
@@ -88,7 +88,8 @@ export const AdminProfileEditDialog: React.FC<AdminProfileEditDialogProps> = ({
   };
 
   const handleAwardCredits = async () => {
-    if (creditAmount <= 0) {
+    const credits = parseInt(creditAmount);
+    if (!creditAmount || credits <= 0 || isNaN(credits)) {
       toast({
         title: "Invalid Amount",
         description: "Please enter a valid credit amount greater than 0.",
@@ -101,14 +102,14 @@ export const AdminProfileEditDialog: React.FC<AdminProfileEditDialogProps> = ({
     try {
       await awardCredits.mutateAsync({
         targetUserId: user.id,
-        credits: creditAmount,
+        credits: credits,
         adminNote: creditNote || undefined
       });
-      setCreditAmount(0);
+      setCreditAmount('');
       setCreditNote('');
       toast({
         title: "Credits Awarded",
-        description: `Successfully awarded ${creditAmount} credits to ${user.display_name}.`,
+        description: `Successfully awarded ${credits} credits to ${user.display_name}.`,
       });
     } catch (error) {
       toast({
@@ -124,6 +125,14 @@ export const AdminProfileEditDialog: React.FC<AdminProfileEditDialogProps> = ({
   const handleRoleUpdate = (newRole: string) => {
     if (canAssignRole(newRole as UserRole)) {
       onRoleChange(user.id, newRole as UserRole);
+    }
+  };
+
+  const handleCreditAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Allow empty string or valid numbers
+    if (value === '' || /^\d+$/.test(value)) {
+      setCreditAmount(value);
     }
   };
 
@@ -294,11 +303,10 @@ export const AdminProfileEditDialog: React.FC<AdminProfileEditDialogProps> = ({
                   <Label htmlFor="credit_amount">Award Credits</Label>
                   <Input
                     id="credit_amount"
-                    type="number"
+                    type="text"
                     value={creditAmount}
-                    onChange={(e) => setCreditAmount(parseInt(e.target.value) || 0)}
+                    onChange={handleCreditAmountChange}
                     placeholder="Enter credit amount"
-                    min="1"
                   />
                 </div>
 
@@ -315,7 +323,7 @@ export const AdminProfileEditDialog: React.FC<AdminProfileEditDialogProps> = ({
 
                 <Button 
                   onClick={handleAwardCredits} 
-                  disabled={isAwardingCredits || creditAmount <= 0}
+                  disabled={isAwardingCredits || !creditAmount || parseInt(creditAmount) <= 0}
                   className="w-full"
                   variant="outline"
                 >
@@ -327,7 +335,7 @@ export const AdminProfileEditDialog: React.FC<AdminProfileEditDialogProps> = ({
                   ) : (
                     <>
                       <DollarSign className="h-4 w-4 mr-2" />
-                      Award {creditAmount} Credits
+                      Award {creditAmount || '0'} Credits
                     </>
                   )}
                 </Button>
