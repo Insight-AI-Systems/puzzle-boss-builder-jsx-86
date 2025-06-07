@@ -173,7 +173,7 @@ export const TimerAccuracyTest: React.FC = () => {
 
         <div className="text-xs text-gray-500">
           Timer should maintain millisecond precision for competitive play.
-          Target accuracy: >99% for optimal user experience.
+          Target accuracy: {'>'}99% for optimal user experience.
         </div>
       </CardContent>
     </Card>

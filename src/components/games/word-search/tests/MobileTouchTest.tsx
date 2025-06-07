@@ -274,7 +274,7 @@ export const MobileTouchTest: React.FC = () => {
 
         <div className="text-xs text-gray-500">
           Touch interactions must be responsive and accurate for mobile gameplay.
-          Target: >95% success rate across all gesture types.
+          Target: {'>'}95% success rate across all gesture types.
         </div>
       </CardContent>
     </Card>

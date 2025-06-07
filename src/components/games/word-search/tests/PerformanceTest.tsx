@@ -264,8 +264,8 @@ export const PerformanceTest: React.FC = () => {
         )}
 
         <div className="text-xs text-gray-500">
-          Performance targets: Grid generation <200ms, Render <50ms, Memory <25MB, 
-          Frame rate >55fps, Interaction response <20ms.
+          Performance targets: Grid generation {'<'}200ms, Render {'<'}50ms, Memory {'<'}25MB, 
+          Frame rate {'>'}55fps, Interaction response {'<'}20ms.
         </div>
       </CardContent>
     </Card>

@@ -359,14 +359,14 @@ export const WordSearchTestSuite: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Card className="bg-gray-800 border-gray-600">
                     <CardContent className="p-4 text-center">
-                      <div className="text-xl font-bold text-puzzle-aqua">< 100ms</div>
+                      <div className="text-xl font-bold text-puzzle-aqua">{'<'} 100ms</div>
                       <div className="text-sm text-gray-400">Grid Generation</div>
                     </CardContent>
                   </Card>
                   
                   <Card className="bg-gray-800 border-gray-600">
                     <CardContent className="p-4 text-center">
-                      <div className="text-xl font-bold text-puzzle-gold">< 50MB</div>
+                      <div className="text-xl font-bold text-puzzle-gold">{'<'} 50MB</div>
                       <div className="text-sm text-gray-400">Memory Usage</div>
                     </CardContent>
                   </Card>

@@ -212,7 +212,8 @@ export const MultiplayerTest: React.FC = () => {
               ))}
               {players.length > 10 && (
                 <div className="text-center text-xs text-gray-500">
-                  +{players.length - 10} more players...
+                  {'+'}
+                  {players.length - 10} more players...
                 </div>
               )}
             </div>
@@ -221,7 +222,8 @@ export const MultiplayerTest: React.FC = () => {
 
         <div className="text-xs text-gray-500">
           Testing server capacity and synchronization with multiple concurrent users.
-          Target: Support 100+ players with <1s response time.
+          Target: Support 100{'+'}
+          {' '}players with {'<'}1s response time.
         </div>
       </CardContent>
     </Card>
