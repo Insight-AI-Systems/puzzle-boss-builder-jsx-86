@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +11,8 @@ import Navbar from "@/components/Navbar";
 import Index from "./pages/Index";
 import PuzzlePlay from "./pages/PuzzlePlay";
 import Puzzles from "./pages/Puzzles";
+import Categories from "./pages/Categories";
+import CategoryPuzzles from "./pages/CategoryPuzzles";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import AdminDashboard from "./pages/AdminDashboard";

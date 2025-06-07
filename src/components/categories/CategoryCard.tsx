@@ -1,5 +1,7 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 interface CategoryCardProps {
   title: string;
@@ -7,9 +9,17 @@ interface CategoryCardProps {
   icon?: string;
   color: string;
   imageUrl?: string;
+  categoryId?: string;
 }
 
-export const CategoryCard: React.FC<CategoryCardProps> = ({ title, description, icon, color, imageUrl }) => {
+export const CategoryCard: React.FC<CategoryCardProps> = ({ 
+  title, 
+  description, 
+  icon, 
+  color, 
+  imageUrl, 
+  categoryId 
+}) => {
   return (
     <div className="card-highlight p-6 hover:translate-y-[-5px] transition-all duration-300">
       {imageUrl ? (
@@ -26,7 +36,15 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ title, description, 
         </div>
       )}
       <h3 className="text-xl font-bold text-center mb-2">{title}</h3>
-      <p className="text-muted-foreground text-center">{description}</p>
+      <p className="text-muted-foreground text-center mb-4">{description}</p>
+      
+      {categoryId && (
+        <div className="text-center">
+          <Button asChild className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
+            <Link to={`/categories/${categoryId}`}>View Puzzles</Link>
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

@@ -14,6 +14,7 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({ categories }) => {
       {categories.map((category, index) => (
         <CategoryCard
           key={category.id}
+          categoryId={category.id}
           title={category.name}
           description={category.description || `Explore our ${category.name} puzzle collection`}
           icon={category.icon || undefined}

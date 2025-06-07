@@ -2,6 +2,8 @@
 export { default as HomePage } from './HomePage';
 export { default as Index } from './Index';
 export { default as Puzzles } from './Puzzles';
+export { default as Categories } from './Categories';
+export { default as CategoryPuzzles } from './CategoryPuzzles';
 export { default as Prizes } from './Prizes';
 export { default as HowItWorks } from './HowItWorks';
 export { default as PuzzleDemo } from './PuzzleDemo';
