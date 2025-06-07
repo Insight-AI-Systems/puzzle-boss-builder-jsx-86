@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -52,6 +51,7 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
 }) => {
   const [foundWords, setFoundWords] = useState<Set<string>>(new Set());
   const [foundWordDetails, setFoundWordDetails] = useState<FoundWord[]>([]);
+  const [foundWordCells, setFoundWordCells] = useState<Set<string>>(new Set()); // Track cells of found words
   const [gameStarted, setGameStarted] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
   const [incorrectSelections, setIncorrectSelections] = useState(0);
@@ -201,6 +201,40 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
       return () => clearInterval(interval);
     }
   }, [gameStarted, gameComplete, saveGameState]);
+
+  // Helper function to get cells for a found word
+  const getWordCells = useCallback((foundWord: FoundWord): string[] => {
+    const cells: string[] = [];
+    const [startRow, startCol] = foundWord.startPos;
+    const [endRow, endCol] = foundWord.endPos;
+    
+    const deltaRow = endRow > startRow ? 1 : endRow < startRow ? -1 : 0;
+    const deltaCol = endCol > startCol ? 1 : endCol < startCol ? -1 : 0;
+    
+    let currentRow = startRow;
+    let currentCol = startCol;
+    
+    while (true) {
+      cells.push(`${currentRow}-${currentCol}`);
+      
+      if (currentRow === endRow && currentCol === endCol) break;
+      
+      currentRow += deltaRow;
+      currentCol += deltaCol;
+    }
+    
+    return cells;
+  }, []);
+
+  // Update found word cells when foundWordDetails changes
+  useEffect(() => {
+    const allFoundCells = new Set<string>();
+    foundWordDetails.forEach(foundWord => {
+      const wordCells = getWordCells(foundWord);
+      wordCells.forEach(cell => allFoundCells.add(cell));
+    });
+    setFoundWordCells(allFoundCells);
+  }, [foundWordDetails, getWordCells]);
 
   // Check for word completion and auto-submit
   useEffect(() => {
@@ -368,6 +402,7 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
     // Reset all game state
     setFoundWords(new Set());
     setFoundWordDetails([]);
+    setFoundWordCells(new Set()); // Reset found word cells
     setGameStarted(false);
     setGameComplete(false);
     setIncorrectSelections(0);
@@ -491,25 +526,33 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
                   }}
                 >
                   {grid.map((row, rowIndex) =>
-                    row.map((letter, colIndex) => (
-                      <div
-                        key={`${rowIndex}-${colIndex}`}
-                        className={`
-                          w-8 h-8 flex items-center justify-center
-                          text-sm font-bold cursor-pointer transition-colors
-                          border-0 m-0 p-0
-                          ${selectedCells.has(`${rowIndex}-${colIndex}`) 
-                            ? 'bg-puzzle-aqua text-puzzle-black' 
-                            : 'bg-gray-800 text-puzzle-white hover:bg-gray-700'
-                          }
-                        `}
-                        onMouseDown={() => handleCellMouseDown(rowIndex, colIndex)}
-                        onMouseEnter={() => handleCellMouseEnter(rowIndex, colIndex)}
-                        onMouseUp={handleCellMouseUp}
-                      >
-                        {letter}
-                      </div>
-                    ))
+                    row.map((letter, colIndex) => {
+                      const cellId = `${rowIndex}-${colIndex}`;
+                      const isSelected = selectedCells.has(cellId);
+                      const isFoundWordCell = foundWordCells.has(cellId);
+                      
+                      return (
+                        <div
+                          key={cellId}
+                          className={`
+                            w-8 h-8 flex items-center justify-center
+                            text-sm font-bold cursor-pointer transition-colors
+                            border-0 m-0 p-0
+                            ${isSelected 
+                              ? 'bg-puzzle-aqua text-puzzle-black' 
+                              : isFoundWordCell
+                              ? 'bg-puzzle-gold text-puzzle-black'
+                              : 'bg-gray-800 text-puzzle-white hover:bg-gray-700'
+                            }
+                          `}
+                          onMouseDown={() => handleCellMouseDown(rowIndex, colIndex)}
+                          onMouseEnter={() => handleCellMouseEnter(rowIndex, colIndex)}
+                          onMouseUp={handleCellMouseUp}
+                        >
+                          {letter}
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </CardContent>
