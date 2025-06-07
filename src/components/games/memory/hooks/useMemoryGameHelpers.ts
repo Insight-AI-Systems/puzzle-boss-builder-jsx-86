@@ -14,7 +14,7 @@ export const shuffleArray = <T>(array: T[]): T[] => {
 // Generate cards for the current layout and theme
 export const generateCards = (layout: MemoryLayout, theme: MemoryTheme): MemoryCard[] => {
   const { totalCards } = LAYOUT_CONFIGS[layout];
-  const themeItems = THEME_CONFIGS[theme].items;
+  const themeItems = [...THEME_CONFIGS[theme].items]; // Convert readonly to mutable
   const pairsNeeded = totalCards / 2;
   
   // Select random items from theme
@@ -28,7 +28,7 @@ export const generateCards = (layout: MemoryLayout, theme: MemoryTheme): MemoryC
   
   return shuffledValues.map((value, index) => ({
     id: `card-${index}`,
-    value,
+    value: value as string, // Explicit cast to string
     isFlipped: false,
     isMatched: false
   }));

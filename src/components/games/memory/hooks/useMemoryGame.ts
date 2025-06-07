@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { MemoryCard, MemoryGameState, MemoryLayout, MemoryTheme } from '../types/memoryTypes';
 import { useMemoryScoring, LeaderboardEntry } from './useMemoryScoring';
@@ -176,7 +175,7 @@ export function useMemoryGame(
       // Get the display name for leaderboard
       const playerName = profile?.username || profile?.display_name || profile?.full_name || 'Anonymous Player';
 
-      // Add to leaderboard
+      // Add to leaderboard - now with all required properties
       const newEntry: LeaderboardEntry = {
         id: Date.now().toString(),
         playerName,
@@ -185,6 +184,8 @@ export function useMemoryGame(
         moves,
         accuracy: scoreData.accuracy,
         isPerfectGame: scoreData.isPerfectGame,
+        layout, // Add missing layout property
+        achievedAt: new Date(), // Add missing achievedAt property
       };
 
       setLeaderboard(prev => [...prev, newEntry].sort((a, b) => b.score - a.score).slice(0, 10));
@@ -192,7 +193,7 @@ export function useMemoryGame(
     } else {
       setGameState('failed');
     }
-  }, [startTime, matchedPairs.length, moves, calculateScore, getGridSize, profile]);
+  }, [startTime, matchedPairs.length, moves, calculateScore, getGridSize, profile, layout]);
 
   const resetGame = useCallback(() => {
     if (timerRef.current) {
