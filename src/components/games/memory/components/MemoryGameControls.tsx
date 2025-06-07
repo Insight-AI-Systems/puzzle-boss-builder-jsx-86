@@ -50,7 +50,6 @@ export function MemoryGameControls({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Game Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center p-3 bg-gray-800 rounded-lg">
             <Clock className="w-6 h-6 text-puzzle-aqua mx-auto mb-1" />
@@ -82,7 +81,6 @@ export function MemoryGameControls({
           </div>
         </div>
 
-        {/* Game Controls */}
         <div className="flex flex-wrap gap-3 items-center">
           <Select value={layout} onValueChange={onLayoutChange} disabled={isGameActive}>
             <SelectTrigger className="w-32 bg-gray-800 border-gray-600 text-puzzle-white">
@@ -118,7 +116,6 @@ export function MemoryGameControls({
           </Button>
         </div>
 
-        {/* Progress Badge */}
         {isGameActive && (
           <div className="flex justify-center">
             <Badge className="bg-puzzle-aqua text-puzzle-black">

@@ -6,12 +6,11 @@ import { MemoryScoreDisplay } from './components/MemoryScoreDisplay';
 import { MemoryLeaderboard } from './components/MemoryLeaderboard';
 import { MemoryCelebration } from './components/MemoryCelebration';
 import { useMemoryGame } from './hooks/useMemoryGame';
-import { useMemoryScoring } from './hooks/useMemoryScoring';
+import { useMemoryGameScoring } from './hooks/useMemoryGameScoring';
 import { useImagePreloader } from './hooks/useImagePreloader';
 import { MemoryLayout, MemoryTheme, THEME_CONFIGS } from './types/memoryTypes';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-// Import the CSS file directly to ensure it loads
 import './styles/memory-cards.css';
 
 interface MemoryGameProps {
@@ -53,15 +52,12 @@ export function MemoryGame({
     updateScore,
     submitToLeaderboard,
     resetScore
-  } = useMemoryScoring(gameState.layout);
+  } = useMemoryGameScoring(gameState.layout);
 
-  // Preload images for the current theme
   const themeItems = THEME_CONFIGS[gameState.theme]?.items || [];
   const { loadedImages, loading: imagesLoading } = useImagePreloader(themeItems);
 
   const stats = getGameStats();
-  const lastMoves = useRef(0);
-  const lastMatchedPairs = useRef(0);
   const gameCompletedRef = useRef(false);
 
   // Update scoring in real-time
@@ -69,14 +65,12 @@ export function MemoryGame({
     if (gameInitialized && isGameActive) {
       const newScoreData = updateScore(gameState.matchedPairs, gameState.moves, stats.timeElapsed);
       
-      // Update external score callback
       if (onScoreUpdate && newScoreData.finalScore !== scoreData.finalScore) {
         onScoreUpdate(newScoreData.finalScore);
       }
     }
   }, [gameState.matchedPairs, gameState.moves, stats.timeElapsed, gameInitialized, isGameActive]);
 
-  // Handle layout changes
   const handleLayoutChange = (newLayout: MemoryLayout) => {
     console.log('🔄 Layout change triggered:', newLayout);
     initializeGame(newLayout, gameState.theme);
@@ -85,7 +79,6 @@ export function MemoryGame({
     setShowCelebration(false);
   };
 
-  // Handle theme changes
   const handleThemeChange = (newTheme: MemoryTheme) => {
     console.log('🎨 Theme change triggered:', newTheme);
     initializeGame(gameState.layout, newTheme);
@@ -94,7 +87,6 @@ export function MemoryGame({
     setShowCelebration(false);
   };
 
-  // Handle restart
   const handleRestart = () => {
     console.log('🔄 Restart triggered');
     initializeGame(gameState.layout, gameState.theme);
@@ -103,24 +95,18 @@ export function MemoryGame({
     setShowCelebration(false);
   };
 
-  // Update external moves only when moves change
   useEffect(() => {
-    if (onMoveUpdate && gameInitialized && lastMoves.current !== gameState.moves) {
-      console.log('Moves updated:', gameState.moves);
+    if (onMoveUpdate && gameInitialized) {
       onMoveUpdate(gameState.moves);
-      lastMoves.current = gameState.moves;
     }
   }, [gameState.moves, onMoveUpdate, gameInitialized]);
 
-  // Handle game completion
   useEffect(() => {
     if (gameState.isGameComplete && onComplete && !gameCompletedRef.current) {
       gameCompletedRef.current = true;
       
-      // Show celebration first
       setShowCelebration(true);
       
-      // Submit to leaderboard (using a default player name for now)
       const leaderboardEntry = submitToLeaderboard(scoreData, 'Anonymous Player');
       
       const finalStats = {
@@ -134,7 +120,6 @@ export function MemoryGame({
       
       console.log('Game completed with stats:', finalStats);
       
-      // Delay the onComplete callback to allow celebration to show
       setTimeout(() => {
         onComplete(finalStats);
       }, 3000);
@@ -156,8 +141,6 @@ export function MemoryGame({
       </div>
     );
   }
-
-  const cardsDisabled = disabled;
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-4">
@@ -191,7 +174,7 @@ export function MemoryGame({
           <MemoryGameBoard
             cards={gameState.cards}
             onCardClick={handleCardClick}
-            disabled={cardsDisabled}
+            disabled={disabled}
             layout={gameState.layout}
             theme={gameState.theme}
           />
