@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, Users, Trophy, Zap, Grid3X3 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { SudokuGameWrapper } from '@/components/games/sudoku/SudokuGameWrapper';
+import { SudokuDifficulty, SudokuSize } from '@/components/games/sudoku/types/sudokuTypes';
 
 interface DifficultyTier {
   id: string;
@@ -15,7 +16,8 @@ interface DifficultyTier {
   prizePool: number;
   nextRace: Date;
   participants: number;
-  difficulty: 'Easy' | 'Medium' | 'Expert';
+  difficulty: SudokuDifficulty;
+  size: SudokuSize;
   color: string;
 }
 
@@ -29,8 +31,10 @@ interface LeaderboardEntry {
 const SpeedSudoku: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [selectedTier, setSelectedTier] = useState<DifficultyTier | null>(null);
+  const [showGame, setShowGame] = useState(false);
 
-  // Mock data for difficulty tiers
+  // Mock data for difficulty tiers with proper Sudoku configurations
   const [tiers] = useState<DifficultyTier[]>([
     {
       id: 'easy',
@@ -38,9 +42,10 @@ const SpeedSudoku: React.FC = () => {
       grid: '4x4',
       entryFee: 2,
       prizePool: 80,
-      nextRace: new Date(Date.now() + 1.5 * 60 * 60 * 1000), // 1.5 hours from now
+      nextRace: new Date(Date.now() + 1.5 * 60 * 60 * 1000),
       participants: 32,
-      difficulty: 'Easy',
+      difficulty: 'easy' as SudokuDifficulty,
+      size: 4 as SudokuSize,
       color: 'bg-green-500'
     },
     {
@@ -49,9 +54,10 @@ const SpeedSudoku: React.FC = () => {
       grid: '6x6',
       entryFee: 5,
       prizePool: 200,
-      nextRace: new Date(Date.now() + 3 * 60 * 60 * 1000), // 3 hours from now
+      nextRace: new Date(Date.now() + 3 * 60 * 60 * 1000),
       participants: 24,
-      difficulty: 'Medium',
+      difficulty: 'medium' as SudokuDifficulty,
+      size: 6 as SudokuSize,
       color: 'bg-orange-500'
     },
     {
@@ -60,9 +66,10 @@ const SpeedSudoku: React.FC = () => {
       grid: '9x9',
       entryFee: 12,
       prizePool: 480,
-      nextRace: new Date(Date.now() + 5 * 60 * 60 * 1000), // 5 hours from now
+      nextRace: new Date(Date.now() + 5 * 60 * 60 * 1000),
       participants: 16,
-      difficulty: 'Expert',
+      difficulty: 'expert' as SudokuDifficulty,
+      size: 9 as SudokuSize,
       color: 'bg-red-500'
     }
   ]);
@@ -121,6 +128,41 @@ const SpeedSudoku: React.FC = () => {
     return formatCountdown(nextRace);
   };
 
+  const handleJoinRace = (tier: DifficultyTier) => {
+    setSelectedTier(tier);
+    setShowGame(true);
+  };
+
+  const handleBackToLobby = () => {
+    setShowGame(false);
+    setSelectedTier(null);
+  };
+
+  if (showGame && selectedTier) {
+    return (
+      <main className="min-h-screen bg-puzzle-black">
+        <div className="container mx-auto px-4 py-8">
+          <div className="mb-6">
+            <Button 
+              onClick={handleBackToLobby}
+              variant="outline"
+              className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black"
+            >
+              ← Back to Lobby
+            </Button>
+          </div>
+          
+          <SudokuGameWrapper
+            difficulty={selectedTier.difficulty}
+            size={selectedTier.size}
+            requiresPayment={true}
+            entryFee={selectedTier.entryFee}
+          />
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-puzzle-black">
       {/* Hero Section */}
@@ -164,6 +206,7 @@ const SpeedSudoku: React.FC = () => {
               <Button 
                 size="lg" 
                 className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold px-8 py-3"
+                onClick={() => handleJoinRace(tiers[1])} // Default to medium
               >
                 <Zap className="h-5 w-5 mr-2" />
                 Quick Race
@@ -197,7 +240,7 @@ const SpeedSudoku: React.FC = () => {
               <Card key={tier.id} className="bg-gray-900 border-gray-700 hover:border-puzzle-aqua/50 transition-all duration-300">
                 <CardHeader className="text-center">
                   <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${tier.color} text-white mb-4`}>
-                    {tier.difficulty} {tier.grid}
+                    {tier.difficulty.charAt(0).toUpperCase() + tier.difficulty.slice(1)} {tier.grid}
                   </div>
                   <CardTitle className="text-2xl text-puzzle-white">{tier.name}</CardTitle>
                 </CardHeader>
@@ -237,12 +280,14 @@ const SpeedSudoku: React.FC = () => {
                     <Button 
                       className="w-full bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold"
                       disabled={!isAuthenticated}
+                      onClick={() => handleJoinRace(tier)}
                     >
                       {isAuthenticated ? 'Join Race' : 'Login to Race'}
                     </Button>
                     <Button 
                       variant="outline" 
                       className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
+                      onClick={() => handleJoinRace(tier)}
                     >
                       Practice Mode
                     </Button>
