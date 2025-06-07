@@ -19,13 +19,15 @@ export class WordPlacementEngine {
   private grid: string[][];
   private placedWords: PlacedWord[];
   private random: () => number;
+  private maxAttempts: number;
 
   constructor(gridSize: number, seed?: string) {
     this.gridSize = gridSize;
     this.grid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(''));
     this.placedWords = [];
+    this.maxAttempts = 1000; // Maximum attempts per word
     
-    // Seeded random generator for consistent results
+    // Improved seeded random generator for consistent results
     if (seed) {
       this.random = this.createSeededRandom(seed);
     } else {
@@ -41,23 +43,61 @@ export class WordPlacementEngine {
       hash = hash & hash; // Convert to 32-bit integer
     }
     
+    // Ensure hash is positive and non-zero
+    if (hash === 0) hash = 1;
+    if (hash < 0) hash = Math.abs(hash);
+    
     return () => {
       hash = (hash * 9301 + 49297) % 233280;
-      return hash / 233280;
+      const result = hash / 233280;
+      // Ensure result is always between 0 and 1
+      return Math.max(0, Math.min(0.999999, result));
     };
   }
 
   public placeWords(words: string[]): WordPlacementResult {
     console.log('Starting word placement for words:', words);
     
+    if (!words || words.length === 0) {
+      console.warn('No words provided for placement');
+      return {
+        grid: this.grid,
+        placedWords: [],
+        success: false,
+        failedWords: []
+      };
+    }
+
+    // Reset state for new placement
+    this.grid = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(''));
+    this.placedWords = [];
+    
     // Sort words by length (longest first for better placement)
     const sortedWords = [...words].sort((a, b) => b.length - a.length);
     const failedWords: string[] = [];
 
     for (const word of sortedWords) {
-      const success = this.placeWord(word.toUpperCase());
-      if (!success) {
-        console.warn(`Failed to place word: ${word}`);
+      try {
+        const cleanWord = word.toUpperCase().trim();
+        if (!cleanWord || cleanWord.length === 0) {
+          console.warn(`Skipping empty word: "${word}"`);
+          failedWords.push(word);
+          continue;
+        }
+
+        if (cleanWord.length > this.gridSize) {
+          console.warn(`Word "${cleanWord}" is too long for grid size ${this.gridSize}`);
+          failedWords.push(word);
+          continue;
+        }
+
+        const success = this.placeWordWithRetry(cleanWord);
+        if (!success) {
+          console.warn(`Failed to place word after ${this.maxAttempts} attempts: ${cleanWord}`);
+          failedWords.push(word);
+        }
+      } catch (error) {
+        console.error(`Error placing word "${word}":`, error);
         failedWords.push(word);
       }
     }
@@ -69,7 +109,7 @@ export class WordPlacementEngine {
       totalWords: words.length,
       placedWords: this.placedWords.length,
       failedWords: failedWords.length,
-      grid: this.grid
+      successRate: `${((this.placedWords.length / words.length) * 100).toFixed(1)}%`
     });
 
     return {
@@ -80,7 +120,7 @@ export class WordPlacementEngine {
     };
   }
 
-  private placeWord(word: string): boolean {
+  private placeWordWithRetry(word: string): boolean {
     const directions: Array<{
       name: 'horizontal' | 'vertical' | 'diagonal-down' | 'diagonal-up';
       deltaRow: number;
@@ -92,12 +132,25 @@ export class WordPlacementEngine {
       { name: 'diagonal-up', deltaRow: -1, deltaCol: 1 }
     ];
 
-    // Try each direction multiple times
-    for (let attempt = 0; attempt < 100; attempt++) {
-      const direction = directions[Math.floor(this.random() * directions.length)];
-      
-      if (this.tryPlaceWordInDirection(word, direction)) {
-        return true;
+    // Try each direction multiple times with different strategies
+    for (let attempt = 0; attempt < this.maxAttempts; attempt++) {
+      try {
+        // Select direction with proper bounds checking
+        const directionIndex = Math.floor(this.random() * directions.length);
+        const direction = directions[directionIndex];
+        
+        // Additional safety check
+        if (!direction) {
+          console.warn(`Invalid direction at index ${directionIndex}, retrying...`);
+          continue;
+        }
+        
+        if (this.tryPlaceWordInDirection(word, direction)) {
+          return true;
+        }
+      } catch (error) {
+        console.error(`Error in placement attempt ${attempt + 1} for word "${word}":`, error);
+        continue;
       }
     }
 
@@ -108,27 +161,65 @@ export class WordPlacementEngine {
     word: string, 
     direction: { name: 'horizontal' | 'vertical' | 'diagonal-down' | 'diagonal-up'; deltaRow: number; deltaCol: number }
   ): boolean {
-    const { deltaRow, deltaCol } = direction;
-    
-    // Calculate valid starting positions
-    const maxStartRow = direction.name === 'diagonal-up' 
-      ? this.gridSize - 1 
-      : deltaRow === 0 ? this.gridSize - 1 : this.gridSize - word.length;
-    const maxStartCol = deltaCol === 0 ? this.gridSize - 1 : this.gridSize - word.length;
-    const minStartRow = direction.name === 'diagonal-up' ? word.length - 1 : 0;
-
-    if (maxStartRow < minStartRow || maxStartCol < 0) {
+    if (!direction || !word) {
       return false;
     }
 
-    // Try random valid positions
-    for (let attempt = 0; attempt < 50; attempt++) {
-      const startRow = minStartRow + Math.floor(this.random() * (maxStartRow - minStartRow + 1));
-      const startCol = Math.floor(this.random() * (maxStartCol + 1));
+    const { deltaRow, deltaCol } = direction;
+    
+    // Calculate valid starting positions with proper bounds checking
+    let maxStartRow: number;
+    let minStartRow: number;
+    let maxStartCol: number;
+    
+    if (direction.name === 'diagonal-up') {
+      maxStartRow = this.gridSize - 1;
+      minStartRow = word.length - 1;
+    } else if (deltaRow === 0) {
+      maxStartRow = this.gridSize - 1;
+      minStartRow = 0;
+    } else {
+      maxStartRow = this.gridSize - word.length;
+      minStartRow = 0;
+    }
+    
+    if (deltaCol === 0) {
+      maxStartCol = this.gridSize - 1;
+    } else {
+      maxStartCol = this.gridSize - word.length;
+    }
 
-      if (this.canPlaceWordAt(word, startRow, startCol, deltaRow, deltaCol)) {
-        this.placeWordAt(word, startRow, startCol, deltaRow, deltaCol, direction.name);
-        return true;
+    // Validate bounds
+    if (maxStartRow < minStartRow || maxStartCol < 0 || maxStartRow < 0 || maxStartCol < 0) {
+      return false;
+    }
+
+    // Try random valid positions with improved distribution
+    const maxPositionAttempts = 50;
+    for (let attempt = 0; attempt < maxPositionAttempts; attempt++) {
+      try {
+        const rowRange = maxStartRow - minStartRow + 1;
+        const colRange = maxStartCol + 1;
+        
+        if (rowRange <= 0 || colRange <= 0) {
+          break;
+        }
+        
+        const startRow = minStartRow + Math.floor(this.random() * rowRange);
+        const startCol = Math.floor(this.random() * colRange);
+
+        // Validate calculated position
+        if (startRow < 0 || startRow >= this.gridSize || startCol < 0 || startCol >= this.gridSize) {
+          continue;
+        }
+
+        if (this.canPlaceWordAt(word, startRow, startCol, deltaRow, deltaCol)) {
+          this.placeWordAt(word, startRow, startCol, deltaRow, deltaCol, direction.name);
+          return true;
+        }
+      } catch (error) {
+        console.error(`Error in position attempt ${attempt + 1}:`, error);
+        continue;
       }
     }
 
@@ -136,23 +227,27 @@ export class WordPlacementEngine {
   }
 
   private canPlaceWordAt(word: string, startRow: number, startCol: number, deltaRow: number, deltaCol: number): boolean {
-    for (let i = 0; i < word.length; i++) {
-      const row = startRow + i * deltaRow;
-      const col = startCol + i * deltaCol;
+    try {
+      for (let i = 0; i < word.length; i++) {
+        const row = startRow + i * deltaRow;
+        const col = startCol + i * deltaCol;
 
-      // Check bounds
-      if (row < 0 || row >= this.gridSize || col < 0 || col >= this.gridSize) {
-        return false;
-      }
+        // Check bounds
+        if (row < 0 || row >= this.gridSize || col < 0 || col >= this.gridSize) {
+          return false;
+        }
 
-      // Check if cell is empty or contains the same letter
-      const existingLetter = this.grid[row][col];
-      if (existingLetter !== '' && existingLetter !== word[i]) {
-        return false;
+        // Check if cell is empty or contains the same letter
+        const existingLetter = this.grid[row][col];
+        if (existingLetter !== '' && existingLetter !== word[i]) {
+          return false;
+        }
       }
+      return true;
+    } catch (error) {
+      console.error('Error in canPlaceWordAt:', error);
+      return false;
     }
-
-    return true;
   }
 
   private placeWordAt(
@@ -163,78 +258,123 @@ export class WordPlacementEngine {
     deltaCol: number,
     direction: 'horizontal' | 'vertical' | 'diagonal-down' | 'diagonal-up'
   ): void {
-    const cells: string[] = [];
-    
-    for (let i = 0; i < word.length; i++) {
-      const row = startRow + i * deltaRow;
-      const col = startCol + i * deltaCol;
-      this.grid[row][col] = word[i];
-      cells.push(`${row}-${col}`);
+    try {
+      const cells: string[] = [];
+      
+      for (let i = 0; i < word.length; i++) {
+        const row = startRow + i * deltaRow;
+        const col = startCol + i * deltaCol;
+        
+        // Double-check bounds before placing
+        if (row >= 0 && row < this.gridSize && col >= 0 && col < this.gridSize) {
+          this.grid[row][col] = word[i];
+          cells.push(`${row}-${col}`);
+        } else {
+          throw new Error(`Invalid position during placement: (${row}, ${col})`);
+        }
+      }
+
+      const endRow = startRow + (word.length - 1) * deltaRow;
+      const endCol = startCol + (word.length - 1) * deltaCol;
+
+      this.placedWords.push({
+        word,
+        startPos: [startRow, startCol],
+        endPos: [endRow, endCol],
+        direction,
+        cells
+      });
+
+      console.log(`Successfully placed word "${word}" from (${startRow},${startCol}) to (${endRow},${endCol}) direction: ${direction}`);
+    } catch (error) {
+      console.error(`Error placing word "${word}":`, error);
+      throw error;
     }
-
-    const endRow = startRow + (word.length - 1) * deltaRow;
-    const endCol = startCol + (word.length - 1) * deltaCol;
-
-    this.placedWords.push({
-      word,
-      startPos: [startRow, startCol],
-      endPos: [endRow, endCol],
-      direction,
-      cells
-    });
-
-    console.log(`Placed word "${word}" from (${startRow},${startCol}) to (${endRow},${endCol}) direction: ${direction}`);
   }
 
   private fillEmptyCells(): void {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     
-    for (let row = 0; row < this.gridSize; row++) {
-      for (let col = 0; col < this.gridSize; col++) {
-        if (this.grid[row][col] === '') {
-          this.grid[row][col] = letters[Math.floor(this.random() * letters.length)];
+    try {
+      for (let row = 0; row < this.gridSize; row++) {
+        for (let col = 0; col < this.gridSize; col++) {
+          if (this.grid[row][col] === '') {
+            const letterIndex = Math.floor(this.random() * letters.length);
+            this.grid[row][col] = letters[letterIndex] || 'A'; // Fallback to 'A'
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error filling empty cells:', error);
+      // Fill remaining empty cells with 'A' as fallback
+      for (let row = 0; row < this.gridSize; row++) {
+        for (let col = 0; col < this.gridSize; col++) {
+          if (this.grid[row][col] === '') {
+            this.grid[row][col] = 'A';
+          }
         }
       }
     }
   }
 
   public validatePlacement(wordList: string[]): boolean {
-    const upperWords = wordList.map(w => w.toUpperCase());
-    const placedWordStrings = this.placedWords.map(w => w.word);
-    
-    // Check all words were placed
-    for (const word of upperWords) {
-      if (!placedWordStrings.includes(word)) {
-        console.error(`Word "${word}" was not placed in grid`);
-        return false;
+    try {
+      const upperWords = wordList.map(w => w.toUpperCase());
+      const placedWordStrings = this.placedWords.map(w => w.word);
+      
+      // Check all words were placed
+      for (const word of upperWords) {
+        if (!placedWordStrings.includes(word)) {
+          console.error(`Word "${word}" was not placed in grid`);
+          return false;
+        }
       }
-    }
 
-    // Validate each placed word exists in grid
-    for (const placedWord of this.placedWords) {
-      if (!this.validateWordInGrid(placedWord)) {
-        console.error(`Placed word "${placedWord.word}" validation failed`);
-        return false;
+      // Validate each placed word exists in grid
+      for (const placedWord of this.placedWords) {
+        if (!this.validateWordInGrid(placedWord)) {
+          console.error(`Placed word "${placedWord.word}" validation failed`);
+          return false;
+        }
       }
-    }
 
-    return true;
+      return true;
+    } catch (error) {
+      console.error('Error during validation:', error);
+      return false;
+    }
   }
 
   private validateWordInGrid(placedWord: PlacedWord): boolean {
-    const { word, cells } = placedWord;
-    
-    if (cells.length !== word.length) {
-      return false;
-    }
-
-    for (let i = 0; i < word.length; i++) {
-      const [row, col] = cells[i].split('-').map(Number);
-      if (this.grid[row][col] !== word[i]) {
+    try {
+      const { word, cells } = placedWord;
+      
+      if (!cells || cells.length !== word.length) {
         return false;
       }
-    }
 
-    return true;
+      for (let i = 0; i < word.length; i++) {
+        const cellParts = cells[i].split('-');
+        if (cellParts.length !== 2) {
+          return false;
+        }
+        
+        const row = parseInt(cellParts[0], 10);
+        const col = parseInt(cellParts[1], 10);
+        
+        if (isNaN(row) || isNaN(col) || row < 0 || row >= this.gridSize || col < 0 || col >= this.gridSize) {
+          return false;
+        }
+        
+        if (this.grid[row][col] !== word[i]) {
+          return false;
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error validating word in grid:', error);
+      return false;
+    }
   }
 }
