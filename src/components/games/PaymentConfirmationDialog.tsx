@@ -38,7 +38,7 @@ export function PaymentConfirmationDialog({
   };
 
   const isCredits = paymentMethod === 'credits';
-  const paymentIcon = isCredits ? CreditCard : Wallet;
+  const PaymentIcon = isCredits ? CreditCard : Wallet;
   const paymentColor = isCredits ? 'text-puzzle-gold' : 'text-puzzle-aqua';
   const paymentBg = isCredits ? 'bg-puzzle-gold/20' : 'bg-puzzle-aqua/20';
   const paymentBorder = isCredits ? 'border-puzzle-gold/50' : 'border-puzzle-aqua/50';
@@ -68,7 +68,7 @@ export function PaymentConfirmationDialog({
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <paymentIcon.type className={`h-5 w-5 ${paymentColor}`} />
+                  <PaymentIcon className={`h-5 w-5 ${paymentColor}`} />
                   <div>
                     <div className={`font-medium ${paymentColor}`}>
                       {isCredits ? 'Free Credits' : 'Wallet Balance'}
