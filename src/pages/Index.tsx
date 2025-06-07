@@ -55,6 +55,8 @@ function Index() {
       console.log('User explicitly navigated home - skipping admin redirect');
       // Temporarily disable auto-redirect preference for this session
       sessionStorage.setItem('temp_disable_admin_redirect', 'true');
+      // Clear the navigation state to prevent it from affecting future navigations
+      window.history.replaceState(null, '', window.location.pathname);
       return;
     }
     
@@ -156,7 +158,10 @@ function Index() {
               </Link>
             </p>
             <button 
-              onClick={() => sessionStorage.removeItem('temp_disable_admin_redirect')}
+              onClick={() => {
+                sessionStorage.removeItem('temp_disable_admin_redirect');
+                window.history.replaceState(null, '', window.location.pathname);
+              }}
               className="text-xs bg-puzzle-aqua text-puzzle-black px-2 py-1 rounded hover:bg-puzzle-aqua/80"
             >
               Enable Auto-Redirect
