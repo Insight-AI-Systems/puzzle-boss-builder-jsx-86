@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Clock, Trophy, Play, Pause, Square, AlertCircle, Coins } from 'lucide-react';
+import { Clock, Trophy, Pause, Square, AlertCircle, Coins } from 'lucide-react';
 import { useGameTimer } from './hooks/useGameTimer';
 import { useGameSession } from './hooks/useGameSession';
 import { useLeaderboard } from './hooks/useLeaderboard';
@@ -149,40 +149,10 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
       {/* Game Header */}
       <Card className="mb-4 bg-gray-900 border-gray-700">
         <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <CardTitle className="text-puzzle-white flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-puzzle-gold" />
-              {config.gameType.charAt(0).toUpperCase() + config.gameType.slice(1)} Game
-            </CardTitle>
-            
-            <div className="flex flex-wrap items-center gap-3">
-              {config.hasTimer && (
-                <Badge variant="outline" className="text-puzzle-aqua border-puzzle-aqua">
-                  <Clock className="h-3 w-3 mr-1" />
-                  {timer.formattedTime}
-                </Badge>
-              )}
-              
-              {config.hasScore && session.session && (
-                <Badge variant="outline" className="text-puzzle-gold border-puzzle-gold">
-                  Score: {session.session.score.toLocaleString()}
-                </Badge>
-              )}
-              
-              {config.hasMoves && session.session && (
-                <Badge variant="outline" className="text-puzzle-white border-gray-400">
-                  Moves: {session.session.moves}
-                </Badge>
-              )}
-              
-              {config.requiresPayment && (
-                <Badge variant="outline" className="text-puzzle-aqua border-puzzle-aqua">
-                  <Coins className="h-3 w-3 mr-1" />
-                  {config.entryFee} credits
-                </Badge>
-              )}
-            </div>
-          </div>
+          <CardTitle className="text-puzzle-white flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-puzzle-gold" />
+            {config.gameType.charAt(0).toUpperCase() + config.gameType.slice(1)} Game
+          </CardTitle>
         </CardHeader>
         
         <CardContent>
@@ -207,20 +177,9 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
             </Alert>
           )}
 
-          {/* Game Controls */}
-          <div className="flex flex-wrap gap-2">
-            {gameState === 'not_started' && (
-              <Button 
-                onClick={startGame}
-                disabled={!canPlay || !user}
-                className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black"
-              >
-                <Play className="h-4 w-4 mr-2" />
-                Start Game
-              </Button>
-            )}
-            
-            {gameState === 'playing' && (
+          {/* Game Controls - Only show pause/resume/reset when game is active */}
+          {gameState === 'playing' && (
+            <div className="flex flex-wrap gap-2 mb-4">
               <Button 
                 onClick={pauseGame}
                 variant="outline"
@@ -229,32 +188,34 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
                 <Pause className="h-4 w-4 mr-2" />
                 Pause
               </Button>
-            )}
-            
-            {gameState === 'paused' && (
-              <>
-                <Button 
-                  onClick={resumeGame}
-                  className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black"
-                >
-                  <Play className="h-4 w-4 mr-2" />
-                  Resume
-                </Button>
-                <Button 
-                  onClick={() => {
-                    session.resetSession();
-                    timer.reset();
-                  }}
-                  variant="outline"
-                  className="border-gray-400 text-gray-400 hover:bg-gray-400 hover:text-gray-900"
-                >
-                  <Square className="h-4 w-4 mr-2" />
-                  Reset
-                </Button>
-              </>
-            )}
-            
-            {(gameState === 'completed' || gameState === 'submitted') && (
+            </div>
+          )}
+          
+          {gameState === 'paused' && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Button 
+                onClick={resumeGame}
+                className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black"
+              >
+                <Pause className="h-4 w-4 mr-2" />
+                Resume
+              </Button>
+              <Button 
+                onClick={() => {
+                  session.resetSession();
+                  timer.reset();
+                }}
+                variant="outline"
+                className="border-gray-400 text-gray-400 hover:bg-gray-400 hover:text-gray-900"
+              >
+                <Square className="h-4 w-4 mr-2" />
+                Reset
+              </Button>
+            </div>
+          )}
+          
+          {(gameState === 'completed' || gameState === 'submitted') && (
+            <div className="flex flex-wrap gap-2 mb-4">
               <Button 
                 onClick={() => {
                   session.resetSession();
@@ -264,19 +225,19 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
               >
                 Play Again
               </Button>
-            )}
+            </div>
+          )}
 
-            {config.requiresPayment && !payment.paymentStatus.hasAccess && (
-              <Button 
-                onClick={handlePaymentClick}
-                disabled={payment.isVerifying}
-                className="bg-puzzle-gold hover:bg-puzzle-gold/80 text-puzzle-black"
-              >
-                <Coins className="h-4 w-4 mr-2" />
-                {payment.isVerifying ? 'Processing...' : 'Pay to Play'}
-              </Button>
-            )}
-          </div>
+          {config.requiresPayment && !payment.paymentStatus.hasAccess && (
+            <Button 
+              onClick={handlePaymentClick}
+              disabled={payment.isVerifying}
+              className="bg-puzzle-gold hover:bg-puzzle-gold/80 text-puzzle-black"
+            >
+              <Coins className="h-4 w-4 mr-2" />
+              {payment.isVerifying ? 'Processing...' : 'Pay to Play'}
+            </Button>
+          )}
         </CardContent>
       </Card>
 
@@ -289,7 +250,10 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
           onComplete: completeGame,
           onError: handleError,
           isActive: gameState === 'playing',
-          session: session.session
+          session: session.session,
+          startGame, // Pass startGame function to children
+          timer, // Pass timer object to children
+          payment // Pass payment object to children
         })}
         
         {/* Game Overlay for non-playing states */}

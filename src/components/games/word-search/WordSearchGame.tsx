@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { BaseGameWrapper } from '../BaseGameWrapper';
 import { ResponsiveGameContainer } from '../ResponsiveGameContainer';
@@ -7,8 +8,9 @@ import { wordCategories, getRandomWordsFromCategory, getDifficultyWordCount } fr
 import { GameConfig } from '../types/GameTypes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shuffle, RotateCcw, Play } from 'lucide-react';
+import { Shuffle, RotateCcw, Play, Clock, Trophy, Coins } from 'lucide-react';
 
 interface WordSearchGameProps {
   difficulty?: 'rookie' | 'pro' | 'master';
@@ -74,7 +76,8 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
     setShowInstructions(true);
   };
 
-  const handleStartGame = () => {
+  const handleStartGame = (startGameFn: () => void) => {
+    startGameFn(); // Call the BaseGameWrapper's startGame function
     setGameStarted(true);
     setShowInstructions(false);
   };
@@ -123,141 +126,173 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
           }
         }}
       >
-        <div className="space-y-4">
-          {/* Game Configuration */}
-          {showInstructions && (
-            <>
-              <Card className="bg-gray-900 border-gray-700">
-                <CardHeader>
-                  <CardTitle className="text-puzzle-white">Competitive Word Search</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-puzzle-white mb-2">
-                        Category
-                      </label>
-                      <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                        <SelectTrigger className="bg-gray-800 border-gray-600 text-puzzle-white">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-600">
-                          {wordCategories.map(category => (
-                            <SelectItem 
-                              key={category.id} 
-                              value={category.id}
-                              className="text-puzzle-white hover:bg-gray-700"
-                            >
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+        {({ gameState, startGame, timer, payment, session }) => (
+          <div className="space-y-4">
+            {/* Game Configuration */}
+            {showInstructions && (
+              <>
+                <Card className="bg-gray-900 border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-puzzle-white">Competitive Word Search</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Game Metrics - Timer, Score, Credits */}
+                    {(gameStarted || gameState === 'playing' || gameState === 'paused') && (
+                      <div className="flex flex-wrap items-center gap-4 p-4 bg-gray-800 rounded-lg">
+                        <Badge variant="outline" className="text-puzzle-aqua border-puzzle-aqua">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {timer?.formattedTime || '00:00'}
+                        </Badge>
+                        
+                        {session && (
+                          <Badge variant="outline" className="text-puzzle-gold border-puzzle-gold">
+                            <Trophy className="h-3 w-3 mr-1" />
+                            Score: {session.score.toLocaleString()}
+                          </Badge>
+                        )}
+                        
+                        {gameConfig.requiresPayment && (
+                          <Badge variant="outline" className="text-puzzle-aqua border-puzzle-aqua">
+                            <Coins className="h-3 w-3 mr-1" />
+                            {gameConfig.entryFee} credits
+                          </Badge>
+                        )}
+                        
+                        <Badge variant="outline" className="text-puzzle-white border-gray-400">
+                          Words: {wordsFound}/{totalWords}
+                        </Badge>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-puzzle-white mb-2">
+                          Category
+                        </label>
+                        <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+                          <SelectTrigger className="bg-gray-800 border-gray-600 text-puzzle-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-gray-800 border-gray-600">
+                            {wordCategories.map(category => (
+                              <SelectItem 
+                                key={category.id} 
+                                value={category.id}
+                                className="text-puzzle-white hover:bg-gray-700"
+                              >
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="flex items-end gap-2">
+                        <Button
+                          onClick={handleNewGame}
+                          variant="outline"
+                          className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black"
+                        >
+                          <Shuffle className="h-4 w-4 mr-2" />
+                          New Words
+                        </Button>
+                        
+                        {!gameStarted && gameState === 'not_started' && (
+                          <Button
+                            onClick={() => handleStartGame(startGame)}
+                            className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold"
+                          >
+                            <Play className="h-4 w-4 mr-2" />
+                            Start Game
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     
-                    <div className="flex items-end gap-2">
-                      <Button
-                        onClick={handleNewGame}
-                        variant="outline"
-                        className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black"
-                      >
-                        <Shuffle className="h-4 w-4 mr-2" />
-                        New Words
-                      </Button>
-                      
-                      <Button
-                        onClick={handleStartGame}
-                        className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold"
-                      >
-                        <Play className="h-4 w-4 mr-2" />
-                        Start Game
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {categoryOptions && (
-                    <div className="p-3 bg-gray-800 rounded-lg">
-                      <p className="text-sm text-gray-300">{categoryOptions.description}</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {totalWords} words to find • {difficulty} difficulty
-                      </p>
-                    </div>
-                  )}
+                    {categoryOptions && (
+                      <div className="p-3 bg-gray-800 rounded-lg">
+                        <p className="text-sm text-gray-300">{categoryOptions.description}</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {totalWords} words to find • {difficulty} difficulty
+                        </p>
+                      </div>
+                    )}
 
-                  {/* Competitive Features Info */}
-                  <div className="p-4 bg-puzzle-aqua/10 border border-puzzle-aqua/30 rounded-lg">
-                    <h4 className="text-puzzle-aqua font-semibold mb-2">Competitive Features:</h4>
-                    <ul className="text-sm text-gray-300 space-y-1">
-                      <li>• ⏱️ Precision timing to milliseconds</li>
-                      <li>• 🎯 All words must be found to complete</li>
-                      <li>• ⚠️ Penalty system for incorrect selections</li>
-                      <li>• 🏆 Real-time leaderboard tracking</li>
-                      <li>• 💾 Game state auto-saves (disconnect protection)</li>
-                      <li>• ✅ Auto-submit when all words found</li>
-                    </ul>
+                    {/* Competitive Features Info */}
+                    <div className="p-4 bg-puzzle-aqua/10 border border-puzzle-aqua/30 rounded-lg">
+                      <h4 className="text-puzzle-aqua font-semibold mb-2">Competitive Features:</h4>
+                      <ul className="text-sm text-gray-300 space-y-1">
+                        <li>• ⏱️ Precision timing to milliseconds</li>
+                        <li>• 🎯 All words must be found to complete</li>
+                        <li>• ⚠️ Penalty system for incorrect selections</li>
+                        <li>• 🏆 Real-time leaderboard tracking</li>
+                        <li>• 💾 Game state auto-saves (disconnect protection)</li>
+                        <li>• ✅ Auto-submit when all words found</li>
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Enhanced Instructions */}
+                <WordSearchInstructions
+                  difficulty={difficulty}
+                  category={categoryOptions?.name || 'Unknown'}
+                  totalWords={totalWords}
+                  competitive={true}
+                />
+              </>
+            )}
+
+            {/* Enhanced Word Search Engine */}
+            {gameStarted && currentWords.length > 0 && (
+              <WordSearchEngine
+                key={gameKey}
+                difficulty={difficulty}
+                category={categoryOptions?.name || 'Unknown'}
+                wordList={currentWords}
+                onComplete={handleGameComplete}
+                onWordFound={handleWordFound}
+                enablePenalties={enablePenalties}
+                sessionId={sessionId}
+              />
+            )}
+
+            {/* Game Actions */}
+            {gameStarted && (
+              <Card className="bg-gray-900 border-gray-700">
+                <CardContent className="p-4">
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    <Button
+                      onClick={handleNewGame}
+                      variant="outline"
+                      className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      New Game
+                    </Button>
+                    
+                    <Button
+                      onClick={() => handleCategoryChange(selectedCategory)}
+                      variant="outline"
+                      className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold hover:text-puzzle-black"
+                    >
+                      <Shuffle className="h-4 w-4 mr-2" />
+                      Shuffle Words
+                    </Button>
+                    
+                    <Button
+                      onClick={() => setShowInstructions(true)}
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                    >
+                      Show Instructions
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Enhanced Instructions */}
-              <WordSearchInstructions
-                difficulty={difficulty}
-                category={categoryOptions?.name || 'Unknown'}
-                totalWords={totalWords}
-                competitive={true}
-              />
-            </>
-          )}
-
-          {/* Enhanced Word Search Engine */}
-          {gameStarted && currentWords.length > 0 && (
-            <WordSearchEngine
-              key={gameKey}
-              difficulty={difficulty}
-              category={categoryOptions?.name || 'Unknown'}
-              wordList={currentWords}
-              onComplete={handleGameComplete}
-              onWordFound={handleWordFound}
-              enablePenalties={enablePenalties}
-              sessionId={sessionId}
-            />
-          )}
-
-          {/* Game Actions */}
-          {gameStarted && (
-            <Card className="bg-gray-900 border-gray-700">
-              <CardContent className="p-4">
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <Button
-                    onClick={handleNewGame}
-                    variant="outline"
-                    className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black"
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    New Game
-                  </Button>
-                  
-                  <Button
-                    onClick={() => handleCategoryChange(selectedCategory)}
-                    variant="outline"
-                    className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold hover:text-puzzle-black"
-                  >
-                    <Shuffle className="h-4 w-4 mr-2" />
-                    Shuffle Words
-                  </Button>
-                  
-                  <Button
-                    onClick={() => setShowInstructions(true)}
-                    variant="outline"
-                    className="border-gray-600 text-gray-300 hover:bg-gray-800"
-                  >
-                    Show Instructions
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </BaseGameWrapper>
     </ResponsiveGameContainer>
   );
