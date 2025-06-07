@@ -118,12 +118,18 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
     }
   }, [timer, session, hooks, config.gameType, leaderboard, handleError]);
 
-  // Update session with timer
+  // Update session with timer - Fixed to prevent infinite loop
   useEffect(() => {
-    if (session.session && timer.isRunning) {
-      session.updateTime(timer.timeElapsed);
+    if (session.session && timer.isRunning && session.session.state === 'playing') {
+      // Only update if there's a meaningful time change (every second)
+      const currentSeconds = Math.floor(timer.timeElapsed / 1000);
+      const sessionSeconds = Math.floor((session.session.timeElapsed || 0) / 1000);
+      
+      if (currentSeconds !== sessionSeconds) {
+        session.updateTime(timer.timeElapsed);
+      }
     }
-  }, [timer.timeElapsed, timer.isRunning, session]);
+  }, [Math.floor(timer.timeElapsed / 1000), timer.isRunning, session.session?.state]);
 
   // Handle time limit
   useEffect(() => {
