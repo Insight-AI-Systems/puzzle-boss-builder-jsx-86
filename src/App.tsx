@@ -22,6 +22,7 @@ import Support from "./pages/Support";
 import Partnerships from "./pages/Partnerships";
 import WordSearchArena from "./pages/WordSearchArena";
 import SpeedSudoku from "./pages/SpeedSudoku";
+import MemoryMaster from "./pages/MemoryMaster";
 import DevelopmentDashboard from "@/components/DevelopmentDashboard";
 
 const queryClient = new QueryClient({
@@ -46,6 +47,7 @@ function AppContent() {
         <Route path="/puzzles" element={<Puzzles />} />
         <Route path="/puzzles/word-search" element={<WordSearchArena />} />
         <Route path="/puzzles/sudoku" element={<SpeedSudoku />} />
+        <Route path="/puzzles/memory" element={<MemoryMaster />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/categories/:categoryId" element={<CategoryPuzzles />} />
         <Route path="/profile" element={<Profile />} />
