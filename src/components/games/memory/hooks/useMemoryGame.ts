@@ -1,5 +1,6 @@
+
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { MemoryCard, MemoryGameState, GameDifficulty } from '../types/memoryTypes';
+import { MemoryCard, MemoryGameState, MemoryLayout, MemoryTheme } from '../types/memoryTypes';
 import { useMemoryScoring, LeaderboardEntry } from './useMemoryScoring';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMemberProfile } from '@/hooks/useMemberProfile';
@@ -11,33 +12,24 @@ const CARD_THEMES = {
 };
 
 export function useMemoryGame(
-  layout: string,
-  theme: keyof typeof CARD_THEMES,
-  difficulty: GameDifficulty = 'medium'
+  layout: MemoryLayout,
+  theme: MemoryTheme
 ) {
   const { user } = useAuth();
   const { profile } = useMemberProfile();
   const [gameState, setGameState] = useState<MemoryGameState>('waiting');
   const [cards, setCards] = useState<MemoryCard[]>([]);
-  const [flippedCards, setFlippedCards] = useState<number[]>([]);
-  const [matchedPairs, setMatchedPairs] = useState<number[]>([]);
+  const [flippedCards, setFlippedCards] = useState<string[]>([]);
+  const [matchedPairs, setMatchedPairs] = useState<string[]>([]);
   const [moves, setMoves] = useState(0);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [gameTime, setGameTime] = useState(0);
   const [score, setScore] = useState(0);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [gameInitialized, setGameInitialized] = useState(false);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const { calculateScore } = useMemoryScoring(layout);
-
-  const getDifficultySettings = (diff: GameDifficulty) => {
-    switch (diff) {
-      case 'easy': return { timeLimit: 120, showTime: 3000 };
-      case 'medium': return { timeLimit: 90, showTime: 2000 };
-      case 'hard': return { timeLimit: 60, showTime: 1000 };
-      default: return { timeLimit: 90, showTime: 2000 };
-    }
-  };
 
   const getGridSize = useCallback(() => {
     const [rows, cols] = layout.split('x').map(Number);
@@ -56,18 +48,53 @@ export function useMemoryGame(
     }
 
     const newCards: MemoryCard[] = cardPairs.map((symbol, index) => ({
-      id: index,
-      symbol,
+      id: `card-${index}`,
+      value: symbol,
       isFlipped: false,
       isMatched: false,
     }));
 
     setCards(newCards);
+    setGameInitialized(true);
     return newCards;
   }, [layout, theme, getGridSize]);
 
+  const initializeGame = useCallback((newLayout?: MemoryLayout, newTheme?: MemoryTheme) => {
+    const targetLayout = newLayout || layout;
+    const targetTheme = newTheme || theme;
+    
+    const { totalPairs } = getGridSize();
+    const symbols = CARD_THEMES[targetTheme].slice(0, totalPairs);
+    const cardPairs = [...symbols, ...symbols];
+    
+    // Shuffle cards
+    for (let i = cardPairs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [cardPairs[i], cardPairs[j]] = [cardPairs[j], cardPairs[i]];
+    }
+
+    const newCards: MemoryCard[] = cardPairs.map((symbol, index) => ({
+      id: `card-${index}`,
+      value: symbol,
+      isFlipped: false,
+      isMatched: false,
+    }));
+
+    setCards(newCards);
+    setGameState('waiting');
+    setFlippedCards([]);
+    setMatchedPairs([]);
+    setMoves(0);
+    setScore(0);
+    setStartTime(null);
+    setGameTime(0);
+    setGameInitialized(true);
+  }, [layout, theme, getGridSize]);
+
   const startGame = useCallback(() => {
-    const newCards = initializeCards();
+    if (!gameInitialized) {
+      initializeCards();
+    }
     setGameState('playing');
     setFlippedCards([]);
     setMatchedPairs([]);
@@ -76,21 +103,13 @@ export function useMemoryGame(
     setStartTime(Date.now());
     setGameTime(0);
 
-    // Show all cards briefly based on difficulty
-    const { showTime } = getDifficultySettings(difficulty);
-    setCards(newCards.map(card => ({ ...card, isFlipped: true })));
-    
-    setTimeout(() => {
-      setCards(newCards.map(card => ({ ...card, isFlipped: false })));
-    }, showTime);
-
     // Start timer
     timerRef.current = setInterval(() => {
       setGameTime(prev => prev + 1);
     }, 1000);
-  }, [initializeCards, difficulty]);
+  }, [gameInitialized, initializeCards]);
 
-  const flipCard = useCallback((cardId: number) => {
+  const handleCardClick = useCallback((cardId: string) => {
     if (gameState !== 'playing' || flippedCards.length >= 2) return;
     if (flippedCards.includes(cardId) || matchedPairs.includes(cardId)) return;
 
@@ -110,7 +129,7 @@ export function useMemoryGame(
             const firstCard = cards.find(c => c.id === firstId);
             const secondCard = cards.find(c => c.id === cardId);
 
-            if (firstCard && secondCard && firstCard.symbol === secondCard.symbol) {
+            if (firstCard && secondCard && firstCard.value === secondCard.value) {
               // Match found
               setMatchedPairs(prev => [...prev, firstId, cardId]);
               setCards(prev => prev.map(card => 
@@ -165,7 +184,6 @@ export function useMemoryGame(
         timeElapsed,
         moves,
         accuracy: scoreData.accuracy,
-        completedAt: new Date(),
         isPerfectGame: scoreData.isPerfectGame,
       };
 
@@ -190,7 +208,25 @@ export function useMemoryGame(
     setStartTime(null);
     setGameTime(0);
     setScore(0);
+    setGameInitialized(false);
   }, []);
+
+  const getGameStats = useCallback(() => {
+    const { totalPairs } = getGridSize();
+    const accuracy = moves > 0 ? (matchedPairs.length / 2) / moves * 100 : 0;
+    const timeElapsed = startTime ? gameTime : 0;
+    
+    return {
+      moves,
+      timeElapsed,
+      matchedPairs: matchedPairs.length / 2,
+      totalPairs,
+      accuracy: Math.round(accuracy * 100) / 100,
+    };
+  }, [moves, matchedPairs.length, gameTime, startTime, getGridSize]);
+
+  const isGameActive = gameState === 'playing';
+  const disabled = gameState !== 'playing' || flippedCards.length >= 2;
 
   useEffect(() => {
     return () => {
@@ -200,15 +236,35 @@ export function useMemoryGame(
     };
   }, []);
 
+  // Initialize game on mount
+  useEffect(() => {
+    if (!gameInitialized) {
+      initializeGame();
+    }
+  }, [initializeGame, gameInitialized]);
+
   return {
-    gameState,
+    gameState: {
+      layout,
+      theme,
+      cards,
+      isGameComplete: gameState === 'completed',
+      matchedPairs: matchedPairs.length,
+      moves,
+    },
+    handleCardClick,
+    initializeGame,
+    getGameStats,
+    isGameActive,
+    disabled,
+    gameInitialized,
     cards,
     moves,
     gameTime,
     score,
     leaderboard,
     startGame,
-    flipCard,
+    flipCard: handleCardClick,
     resetGame,
     gridSize: getGridSize(),
   };
