@@ -6,18 +6,62 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { UserProfile, UserRole } from '@/types/userTypes';
 
 interface UserActionButtonsProps {
-  user: UserProfile;
-  currentUserRole: UserRole;
-  onEditProfile: (user: UserProfile) => void;
-  onRoleChange: (userId: string, newRole: UserRole) => void;
+  user?: UserProfile;
+  currentUserRole?: UserRole;
+  onEditProfile?: (user: UserProfile) => void;
+  onRoleChange?: (userId: string, newRole: UserRole) => void;
+  selectedUsers?: Set<string>;
+  onEmailClick?: () => void;
+  onRoleClick?: () => void;
+  onExportClick?: () => void;
 }
 
 export const UserActionButtons: React.FC<UserActionButtonsProps> = ({
   user,
   currentUserRole,
   onEditProfile,
-  onRoleChange
+  onRoleChange,
+  selectedUsers,
+  onEmailClick,
+  onRoleClick,
+  onExportClick
 }) => {
+  // If we have bulk action props, render bulk action buttons
+  if (selectedUsers !== undefined && onEmailClick && onRoleClick && onExportClick) {
+    return (
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onEmailClick}
+          disabled={selectedUsers.size === 0}
+        >
+          Email ({selectedUsers.size})
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRoleClick}
+          disabled={selectedUsers.size === 0}
+        >
+          Change Role ({selectedUsers.size})
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onExportClick}
+        >
+          Export
+        </Button>
+      </div>
+    );
+  }
+
+  // If we have individual user props, render individual action buttons
+  if (!user || !currentUserRole || !onEditProfile) {
+    return null;
+  }
+
   const isAdmin = currentUserRole === 'admin' || currentUserRole === 'super_admin';
 
   if (!isAdmin) {
