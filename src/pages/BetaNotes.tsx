@@ -11,7 +11,7 @@ import PageLayout from '@/components/layouts/PageLayout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 const BetaNotes: React.FC = () => {
-  const { notes, isLoading, createNote, updateNoteStatus } = useBetaNotes();
+  const { notes, isLoading, addNote, updateNoteStatus } = useBetaNotes();
   const [newNote, setNewNote] = useState('');
   const { toast } = useToast();
 
@@ -27,7 +27,7 @@ const BetaNotes: React.FC = () => {
       return;
     }
 
-    const result = await createNote(newNote);
+    const result = await addNote(newNote);
     
     if (result) {
       setNewNote('');
@@ -82,13 +82,13 @@ const BetaNotes: React.FC = () => {
                 <Card key={note.id} className="hover:bg-background/50 transition-colors">
                   <CardContent className="flex items-start space-x-4 p-4">
                     <Avatar>
-                      <AvatarImage src={note.user.avatar_url || ''} alt={note.user.username || 'User'} />
-                      <AvatarFallback>{(note.user.username?.[0] || 'U').toUpperCase()}</AvatarFallback>
+                      <AvatarImage src="" alt="User" />
+                      <AvatarFallback>U</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-medium">{note.user.username || 'Anonymous User'}</p>
+                          <p className="font-medium">User</p>
                           <p className="text-sm text-muted-foreground">{new Date(note.created_at).toLocaleString()}</p>
                         </div>
                         <Button 

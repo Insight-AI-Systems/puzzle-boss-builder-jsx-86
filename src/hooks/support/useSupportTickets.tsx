@@ -7,7 +7,7 @@ import { useTicketStatus } from "./useTicketStatus";
 
 export const useSupportTickets = () => {
   const { tickets, isLoading, fetchTickets, isAdmin } = useFetchTickets();
-  const { addTicket } = useAddTicket(fetchTickets);
+  const { submitTicket, isSubmitting } = useAddTicket();
   const { addComment } = useTicketComment(fetchTickets);
   const { updateTicketStatus } = useTicketStatus(fetchTickets);
 
@@ -21,7 +21,7 @@ export const useSupportTickets = () => {
     tickets,
     isLoading,
     fetchTickets,
-    addTicket,
+    addTicket: submitTicket,
     addComment,
     updateTicketStatus,
     isAdmin

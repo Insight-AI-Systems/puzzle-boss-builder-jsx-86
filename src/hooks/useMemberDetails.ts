@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { MemberDetailedProfile, MemberFinancialSummary } from '@/types/memberTypes';
+import { MemberDetailedProfile, MemberFinancialSummary, AddressType } from '@/types/memberTypes';
 import { useToast } from '@/hooks/use-toast';
 
 export function useMemberDetails() {
@@ -87,8 +87,14 @@ export function useMemberDetails() {
         terms_accepted: profile.terms_accepted || false,
         terms_accepted_at: profile.terms_accepted_at,
         marketing_opt_in: profile.marketing_opt_in || false,
-        addresses: addresses || [],
-        membership_details: membershipDetails || undefined,
+        addresses: addresses ? addresses.map(addr => ({
+          ...addr,
+          address_type: addr.address_type as AddressType
+        })) : [],
+        membership_details: membershipDetails ? {
+          ...membershipDetails,
+          status: membershipDetails.status as 'active' | 'expired' | 'canceled' | 'suspended'
+        } : undefined,
         financial_summary: financialData && financialData[0] ? {
           total_spend: financialData[0].total_spend || 0,
           total_prizes: financialData[0].total_prizes || 0,

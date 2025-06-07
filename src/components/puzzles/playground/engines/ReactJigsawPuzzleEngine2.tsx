@@ -19,17 +19,16 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
   const [hasStarted, setHasStarted] = useState(false);
   const [showBorder, setShowBorder] = useState(true);
   const [key, setKey] = useState(Date.now());
+  const [completed, setCompleted] = useState(false);
 
   const {
     elapsed, start, stop, reset, startTime, setElapsed, setStartTime
   } = usePuzzleTimer();
 
   const {
-    completed,
-    solveTime,
-    handlePuzzleComplete,
-    resetCompletion
-  } = usePuzzleCompletion({ imageUrl, rows, columns });
+    submitCompletion,
+    isSubmitting
+  } = usePuzzleCompletion();
 
   usePuzzleImagePreload({
     imageUrl,
@@ -38,7 +37,7 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
       setLoading(false);
       setElapsed(0);
       setHasStarted(false);
-      resetCompletion();
+      setCompleted(false);
     },
     onError: (error) => {
       console.error('Error loading puzzle image:', error);
@@ -57,13 +56,10 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
   const handlePuzzleSolved = async () => {
     if (!completed) {
       stop();
-      // Use the precise elapsed time for consistency with displayed timer
-      const totalTime = elapsed;
-      const timeResult = await handlePuzzleComplete(startTime);
-      if (totalTime) {
-        // Ensure we use the same timer value for both display and leaderboard
-        setElapsed(totalTime);
-      }
+      setCompleted(true);
+      // Submit completion with puzzle details
+      const puzzleId = `puzzle-${imageUrl.split('/').pop()?.split('.')[0] || 'unknown'}`;
+      await submitCompletion(puzzleId, elapsed, 0, `${rows}x${columns}`, 'classic');
     }
   };
 
@@ -71,7 +67,7 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
     setKey(Date.now());
     setElapsed(0);
     setHasStarted(false);
-    resetCompletion();
+    setCompleted(false);
     reset();
     setStartTime(null);
   };
@@ -93,7 +89,7 @@ const ReactJigsawPuzzleEngine2: React.FC<ReactJigsawPuzzleEngine2Props> = ({
       columns={columns}
       keyProp={key}
       onSolved={handlePuzzleSolved}
-      solveTime={elapsed} // Use consistent timing source
+      solveTime={elapsed}
       completed={completed}
       onPlayAgain={handleReset}
       hasStarted={hasStarted}

@@ -85,6 +85,7 @@ export function usePuzzleProgress(puzzleId: string) {
       // Convert our frontend model to match the actual DB schema
       const dbData = {
         user_id: user.id,
+        member_id: user.id, // Add required member_id field
         puzzle_id: newProgress.puzzleId || puzzleId,
         is_completed: newProgress.isComplete || false,
         completion_time: newProgress.timeSpent || 0,

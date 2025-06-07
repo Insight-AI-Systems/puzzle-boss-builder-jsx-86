@@ -99,6 +99,7 @@ export function useTickets(initialFilters?: Partial<TicketFilters>) {
         description,
         type,
         created_by: user.id,
+        member_id: user.id, // Add required member_id field
         status: 'open' as const,
         priority: 'medium' as TicketPriority,
         comments: []
