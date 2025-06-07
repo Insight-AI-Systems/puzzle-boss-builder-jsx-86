@@ -3,9 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Users, Trophy, Zap, Search } from 'lucide-react';
+import { Clock, Users, Trophy, Zap, Search, Play } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import WordSearchGame from '@/components/games/word-search/WordSearchGame';
 
 interface CompetitionTier {
   id: string;
@@ -14,13 +15,15 @@ interface CompetitionTier {
   prizePool: number;
   nextTournament: Date;
   activePlayers: number;
-  difficulty: 'Rookie' | 'Pro' | 'Master';
+  difficulty: 'rookie' | 'pro' | 'master';
   color: string;
 }
 
 const WordSearchArena: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [selectedTier, setSelectedTier] = useState<CompetitionTier | null>(null);
+  const [showGame, setShowGame] = useState(false);
 
   // Mock data for competition tiers
   const [tiers] = useState<CompetitionTier[]>([
@@ -31,7 +34,7 @@ const WordSearchArena: React.FC = () => {
       prizePool: 50,
       nextTournament: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
       activePlayers: 24,
-      difficulty: 'Rookie',
+      difficulty: 'rookie',
       color: 'bg-green-500'
     },
     {
@@ -41,7 +44,7 @@ const WordSearchArena: React.FC = () => {
       prizePool: 250,
       nextTournament: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4 hours from now
       activePlayers: 18,
-      difficulty: 'Pro',
+      difficulty: 'pro',
       color: 'bg-blue-500'
     },
     {
@@ -51,7 +54,7 @@ const WordSearchArena: React.FC = () => {
       prizePool: 750,
       nextTournament: new Date(Date.now() + 6 * 60 * 60 * 1000), // 6 hours from now
       activePlayers: 12,
-      difficulty: 'Master',
+      difficulty: 'master',
       color: 'bg-purple-500'
     }
   ]);
@@ -87,6 +90,48 @@ const WordSearchArena: React.FC = () => {
   const getTotalPrizePool = () => {
     return tiers.reduce((total, tier) => total + tier.prizePool, 0);
   };
+
+  const handleEnterTournament = (tier: CompetitionTier) => {
+    setSelectedTier(tier);
+    setShowGame(true);
+  };
+
+  const handleGameComplete = (result: any) => {
+    console.log('Game completed:', result);
+    // Here you would submit the score to the leaderboard
+    setShowGame(false);
+    setSelectedTier(null);
+  };
+
+  if (showGame && selectedTier) {
+    return (
+      <main className="min-h-screen bg-puzzle-black">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-puzzle-white">
+              {selectedTier.name} - Word Search
+            </h1>
+            <Button
+              onClick={() => {
+                setShowGame(false);
+                setSelectedTier(null);
+              }}
+              variant="outline"
+              className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black"
+            >
+              Back to Arena
+            </Button>
+          </div>
+          
+          <WordSearchGame
+            difficulty={selectedTier.difficulty}
+            entryFee={selectedTier.entryFee}
+            onComplete={handleGameComplete}
+          />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-puzzle-black">
@@ -132,6 +177,7 @@ const WordSearchArena: React.FC = () => {
               <Button 
                 size="lg" 
                 className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold px-8 py-3"
+                onClick={() => handleEnterTournament(tiers[0])}
               >
                 <Zap className="h-5 w-5 mr-2" />
                 Quick Play
@@ -165,7 +211,7 @@ const WordSearchArena: React.FC = () => {
               <Card key={tier.id} className="bg-gray-900 border-gray-700 hover:border-puzzle-aqua/50 transition-all duration-300">
                 <CardHeader className="text-center">
                   <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${tier.color} text-white mb-4`}>
-                    {tier.difficulty}
+                    {tier.difficulty.charAt(0).toUpperCase() + tier.difficulty.slice(1)}
                   </div>
                   <CardTitle className="text-2xl text-puzzle-white">{tier.name}</CardTitle>
                 </CardHeader>
@@ -205,12 +251,15 @@ const WordSearchArena: React.FC = () => {
                     <Button 
                       className="w-full bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold"
                       disabled={!isAuthenticated}
+                      onClick={() => handleEnterTournament(tier)}
                     >
+                      <Play className="h-4 w-4 mr-2" />
                       {isAuthenticated ? 'Enter Tournament' : 'Login to Enter'}
                     </Button>
                     <Button 
                       variant="outline" 
                       className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
+                      onClick={() => handleEnterTournament({ ...tier, entryFee: 0 })}
                     >
                       Practice Mode
                     </Button>
@@ -244,16 +293,16 @@ const WordSearchArena: React.FC = () => {
               <div className="bg-puzzle-aqua/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-puzzle-aqua">2</span>
               </div>
-              <h3 className="text-lg font-semibold text-puzzle-white mb-2">Wait for Start</h3>
-              <p className="text-sm text-gray-400">Tournaments begin every few hours</p>
+              <h3 className="text-lg font-semibold text-puzzle-white mb-2">Find Words</h3>
+              <p className="text-sm text-gray-400">Search for hidden words in the grid</p>
             </div>
             
             <div className="text-center">
               <div className="bg-puzzle-aqua/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-puzzle-aqua">3</span>
               </div>
-              <h3 className="text-lg font-semibold text-puzzle-white mb-2">Compete</h3>
-              <p className="text-sm text-gray-400">Find words faster than opponents</p>
+              <h3 className="text-lg font-semibold text-puzzle-white mb-2">Race the Clock</h3>
+              <p className="text-sm text-gray-400">Complete puzzles faster than opponents</p>
             </div>
             
             <div className="text-center">
