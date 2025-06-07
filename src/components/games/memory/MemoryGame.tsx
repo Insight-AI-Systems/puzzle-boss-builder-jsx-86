@@ -3,7 +3,8 @@ import React, { useEffect, useRef } from 'react';
 import { MemoryGameBoard } from './components/MemoryGameBoard';
 import { MemoryGameControls } from './components/MemoryGameControls';
 import { useMemoryGame } from './hooks/useMemoryGame';
-import { MemoryLayout, MemoryTheme } from './types/memoryTypes';
+import { useImagePreloader } from './hooks/useImagePreloader';
+import { MemoryLayout, MemoryTheme, THEME_CONFIGS } from './types/memoryTypes';
 
 interface MemoryGameProps {
   layout?: MemoryLayout;
@@ -33,6 +34,10 @@ export function MemoryGame({
     disabled,
     gameInitialized
   } = useMemoryGame(layout, theme);
+
+  // Preload images for the current theme
+  const themeItems = THEME_CONFIGS[gameState.theme]?.items || [];
+  const { loadedImages, loading: imagesLoading } = useImagePreloader(themeItems);
 
   const stats = getGameStats();
   const lastMoves = useRef(0);
@@ -101,11 +106,20 @@ export function MemoryGame({
     );
   }
 
+  if (imagesLoading && gameState.theme === 'animals') {
+    return (
+      <div className="w-full max-w-6xl mx-auto space-y-4 flex items-center justify-center min-h-[400px]">
+        <div className="text-puzzle-white">Loading images...</div>
+      </div>
+    );
+  }
+
   console.log('Rendering memory game', { 
     initialized: gameInitialized, 
     cardsCount: gameState.cards.length,
     layout: gameState.layout,
-    theme: gameState.theme
+    theme: gameState.theme,
+    imagesLoaded: loadedImages.size
   });
 
   return (

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { MemoryCard as MemoryCardType } from '../types/memoryTypes';
 
@@ -11,10 +11,17 @@ interface MemoryCardProps {
 }
 
 export function MemoryCard({ card, onClick, disabled, theme }: MemoryCardProps) {
+  const [imageError, setImageError] = useState(false);
+  const isImage = card.value.startsWith('http');
+
   const handleClick = () => {
     if (!disabled && !card.isFlipped && !card.isMatched) {
       onClick(card.id);
     }
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
   };
 
   return (
@@ -43,7 +50,7 @@ export function MemoryCard({ card, onClick, disabled, theme }: MemoryCardProps) 
         <div 
           className={`
             absolute inset-0 w-full h-full backface-hidden rounded-lg 
-            flex items-center justify-center text-4xl font-bold
+            flex items-center justify-center overflow-hidden
             ${card.isMatched ? 'bg-green-100 border-2 border-green-400' : 'bg-white border-2 border-gray-200'}
           `}
           style={{ 
@@ -51,7 +58,19 @@ export function MemoryCard({ card, onClick, disabled, theme }: MemoryCardProps) 
             transform: 'rotateY(180deg)'
           }}
         >
-          {card.value}
+          {isImage && !imageError ? (
+            <img 
+              src={card.value} 
+              alt="Memory card"
+              className="w-full h-full object-cover rounded-lg"
+              onError={handleImageError}
+              loading="lazy"
+            />
+          ) : (
+            <div className="text-4xl font-bold">
+              {imageError ? '❓' : card.value}
+            </div>
+          )}
         </div>
       </div>
     </Card>
