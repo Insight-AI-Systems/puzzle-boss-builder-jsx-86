@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Clock, Trophy, Pause, Square, AlertCircle, Coins } from 'lucide-react';
+import { Clock, Trophy, Square, AlertCircle, Coins } from 'lucide-react';
 import { useGameTimer } from './hooks/useGameTimer';
 import { useGameSession } from './hooks/useGameSession';
 import { useLeaderboard } from './hooks/useLeaderboard';
@@ -49,9 +49,9 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
   const handleError = useCallback((errorMessage: string) => {
     setError(errorMessage);
     hooks?.onError?.(errorMessage);
-    timer.pause();
+    timer.stop();
     if (session.session?.state === 'playing') {
-      session.updateState('paused');
+      session.updateState('completed');
     }
   }, [hooks, timer, session]);
 
@@ -84,16 +84,11 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
     }
   }, [config.requiresPayment, config.gameType, payment, session, timer, hooks, toast, handleError]);
 
-  const pauseGame = useCallback(() => {
-    timer.pause();
-    session.updateState('paused');
-    hooks?.onGamePause?.();
-  }, [timer, session, hooks]);
-
-  const resumeGame = useCallback(() => {
-    timer.resume();
-    session.updateState('playing');
-    hooks?.onGameResume?.();
+  const resetGame = useCallback(() => {
+    timer.reset();
+    session.resetSession();
+    setError(null);
+    hooks?.onGameReset?.();
   }, [timer, session, hooks]);
 
   const completeGame = useCallback(async () => {
@@ -203,50 +198,11 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
             </Alert>
           )}
 
-          {/* Game Controls - Only show pause/resume/reset when game is active */}
-          {gameState === 'playing' && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              <Button 
-                onClick={pauseGame}
-                variant="outline"
-                className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black"
-              >
-                <Pause className="h-4 w-4 mr-2" />
-                Pause
-              </Button>
-            </div>
-          )}
-          
-          {gameState === 'paused' && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              <Button 
-                onClick={resumeGame}
-                className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black"
-              >
-                <Pause className="h-4 w-4 mr-2" />
-                Resume
-              </Button>
-              <Button 
-                onClick={() => {
-                  session.resetSession();
-                  timer.reset();
-                }}
-                variant="outline"
-                className="border-gray-400 text-gray-400 hover:bg-gray-400 hover:text-gray-900"
-              >
-                <Square className="h-4 w-4 mr-2" />
-                Reset
-              </Button>
-            </div>
-          )}
-          
+          {/* Game Controls - Simplified without pause functionality */}
           {(gameState === 'completed' || gameState === 'submitted') && (
             <div className="flex flex-wrap gap-2 mb-4">
               <Button 
-                onClick={() => {
-                  session.resetSession();
-                  timer.reset();
-                }}
+                onClick={resetGame}
                 className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black"
               >
                 Play Again
@@ -271,25 +227,15 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
       <div className="relative">
         {typeof children === 'function' ? children(gameStateProps) : children}
         
-        {/* Game Overlay for non-playing states */}
-        {gameState !== 'playing' && gameState !== 'not_started' && (
+        {/* Game Overlay for completed state only */}
+        {gameState === 'completed' && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
             <Card className="bg-gray-900 border-gray-700 text-center">
               <CardContent className="p-6">
-                {gameState === 'paused' && (
-                  <>
-                    <h3 className="text-xl font-bold text-puzzle-white mb-2">Game Paused</h3>
-                    <p className="text-gray-400 mb-4">Click Resume to continue playing</p>
-                  </>
-                )}
-                {gameState === 'completed' && (
-                  <>
-                    <h3 className="text-xl font-bold text-puzzle-gold mb-2">Game Complete!</h3>
-                    <p className="text-gray-400 mb-4">
-                      {isSubmitting ? 'Submitting your score...' : 'Your score has been submitted to the leaderboard'}
-                    </p>
-                  </>
-                )}
+                <h3 className="text-xl font-bold text-puzzle-gold mb-2">Game Complete!</h3>
+                <p className="text-gray-400 mb-4">
+                  {isSubmitting ? 'Submitting your score...' : 'Your score has been submitted to the leaderboard'}
+                </p>
               </CardContent>
             </Card>
           </div>

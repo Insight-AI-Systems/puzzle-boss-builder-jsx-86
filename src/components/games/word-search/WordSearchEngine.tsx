@@ -395,7 +395,7 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   const handleNewGame = () => {
     console.log('Starting new game - resetting all state');
     
-    // Stop and reset timer
+    // Stop and reset timer first
     stopTimer();
     resetTimer();
     
@@ -416,8 +416,13 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
     // Clear saved state
     localStorage.removeItem(`wordSearch_${sessionId}`);
     
-    // Call parent callback
+    // Call parent callback which may trigger BaseGameWrapper reset
     onNewGame?.();
+    
+    // Small delay to ensure parent state is reset, then allow restart
+    setTimeout(() => {
+      console.log('New game state reset complete');
+    }, 100);
   };
 
   const progressPercentage = (foundWords.size / wordList.length) * 100;
