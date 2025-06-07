@@ -1,63 +1,67 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
-interface UsePuzzleCompletionProps {
-  imageUrl: string;
-  rows: number;
-  columns: number;
-}
+export function usePuzzleCompletion() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-export const usePuzzleCompletion = ({ imageUrl, rows, columns }: UsePuzzleCompletionProps) => {
-  const [completed, setCompleted] = useState(false);
-  const [solveTime, setSolveTime] = useState<number | null>(null);
-
-  const handlePuzzleComplete = async (timeElapsedMs: number) => {
-    if (!completed) {
-      setCompleted(true);
-      // Convert to seconds and round to 2 decimal places
-      const totalTimeInSeconds = parseFloat((timeElapsedMs / 1000).toFixed(2));
-      setSolveTime(totalTimeInSeconds);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        try {
-          const { error } = await supabase
-            .from('puzzle_completions')
-            .insert([
-              {
-                user_id: user.id,
-                puzzle_id: imageUrl,
-                completion_time: totalTimeInSeconds,
-                moves_count: 0,
-                difficulty_level: `${rows}x${columns}`,
-                game_mode: 'classic'
-              }
-            ]);
-
-          if (error) {
-            console.error('Error saving puzzle completion:', error);
-          }
-        } catch (error) {
-          console.error('Error in handlePuzzleComplete:', error);
-        }
-      }
-      return totalTimeInSeconds;
+  const submitCompletion = async (
+    puzzleId: string,
+    completionTime: number,
+    movesCount: number,
+    difficultyLevel: string,
+    gameMode: string = 'classic'
+  ) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to submit your completion.",
+        variant: "destructive",
+      });
+      return false;
     }
-    return solveTime;
-  };
 
-  const resetCompletion = () => {
-    console.log("Resetting puzzle completion state");
-    setCompleted(false);
-    setSolveTime(null);
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('puzzle_completions')
+        .insert({
+          user_id: user.id,
+          member_id: user.id, // Add required member_id field
+          puzzle_id: puzzleId,
+          completion_time: completionTime,
+          moves_count: movesCount,
+          difficulty_level: difficultyLevel,
+          game_mode: gameMode,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Completion submitted!",
+        description: "Your puzzle completion has been recorded.",
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error submitting completion:', error);
+      toast({
+        title: "Submission failed",
+        description: error instanceof Error ? error.message : "Failed to submit completion",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return {
-    completed,
-    solveTime,
-    handlePuzzleComplete,
-    resetCompletion
+    submitCompletion,
+    isSubmitting,
   };
-};
+}

@@ -1,9 +1,8 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { MemberDetailedProfile, UserAddress, AddressType, UserMembershipDetail, XeroUserMapping } from '@/types/memberTypes';
+import { MemberDetailedProfile, MemberAddress, AddressType, MembershipDetail, XeroMemberMapping } from '@/types/memberTypes';
 import { toast } from '@/hooks/use-toast';
 
 export function useMemberProfile(userId?: string) {
@@ -36,7 +35,7 @@ export function useMemberProfile(userId?: string) {
         const { data: addressesData, error: addressError } = await supabase
           .from('user_addresses')
           .select('*')
-          .eq('user_id', targetUserId);
+          .eq('member_id', targetUserId);
 
         if (addressError) {
           console.error('Error fetching addresses:', addressError);
@@ -57,7 +56,7 @@ export function useMemberProfile(userId?: string) {
         const { data: membershipDetailsData, error: membershipError } = await supabase
           .from('user_membership_details')
           .select('*')
-          .eq('user_id', targetUserId)
+          .eq('member_id', targetUserId)
           .maybeSingle();
 
         if (membershipError) {
@@ -67,7 +66,7 @@ export function useMemberProfile(userId?: string) {
         // Get financial summary
         const { data: financialSummary, error: financialError } = await supabase.rpc(
           'get_member_financial_summary',
-          { user_id_param: targetUserId }
+          { member_id_param: targetUserId }
         );
 
         if (financialError) {
@@ -75,19 +74,20 @@ export function useMemberProfile(userId?: string) {
         }
 
         // Map addresses to correct type
-        const addresses: UserAddress[] = addressesData ? addressesData.map((addr: any) => ({
+        const addresses: MemberAddress[] = addressesData ? addressesData.map((addr: any) => ({
           ...addr,
           address_type: addr.address_type as AddressType
         })) : [];
 
         // Map Xero mapping to correct type
-        const xeroMapping: XeroUserMapping | undefined = xeroMappingData ? {
+        const xeroMapping: XeroMemberMapping | undefined = xeroMappingData ? {
           ...xeroMappingData,
+          member_id: xeroMappingData.user_id, // Map user_id to member_id for consistency
           sync_status: xeroMappingData.sync_status as 'active' | 'inactive' | 'error'
         } : undefined;
 
         // Map membership details to correct type
-        const membershipDetails: UserMembershipDetail | undefined = membershipDetailsData ? {
+        const membershipDetails: MembershipDetail | undefined = membershipDetailsData ? {
           ...membershipDetailsData,
           status: membershipDetailsData.status as 'active' | 'expired' | 'canceled' | 'suspended'
         } : undefined;
@@ -161,7 +161,7 @@ export function useMemberProfile(userId?: string) {
 
   // Add/update address mutation
   const upsertAddress = useMutation({
-    mutationFn: async (address: Partial<UserAddress> & { id?: string }) => {
+    mutationFn: async (address: Partial<MemberAddress> & { id?: string }) => {
       if (!targetUserId) throw new Error('No user ID provided');
 
       // If we have an ID, update existing address
@@ -179,7 +179,7 @@ export function useMemberProfile(userId?: string) {
             country: address.country,
           })
           .eq('id', address.id)
-          .eq('user_id', targetUserId)
+          .eq('member_id', targetUserId)
           .select();
 
         if (error) throw error;
@@ -191,6 +191,7 @@ export function useMemberProfile(userId?: string) {
           .from('user_addresses')
           .insert({
             user_id: targetUserId,
+            member_id: targetUserId, // Add required member_id field
             address_type: address.address_type,
             is_default: address.is_default,
             address_line1: address.address_line1,
@@ -231,7 +232,7 @@ export function useMemberProfile(userId?: string) {
         .from('user_addresses')
         .delete()
         .eq('id', addressId)
-        .eq('user_id', targetUserId);
+        .eq('member_id', targetUserId);
 
       if (error) throw error;
       return true;

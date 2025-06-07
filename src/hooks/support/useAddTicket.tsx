@@ -1,104 +1,65 @@
 
-import { useCallback } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { SupportTicket } from "@/types/supportTicketTypes";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { mapFrontendStatusToDb, DbStatus } from "@/utils/support/mappings";
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
-export const useAddTicket = (onTicketAdded: () => void) => {
+export function useAddTicket() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
   const { toast } = useToast();
-  const { user, hasRole } = useAuth();
-  const isAdmin = hasRole('super_admin') || hasRole('admin');
 
-  const addTicket = useCallback(async (newTicket: Partial<SupportTicket>): Promise<boolean> => {
-    try {
-      if (!user) {
-        toast({
-          title: "Authentication Required",
-          description: "You must be logged in to create a support ticket.",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      const isInternalTicket = newTicket.category === 'internal';
-      
-      if (isInternalTicket && !isAdmin) {
-        toast({
-          title: "Permission Denied",
-          description: "You do not have permission to create internal tickets.",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      // Create a base ticket object with common fields
-      const baseTicketData = {
-        id: newTicket.id || crypto.randomUUID(),
-        title: newTicket.title,
-        description: newTicket.description,
-        created_by: user.id,
-        updated_at: new Date().toISOString(),
-        created_at: new Date().toISOString()
-      };
-
-      let result;
-      
-      // Handle internal tickets (issues table)
-      if (isInternalTicket) {
-        const dbStatus: DbStatus = mapFrontendStatusToDb(newTicket.status as string || 'open');
-        
-        result = await supabase
-          .from('issues')
-          .insert({
-            ...baseTicketData,
-            status: dbStatus,
-            category: 'bug', // Default internal issue category
-            modified_by: user.id,
-            modified_at: new Date().toISOString()
-          });
-      } 
-      // Handle regular user tickets (tickets table)
-      else {
-        result = await supabase
-          .from('tickets')
-          .insert({
-            ...baseTicketData,
-            status: 'open', // using the ticket_status enum directly
-            type: 'external' // using the ticket_type enum
-          });
-      }
-
-      if (result.error) {
-        console.error("Error adding ticket:", result.error);
-        toast({
-          title: "Ticket Creation Failed",
-          description: `Could not create the ticket: ${result.error.message}`,
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      // Ensure we call onTicketAdded to refresh the ticket list
-      await onTicketAdded();
-      
+  const submitTicket = async (title: string, description: string) => {
+    if (!user) {
       toast({
-        title: "Ticket Created",
-        description: `Your ${isInternalTicket ? 'internal issue' : 'support ticket'} has been submitted successfully.`,
-      });
-      
-      return true;
-    } catch (err) {
-      console.error("Error adding ticket:", err);
-      toast({
-        title: "Ticket Creation Failed",
-        description: "An unexpected error occurred while creating your ticket.",
+        title: "Authentication required",
+        description: "Please log in to submit a support ticket.",
         variant: "destructive",
       });
       return false;
     }
-  }, [toast, user, isAdmin, onTicketAdded]);
 
-  return { addTicket };
-};
+    setIsSubmitting(true);
+    try {
+      const ticketData = {
+        status: 'open' as const,
+        type: 'external' as const,
+        id: crypto.randomUUID(),
+        title,
+        description,
+        created_by: user.id,
+        member_id: user.id, // Add required member_id field
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('tickets')
+        .insert(ticketData);
+
+      if (error) throw error;
+
+      toast({
+        title: "Ticket submitted!",
+        description: "Your support ticket has been created successfully.",
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error submitting ticket:', error);
+      toast({
+        title: "Submission failed",
+        description: error instanceof Error ? error.message : "Failed to submit ticket",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return {
+    submitTicket,
+    isSubmitting,
+  };
+}
