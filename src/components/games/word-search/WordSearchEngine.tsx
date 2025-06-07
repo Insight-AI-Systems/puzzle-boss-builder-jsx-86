@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,8 @@ import { WordSearchCongratulations } from './WordSearchCongratulations';
 import { WordSearchLeaderboard } from './WordSearchLeaderboard';
 import { useToast } from '@/hooks/use-toast';
 import { useMemberProfile } from '@/hooks/useMemberProfile';
+import { WordPlacementEngine, PlacedWord } from './WordPlacementEngine';
+import { WordSelectionValidator } from './WordSelectionValidator';
 
 interface WordSearchEngineProps {
   difficulty: 'rookie' | 'pro' | 'master';
@@ -22,16 +25,8 @@ interface WordSearchEngineProps {
   sessionId?: string;
 }
 
-interface FoundWord {
-  word: string;
-  startPos: [number, number];
-  endPos: [number, number];
-  direction: string;
-  foundAt: number;
-}
-
 interface GameState {
-  foundWords: FoundWord[];
+  foundWords: PlacedWord[];
   incorrectSelections: number;
   gameStarted: boolean;
   gameComplete: boolean;
@@ -58,8 +53,8 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   sessionId = `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }) => {
   const [foundWords, setFoundWords] = useState<Set<string>>(new Set());
-  const [foundWordDetails, setFoundWordDetails] = useState<FoundWord[]>([]);
-  const [foundWordCells, setFoundWordCells] = useState<Set<string>>(new Set()); // Track cells of found words
+  const [foundWordDetails, setFoundWordDetails] = useState<PlacedWord[]>([]);
+  const [foundWordCells, setFoundWordCells] = useState<Set<string>>(new Set());
   const [gameStarted, setGameStarted] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
   const [incorrectSelections, setIncorrectSelections] = useState(0);
@@ -67,12 +62,14 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [grid, setGrid] = useState<string[][]>([]);
+  const [placedWords, setPlacedWords] = useState<PlacedWord[]>([]);
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionStart, setSelectionStart] = useState<[number, number] | null>(null);
   const [lastSaveTime, setLastSaveTime] = useState<number>(0);
   const [cluePosition, setCluePosition] = useState<CluePosition | null>(null);
   const [isUsingClue, setIsUsingClue] = useState(false);
+  const [gridGenerationError, setGridGenerationError] = useState<string | null>(null);
   
   const gridSize = difficulty === 'master' ? 15 : difficulty === 'pro' ? 12 : 10;
   const timeLimit = difficulty === 'master' ? 600 : difficulty === 'pro' ? 480 : 360;
@@ -87,81 +84,62 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
     reset: resetTimer
   } = useGameTimer(timeLimit);
 
-  // Generate a stable grid based on wordList
-  const placedWords = useMemo(() => {
-    const newGrid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(''));
-    const placed: FoundWord[] = [];
-    
-    // Simple word placement algorithm
-    wordList.forEach((word, index) => {
-      const direction = ['horizontal', 'vertical', 'diagonal'][index % 3];
-      let placed_success = false;
-      let attempts = 0;
-      
-      while (!placed_success && attempts < 50) {
-        let startRow, startCol, deltaRow, deltaCol;
-        
-        if (direction === 'horizontal') {
-          startRow = Math.floor(Math.random() * gridSize);
-          startCol = Math.floor(Math.random() * (gridSize - word.length + 1));
-          deltaRow = 0;
-          deltaCol = 1;
-        } else if (direction === 'vertical') {
-          startRow = Math.floor(Math.random() * (gridSize - word.length + 1));
-          startCol = Math.floor(Math.random() * gridSize);
-          deltaRow = 1;
-          deltaCol = 0;
-        } else { // diagonal
-          startRow = Math.floor(Math.random() * (gridSize - word.length + 1));
-          startCol = Math.floor(Math.random() * (gridSize - word.length + 1));
-          deltaRow = 1;
-          deltaCol = 1;
-        }
-        
-        // Check if word can be placed
-        let canPlace = true;
-        for (let i = 0; i < word.length; i++) {
-          const row = startRow + i * deltaRow;
-          const col = startCol + i * deltaCol;
-          if (newGrid[row][col] !== '' && newGrid[row][col] !== word[i].toUpperCase()) {
-            canPlace = false;
-            break;
-          }
-        }
-        
-        if (canPlace) {
-          // Place the word
-          for (let i = 0; i < word.length; i++) {
-            const row = startRow + i * deltaRow;
-            const col = startCol + i * deltaCol;
-            newGrid[row][col] = word[i].toUpperCase();
-          }
-          
-          placed.push({
-            word: word.toUpperCase(),
-            startPos: [startRow, startCol],
-            endPos: [startRow + (word.length - 1) * deltaRow, startCol + (word.length - 1) * deltaCol],
-            direction,
-            foundAt: 0
-          });
-          placed_success = true;
-        }
-        attempts++;
-      }
-    });
-    
-    // Fill empty cells with random letters
-    for (let row = 0; row < gridSize; row++) {
-      for (let col = 0; col < gridSize; col++) {
-        if (newGrid[row][col] === '') {
-          newGrid[row][col] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
-        }
-      }
+  // Word selection validator
+  const selectionValidator = useMemo(() => {
+    if (placedWords.length > 0 && grid.length > 0) {
+      return new WordSelectionValidator(placedWords, grid);
     }
+    return null;
+  }, [placedWords, grid]);
+
+  // Generate stable grid with proper word placement
+  useEffect(() => {
+    console.log('Generating new grid for words:', wordList);
     
-    setGrid(newGrid);
-    return placed;
-  }, [wordList, gridSize]);
+    if (wordList.length === 0) {
+      console.warn('No words provided for grid generation');
+      return;
+    }
+
+    setGridGenerationError(null);
+    
+    // Create seed from wordList for consistent grids
+    const seed = wordList.join('|') + difficulty + category;
+    const engine = new WordPlacementEngine(gridSize, seed);
+    
+    const result = engine.placeWords(wordList);
+    
+    if (!result.success) {
+      const errorMsg = `Failed to place ${result.failedWords.length} words: ${result.failedWords.join(', ')}`;
+      console.error('Grid generation failed:', errorMsg);
+      setGridGenerationError(errorMsg);
+      
+      toast({
+        title: "Grid Generation Error",
+        description: "Some words couldn't be placed. Retrying...",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate the placement
+    if (!engine.validatePlacement(wordList)) {
+      const errorMsg = 'Grid validation failed - words not properly placed';
+      console.error(errorMsg);
+      setGridGenerationError(errorMsg);
+      return;
+    }
+
+    console.log('Grid generation successful:', {
+      totalWords: wordList.length,
+      placedWords: result.placedWords.length,
+      gridSize: result.grid.length
+    });
+
+    setGrid(result.grid);
+    setPlacedWords(result.placedWords);
+    setGridGenerationError(null);
+  }, [wordList, gridSize, difficulty, category, toast]);
 
   // Save game state periodically
   const saveGameState = useCallback(() => {
@@ -191,7 +169,6 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
           setFoundWords(new Set(gameState.foundWords.map(w => w.word)));
           setIncorrectSelections(gameState.incorrectSelections);
           setGameStarted(gameState.gameStarted);
-          // Resume timer if needed
           if (gameState.startTime) {
             const elapsed = Date.now() - gameState.startTime;
             if (elapsed < timeLimit * 1000) {
@@ -213,39 +190,14 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
     }
   }, [gameStarted, gameComplete, saveGameState]);
 
-  // Helper function to get cells for a found word
-  const getWordCells = useCallback((foundWord: FoundWord): string[] => {
-    const cells: string[] = [];
-    const [startRow, startCol] = foundWord.startPos;
-    const [endRow, endCol] = foundWord.endPos;
-    
-    const deltaRow = endRow > startRow ? 1 : endRow < startRow ? -1 : 0;
-    const deltaCol = endCol > startCol ? 1 : endCol < startCol ? -1 : 0;
-    
-    let currentRow = startRow;
-    let currentCol = startCol;
-    
-    while (true) {
-      cells.push(`${currentRow}-${currentCol}`);
-      
-      if (currentRow === endRow && currentCol === endCol) break;
-      
-      currentRow += deltaRow;
-      currentCol += deltaCol;
-    }
-    
-    return cells;
-  }, []);
-
   // Update found word cells when foundWordDetails changes
   useEffect(() => {
     const allFoundCells = new Set<string>();
     foundWordDetails.forEach(foundWord => {
-      const wordCells = getWordCells(foundWord);
-      wordCells.forEach(cell => allFoundCells.add(cell));
+      foundWord.cells.forEach(cell => allFoundCells.add(cell));
     });
     setFoundWordCells(allFoundCells);
-  }, [foundWordDetails, getWordCells]);
+  }, [foundWordDetails]);
 
   // Check for word completion and auto-submit
   useEffect(() => {
@@ -258,15 +210,12 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
     
     if (foundWords.size === wordList.length && foundWords.size > 0 && gameStarted && !gameComplete) {
       console.log('All words found - completing game');
-      // All words found - auto submit
       const completionTimeMs = timeElapsed;
       setGameComplete(true);
       stopTimer();
       
-      // Clear saved state
       localStorage.removeItem(`wordSearch_${sessionId}`);
       
-      // Calculate final score
       const baseScore = 1000;
       const timeBonus = Math.max(0, (timeLimit - Math.floor(completionTimeMs / 1000)) * 10);
       const penaltyDeduction = enablePenalties ? incorrectSelections * 50 : 0;
@@ -290,7 +239,7 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   }, [foundWords.size, wordList.length, gameStarted, gameComplete, timeElapsed, stopTimer, sessionId, timeLimit, incorrectSelections, enablePenalties, onComplete, toast]);
 
   const handleCellMouseDown = (row: number, col: number) => {
-    if (!gameStarted || gameComplete) return;
+    if (!gameStarted || gameComplete || !selectionValidator) return;
     
     setIsSelecting(true);
     setSelectionStart([row, col]);
@@ -303,7 +252,6 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
     const [startRow, startCol] = selectionStart;
     const cells = new Set<string>();
     
-    // Calculate direction and select cells in a line
     const deltaRow = row - startRow;
     const deltaCol = col - startCol;
     
@@ -325,61 +273,29 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   };
 
   const handleCellMouseUp = () => {
-    if (!isSelecting || !selectionStart || selectedCells.size === 0) {
+    if (!isSelecting || !selectionStart || selectedCells.size === 0 || !selectionValidator) {
       setIsSelecting(false);
       setSelectedCells(new Set());
       return;
     }
     
-    // Check if selection forms a valid word
-    const selectedWord = Array.from(selectedCells)
-      .sort((a, b) => {
-        const [rowA, colA] = a.split('-').map(Number);
-        const [rowB, colB] = b.split('-').map(Number);
-        return rowA - rowB || colA - colB;
-      })
-      .map(cellId => {
-        const [row, col] = cellId.split('-').map(Number);
-        return grid[row][col];
-      })
-      .join('');
+    const selectedCellsArray = Array.from(selectedCells);
+    const validation = selectionValidator.validateSelection(selectedCellsArray);
     
-    const reverseWord = selectedWord.split('').reverse().join('');
-    
-    // Check if it's a valid word from our list
-    const targetWord = wordList.find(word => 
-      word.toUpperCase() === selectedWord || word.toUpperCase() === reverseWord
-    );
-    
-    if (targetWord && !foundWords.has(targetWord.toUpperCase())) {
+    if (validation.isValid && validation.foundWord && !foundWords.has(validation.foundWord.word)) {
       // Word found!
       const newFoundWords = new Set(foundWords);
-      newFoundWords.add(targetWord.toUpperCase());
+      newFoundWords.add(validation.foundWord.word);
       setFoundWords(newFoundWords);
+      setFoundWordDetails(prev => [...prev, validation.foundWord!]);
       
-      // Record detailed info
-      const [startRow, startCol] = selectionStart;
-      const lastCell = Array.from(selectedCells).pop();
-      const [endRow, endCol] = lastCell ? lastCell.split('-').map(Number) : [startRow, startCol];
-      
-      const newWordDetail: FoundWord = {
-        word: targetWord.toUpperCase(),
-        startPos: [startRow, startCol],
-        endPos: [endRow, endCol],
-        direction: 'custom',
-        foundAt: timeElapsed
-      };
-      
-      setFoundWordDetails(prev => [...prev, newWordDetail]);
-      
-      onWordFound?.(targetWord, newFoundWords.size, wordList.length);
+      onWordFound?.(validation.foundWord.word, newFoundWords.size, wordList.length);
       
       toast({
         title: "Word Found!",
-        description: `${targetWord.toUpperCase()} - ${newFoundWords.size}/${wordList.length} words found`,
+        description: `${validation.foundWord.word} - ${newFoundWords.size}/${wordList.length} words found`,
       });
     } else if (enablePenalties && selectedCells.size > 1) {
-      // Incorrect selection penalty
       setIncorrectSelections(prev => prev + 1);
       toast({
         title: "Incorrect Selection",
@@ -394,6 +310,15 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   };
 
   const handleStartGame = () => {
+    if (gridGenerationError) {
+      toast({
+        title: "Cannot Start Game",
+        description: "Grid generation failed. Please try a new game.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setGameStarted(true);
     startTimer();
     
@@ -406,14 +331,12 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   const handleNewGame = () => {
     console.log('Starting new game - resetting all state');
     
-    // Stop and reset timer first
     stopTimer();
     resetTimer();
     
-    // Reset all game state
     setFoundWords(new Set());
     setFoundWordDetails([]);
-    setFoundWordCells(new Set()); // Reset found word cells
+    setFoundWordCells(new Set());
     setGameStarted(false);
     setGameComplete(false);
     setIncorrectSelections(0);
@@ -423,24 +346,21 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
     setSelectedCells(new Set());
     setIsSelecting(false);
     setSelectionStart(null);
-    setCluePosition(null); // Clear any active clues
+    setCluePosition(null);
+    setGridGenerationError(null);
     
-    // Clear saved state
     localStorage.removeItem(`wordSearch_${sessionId}`);
     
-    // Call parent callback which may trigger BaseGameWrapper reset
     onNewGame?.();
     
-    // Small delay to ensure parent state is reset, then allow restart
     setTimeout(() => {
       console.log('New game state reset complete');
     }, 100);
   };
 
   const handleUseClue = useCallback(async () => {
-    if (!gameStarted || gameComplete || isUsingClue) return;
+    if (!gameStarted || gameComplete || isUsingClue || !selectionValidator) return;
     
-    // Check if user has enough credits
     if (!profile || profile.credits < 1) {
       toast({
         title: "Insufficient Credits",
@@ -450,12 +370,8 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
       return;
     }
 
-    // Find an unfound word
-    const remainingWords = placedWords.filter(placedWord => 
-      !foundWords.has(placedWord.word)
-    );
-
-    if (remainingWords.length === 0) {
+    const randomWord = selectionValidator.getRandomUnfoundWord(foundWords);
+    if (!randomWord) {
       toast({
         title: "No Clues Available",
         description: "All words have been found!",
@@ -466,12 +382,8 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
     setIsUsingClue(true);
 
     try {
-      // Deduct credit (this would normally be done via API)
-      // For now, we'll just show the clue and assume credit deduction
-      const randomWord = remainingWords[Math.floor(Math.random() * remainingWords.length)];
       const [startRow, startCol] = randomWord.startPos;
       
-      // Show clue for 10 seconds
       const clueExpires = Date.now() + 10000;
       setCluePosition({
         row: startRow,
@@ -480,7 +392,6 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
         expires: clueExpires
       });
 
-      // Update profile credits locally (in a real app, this would be done server-side)
       await refetchProfile();
 
       toast({
@@ -488,7 +399,6 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
         description: `Look for "${randomWord.word}" starting at the highlighted position. Clue expires in 10 seconds.`,
       });
 
-      // Clear clue after 10 seconds
       setTimeout(() => {
         setCluePosition(null);
       }, 10000);
@@ -502,9 +412,8 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
     } finally {
       setIsUsingClue(false);
     }
-  }, [gameStarted, gameComplete, isUsingClue, profile, placedWords, foundWords, toast, refetchProfile]);
+  }, [gameStarted, gameComplete, isUsingClue, profile, selectionValidator, foundWords, toast, refetchProfile]);
 
-  // Clear clue when component unmounts or game resets
   useEffect(() => {
     return () => {
       setCluePosition(null);
@@ -514,10 +423,35 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   const progressPercentage = (foundWords.size / wordList.length) * 100;
   const remainingWords = wordList.filter(word => !foundWords.has(word.toUpperCase()));
 
-  // Load saved state on component mount
   useEffect(() => {
     loadGameState();
   }, [loadGameState]);
+
+  // Show error state if grid generation failed
+  if (gridGenerationError) {
+    return (
+      <div className="w-full max-w-6xl mx-auto space-y-6">
+        <Card className="bg-gray-900 border-red-500">
+          <CardHeader>
+            <CardTitle className="text-red-400 text-center">
+              Grid Generation Error
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <AlertTriangle className="h-16 w-16 text-red-400 mx-auto" />
+            <p className="text-red-300">{gridGenerationError}</p>
+            <p className="text-gray-400">This ensures fair gameplay for all players.</p>
+            <Button 
+              onClick={handleNewGame}
+              className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black"
+            >
+              Try New Game
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
@@ -580,6 +514,7 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
             {!gameStarted ? (
               <Button
                 onClick={handleStartGame}
+                disabled={!!gridGenerationError}
                 className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold"
               >
                 <Play className="h-4 w-4 mr-2" />
@@ -595,7 +530,6 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
                   New Game
                 </Button>
                 
-                {/* Clue Button */}
                 <Button
                   onClick={handleUseClue}
                   disabled={isUsingClue || gameComplete || !profile || profile.credits < 1}
@@ -620,7 +554,7 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
       </Card>
 
       {/* Game Grid */}
-      {gameStarted && (
+      {gameStarted && grid.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Word Search Grid */}
           <div className="lg:col-span-2">
