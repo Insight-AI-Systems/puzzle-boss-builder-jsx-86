@@ -1,3 +1,4 @@
+
 import { 
   Home, Users, Puzzle, ImageIcon, FileText, Star, ShoppingCart, 
   Settings, BarChart, User, Mail, Eye, Bell, Trophy, HelpCircle,
@@ -30,6 +31,11 @@ export const mainNavItems: NavItem[] = [
     title: "Puzzles",
     icon: Puzzle,
     href: "/puzzles", // Updated to match route in App.tsx
+  },
+  {
+    title: "Leaderboard",
+    icon: Trophy,
+    href: "/leaderboard",
   },
   {
     title: "Prizes",

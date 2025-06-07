@@ -15,6 +15,7 @@ export interface MainNavItem extends NavItem {
 export const mainNavItems: MainNavItem[] = [
   { name: 'Home', path: '/' },
   { name: 'Puzzles', path: '/puzzles' },
+  { name: 'Leaderboard', path: '/leaderboard' },
   { name: 'Prizes Won', path: '/prizes-won' },
   { name: 'How It Works', path: '/how-it-works' },
   { name: 'Categories', path: '/categories' }
