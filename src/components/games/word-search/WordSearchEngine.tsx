@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -71,7 +72,8 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
     timeElapsed, 
     isRunning, 
     start: startTimer, 
-    stop: stopTimer
+    stop: stopTimer,
+    reset: resetTimer
   } = useGameTimer(timeLimit);
 
   // Generate a stable grid based on wordList
@@ -202,7 +204,15 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
 
   // Check for word completion and auto-submit
   useEffect(() => {
-    if (foundWords.size === wordList.length && gameStarted && !gameComplete) {
+    console.log('Completion check:', { 
+      foundWordsSize: foundWords.size, 
+      wordListLength: wordList.length, 
+      gameStarted, 
+      gameComplete 
+    });
+    
+    if (foundWords.size === wordList.length && foundWords.size > 0 && gameStarted && !gameComplete) {
+      console.log('All words found - completing game');
       // All words found - auto submit
       const completionTimeMs = timeElapsed;
       setGameComplete(true);
@@ -349,6 +359,13 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   };
 
   const handleNewGame = () => {
+    console.log('Starting new game - resetting all state');
+    
+    // Stop and reset timer
+    stopTimer();
+    resetTimer();
+    
+    // Reset all game state
     setFoundWords(new Set());
     setFoundWordDetails([]);
     setGameStarted(false);
@@ -356,10 +373,15 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
     setIncorrectSelections(0);
     setScore(0);
     setShowCongratulations(false);
+    setShowLeaderboard(false);
     setSelectedCells(new Set());
     setIsSelecting(false);
     setSelectionStart(null);
+    
+    // Clear saved state
     localStorage.removeItem(`wordSearch_${sessionId}`);
+    
+    // Call parent callback
     onNewGame?.();
   };
 
@@ -458,7 +480,7 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
             <Card className="bg-gray-900 border-gray-700">
               <CardContent className="p-4">
                 <div 
-                  className="grid mx-auto"
+                  className="grid mx-auto gap-0"
                   style={{ 
                     gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
                     maxWidth: '500px'
@@ -475,6 +497,7 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
                         className={`
                           w-8 h-8 flex items-center justify-center
                           text-sm font-bold cursor-pointer transition-colors
+                          border-0 m-0 p-0
                           ${selectedCells.has(`${rowIndex}-${colIndex}`) 
                             ? 'bg-puzzle-aqua text-puzzle-black' 
                             : 'bg-gray-800 text-puzzle-white hover:bg-gray-700'
