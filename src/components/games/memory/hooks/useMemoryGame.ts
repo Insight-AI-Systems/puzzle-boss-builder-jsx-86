@@ -1,213 +1,215 @@
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { MemoryCard, MemoryGameState, GameDifficulty } from '../types/memoryTypes';
+import { useMemoryScoring, LeaderboardEntry } from './useMemoryScoring';
+import { useAuth } from '@/contexts/AuthContext';
+import { useMemberProfile } from '@/hooks/useMemberProfile';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { MemoryCard, MemoryGameState, MemoryLayout, MemoryTheme, LAYOUT_CONFIGS } from '../types/memoryTypes';
-import { generateCards, processCardMatch, calculateGameStats } from './useMemoryGameHelpers';
+const CARD_THEMES = {
+  animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮'],
+  fruits: ['🍎', '🍊', '🍋', '🍌', '🍇', '🍓', '🍈', '🍉', '🍑', '🍒', '🥝', '🍍'],
+  shapes: ['⭐', '🔴', '🔵', '🟡', '🟢', '🟣', '🟠', '⬛', '⬜', '🔶', '🔷', '🔸'],
+};
 
-export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme: MemoryTheme = 'animals') {
-  const [gameState, setGameState] = useState<MemoryGameState>(() => {
-    console.log('Initial game state creation:', { initialLayout, initialTheme });
-    return {
-      cards: [],
-      selectedCards: [],
-      matchedPairs: 0,
-      moves: 0,
-      startTime: 0,
-      isGameComplete: false,
-      layout: initialLayout,
-      theme: initialTheme
-    };
-  });
+export function useMemoryGame(
+  layout: string,
+  theme: keyof typeof CARD_THEMES,
+  difficulty: GameDifficulty = 'medium'
+) {
+  const { user } = useAuth();
+  const { profile } = useMemberProfile();
+  const [gameState, setGameState] = useState<MemoryGameState>('waiting');
+  const [cards, setCards] = useState<MemoryCard[]>([]);
+  const [flippedCards, setFlippedCards] = useState<number[]>([]);
+  const [matchedPairs, setMatchedPairs] = useState<number[]>([]);
+  const [moves, setMoves] = useState(0);
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [gameTime, setGameTime] = useState(0);
+  const [score, setScore] = useState(0);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const { calculateScore } = useMemoryScoring(layout);
 
-  const [gameInitialized, setGameInitialized] = useState(false);
-  const initializationRef = useRef(false);
+  const getDifficultySettings = (diff: GameDifficulty) => {
+    switch (diff) {
+      case 'easy': return { timeLimit: 120, showTime: 3000 };
+      case 'medium': return { timeLimit: 90, showTime: 2000 };
+      case 'hard': return { timeLimit: 60, showTime: 1000 };
+      default: return { timeLimit: 90, showTime: 2000 };
+    }
+  };
 
-  // Initialize or restart game
-  const initializeGame = useCallback((layout?: MemoryLayout, theme?: MemoryTheme) => {
-    const newLayout = layout || initialLayout;
-    const newTheme = theme || initialTheme;
-    
-    console.log('=== INITIALIZING MEMORY GAME ===');
-    console.log('Layout:', newLayout, 'Theme:', newTheme);
-    
-    const cards = generateCards(newLayout, newTheme);
-    console.log('Generated cards:', cards.length, cards);
-    
-    const newGameState = {
-      cards,
-      selectedCards: [],
-      matchedPairs: 0,
-      moves: 0,
-      startTime: Date.now(),
-      isGameComplete: false,
-      layout: newLayout,
-      theme: newTheme
-    };
-    
-    console.log('New game state:', newGameState);
-    setGameState(newGameState);
-    setGameInitialized(true);
-    
-    console.log('=== GAME INITIALIZATION COMPLETE ===');
-  }, [initialLayout, initialTheme]);
+  const getGridSize = useCallback(() => {
+    const [rows, cols] = layout.split('x').map(Number);
+    return { rows, cols, totalPairs: (rows * cols) / 2 };
+  }, [layout]);
 
-  // Handle card click with extensive debugging
-  const handleCardClick = useCallback((cardId: string) => {
-    console.log('=== CARD CLICK HANDLER ===');
-    console.log('Clicked card ID:', cardId);
-    console.log('Game initialized:', gameInitialized);
+  const initializeCards = useCallback(() => {
+    const { totalPairs } = getGridSize();
+    const symbols = CARD_THEMES[theme].slice(0, totalPairs);
+    const cardPairs = [...symbols, ...symbols];
     
-    if (!gameInitialized) {
-      console.log('❌ Game not initialized, cannot click cards');
-      return;
+    // Shuffle cards
+    for (let i = cardPairs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [cardPairs[i], cardPairs[j]] = [cardPairs[j], cardPairs[i]];
     }
 
-    setGameState(prevState => {
-      console.log('Previous state:', prevState);
-      
-      const { cards, selectedCards, moves } = prevState;
-      
-      // Can't select more than 2 cards at once
-      if (selectedCards.length >= 2) {
-        console.log('❌ Already 2 cards selected, ignoring click');
-        return prevState;
-      }
-      
-      // Can't select already flipped or matched cards
-      const clickedCard = cards.find(card => card.id === cardId);
-      if (!clickedCard) {
-        console.log('❌ Card not found:', cardId);
-        return prevState;
-      }
-      
-      if (clickedCard.isFlipped || clickedCard.isMatched) {
-        console.log('❌ Card already flipped or matched, ignoring click');
-        return prevState;
-      }
-      
-      console.log('✅ Valid click, processing...');
-      
-      const newSelectedCards = [...selectedCards, cardId];
-      const newCards = cards.map(card => 
-        card.id === cardId ? { ...card, isFlipped: true } : card
-      );
-      
-      console.log('Updated cards after flip:', newCards.find(c => c.id === cardId));
-      
-      let newMoves = moves;
-      let newMatchedPairs = prevState.matchedPairs;
-      
-      // Check for match when 2 cards are selected
-      if (newSelectedCards.length === 2) {
-        newMoves += 1;
-        const [firstCardId, secondCardId] = newSelectedCards;
-        const { updatedCards, isMatch } = processCardMatch(newCards, firstCardId, secondCardId);
-        
-        if (isMatch) {
-          newMatchedPairs += 1;
-          newCards.splice(0, newCards.length, ...updatedCards);
-          console.log('🎉 Match found!', { newMatchedPairs, totalPairs: LAYOUT_CONFIGS[prevState.layout].totalCards / 2 });
-        } else {
-          console.log('❌ No match found');
-        }
-      }
-      
-      const newState = {
-        ...prevState,
-        cards: newCards,
-        selectedCards: newSelectedCards,
-        moves: newMoves,
-        matchedPairs: newMatchedPairs
-      };
-      
-      console.log('New state after click:', newState);
-      console.log('=== END CARD CLICK HANDLER ===');
-      
-      return newState;
-    });
-  }, [gameInitialized]);
+    const newCards: MemoryCard[] = cardPairs.map((symbol, index) => ({
+      id: index,
+      symbol,
+      isFlipped: false,
+      isMatched: false,
+    }));
 
-  // Auto-flip unmatched cards after delay
-  useEffect(() => {
-    if (gameState.selectedCards.length === 2) {
-      console.log('Setting timer to flip back unmatched cards');
-      const timer = setTimeout(() => {
-        console.log('=== AUTO-FLIPPING UNMATCHED CARDS ===');
-        setGameState(prevState => {
-          const { cards, selectedCards } = prevState;
-          const [firstCardId, secondCardId] = selectedCards;
-          
-          const newCards = cards.map(card => {
-            if ((card.id === firstCardId || card.id === secondCardId) && !card.isMatched) {
-              console.log('Flipping back card:', card.id);
-              return { ...card, isFlipped: false };
+    setCards(newCards);
+    return newCards;
+  }, [layout, theme, getGridSize]);
+
+  const startGame = useCallback(() => {
+    const newCards = initializeCards();
+    setGameState('playing');
+    setFlippedCards([]);
+    setMatchedPairs([]);
+    setMoves(0);
+    setScore(0);
+    setStartTime(Date.now());
+    setGameTime(0);
+
+    // Show all cards briefly based on difficulty
+    const { showTime } = getDifficultySettings(difficulty);
+    setCards(newCards.map(card => ({ ...card, isFlipped: true })));
+    
+    setTimeout(() => {
+      setCards(newCards.map(card => ({ ...card, isFlipped: false })));
+    }, showTime);
+
+    // Start timer
+    timerRef.current = setInterval(() => {
+      setGameTime(prev => prev + 1);
+    }, 1000);
+  }, [initializeCards, difficulty]);
+
+  const flipCard = useCallback((cardId: number) => {
+    if (gameState !== 'playing' || flippedCards.length >= 2) return;
+    if (flippedCards.includes(cardId) || matchedPairs.includes(cardId)) return;
+
+    setFlippedCards(prev => [...prev, cardId]);
+    setCards(prev => prev.map(card => 
+      card.id === cardId ? { ...card, isFlipped: true } : card
+    ));
+
+    if (flippedCards.length === 1) {
+      setMoves(prev => prev + 1);
+      
+      // Check for match after a short delay
+      setTimeout(() => {
+        setFlippedCards(current => {
+          if (current.length === 2) {
+            const [firstId, secondId] = current;
+            const firstCard = cards.find(c => c.id === firstId);
+            const secondCard = cards.find(c => c.id === cardId);
+
+            if (firstCard && secondCard && firstCard.symbol === secondCard.symbol) {
+              // Match found
+              setMatchedPairs(prev => [...prev, firstId, cardId]);
+              setCards(prev => prev.map(card => 
+                (card.id === firstId || card.id === cardId) 
+                  ? { ...card, isMatched: true }
+                  : card
+              ));
+              
+              // Check for game completion
+              const { totalPairs } = getGridSize();
+              if (matchedPairs.length + 2 === totalPairs * 2) {
+                endGame(true);
+              }
+            } else {
+              // No match - flip cards back
+              setTimeout(() => {
+                setCards(prev => prev.map(card => 
+                  (card.id === firstId || card.id === cardId) 
+                    ? { ...card, isFlipped: false }
+                    : card
+                ));
+              }, 1000);
             }
-            return card;
-          });
-          
-          const newState = {
-            ...prevState,
-            cards: newCards,
-            selectedCards: []
-          };
-          
-          console.log('Cards flipped back, new state:', newState);
-          return newState;
+            return [];
+          }
+          return current;
         });
-      }, 1000);
-      
-      return () => {
-        console.log('Clearing flip timer');
-        clearTimeout(timer);
+      }, 500);
+    }
+  }, [gameState, flippedCards, matchedPairs, cards, getGridSize]);
+
+  const endGame = useCallback((completed: boolean) => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (completed && startTime) {
+      const timeElapsed = Date.now() - startTime;
+      const { totalPairs } = getGridSize();
+      const scoreData = calculateScore(matchedPairs.length / 2, moves, timeElapsed, totalPairs);
+      setScore(scoreData.finalScore);
+
+      // Get the display name for leaderboard
+      const playerName = profile?.username || profile?.display_name || profile?.full_name || 'Anonymous Player';
+
+      // Add to leaderboard
+      const newEntry: LeaderboardEntry = {
+        id: Date.now().toString(),
+        playerName,
+        score: scoreData.finalScore,
+        timeElapsed,
+        moves,
+        accuracy: scoreData.accuracy,
+        completedAt: new Date(),
+        isPerfectGame: scoreData.isPerfectGame,
       };
-    }
-  }, [gameState.selectedCards]);
 
-  // Check for game completion
-  useEffect(() => {
-    if (!gameInitialized) return;
+      setLeaderboard(prev => [...prev, newEntry].sort((a, b) => b.score - a.score).slice(0, 10));
+      setGameState('completed');
+    } else {
+      setGameState('failed');
+    }
+  }, [startTime, matchedPairs.length, moves, calculateScore, getGridSize, profile]);
+
+  const resetGame = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
     
-    const totalPairs = LAYOUT_CONFIGS[gameState.layout].totalCards / 2;
-    if (gameState.matchedPairs === totalPairs && totalPairs > 0) {
-      console.log('🎉 Game completed!', { matchedPairs: gameState.matchedPairs, totalPairs });
-      setGameState(prevState => ({
-        ...prevState,
-        isGameComplete: true
-      }));
-    }
-  }, [gameState.matchedPairs, gameState.layout, gameInitialized]);
+    setGameState('waiting');
+    setCards([]);
+    setFlippedCards([]);
+    setMatchedPairs([]);
+    setMoves(0);
+    setStartTime(null);
+    setGameTime(0);
+    setScore(0);
+  }, []);
 
-  // Calculate game stats
-  const getGameStats = useCallback(() => {
-    return calculateGameStats(gameState, gameState.layout);
-  }, [gameState]);
-
-  // Initialize game on mount (only once)
   useEffect(() => {
-    if (!initializationRef.current) {
-      console.log('🚀 Initializing memory game on mount');
-      initializationRef.current = true;
-      initializeGame();
-    }
-  }, [initializeGame]);
-
-  // Debug current state
-  useEffect(() => {
-    console.log('Game state updated:', {
-      cardsCount: gameState.cards.length,
-      selectedCards: gameState.selectedCards,
-      moves: gameState.moves,
-      matchedPairs: gameState.matchedPairs,
-      initialized: gameInitialized
-    });
-  }, [gameState, gameInitialized]);
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
 
   return {
     gameState,
-    handleCardClick,
-    initializeGame,
-    getGameStats,
-    isGameActive: gameInitialized && gameState.moves > 0 && !gameState.isGameComplete,
-    disabled: gameState.selectedCards.length >= 2,
-    gameInitialized
+    cards,
+    moves,
+    gameTime,
+    score,
+    leaderboard,
+    startGame,
+    flipCard,
+    resetGame,
+    gridSize: getGridSize(),
   };
 }

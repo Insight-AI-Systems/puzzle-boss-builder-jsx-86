@@ -11,6 +11,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,7 +19,7 @@ import { UseMutationResult } from '@tanstack/react-query';
 import { MemberDetailedProfile } from '@/types/memberTypes';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, User, Calendar, FileText, CheckCircle } from "lucide-react";
+import { Loader2, User, Calendar, FileText, CheckCircle, Gamepad2 } from "lucide-react";
 import { CreditBalanceCard } from '../CreditBalanceCard';
 import { UserWallet } from '@/hooks/useMemberProfile';
 
@@ -31,6 +32,12 @@ export interface ProfileInfoTabProps {
 
 const profileFormSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),
+  username: z.string()
+    .min(3, "Username must be at least 3 characters")
+    .max(20, "Username must be 20 characters or less")
+    .regex(/^[a-zA-Z0-9_-]+$/, "Username can only contain letters, numbers, underscores, and hyphens")
+    .optional()
+    .or(z.literal("")),
   bio: z.string().optional(),
   date_of_birth: z.string().optional(),
 });
@@ -42,6 +49,7 @@ export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredi
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       full_name: profile.full_name || "",
+      username: profile.username || "",
       bio: profile.bio || "",
       date_of_birth: profile.date_of_birth || "",
     },
@@ -99,25 +107,49 @@ export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredi
 
                 <FormField
                   control={form.control}
-                  name="date_of_birth"
+                  name="username"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-puzzle-white flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        Date of Birth
+                        <Gamepad2 className="h-4 w-4" />
+                        Username (Screen Name)
                       </FormLabel>
                       <FormControl>
                         <Input 
-                          type="date"
+                          placeholder="Choose a username for leaderboards" 
                           className="bg-puzzle-black border-puzzle-aqua/30 text-puzzle-white"
                           {...field} 
                         />
                       </FormControl>
+                      <FormDescription className="text-puzzle-white/60">
+                        This is how your name will appear on game leaderboards. Leave empty to use your full name.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="date_of_birth"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-puzzle-white flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Date of Birth
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="date"
+                        className="bg-puzzle-black border-puzzle-aqua/30 text-puzzle-white"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}

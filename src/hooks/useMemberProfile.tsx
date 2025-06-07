@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -139,7 +140,7 @@ export function useMemberProfile(userId?: string) {
     enabled: !!targetUserId,
   });
 
-  // Update profile mutation - Fixed to include bio and remove address fields
+  // Update profile mutation - Updated to include username
   const updateProfile = useMutation({
     mutationFn: async (profileData: Partial<MemberDetailedProfile>) => {
       if (!targetUserId) throw new Error('No user ID provided');
@@ -148,7 +149,8 @@ export function useMemberProfile(userId?: string) {
         .from('profiles')
         .update({
           full_name: profileData.full_name,
-          bio: profileData.bio, // Fixed: Added bio field
+          username: profileData.username, // Added username field
+          bio: profileData.bio,
           phone: profileData.phone,
           date_of_birth: profileData.date_of_birth,
           tax_id: profileData.tax_id,

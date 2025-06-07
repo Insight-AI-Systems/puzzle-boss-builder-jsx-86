@@ -75,6 +75,7 @@ export interface MemberDetailedProfile {
   updated_at: string;
   // Additional member fields
   full_name?: string;
+  username?: string; // Added username field for screen names
   phone?: string;
   address_line1?: string;
   address_line2?: string;
