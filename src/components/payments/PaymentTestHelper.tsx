@@ -1,0 +1,274 @@
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  TestTube, 
+  CheckCircle, 
+  XCircle, 
+  DollarSign,
+  Wallet,
+  CreditCard
+} from 'lucide-react';
+import { usePaymentSystem } from '@/hooks/usePaymentSystem';
+import { useAuth } from '@/contexts/AuthContext';
+
+export function PaymentTestHelper() {
+  const [testGameId, setTestGameId] = useState('test-game-123');
+  const [testEntryFee, setTestEntryFee] = useState(5.00);
+  const [testResults, setTestResults] = useState<any[]>([]);
+  const [isRunningTests, setIsRunningTests] = useState(false);
+  
+  const { user } = useAuth();
+  const { 
+    wallet, 
+    fetchWallet, 
+    verifyGameEntry, 
+    addFunds, 
+    processRefund 
+  } = usePaymentSystem();
+
+  const addTestResult = (test: string, success: boolean, message: string, data?: any) => {
+    setTestResults(prev => [...prev, {
+      test,
+      success,
+      message,
+      data,
+      timestamp: new Date().toISOString()
+    }]);
+  };
+
+  const runPaymentTests = async () => {
+    setIsRunningTests(true);
+    setTestResults([]);
+
+    try {
+      // Test 1: Wallet Creation/Fetch
+      console.log('Test 1: Wallet Creation/Fetch');
+      const walletResult = await fetchWallet();
+      addTestResult(
+        'Wallet Creation/Fetch',
+        !!walletResult,
+        walletResult ? `Wallet found with balance: $${walletResult.balance}` : 'Failed to create/fetch wallet',
+        walletResult
+      );
+
+      if (!walletResult) {
+        addTestResult('Test Suite', false, 'Cannot continue without wallet');
+        return;
+      }
+
+      // Test 2: Add Test Funds
+      console.log('Test 2: Add Test Funds');
+      const addFundsResult = await addFunds(20.00);
+      addTestResult(
+        'Add Test Funds',
+        addFundsResult,
+        addFundsResult ? 'Successfully added $20.00 to wallet' : 'Failed to add funds'
+      );
+
+      // Test 3: Payment Verification - Sufficient Funds
+      console.log('Test 3: Payment Verification - Sufficient Funds');
+      const paymentResult = await verifyGameEntry(testGameId, testEntryFee, false);
+      addTestResult(
+        'Payment Verification - Sufficient Funds',
+        paymentResult.success,
+        paymentResult.success 
+          ? `Payment verified. Balance after: $${paymentResult.balance}` 
+          : `Payment failed: ${paymentResult.error}`,
+        paymentResult
+      );
+
+      // Test 4: Payment Verification - Test Mode
+      console.log('Test 4: Payment Verification - Test Mode');
+      const testModeResult = await verifyGameEntry('test-mode-game', 100.00, true);
+      addTestResult(
+        'Payment Verification - Test Mode',
+        testModeResult.success,
+        testModeResult.success 
+          ? 'Test mode bypass successful' 
+          : `Test mode failed: ${testModeResult.error}`,
+        testModeResult
+      );
+
+      // Test 5: Payment Verification - Insufficient Funds
+      console.log('Test 5: Payment Verification - Insufficient Funds');
+      const insufficientResult = await verifyGameEntry('insufficient-test', 1000.00, false);
+      addTestResult(
+        'Payment Verification - Insufficient Funds',
+        !insufficientResult.success && insufficientResult.error?.includes('Insufficient'),
+        insufficientResult.success 
+          ? 'Unexpected success with insufficient funds' 
+          : `Correctly rejected: ${insufficientResult.error}`,
+        insufficientResult
+      );
+
+      // Test 6: Refund Process (if we had a successful transaction)
+      if (paymentResult.success && paymentResult.transactionId) {
+        console.log('Test 6: Refund Process');
+        const refundResult = await processRefund({
+          transactionId: paymentResult.transactionId,
+          reason: 'Test refund',
+          amount: testEntryFee
+        });
+        addTestResult(
+          'Refund Process',
+          refundResult,
+          refundResult ? 'Refund processed successfully' : 'Refund failed'
+        );
+      }
+
+    } catch (error) {
+      addTestResult(
+        'Test Suite Error',
+        false,
+        `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    } finally {
+      setIsRunningTests(false);
+      // Refresh wallet after tests
+      await fetchWallet();
+    }
+  };
+
+  const clearResults = () => {
+    setTestResults([]);
+  };
+
+  const getTestIcon = (success: boolean) => {
+    return success ? (
+      <CheckCircle className="h-4 w-4 text-green-500" />
+    ) : (
+      <XCircle className="h-4 w-4 text-red-500" />
+    );
+  };
+
+  if (!user) {
+    return (
+      <Card className="bg-gray-900 border-gray-700">
+        <CardContent className="p-6 text-center">
+          <p className="text-puzzle-white">Please log in to test payment system</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card className="bg-gray-900 border-gray-700">
+        <CardHeader>
+          <CardTitle className="text-puzzle-white flex items-center gap-2">
+            <TestTube className="h-5 w-5" />
+            Payment System Test Helper
+          </CardTitle>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          {/* Current Wallet Status */}
+          {wallet && (
+            <Alert className="border-puzzle-aqua bg-puzzle-aqua/10">
+              <Wallet className="h-4 w-4" />
+              <AlertDescription className="text-puzzle-aqua">
+                Current wallet balance: ${wallet.balance.toFixed(2)} {wallet.currency}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Test Configuration */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-puzzle-white">Test Game ID</label>
+              <Input
+                value={testGameId}
+                onChange={(e) => setTestGameId(e.target.value)}
+                className="bg-gray-800 border-gray-600 text-puzzle-white"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-puzzle-white">Test Entry Fee</label>
+              <Input
+                type="number"
+                step="0.01"
+                value={testEntryFee}
+                onChange={(e) => setTestEntryFee(parseFloat(e.target.value) || 0)}
+                className="bg-gray-800 border-gray-600 text-puzzle-white"
+              />
+            </div>
+          </div>
+
+          {/* Test Actions */}
+          <div className="flex gap-2">
+            <Button
+              onClick={runPaymentTests}
+              disabled={isRunningTests}
+              className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black"
+            >
+              {isRunningTests ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-puzzle-black border-t-transparent rounded-full mr-2"></div>
+                  Running Tests...
+                </>
+              ) : (
+                <>
+                  <TestTube className="h-4 w-4 mr-2" />
+                  Run Payment Tests
+                </>
+              )}
+            </Button>
+            
+            {testResults.length > 0 && (
+              <Button
+                onClick={clearResults}
+                variant="outline"
+                className="border-gray-600 text-gray-400"
+              >
+                Clear Results
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Test Results */}
+      {testResults.length > 0 && (
+        <Card className="bg-gray-900 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-puzzle-white">Test Results</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {testResults.map((result, index) => (
+                <div key={index} className="flex items-start gap-3 p-3 bg-gray-800 rounded-lg">
+                  {getTestIcon(result.success)}
+                  <div className="flex-1">
+                    <div className="text-puzzle-white font-medium">{result.test}</div>
+                    <div className="text-sm text-gray-400">{result.message}</div>
+                    {result.data && (
+                      <details className="mt-2">
+                        <summary className="text-xs text-puzzle-aqua cursor-pointer">
+                          Show Details
+                        </summary>
+                        <pre className="text-xs text-gray-500 mt-1 overflow-auto">
+                          {JSON.stringify(result.data, null, 2)}
+                        </pre>
+                      </details>
+                    )}
+                  </div>
+                  <Badge 
+                    variant={result.success ? "default" : "destructive"}
+                    className="text-xs"
+                  >
+                    {result.success ? 'PASS' : 'FAIL'}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

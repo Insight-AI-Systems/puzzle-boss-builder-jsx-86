@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { usePaymentSystem } from '@/hooks/usePaymentSystem';
@@ -22,7 +22,43 @@ export function usePaymentVerification(entryFee?: number) {
   const [isVerifying, setIsVerifying] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { verifyGameEntry, wallet } = usePaymentSystem();
+  const { verifyGameEntry, wallet, fetchWallet } = usePaymentSystem();
+
+  // Initialize wallet and payment status
+  useEffect(() => {
+    const initializePaymentStatus = async () => {
+      if (!user) {
+        setPaymentStatus(prev => ({ ...prev, hasAccess: false }));
+        return;
+      }
+
+      if (!entryFee || entryFee <= 0) {
+        setPaymentStatus({
+          verified: true,
+          credits: 0,
+          hasAccess: true,
+          requiresPayment: false
+        });
+        return;
+      }
+
+      // Fetch wallet to get current balance
+      await fetchWallet();
+    };
+
+    initializePaymentStatus();
+  }, [user, entryFee, fetchWallet]);
+
+  // Update payment status when wallet changes
+  useEffect(() => {
+    if (wallet && entryFee && entryFee > 0) {
+      setPaymentStatus(prev => ({
+        ...prev,
+        credits: wallet.balance,
+        hasAccess: wallet.balance >= entryFee
+      }));
+    }
+  }, [wallet, entryFee]);
 
   const verifyPayment = useCallback(async (gameId: string, testMode: boolean = false) => {
     if (!entryFee || entryFee <= 0) {
