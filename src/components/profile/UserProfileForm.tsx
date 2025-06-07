@@ -102,8 +102,8 @@ export function UserProfileForm() {
           
           <TabsContent value="financial">
             <ProfileFinancialTab 
-              userId={profile.id}
-              financialSummary={profile.financial_summary}
+              profile={profile}
+              isAdmin={false}
             />
           </TabsContent>
           
