@@ -3,12 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { BaseGameWrapper } from '../BaseGameWrapper';
 import { ResponsiveGameContainer } from '../ResponsiveGameContainer';
 import WordSearchEngine from './WordSearchEngine';
+import { WordSearchInstructions } from './WordSearchInstructions';
 import { wordCategories, getRandomWordsFromCategory, getDifficultyWordCount } from './WordListManager';
 import { GameConfig } from '../types/GameTypes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shuffle, RotateCcw } from 'lucide-react';
+import { Shuffle, RotateCcw, Play } from 'lucide-react';
 
 interface WordSearchGameProps {
   difficulty?: 'rookie' | 'pro' | 'master';
@@ -27,6 +28,7 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
   const [currentWords, setCurrentWords] = useState<string[]>([]);
   const [gameKey, setGameKey] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(true);
   const [wordsFound, setWordsFound] = useState(0);
   const [totalWords, setTotalWords] = useState(0);
 
@@ -35,7 +37,7 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
     hasTimer: true,
     hasScore: true,
     hasMoves: false,
-    timeLimit: difficulty === 'master' ? 600 : difficulty === 'pro' ? 480 : 360, // 10, 8, or 6 minutes
+    timeLimit: difficulty === 'master' ? 600 : difficulty === 'pro' ? 480 : 360,
     requiresPayment: entryFee > 0,
     entryFee
   };
@@ -47,11 +49,15 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
     setCurrentWords(words);
     setTotalWords(words.length);
     setWordsFound(0);
+    setGameStarted(false);
+    setShowInstructions(true);
   }, [selectedCategory, difficulty]);
 
   const handleCategoryChange = (newCategory: string) => {
     setSelectedCategory(newCategory);
-    setGameKey(prev => prev + 1); // Force re-render of word search engine
+    setGameKey(prev => prev + 1);
+    setGameStarted(false);
+    setShowInstructions(true);
   };
 
   const handleNewGame = () => {
@@ -61,6 +67,13 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
     setTotalWords(words.length);
     setWordsFound(0);
     setGameKey(prev => prev + 1);
+    setGameStarted(false);
+    setShowInstructions(true);
+  };
+
+  const handleStartGame = () => {
+    setGameStarted(true);
+    setShowInstructions(false);
   };
 
   const handleWordFound = (word: string, found: number, total: number) => {
@@ -97,57 +110,74 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
       >
         <div className="space-y-4">
           {/* Game Configuration */}
-          {!gameStarted && (
-            <Card className="bg-gray-900 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-puzzle-white">Game Setup</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-puzzle-white mb-2">
-                      Category
-                    </label>
-                    <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                      <SelectTrigger className="bg-gray-800 border-gray-600 text-puzzle-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-gray-600">
-                        {wordCategories.map(category => (
-                          <SelectItem 
-                            key={category.id} 
-                            value={category.id}
-                            className="text-puzzle-white hover:bg-gray-700"
-                          >
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+          {showInstructions && (
+            <>
+              <Card className="bg-gray-900 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-puzzle-white">Game Setup</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-puzzle-white mb-2">
+                        Category
+                      </label>
+                      <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+                        <SelectTrigger className="bg-gray-800 border-gray-600 text-puzzle-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border-gray-600">
+                          {wordCategories.map(category => (
+                            <SelectItem 
+                              key={category.id} 
+                              value={category.id}
+                              className="text-puzzle-white hover:bg-gray-700"
+                            >
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="flex items-end gap-2">
+                      <Button
+                        onClick={handleNewGame}
+                        variant="outline"
+                        className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black"
+                      >
+                        <Shuffle className="h-4 w-4 mr-2" />
+                        New Words
+                      </Button>
+                      
+                      <Button
+                        onClick={handleStartGame}
+                        className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold"
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        Start Game
+                      </Button>
+                    </div>
                   </div>
                   
-                  <div className="flex items-end">
-                    <Button
-                      onClick={handleNewGame}
-                      variant="outline"
-                      className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black"
-                    >
-                      <Shuffle className="h-4 w-4 mr-2" />
-                      New Words
-                    </Button>
-                  </div>
-                </div>
-                
-                {categoryOptions && (
-                  <div className="p-3 bg-gray-800 rounded-lg">
-                    <p className="text-sm text-gray-300">{categoryOptions.description}</p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {totalWords} words to find • {difficulty} difficulty
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  {categoryOptions && (
+                    <div className="p-3 bg-gray-800 rounded-lg">
+                      <p className="text-sm text-gray-300">{categoryOptions.description}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {totalWords} words to find • {difficulty} difficulty
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Instructions */}
+              <WordSearchInstructions
+                difficulty={difficulty}
+                category={categoryOptions?.name || 'Unknown'}
+                totalWords={totalWords}
+              />
+            </>
           )}
 
           {/* Word Search Engine */}
@@ -183,6 +213,14 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
                   >
                     <Shuffle className="h-4 w-4 mr-2" />
                     Shuffle Words
+                  </Button>
+                  
+                  <Button
+                    onClick={() => setShowInstructions(true)}
+                    variant="outline"
+                    className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                  >
+                    Show Instructions
                   </Button>
                 </div>
               </CardContent>
