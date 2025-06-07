@@ -1,5 +1,5 @@
 
-/* Memory Card Simple Flip Animation - Simplified Implementation */
+/* Memory Card Flip Animation - SIMPLIFIED AND DEBUGGED */
 .memory-card {
   position: relative !important;
   width: 100% !important;
@@ -7,6 +7,8 @@
   cursor: pointer !important;
   border-radius: 8px !important;
   transition: all 0.3s ease !important;
+  min-height: 80px !important;
+  min-width: 80px !important;
 }
 
 .memory-card:hover {
@@ -16,6 +18,8 @@
 .memory-card.disabled {
   pointer-events: none !important;
   opacity: 0.6 !important;
+  /* Add visual debug for disabled state */
+  border: 3px solid red !important;
 }
 
 /* Card content container */
@@ -43,7 +47,7 @@
   font-size: 2rem !important;
   font-weight: bold !important;
   border-radius: 8px !important;
-  transition: opacity 0.3s ease !important;
+  transition: opacity 0.5s ease !important;
   z-index: 2 !important;
 }
 
@@ -60,27 +64,35 @@
   align-items: center !important;
   justify-content: center !important;
   border-radius: 8px !important;
-  transition: opacity 0.3s ease !important;
+  transition: opacity 0.5s ease !important;
   z-index: 1 !important;
 }
 
-/* Flipped state - hide front, show back */
+/* FLIPPED STATE - SHOW BACK, HIDE FRONT */
 .memory-card.flipped .memory-card-front {
   opacity: 0 !important;
   pointer-events: none !important;
+  /* DEBUG: Add bright border to show flipped cards */
+  border: 5px solid lime !important;
 }
 
 .memory-card.flipped .memory-card-back {
   opacity: 1 !important;
+  /* DEBUG: Add bright background to show flipped cards */
+  background: #90EE90 !important;
+  border: 5px solid lime !important;
 }
 
-/* Not flipped state - show front, hide back */
+/* NOT FLIPPED STATE - SHOW FRONT, HIDE BACK */
 .memory-card:not(.flipped) .memory-card-front {
   opacity: 1 !important;
+  /* DEBUG: Add bright border to show non-flipped cards */
+  border: 5px solid blue !important;
 }
 
 .memory-card:not(.flipped) .memory-card-back {
   opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Matched card styling */
@@ -102,19 +114,19 @@
 .memory-card-emoji {
   font-size: 3rem !important;
   line-height: 1 !important;
+  color: black !important;
 }
 
-/* Debug classes for testing */
-.debug-flipped {
-  border: 3px solid red !important;
+/* EXTREME DEBUGGING - Make flipped state super obvious */
+.memory-card.flipped {
+  /* Bright green background for flipped cards */
+  background: lime !important;
+  border: 5px solid green !important;
+  transform: scale(1.1) !important;
 }
 
-.debug-not-flipped {
-  border: 3px solid blue !important;
-}
-
-/* Ensure minimum size */
-.memory-card {
-  min-height: 80px !important;
-  min-width: 80px !important;
+.memory-card:not(.flipped) {
+  /* Blue background for non-flipped cards */
+  background: lightblue !important;
+  border: 5px solid blue !important;
 }

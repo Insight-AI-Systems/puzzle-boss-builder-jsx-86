@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import { MemoryGameBoard } from './components/MemoryGameBoard';
 import { MemoryGameControls } from './components/MemoryGameControls';
@@ -22,7 +23,7 @@ export function MemoryGame({
   layout = '3x4',
   theme = 'animals',
   gameState: externalGameState,
-  isActive = true,
+  isActive = true, // Default to true instead of checking external prop
   onComplete,
   onScoreUpdate,
   onMoveUpdate
@@ -55,7 +56,8 @@ export function MemoryGame({
       isActive,
       selectedCards: gameState.selectedCards.length,
       layout: gameState.layout,
-      theme: gameState.theme
+      theme: gameState.theme,
+      isGameActive
     });
 
     // Log card states for debugging
@@ -66,7 +68,7 @@ export function MemoryGame({
         value: card.value
       });
     });
-  }, [gameInitialized, gameState, disabled, isActive]);
+  }, [gameInitialized, gameState, disabled, isActive, isGameActive]);
 
   // Handle layout changes
   const handleLayoutChange = (newLayout: MemoryLayout) => {
@@ -138,6 +140,11 @@ export function MemoryGame({
     );
   }
 
+  // FIXED: Only disable cards when 2 are selected, NOT when game is inactive
+  const cardsDisabled = disabled; // Remove the || !isActive condition
+
+  console.log('🚨 CARDS DISABLED STATE:', cardsDisabled, 'disabled:', disabled, 'isActive:', isActive);
+
   return (
     <div className="w-full max-w-6xl mx-auto space-y-4">
       <MemoryGameControls
@@ -157,7 +164,7 @@ export function MemoryGame({
       <MemoryGameBoard
         cards={gameState.cards}
         onCardClick={handleCardClick}
-        disabled={disabled || !isActive}
+        disabled={cardsDisabled}
         layout={gameState.layout}
         theme={gameState.theme}
       />

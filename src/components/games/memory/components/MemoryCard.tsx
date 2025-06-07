@@ -22,7 +22,8 @@ export function MemoryCard({ card, onClick, disabled, theme }: MemoryCardProps) 
       isMatched: card.isMatched,
       computedFlipped: isFlipped,
       value: card.value,
-      disabled
+      disabled,
+      propsDisabled: disabled
     });
   }, [card.isFlipped, card.isMatched, card.id, card.value, disabled, isFlipped]);
 
@@ -31,14 +32,20 @@ export function MemoryCard({ card, onClick, disabled, theme }: MemoryCardProps) 
       isFlipped: card.isFlipped,
       isMatched: card.isMatched,
       disabled,
+      propsDisabled: disabled,
       canClick: !disabled && !card.isFlipped && !card.isMatched
     });
     
+    // SIMPLIFIED: Only check if disabled prop is true, card is flipped, or matched
     if (!disabled && !card.isFlipped && !card.isMatched) {
       console.log(`✅ Executing click for card: ${card.id}`);
       onClick(card.id);
     } else {
-      console.log(`❌ Click blocked for card: ${card.id}`, { disabled, isFlipped: card.isFlipped, isMatched: card.isMatched });
+      console.log(`❌ Click blocked for card: ${card.id}`, { 
+        disabled, 
+        isFlipped: card.isFlipped, 
+        isMatched: card.isMatched 
+      });
     }
   };
 
@@ -47,7 +54,7 @@ export function MemoryCard({ card, onClick, disabled, theme }: MemoryCardProps) 
     setImageError(true);
   };
 
-  // Build class names
+  // Build class names - SIMPLIFIED
   const cardClasses = [
     'memory-card',
     'w-full',
@@ -57,33 +64,32 @@ export function MemoryCard({ card, onClick, disabled, theme }: MemoryCardProps) 
   // Add flip state
   if (isFlipped) {
     cardClasses.push('flipped');
-    console.log(`🔄 Card ${card.id} is FLIPPED`);
+    console.log(`🔄 Card ${card.id} is FLIPPED - adding 'flipped' class`);
   } else {
     console.log(`📋 Card ${card.id} is NOT FLIPPED`);
   }
 
-  // Add disabled state
+  // Add disabled state ONLY if the disabled prop is true
   if (disabled) {
     cardClasses.push('disabled');
-  }
-
-  // Add debug classes for visual confirmation
-  if (isFlipped) {
-    cardClasses.push('debug-flipped');
+    console.log(`🚫 Card ${card.id} is DISABLED`);
   } else {
-    cardClasses.push('debug-not-flipped');
+    console.log(`✅ Card ${card.id} is ENABLED`);
   }
 
   const finalClassName = cardClasses.join(' ');
   
-  console.log(`🎨 Card ${card.id} className:`, finalClassName);
-  console.log(`🎭 Card ${card.id} visual state: ${isFlipped ? 'SHOWING BACK' : 'SHOWING FRONT'}`);
+  console.log(`🎨 Card ${card.id} final className:`, finalClassName);
+  console.log(`🎭 Card ${card.id} should show: ${isFlipped ? 'BACK (content)' : 'FRONT (question mark)'}`);
 
   return (
     <div 
       className={finalClassName}
       onClick={handleClick}
       style={{ minHeight: '80px' }}
+      data-card-id={card.id}
+      data-flipped={isFlipped.toString()}
+      data-disabled={disabled.toString()}
     >
       <div className="memory-card-content">
         {/* Card Front (question mark) */}
