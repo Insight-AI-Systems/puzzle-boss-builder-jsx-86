@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +15,8 @@ interface WordSearchEngineProps {
   wordList: string[];
   onComplete?: (stats: { timeElapsed: number; wordsFound: number; totalWords: number }) => void;
   onWordFound?: (word: string, found: number, total: number) => void;
+  onNewGame?: () => void;
+  onBackToArena?: () => void;
 }
 
 const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
@@ -21,7 +24,9 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   category,
   wordList,
   onComplete,
-  onWordFound
+  onWordFound,
+  onNewGame,
+  onBackToArena
 }) => {
   const [foundWords, setFoundWords] = useState<Set<string>>(new Set());
   const [gameStarted, setGameStarted] = useState(false);
@@ -69,6 +74,8 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
     setGameComplete(false);
     setIsPaused(false);
     setScore(0);
+    setShowCongratulations(false);
+    setShowLeaderboard(false);
     gridInitialized.current = false;
   }, [wordList]);
 
@@ -124,6 +131,22 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
       }
     }
   }, [foundWords, actualWordList.length, timeElapsed, timeLimit, onWordFound, handleGameComplete]);
+
+  // Handler functions for congratulations and leaderboard
+  const handleContinueFromCongratulations = useCallback(() => {
+    setShowCongratulations(false);
+    setShowLeaderboard(true);
+  }, []);
+
+  const handlePlayAgain = useCallback(() => {
+    setShowLeaderboard(false);
+    onNewGame?.();
+  }, [onNewGame]);
+
+  const handleBackToArena = useCallback(() => {
+    setShowLeaderboard(false);
+    onBackToArena?.();
+  }, [onBackToArena]);
 
   const progress = actualWordList.length > 0 ? (foundWords.size / actualWordList.length) * 100 : 0;
   const timeRemaining = Math.max(0, timeLimit - timeElapsed);
