@@ -1,10 +1,15 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { MemoryGameBoard } from './components/MemoryGameBoard';
 import { MemoryGameControls } from './components/MemoryGameControls';
+import { MemoryScoreDisplay } from './components/MemoryScoreDisplay';
+import { MemoryLeaderboard } from './components/MemoryLeaderboard';
+import { MemoryCelebration } from './components/MemoryCelebration';
 import { useMemoryGame } from './hooks/useMemoryGame';
+import { useMemoryScoring } from './hooks/useMemoryScoring';
 import { useImagePreloader } from './hooks/useImagePreloader';
 import { MemoryLayout, MemoryTheme, THEME_CONFIGS } from './types/memoryTypes';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Import the CSS file directly to ensure it loads
 import './styles/memory-cards.css';
@@ -23,11 +28,14 @@ export function MemoryGame({
   layout = '3x4',
   theme = 'animals',
   gameState: externalGameState,
-  isActive = true, // Default to true instead of checking external prop
+  isActive = true,
   onComplete,
   onScoreUpdate,
   onMoveUpdate
 }: MemoryGameProps) {
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [activeTab, setActiveTab] = useState('game');
+
   const {
     gameState,
     handleCardClick,
@@ -38,6 +46,15 @@ export function MemoryGame({
     gameInitialized
   } = useMemoryGame(layout, theme);
 
+  const {
+    scoreData,
+    leaderboard,
+    personalBests,
+    updateScore,
+    submitToLeaderboard,
+    resetScore
+  } = useMemoryScoring(gameState.layout);
+
   // Preload images for the current theme
   const themeItems = THEME_CONFIGS[gameState.theme]?.items || [];
   const { loadedImages, loading: imagesLoading } = useImagePreloader(themeItems);
@@ -47,59 +64,44 @@ export function MemoryGame({
   const lastMatchedPairs = useRef(0);
   const gameCompletedRef = useRef(false);
 
-  // Debug current game state
+  // Update scoring in real-time
   useEffect(() => {
-    console.log('🎮 MemoryGame render state:', {
-      gameInitialized,
-      cardsLength: gameState.cards.length,
-      disabled,
-      isActive,
-      selectedCards: gameState.selectedCards.length,
-      layout: gameState.layout,
-      theme: gameState.theme,
-      isGameActive
-    });
-
-    // Log card states for debugging
-    gameState.cards.forEach(card => {
-      console.log(`🎴 Card ${card.id}:`, {
-        isFlipped: card.isFlipped,
-        isMatched: card.isMatched,
-        value: card.value
-      });
-    });
-  }, [gameInitialized, gameState, disabled, isActive, isGameActive]);
+    if (gameInitialized && isGameActive) {
+      const newScoreData = updateScore(gameState.matchedPairs, gameState.moves, stats.timeElapsed);
+      
+      // Update external score callback
+      if (onScoreUpdate && newScoreData.finalScore !== scoreData.finalScore) {
+        onScoreUpdate(newScoreData.finalScore);
+      }
+    }
+  }, [gameState.matchedPairs, gameState.moves, stats.timeElapsed, gameInitialized, isGameActive]);
 
   // Handle layout changes
   const handleLayoutChange = (newLayout: MemoryLayout) => {
     console.log('🔄 Layout change triggered:', newLayout);
     initializeGame(newLayout, gameState.theme);
+    resetScore();
     gameCompletedRef.current = false;
+    setShowCelebration(false);
   };
 
   // Handle theme changes
   const handleThemeChange = (newTheme: MemoryTheme) => {
     console.log('🎨 Theme change triggered:', newTheme);
     initializeGame(gameState.layout, newTheme);
+    resetScore();
     gameCompletedRef.current = false;
+    setShowCelebration(false);
   };
 
   // Handle restart
   const handleRestart = () => {
     console.log('🔄 Restart triggered');
     initializeGame(gameState.layout, gameState.theme);
+    resetScore();
     gameCompletedRef.current = false;
+    setShowCelebration(false);
   };
-
-  // Update external score only when matched pairs change
-  useEffect(() => {
-    if (onScoreUpdate && gameInitialized && lastMatchedPairs.current !== gameState.matchedPairs) {
-      const score = Math.round(gameState.matchedPairs * 100 * (stats.accuracy / 100));
-      console.log('Score updated:', score);
-      onScoreUpdate(score);
-      lastMatchedPairs.current = gameState.matchedPairs;
-    }
-  }, [gameState.matchedPairs, stats.accuracy, onScoreUpdate, gameInitialized]);
 
   // Update external moves only when moves change
   useEffect(() => {
@@ -110,19 +112,34 @@ export function MemoryGame({
     }
   }, [gameState.moves, onMoveUpdate, gameInitialized]);
 
-  // Handle game completion only once
+  // Handle game completion
   useEffect(() => {
     if (gameState.isGameComplete && onComplete && !gameCompletedRef.current) {
       gameCompletedRef.current = true;
+      
+      // Show celebration first
+      setShowCelebration(true);
+      
+      // Submit to leaderboard (using a default player name for now)
+      const leaderboardEntry = submitToLeaderboard(scoreData, 'Anonymous Player');
+      
       const finalStats = {
-        ...stats,
+        ...scoreData,
         completed: true,
-        score: Math.round(gameState.matchedPairs * 100 * (stats.accuracy / 100))
+        score: scoreData.finalScore,
+        gameType: `memory-${gameState.layout}-${gameState.theme}`,
+        difficulty: gameState.layout,
+        leaderboardPosition: leaderboard.findIndex(entry => entry.id === leaderboardEntry.id) + 1
       };
+      
       console.log('Game completed with stats:', finalStats);
-      onComplete(finalStats);
+      
+      // Delay the onComplete callback to allow celebration to show
+      setTimeout(() => {
+        onComplete(finalStats);
+      }, 3000);
     }
-  }, [gameState.isGameComplete, onComplete, stats, gameState.matchedPairs]);
+  }, [gameState.isGameComplete, onComplete, scoreData, submitToLeaderboard]);
 
   if (!gameInitialized || gameState.cards.length === 0) {
     return (
@@ -140,33 +157,67 @@ export function MemoryGame({
     );
   }
 
-  // FIXED: Only disable cards when 2 are selected, NOT when game is inactive
-  const cardsDisabled = disabled; // Remove the || !isActive condition
-
-  console.log('🚨 CARDS DISABLED STATE:', cardsDisabled, 'disabled:', disabled, 'isActive:', isActive);
+  const cardsDisabled = disabled;
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-4">
-      <MemoryGameControls
-        moves={stats.moves}
-        timeElapsed={stats.timeElapsed}
-        matchedPairs={stats.matchedPairs}
-        totalPairs={stats.totalPairs}
-        accuracy={stats.accuracy}
-        layout={gameState.layout}
-        theme={gameState.theme}
-        isGameActive={isGameActive}
-        onLayoutChange={handleLayoutChange}
-        onThemeChange={handleThemeChange}
-        onRestart={handleRestart}
-      />
-      
-      <MemoryGameBoard
-        cards={gameState.cards}
-        onCardClick={handleCardClick}
-        disabled={cardsDisabled}
-        layout={gameState.layout}
-        theme={gameState.theme}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3 bg-gray-800">
+          <TabsTrigger value="game">Game</TabsTrigger>
+          <TabsTrigger value="score">Score Details</TabsTrigger>
+          <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="game" className="space-y-4">
+          <MemoryGameControls
+            moves={stats.moves}
+            timeElapsed={stats.timeElapsed}
+            matchedPairs={stats.matchedPairs}
+            totalPairs={stats.totalPairs}
+            accuracy={stats.accuracy}
+            layout={gameState.layout}
+            theme={gameState.theme}
+            isGameActive={isGameActive}
+            onLayoutChange={handleLayoutChange}
+            onThemeChange={handleThemeChange}
+            onRestart={handleRestart}
+          />
+
+          <MemoryScoreDisplay
+            scoreData={scoreData}
+            isGameActive={isGameActive}
+          />
+          
+          <MemoryGameBoard
+            cards={gameState.cards}
+            onCardClick={handleCardClick}
+            disabled={cardsDisabled}
+            layout={gameState.layout}
+            theme={gameState.theme}
+          />
+        </TabsContent>
+
+        <TabsContent value="score">
+          <MemoryScoreDisplay
+            scoreData={scoreData}
+            isGameActive={isGameActive}
+            showDetailed={true}
+          />
+        </TabsContent>
+
+        <TabsContent value="leaderboard">
+          <MemoryLeaderboard
+            leaderboard={leaderboard}
+            layout={gameState.layout}
+            personalBests={personalBests}
+          />
+        </TabsContent>
+      </Tabs>
+
+      <MemoryCelebration
+        scoreData={scoreData}
+        show={showCelebration}
+        onComplete={() => setShowCelebration(false)}
       />
     </div>
   );
