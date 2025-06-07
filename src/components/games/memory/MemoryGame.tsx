@@ -46,23 +46,27 @@ export function MemoryGame({
 
   // Handle layout changes
   const handleLayoutChange = (newLayout: MemoryLayout) => {
-    console.log('Layout changed to:', newLayout);
+    console.log('=== LAYOUT CHANGE ===');
+    console.log('New layout:', newLayout);
     initializeGame(newLayout, gameState.theme);
     gameCompletedRef.current = false;
   };
 
   // Handle theme changes
   const handleThemeChange = (newTheme: MemoryTheme) => {
-    console.log('Theme changed to:', newTheme);
+    console.log('=== THEME CHANGE ===');
+    console.log('New theme:', newTheme);
     initializeGame(gameState.layout, newTheme);
     gameCompletedRef.current = false;
   };
 
   // Handle restart
   const handleRestart = () => {
-    console.log('Game restarted');
+    console.log('=== GAME RESTART TRIGGERED ===');
+    console.log('Current layout:', gameState.layout, 'Current theme:', gameState.theme);
     initializeGame(gameState.layout, gameState.theme);
     gameCompletedRef.current = false;
+    console.log('=== RESTART COMPLETE ===');
   };
 
   // Update external score only when matched pairs change
@@ -97,6 +101,17 @@ export function MemoryGame({
       onComplete(finalStats);
     }
   }, [gameState.isGameComplete, onComplete, stats, gameState.matchedPairs]);
+
+  // Debug current game state
+  useEffect(() => {
+    console.log('MemoryGame render state:', {
+      gameInitialized,
+      cardsLength: gameState.cards.length,
+      disabled,
+      isActive,
+      selectedCards: gameState.selectedCards.length
+    });
+  }, [gameInitialized, gameState.cards.length, disabled, isActive, gameState.selectedCards.length]);
 
   if (!gameInitialized || gameState.cards.length === 0) {
     return (
