@@ -28,14 +28,14 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, navItems, isLoggedIn, o
   };
 
   const getPuzzleDropdownItems = () => [
-    { name: 'Word Search Arena', path: '/puzzles/word-search', icon: Search },
-    { name: 'Speed Sudoku', path: '/puzzles/sudoku', icon: Grid3X3 },
-    { name: 'Memory Master', path: '/puzzles/memory', icon: Brain },
-    { name: 'Trivia Lightning', path: '/puzzles/trivia', icon: Zap },
-    { name: 'Block Puzzle Pro', path: '/puzzles/blocks', icon: Square },
-    { name: 'Daily Crossword', path: '/puzzles/crossword', icon: BookOpen },
-    { name: 'divider', path: '', icon: null },
-    { name: 'All Puzzles', path: '/puzzles', icon: Puzzle, isBold: true }
+    { name: 'Word Search Arena', href: '/puzzles/word-search', icon: Search },
+    { name: 'Speed Sudoku', href: '/puzzles/sudoku', icon: Grid3X3 },
+    { name: 'Memory Master', href: '/puzzles/memory', icon: Brain },
+    { name: 'Trivia Lightning', href: '/puzzles/trivia', icon: Zap },
+    { name: 'Block Puzzle Pro', href: '/puzzles/blocks', icon: Square },
+    { name: 'Daily Crossword', href: '/puzzles/crossword', icon: BookOpen },
+    { name: 'divider', href: '', icon: null },
+    { name: 'All Puzzles', href: '/puzzles', icon: Puzzle, isBold: true }
   ];
 
   const handlePuzzlesToggle = () => {
@@ -46,7 +46,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, navItems, isLoggedIn, o
     <div className="md:hidden">
       <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-puzzle-aqua/20">
         {navItems.map((item) => shouldShowLink(item) && (
-          <div key={item.path}>
+          <div key={item.href}>
             {item.name === 'Puzzles' ? (
               <>
                 <button
@@ -74,8 +74,8 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, navItems, isLoggedIn, o
                         />
                       ) : (
                         <Link
-                          key={dropdownItem.path}
-                          to={dropdownItem.path}
+                          key={dropdownItem.href}
+                          to={dropdownItem.href}
                           className={`flex items-center gap-3 px-4 py-3 text-white hover:text-puzzle-gold hover:bg-puzzle-aqua/10 transition-colors duration-200 rounded-md ${
                             dropdownItem.isBold ? 'font-semibold' : ''
                           }`}
@@ -94,7 +94,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, navItems, isLoggedIn, o
               </>
             ) : (
               <Link
-                to={item.path}
+                to={item.href}
                 className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-puzzle-white hover:bg-white/10"
                 onClick={onClose}
               >
