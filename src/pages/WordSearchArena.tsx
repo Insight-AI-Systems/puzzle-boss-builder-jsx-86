@@ -1,13 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Users, Trophy, Zap, Search, Play, CreditCard } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Clock, Users, Trophy, Zap, Search, Play, CreditCard, Wallet } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { useMemberProfile } from '@/hooks/useMemberProfile';
 import { usePaymentSystem } from '@/hooks/usePaymentSystem';
 import { CreditBalanceDisplay } from '@/components/games/CreditBalanceDisplay';
+import { PaymentMethodSelector } from '@/components/games/PaymentMethodSelector';
+import { PaymentConfirmationDialog } from '@/components/games/PaymentConfirmationDialog';
 import WordSearchGame from '@/components/games/word-search/WordSearchGame';
 
 interface CompetitionTier {
