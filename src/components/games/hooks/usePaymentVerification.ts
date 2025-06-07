@@ -2,12 +2,14 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { usePaymentSystem } from '@/hooks/usePaymentSystem';
 
 export interface PaymentStatus {
   verified: boolean;
   credits: number;
   hasAccess: boolean;
   requiresPayment: boolean;
+  transactionId?: string;
 }
 
 export function usePaymentVerification(entryFee?: number) {
@@ -20,8 +22,9 @@ export function usePaymentVerification(entryFee?: number) {
   const [isVerifying, setIsVerifying] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { verifyGameEntry, wallet } = usePaymentSystem();
 
-  const verifyPayment = useCallback(async () => {
+  const verifyPayment = useCallback(async (gameId: string, testMode: boolean = false) => {
     if (!entryFee || entryFee <= 0) {
       setPaymentStatus({
         verified: true,
@@ -39,26 +42,25 @@ export function usePaymentVerification(entryFee?: number) {
 
     setIsVerifying(true);
     try {
-      // Mock verification - replace with actual payment verification
-      const mockCredits = 50; // Mock user credits
-      const hasEnoughCredits = mockCredits >= entryFee;
+      const result = await verifyGameEntry(gameId, entryFee, testMode);
       
       setPaymentStatus({
-        verified: hasEnoughCredits,
-        credits: mockCredits,
-        hasAccess: hasEnoughCredits,
-        requiresPayment: true
+        verified: result.success,
+        credits: result.balance,
+        hasAccess: result.canPlay,
+        requiresPayment: true,
+        transactionId: result.transactionId
       });
 
-      if (!hasEnoughCredits) {
+      if (!result.success) {
         toast({
-          title: "Insufficient credits",
-          description: `You need ${entryFee} credits to play this game`,
+          title: "Payment verification failed",
+          description: result.error || "Unable to verify payment",
           variant: "destructive"
         });
       }
 
-      return hasEnoughCredits;
+      return result.success;
     } catch (error) {
       console.error('Payment verification failed:', error);
       toast({
@@ -70,43 +72,17 @@ export function usePaymentVerification(entryFee?: number) {
     } finally {
       setIsVerifying(false);
     }
-  }, [entryFee, user, toast]);
+  }, [entryFee, user, toast, verifyGameEntry]);
 
-  const processPayment = useCallback(async () => {
-    if (!entryFee || !user) return false;
-
-    try {
-      // Mock payment processing - replace with actual payment processing
-      console.log(`Processing payment of ${entryFee} credits`);
-      
-      toast({
-        title: "Payment processed",
-        description: "You can now start the game",
-      });
-
-      setPaymentStatus(prev => ({ 
-        ...prev, 
-        verified: true, 
-        hasAccess: true,
-        credits: prev.credits - entryFee
-      }));
-
-      return true;
-    } catch (error) {
-      console.error('Payment processing failed:', error);
-      toast({
-        title: "Payment failed",
-        description: "Please try again",
-        variant: "destructive"
-      });
-      return false;
-    }
-  }, [entryFee, user, toast]);
+  const processPayment = useCallback(async (gameId: string, testMode: boolean = false) => {
+    return await verifyPayment(gameId, testMode);
+  }, [verifyPayment]);
 
   return {
     paymentStatus,
     isVerifying,
     verifyPayment,
-    processPayment
+    processPayment,
+    currentBalance: wallet?.balance || 0
   };
 }

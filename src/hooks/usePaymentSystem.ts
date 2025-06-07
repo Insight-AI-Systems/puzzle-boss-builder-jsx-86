@@ -1,0 +1,435 @@
+
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import {
+  PaymentMethod,
+  UserWallet,
+  GameTransaction,
+  GamePrizePool,
+  PaymentVerificationResult,
+  RefundRequest,
+  TransactionReceipt
+} from '@/types/payments';
+
+export function usePaymentSystem() {
+  const [loading, setLoading] = useState(false);
+  const [wallet, setWallet] = useState<UserWallet | null>(null);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  // Get user wallet
+  const fetchWallet = useCallback(async () => {
+    if (!user) return null;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_wallets')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+      setWallet(data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching wallet:', error);
+      return null;
+    }
+  }, [user]);
+
+  // Get payment methods
+  const fetchPaymentMethods = useCallback(async () => {
+    if (!user) return [];
+
+    try {
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('is_default', { ascending: false });
+
+      if (error) throw error;
+      setPaymentMethods(data || []);
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching payment methods:', error);
+      return [];
+    }
+  }, [user]);
+
+  // Verify payment for game entry
+  const verifyGameEntry = useCallback(async (
+    gameId: string,
+    entryFee: number,
+    testMode: boolean = false
+  ): Promise<PaymentVerificationResult> => {
+    if (!user) {
+      return {
+        success: false,
+        canPlay: false,
+        balance: 0,
+        entryFee,
+        error: 'User not authenticated'
+      };
+    }
+
+    setLoading(true);
+
+    try {
+      // In test mode, bypass payment verification
+      if (testMode) {
+        return {
+          success: true,
+          canPlay: true,
+          balance: 999999,
+          entryFee: 0
+        };
+      }
+
+      // Get current wallet balance
+      const currentWallet = await fetchWallet();
+      if (!currentWallet) {
+        throw new Error('Wallet not found');
+      }
+
+      // Check if user has sufficient balance
+      if (currentWallet.balance < entryFee) {
+        return {
+          success: false,
+          canPlay: false,
+          balance: currentWallet.balance,
+          entryFee,
+          error: 'Insufficient balance'
+        };
+      }
+
+      // Perform fraud detection check
+      const riskScore = await performFraudCheck(user.id, entryFee);
+      if (riskScore > 80) {
+        return {
+          success: false,
+          canPlay: false,
+          balance: currentWallet.balance,
+          entryFee,
+          error: 'Transaction flagged for review'
+        };
+      }
+
+      // Create entry fee transaction
+      const { data: transaction, error: transactionError } = await supabase
+        .from('game_transactions')
+        .insert({
+          user_id: user.id,
+          game_id: gameId,
+          transaction_type: 'entry_fee',
+          amount: entryFee,
+          status: 'pending',
+          description: `Game entry fee for game ${gameId}`
+        })
+        .select()
+        .single();
+
+      if (transactionError) throw transactionError;
+
+      // Deduct from wallet balance
+      const { error: walletError } = await supabase
+        .from('user_wallets')
+        .update({ 
+          balance: currentWallet.balance - entryFee,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+
+      if (walletError) throw walletError;
+
+      // Update transaction to completed
+      await supabase
+        .from('game_transactions')
+        .update({ status: 'completed' })
+        .eq('id', transaction.id);
+
+      // Generate receipt
+      const receipt = await generateReceipt(transaction.id);
+
+      // Update local wallet state
+      setWallet(prev => prev ? { ...prev, balance: prev.balance - entryFee } : null);
+
+      toast({
+        title: "Payment Successful",
+        description: `Entry fee of $${entryFee.toFixed(2)} has been deducted`,
+      });
+
+      return {
+        success: true,
+        canPlay: true,
+        balance: currentWallet.balance - entryFee,
+        entryFee,
+        transactionId: transaction.id,
+        receipt
+      };
+
+    } catch (error) {
+      console.error('Payment verification error:', error);
+      toast({
+        title: "Payment Failed",
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: "destructive"
+      });
+
+      return {
+        success: false,
+        canPlay: false,
+        balance: wallet?.balance || 0,
+        entryFee,
+        error: error instanceof Error ? error.message : 'Payment verification failed'
+      };
+    } finally {
+      setLoading(false);
+    }
+  }, [user, wallet, fetchWallet, toast]);
+
+  // Process refund
+  const processRefund = useCallback(async (request: RefundRequest): Promise<boolean> => {
+    if (!user) return false;
+
+    setLoading(true);
+
+    try {
+      // Get original transaction
+      const { data: originalTransaction, error: fetchError } = await supabase
+        .from('game_transactions')
+        .select('*')
+        .eq('id', request.transactionId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      if (originalTransaction.status === 'refunded') {
+        throw new Error('Transaction already refunded');
+      }
+
+      const refundAmount = request.amount || originalTransaction.amount;
+
+      // Create refund transaction
+      const { data: refundTransaction, error: refundError } = await supabase
+        .from('game_transactions')
+        .insert({
+          user_id: user.id,
+          game_id: originalTransaction.game_id,
+          session_id: originalTransaction.session_id,
+          transaction_type: 'refund',
+          amount: refundAmount,
+          status: 'completed',
+          description: `Refund for transaction ${request.transactionId}: ${request.reason}`,
+          metadata: { original_transaction_id: request.transactionId, reason: request.reason }
+        })
+        .select()
+        .single();
+
+      if (refundError) throw refundError;
+
+      // Update wallet balance
+      const currentWallet = await fetchWallet();
+      if (currentWallet) {
+        await supabase
+          .from('user_wallets')
+          .update({ 
+            balance: currentWallet.balance + refundAmount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+
+        setWallet(prev => prev ? { ...prev, balance: prev.balance + refundAmount } : null);
+      }
+
+      // Mark original transaction as refunded
+      await supabase
+        .from('game_transactions')
+        .update({ status: 'refunded' })
+        .eq('id', request.transactionId);
+
+      // Generate refund receipt
+      await generateReceipt(refundTransaction.id);
+
+      toast({
+        title: "Refund Processed",
+        description: `$${refundAmount.toFixed(2)} has been refunded to your account`,
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Refund error:', error);
+      toast({
+        title: "Refund Failed",
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [user, fetchWallet, toast]);
+
+  // Get prize pool for game
+  const getPrizePool = useCallback(async (gameId: string): Promise<GamePrizePool | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('game_prize_pools')
+        .select('*')
+        .eq('game_id', gameId)
+        .eq('status', 'active')
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching prize pool:', error);
+      return null;
+    }
+  }, []);
+
+  // Add funds to wallet (for testing)
+  const addFunds = useCallback(async (amount: number): Promise<boolean> => {
+    if (!user) return false;
+
+    setLoading(true);
+
+    try {
+      // Create deposit transaction
+      const { data: transaction, error: transactionError } = await supabase
+        .from('game_transactions')
+        .insert({
+          user_id: user.id,
+          transaction_type: 'deposit',
+          amount,
+          status: 'completed',
+          description: `Wallet deposit of $${amount.toFixed(2)}`,
+          metadata: { method: 'test_deposit' }
+        })
+        .select()
+        .single();
+
+      if (transactionError) throw transactionError;
+
+      // Update wallet balance
+      const currentWallet = await fetchWallet();
+      if (currentWallet) {
+        await supabase
+          .from('user_wallets')
+          .update({ 
+            balance: currentWallet.balance + amount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+
+        setWallet(prev => prev ? { ...prev, balance: prev.balance + amount } : null);
+      }
+
+      toast({
+        title: "Funds Added",
+        description: `$${amount.toFixed(2)} has been added to your wallet`,
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Add funds error:', error);
+      toast({
+        title: "Failed to Add Funds",
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [user, fetchWallet, toast]);
+
+  // Helper function for fraud detection
+  const performFraudCheck = async (userId: string, amount: number): Promise<number> => {
+    // Simple fraud detection - in real implementation, this would be more sophisticated
+    const riskFactors = [];
+    let riskScore = 0;
+
+    // Check for high-frequency transactions
+    const { data: recentTransactions } = await supabase
+      .from('game_transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString()) // Last hour
+      .order('created_at', { ascending: false });
+
+    if (recentTransactions && recentTransactions.length > 10) {
+      riskFactors.push('high_frequency_transactions');
+      riskScore += 30;
+    }
+
+    // Check for large amounts
+    if (amount > 100) {
+      riskFactors.push('large_amount');
+      riskScore += 20;
+    }
+
+    // Log fraud check
+    await supabase.from('fraud_detection_logs').insert({
+      user_id: userId,
+      risk_score: riskScore,
+      risk_factors: riskFactors,
+      action_taken: riskScore > 80 ? 'blocked' : 'allowed'
+    });
+
+    return riskScore;
+  };
+
+  // Helper function to generate receipt
+  const generateReceipt = async (transactionId: string): Promise<TransactionReceipt | null> => {
+    try {
+      const { data: transaction } = await supabase
+        .from('game_transactions')
+        .select('*')
+        .eq('id', transactionId)
+        .single();
+
+      if (!transaction) return null;
+
+      const { data: receipt, error } = await supabase
+        .from('transaction_receipts')
+        .insert({
+          transaction_id: transactionId,
+          user_id: transaction.user_id,
+          amount: transaction.amount,
+          currency: transaction.currency,
+          description: transaction.description,
+          receipt_data: {
+            transaction_type: transaction.transaction_type,
+            game_id: transaction.game_id,
+            timestamp: new Date().toISOString()
+          }
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return receipt;
+    } catch (error) {
+      console.error('Error generating receipt:', error);
+      return null;
+    }
+  };
+
+  return {
+    loading,
+    wallet,
+    paymentMethods,
+    fetchWallet,
+    fetchPaymentMethods,
+    verifyGameEntry,
+    processRefund,
+    getPrizePool,
+    addFunds
+  };
+}

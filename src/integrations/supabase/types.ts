@@ -545,6 +545,151 @@ export type Database = {
           },
         ]
       }
+      fraud_detection_logs: {
+        Row: {
+          action_taken: string | null
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          risk_factors: Json | null
+          risk_score: number | null
+          transaction_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_taken?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          risk_factors?: Json | null
+          risk_score?: number | null
+          transaction_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_taken?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          risk_factors?: Json | null
+          risk_score?: number | null
+          transaction_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fraud_detection_logs_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "game_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_prize_pools: {
+        Row: {
+          created_at: string | null
+          entries_count: number | null
+          entry_fee: number
+          game_id: string
+          game_type: string
+          id: string
+          max_entries: number | null
+          prize_distribution: Json | null
+          status: string | null
+          total_pool: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          entries_count?: number | null
+          entry_fee: number
+          game_id: string
+          game_type: string
+          id?: string
+          max_entries?: number | null
+          prize_distribution?: Json | null
+          status?: string | null
+          total_pool?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          entries_count?: number | null
+          entry_fee?: number
+          game_id?: string
+          game_type?: string
+          id?: string
+          max_entries?: number | null
+          prize_distribution?: Json | null
+          status?: string | null
+          total_pool?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      game_transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          external_transaction_id: string | null
+          game_id: string | null
+          id: string
+          metadata: Json | null
+          payment_method_id: string | null
+          session_id: string | null
+          status: string
+          transaction_type: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          external_transaction_id?: string | null
+          game_id?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_method_id?: string | null
+          session_id?: string | null
+          status?: string
+          transaction_type: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          external_transaction_id?: string | null
+          game_id?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_method_id?: string | null
+          session_id?: string | null
+          status?: string
+          transaction_type?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_transactions_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hero_puzzle_config: {
         Row: {
           active: boolean
@@ -1025,6 +1170,45 @@ export type Database = {
           id?: string
           ip_address?: string | null
           last_attempt_at?: string | null
+        }
+        Relationships: []
+      }
+      payment_methods: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          last_four: string | null
+          metadata: Json | null
+          method_type: string
+          provider: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          last_four?: string | null
+          metadata?: Json | null
+          method_type: string
+          provider: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          last_four?: string | null
+          metadata?: Json | null
+          method_type?: string
+          provider?: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1979,6 +2163,50 @@ export type Database = {
         }
         Relationships: []
       }
+      transaction_receipts: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          id: string
+          receipt_data: Json | null
+          receipt_number: string
+          transaction_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          id?: string
+          receipt_data?: Json | null
+          receipt_number: string
+          transaction_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          id?: string
+          receipt_data?: Json | null
+          receipt_number?: string
+          transaction_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_receipts_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "game_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_activity_metrics: {
         Row: {
           active_users: number | null
@@ -2227,6 +2455,33 @@ export type Database = {
           session_token?: string
           user_agent?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_wallets: {
+        Row: {
+          balance: number | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
