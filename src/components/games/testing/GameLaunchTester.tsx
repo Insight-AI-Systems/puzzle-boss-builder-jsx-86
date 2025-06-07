@@ -16,7 +16,7 @@ export function GameLaunchTester() {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
 
-  const addTestResult = (testName: string, status: 'pass' | 'fail', message: string) => {
+  const addTestResult = (testName: string, status: 'pass' | 'fail' | 'pending', message: string) => {
     setTestResults(prev => [...prev, {
       testName,
       status,
