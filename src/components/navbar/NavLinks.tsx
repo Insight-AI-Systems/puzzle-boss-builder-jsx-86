@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -151,20 +152,21 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
                 onMouseEnter={handleDropdownMouseEnter}
                 onMouseLeave={handleDropdownMouseLeave}
               >
-                <div className="py-2">
+                <div className="py-1">
                   {getPuzzleDropdownItems().map((dropdownItem, index) => (
                     dropdownItem.name === 'divider' ? (
                       <div 
                         key={`divider-${index}`}
-                        className="my-1 h-px bg-puzzle-aqua/20 mx-2"
+                        className="my-1 h-px bg-puzzle-aqua/20 mx-3"
                       />
                     ) : (
                       <Link
                         key={dropdownItem.path}
                         to={dropdownItem.path}
-                        className={`flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-puzzle-white hover:bg-white/10 transition-colors ${
+                        className={`flex items-center gap-3 px-5 py-3 text-white hover:text-puzzle-gold hover:bg-puzzle-aqua/10 transition-colors duration-200 border-b border-puzzle-aqua/10 last:border-b-0 ${
                           dropdownItem.isBold ? 'font-semibold' : ''
                         }`}
+                        style={{ fontSize: '16px' }}
                         onClick={onClick}
                         data-testid={`dropdown-link-${dropdownItem.name.toLowerCase().replace(/\s+/g, '-')}`}
                       >
