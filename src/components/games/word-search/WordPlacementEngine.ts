@@ -1,4 +1,3 @@
-
 export interface PlacedWord {
   word: string;
   startPos: [number, number];
@@ -25,7 +24,7 @@ export class WordPlacementEngine {
     this.gridSize = gridSize;
     this.grid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(''));
     this.placedWords = [];
-    this.maxAttempts = 1000; // Maximum attempts per word
+    this.maxAttempts = 2000; // Increased from 1000
     
     // Improved seeded random generator for consistent results
     if (seed) {
@@ -75,31 +74,49 @@ export class WordPlacementEngine {
     // Sort words by length (longest first for better placement)
     const sortedWords = [...words].sort((a, b) => b.length - a.length);
     const failedWords: string[] = [];
+    let retryCount = 0;
+    const maxRetries = 3;
 
-    for (const word of sortedWords) {
-      try {
-        const cleanWord = word.toUpperCase().trim();
-        if (!cleanWord || cleanWord.length === 0) {
-          console.warn(`Skipping empty word: "${word}"`);
-          failedWords.push(word);
-          continue;
-        }
+    // Retry entire placement if too many words fail
+    while (retryCount < maxRetries) {
+      this.grid = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(''));
+      this.placedWords = [];
+      failedWords.length = 0;
 
-        if (cleanWord.length > this.gridSize) {
-          console.warn(`Word "${cleanWord}" is too long for grid size ${this.gridSize}`);
-          failedWords.push(word);
-          continue;
-        }
+      for (const word of sortedWords) {
+        try {
+          const cleanWord = word.toUpperCase().trim();
+          if (!cleanWord || cleanWord.length === 0) {
+            console.warn(`Skipping empty word: "${word}"`);
+            failedWords.push(word);
+            continue;
+          }
 
-        const success = this.placeWordWithRetry(cleanWord);
-        if (!success) {
-          console.warn(`Failed to place word after ${this.maxAttempts} attempts: ${cleanWord}`);
+          if (cleanWord.length > this.gridSize) {
+            console.warn(`Word "${cleanWord}" is too long for grid size ${this.gridSize}`);
+            failedWords.push(word);
+            continue;
+          }
+
+          const success = this.placeWordWithRetry(cleanWord);
+          if (!success) {
+            console.warn(`Failed to place word after ${this.maxAttempts} attempts: ${cleanWord}`);
+            failedWords.push(word);
+          }
+        } catch (error) {
+          console.error(`Error placing word "${word}":`, error);
           failedWords.push(word);
         }
-      } catch (error) {
-        console.error(`Error placing word "${word}":`, error);
-        failedWords.push(word);
       }
+
+      // If we successfully placed most words, break
+      const successRate = (this.placedWords.length / words.length);
+      if (successRate >= 0.9 || failedWords.length === 0) {
+        break;
+      }
+
+      retryCount++;
+      console.log(`Retry attempt ${retryCount} - Success rate: ${(successRate * 100).toFixed(1)}%`);
     }
 
     // Fill empty cells with random letters
@@ -109,7 +126,8 @@ export class WordPlacementEngine {
       totalWords: words.length,
       placedWords: this.placedWords.length,
       failedWords: failedWords.length,
-      successRate: `${((this.placedWords.length / words.length) * 100).toFixed(1)}%`
+      successRate: `${((this.placedWords.length / words.length) * 100).toFixed(1)}%`,
+      retries: retryCount
     });
 
     return {
@@ -135,8 +153,8 @@ export class WordPlacementEngine {
     // Try each direction multiple times with different strategies
     for (let attempt = 0; attempt < this.maxAttempts; attempt++) {
       try {
-        // Select direction with proper bounds checking
-        const directionIndex = Math.floor(this.random() * directions.length);
+        // Rotate through directions more evenly
+        const directionIndex = attempt % directions.length;
         const direction = directions[directionIndex];
         
         // Additional safety check
@@ -147,6 +165,13 @@ export class WordPlacementEngine {
         
         if (this.tryPlaceWordInDirection(word, direction)) {
           return true;
+        }
+
+        // Every 100 attempts, try with more lenient placement (allow some overlaps)
+        if (attempt > 0 && attempt % 100 === 0) {
+          if (this.tryPlaceWordWithOverlap(word, direction)) {
+            return true;
+          }
         }
       } catch (error) {
         console.error(`Error in placement attempt ${attempt + 1} for word "${word}":`, error);
@@ -195,7 +220,7 @@ export class WordPlacementEngine {
     }
 
     // Try random valid positions with improved distribution
-    const maxPositionAttempts = 50;
+    const maxPositionAttempts = 100; // Increased from 50
     for (let attempt = 0; attempt < maxPositionAttempts; attempt++) {
       try {
         const rowRange = maxStartRow - minStartRow + 1;
@@ -224,6 +249,58 @@ export class WordPlacementEngine {
     }
 
     return false;
+  }
+
+  private tryPlaceWordWithOverlap(
+    word: string, 
+    direction: { name: 'horizontal' | 'vertical' | 'diagonal-down' | 'diagonal-up'; deltaRow: number; deltaCol: number }
+  ): boolean {
+    if (!direction || !word) {
+      return false;
+    }
+
+    const { deltaRow, deltaCol } = direction;
+    
+    // More lenient placement allowing some character overlaps
+    for (let row = 0; row < this.gridSize; row++) {
+      for (let col = 0; col < this.gridSize; col++) {
+        if (this.canPlaceWordWithOverlap(word, row, col, deltaRow, deltaCol)) {
+          this.placeWordAt(word, row, col, deltaRow, deltaCol, direction.name);
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  private canPlaceWordWithOverlap(word: string, startRow: number, startCol: number, deltaRow: number, deltaCol: number): boolean {
+    try {
+      let overlapCount = 0;
+      const maxOverlaps = Math.floor(word.length * 0.3); // Allow up to 30% overlap
+
+      for (let i = 0; i < word.length; i++) {
+        const row = startRow + i * deltaRow;
+        const col = startCol + i * deltaCol;
+
+        // Check bounds
+        if (row < 0 || row >= this.gridSize || col < 0 || col >= this.gridSize) {
+          return false;
+        }
+
+        const existingLetter = this.grid[row][col];
+        if (existingLetter !== '' && existingLetter !== word[i]) {
+          overlapCount++;
+          if (overlapCount > maxOverlaps) {
+            return false;
+          }
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error('Error in canPlaceWordWithOverlap:', error);
+      return false;
+    }
   }
 
   private canPlaceWordAt(word: string, startRow: number, startCol: number, deltaRow: number, deltaCol: number): boolean {
