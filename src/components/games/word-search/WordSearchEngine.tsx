@@ -458,11 +458,10 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
             <Card className="bg-gray-900 border-gray-700">
               <CardContent className="p-4">
                 <div 
-                  className="grid mx-auto bg-gray-600 p-px"
+                  className="grid mx-auto"
                   style={{ 
                     gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
-                    maxWidth: '500px',
-                    gap: '1px'
+                    maxWidth: '500px'
                   }}
                   onMouseLeave={() => {
                     setIsSelecting(false);
