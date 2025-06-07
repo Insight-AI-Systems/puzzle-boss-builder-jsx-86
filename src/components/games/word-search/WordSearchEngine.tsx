@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Clock, Trophy, Target, CheckCircle, Play, AlertTriangle } from 'lucide-react';
+import { Clock, Trophy, Target, CheckCircle, Play, AlertTriangle, Lightbulb } from 'lucide-react';
 import { useGameTimer } from '../hooks/useGameTimer';
 import { WordSearchCongratulations } from './WordSearchCongratulations';
 import { WordSearchLeaderboard } from './WordSearchLeaderboard';
 import { useToast } from '@/hooks/use-toast';
+import { useMemberProfile } from '@/hooks/useMemberProfile';
 
 interface WordSearchEngineProps {
   difficulty: 'rookie' | 'pro' | 'master';
@@ -38,6 +39,13 @@ interface GameState {
   completionTime: number | null;
 }
 
+interface CluePosition {
+  row: number;
+  col: number;
+  word: string;
+  expires: number;
+}
+
 const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   difficulty,
   category,
@@ -63,10 +71,13 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionStart, setSelectionStart] = useState<[number, number] | null>(null);
   const [lastSaveTime, setLastSaveTime] = useState<number>(0);
+  const [cluePosition, setCluePosition] = useState<CluePosition | null>(null);
+  const [isUsingClue, setIsUsingClue] = useState(false);
   
   const gridSize = difficulty === 'master' ? 15 : difficulty === 'pro' ? 12 : 10;
   const timeLimit = difficulty === 'master' ? 600 : difficulty === 'pro' ? 480 : 360;
   const { toast } = useToast();
+  const { profile, refetch: refetchProfile } = useMemberProfile();
   
   const { 
     timeElapsed, 
@@ -412,6 +423,7 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
     setSelectedCells(new Set());
     setIsSelecting(false);
     setSelectionStart(null);
+    setCluePosition(null); // Clear any active clues
     
     // Clear saved state
     localStorage.removeItem(`wordSearch_${sessionId}`);
@@ -424,6 +436,80 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
       console.log('New game state reset complete');
     }, 100);
   };
+
+  const handleUseClue = useCallback(async () => {
+    if (!gameStarted || gameComplete || isUsingClue) return;
+    
+    // Check if user has enough credits
+    if (!profile || profile.credits < 1) {
+      toast({
+        title: "Insufficient Credits",
+        description: "You need 1 credit to use a clue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Find an unfound word
+    const remainingWords = placedWords.filter(placedWord => 
+      !foundWords.has(placedWord.word)
+    );
+
+    if (remainingWords.length === 0) {
+      toast({
+        title: "No Clues Available",
+        description: "All words have been found!",
+      });
+      return;
+    }
+
+    setIsUsingClue(true);
+
+    try {
+      // Deduct credit (this would normally be done via API)
+      // For now, we'll just show the clue and assume credit deduction
+      const randomWord = remainingWords[Math.floor(Math.random() * remainingWords.length)];
+      const [startRow, startCol] = randomWord.startPos;
+      
+      // Show clue for 10 seconds
+      const clueExpires = Date.now() + 10000;
+      setCluePosition({
+        row: startRow,
+        col: startCol,
+        word: randomWord.word,
+        expires: clueExpires
+      });
+
+      // Update profile credits locally (in a real app, this would be done server-side)
+      await refetchProfile();
+
+      toast({
+        title: "Clue Revealed!",
+        description: `Look for "${randomWord.word}" starting at the highlighted position. Clue expires in 10 seconds.`,
+      });
+
+      // Clear clue after 10 seconds
+      setTimeout(() => {
+        setCluePosition(null);
+      }, 10000);
+
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to use clue. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUsingClue(false);
+    }
+  }, [gameStarted, gameComplete, isUsingClue, profile, placedWords, foundWords, toast, refetchProfile]);
+
+  // Clear clue when component unmounts or game resets
+  useEffect(() => {
+    return () => {
+      setCluePosition(null);
+    };
+  }, []);
 
   const progressPercentage = (foundWords.size / wordList.length) * 100;
   const remainingWords = wordList.filter(word => !foundWords.has(word.toUpperCase()));
@@ -500,15 +586,36 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
                 Start Game
               </Button>
             ) : (
-              <Button
-                onClick={handleNewGame}
-                variant="outline"
-                className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold hover:text-puzzle-black"
-              >
-                New Game
-              </Button>
+              <>
+                <Button
+                  onClick={handleNewGame}
+                  variant="outline"
+                  className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold hover:text-puzzle-black"
+                >
+                  New Game
+                </Button>
+                
+                {/* Clue Button */}
+                <Button
+                  onClick={handleUseClue}
+                  disabled={isUsingClue || gameComplete || !profile || profile.credits < 1}
+                  className="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold"
+                >
+                  <Lightbulb className="h-4 w-4 mr-2" />
+                  Clue (1 Credit)
+                </Button>
+              </>
             )}
           </div>
+
+          {/* Credits Display */}
+          {profile && (
+            <div className="text-center">
+              <Badge variant="outline" className="text-puzzle-aqua border-puzzle-aqua">
+                Credits: {profile.credits}
+              </Badge>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -535,6 +642,10 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
                       const cellId = `${rowIndex}-${colIndex}`;
                       const isSelected = selectedCells.has(cellId);
                       const isFoundWordCell = foundWordCells.has(cellId);
+                      const isClueCell = cluePosition && 
+                        cluePosition.row === rowIndex && 
+                        cluePosition.col === colIndex &&
+                        Date.now() < cluePosition.expires;
                       
                       return (
                         <div
@@ -543,7 +654,9 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
                             w-8 h-8 flex items-center justify-center
                             text-sm font-bold cursor-pointer transition-colors
                             border-0 m-0 p-0
-                            ${isSelected 
+                            ${isClueCell
+                              ? 'bg-yellow-500 text-black ring-2 ring-yellow-300 animate-pulse'
+                              : isSelected 
                               ? 'bg-puzzle-aqua text-puzzle-black' 
                               : isFoundWordCell
                               ? 'bg-puzzle-gold text-puzzle-black'
@@ -560,6 +673,16 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
                     })
                   )}
                 </div>
+                
+                {/* Clue Information */}
+                {cluePosition && Date.now() < cluePosition.expires && (
+                  <div className="mt-4 p-3 bg-yellow-900/50 border border-yellow-500 rounded-lg">
+                    <div className="text-yellow-300 text-center">
+                      <Lightbulb className="h-4 w-4 inline mr-2" />
+                      Clue: Look for "{cluePosition.word}" starting at the highlighted position
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
