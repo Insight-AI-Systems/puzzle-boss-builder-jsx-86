@@ -12,7 +12,7 @@ import { Loader2, User, Trophy, Settings, Puzzle } from 'lucide-react';
 
 const Profile: React.FC = () => {
   const { isLoading: isLoadingUserProfile } = useUserProfile();
-  const { profile, isLoading: isLoadingMemberProfile, updateProfile, acceptTerms } = useMemberProfile();
+  const { profile, isLoading: isLoadingMemberProfile, updateProfile, acceptTerms, awardCredits } = useMemberProfile();
   const [activeTab, setActiveTab] = useState('profile');
   
   const isLoading = isLoadingUserProfile || isLoadingMemberProfile;
@@ -59,6 +59,7 @@ const Profile: React.FC = () => {
                   profile={profile} 
                   updateProfile={updateProfile} 
                   acceptTerms={acceptTerms}
+                  awardCredits={awardCredits}
                 />
               )}
             </TabsContent>

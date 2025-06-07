@@ -2857,6 +2857,14 @@ export type Database = {
       }
     }
     Functions: {
+      award_credits: {
+        Args: {
+          target_user_id: string
+          credits_to_add: number
+          admin_note?: string
+        }
+        Returns: undefined
+      }
       calculate_daily_metrics: {
         Args: { date_param: string }
         Returns: {

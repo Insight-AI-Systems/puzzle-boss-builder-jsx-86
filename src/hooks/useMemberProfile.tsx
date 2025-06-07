@@ -5,6 +5,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { MemberDetailedProfile, MemberAddress, AddressType, MembershipDetail, XeroMemberMapping } from '@/types/memberTypes';
 import { toast } from '@/hooks/use-toast';
 
+export interface UserWallet {
+  id: string;
+  user_id: string;
+  balance: number;
+  currency: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export function useMemberProfile(userId?: string) {
   const { user } = useAuth();
   const [error, setError] = useState<Error | null>(null);
@@ -13,7 +22,7 @@ export function useMemberProfile(userId?: string) {
   // Use currently logged in user ID if none provided
   const targetUserId = userId || user?.id;
   
-  // Fetch member profile with extended details
+  // Fetch member profile with extended details including wallet
   const profileQuery = useQuery({
     queryKey: ['member-profile', targetUserId],
     queryFn: async () => {
@@ -29,6 +38,17 @@ export function useMemberProfile(userId?: string) {
 
         if (profileError) {
           throw new Error(`Failed to fetch profile: ${profileError.message}`);
+        }
+
+        // Fetch wallet information
+        const { data: walletData, error: walletError } = await supabase
+          .from('user_wallets')
+          .select('*')
+          .eq('user_id', targetUserId)
+          .maybeSingle();
+
+        if (walletError) {
+          console.error('Error fetching wallet:', walletError);
         }
 
         // Fetch addresses
@@ -92,7 +112,7 @@ export function useMemberProfile(userId?: string) {
           status: membershipDetailsData.status as 'active' | 'expired' | 'canceled' | 'suspended'
         } : undefined;
 
-        const memberProfile: MemberDetailedProfile = {
+        const memberProfile: MemberDetailedProfile & { wallet?: UserWallet } = {
           ...profileData,
           display_name: profileData.username || profileData.full_name || 'Member',
           addresses,
@@ -101,6 +121,7 @@ export function useMemberProfile(userId?: string) {
           financial_summary: financialSummary?.[0] || undefined,
           terms_accepted: profileData.terms_accepted || false,
           marketing_opt_in: profileData.marketing_opt_in || false,
+          wallet: walletData || undefined,
         };
 
         return memberProfile;
@@ -286,6 +307,34 @@ export function useMemberProfile(userId?: string) {
     },
   });
 
+  // Award credits mutation (admin only)
+  const awardCredits = useMutation({
+    mutationFn: async ({ targetUserId, credits, adminNote }: { targetUserId: string; credits: number; adminNote?: string }) => {
+      const { error } = await supabase.rpc('award_credits', {
+        target_user_id: targetUserId,
+        credits_to_add: credits,
+        admin_note: adminNote || null
+      });
+
+      if (error) throw error;
+      return true;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Credits Awarded",
+        description: "Free credits have been successfully awarded to the user.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['member-profile', targetUserId] });
+    },
+    onError: (err) => {
+      toast({
+        title: "Award Failed",
+        description: err instanceof Error ? err.message : 'Failed to award credits',
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     profile: profileQuery.data,
     isLoading: profileQuery.isLoading,
@@ -294,6 +343,7 @@ export function useMemberProfile(userId?: string) {
     upsertAddress,
     deleteAddress,
     acceptTerms,
+    awardCredits,
     refetch: profileQuery.refetch,
   };
 }

@@ -19,11 +19,14 @@ import { MemberDetailedProfile } from '@/types/memberTypes';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
+import { CreditBalanceCard } from '../CreditBalanceCard';
+import { UserWallet } from '@/hooks/useMemberProfile';
 
 export interface ProfileInfoTabProps {
-  profile: MemberDetailedProfile;
+  profile: MemberDetailedProfile & { wallet?: UserWallet };
   updateProfile: UseMutationResult<any, Error, Partial<MemberDetailedProfile>, unknown>;
   acceptTerms: UseMutationResult<any, Error, void, unknown>;
+  awardCredits?: UseMutationResult<boolean, Error, { targetUserId: string; credits: number; adminNote?: string }, unknown>;
 }
 
 const profileFormSchema = z.object({
@@ -36,7 +39,7 @@ const profileFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
-export function ProfileInfoTab({ profile, updateProfile, acceptTerms }: ProfileInfoTabProps) {
+export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredits }: ProfileInfoTabProps) {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -60,6 +63,14 @@ export function ProfileInfoTab({ profile, updateProfile, acceptTerms }: ProfileI
 
   return (
     <div className="space-y-6">
+      {/* Credit & Balance Card */}
+      {awardCredits && (
+        <CreditBalanceCard 
+          profile={profile} 
+          awardCredits={awardCredits}
+        />
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-lg font-medium">Personal Information</CardTitle>
