@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Clock, Trophy, Target, CheckCircle, Pause, Play } from 'lucide-react';
 import { useGameTimer } from '../hooks/useGameTimer';
+import { WordSearchCongratulations } from './WordSearchCongratulations';
+import { WordSearchLeaderboard } from './WordSearchLeaderboard';
 
 interface WordSearchEngineProps {
   difficulty: 'rookie' | 'pro' | 'master';
@@ -27,6 +28,8 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   const [gameComplete, setGameComplete] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [score, setScore] = useState(0);
+  const [showCongratulations, setShowCongratulations] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   
   const gridSize = difficulty === 'master' ? 15 : difficulty === 'pro' ? 12 : 10;
   const timeLimit = difficulty === 'master' ? 600 : difficulty === 'pro' ? 480 : 360;
@@ -88,6 +91,20 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
     }
   }, [gameStarted, gameComplete, isPaused, resumeTimer, pauseTimer]);
 
+  const handleGameComplete = useCallback(() => {
+    if (foundWords.size === actualWordList.length && !gameComplete) {
+      setGameComplete(true);
+      pauseTimer();
+      setShowCongratulations(true);
+      
+      onComplete?.({
+        timeElapsed,
+        wordsFound: foundWords.size,
+        totalWords: actualWordList.length
+      });
+    }
+  }, [foundWords.size, actualWordList.length, gameComplete, pauseTimer, onComplete, timeElapsed]);
+
   const handleWordFound = useCallback((word: string) => {
     if (!foundWords.has(word)) {
       const newFoundWords = new Set(foundWords);
@@ -103,16 +120,10 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
       
       // Check if game is complete
       if (newFoundWords.size === actualWordList.length) {
-        setGameComplete(true);
-        pauseTimer();
-        onComplete?.({
-          timeElapsed,
-          wordsFound: newFoundWords.size,
-          totalWords: actualWordList.length
-        });
+        setTimeout(() => handleGameComplete(), 500); // Small delay for better UX
       }
     }
-  }, [foundWords, actualWordList.length, timeElapsed, timeLimit, onWordFound, onComplete, pauseTimer]);
+  }, [foundWords, actualWordList.length, timeElapsed, timeLimit, onWordFound, handleGameComplete]);
 
   const progress = actualWordList.length > 0 ? (foundWords.size / actualWordList.length) * 100 : 0;
   const timeRemaining = Math.max(0, timeLimit - timeElapsed);
@@ -129,126 +140,155 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Game Stats */}
-      <Card className="bg-gray-900 border-gray-700">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <Clock className="h-5 w-5 text-puzzle-aqua mx-auto mb-1" />
-              <div className="text-sm text-gray-400">Time Left</div>
-              <div className="text-lg font-bold text-puzzle-white">
-                {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
+    <>
+      <div className="space-y-4">
+        {/* Game Stats */}
+        <Card className="bg-gray-900 border-gray-700">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <Clock className="h-5 w-5 text-puzzle-aqua mx-auto mb-1" />
+                <div className="text-sm text-gray-400">Time Left</div>
+                <div className="text-lg font-bold text-puzzle-white">
+                  {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
+                </div>
+              </div>
+              <div className="text-center">
+                <Target className="h-5 w-5 text-puzzle-gold mx-auto mb-1" />
+                <div className="text-sm text-gray-400">Found</div>
+                <div className="text-lg font-bold text-puzzle-white">
+                  {foundWords.size}/{actualWordList.length}
+                </div>
+              </div>
+              <div className="text-center">
+                <Trophy className="h-5 w-5 text-puzzle-gold mx-auto mb-1" />
+                <div className="text-sm text-gray-400">Score</div>
+                <div className="text-lg font-bold text-puzzle-white">{score}</div>
+              </div>
+              <div className="text-center">
+                <CheckCircle className="h-5 w-5 text-puzzle-aqua mx-auto mb-1" />
+                <div className="text-sm text-gray-400">Progress</div>
+                <div className="text-lg font-bold text-puzzle-white">{Math.round(progress)}%</div>
               </div>
             </div>
-            <div className="text-center">
-              <Target className="h-5 w-5 text-puzzle-gold mx-auto mb-1" />
-              <div className="text-sm text-gray-400">Found</div>
-              <div className="text-lg font-bold text-puzzle-white">
-                {foundWords.size}/{actualWordList.length}
-              </div>
-            </div>
-            <div className="text-center">
-              <Trophy className="h-5 w-5 text-puzzle-gold mx-auto mb-1" />
-              <div className="text-sm text-gray-400">Score</div>
-              <div className="text-lg font-bold text-puzzle-white">{score}</div>
-            </div>
-            <div className="text-center">
-              <CheckCircle className="h-5 w-5 text-puzzle-aqua mx-auto mb-1" />
-              <div className="text-sm text-gray-400">Progress</div>
-              <div className="text-lg font-bold text-puzzle-white">{Math.round(progress)}%</div>
-            </div>
-          </div>
-          <Progress value={progress} className="mt-4" />
-        </CardContent>
-      </Card>
-
-      {/* Game Controls */}
-      {!gameStarted && (
-        <Card className="bg-gray-900 border-gray-700">
-          <CardContent className="p-4 text-center">
-            <Button 
-              onClick={handleGameStart}
-              className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold"
-            >
-              <Play className="h-4 w-4 mr-2" />
-              Start Game
-            </Button>
+            <Progress value={progress} className="mt-4" />
           </CardContent>
         </Card>
-      )}
 
-      {gameStarted && !gameComplete && (
-        <Card className="bg-gray-900 border-gray-700">
-          <CardContent className="p-4 text-center">
-            <Button 
-              onClick={handlePauseToggle}
-              variant="outline"
-              className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black"
-            >
-              {isPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
-              {isPaused ? 'Resume' : 'Pause'}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Word List */}
-      <Card className="bg-gray-900 border-gray-700">
-        <CardHeader>
-          <CardTitle className="text-puzzle-white text-sm">
-            Words to Find ({category})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            {actualWordList.map((word) => (
-              <Badge
-                key={word}
-                variant={foundWords.has(word) ? "default" : "outline"}
-                className={
-                  foundWords.has(word)
-                    ? "bg-puzzle-gold text-puzzle-black"
-                    : "border-gray-600 text-gray-400"
-                }
+        {/* Game Controls */}
+        {!gameStarted && (
+          <Card className="bg-gray-900 border-gray-700">
+            <CardContent className="p-4 text-center">
+              <Button 
+                onClick={handleGameStart}
+                className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold"
               >
-                {word}
-              </Badge>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+                <Play className="h-4 w-4 mr-2" />
+                Start Game
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Game Grid */}
-      <Card className="bg-gray-900 border-gray-700">
-        <CardContent className="p-4">
-          <WordSearchGrid
-            grid={grid}
-            wordPositions={wordPositions}
-            foundWords={foundWords}
-            onWordFound={handleWordFound}
-            disabled={!gameStarted || gameComplete || isPaused}
-          />
-        </CardContent>
-      </Card>
+        {gameStarted && !gameComplete && (
+          <Card className="bg-gray-900 border-gray-700">
+            <CardContent className="p-4 text-center">
+              <Button 
+                onClick={handlePauseToggle}
+                variant="outline"
+                className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black"
+              >
+                {isPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
+                {isPaused ? 'Resume' : 'Pause'}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
-      {gameComplete && (
-        <Card className="bg-green-900/20 border-green-500">
-          <CardContent className="p-6 text-center">
-            <Trophy className="h-12 w-12 text-puzzle-gold mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-puzzle-white mb-2">
-              Puzzle Completed!
-            </h3>
-            <p className="text-gray-300">
-              You found all {actualWordList.length} words in {Math.floor(timeElapsed / 60)}:{(timeElapsed % 60).toString().padStart(2, '0')}
-            </p>
-            <p className="text-puzzle-gold font-semibold mt-2">
-              Final Score: {score}
-            </p>
+        {/* Word List */}
+        <Card className="bg-gray-900 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-puzzle-white text-sm">
+              Words to Find ({category})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              {actualWordList.map((word) => (
+                <Badge
+                  key={word}
+                  variant={foundWords.has(word) ? "default" : "outline"}
+                  className={
+                    foundWords.has(word)
+                      ? "bg-puzzle-gold text-puzzle-black"
+                      : "border-gray-600 text-gray-400"
+                  }
+                >
+                  {word}
+                </Badge>
+              ))}
+            </div>
           </CardContent>
         </Card>
+
+        {/* Game Grid */}
+        <Card className="bg-gray-900 border-gray-700">
+          <CardContent className="p-4">
+            <WordSearchGrid
+              grid={grid}
+              wordPositions={wordPositions}
+              foundWords={foundWords}
+              onWordFound={handleWordFound}
+              disabled={!gameStarted || gameComplete || isPaused}
+            />
+          </CardContent>
+        </Card>
+
+        {gameComplete && (
+          <Card className="bg-green-900/20 border-green-500">
+            <CardContent className="p-6 text-center">
+              <Trophy className="h-12 w-12 text-puzzle-gold mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-puzzle-white mb-2">
+                Puzzle Completed!
+              </h3>
+              <p className="text-gray-300">
+                You found all {actualWordList.length} words in {Math.floor(timeElapsed / 60)}:{(timeElapsed % 60).toString().padStart(2, '0')}
+              </p>
+              <p className="text-puzzle-gold font-semibold mt-2">
+                Final Score: {score}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Congratulations Splash Screen */}
+      {showCongratulations && (
+        <WordSearchCongratulations
+          score={score}
+          timeElapsed={timeElapsed}
+          wordsFound={foundWords.size}
+          totalWords={actualWordList.length}
+          difficulty={difficulty}
+          onContinue={handleContinueFromCongratulations}
+        />
       )}
-    </div>
+
+      {/* Leaderboard */}
+      {showLeaderboard && (
+        <WordSearchLeaderboard
+          currentPlayerScore={{
+            score,
+            timeElapsed,
+            wordsFound: foundWords.size,
+            totalWords: actualWordList.length,
+            difficulty
+          }}
+          onPlayAgain={handlePlayAgain}
+          onBackToArena={handleBackToArena}
+        />
+      )}
+    </>
   );
 };
 
