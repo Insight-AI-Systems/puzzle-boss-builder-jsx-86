@@ -1,4 +1,3 @@
-
 import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +22,7 @@ interface GameStateProps {
   session: any;
   onScoreUpdate: (score: number) => void;
   onMoveUpdate: (moves: number) => void;
-  onComplete: () => void;
+  onComplete: (stats?: any) => void;
   onError: (error: string) => void;
   isActive: boolean;
 }
@@ -100,27 +99,31 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
     hooks?.onGameReset?.();
   }, [timer, session, hooks]);
 
-  const completeGame = useCallback(async () => {
+  const completeGame = useCallback(async (passedStats?: any) => {
     timer.stop();
     session.endSession();
     
-    const result: GameResult = {
-      sessionId: session.session?.sessionId || '',
+    // Use passed stats if available, otherwise fall back to session data
+    const finalStats = passedStats || {
       score: session.session?.score || 0,
       timeElapsed: timer.timeElapsed,
       moves: session.session?.moves || 0,
       completed: true,
+      gameType: config.gameType,
+      difficulty: config.difficulty || 'normal'
+    };
+
+    const result: GameResult = {
+      sessionId: session.session?.sessionId || '',
+      score: finalStats.score || 0,
+      timeElapsed: finalStats.timeElapsed || timer.timeElapsed,
+      moves: finalStats.moves || 0,
+      completed: true,
       gameType: config.gameType
     };
 
-    // Store stats for congratulations screen
-    setGameStats({
-      score: result.score,
-      timeElapsed: result.timeElapsed,
-      moves: result.moves,
-      gameType: config.gameType,
-      difficulty: config.difficulty || 'normal'
-    });
+    // Store stats for congratulations screen - use passed stats directly
+    setGameStats(finalStats);
 
     // Play completion sound and show congratulations
     sounds.playComplete();

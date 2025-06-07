@@ -48,8 +48,9 @@ export function MemoryGameWrapper({
             gameState={gameProps.gameState}
             isActive={gameProps.isActive}
             onComplete={(stats) => {
-              gameProps.onComplete();
-              gameProps.onScoreUpdate(stats.score);
+              // Pass the stats directly to the completion handler
+              gameProps.onComplete(stats);
+              gameProps.onScoreUpdate(stats.score || 0);
             }}
             onScoreUpdate={gameProps.onScoreUpdate}
             onMoveUpdate={gameProps.onMoveUpdate}
