@@ -39,7 +39,7 @@ export function SudokuGameWrapper({
   };
 
   return (
-    <ResponsiveGameContainer maxWidth="6xl" aspectRatio="auto">
+    <ResponsiveGameContainer maxWidth="xl" aspectRatio="auto">
       <BaseGameWrapper config={gameConfig} hooks={gameHooks}>
         {(gameProps) => (
           <SudokuGame

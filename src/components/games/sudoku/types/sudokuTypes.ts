@@ -28,11 +28,20 @@ export interface SudokuGameState {
   size: SudokuSize;
 }
 
+export interface SudokuDifficultyConfig {
+  maxHints: number;
+  fillPercentage: number;
+}
+
+export interface SudokuSizeConfig {
+  4: SudokuDifficultyConfig;
+  6: SudokuDifficultyConfig;
+  9: SudokuDifficultyConfig;
+}
+
 export interface SudokuConfig {
-  [key in SudokuDifficulty]: {
-    [key in SudokuSize]: {
-      maxHints: number;
-      fillPercentage: number;
-    };
-  };
+  easy: SudokuSizeConfig;
+  medium: SudokuSizeConfig;
+  hard: SudokuSizeConfig;
+  expert: SudokuSizeConfig;
 }
