@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Clock, Trophy, Target, CheckCircle, Pause, Play, AlertTriangle } from 'lucide-react';
+import { Clock, Trophy, Target, CheckCircle, Play, AlertTriangle } from 'lucide-react';
 import { useGameTimer } from '../hooks/useGameTimer';
 import { WordSearchCongratulations } from './WordSearchCongratulations';
 import { WordSearchLeaderboard } from './WordSearchLeaderboard';
@@ -72,8 +72,6 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
     timeElapsed, 
     isRunning, 
     start: startTimer, 
-    pause: pauseTimer, 
-    resume: resumeTimer,
     stop: stopTimer
   } = useGameTimer(timeLimit);
 
@@ -441,24 +439,13 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
                 Start Game
               </Button>
             ) : (
-              <>
-                <Button
-                  onClick={isRunning ? pauseTimer : resumeTimer}
-                  variant="outline"
-                  className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black"
-                >
-                  {isRunning ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
-                  {isRunning ? 'Pause' : 'Resume'}
-                </Button>
-                
-                <Button
-                  onClick={handleNewGame}
-                  variant="outline"
-                  className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold hover:text-puzzle-black"
-                >
-                  New Game
-                </Button>
-              </>
+              <Button
+                onClick={handleNewGame}
+                variant="outline"
+                className="border-puzzle-gold text-puzzle-gold hover:bg-puzzle-gold hover:text-puzzle-black"
+              >
+                New Game
+              </Button>
             )}
           </div>
         </CardContent>
@@ -472,10 +459,11 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
             <Card className="bg-gray-900 border-gray-700">
               <CardContent className="p-4">
                 <div 
-                  className="grid gap-1 mx-auto"
+                  className="grid mx-auto"
                   style={{ 
                     gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
-                    maxWidth: '500px'
+                    maxWidth: '500px',
+                    gap: '0px'
                   }}
                   onMouseLeave={() => {
                     setIsSelecting(false);
