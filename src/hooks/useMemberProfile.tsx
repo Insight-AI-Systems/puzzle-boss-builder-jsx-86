@@ -134,7 +134,7 @@ export function useMemberProfile(userId?: string) {
     enabled: !!targetUserId,
   });
 
-  // Update profile mutation
+  // Update profile mutation - Fixed to include bio and remove address fields
   const updateProfile = useMutation({
     mutationFn: async (profileData: Partial<MemberDetailedProfile>) => {
       if (!targetUserId) throw new Error('No user ID provided');
@@ -143,13 +143,8 @@ export function useMemberProfile(userId?: string) {
         .from('profiles')
         .update({
           full_name: profileData.full_name,
+          bio: profileData.bio, // Fixed: Added bio field
           phone: profileData.phone,
-          address_line1: profileData.address_line1,
-          address_line2: profileData.address_line2,
-          city: profileData.city,
-          state: profileData.state,
-          postal_code: profileData.postal_code,
-          country: profileData.country,
           date_of_birth: profileData.date_of_birth,
           tax_id: profileData.tax_id,
           marketing_opt_in: profileData.marketing_opt_in,

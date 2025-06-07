@@ -18,7 +18,7 @@ import { UseMutationResult } from '@tanstack/react-query';
 import { MemberDetailedProfile } from '@/types/memberTypes';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2 } from "lucide-react";
+import { Loader2, User, Calendar, FileText, CheckCircle } from "lucide-react";
 import { CreditBalanceCard } from '../CreditBalanceCard';
 import { UserWallet } from '@/hooks/useMemberProfile';
 
@@ -30,11 +30,9 @@ export interface ProfileInfoTabProps {
 }
 
 const profileFormSchema = z.object({
-  full_name: z.string().optional(),
+  full_name: z.string().min(1, "Full name is required"),
   bio: z.string().optional(),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  tax_id: z.string().optional(),
+  date_of_birth: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -45,9 +43,7 @@ export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredi
     defaultValues: {
       full_name: profile.full_name || "",
       bio: profile.bio || "",
-      email: profile.email || "",
-      phone: profile.phone || "",
-      tax_id: profile.tax_id || "",
+      date_of_birth: profile.date_of_birth || "",
     },
   });
 
@@ -63,7 +59,7 @@ export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredi
 
   return (
     <div className="space-y-6">
-      {/* Credit & Balance Card */}
+      {/* Credit & Balance Card - Only show if admin tools available */}
       {awardCredits && (
         <CreditBalanceCard 
           profile={profile} 
@@ -71,79 +67,72 @@ export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredi
         />
       )}
 
-      <Card>
+      {/* Personal Information Card */}
+      <Card className="bg-puzzle-black/50 border-puzzle-aqua/30">
         <CardHeader>
-          <CardTitle className="text-lg font-medium">Personal Information</CardTitle>
+          <CardTitle className="text-puzzle-white flex items-center gap-2">
+            <User className="h-5 w-5 text-puzzle-aqua" />
+            Personal Information
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="full_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter your full name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="full_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-puzzle-white">Full Name *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter your full name" 
+                          className="bg-puzzle-black border-puzzle-aqua/30 text-puzzle-white"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" disabled placeholder="Your email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter your phone number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="tax_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tax ID / VAT Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter your tax ID (if applicable)" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="date_of_birth"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-puzzle-white flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Date of Birth
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="date"
+                          className="bg-puzzle-black border-puzzle-aqua/30 text-puzzle-white"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}
                 name="bio"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Bio</FormLabel>
+                    <FormLabel className="text-puzzle-white flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Biography
+                    </FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Tell us a little about yourself"
-                        className="resize-none"
+                        placeholder="Tell us a little about yourself..."
+                        className="resize-none bg-puzzle-black border-puzzle-aqua/30 text-puzzle-white"
+                        rows={4}
                         {...field}
                       />
                     </FormControl>
@@ -156,7 +145,7 @@ export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredi
                 <Button 
                   type="submit" 
                   disabled={updateProfile.isPending}
-                  className="bg-puzzle-gold text-puzzle-black hover:bg-puzzle-gold/90"
+                  className="bg-puzzle-aqua text-puzzle-black hover:bg-puzzle-aqua/90"
                 >
                   {updateProfile.isPending ? (
                     <>
@@ -164,7 +153,10 @@ export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredi
                       Saving...
                     </>
                   ) : (
-                    "Save Changes"
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Save Changes
+                    </>
                   )}
                 </Button>
               </div>
@@ -173,24 +165,27 @@ export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredi
         </CardContent>
       </Card>
 
-      <Card>
+      {/* Terms & Conditions Card */}
+      <Card className="bg-puzzle-black/50 border-puzzle-aqua/30">
         <CardHeader>
-          <CardTitle className="text-lg font-medium">Terms & Conditions</CardTitle>
+          <CardTitle className="text-puzzle-white">Terms & Conditions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {profile.terms_accepted ? (
-              <Alert>
-                <AlertDescription>
-                  You have accepted our terms and conditions on {new Date(profile.terms_accepted_at || '').toLocaleDateString()}.
+              <Alert className="border-green-500/50 bg-green-500/10">
+                <CheckCircle className="h-4 w-4 text-green-400" />
+                <AlertDescription className="text-green-400">
+                  You accepted our terms and conditions on {new Date(profile.terms_accepted_at || '').toLocaleDateString()}.
                 </AlertDescription>
               </Alert>
             ) : (
               <div className="space-y-4">
-                <p className="text-sm">Please review and accept our terms and conditions to continue.</p>
+                <p className="text-puzzle-white/70">Please review and accept our terms and conditions to continue.</p>
                 <Button 
                   onClick={handleAcceptTerms} 
                   disabled={acceptTerms.isPending}
+                  className="bg-puzzle-gold text-puzzle-black hover:bg-puzzle-gold/90"
                 >
                   {acceptTerms.isPending ? (
                     <>
