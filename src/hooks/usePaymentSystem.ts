@@ -10,8 +10,51 @@ import {
   GamePrizePool,
   PaymentVerificationResult,
   RefundRequest,
-  TransactionReceipt
+  TransactionReceipt,
+  PrizeDistribution
 } from '@/types/payments';
+
+// Helper functions to convert database results to proper types
+const convertToPaymentMethod = (dbMethod: any): PaymentMethod => ({
+  id: dbMethod.id,
+  user_id: dbMethod.user_id,
+  method_type: dbMethod.method_type as PaymentMethod['method_type'],
+  provider: dbMethod.provider,
+  last_four: dbMethod.last_four,
+  is_default: dbMethod.is_default,
+  is_active: dbMethod.is_active,
+  metadata: dbMethod.metadata as Record<string, any>,
+  created_at: dbMethod.created_at,
+  updated_at: dbMethod.updated_at
+});
+
+const convertToGamePrizePool = (dbPool: any): GamePrizePool => ({
+  id: dbPool.id,
+  game_id: dbPool.game_id,
+  game_type: dbPool.game_type,
+  entry_fee: dbPool.entry_fee,
+  total_pool: dbPool.total_pool,
+  entries_count: dbPool.entries_count,
+  max_entries: dbPool.max_entries,
+  prize_distribution: Array.isArray(dbPool.prize_distribution) 
+    ? dbPool.prize_distribution as PrizeDistribution[]
+    : [],
+  status: dbPool.status as GamePrizePool['status'],
+  created_at: dbPool.created_at,
+  updated_at: dbPool.updated_at
+});
+
+const convertToTransactionReceipt = (dbReceipt: any): TransactionReceipt => ({
+  id: dbReceipt.id,
+  transaction_id: dbReceipt.transaction_id,
+  receipt_number: dbReceipt.receipt_number,
+  user_id: dbReceipt.user_id,
+  amount: dbReceipt.amount,
+  currency: dbReceipt.currency,
+  description: dbReceipt.description,
+  receipt_data: dbReceipt.receipt_data as Record<string, any>,
+  created_at: dbReceipt.created_at
+});
 
 export function usePaymentSystem() {
   const [loading, setLoading] = useState(false);
@@ -53,8 +96,10 @@ export function usePaymentSystem() {
         .order('is_default', { ascending: false });
 
       if (error) throw error;
-      setPaymentMethods(data || []);
-      return data || [];
+      
+      const convertedMethods = (data || []).map(convertToPaymentMethod);
+      setPaymentMethods(convertedMethods);
+      return convertedMethods;
     } catch (error) {
       console.error('Error fetching payment methods:', error);
       return [];
@@ -169,7 +214,7 @@ export function usePaymentSystem() {
         balance: currentWallet.balance - entryFee,
         entryFee,
         transactionId: transaction.id,
-        receipt
+        receipt: receipt || undefined
       };
 
     } catch (error) {
@@ -286,7 +331,7 @@ export function usePaymentSystem() {
         .single();
 
       if (error) throw error;
-      return data;
+      return convertToGamePrizePool(data);
     } catch (error) {
       console.error('Error fetching prize pool:', error);
       return null;
@@ -414,7 +459,7 @@ export function usePaymentSystem() {
         .single();
 
       if (error) throw error;
-      return receipt;
+      return convertToTransactionReceipt(receipt);
     } catch (error) {
       console.error('Error generating receipt:', error);
       return null;

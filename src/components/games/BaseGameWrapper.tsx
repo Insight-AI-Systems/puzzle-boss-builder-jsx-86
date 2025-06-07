@@ -48,8 +48,8 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
       setError(null);
       
       // Verify payment if required
-      if (config.requiresPayment) {
-        const hasAccess = await payment.verifyPayment();
+      if (config.requiresPayment && config.gameType) {
+        const hasAccess = await payment.verifyPayment(config.gameType, false);
         if (!hasAccess) return;
       }
 
@@ -69,7 +69,7 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
     } catch (err) {
       handleError(err instanceof Error ? err.message : 'Failed to start game');
     }
-  }, [config.requiresPayment, payment, session, timer, hooks, toast, handleError]);
+  }, [config.requiresPayment, config.gameType, payment, session, timer, hooks, toast, handleError]);
 
   const pauseGame = useCallback(() => {
     timer.pause();
@@ -134,6 +134,12 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
     session.updateMoves(moves);
     hooks?.onMoveUpdate?.(moves);
   }, [session, hooks]);
+
+  const handlePaymentClick = useCallback(async () => {
+    if (config.gameType) {
+      await payment.processPayment(config.gameType, false);
+    }
+  }, [config.gameType, payment]);
 
   const canPlay = !config.requiresPayment || payment.paymentStatus.hasAccess;
   const gameState = session.session?.state || 'not_started';
@@ -262,7 +268,7 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
 
             {config.requiresPayment && !payment.paymentStatus.hasAccess && (
               <Button 
-                onClick={payment.processPayment}
+                onClick={handlePaymentClick}
                 disabled={payment.isVerifying}
                 className="bg-puzzle-gold hover:bg-puzzle-gold/80 text-puzzle-black"
               >

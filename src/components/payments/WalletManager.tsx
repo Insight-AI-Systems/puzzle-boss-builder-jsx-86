@@ -17,6 +17,24 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { GameTransaction } from '@/types/payments';
 
+// Helper function to convert database result to GameTransaction
+const convertToGameTransaction = (dbTransaction: any): GameTransaction => ({
+  id: dbTransaction.id,
+  user_id: dbTransaction.user_id,
+  game_id: dbTransaction.game_id,
+  session_id: dbTransaction.session_id,
+  transaction_type: dbTransaction.transaction_type as GameTransaction['transaction_type'],
+  amount: dbTransaction.amount,
+  currency: dbTransaction.currency,
+  status: dbTransaction.status as GameTransaction['status'],
+  payment_method_id: dbTransaction.payment_method_id,
+  external_transaction_id: dbTransaction.external_transaction_id,
+  description: dbTransaction.description,
+  metadata: dbTransaction.metadata as Record<string, any>,
+  created_at: dbTransaction.created_at,
+  updated_at: dbTransaction.updated_at
+});
+
 export function WalletManager() {
   const [addAmount, setAddAmount] = useState('');
   const [transactions, setTransactions] = useState<GameTransaction[]>([]);
@@ -43,7 +61,10 @@ export function WalletManager() {
         .limit(20);
 
       if (error) throw error;
-      setTransactions(data || []);
+      
+      // Convert database results to proper types
+      const convertedTransactions = (data || []).map(convertToGameTransaction);
+      setTransactions(convertedTransactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
     }
