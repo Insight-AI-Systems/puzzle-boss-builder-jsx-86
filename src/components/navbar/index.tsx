@@ -11,6 +11,7 @@ import NavLinks from './NavLinks';
 import UserMenu from './UserMenu';
 import AuthButtons from './AuthButtons';
 import MobileMenu from './MobileMenu';
+import PuzzleDropdown from './PuzzleDropdown';
 import { mainNavItems } from './NavbarData';
 
 const Navbar: React.FC = () => {
@@ -46,6 +47,9 @@ const Navbar: React.FC = () => {
   // Use the isAdmin from AuthContext which is based on database role
   const isAdminUser = isAdmin;
   
+  // Filter out "Puzzles" from main nav items since we'll handle it separately
+  const filteredNavItems = mainNavItems.filter(item => item.name !== 'Puzzles');
+  
   console.log('Navbar render state:', {
     isLoading,
     isAuthenticated,
@@ -63,12 +67,14 @@ const Navbar: React.FC = () => {
           <Logo />
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-1">
+          <div className="hidden md:flex space-x-1 items-center">
             <NavLinks 
-              items={mainNavItems} 
+              items={filteredNavItems} 
               className="px-3 py-2 rounded-md text-sm font-medium transition-colors"
               isMobile={false}
             />
+            {/* Desktop Puzzle Dropdown */}
+            <PuzzleDropdown />
           </div>
           
           {/* User Menu / Auth Buttons */}
