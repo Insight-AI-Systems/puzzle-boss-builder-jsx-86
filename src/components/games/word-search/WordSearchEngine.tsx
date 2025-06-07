@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -459,11 +458,11 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
             <Card className="bg-gray-900 border-gray-700">
               <CardContent className="p-4">
                 <div 
-                  className="grid mx-auto"
+                  className="grid mx-auto bg-gray-600 p-px"
                   style={{ 
                     gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
                     maxWidth: '500px',
-                    gap: '0px'
+                    gap: '1px'
                   }}
                   onMouseLeave={() => {
                     setIsSelecting(false);
@@ -475,7 +474,7 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
                       <div
                         key={`${rowIndex}-${colIndex}`}
                         className={`
-                          w-8 h-8 border border-gray-600 flex items-center justify-center
+                          w-8 h-8 flex items-center justify-center
                           text-sm font-bold cursor-pointer transition-colors
                           ${selectedCells.has(`${rowIndex}-${colIndex}`) 
                             ? 'bg-puzzle-aqua text-puzzle-black' 
