@@ -28,7 +28,7 @@ export function usePaymentVerification(entryFee?: number) {
   const { user } = useAuth();
   const { toast } = useToast();
   const { verifyGameEntry, wallet, fetchWallet } = usePaymentSystem();
-  const { profile } = useMemberProfile();
+  const { profile, refetch: refetchProfile } = useMemberProfile();
 
   // Initialize payment status
   useEffect(() => {
@@ -89,6 +89,11 @@ export function usePaymentVerification(entryFee?: number) {
     }
 
     if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to play games",
+        variant: "destructive"
+      });
       setPaymentStatus(prev => ({ ...prev, hasAccess: false }));
       return false;
     }
@@ -100,23 +105,33 @@ export function usePaymentVerification(entryFee?: number) {
 
       // Check if we can use credits first
       if (credits >= entryFee) {
-        // Use credits - call our new credit-based verification
+        // Use credits - call our credit-based verification
         const result = await verifyGameEntry(gameId, entryFee, testMode, true); // true = use credits
         
-        setPaymentStatus({
-          verified: result.success,
-          credits: result.success ? credits - entryFee : credits,
-          balance,
-          hasAccess: result.canPlay,
-          requiresPayment: true,
-          willUseCredits: true,
-          transactionId: result.transactionId
-        });
-
         if (result.success) {
+          // Refresh profile to get updated credits
+          await refetchProfile();
+          
+          setPaymentStatus({
+            verified: true,
+            credits: credits - entryFee,
+            balance,
+            hasAccess: true,
+            requiresPayment: true,
+            willUseCredits: true,
+            transactionId: result.transactionId
+          });
+
           toast({
-            title: "Credits Used",
+            title: "Credits Used Successfully",
             description: `${entryFee} credits deducted. Remaining: ${credits - entryFee}`,
+          });
+        } else {
+          setPaymentStatus(prev => ({ ...prev, verified: false, hasAccess: false }));
+          toast({
+            title: "Credit Payment Failed",
+            description: result.error || "Unable to process credit payment",
+            variant: "destructive"
           });
         }
 
@@ -125,38 +140,55 @@ export function usePaymentVerification(entryFee?: number) {
         // Use wallet balance - existing logic
         const result = await verifyGameEntry(gameId, entryFee, testMode, false); // false = use wallet
         
-        setPaymentStatus({
-          verified: result.success,
-          credits,
-          balance: result.balance,
-          hasAccess: result.canPlay,
-          requiresPayment: true,
-          willUseCredits: false,
-          transactionId: result.transactionId
-        });
-
-        if (!result.success) {
-          toast({
-            title: "Payment verification failed",
-            description: result.error || "Unable to verify payment",
-            variant: "destructive"
+        if (result.success) {
+          setPaymentStatus({
+            verified: true,
+            credits,
+            balance: result.balance,
+            hasAccess: true,
+            requiresPayment: true,
+            willUseCredits: false,
+            transactionId: result.transactionId
           });
+
+          toast({
+            title: "Payment Successful",
+            description: `$${entryFee.toFixed(2)} charged from wallet`,
+          });
+        } else {
+          setPaymentStatus(prev => ({ ...prev, verified: false, hasAccess: false }));
+          
+          if (result.error?.includes('Insufficient')) {
+            toast({
+              title: "Insufficient Funds",
+              description: `You need $${entryFee.toFixed(2)} to play this game. Add funds to your wallet or earn more credits.`,
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Payment Failed",
+              description: result.error || "Unable to process payment",
+              variant: "destructive"
+            });
+          }
         }
 
         return result.success;
       }
     } catch (error) {
       console.error('Payment verification failed:', error);
+      setPaymentStatus(prev => ({ ...prev, verified: false, hasAccess: false }));
+      
       toast({
-        title: "Payment verification failed",
-        description: "Please try again",
+        title: "System Error",
+        description: "A system error occurred. Please try again or contact support.",
         variant: "destructive"
       });
       return false;
     } finally {
       setIsVerifying(false);
     }
-  }, [entryFee, user, profile, wallet, toast, verifyGameEntry]);
+  }, [entryFee, user, profile, wallet, toast, verifyGameEntry, refetchProfile]);
 
   const processPayment = useCallback(async (gameId: string, testMode: boolean = false) => {
     return await verifyPayment(gameId, testMode);

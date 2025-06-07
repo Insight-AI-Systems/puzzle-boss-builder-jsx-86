@@ -76,6 +76,7 @@ export function usePaymentSystem() {
       if (error) {
         // If wallet doesn't exist, create one
         if (error.code === 'PGRST116') {
+          console.log('Creating new wallet for user:', user.id);
           const { data: newWallet, error: createError } = await supabase
             .from('user_wallets')
             .insert({
@@ -86,7 +87,10 @@ export function usePaymentSystem() {
             .select()
             .single();
 
-          if (createError) throw createError;
+          if (createError) {
+            console.error('Error creating wallet:', createError);
+            throw createError;
+          }
           setWallet(newWallet);
           return newWallet;
         }
@@ -124,7 +128,7 @@ export function usePaymentSystem() {
     }
   }, [user]);
 
-  // Verify payment for game entry - updated to handle credits
+  // Verify payment for game entry - updated to handle credits with better error handling
   const verifyGameEntry = useCallback(async (
     gameId: string,
     entryFee: number,
@@ -155,27 +159,35 @@ export function usePaymentSystem() {
       }
 
       if (useCredits) {
-        // Handle credit-based payment
+        // Handle credit-based payment with improved error handling
+        console.log('Processing credit payment for user:', user.id, 'amount:', entryFee);
+        
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('credits')
           .eq('id', user.id)
           .single();
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          throw new Error('Unable to fetch user credits');
+        }
 
         const currentCredits = profile.credits || 0;
+        console.log('Current credits:', currentCredits, 'Required:', entryFee);
+        
         if (currentCredits < entryFee) {
           return {
             success: false,
             canPlay: false,
             balance: wallet?.balance || 0,
             entryFee,
-            error: 'Insufficient credits'
+            error: `Insufficient credits. You have ${currentCredits}, but need ${entryFee} credits.`
           };
         }
 
-        // Create credit transaction
+        // Create credit transaction with better error handling
+        console.log('Creating credit transaction...');
         const { data: transaction, error: transactionError } = await supabase
           .from('financial_transactions')
           .insert({
@@ -191,9 +203,15 @@ export function usePaymentSystem() {
           .select()
           .single();
 
-        if (transactionError) throw transactionError;
+        if (transactionError) {
+          console.error('Error creating transaction:', transactionError);
+          throw new Error('Unable to process credit payment');
+        }
 
-        // Deduct credits from profile
+        console.log('Transaction created:', transaction.id);
+
+        // Deduct credits from profile with better error handling
+        console.log('Updating profile credits...');
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ 
@@ -202,12 +220,12 @@ export function usePaymentSystem() {
           })
           .eq('id', user.id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Error updating credits:', updateError);
+          throw new Error('Unable to deduct credits');
+        }
 
-        toast({
-          title: "Credits Used",
-          description: `${entryFee} credits deducted for game entry`,
-        });
+        console.log('Credits updated successfully');
 
         return {
           success: true,
@@ -217,10 +235,10 @@ export function usePaymentSystem() {
           transactionId: transaction.id
         };
       } else {
-        // Handle wallet-based payment (existing logic)
+        // Handle wallet-based payment (existing logic with better error handling)
         const currentWallet = await fetchWallet();
         if (!currentWallet) {
-          throw new Error('Wallet not found');
+          throw new Error('Unable to access wallet');
         }
 
         if (currentWallet.balance < entryFee) {
@@ -229,7 +247,7 @@ export function usePaymentSystem() {
             canPlay: false,
             balance: currentWallet.balance,
             entryFee,
-            error: 'Insufficient balance'
+            error: `Insufficient wallet balance. You have $${currentWallet.balance.toFixed(2)}, but need $${entryFee.toFixed(2)}.`
           };
         }
 
@@ -241,7 +259,7 @@ export function usePaymentSystem() {
             canPlay: false,
             balance: currentWallet.balance,
             entryFee,
-            error: 'Transaction flagged for review'
+            error: 'Transaction flagged for review. Please contact support.'
           };
         }
 
@@ -286,11 +304,6 @@ export function usePaymentSystem() {
         // Update local wallet state
         setWallet(prev => prev ? { ...prev, balance: prev.balance - entryFee } : null);
 
-        toast({
-          title: "Payment Successful",
-          description: `Entry fee of $${entryFee.toFixed(2)} has been deducted`,
-        });
-
         return {
           success: true,
           canPlay: true,
@@ -302,23 +315,20 @@ export function usePaymentSystem() {
       }
     } catch (error) {
       console.error('Payment verification error:', error);
-      toast({
-        title: "Payment Failed",
-        description: error instanceof Error ? error.message : 'Payment verification failed',
-        variant: "destructive"
-      });
-
+      
+      const errorMessage = error instanceof Error ? error.message : 'Payment verification failed';
+      
       return {
         success: false,
         canPlay: false,
         balance: wallet?.balance || 0,
         entryFee,
-        error: error instanceof Error ? error.message : 'Payment verification failed'
+        error: errorMessage
       };
     } finally {
       setLoading(false);
     }
-  }, [user, wallet, fetchWallet, toast]);
+  }, [user, wallet, fetchWallet]);
 
   // Process refund
   const processRefund = useCallback(async (request: RefundRequest): Promise<boolean> => {
