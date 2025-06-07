@@ -67,13 +67,20 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
     return isAdmin || item.roles.some(role => hasRole(role));
   };
 
-  // Add special handling for home link when in admin pages
+  // Enhanced handling for home link when in admin pages
   const getHomeLinkProps = (path: string) => {
     if (path === '/' && location.pathname.startsWith('/admin')) {
-      // Add a special flag to skip the admin redirect when coming from admin pages
+      console.log('NavLinks: Setting skipAdminRedirect for home navigation from admin page');
+      // Clear any temporary session storage when explicitly navigating home
+      sessionStorage.removeItem('temp_disable_admin_redirect');
+      
       return { 
         to: '/', 
-        state: { skipAdminRedirect: true, from: location.pathname }
+        state: { 
+          skipAdminRedirect: true, 
+          from: location.pathname,
+          timestamp: Date.now() // Add timestamp to ensure state is fresh
+        }
       };
     }
     return { to: path };

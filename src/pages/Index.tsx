@@ -50,8 +50,23 @@ function Index() {
       skipRedirect
     });
     
+    // IMPORTANT: If user explicitly navigated home (skipRedirect), respect their choice
+    if (skipRedirect) {
+      console.log('User explicitly navigated home - skipping admin redirect');
+      // Temporarily disable auto-redirect preference for this session
+      sessionStorage.setItem('temp_disable_admin_redirect', 'true');
+      return;
+    }
+    
+    // Check if we have a temporary disable flag from this session
+    const tempDisabled = sessionStorage.getItem('temp_disable_admin_redirect');
+    if (tempDisabled) {
+      console.log('Auto-redirect temporarily disabled for this session');
+      return;
+    }
+    
     // Only proceed if loading is done, there's no skip flag, and we're not coming from admin pages
-    if (!authLoading && userRole === 'super_admin' && !skipRedirect && !comingFromAdmin) {
+    if (!authLoading && userRole === 'super_admin' && !comingFromAdmin) {
       // Check localStorage for user preference
       const userWantsAdmin = window.localStorage.getItem('redirect_to_admin');
       
@@ -89,13 +104,15 @@ function Index() {
     console.log('Index page mounted', {
       pathname: window.location.pathname,
       localStorage: window.localStorage.getItem('redirect_to_admin'),
-      state: location.state
+      state: location.state,
+      sessionStorage: sessionStorage.getItem('temp_disable_admin_redirect')
     });
     
     // Allow testing by clearing localStorage when adding a query parameter
     if (window.location.search.includes('reset_admin_pref')) {
       console.log('Resetting admin preference in localStorage');
       window.localStorage.removeItem('redirect_to_admin');
+      sessionStorage.removeItem('temp_disable_admin_redirect');
     }
   }, [location]);
 
@@ -127,6 +144,27 @@ function Index() {
   return (
     <main className="min-h-screen">
       <h1 className="sr-only">The Puzzle Boss - Home</h1>
+      
+      {/* Show a notification if user came from admin and can return */}
+      {location.state?.skipAdminRedirect && userRole === 'super_admin' && (
+        <div className="bg-puzzle-aqua/10 border-l-4 border-puzzle-aqua p-4 m-4 rounded">
+          <div className="flex items-center justify-between">
+            <p className="text-sm">
+              You're viewing the home page. 
+              <Link to="/admin-dashboard" className="ml-2 underline hover:no-underline">
+                Return to Admin Dashboard
+              </Link>
+            </p>
+            <button 
+              onClick={() => sessionStorage.removeItem('temp_disable_admin_redirect')}
+              className="text-xs bg-puzzle-aqua text-puzzle-black px-2 py-1 rounded hover:bg-puzzle-aqua/80"
+            >
+              Enable Auto-Redirect
+            </button>
+          </div>
+        </div>
+      )}
+      
       <Hero />
       <ConceptSection />
       <HowItWorks />
