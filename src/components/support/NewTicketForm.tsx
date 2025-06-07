@@ -51,11 +51,8 @@ export const NewTicketForm = () => {
     
     setIsSubmitting(true);
     
-    // Make sure we're passing the correct ticket type parameter
-    const success = await addTicket({
-      ...ticket,
-      category: isInternal ? 'internal' : ticket.category
-    });
+    // Make sure we're passing the correct ticket type parameter with title and description
+    const success = await addTicket(ticket.title || '', ticket.description || '');
     
     if (success) {
       navigate(`/support/tickets${isInternal ? '?view=internal' : ''}`);

@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TrendingUp, TrendingDown, Info } from "lucide-react";
 
 interface StatCardProps {
   title: string;
@@ -11,18 +12,34 @@ interface StatCardProps {
     direction: 'up' | 'down';
   };
   subtext?: string;
+  tooltip?: string;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({ 
   title, 
   value, 
   trend,
-  subtext
+  subtext,
+  tooltip
 }) => {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">{title}</CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">
+          {title}
+          {tooltip && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">{tooltip}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex items-baseline">

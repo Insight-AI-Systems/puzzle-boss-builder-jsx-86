@@ -75,6 +75,7 @@ export const OverviewTab: React.FC = () => {
           value={dailyMetrics?.active_users || 0}
           trend={formatTrend(getUserTrend())}
           subtext={`of ${totalUsers} total users`}
+          tooltip="Members who have logged in and played at least one puzzle in the current month"
         />
         <StatCard 
           title="New Signups" 
