@@ -61,7 +61,7 @@ export function MemoryGame({
   // Handle restart
   const handleRestart = () => {
     console.log('Game restarted');
-    initializeGame();
+    initializeGame(gameState.layout, gameState.theme);
     gameCompletedRef.current = false;
   };
 
@@ -113,14 +113,6 @@ export function MemoryGame({
       </div>
     );
   }
-
-  console.log('Rendering memory game', { 
-    initialized: gameInitialized, 
-    cardsCount: gameState.cards.length,
-    layout: gameState.layout,
-    theme: gameState.theme,
-    imagesLoaded: loadedImages.size
-  });
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-4">

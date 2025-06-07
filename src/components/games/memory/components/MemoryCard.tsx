@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { MemoryCard as MemoryCardType } from '../types/memoryTypes';
+import '../styles/memory-cards.css';
 
 interface MemoryCardProps {
   card: MemoryCardType;
@@ -15,64 +16,47 @@ export function MemoryCard({ card, onClick, disabled, theme }: MemoryCardProps) 
   const isImage = card.value.startsWith('http');
 
   const handleClick = () => {
+    console.log('Card clicked:', card.id, 'isFlipped:', card.isFlipped, 'isMatched:', card.isMatched, 'disabled:', disabled);
     if (!disabled && !card.isFlipped && !card.isMatched) {
       onClick(card.id);
     }
   };
 
   const handleImageError = () => {
+    console.log('Image failed to load:', card.value);
     setImageError(true);
   };
 
+  const cardClasses = `
+    memory-card w-full aspect-square
+    ${card.isFlipped || card.isMatched ? 'flipped' : ''}
+    ${disabled ? 'disabled' : ''}
+  `;
+
   return (
-    <Card 
-      className={`
-        relative w-full aspect-square cursor-pointer transition-all duration-300 
-        transform hover:scale-105 ${disabled ? 'cursor-not-allowed' : ''}
-        ${card.isMatched ? 'opacity-70 scale-95' : ''}
-      `}
-      onClick={handleClick}
-    >
-      <div className="w-full h-full relative preserve-3d" style={{
-        transform: card.isFlipped || card.isMatched ? 'rotateY(180deg)' : 'rotateY(0deg)',
-        transformStyle: 'preserve-3d',
-        transition: 'transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1)'
-      }}>
-        {/* Card Back */}
-        <div 
-          className="absolute inset-0 w-full h-full backface-hidden rounded-lg bg-gradient-to-br from-puzzle-aqua to-puzzle-blue flex items-center justify-center"
-          style={{ backfaceVisibility: 'hidden' }}
-        >
-          <div className="text-white text-2xl font-bold">?</div>
+    <div className={cardClasses} onClick={handleClick}>
+      <div className="memory-card-inner">
+        {/* Card Front (back side when flipped) */}
+        <div className="memory-card-face memory-card-front">
+          <div>?</div>
         </div>
         
-        {/* Card Front */}
-        <div 
-          className={`
-            absolute inset-0 w-full h-full backface-hidden rounded-lg 
-            flex items-center justify-center overflow-hidden
-            ${card.isMatched ? 'bg-green-100 border-2 border-green-400' : 'bg-white border-2 border-gray-200'}
-          `}
-          style={{ 
-            backfaceVisibility: 'hidden',
-            transform: 'rotateY(180deg)'
-          }}
-        >
+        {/* Card Back (front side when flipped) */}
+        <div className={`memory-card-face memory-card-back ${card.isMatched ? 'matched' : ''}`}>
           {isImage && !imageError ? (
             <img 
               src={card.value} 
               alt="Memory card"
-              className="w-full h-full object-cover rounded-lg"
               onError={handleImageError}
               loading="lazy"
             />
           ) : (
-            <div className="text-4xl font-bold">
+            <div className="text-4xl">
               {imageError ? '❓' : card.value}
             </div>
           )}
         </div>
       </div>
-    </Card>
+    </div>
   );
 }

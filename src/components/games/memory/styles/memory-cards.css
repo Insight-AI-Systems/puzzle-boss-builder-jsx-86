@@ -1,0 +1,69 @@
+
+.memory-card {
+  perspective: 1000px;
+  cursor: pointer;
+}
+
+.memory-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.memory-card.flipped .memory-card-inner {
+  transform: rotateY(180deg);
+}
+
+.memory-card-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.memory-card-front {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.memory-card-back {
+  background: white;
+  border: 2px solid #e5e7eb;
+  transform: rotateY(180deg);
+}
+
+.memory-card-back.matched {
+  background: #f0fdf4;
+  border-color: #22c55e;
+}
+
+.memory-card-back img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.memory-card:hover .memory-card-inner {
+  transform: scale(1.05);
+}
+
+.memory-card.flipped:hover .memory-card-inner {
+  transform: rotateY(180deg) scale(1.05);
+}
+
+.memory-card.disabled {
+  pointer-events: none;
+  opacity: 0.7;
+}

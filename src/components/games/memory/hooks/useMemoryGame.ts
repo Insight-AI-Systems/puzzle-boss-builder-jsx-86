@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { MemoryCard, MemoryGameState, MemoryLayout, MemoryTheme, LAYOUT_CONFIGS } from '../types/memoryTypes';
 import { generateCards, processCardMatch, calculateGameStats } from './useMemoryGameHelpers';
 
@@ -16,11 +16,15 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
   }));
 
   const [gameInitialized, setGameInitialized] = useState(false);
+  const initializationRef = useRef(false);
 
   // Initialize or restart game
   const initializeGame = useCallback((layout?: MemoryLayout, theme?: MemoryTheme) => {
-    const newLayout = layout || gameState.layout;
-    const newTheme = theme || gameState.theme;
+    const newLayout = layout || initialLayout;
+    const newTheme = theme || initialTheme;
+    
+    console.log('Initializing memory game:', { newLayout, newTheme });
+    
     const cards = generateCards(newLayout, newTheme);
     
     setGameState({
@@ -35,8 +39,8 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
     });
     
     setGameInitialized(true);
-    console.log(`Memory game initialized: ${newLayout} ${newTheme}`, { cardsCount: cards.length });
-  }, [gameState.layout, gameState.theme]);
+    console.log('Memory game initialized with cards:', cards.length);
+  }, [initialLayout, initialTheme]);
 
   // Handle card click
   const handleCardClick = useCallback((cardId: string) => {
@@ -45,17 +49,21 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
       return;
     }
 
+    console.log('Processing card click:', cardId);
+
     setGameState(prevState => {
       const { cards, selectedCards, moves } = prevState;
       
       // Can't select more than 2 cards at once
       if (selectedCards.length >= 2) {
+        console.log('Already 2 cards selected, ignoring click');
         return prevState;
       }
       
       // Can't select already flipped or matched cards
       const clickedCard = cards.find(card => card.id === cardId);
       if (!clickedCard || clickedCard.isFlipped || clickedCard.isMatched) {
+        console.log('Card already flipped or matched, ignoring click');
         return prevState;
       }
       
@@ -77,8 +85,16 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
           newMatchedPairs += 1;
           newCards.splice(0, newCards.length, ...updatedCards);
           console.log('Match found!', { newMatchedPairs, totalPairs: LAYOUT_CONFIGS[prevState.layout].totalCards / 2 });
+        } else {
+          console.log('No match found');
         }
       }
+      
+      console.log('Updated game state:', { 
+        selectedCards: newSelectedCards, 
+        moves: newMoves, 
+        matchedPairs: newMatchedPairs 
+      });
       
       return {
         ...prevState,
@@ -94,6 +110,7 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
   useEffect(() => {
     if (gameState.selectedCards.length === 2) {
       const timer = setTimeout(() => {
+        console.log('Auto-flipping unmatched cards');
         setGameState(prevState => {
           const { cards, selectedCards } = prevState;
           const [firstCardId, secondCardId] = selectedCards;
@@ -136,11 +153,14 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
     return calculateGameStats(gameState, gameState.layout);
   }, [gameState]);
 
-  // Initialize game immediately on mount
+  // Initialize game on mount (only once)
   useEffect(() => {
-    console.log('Initializing memory game on mount');
-    initializeGame();
-  }, []);
+    if (!initializationRef.current) {
+      console.log('Initializing memory game on mount');
+      initializationRef.current = true;
+      initializeGame();
+    }
+  }, [initializeGame]);
 
   return {
     gameState,
