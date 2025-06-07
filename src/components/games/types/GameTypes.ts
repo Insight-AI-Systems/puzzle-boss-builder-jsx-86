@@ -1,5 +1,5 @@
 
-export type GameState = 'not_started' | 'playing' | 'paused' | 'completed' | 'submitted';
+export type GameState = 'not_started' | 'playing' | 'completed' | 'submitted';
 
 export interface GameSession {
   sessionId: string;
@@ -47,6 +47,7 @@ export interface GameHooks {
   onGameStart?: () => void;
   onGamePause?: () => void;
   onGameResume?: () => void;
+  onGameReset?: () => void;
   onGameComplete?: (result: GameResult) => void;
   onScoreUpdate?: (score: number) => void;
   onMoveUpdate?: (moves: number) => void;
