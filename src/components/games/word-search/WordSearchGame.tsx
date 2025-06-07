@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { BaseGameWrapper } from '../BaseGameWrapper';
 import { ResponsiveGameContainer } from '../ResponsiveGameContainer';
@@ -41,7 +40,8 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
     hasMoves: false,
     timeLimit: difficulty === 'master' ? 600 : difficulty === 'pro' ? 480 : 360,
     requiresPayment: entryFee > 0,
-    entryFee
+    entryFee,
+    difficulty // Add difficulty to config
   };
 
   // Generate unique session ID for game state persistence

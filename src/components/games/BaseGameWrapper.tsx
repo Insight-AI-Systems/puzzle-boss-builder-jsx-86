@@ -9,7 +9,9 @@ import { useGameTimer } from './hooks/useGameTimer';
 import { useGameSession } from './hooks/useGameSession';
 import { useLeaderboard } from './hooks/useLeaderboard';
 import { usePaymentVerification } from './hooks/usePaymentVerification';
+import { useGameSounds } from './hooks/useGameSounds';
 import { GameConfig, GameHooks, GameResult } from './types/GameTypes';
+import { GameCongratulationsScreen } from './components/GameCongratulationsScreen';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -38,27 +40,32 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
+  const [gameStats, setGameStats] = useState<any>({});
 
   // Initialize hooks
   const timer = useGameTimer(config.timeLimit);
   const session = useGameSession(config);
   const leaderboard = useLeaderboard(config.gameType);
   const payment = usePaymentVerification(config.entryFee);
+  const sounds = useGameSounds();
 
   // Error recovery
   const handleError = useCallback((errorMessage: string) => {
     setError(errorMessage);
     hooks?.onError?.(errorMessage);
     timer.stop();
+    sounds.playError();
     if (session.session?.state === 'playing') {
       session.updateState('completed');
     }
-  }, [hooks, timer, session]);
+  }, [hooks, timer, session, sounds]);
 
   // Game state management
   const startGame = useCallback(async () => {
     try {
       setError(null);
+      setShowCongratulations(false);
       
       // Verify payment if required
       if (config.requiresPayment && config.gameType) {
@@ -88,6 +95,8 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
     timer.reset();
     session.resetSession();
     setError(null);
+    setShowCongratulations(false);
+    setGameStats({});
     hooks?.onGameReset?.();
   }, [timer, session, hooks]);
 
@@ -104,6 +113,19 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
       gameType: config.gameType
     };
 
+    // Store stats for congratulations screen
+    setGameStats({
+      score: result.score,
+      timeElapsed: result.timeElapsed,
+      moves: result.moves,
+      gameType: config.gameType,
+      difficulty: config.difficulty || 'normal'
+    });
+
+    // Play completion sound and show congratulations
+    sounds.playComplete();
+    setShowCongratulations(true);
+
     hooks?.onGameComplete?.(result);
 
     // Submit to leaderboard
@@ -116,7 +138,7 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
     } finally {
       setIsSubmitting(false);
     }
-  }, [timer, session, hooks, config.gameType, leaderboard, handleError]);
+  }, [timer, session, hooks, config.gameType, config.difficulty, leaderboard, handleError, sounds]);
 
   // Update session with timer - Fixed to prevent infinite loop
   useEffect(() => {
@@ -205,7 +227,7 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
           )}
 
           {/* Game Controls - Simplified without pause functionality */}
-          {(gameState === 'completed' || gameState === 'submitted') && (
+          {(gameState === 'completed' || gameState === 'submitted') && !showCongratulations && (
             <div className="flex flex-wrap gap-2 mb-4">
               <Button 
                 onClick={resetGame}
@@ -232,21 +254,18 @@ export function BaseGameWrapper({ config, hooks, children, className = '' }: Bas
       {/* Game Content */}
       <div className="relative">
         {typeof children === 'function' ? children(gameStateProps) : children}
-        
-        {/* Game Overlay for completed state only */}
-        {gameState === 'completed' && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
-            <Card className="bg-gray-900 border-gray-700 text-center">
-              <CardContent className="p-6">
-                <h3 className="text-xl font-bold text-puzzle-gold mb-2">Game Complete!</h3>
-                <p className="text-gray-400 mb-4">
-                  {isSubmitting ? 'Submitting your score...' : 'Your score has been submitted to the leaderboard'}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
       </div>
+
+      {/* Spectacular Congratulations Screen */}
+      <GameCongratulationsScreen
+        show={showCongratulations}
+        stats={gameStats}
+        onPlayAgain={() => {
+          setShowCongratulations(false);
+          resetGame();
+        }}
+        onClose={() => setShowCongratulations(false)}
+      />
     </div>
   );
 }

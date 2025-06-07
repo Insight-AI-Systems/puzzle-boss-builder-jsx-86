@@ -1,7 +1,6 @@
 
 import React, { useEffect } from 'react';
 import { GameMode } from '../types/puzzle-types';
-import { useToast } from '@/hooks/use-toast';
 
 interface PuzzleCompletionHandlerProps {
   pieces: any[];
@@ -11,6 +10,7 @@ interface PuzzleCompletionHandlerProps {
   gameMode: GameMode;
   rotationEnabled: boolean;
   isSolved: boolean;
+  onComplete?: (stats: any) => void;
 }
 
 const PuzzleCompletionHandler: React.FC<PuzzleCompletionHandlerProps> = ({
@@ -20,10 +20,9 @@ const PuzzleCompletionHandler: React.FC<PuzzleCompletionHandlerProps> = ({
   playSound,
   gameMode,
   rotationEnabled,
-  isSolved
+  isSolved,
+  onComplete
 }) => {
-  const { toast } = useToast();
-
   useEffect(() => {
     if (!isSolved && pieces.length > 0) {
       const correctCount = pieces.filter((piece) => {
@@ -63,9 +62,21 @@ const PuzzleCompletionHandler: React.FC<PuzzleCompletionHandlerProps> = ({
       if (isPuzzleSolved()) {
         puzzleState.checkCompletion(gridSize * gridSize, gridSize * gridSize);
         playSound('complete');
+        
+        // Call completion handler with stats if provided
+        if (onComplete) {
+          onComplete({
+            moves: puzzleState.moves || 0,
+            timeElapsed: puzzleState.timeSpent || 0,
+            score: puzzleState.score || 0,
+            difficulty: gameMode,
+            totalPieces: gridSize * gridSize,
+            completed: true
+          });
+        }
       }
     }
-  }, [pieces, isSolved, puzzleState, gridSize, playSound, gameMode, rotationEnabled]);
+  }, [pieces, isSolved, puzzleState, gridSize, playSound, gameMode, rotationEnabled, onComplete]);
 
   return null;
 };
