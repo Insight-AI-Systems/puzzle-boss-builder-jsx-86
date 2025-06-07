@@ -2609,6 +2609,7 @@ export type Database = {
           new_signups: number
           puzzles_completed: number
           revenue: number
+          total_users: number
         }[]
       }
       calculate_monthly_commissions: {

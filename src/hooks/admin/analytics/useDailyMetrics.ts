@@ -17,25 +17,13 @@ export const useDailyMetrics = (selectedDate: Date) => {
         return data[0] as DailyMetrics;
       } 
       
-      // Get total users count directly if the function doesn't return it
-      let totalUsers = 0;
-      try {
-        // Use alternate approach to bypass TypeScript's strict checking
-        const countResponse = await supabase.from('profiles').select('count');
-        if (countResponse && !countResponse.error && countResponse.count !== null) {
-          totalUsers = countResponse.count;
-        }
-      } catch (countErr) {
-        console.error("Failed to get total users count:", countErr);
-      }
-      
       // Provide consistent default values to prevent mismatch in counts
       return { 
         active_users: 0, 
         new_signups: 0, 
         puzzles_completed: 0, 
         revenue: 0,
-        total_users: totalUsers
+        total_users: 0
       };
     }
   });
