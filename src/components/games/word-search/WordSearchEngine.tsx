@@ -33,7 +33,7 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   
   const { 
     timeElapsed, 
-    isActive, 
+    isRunning, 
     start: startTimer, 
     pause: pauseTimer, 
     resume: resumeTimer 
@@ -108,6 +108,26 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
       }
     }
   }, [foundWords, wordList.length, timeElapsed, timeLimit, onWordFound, onComplete, pauseTimer]);
+
+  // Initialize grid only once
+  useEffect(() => {
+    if (!gridInitialized.current && wordList.length > 0) {
+      const newGrid = generateWordSearchGrid(gridSize, wordList);
+      setGrid(newGrid.grid);
+      setWordPositions(newGrid.positions);
+      gridInitialized.current = true;
+    }
+  }, [gridSize, wordList]);
+
+  // Reset game state when wordList changes
+  useEffect(() => {
+    setFoundWords(new Set());
+    setGameStarted(false);
+    setGameComplete(false);
+    setIsPaused(false);
+    setScore(0);
+    gridInitialized.current = false;
+  }, [wordList]);
 
   const progress = (foundWords.size / wordList.length) * 100;
   const timeRemaining = Math.max(0, timeLimit - timeElapsed);
