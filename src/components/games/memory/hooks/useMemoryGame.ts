@@ -14,6 +14,8 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
     theme: initialTheme
   }));
 
+  const [gameInitialized, setGameInitialized] = useState(false);
+
   // Shuffle algorithm for random card placement
   const shuffleArray = <T>(array: T[]): T[] => {
     const shuffled = [...array];
@@ -63,10 +65,18 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
       layout: newLayout,
       theme: newTheme
     });
+    
+    setGameInitialized(true);
+    console.log(`Memory game initialized: ${newLayout} ${newTheme}`);
   }, [gameState.layout, gameState.theme, generateCards]);
 
   // Handle card click
   const handleCardClick = useCallback((cardId: string) => {
+    if (!gameInitialized) {
+      console.log('Game not initialized, cannot click cards');
+      return;
+    }
+
     setGameState(prevState => {
       const { cards, selectedCards, moves } = prevState;
       
@@ -115,7 +125,7 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
         matchedPairs: newMatchedPairs
       };
     });
-  }, []);
+  }, [gameInitialized]);
 
   // Auto-flip unmatched cards after delay
   useEffect(() => {
@@ -146,6 +156,8 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
 
   // Check for game completion
   useEffect(() => {
+    if (!gameInitialized) return;
+    
     const totalPairs = LAYOUT_CONFIGS[gameState.layout].totalCards / 2;
     if (gameState.matchedPairs === totalPairs && totalPairs > 0) {
       setGameState(prevState => ({
@@ -153,7 +165,7 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
         isGameComplete: true
       }));
     }
-  }, [gameState.matchedPairs, gameState.layout]);
+  }, [gameState.matchedPairs, gameState.layout, gameInitialized]);
 
   // Calculate game stats
   const getGameStats = useCallback(() => {
@@ -170,17 +182,20 @@ export function useMemoryGame(initialLayout: MemoryLayout = '3x4', initialTheme:
     };
   }, [gameState]);
 
-  // Initialize game on mount
+  // Initialize game on first mount only
   useEffect(() => {
-    initializeGame();
-  }, []);
+    if (!gameInitialized) {
+      initializeGame();
+    }
+  }, [initializeGame, gameInitialized]);
 
   return {
     gameState,
     handleCardClick,
     initializeGame,
     getGameStats,
-    isGameActive: gameState.moves > 0 && !gameState.isGameComplete,
-    disabled: gameState.selectedCards.length >= 2
+    isGameActive: gameInitialized && gameState.moves > 0 && !gameState.isGameComplete,
+    disabled: gameState.selectedCards.length >= 2,
+    gameInitialized
   };
 }

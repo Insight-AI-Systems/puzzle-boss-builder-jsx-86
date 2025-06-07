@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MemoryGameBoard } from './components/MemoryGameBoard';
 import { MemoryGameControls } from './components/MemoryGameControls';
 import { useMemoryGame } from './hooks/useMemoryGame';
@@ -30,44 +30,54 @@ export function MemoryGame({
     initializeGame,
     getGameStats,
     isGameActive,
-    disabled
+    disabled,
+    gameInitialized
   } = useMemoryGame(layout, theme);
 
   const stats = getGameStats();
+  const lastMoves = useRef(gameState.moves);
+  const lastMatchedPairs = useRef(gameState.matchedPairs);
+  const gameCompletedRef = useRef(false);
 
   // Handle layout changes
   const handleLayoutChange = (newLayout: MemoryLayout) => {
     initializeGame(newLayout, gameState.theme);
+    gameCompletedRef.current = false;
   };
 
   // Handle theme changes
   const handleThemeChange = (newTheme: MemoryTheme) => {
     initializeGame(gameState.layout, newTheme);
+    gameCompletedRef.current = false;
   };
 
   // Handle restart
   const handleRestart = () => {
     initializeGame();
+    gameCompletedRef.current = false;
   };
 
-  // Update external score and moves
+  // Update external score only when matched pairs change
   useEffect(() => {
-    if (onScoreUpdate) {
-      // Score based on matched pairs and accuracy
+    if (onScoreUpdate && gameInitialized && lastMatchedPairs.current !== gameState.matchedPairs) {
       const score = Math.round(gameState.matchedPairs * 100 * (stats.accuracy / 100));
       onScoreUpdate(score);
+      lastMatchedPairs.current = gameState.matchedPairs;
     }
-  }, [gameState.matchedPairs, stats.accuracy, onScoreUpdate]);
+  }, [gameState.matchedPairs, stats.accuracy, onScoreUpdate, gameInitialized]);
 
+  // Update external moves only when moves change
   useEffect(() => {
-    if (onMoveUpdate) {
+    if (onMoveUpdate && gameInitialized && lastMoves.current !== gameState.moves) {
       onMoveUpdate(gameState.moves);
+      lastMoves.current = gameState.moves;
     }
-  }, [gameState.moves, onMoveUpdate]);
+  }, [gameState.moves, onMoveUpdate, gameInitialized]);
 
-  // Handle game completion
+  // Handle game completion only once
   useEffect(() => {
-    if (gameState.isGameComplete && onComplete) {
+    if (gameState.isGameComplete && onComplete && !gameCompletedRef.current) {
+      gameCompletedRef.current = true;
       const finalStats = {
         ...stats,
         completed: true,
@@ -76,6 +86,14 @@ export function MemoryGame({
       onComplete(finalStats);
     }
   }, [gameState.isGameComplete, onComplete, stats, gameState.matchedPairs]);
+
+  if (!gameInitialized) {
+    return (
+      <div className="w-full max-w-6xl mx-auto space-y-4 flex items-center justify-center min-h-[400px]">
+        <div className="text-puzzle-white">Initializing game...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-4">
