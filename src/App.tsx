@@ -42,6 +42,8 @@ function AppContent() {
         <Route path="/" element={<Index />} />
         <Route path="/puzzle/:puzzleId" element={<PuzzlePlay />} />
         <Route path="/puzzles" element={<Puzzles />} />
+        <Route path="/categories" element={<Categories />} />
+        <Route path="/categories/:categoryId" element={<CategoryPuzzles />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
