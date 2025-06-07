@@ -42,15 +42,20 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   // Create a stable grid that doesn't change on re-renders
   const [grid, setGrid] = useState<string[][]>([]);
   const [wordPositions, setWordPositions] = useState<Map<string, Array<[number, number]>>>(new Map());
+  const [actualWordList, setActualWordList] = useState<string[]>([]);
   const gridInitialized = useRef(false);
 
   // Initialize grid only once
   useEffect(() => {
     if (!gridInitialized.current && wordList.length > 0) {
+      console.log('Generating word search grid with words:', wordList);
       const newGrid = generateWordSearchGrid(gridSize, wordList);
       setGrid(newGrid.grid);
       setWordPositions(newGrid.positions);
+      setActualWordList(newGrid.placedWords);
       gridInitialized.current = true;
+      console.log('Grid generated. Placed words:', newGrid.placedWords);
+      console.log('Words that failed to place:', wordList.filter(w => !newGrid.placedWords.includes(w)));
     }
   }, [gridSize, wordList]);
 
@@ -94,42 +99,22 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
       const wordScore = 100 + Math.floor(timeBonus / 10);
       setScore(prev => prev + wordScore);
       
-      onWordFound?.(word, newFoundWords.size, wordList.length);
+      onWordFound?.(word, newFoundWords.size, actualWordList.length);
       
       // Check if game is complete
-      if (newFoundWords.size === wordList.length) {
+      if (newFoundWords.size === actualWordList.length) {
         setGameComplete(true);
         pauseTimer();
         onComplete?.({
           timeElapsed,
           wordsFound: newFoundWords.size,
-          totalWords: wordList.length
+          totalWords: actualWordList.length
         });
       }
     }
-  }, [foundWords, wordList.length, timeElapsed, timeLimit, onWordFound, onComplete, pauseTimer]);
+  }, [foundWords, actualWordList.length, timeElapsed, timeLimit, onWordFound, onComplete, pauseTimer]);
 
-  // Initialize grid only once
-  useEffect(() => {
-    if (!gridInitialized.current && wordList.length > 0) {
-      const newGrid = generateWordSearchGrid(gridSize, wordList);
-      setGrid(newGrid.grid);
-      setWordPositions(newGrid.positions);
-      gridInitialized.current = true;
-    }
-  }, [gridSize, wordList]);
-
-  // Reset game state when wordList changes
-  useEffect(() => {
-    setFoundWords(new Set());
-    setGameStarted(false);
-    setGameComplete(false);
-    setIsPaused(false);
-    setScore(0);
-    gridInitialized.current = false;
-  }, [wordList]);
-
-  const progress = (foundWords.size / wordList.length) * 100;
+  const progress = actualWordList.length > 0 ? (foundWords.size / actualWordList.length) * 100 : 0;
   const timeRemaining = Math.max(0, timeLimit - timeElapsed);
 
   if (grid.length === 0) {
@@ -160,7 +145,7 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
               <Target className="h-5 w-5 text-puzzle-gold mx-auto mb-1" />
               <div className="text-sm text-gray-400">Found</div>
               <div className="text-lg font-bold text-puzzle-white">
-                {foundWords.size}/{wordList.length}
+                {foundWords.size}/{actualWordList.length}
               </div>
             </div>
             <div className="text-center">
@@ -217,7 +202,7 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            {wordList.map((word) => (
+            {actualWordList.map((word) => (
               <Badge
                 key={word}
                 variant={foundWords.has(word) ? "default" : "outline"}
@@ -255,7 +240,7 @@ const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
               Puzzle Completed!
             </h3>
             <p className="text-gray-300">
-              You found all {wordList.length} words in {Math.floor(timeElapsed / 60)}:{(timeElapsed % 60).toString().padStart(2, '0')}
+              You found all {actualWordList.length} words in {Math.floor(timeElapsed / 60)}:{(timeElapsed % 60).toString().padStart(2, '0')}
             </p>
             <p className="text-puzzle-gold font-semibold mt-2">
               Final Score: {score}
@@ -397,26 +382,41 @@ const WordSearchGrid: React.FC<WordSearchGridProps> = ({
   );
 };
 
-// Generate word search grid
-function generateWordSearchGrid(size: number, words: string[]): { grid: string[][]; positions: Map<string, Array<[number, number]>> } {
+// Enhanced word search grid generation with better placement validation
+function generateWordSearchGrid(size: number, words: string[]): { 
+  grid: string[][]; 
+  positions: Map<string, Array<[number, number]>>; 
+  placedWords: string[] 
+} {
   const grid: string[][] = Array(size).fill(null).map(() => Array(size).fill(''));
   const positions = new Map<string, Array<[number, number]>>();
+  const placedWords: string[] = [];
   
-  // Place words in the grid
-  for (const word of words) {
+  // Sort words by length (longest first) for better placement success
+  const sortedWords = [...words].sort((a, b) => b.length - a.length);
+  
+  // Place words in the grid with enhanced algorithm
+  for (const word of sortedWords) {
     let placed = false;
     let attempts = 0;
+    const maxAttempts = 1000; // Increased from 100
     
-    while (!placed && attempts < 100) {
+    while (!placed && attempts < maxAttempts) {
       const direction = Math.floor(Math.random() * 8); // 8 directions
       const row = Math.floor(Math.random() * size);
       const col = Math.floor(Math.random() * size);
       
       if (canPlaceWord(grid, word, row, col, direction, size)) {
         placeWord(grid, word, row, col, direction, positions);
+        placedWords.push(word);
         placed = true;
+        console.log(`Successfully placed word "${word}" at (${row}, ${col}) in direction ${direction}`);
       }
       attempts++;
+    }
+    
+    if (!placed) {
+      console.warn(`Failed to place word "${word}" after ${maxAttempts} attempts`);
     }
   }
   
@@ -429,7 +429,8 @@ function generateWordSearchGrid(size: number, words: string[]): { grid: string[]
     }
   }
   
-  return { grid, positions };
+  console.log(`Grid generation complete. Placed ${placedWords.length} out of ${words.length} words.`);
+  return { grid, positions, placedWords };
 }
 
 function canPlaceWord(grid: string[][], word: string, row: number, col: number, direction: number, size: number): boolean {
