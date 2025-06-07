@@ -20,6 +20,7 @@ import Auth from "./pages/Auth";
 import Contact from "./pages/Contact";
 import Support from "./pages/Support";
 import Partnerships from "./pages/Partnerships";
+import WordSearchArena from "./pages/WordSearchArena";
 import DevelopmentDashboard from "@/components/DevelopmentDashboard";
 
 const queryClient = new QueryClient({
@@ -42,6 +43,7 @@ function AppContent() {
         <Route path="/" element={<Index />} />
         <Route path="/puzzle/:puzzleId" element={<PuzzlePlay />} />
         <Route path="/puzzles" element={<Puzzles />} />
+        <Route path="/puzzles/word-search" element={<WordSearchArena />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/categories/:categoryId" element={<CategoryPuzzles />} />
         <Route path="/profile" element={<Profile />} />
