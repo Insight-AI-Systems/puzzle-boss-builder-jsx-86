@@ -1,8 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import NavLinks from './NavLinks';
+import { ChevronDown, Search, Grid3X3, Brain, Zap, Square, BookOpen, Puzzle } from 'lucide-react';
 import { MainNavItem } from './NavbarData';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -12,16 +14,95 @@ interface MobileMenuProps {
 }
 
 const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, navItems, isLoggedIn, onClose }) => {
+  const [expandedPuzzles, setExpandedPuzzles] = useState(false);
+  const { profile } = useUserProfile();
+  const { hasRole, isAdmin } = useAuth();
+
   if (!isOpen) return null;
+
+  const shouldShowLink = (item: MainNavItem) => {
+    if (!item.roles) return true;
+    if (!profile) return false;
+    
+    return isAdmin || item.roles.some(role => hasRole(role));
+  };
+
+  const getPuzzleDropdownItems = () => [
+    { name: 'Word Search Arena', path: '/puzzles/word-search', icon: Search },
+    { name: 'Speed Sudoku', path: '/puzzles/sudoku', icon: Grid3X3 },
+    { name: 'Memory Master', path: '/puzzles/memory', icon: Brain },
+    { name: 'Trivia Lightning', path: '/puzzles/trivia', icon: Zap },
+    { name: 'Block Puzzle Pro', path: '/puzzles/blocks', icon: Square },
+    { name: 'Daily Crossword', path: '/puzzles/crossword', icon: BookOpen },
+    { name: 'divider', path: '', icon: null },
+    { name: 'All Puzzles', path: '/puzzles', icon: Puzzle, isBold: true }
+  ];
+
+  const handlePuzzlesToggle = () => {
+    setExpandedPuzzles(!expandedPuzzles);
+  };
   
   return (
     <div className="md:hidden">
       <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-puzzle-aqua/20">
-        <NavLinks
-          items={navItems}
-          className="block px-3 py-2 rounded-md text-base font-medium"
-          onClick={onClose}
-        />
+        {navItems.map((item) => shouldShowLink(item) && (
+          <div key={item.path}>
+            {item.name === 'Puzzles' ? (
+              <>
+                <button
+                  onClick={handlePuzzlesToggle}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-puzzle-white hover:bg-white/10"
+                >
+                  <span>Puzzles</span>
+                  <ChevronDown 
+                    className={`h-4 w-4 transition-transform duration-300 ${
+                      expandedPuzzles ? 'rotate-180' : ''
+                    }`} 
+                  />
+                </button>
+                
+                {/* Expandable Puzzles Sub-menu */}
+                <div className={`overflow-hidden transition-all duration-300 ${
+                  expandedPuzzles ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                }`}>
+                  <div className="pl-4 space-y-1">
+                    {getPuzzleDropdownItems().map((dropdownItem, index) => (
+                      dropdownItem.name === 'divider' ? (
+                        <div 
+                          key={`divider-${index}`}
+                          className="my-2 h-px bg-puzzle-aqua/20 mx-3"
+                        />
+                      ) : (
+                        <Link
+                          key={dropdownItem.path}
+                          to={dropdownItem.path}
+                          className={`flex items-center gap-3 px-4 py-3 text-white hover:text-puzzle-gold hover:bg-puzzle-aqua/10 transition-colors duration-200 rounded-md ${
+                            dropdownItem.isBold ? 'font-semibold' : ''
+                          }`}
+                          style={{ fontSize: '15px' }}
+                          onClick={onClose}
+                        >
+                          {dropdownItem.icon && (
+                            <dropdownItem.icon className="h-4 w-4 flex-shrink-0" />
+                          )}
+                          <span>{dropdownItem.name}</span>
+                        </Link>
+                      )
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <Link
+                to={item.path}
+                className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-puzzle-white hover:bg-white/10"
+                onClick={onClose}
+              >
+                {item.name}
+              </Link>
+            )}
+          </div>
+        ))}
         
         {!isLoggedIn && (
           <Link

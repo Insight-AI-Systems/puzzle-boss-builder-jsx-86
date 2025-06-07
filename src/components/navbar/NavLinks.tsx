@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -10,9 +9,10 @@ interface NavLinksProps {
   items: MainNavItem[];
   className?: string;
   onClick?: () => void;
+  isMobile?: boolean;
 }
 
-const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) => {
+const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick, isMobile = false }) => {
   const location = useLocation();
   const { profile } = useUserProfile();
   const { hasRole, isAdmin } = useAuth();
@@ -101,21 +101,27 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
   ];
 
   const handleItemMouseEnter = (itemName: string) => {
-    if (itemName === 'Puzzles') {
+    if (itemName === 'Puzzles' && !isMobile) {
       setHoveredItem(itemName);
     }
   };
 
   const handleItemMouseLeave = () => {
-    setHoveredItem(null);
+    if (!isMobile) {
+      setHoveredItem(null);
+    }
   };
 
   const handleDropdownMouseEnter = () => {
-    setHoveredItem('Puzzles');
+    if (!isMobile) {
+      setHoveredItem('Puzzles');
+    }
   };
 
   const handleDropdownMouseLeave = () => {
-    setHoveredItem(null);
+    if (!isMobile) {
+      setHoveredItem(null);
+    }
   };
   
   return (
@@ -127,7 +133,7 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
           onMouseEnter={() => handleItemMouseEnter(item.name)}
           onMouseLeave={handleItemMouseLeave}
         >
-          {item.name === 'Puzzles' ? (
+          {item.name === 'Puzzles' && !isMobile ? (
             <>
               <div className={`${className} ${
                 isLinkActive(item.path)
@@ -142,7 +148,7 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
                 />
               </div>
               
-              {/* Dropdown Menu */}
+              {/* Desktop Dropdown Menu */}
               <div
                 className={`absolute top-full left-0 w-[250px] bg-puzzle-black border border-puzzle-aqua/20 rounded-md shadow-lg z-50 transition-all duration-300 ${
                   hoveredItem === 'Puzzles' 
