@@ -6,19 +6,22 @@ import { UserTableFilters } from './UserTableFilters';
 import { UserActions } from './UserActions';
 import { UserPagination } from './UserPagination';
 import { UserTypeToggle } from './UserTypeToggle';
+import { AdminProfileEditDialog } from './AdminProfileEditDialog';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { EmailDialog } from './EmailDialog';
 import { BulkRoleDialog } from './BulkRoleDialog';
 import { MemberInsightsDashboard } from './MemberInsightsDashboard';
-import { UserRole } from '@/types/userTypes';
+import { UserRole, UserProfile } from '@/types/userTypes';
 import { validateUserRole } from '@/utils/typeValidation/roleValidators';
 
 export const UserManagement: React.FC = () => {
   const { user, userRole: authUserRole } = useAuth();
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [confirmRoleDialogOpen, setConfirmRoleDialogOpen] = useState(false);
+  const [profileEditDialogOpen, setProfileEditDialogOpen] = useState(false);
+  const [selectedUserForEdit, setSelectedUserForEdit] = useState<UserProfile | null>(null);
   const [localSearchTerm, setLocalSearchTerm] = useState('');
   
   const userRole = authUserRole || 'player';
@@ -67,6 +70,18 @@ export const UserManagement: React.FC = () => {
   const handleRoleFilterChange = (roleString: string) => {
     const validatedRole = validateUserRole(roleString);
     userManagement.setSelectedRole(validatedRole);
+  };
+
+  // Handle opening profile edit dialog
+  const handleEditProfile = (user: UserProfile) => {
+    setSelectedUserForEdit(user);
+    setProfileEditDialogOpen(true);
+  };
+
+  // Handle closing profile edit dialog
+  const handleCloseProfileEdit = () => {
+    setProfileEditDialogOpen(false);
+    setSelectedUserForEdit(null);
   };
 
   if (!isAdmin) {
@@ -155,6 +170,7 @@ export const UserManagement: React.FC = () => {
               selectedUsers={userManagement.selectedUsers}
               onUserSelection={userManagement.handleUserSelection}
               onSelectAll={userManagement.handleSelectAllUsers}
+              onEditProfile={handleEditProfile}
             />
           )}
           
@@ -189,6 +205,17 @@ export const UserManagement: React.FC = () => {
         onUpdateRoles={handleBulkRoleChange}
         isUpdating={userManagement.isBulkRoleChanging}
       />
+
+      {/* Profile Edit Dialog */}
+      {selectedUserForEdit && (
+        <AdminProfileEditDialog
+          open={profileEditDialogOpen}
+          onOpenChange={handleCloseProfileEdit}
+          user={selectedUserForEdit}
+          currentUserRole={userRole}
+          onRoleChange={userManagement.handleRoleChange}
+        />
+      )}
     </div>
   );
 };

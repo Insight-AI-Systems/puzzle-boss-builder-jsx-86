@@ -3,19 +3,26 @@ import React from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Edit } from "lucide-react";
 import { UserAvatar } from './UserAvatar';
 import { UserRoleMenu } from './UserRoleMenu';
 import { UserLoginStatus } from './UserLoginStatus';
 import { UserRowProps } from '@/types/userTableTypes';
 import { ROLE_DEFINITIONS } from '@/types/userTypes';
 
-export const UserTableRow: React.FC<UserRowProps> = ({
+export interface ExtendedUserRowProps extends UserRowProps {
+  onEditProfile?: (user: any) => void;
+}
+
+export const UserTableRow: React.FC<ExtendedUserRowProps> = ({
   user,
   canAssignRole,
   onRoleChange,
   isSelected,
   onSelect,
-  selectionEnabled
+  selectionEnabled,
+  onEditProfile
 }) => {
   const getRoleBadgeClass = (role?: string) => {
     switch (role) {
@@ -63,11 +70,23 @@ export const UserTableRow: React.FC<UserRowProps> = ({
         />
       </TableCell>
       <TableCell className="text-right">
-        <UserRoleMenu 
-          user={user}
-          canAssignRole={canAssignRole}
-          onRoleChange={onRoleChange}
-        />
+        <div className="flex items-center justify-end gap-1">
+          {onEditProfile && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => onEditProfile(user)}
+              title="Edit Profile"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
+          <UserRoleMenu 
+            user={user}
+            canAssignRole={canAssignRole}
+            onRoleChange={onRoleChange}
+          />
+        </div>
       </TableCell>
     </TableRow>
   );

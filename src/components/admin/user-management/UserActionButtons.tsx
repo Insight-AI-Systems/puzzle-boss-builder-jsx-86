@@ -1,55 +1,53 @@
 
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Mail, Shield, Download } from "lucide-react";
+import { Edit, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { UserProfile, UserRole } from '@/types/userTypes';
 
 interface UserActionButtonsProps {
-  selectedUsers: Set<string>;
-  onEmailClick: () => void;
-  onRoleClick: () => void;
-  onExportClick: () => void;
+  user: UserProfile;
+  currentUserRole: UserRole;
+  onEditProfile: (user: UserProfile) => void;
+  onRoleChange: (userId: string, newRole: UserRole) => void;
 }
 
-export function UserActionButtons({ 
-  selectedUsers, 
-  onEmailClick, 
-  onRoleClick, 
-  onExportClick 
-}: UserActionButtonsProps) {
+export const UserActionButtons: React.FC<UserActionButtonsProps> = ({
+  user,
+  currentUserRole,
+  onEditProfile,
+  onRoleChange
+}) => {
+  const isAdmin = currentUserRole === 'admin' || currentUserRole === 'super_admin';
+
+  if (!isAdmin) {
+    return null;
+  }
+
   return (
-    <div className="flex gap-2">
-      {selectedUsers.size > 0 && (
-        <>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-1"
-            onClick={onEmailClick}
-          >
-            <Mail className="h-4 w-4" />
-            <span>Email Selected ({selectedUsers.size})</span>
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-1"
-            onClick={onRoleClick}
-          >
-            <Shield className="h-4 w-4" />
-            <span>Change Roles ({selectedUsers.size})</span>
-          </Button>
-        </>
-      )}
-      
-      <Button 
-        variant="outline" 
-        size="sm" 
-        className="flex items-center gap-1"
-        onClick={onExportClick}
+    <div className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onEditProfile(user)}
+        title="Edit Profile"
       >
-        <Download className="h-4 w-4" />
-        <span>Export Users</span>
+        <Edit className="h-4 w-4" />
       </Button>
+      
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => onEditProfile(user)}>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Profile
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
-}
+};

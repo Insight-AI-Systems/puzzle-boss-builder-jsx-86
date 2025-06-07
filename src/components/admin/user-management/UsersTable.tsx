@@ -1,68 +1,80 @@
 
 import React from 'react';
-import { Table, TableBody } from "@/components/ui/table";
-import { UserTableHeader } from './UserTableHeader';
-import { UserTableRow } from './UserTableRow';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { UserTableRow, ExtendedUserRowProps } from './UserTableRow';
 import { UserTableProps } from '@/types/userTableTypes';
-import { UserRole } from '@/types/userTypes';
+import { UserProfile } from '@/types/userTypes';
 
-export function UsersTable({ 
-  users, 
-  currentUserRole, 
+interface ExtendedUserTableProps extends UserTableProps {
+  onEditProfile?: (user: UserProfile) => void;
+}
+
+export const UsersTable: React.FC<ExtendedUserTableProps> = ({
+  users,
+  currentUserRole,
   currentUserEmail,
   onRoleChange,
   onSortByRole,
-  selectedUsers = new Set(),
+  selectedUsers,
   onUserSelection,
-  onSelectAll
-}: UserTableProps) {
-  const selectionEnabled = !!onUserSelection && !!onSelectAll;
-  
-  // Check if current user has admin privileges based on role
-  const isSuperAdmin = currentUserRole === 'super_admin' as UserRole;
-  const isAdmin = currentUserRole === 'admin' as UserRole;
-  const canAssignAnyRole = isSuperAdmin;
-  
-  const canAssignRole = (role: UserRole, userId: string): boolean => {
-    // Super admins can assign any role
-    if (isSuperAdmin) return true;
-    
-    // Regular admins can assign roles except super_admin
-    if (isAdmin && role !== 'super_admin' as UserRole) return true;
-    
+  onSelectAll,
+  onEditProfile
+}) => {
+  const canAssignRole = (role: string, userId: string) => {
+    if (currentUserRole === 'super_admin') return true;
+    if (currentUserRole === 'admin' && role !== 'super_admin') return true;
     return false;
   };
 
+  const handleUserSelection = (userId: string, isSelected: boolean) => {
+    onUserSelection?.(userId, isSelected);
+  };
+
+  const handleSelectAll = (isSelected: boolean) => {
+    onSelectAll?.(isSelected);
+  };
+
+  const selectionEnabled = !!selectedUsers && !!onUserSelection;
+
   return (
-    <div className="rounded-md border overflow-x-auto">
+    <div className="rounded-md border">
       <Table>
-        <UserTableHeader
-          selectionEnabled={selectionEnabled}
-          onSelectAll={onSelectAll}
-          onSortByRole={onSortByRole}
-        />
+        <TableHeader>
+          <TableRow>
+            {selectionEnabled && (
+              <TableHead className="w-12">
+                <input
+                  type="checkbox"
+                  checked={users.length > 0 && users.every(user => selectedUsers?.has(user.id))}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+              </TableHead>
+            )}
+            <TableHead>User</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead onClick={onSortByRole} className="cursor-pointer hover:bg-muted/50">
+              Role
+            </TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
         <TableBody>
-          {users.length === 0 ? (
-            <tr>
-              <td colSpan={selectionEnabled ? 6 : 5} className="text-center py-6">
-                No users found matching your search.
-              </td>
-            </tr>
-          ) : (
-            users.map(user => (
-              <UserTableRow
-                key={user.id}
-                user={user}
-                canAssignRole={canAssignRole}
-                onRoleChange={onRoleChange}
-                isSelected={selectedUsers.has(user.id)}
-                onSelect={(checked) => onUserSelection?.(user.id, checked)}
-                selectionEnabled={selectionEnabled}
-              />
-            ))
-          )}
+          {users.map((user) => (
+            <UserTableRow
+              key={user.id}
+              user={user}
+              canAssignRole={(role: string) => canAssignRole(role, user.id)}
+              onRoleChange={onRoleChange}
+              isSelected={selectedUsers?.has(user.id)}
+              onSelect={(isSelected) => handleUserSelection(user.id, isSelected)}
+              selectionEnabled={selectionEnabled}
+              onEditProfile={onEditProfile}
+            />
+          ))}
         </TableBody>
       </Table>
     </div>
   );
-}
+};
