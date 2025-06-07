@@ -4,9 +4,9 @@ import { XeroContact } from './integration';
 
 export type AddressType = 'billing' | 'shipping';
 
-export interface UserAddress {
+export interface MemberAddress {
   id: string;
-  user_id: string;
+  member_id: string;
   address_type: AddressType;
   is_default: boolean;
   address_line1: string;
@@ -19,18 +19,18 @@ export interface UserAddress {
   updated_at: string;
 }
 
-export interface XeroUserMapping {
+export interface XeroMemberMapping {
   id: string;
-  user_id: string;
+  member_id: string;
   xero_contact_id: string;
   sync_status: 'active' | 'inactive' | 'error';
   last_synced: string;
   created_at: string;
 }
 
-export interface UserMembershipDetail {
+export interface MembershipDetail {
   id: string;
-  user_id: string;
+  member_id: string;
   membership_id: string;
   start_date: string;
   end_date?: string;
@@ -43,7 +43,7 @@ export interface UserMembershipDetail {
 
 export interface FinancialTransaction {
   id: string;
-  user_id: string;
+  member_id: string;
   transaction_type: 'membership' | 'puzzle' | 'prize' | 'refund' | 'other';
   amount: number;
   currency: string;
@@ -58,7 +58,7 @@ export interface FinancialTransaction {
   created_at: string;
 }
 
-// Modified to not extend UserProfile directly to avoid strict interface requirements
+// Extended member profile with financial and membership data
 export interface MemberDetailedProfile {
   id: string;
   email: string | null;
@@ -66,7 +66,6 @@ export interface MemberDetailedProfile {
   bio: string | null;
   avatar_url?: string | null;
   role: string;
-  // Make country optional since it's required in UserProfile but optional here
   country?: string | null;
   categories_played?: string[];
   credits: number;
@@ -87,9 +86,9 @@ export interface MemberDetailedProfile {
   terms_accepted: boolean;
   terms_accepted_at?: string;
   marketing_opt_in: boolean;
-  addresses?: UserAddress[];
-  membership_details?: UserMembershipDetail;
-  xero_mapping?: XeroUserMapping;
+  addresses?: MemberAddress[];
+  membership_details?: MembershipDetail;
+  xero_mapping?: XeroMemberMapping;
   financial_summary?: MemberFinancialSummary;
 }
 
@@ -109,3 +108,9 @@ export interface MemberSyncData {
   profile: MemberDetailedProfile;
   xeroContact?: XeroContact;
 }
+
+// Backward compatibility aliases
+export type UserAddress = MemberAddress;
+export type XeroUserMapping = XeroMemberMapping;
+export type UserMembershipDetail = MembershipDetail;
+export type UserFinancialSummary = MemberFinancialSummary;

@@ -7,7 +7,7 @@ import { Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { MemberDetailsDialog } from './dialogs/MemberDetailsDialog';
 import { useMemberDetails } from '@/hooks/useMemberDetails';
-import { MemberHistoryDetails } from '@/types/membershipTypes';
+import { MemberDetailedProfile } from '@/types/memberTypes';
 import { MemberStatsCards } from './membership/MemberStatsCards';
 import { MembershipCharts } from './membership/MembershipCharts';
 import { KeyMetrics } from './membership/KeyMetrics';
@@ -22,7 +22,7 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
   const [membershipData, setMembershipData] = useState<MembershipStats[]>([]);
   const { toast } = useToast();
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
-  const [memberDetails, setMemberDetails] = useState<MemberHistoryDetails | null>(null);
+  const [memberDetails, setMemberDetails] = useState<MemberDetailedProfile | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const { fetchMemberDetails } = useMemberDetails();
 
@@ -103,8 +103,8 @@ const MembershipSummary: React.FC<MembershipSummaryProps> = ({ selectedMonth }) 
     document.body.removeChild(link);
   };
 
-  const handleMemberClick = async (userId: string, username: string) => {
-    const details = await fetchMemberDetails(userId);
+  const handleMemberClick = async (memberId: string, username: string) => {
+    const details = await fetchMemberDetails(memberId);
     if (details) {
       setMemberDetails(details);
       setSelectedMember(username);

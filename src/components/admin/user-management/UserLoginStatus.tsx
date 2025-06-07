@@ -8,13 +8,13 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 
-interface UserLoginStatusProps {
+interface MemberLoginStatusProps {
   lastSignIn: string | null;
   createdAt: string;
   displayName?: string | null;
 }
 
-export const UserLoginStatus: React.FC<UserLoginStatusProps> = ({ 
+export const UserLoginStatus: React.FC<MemberLoginStatusProps> = ({ 
   lastSignIn, 
   createdAt, 
   displayName 

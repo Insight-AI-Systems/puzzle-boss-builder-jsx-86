@@ -38,6 +38,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          member_id: string
           status: Database["public"]["Enums"]["note_status"]
           updated_at: string
           user_id: string
@@ -46,6 +47,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          member_id: string
           status?: Database["public"]["Enums"]["note_status"]
           updated_at?: string
           user_id: string
@@ -54,6 +56,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          member_id?: string
           status?: Database["public"]["Enums"]["note_status"]
           updated_at?: string
           user_id?: string
@@ -100,6 +103,7 @@ export type Database = {
           commission_percent: number
           created_at: string
           id: string
+          member_id: string
           updated_at: string
           user_id: string
         }
@@ -109,6 +113,7 @@ export type Database = {
           commission_percent?: number
           created_at?: string
           id?: string
+          member_id: string
           updated_at?: string
           user_id: string
         }
@@ -118,6 +123,7 @@ export type Database = {
           commission_percent?: number
           created_at?: string
           id?: string
+          member_id?: string
           updated_at?: string
           user_id?: string
         }
@@ -175,6 +181,7 @@ export type Database = {
           id: string
           invoice_number: string | null
           manager_id: string
+          member_id: string | null
           net_income: number
           payment_date: string | null
           payment_status: string
@@ -192,6 +199,7 @@ export type Database = {
           id?: string
           invoice_number?: string | null
           manager_id: string
+          member_id?: string | null
           net_income?: number
           payment_date?: string | null
           payment_status?: string
@@ -209,6 +217,7 @@ export type Database = {
           id?: string
           invoice_number?: string | null
           manager_id?: string
+          member_id?: string | null
           net_income?: number
           payment_date?: string | null
           payment_status?: string
@@ -442,6 +451,7 @@ export type Database = {
           description: string
           email: string | null
           id: string
+          member_id: string | null
           page_url: string | null
           status: string | null
           type: Database["public"]["Enums"]["feedback_type"]
@@ -453,6 +463,7 @@ export type Database = {
           description: string
           email?: string | null
           id?: string
+          member_id?: string | null
           page_url?: string | null
           status?: string | null
           type: Database["public"]["Enums"]["feedback_type"]
@@ -464,6 +475,7 @@ export type Database = {
           description?: string
           email?: string | null
           id?: string
+          member_id?: string | null
           page_url?: string | null
           status?: string | null
           type?: Database["public"]["Enums"]["feedback_type"]
@@ -479,6 +491,7 @@ export type Database = {
           currency: string | null
           description: string | null
           id: string
+          member_id: string | null
           metadata: Json | null
           payment_method: string | null
           status: string
@@ -495,6 +508,7 @@ export type Database = {
           currency?: string | null
           description?: string | null
           id?: string
+          member_id?: string | null
           metadata?: Json | null
           payment_method?: string | null
           status: string
@@ -511,6 +525,7 @@ export type Database = {
           currency?: string | null
           description?: string | null
           id?: string
+          member_id?: string | null
           metadata?: Json | null
           payment_method?: string | null
           status?: string
@@ -728,6 +743,7 @@ export type Database = {
           end_date: string | null
           id: string
           last_payment_date: string | null
+          member_id: string
           membership_type: string
           start_date: string
           status: string
@@ -740,6 +756,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           last_payment_date?: string | null
+          member_id: string
           membership_type: string
           start_date?: string
           status: string
@@ -752,6 +769,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           last_payment_date?: string | null
+          member_id?: string
           membership_type?: string
           start_date?: string
           status?: string
@@ -1036,6 +1054,7 @@ export type Database = {
           completion_time: number
           created_at: string
           id: string
+          member_id: string
           prize_value: number
           puzzle_id: string
           puzzle_image_url: string
@@ -1047,6 +1066,7 @@ export type Database = {
           completion_time: number
           created_at?: string
           id?: string
+          member_id: string
           prize_value: number
           puzzle_id: string
           puzzle_image_url: string
@@ -1058,6 +1078,7 @@ export type Database = {
           completion_time?: number
           created_at?: string
           id?: string
+          member_id?: string
           prize_value?: number
           puzzle_id?: string
           puzzle_image_url?: string
@@ -1149,6 +1170,7 @@ export type Database = {
           last_password_change: string | null
           last_sign_in: string | null
           marketing_opt_in: boolean | null
+          member_id: string
           phone: string | null
           postal_code: string | null
           role: string | null
@@ -1187,6 +1209,7 @@ export type Database = {
           last_password_change?: string | null
           last_sign_in?: string | null
           marketing_opt_in?: boolean | null
+          member_id: string
           phone?: string | null
           postal_code?: string | null
           role?: string | null
@@ -1225,6 +1248,7 @@ export type Database = {
           last_password_change?: string | null
           last_sign_in?: string | null
           marketing_opt_in?: boolean | null
+          member_id?: string
           phone?: string | null
           postal_code?: string | null
           role?: string | null
@@ -1315,6 +1339,7 @@ export type Database = {
           game_mode: string | null
           id: string
           is_winner: boolean | null
+          member_id: string
           moves_count: number | null
           puzzle_id: string
           user_id: string
@@ -1326,6 +1351,7 @@ export type Database = {
           game_mode?: string | null
           id?: string
           is_winner?: boolean | null
+          member_id: string
           moves_count?: number | null
           puzzle_id: string
           user_id: string
@@ -1337,6 +1363,7 @@ export type Database = {
           game_mode?: string | null
           id?: string
           is_winner?: boolean | null
+          member_id?: string
           moves_count?: number | null
           puzzle_id?: string
           user_id?: string
@@ -1394,6 +1421,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          member_id: string
           player_id: string
           player_name: string | null
           puzzle_id: string
@@ -1402,6 +1430,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          member_id: string
           player_id: string
           player_name?: string | null
           puzzle_id: string
@@ -1410,6 +1439,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          member_id?: string
           player_id?: string
           player_name?: string | null
           puzzle_id?: string
@@ -1423,6 +1453,7 @@ export type Database = {
           id: string
           is_completed: boolean | null
           last_updated: string | null
+          member_id: string
           progress: Json | null
           puzzle_id: string
           start_time: string | null
@@ -1433,6 +1464,7 @@ export type Database = {
           id?: string
           is_completed?: boolean | null
           last_updated?: string | null
+          member_id: string
           progress?: Json | null
           puzzle_id: string
           start_time?: string | null
@@ -1443,6 +1475,7 @@ export type Database = {
           id?: string
           is_completed?: boolean | null
           last_updated?: string | null
+          member_id?: string
           progress?: Json | null
           puzzle_id?: string
           start_time?: string | null
@@ -1629,6 +1662,7 @@ export type Database = {
           event_type: string
           id: string
           ip_address: string | null
+          member_id: string | null
           severity: string
           user_agent: string | null
           user_id: string | null
@@ -1640,6 +1674,7 @@ export type Database = {
           event_type: string
           id?: string
           ip_address?: string | null
+          member_id?: string | null
           severity: string
           user_agent?: string | null
           user_id?: string | null
@@ -1651,6 +1686,7 @@ export type Database = {
           event_type?: string
           id?: string
           ip_address?: string | null
+          member_id?: string | null
           severity?: string
           user_agent?: string | null
           user_id?: string | null
@@ -1750,6 +1786,7 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          member_id: string | null
           method: string
           notes: string | null
           source_type: string
@@ -1762,6 +1799,7 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          member_id?: string | null
           method?: string
           notes?: string | null
           source_type: string
@@ -1774,6 +1812,7 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          member_id?: string | null
           method?: string
           notes?: string | null
           source_type?: string
@@ -1826,6 +1865,7 @@ export type Database = {
           credits: number | null
           email: string
           id: string
+          member_id: string
           stripe_customer_id: string | null
           subscribed: boolean
           subscription_end: string | null
@@ -1839,6 +1879,7 @@ export type Database = {
           credits?: number | null
           email: string
           id?: string
+          member_id: string
           stripe_customer_id?: string | null
           subscribed?: boolean
           subscription_end?: string | null
@@ -1852,6 +1893,7 @@ export type Database = {
           credits?: number | null
           email?: string
           id?: string
+          member_id?: string
           stripe_customer_id?: string | null
           subscribed?: boolean
           subscription_end?: string | null
@@ -1903,6 +1945,7 @@ export type Database = {
           created_by: string
           description: string
           id: string
+          member_id: string
           status: Database["public"]["Enums"]["ticket_status"]
           title: string
           type: Database["public"]["Enums"]["ticket_type"]
@@ -1915,6 +1958,7 @@ export type Database = {
           created_by: string
           description: string
           id?: string
+          member_id: string
           status?: Database["public"]["Enums"]["ticket_status"]
           title: string
           type?: Database["public"]["Enums"]["ticket_type"]
@@ -1927,6 +1971,7 @@ export type Database = {
           created_by?: string
           description?: string
           id?: string
+          member_id?: string
           status?: Database["public"]["Enums"]["ticket_status"]
           title?: string
           type?: Database["public"]["Enums"]["ticket_type"]
@@ -1974,6 +2019,7 @@ export type Database = {
           created_at: string
           id: string
           is_default: boolean | null
+          member_id: string
           postal_code: string
           state: string | null
           updated_at: string
@@ -1988,6 +2034,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_default?: boolean | null
+          member_id: string
           postal_code: string
           state?: string | null
           updated_at?: string
@@ -2002,6 +2049,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_default?: boolean | null
+          member_id?: string
           postal_code?: string
           state?: string | null
           updated_at?: string
@@ -2015,6 +2063,7 @@ export type Database = {
           created_at: string
           end_date: string | null
           id: string
+          member_id: string
           membership_id: string | null
           notes: string | null
           start_date: string
@@ -2027,6 +2076,7 @@ export type Database = {
           created_at?: string
           end_date?: string | null
           id?: string
+          member_id: string
           membership_id?: string | null
           notes?: string | null
           start_date?: string
@@ -2039,6 +2089,7 @@ export type Database = {
           created_at?: string
           end_date?: string | null
           id?: string
+          member_id?: string
           membership_id?: string | null
           notes?: string | null
           start_date?: string
@@ -2062,6 +2113,7 @@ export type Database = {
           id: string
           is_default: boolean | null
           last_used: string | null
+          member_id: string
           method_type: string
           updated_at: string | null
           user_id: string
@@ -2071,6 +2123,7 @@ export type Database = {
           id?: string
           is_default?: boolean | null
           last_used?: string | null
+          member_id: string
           method_type: string
           updated_at?: string | null
           user_id: string
@@ -2080,6 +2133,7 @@ export type Database = {
           id?: string
           is_default?: boolean | null
           last_used?: string | null
+          member_id?: string
           method_type?: string
           updated_at?: string | null
           user_id?: string
@@ -2143,6 +2197,7 @@ export type Database = {
           is_active: boolean | null
           last_active: string | null
           location_info: Json | null
+          member_id: string
           session_token: string
           user_agent: string | null
           user_id: string
@@ -2155,6 +2210,7 @@ export type Database = {
           is_active?: boolean | null
           last_active?: string | null
           location_info?: Json | null
+          member_id: string
           session_token: string
           user_agent?: string | null
           user_id: string
@@ -2167,6 +2223,7 @@ export type Database = {
           is_active?: boolean | null
           last_active?: string | null
           location_info?: Json | null
+          member_id?: string
           session_token?: string
           user_agent?: string | null
           user_id?: string
@@ -2608,7 +2665,7 @@ export type Database = {
         }[]
       }
       get_member_financial_summary: {
-        Args: { user_id_param: string }
+        Args: { member_id_param: string }
         Returns: {
           total_spend: number
           total_prizes: number
@@ -2672,17 +2729,6 @@ export type Database = {
       get_user_email: {
         Args: { user_id: string }
         Returns: string
-      }
-      get_user_financial_summary: {
-        Args: { user_id_param: string }
-        Returns: {
-          total_spend: number
-          total_prizes: number
-          membership_revenue: number
-          puzzle_revenue: number
-          last_payment_date: string
-          membership_status: string
-        }[]
       }
       handle_password_reset_attempt: {
         Args: { _email: string; _ip_address?: string }
