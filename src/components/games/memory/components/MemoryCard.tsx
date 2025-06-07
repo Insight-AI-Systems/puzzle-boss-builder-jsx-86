@@ -13,19 +13,21 @@ interface MemoryCardProps {
 export function MemoryCard({ card, onClick, disabled, theme }: MemoryCardProps) {
   const [imageError, setImageError] = useState(false);
   const isImage = card.value.startsWith('http');
+  const isFlipped = card.isFlipped || card.isMatched;
 
   // Debug logging for card state changes
   useEffect(() => {
-    console.log(`Card ${card.id} state changed:`, {
+    console.log(`🎴 Card ${card.id} state:`, {
       isFlipped: card.isFlipped,
       isMatched: card.isMatched,
+      computedFlipped: isFlipped,
       value: card.value,
       disabled
     });
-  }, [card.isFlipped, card.isMatched, card.id, card.value, disabled]);
+  }, [card.isFlipped, card.isMatched, card.id, card.value, disabled, isFlipped]);
 
   const handleClick = () => {
-    console.log(`Card clicked: ${card.id}`, {
+    console.log(`🎯 Card ${card.id} clicked:`, {
       isFlipped: card.isFlipped,
       isMatched: card.isMatched,
       disabled,
@@ -33,19 +35,19 @@ export function MemoryCard({ card, onClick, disabled, theme }: MemoryCardProps) 
     });
     
     if (!disabled && !card.isFlipped && !card.isMatched) {
-      console.log(`Executing click for card: ${card.id}`);
+      console.log(`✅ Executing click for card: ${card.id}`);
       onClick(card.id);
     } else {
-      console.log(`Click blocked for card: ${card.id}`, { disabled, isFlipped: card.isFlipped, isMatched: card.isMatched });
+      console.log(`❌ Click blocked for card: ${card.id}`, { disabled, isFlipped: card.isFlipped, isMatched: card.isMatched });
     }
   };
 
   const handleImageError = () => {
-    console.log('Image failed to load:', card.value);
+    console.log('❌ Image failed to load:', card.value);
     setImageError(true);
   };
 
-  // Build class names more carefully
+  // Build class names
   const cardClasses = [
     'memory-card',
     'w-full',
@@ -53,8 +55,11 @@ export function MemoryCard({ card, onClick, disabled, theme }: MemoryCardProps) 
   ];
 
   // Add flip state
-  if (card.isFlipped || card.isMatched) {
+  if (isFlipped) {
     cardClasses.push('flipped');
+    console.log(`🔄 Card ${card.id} is FLIPPED`);
+  } else {
+    console.log(`📋 Card ${card.id} is NOT FLIPPED`);
   }
 
   // Add disabled state
@@ -62,8 +67,8 @@ export function MemoryCard({ card, onClick, disabled, theme }: MemoryCardProps) 
     cardClasses.push('disabled');
   }
 
-  // Add debug classes
-  if (card.isFlipped || card.isMatched) {
+  // Add debug classes for visual confirmation
+  if (isFlipped) {
     cardClasses.push('debug-flipped');
   } else {
     cardClasses.push('debug-not-flipped');
@@ -71,22 +76,23 @@ export function MemoryCard({ card, onClick, disabled, theme }: MemoryCardProps) 
 
   const finalClassName = cardClasses.join(' ');
   
-  console.log(`Card ${card.id} className:`, finalClassName);
+  console.log(`🎨 Card ${card.id} className:`, finalClassName);
+  console.log(`🎭 Card ${card.id} visual state: ${isFlipped ? 'SHOWING BACK' : 'SHOWING FRONT'}`);
 
   return (
     <div 
       className={finalClassName}
       onClick={handleClick}
-      style={{ minHeight: '80px' }} // Ensure minimum size
+      style={{ minHeight: '80px' }}
     >
-      <div className="memory-card-inner">
-        {/* Card Front (back side when flipped) */}
-        <div className="memory-card-face memory-card-front">
+      <div className="memory-card-content">
+        {/* Card Front (question mark) */}
+        <div className="memory-card-front">
           <div>?</div>
         </div>
         
-        {/* Card Back (front side when flipped) */}
-        <div className={`memory-card-face memory-card-back ${card.isMatched ? 'matched' : ''}`}>
+        {/* Card Back (image/emoji content) */}
+        <div className={`memory-card-back ${card.isMatched ? 'matched' : ''}`}>
           {isImage && !imageError ? (
             <img 
               src={card.value} 
@@ -95,7 +101,7 @@ export function MemoryCard({ card, onClick, disabled, theme }: MemoryCardProps) 
               loading="lazy"
             />
           ) : (
-            <div className="text-4xl">
+            <div className="memory-card-emoji">
               {imageError ? '❓' : card.value}
             </div>
           )}

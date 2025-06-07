@@ -1,10 +1,12 @@
-
 import React, { useEffect, useRef } from 'react';
 import { MemoryGameBoard } from './components/MemoryGameBoard';
 import { MemoryGameControls } from './components/MemoryGameControls';
 import { useMemoryGame } from './hooks/useMemoryGame';
 import { useImagePreloader } from './hooks/useImagePreloader';
 import { MemoryLayout, MemoryTheme, THEME_CONFIGS } from './types/memoryTypes';
+
+// Import the CSS file directly to ensure it loads
+import './styles/memory-cards.css';
 
 interface MemoryGameProps {
   layout?: MemoryLayout;
@@ -44,29 +46,47 @@ export function MemoryGame({
   const lastMatchedPairs = useRef(0);
   const gameCompletedRef = useRef(false);
 
+  // Debug current game state
+  useEffect(() => {
+    console.log('🎮 MemoryGame render state:', {
+      gameInitialized,
+      cardsLength: gameState.cards.length,
+      disabled,
+      isActive,
+      selectedCards: gameState.selectedCards.length,
+      layout: gameState.layout,
+      theme: gameState.theme
+    });
+
+    // Log card states for debugging
+    gameState.cards.forEach(card => {
+      console.log(`🎴 Card ${card.id}:`, {
+        isFlipped: card.isFlipped,
+        isMatched: card.isMatched,
+        value: card.value
+      });
+    });
+  }, [gameInitialized, gameState, disabled, isActive]);
+
   // Handle layout changes
   const handleLayoutChange = (newLayout: MemoryLayout) => {
-    console.log('=== LAYOUT CHANGE ===');
-    console.log('New layout:', newLayout);
+    console.log('🔄 Layout change triggered:', newLayout);
     initializeGame(newLayout, gameState.theme);
     gameCompletedRef.current = false;
   };
 
   // Handle theme changes
   const handleThemeChange = (newTheme: MemoryTheme) => {
-    console.log('=== THEME CHANGE ===');
-    console.log('New theme:', newTheme);
+    console.log('🎨 Theme change triggered:', newTheme);
     initializeGame(gameState.layout, newTheme);
     gameCompletedRef.current = false;
   };
 
   // Handle restart
   const handleRestart = () => {
-    console.log('=== GAME RESTART TRIGGERED ===');
-    console.log('Current layout:', gameState.layout, 'Current theme:', gameState.theme);
+    console.log('🔄 Restart triggered');
     initializeGame(gameState.layout, gameState.theme);
     gameCompletedRef.current = false;
-    console.log('=== RESTART COMPLETE ===');
   };
 
   // Update external score only when matched pairs change
@@ -101,17 +121,6 @@ export function MemoryGame({
       onComplete(finalStats);
     }
   }, [gameState.isGameComplete, onComplete, stats, gameState.matchedPairs]);
-
-  // Debug current game state
-  useEffect(() => {
-    console.log('MemoryGame render state:', {
-      gameInitialized,
-      cardsLength: gameState.cards.length,
-      disabled,
-      isActive,
-      selectedCards: gameState.selectedCards.length
-    });
-  }, [gameInitialized, gameState.cards.length, disabled, isActive, gameState.selectedCards.length]);
 
   if (!gameInitialized || gameState.cards.length === 0) {
     return (

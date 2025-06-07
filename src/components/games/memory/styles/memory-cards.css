@@ -1,69 +1,96 @@
 
-/* Memory Card 3D Flip Animation Styles */
+/* Memory Card Simple Flip Animation - Simplified Implementation */
 .memory-card {
-  perspective: 1000px !important;
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
   cursor: pointer !important;
-  width: 100% !important;
-  height: 100% !important;
-  position: relative !important;
-}
-
-.memory-card-inner {
-  position: relative !important;
-  width: 100% !important;
-  height: 100% !important;
-  text-align: center !important;
-  transition: transform 0.6s ease-in-out !important;
-  transform-style: preserve-3d !important;
   border-radius: 8px !important;
+  transition: all 0.3s ease !important;
 }
 
-/* When card is flipped, rotate the inner container */
-.memory-card.flipped .memory-card-inner {
-  transform: rotateY(180deg) !important;
+.memory-card:hover {
+  transform: scale(1.05) !important;
 }
 
-/* Both faces of the card */
-.memory-card-face {
+.memory-card.disabled {
+  pointer-events: none !important;
+  opacity: 0.6 !important;
+}
+
+/* Card content container */
+.memory-card-content {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Front face (question mark - shown when NOT flipped) */
+.memory-card-front {
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  backface-visibility: hidden !important;
-  -webkit-backface-visibility: hidden !important;
-  border-radius: 8px !important;
+  background: linear-gradient(135deg, #06b6d4, #0891b2) !important;
+  color: white !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  overflow: hidden !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Front face (shows "?" - visible by default) */
-.memory-card-front {
-  background: linear-gradient(135deg, #06b6d4, #0891b2) !important;
-  color: white !important;
   font-size: 2rem !important;
   font-weight: bold !important;
-  transform: rotateY(0deg) !important;
+  border-radius: 8px !important;
+  transition: opacity 0.3s ease !important;
+  z-index: 2 !important;
 }
 
-/* Back face (shows image/content - hidden by default, visible when flipped) */
+/* Back face (image/content - shown when flipped) */
 .memory-card-back {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
   background: white !important;
   border: 2px solid #e5e7eb !important;
-  transform: rotateY(180deg) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 8px !important;
+  transition: opacity 0.3s ease !important;
+  z-index: 1 !important;
+}
+
+/* Flipped state - hide front, show back */
+.memory-card.flipped .memory-card-front {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.memory-card.flipped .memory-card-back {
+  opacity: 1 !important;
+}
+
+/* Not flipped state - show front, hide back */
+.memory-card:not(.flipped) .memory-card-front {
+  opacity: 1 !important;
+}
+
+.memory-card:not(.flipped) .memory-card-back {
+  opacity: 0 !important;
 }
 
 /* Matched card styling */
 .memory-card-back.matched {
   background: #f0fdf4 !important;
   border-color: #22c55e !important;
-  box-shadow: 0 0 0 2px #22c55e !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3) !important;
 }
 
-/* Image styling within the back face */
+/* Image styling */
 .memory-card-back img {
   width: 100% !important;
   height: 100% !important;
@@ -71,32 +98,23 @@
   border-radius: 6px !important;
 }
 
-/* Hover effects */
-.memory-card:not(.disabled):hover .memory-card-inner {
-  transform: scale(1.05) !important;
+/* Emoji/text content */
+.memory-card-emoji {
+  font-size: 3rem !important;
+  line-height: 1 !important;
 }
 
-.memory-card.flipped:not(.disabled):hover .memory-card-inner {
-  transform: rotateY(180deg) scale(1.05) !important;
-}
-
-/* Disabled state */
-.memory-card.disabled {
-  pointer-events: none !important;
-  opacity: 0.7 !important;
-}
-
-/* Debug styles - temporarily visible borders */
-.memory-card.debug-flipped {
+/* Debug classes for testing */
+.debug-flipped {
   border: 3px solid red !important;
 }
 
-.memory-card.debug-not-flipped {
+.debug-not-flipped {
   border: 3px solid blue !important;
 }
 
-/* Additional debugging - transition visibility */
-.memory-card-inner.debug-transitioning {
-  background-color: yellow !important;
-  opacity: 0.8 !important;
+/* Ensure minimum size */
+.memory-card {
+  min-height: 80px !important;
+  min-width: 80px !important;
 }
