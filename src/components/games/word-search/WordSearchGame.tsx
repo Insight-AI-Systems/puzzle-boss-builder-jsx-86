@@ -136,33 +136,39 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
                     <CardTitle className="text-puzzle-white">Competitive Word Search</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* Game Metrics - Timer, Score, Credits */}
-                    {(gameStarted || gameState === 'playing' || gameState === 'paused') && (
-                      <div className="flex flex-wrap items-center gap-4 p-4 bg-gray-800 rounded-lg">
+                    {/* Game Metrics - Always Visible */}
+                    <div className="p-4 bg-gray-800 rounded-lg">
+                      <h4 className="text-puzzle-aqua font-semibold mb-3 text-sm">Live Game Metrics</h4>
+                      <div className="flex flex-wrap items-center gap-4">
                         <Badge variant="outline" className="text-puzzle-aqua border-puzzle-aqua">
                           <Clock className="h-3 w-3 mr-1" />
                           {timer?.formattedTime || '00:00'}
                         </Badge>
                         
-                        {session && (
-                          <Badge variant="outline" className="text-puzzle-gold border-puzzle-gold">
-                            <Trophy className="h-3 w-3 mr-1" />
-                            Score: {session.score.toLocaleString()}
-                          </Badge>
-                        )}
+                        <Badge variant="outline" className="text-puzzle-gold border-puzzle-gold">
+                          <Trophy className="h-3 w-3 mr-1" />
+                          Score: {session?.score?.toLocaleString() || '0'}
+                        </Badge>
                         
                         {gameConfig.requiresPayment && (
                           <Badge variant="outline" className="text-puzzle-aqua border-puzzle-aqua">
                             <Coins className="h-3 w-3 mr-1" />
-                            {gameConfig.entryFee} credits
+                            Entry: {gameConfig.entryFee} credits
                           </Badge>
                         )}
                         
                         <Badge variant="outline" className="text-puzzle-white border-gray-400">
                           Words: {wordsFound}/{totalWords}
                         </Badge>
+
+                        {payment && (
+                          <Badge variant="outline" className="text-puzzle-gold border-puzzle-gold">
+                            <Coins className="h-3 w-3 mr-1" />
+                            Available: {payment.paymentStatus?.credits || 0} credits
+                          </Badge>
+                        )}
                       </div>
-                    )}
+                    </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
