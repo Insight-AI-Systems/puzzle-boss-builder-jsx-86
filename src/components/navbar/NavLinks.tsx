@@ -67,13 +67,12 @@ const NavLinks: React.FC<NavLinksProps> = ({ items, className = '', onClick }) =
     return isAdmin || item.roles.some(role => hasRole(role));
   };
 
-  // Add special handling for home link when in admin pages
+  // Ensure home link always goes to index page, regardless of admin status
   const getHomeLinkProps = (path: string) => {
-    if (path === '/' && location.pathname.startsWith('/admin')) {
-      // Add a special flag to skip the admin redirect when coming from admin pages
+    if (path === '/') {
       return { 
-        to: '/', 
-        state: { skipAdminRedirect: true, from: location.pathname }
+        to: '/',
+        replace: true // Use replace to ensure clean navigation
       };
     }
     return { to: path };
