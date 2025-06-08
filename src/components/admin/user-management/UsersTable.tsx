@@ -1,80 +1,136 @@
 
 import React from 'react';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { UserTableRow, ExtendedUserRowProps } from './UserTableRow';
-import { UserTableProps } from '@/types/userTableTypes';
-import { UserProfile } from '@/types/userTypes';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { UserProfile, UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
+import { Edit, Mail } from 'lucide-react';
 
-interface ExtendedUserTableProps extends UserTableProps {
-  onEditProfile?: (user: UserProfile) => void;
+interface UsersTableProps {
+  users: UserProfile[];
+  currentUserRole: UserRole;
+  currentUserEmail?: string;
+  onSortByRole: () => void;
+  selectedUsers: Set<string>;
+  onUserSelection: (userId: string, selected: boolean) => void;
+  onSelectAll: (selected: boolean) => void;
+  onEditProfile: (user: UserProfile) => void;
 }
 
-export const UsersTable: React.FC<ExtendedUserTableProps> = ({
+export function UsersTable({
   users,
   currentUserRole,
   currentUserEmail,
-  onRoleChange,
   onSortByRole,
   selectedUsers,
   onUserSelection,
   onSelectAll,
   onEditProfile
-}) => {
-  const canAssignRole = (role: string, userId: string) => {
-    if (currentUserRole === 'super_admin') return true;
-    if (currentUserRole === 'admin' && role !== 'super_admin') return true;
-    return false;
+}: UsersTableProps) {
+  const allSelected = users.length > 0 && users.every(user => selectedUsers.has(user.id));
+  const someSelected = users.some(user => selectedUsers.has(user.id));
+
+  const handleSelectAll = (checked: boolean) => {
+    onSelectAll(checked);
   };
 
-  const handleUserSelection = (userId: string, isSelected: boolean) => {
-    onUserSelection?.(userId, isSelected);
+  const getRoleBadgeColor = (role: UserRole) => {
+    switch (role) {
+      case 'super_admin':
+        return 'bg-red-600 text-white';
+      case 'admin':
+        return 'bg-purple-600 text-white';
+      case 'category_manager':
+        return 'bg-blue-600 text-white';
+      case 'social_media_manager':
+        return 'bg-green-600 text-white';
+      case 'partner_manager':
+        return 'bg-amber-600 text-white';
+      case 'cfo':
+        return 'bg-emerald-600 text-white';
+      case 'player':
+        return 'bg-slate-600 text-white';
+      default:
+        return 'bg-gray-600 text-white';
+    }
   };
-
-  const handleSelectAll = (isSelected: boolean) => {
-    onSelectAll?.(isSelected);
-  };
-
-  const selectionEnabled = !!selectedUsers && !!onUserSelection;
 
   return (
-    <div className="rounded-md border">
+    <div className="border rounded-lg">
       <Table>
         <TableHeader>
           <TableRow>
-            {selectionEnabled && (
-              <TableHead className="w-12">
-                <input
-                  type="checkbox"
-                  checked={users.length > 0 && users.every(user => selectedUsers?.has(user.id))}
-                  onChange={(e) => handleSelectAll(e.target.checked)}
-                  className="rounded border-gray-300"
-                />
-              </TableHead>
-            )}
+            <TableHead className="w-12">
+              <Checkbox
+                checked={allSelected}
+                indeterminate={someSelected && !allSelected}
+                onCheckedChange={handleSelectAll}
+              />
+            </TableHead>
             <TableHead>User</TableHead>
             <TableHead>Email</TableHead>
-            <TableHead onClick={onSortByRole} className="cursor-pointer hover:bg-muted/50">
+            <TableHead className="cursor-pointer" onClick={onSortByRole}>
               Role
             </TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead>Country</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead>Last Sign In</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {users.map((user) => (
-            <UserTableRow
-              key={user.id}
-              user={user}
-              canAssignRole={(role: string) => canAssignRole(role, user.id)}
-              onRoleChange={onRoleChange}
-              isSelected={selectedUsers?.has(user.id)}
-              onSelect={(isSelected) => handleUserSelection(user.id, isSelected)}
-              selectionEnabled={selectionEnabled}
-              onEditProfile={onEditProfile}
-            />
+            <TableRow key={user.id}>
+              <TableCell>
+                <Checkbox
+                  checked={selectedUsers.has(user.id)}
+                  onCheckedChange={(checked) => onUserSelection(user.id, !!checked)}
+                />
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center space-x-2">
+                  <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                    {user.display_name?.charAt(0) || user.email?.charAt(0) || 'U'}
+                  </div>
+                  <div>
+                    <div className="font-medium">{user.display_name || 'No Name'}</div>
+                    <div className="text-xs text-muted-foreground">{user.id.substring(0, 8)}...</div>
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center space-x-1">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">{user.email || 'No email'}</span>
+                </div>
+              </TableCell>
+              <TableCell>
+                <Badge className={getRoleBadgeColor(user.role)}>
+                  {ROLE_DEFINITIONS[user.role]?.label || user.role}
+                </Badge>
+              </TableCell>
+              <TableCell>{user.country || 'Not specified'}</TableCell>
+              <TableCell>
+                {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
+              </TableCell>
+              <TableCell>
+                {user.last_sign_in ? new Date(user.last_sign_in).toLocaleDateString() : 'Never'}
+              </TableCell>
+              <TableCell className="text-right">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEditProfile(user)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TableCell>
+            </TableRow>
           ))}
         </TableBody>
       </Table>
     </div>
   );
-};
+}

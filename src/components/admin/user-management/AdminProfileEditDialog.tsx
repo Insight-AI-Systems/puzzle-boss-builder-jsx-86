@@ -2,38 +2,47 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { UserProfile, UserRole } from '@/types/userTypes';
+import { ProfileEditForm } from './ProfileEditForm';
+import { useProfileUpdate } from '@/hooks/admin/useProfileUpdate';
 
 interface AdminProfileEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: UserProfile;
-  currentUserRole: string;
-  onRoleChange: (userId: string, newRole: UserRole) => Promise<void>;
+  currentUserRole: UserRole;
 }
 
 export function AdminProfileEditDialog({ 
   open, 
   onOpenChange, 
   user, 
-  currentUserRole, 
-  onRoleChange 
+  currentUserRole 
 }: AdminProfileEditDialogProps) {
+  const updateProfile = useProfileUpdate();
+
+  const handleSave = async (userId: string, updates: Partial<UserProfile>) => {
+    await updateProfile.mutateAsync({ userId, updates });
+    onOpenChange(false);
+  };
+
+  const handleCancel = () => {
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit User Profile</DialogTitle>
         </DialogHeader>
-        <div className="p-4">
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground">User ID: {user.id}</p>
-              <p className="text-sm text-muted-foreground">Email: {user.email}</p>
-              <p className="text-sm text-muted-foreground">Display Name: {user.display_name}</p>
-              <p className="text-sm text-muted-foreground">Current Role: {user.role}</p>
-            </div>
-            <p>Profile editing functionality is being developed.</p>
-          </div>
+        <div className="mt-4">
+          <ProfileEditForm
+            user={user}
+            currentUserRole={currentUserRole}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            isLoading={updateProfile.isPending}
+          />
         </div>
       </DialogContent>
     </Dialog>

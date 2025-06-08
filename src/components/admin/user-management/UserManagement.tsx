@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { UsersTable } from './UsersTable';
@@ -165,7 +164,6 @@ export const UserManagement: React.FC = () => {
               users={userManagement.allProfilesData.data}
               currentUserRole={userRole}
               currentUserEmail={user?.email}
-              onRoleChange={userManagement.handleRoleChange}
               onSortByRole={() => {}} // Implement if needed
               selectedUsers={userManagement.selectedUsers}
               onUserSelection={userManagement.handleUserSelection}
@@ -186,7 +184,17 @@ export const UserManagement: React.FC = () => {
           />
         </CardContent>
       </Card>
-      
+
+      {/* Profile Edit Dialog */}
+      {selectedUserForEdit && (
+        <AdminProfileEditDialog
+          open={profileEditDialogOpen}
+          onOpenChange={handleCloseProfileEdit}
+          user={selectedUserForEdit}
+          currentUserRole={userRole}
+        />
+      )}
+
       {/* Email Dialog */}
       <EmailDialog 
         open={emailDialogOpen} 
@@ -205,17 +213,6 @@ export const UserManagement: React.FC = () => {
         onUpdateRoles={handleBulkRoleChange}
         isUpdating={userManagement.isBulkRoleChanging}
       />
-
-      {/* Profile Edit Dialog */}
-      {selectedUserForEdit && (
-        <AdminProfileEditDialog
-          open={profileEditDialogOpen}
-          onOpenChange={handleCloseProfileEdit}
-          user={selectedUserForEdit}
-          currentUserRole={userRole}
-          onRoleChange={userManagement.handleRoleChange}
-        />
-      )}
     </div>
   );
 };
