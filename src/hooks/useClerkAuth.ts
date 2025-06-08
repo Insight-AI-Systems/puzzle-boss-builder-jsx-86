@@ -22,7 +22,7 @@ export const useClerkAuth = () => {
 
   // Fetch user profile from Supabase based on Clerk user
   const profileQuery = useQuery({
-    queryKey: ['profile', user?.id],
+    queryKey: ['profile', user?.id] as const,
     queryFn: async () => {
       if (!user?.id) return null;
       
@@ -37,7 +37,7 @@ export const useClerkAuth = () => {
         return null;
       }
       
-      return data;
+      return data as Profile | null;
     },
     enabled: !!user?.id && isSignedIn,
   });
