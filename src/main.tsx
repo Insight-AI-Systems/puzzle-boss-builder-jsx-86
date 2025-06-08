@@ -28,11 +28,6 @@ console.log('Environment check:', {
   allEnvKeys: Object.keys(import.meta.env).filter(key => key.includes('CLERK'))
 });
 
-if (!clerkPublishableKey) {
-  console.error('Clerk publishable key is missing.');
-  throw new Error('Missing Clerk Publishable Key. Please add VITE_CLERK_PUBLISHABLE_KEY to your environment variables.');
-}
-
 const container = document.getElementById("root");
 if (!container) {
   throw new Error("Root element not found");
@@ -77,40 +72,48 @@ class ErrorFallback extends React.Component<{children: React.ReactNode}, {hasErr
   }
 }
 
+const AppContent = () => (
+  <QueryClientProvider client={queryClient}>
+    <GameProvider>
+      <BrowserRouter>
+        <Toaster />
+        <App />
+        {process.env.NODE_ENV === 'development' && (
+          <ReactQueryDevtools initialIsOpen={false} />
+        )}
+      </BrowserRouter>
+    </GameProvider>
+  </QueryClientProvider>
+);
+
 const root = createRoot(container);
 root.render(
   <React.StrictMode>
     <ErrorFallback>
-      <ClerkProvider 
-        publishableKey={clerkPublishableKey}
-        appearance={{
-          elements: {
-            formButtonPrimary: 'bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black',
-            card: 'bg-puzzle-gray border border-puzzle-border',
-            headerTitle: 'text-puzzle-white',
-            headerSubtitle: 'text-puzzle-white/70',
-            socialButtonsBlockButton: 'border-puzzle-border hover:bg-puzzle-gray/50',
-            formFieldInput: 'bg-puzzle-black border-puzzle-border text-puzzle-white',
-            footerActionLink: 'text-puzzle-aqua hover:text-puzzle-aqua/80',
-          },
-          layout: {
-            socialButtonsPlacement: 'top',
-            showOptionalFields: false,
-          },
-        }}
-      >
-        <QueryClientProvider client={queryClient}>
-          <GameProvider>
-            <BrowserRouter>
-              <Toaster />
-              <App />
-              {process.env.NODE_ENV === 'development' && (
-                <ReactQueryDevtools initialIsOpen={false} />
-              )}
-            </BrowserRouter>
-          </GameProvider>
-        </QueryClientProvider>
-      </ClerkProvider>
+      {clerkPublishableKey ? (
+        <ClerkProvider 
+          publishableKey={clerkPublishableKey}
+          appearance={{
+            elements: {
+              formButtonPrimary: 'bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black',
+              card: 'bg-puzzle-gray border border-puzzle-border',
+              headerTitle: 'text-puzzle-white',
+              headerSubtitle: 'text-puzzle-white/70',
+              socialButtonsBlockButton: 'border-puzzle-border hover:bg-puzzle-gray/50',
+              formFieldInput: 'bg-puzzle-black border-puzzle-border text-puzzle-white',
+              footerActionLink: 'text-puzzle-aqua hover:text-puzzle-aqua/80',
+            },
+            layout: {
+              socialButtonsPlacement: 'top',
+              showOptionalFields: false,
+            },
+          }}
+        >
+          <AppContent />
+        </ClerkProvider>
+      ) : (
+        <AppContent />
+      )}
     </ErrorFallback>
   </React.StrictMode>
 );
