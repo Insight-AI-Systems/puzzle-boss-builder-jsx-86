@@ -1,85 +1,36 @@
 
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { GameProvider } from '@/shared/contexts/GameContext';
-import { Toaster } from '@/components/ui/toaster';
-import App from './App.tsx';
-import './index.css';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { ClerkProvider } from "@clerk/clerk-react";
+import { BrowserRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryDevtools } from "@tanstack/react-query-devtools";
+import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from "@/contexts/AuthContext";
+import App from "./App";
+import "./index.css";
 
-// Create a container for the React application
-const container = document.getElementById("root");
+const queryClient = new QueryClient();
 
-// Ensure container exists before creating root
-if (!container) {
-  throw new Error("Root element not found. Make sure there is a div with id 'root' in your HTML");
+// You'll need to get this from your Clerk dashboard at https://go.clerk.com/lovable
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!PUBLISHABLE_KEY) {
+  throw new Error("Missing Clerk Publishable Key");
 }
 
-// Create a new QueryClient instance
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
-    },
-  },
-});
-
-// Simplified error boundary for the entire app
-class ErrorFallback extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
-  constructor(props: {children: React.ReactNode}) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error('App crashed with error:', error);
-    console.error('Component stack:', info.componentStack);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-black text-white p-4">
-          <div className="max-w-lg text-center">
-            <h1 className="text-2xl font-bold text-red-500 mb-4">Something went wrong</h1>
-            <p className="mb-4">The application encountered an unexpected error.</p>
-            <button 
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              onClick={() => window.location.reload()}
-            >
-              Reload Application
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
-
-// Create root and render app with consolidated provider hierarchy
-const root = createRoot(container);
-root.render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ErrorFallback>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <GameProvider>
-            <BrowserRouter>
-              <Toaster />
-              <App />
-            </BrowserRouter>
-          </GameProvider>
-        </AuthProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <App />
+            <Toaster />
+          </AuthProvider>
+        </BrowserRouter>
+        <QueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
-    </ErrorFallback>
+    </ClerkProvider>
   </React.StrictMode>
 );
