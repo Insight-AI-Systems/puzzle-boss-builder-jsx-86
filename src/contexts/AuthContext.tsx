@@ -67,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
-        // If no profile exists, create one
+        // If no profile exists, create one (let Supabase auto-generate the id)
         if (!existingProfile) {
           const profileData = {
             clerk_user_id: clerkUser.id,
