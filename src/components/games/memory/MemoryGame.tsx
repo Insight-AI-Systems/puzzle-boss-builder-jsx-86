@@ -39,6 +39,7 @@ export function MemoryGame({
     gameState,
     handleCardClick,
     initializeGame,
+    startGame,
     getGameStats,
     isGameActive,
     disabled,
@@ -68,16 +69,17 @@ export function MemoryGame({
     }
   }, [gameInitialized, initializeGame]);
 
-  // Auto-start game when initialized
+  // Auto-start game when ready
   useEffect(() => {
     if (gameInitialized && gameState.cards.length > 0 && !isGameActive && !gameState.isGameComplete) {
-      console.log('🚀 Auto-starting game');
+      console.log('🚀 Auto-starting game - current state:', gameState);
       // Small delay to ensure UI is ready
       setTimeout(() => {
-        initializeGame(); // This sets state to 'ready'
+        console.log('🎯 Starting game now');
+        startGame(); // Start the game instead of reinitializing
       }, 100);
     }
-  }, [gameInitialized, gameState.cards.length, isGameActive, gameState.isGameComplete]);
+  }, [gameInitialized, gameState.cards.length, isGameActive, gameState.isGameComplete, startGame]);
 
   // Update scoring in real-time
   useEffect(() => {
@@ -112,6 +114,11 @@ export function MemoryGame({
     resetScore();
     gameCompletedRef.current = false;
     setShowCelebration(false);
+  };
+
+  const handleStartGame = () => {
+    console.log('🚀 Manual start game triggered');
+    startGame();
   };
 
   useEffect(() => {
@@ -180,9 +187,11 @@ export function MemoryGame({
             layout={gameState.layout}
             theme={gameState.theme}
             isGameActive={isGameActive}
+            gameReady={gameInitialized && !isGameActive}
             onLayoutChange={handleLayoutChange}
             onThemeChange={handleThemeChange}
             onRestart={handleRestart}
+            onStart={handleStartGame}
           />
 
           <MemoryScoreDisplay
