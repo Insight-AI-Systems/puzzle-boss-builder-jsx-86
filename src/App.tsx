@@ -3,10 +3,10 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { MainLayout } from '@/components/MainLayout';
-import Home from '@/pages/Home';
-import Account from '@/pages/Account';
-import AdminPage from '@/pages/AdminPage';
-import AuthPage from '@/pages/AuthPage';
+import HomePage from '@/pages/HomePage';
+import AccountDashboard from '@/pages/AccountDashboard';
+import AdminDashboard from '@/pages/AdminDashboard';
+import Auth from '@/pages/Auth';
 import WordSearchGamePage from '@/pages/games/WordSearchGamePage';
 import SupportPage from '@/pages/SupportPage';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -26,15 +26,15 @@ function App() {
   return (
     <MainLayout>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/auth" element={<Auth />} />
         <Route path="/puzzles/word-search" element={<WordSearchGamePage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route 
           path="/account" 
           element={
             <ProtectedRoute>
-              <Account />
+              <AccountDashboard />
             </ProtectedRoute>
           } 
         />
@@ -42,7 +42,7 @@ function App() {
           path="/admin" 
           element={
             <ProtectedRoute requiredRoles={['admin']}>
-              <AdminPage />
+              <AdminDashboard />
             </ProtectedRoute>
           } 
         />

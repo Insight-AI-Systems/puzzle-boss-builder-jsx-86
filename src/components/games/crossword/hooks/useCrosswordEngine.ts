@@ -21,7 +21,7 @@ export interface CrosswordGameState {
 }
 
 export function useCrosswordEngine(gameId: string = 'crossword-1') {
-  const { gameState, updateGameState, startGame } = useGameContext();
+  const { updateGameState, startGame } = useGameContext();
   const { puzzle, isLoading: puzzleLoading } = useCrosswordPuzzleData();
   const { saveGameState, loadGameState } = useGamePersistence(gameId, 'crossword');
   const { submitScore } = useLeaderboardSubmission();
@@ -51,7 +51,7 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
     hasTimer: true,
     hasScore: true,
     hasMoves: true,
-    difficulty: 'medium', 
+    difficulty: 'pro', 
     enableHints: true 
   };
 
@@ -114,7 +114,7 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
           setLocalGameState(savedState);
         }
         
-        startGame(gameId, 'medium');
+        startGame(gameId, 'pro');
         setIsLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to initialize crossword');
