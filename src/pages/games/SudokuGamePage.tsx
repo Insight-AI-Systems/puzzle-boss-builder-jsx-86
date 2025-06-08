@@ -1,7 +1,7 @@
 
 import React from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
-import { SudokuGame } from '@/components/games';
+import { SudokuGame } from '@/components/games/sudoku';
 
 export default function SudokuGamePage() {
   return (

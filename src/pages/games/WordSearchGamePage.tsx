@@ -1,7 +1,7 @@
 
 import React from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
-import { WordSearchGame } from '@/components/games';
+import { WordSearchGame } from '@/components/games/word-search';
 
 export default function WordSearchGamePage() {
   return (

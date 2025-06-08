@@ -1,7 +1,7 @@
 
 import React from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
-import { TetrisGame } from '@/components/games';
+import { TetrisGame } from '@/components/games/tetris';
 
 export default function BlockPuzzlePro() {
   return (

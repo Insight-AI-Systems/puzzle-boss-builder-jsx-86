@@ -1,7 +1,7 @@
 
 import React from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
-import { TriviaGame } from '@/components/games';
+import { TriviaGame } from '@/components/games/trivia';
 
 export default function TriviaGamePage() {
   return (

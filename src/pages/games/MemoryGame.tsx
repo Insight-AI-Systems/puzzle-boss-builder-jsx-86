@@ -1,7 +1,7 @@
 
 import React from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
-import { MemoryGame as MemoryGameComponent } from '@/components/games';
+import { MemoryGame as MemoryGameComponent } from '@/components/games/memory';
 
 export default function MemoryGame() {
   return (
