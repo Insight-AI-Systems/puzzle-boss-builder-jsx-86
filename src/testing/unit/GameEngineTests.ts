@@ -186,6 +186,7 @@ export class GameEngineTests {
       foundWords: new Set<string>(),
       selectedCells: [],
       currentSelection: [],
+      hintCells: [], // Add missing property
       difficulty: 'rookie',
       timeElapsed: 0,
       hintsUsed: 0,

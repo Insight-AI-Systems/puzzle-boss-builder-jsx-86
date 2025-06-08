@@ -189,10 +189,9 @@ export function WordSearchGame() {
       // Clear hint after 3 seconds
       setTimeout(() => {
         if (engine && gameState) {
-          engine.updateGameState({
-            ...gameState,
-            hintCells: []
-          });
+          // Create new state with cleared hint cells
+          const clearedState = { ...gameState, hintCells: [] };
+          setGameState(clearedState);
         }
       }, 3000);
     }
@@ -254,14 +253,18 @@ export function WordSearchGame() {
 
         {/* Game Status and Instructions */}
         {gameState.status === 'idle' && (
-          <WordSearchInstructions onStart={handleStart} />
+          <WordSearchInstructions />
         )}
 
         {/* Game Completed */}
         {gameState.isComplete && (
           <WordSearchCongratulations 
+            isOpen={true}
+            onClose={handleReset}
             score={gameState.score}
             timeElapsed={gameState.timeElapsed}
+            wordsFound={gameState.foundWords.size}
+            totalWords={gameState.words.length}
             onPlayAgain={handleReset}
           />
         )}
@@ -301,10 +304,14 @@ export function WordSearchGame() {
 
               {/* Game Stats */}
               <WordSearchControls
-                score={gameState.score}
                 timeElapsed={gameState.timeElapsed}
+                isPaused={gameState.status === 'paused'}
+                onPause={handlePause}
+                onResume={handleResume}
+                onReset={handleReset}
+                onHint={handleHint}
                 hintsUsed={gameState.hintsUsed}
-                isGameActive={gameState.status === 'playing'}
+                isGameComplete={gameState.isComplete}
               />
 
               {/* Words List */}
@@ -313,6 +320,18 @@ export function WordSearchGame() {
                 foundWords={gameState.foundWords}
               />
             </div>
+          </div>
+        )}
+
+        {/* Start Game Button for idle state */}
+        {gameState.status === 'idle' && (
+          <div className="text-center">
+            <button
+              onClick={handleStart}
+              className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-white px-8 py-3 rounded-lg text-lg font-semibold"
+            >
+              Start Game
+            </button>
           </div>
         )}
       </div>
