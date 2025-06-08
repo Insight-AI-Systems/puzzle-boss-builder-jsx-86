@@ -1,5 +1,5 @@
 
-import { PlacedWord } from '@/business/engines/word-search/WordSearchEngine';
+import { PlacedWord, Cell } from '@/business/engines/word-search/types';
 
 export class WordSelectionValidator {
   private placedWords: PlacedWord[];
@@ -10,7 +10,7 @@ export class WordSelectionValidator {
     this.grid = grid || [];
   }
 
-  public validateSelection(selectedCells: Array<{ row: number; col: number }>): {
+  public validateSelection(selectedCells: Cell[]): {
     isValid: boolean;
     word?: string;
     foundWord?: PlacedWord;
@@ -49,7 +49,7 @@ export class WordSelectionValidator {
     }
   }
 
-  private getWordFromCells(selectedCells: Array<{ row: number; col: number }>): string {
+  private getWordFromCells(selectedCells: Cell[]): string {
     try {
       if (!selectedCells || selectedCells.length === 0) {
         return '';
@@ -70,7 +70,7 @@ export class WordSelectionValidator {
     }
   }
 
-  private sortCellsInSequence(cells: Array<{ row: number; col: number }>): Array<{ row: number; col: number }> {
+  private sortCellsInSequence(cells: Cell[]): Cell[] {
     try {
       if (!cells || cells.length <= 1) return cells || [];
 
@@ -110,7 +110,7 @@ export class WordSelectionValidator {
     }
   }
 
-  private isSelectionMatchingWord(selectedCells: Array<{ row: number; col: number }>, placedWord: PlacedWord): boolean {
+  private isSelectionMatchingWord(selectedCells: Cell[], placedWord: PlacedWord): boolean {
     try {
       if (!selectedCells || !placedWord || !placedWord.cells || !placedWord.word) {
         return false;
@@ -118,8 +118,14 @@ export class WordSelectionValidator {
 
       const { cells: wordCells, word } = placedWord;
 
+      // Convert word cells from string format to Cell objects
+      const wordCellObjects = wordCells.map(cellId => {
+        const [row, col] = cellId.split('-').map(Number);
+        return { row, col };
+      });
+
       // Check if selection matches word cells exactly
-      if (selectedCells.length === wordCells.length) {
+      if (selectedCells.length === wordCellObjects.length) {
         const selectedCellIds = selectedCells.map(cell => `${cell.row}-${cell.col}`).sort();
         const wordCellIds = wordCells.sort();
         

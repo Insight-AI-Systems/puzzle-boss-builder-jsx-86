@@ -1,31 +1,22 @@
-
 import { GameEngine } from '../GameEngine';
 import { BaseGameState, GameConfig, MoveValidationResult, WinConditionResult, GameEvent } from '../../models/GameState';
+import { PlacedWord, Cell } from './types';
 
 // Word search specific state
 export interface WordSearchState extends BaseGameState {
   grid: string[][];
   words: string[];
   foundWords: Set<string>;
-  selectedCells: Array<{ row: number; col: number }>;
-  currentSelection: Array<{ row: number; col: number }>;
+  selectedCells: Cell[];
+  currentSelection: Cell[];
   difficulty: 'rookie' | 'pro' | 'master';
   timeElapsed: number;
   hintsUsed: number;
 }
 
-// Word placement information
-export interface PlacedWord {
-  word: string;
-  startRow: number;
-  startCol: number;
-  direction: 'horizontal' | 'vertical' | 'diagonal';
-  cells: Array<{ row: number; col: number }>;
-}
-
 // Move types for word search
 export type WordSearchMove = 
-  | { type: 'SELECT_CELLS'; cells: Array<{ row: number; col: number }> }
+  | { type: 'SELECT_CELLS'; cells: Cell[] }
   | { type: 'VALIDATE_SELECTION' }
   | { type: 'HINT' };
 
@@ -179,7 +170,6 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     };
   }
 
-  // Private methods
   private startTimer(): void {
     this.timer = setInterval(() => {
       this.updateGameState({
@@ -287,15 +277,14 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     }
   }
 
-  private getWordCells(startRow: number, startCol: number, length: number, direction: string): Array<{ row: number; col: number }> {
+  private getWordCells(startRow: number, startCol: number, length: number, direction: string): string[] {
     const { rowDir, colDir } = this.getDirection(direction);
     const cells = [];
     
     for (let i = 0; i < length; i++) {
-      cells.push({
-        row: startRow + i * rowDir,
-        col: startCol + i * colDir
-      });
+      const row = startRow + i * rowDir;
+      const col = startCol + i * colDir;
+      cells.push(`${row}-${col}`);
     }
     
     return cells;
@@ -410,5 +399,9 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       finalScore: this.gameState.score,
       timestamp: Date.now()
     });
+  }
+
+  public getPlacedWords(): PlacedWord[] {
+    return this.placedWords;
   }
 }
