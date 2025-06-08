@@ -54,6 +54,7 @@ function AppContent() {
         <Route path="/puzzles/sudoku" element={<SpeedSudoku />} />
         <Route path="/puzzles/memory" element={<MemoryMaster />} />
         <Route path="/puzzles/trivia" element={<TriviaLightning />} />
+        <Route path="/puzzles/blocks" element={<BlockPuzzlePro />} />
         <Route path="/puzzles/block-puzzle" element={<BlockPuzzlePro />} />
         <Route path="/puzzles/crossword" element={<DailyCrossword />} />
         <Route path="/competition/:competitionId" element={<CompetitionRoom />} />
