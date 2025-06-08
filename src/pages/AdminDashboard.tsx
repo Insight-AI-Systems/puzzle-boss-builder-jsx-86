@@ -29,6 +29,23 @@ const AdminDashboard = () => {
                         hasRole('social_media_manager') || 
                         hasRole('partner_manager') || 
                         hasRole('cfo');
+
+  console.log('🏛️ AdminDashboard Detailed State:', {
+    isAuthenticated,
+    userEmail,
+    isAdmin,
+    hasAdminAccess,
+    userRole,
+    profileRole: profile?.role,
+    isLoading,
+    authLoading,
+    profileLoading,
+    hasRoleChecks: {
+      super_admin: hasRole('super_admin'),
+      admin: hasRole('admin'),
+      category_manager: hasRole('category_manager')
+    }
+  });
   
   // Debug logging
   useEffect(() => {
@@ -50,16 +67,24 @@ const AdminDashboard = () => {
     }
   }, [isLoading, isAuthenticated, hasAdminAccess, userRole, profile, userEmail, isAdmin]);
 
-  // Handle access control
+  // Handle access control with enhanced logging
   useEffect(() => {
-    if (!isLoading && isAuthenticated && !hasAdminAccess) {
-      console.log('🚫 Access denied, redirecting to homepage');
-      toast({
-        title: "Access Denied",
-        description: `You don't have admin privileges. Current role: ${userRole}`,
-        variant: "destructive",
+    if (!isLoading) {
+      console.log('🚦 Access Control Check:', {
+        isAuthenticated,
+        hasAdminAccess,
+        shouldRedirect: isAuthenticated && !hasAdminAccess
       });
-      navigate('/', { replace: true });
+
+      if (isAuthenticated && !hasAdminAccess) {
+        console.log('🚫 Access denied, redirecting to homepage');
+        toast({
+          title: "Access Denied",
+          description: `You don't have admin privileges. Current role: ${userRole}`,
+          variant: "destructive",
+        });
+        navigate('/', { replace: true });
+      }
     }
   }, [isLoading, isAuthenticated, hasAdminAccess, navigate, toast, userRole]);
 
@@ -80,6 +105,11 @@ const AdminDashboard = () => {
         hasAdminAccess,
         isAuthenticated,
         isLoading
+      },
+      roleChecks: {
+        super_admin: hasRole('super_admin'),
+        admin: hasRole('admin'),
+        category_manager: hasRole('category_manager')
       }
     };
     setDebugInfo(JSON.stringify(info, null, 2));
@@ -87,6 +117,7 @@ const AdminDashboard = () => {
   };
 
   if (isLoading) {
+    console.log('🔄 AdminDashboard Loading...');
     return (
       <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
         <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
@@ -96,6 +127,7 @@ const AdminDashboard = () => {
 
   // Show access denied if not authenticated or no admin access
   if (!isAuthenticated || !hasAdminAccess) {
+    console.log('🚫 Showing access denied screen');
     return (
       <AdminAccessCheck 
         user={user}
@@ -106,6 +138,8 @@ const AdminDashboard = () => {
     );
   }
 
+  console.log('✅ Showing admin dashboard');
+  
   // Show admin dashboard
   return (
     <AdminErrorBoundary>

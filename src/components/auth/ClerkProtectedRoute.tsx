@@ -4,6 +4,7 @@ import { useUser } from '@clerk/clerk-react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { UserRole } from '@/types/userTypes';
 import { Loader2 } from 'lucide-react';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 interface ClerkProtectedRouteProps {
   children: React.ReactNode;
@@ -15,9 +16,19 @@ export const ClerkProtectedRoute: React.FC<ClerkProtectedRouteProps> = ({
   requiredRoles = [] 
 }) => {
   const { isSignedIn, isLoaded, user } = useUser();
+  const { hasRole, isAdmin, isLoading } = useClerkAuth();
   const location = useLocation();
 
-  if (!isLoaded) {
+  console.log('🛡️ ClerkProtectedRoute:', {
+    isLoaded,
+    isSignedIn,
+    isLoading,
+    isAdmin,
+    requiredRoles,
+    pathname: location.pathname
+  });
+
+  if (!isLoaded || isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="flex flex-col items-center">
@@ -34,10 +45,16 @@ export const ClerkProtectedRoute: React.FC<ClerkProtectedRouteProps> = ({
 
   // Check roles if specified
   if (requiredRoles.length > 0) {
-    const userRoles = (user?.publicMetadata?.roles as string[]) || ['player'];
     const hasRequiredRole = requiredRoles.some(role => 
-      userRoles.includes(role) || userRoles.includes('super_admin')
+      hasRole(role) || isAdmin
     );
+
+    console.log('🛡️ Role check:', {
+      requiredRoles,
+      hasRequiredRole,
+      isAdmin,
+      userEmail: user?.primaryEmailAddress?.emailAddress
+    });
 
     if (!hasRequiredRole) {
       return <Navigate to="/" replace />;

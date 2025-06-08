@@ -22,20 +22,38 @@ export const Navbar: React.FC = () => {
   // Show admin items if user is admin (with loading check)
   const showAdminItems = !isLoading && isAdmin;
 
-  // Debug admin detection
+  // Enhanced debug admin detection
   React.useEffect(() => {
     if (isSignedIn && !isLoading) {
-      console.log('🧭 Navbar Admin Detection:', {
+      console.log('🧭 Navbar Admin Detection (Enhanced):', {
         userEmail: user?.primaryEmailAddress?.emailAddress,
         isAdmin,
         showAdminItems,
-        isLoading
+        isLoading,
+        hasRoleSuperAdmin: hasRole('super_admin'),
+        hasRoleAdmin: hasRole('admin'),
+        adminNavItemsLength: showAdminItems ? adminNavItems.length : 0
       });
     }
-  }, [isSignedIn, isAdmin, showAdminItems, isLoading, user]);
+  }, [isSignedIn, isAdmin, showAdminItems, isLoading, user, hasRole]);
+
+  // Force re-render when admin status changes
+  const [, forceUpdate] = React.useReducer(x => x + 1, 0);
+  React.useEffect(() => {
+    if (!isLoading) {
+      forceUpdate();
+    }
+  }, [isAdmin, isLoading]);
 
   // Filter admin nav items
   const accessibleAdminItems = showAdminItems ? adminNavItems : [];
+
+  console.log('🧭 Navbar Render:', {
+    showAdminItems,
+    accessibleAdminItemsCount: accessibleAdminItems.length,
+    isAdmin,
+    isLoading
+  });
 
   return (
     <AdminErrorBoundary>
@@ -72,15 +90,15 @@ export const Navbar: React.FC = () => {
                 )
               ))}
               
-              {/* Admin links */}
-              {accessibleAdminItems.map((item) => (
+              {/* Admin links - with enhanced visibility */}
+              {showAdminItems && accessibleAdminItems.map((item) => (
                 <Link
                   key={item.href}
                   to={item.href}
-                  className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`px-3 py-2 text-sm font-medium transition-colors bg-puzzle-aqua/10 rounded ${
                     isActive(item.href)
                       ? 'text-puzzle-aqua border-b-2 border-puzzle-aqua'
-                      : 'text-puzzle-white hover:text-puzzle-aqua'
+                      : 'text-puzzle-aqua hover:text-puzzle-aqua/80'
                   }`}
                 >
                   {item.name}
@@ -100,11 +118,11 @@ export const Navbar: React.FC = () => {
                   <User className="h-5 w-5" />
                 </Link>
               )}
-              {/* Admin dashboard link */}
+              {/* Admin dashboard link - with enhanced visibility */}
               {showAdminItems && (
                 <Link
                   to="/admin-dashboard"
-                  className="text-puzzle-white hover:text-puzzle-aqua transition-colors"
+                  className="text-puzzle-aqua hover:text-puzzle-aqua/80 transition-colors bg-puzzle-aqua/10 p-2 rounded"
                   title="Admin Dashboard"
                 >
                   <Shield className="h-5 w-5" />

@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { useUser, useClerk } from '@clerk/clerk-react';
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 // Simplified profile interface
@@ -27,90 +26,109 @@ const ADMIN_EMAILS = [
 export const useClerkAuth = () => {
   const { user, isSignedIn, isLoaded } = useUser();
   const { signOut: clerkSignOut } = useClerk();
+  const [profile, setProfile] = React.useState<ClerkProfile | null>(null);
+  const [profileLoading, setProfileLoading] = React.useState(true);
 
   // Simplified admin email detection
   const userEmail = user?.primaryEmailAddress?.emailAddress;
   const isAdminEmail = userEmail ? ADMIN_EMAILS.includes(userEmail) : false;
 
-  // Fetch user profile with simplified logic
-  const profileQuery = useQuery<ClerkProfile | null>({
-    queryKey: ['clerk-profile', user?.id],
-    queryFn: async (): Promise<ClerkProfile | null> => {
-      if (!user?.id) return null;
-      
-      console.log('🔍 Fetching profile for:', user.id);
-      
-      // Try to find profile by clerk_user_id first
-      let { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('clerk_user_id', user.id)
-        .maybeSingle();
-      
-      // If no profile found by clerk_user_id, try by email
-      if (!data && !error && userEmail) {
-        const { data: emailProfile, error: emailError } = await supabase
+  console.log('🔐 useClerkAuth Hook State:', {
+    isSignedIn,
+    isLoaded,
+    userEmail,
+    isAdminEmail,
+    profileLoading,
+    hasProfile: !!profile
+  });
+
+  // Fetch user profile with simplified logic - no React Query
+  React.useEffect(() => {
+    if (!user?.id || !isSignedIn) {
+      setProfile(null);
+      setProfileLoading(false);
+      return;
+    }
+
+    const fetchProfile = async () => {
+      try {
+        console.log('🔍 Fetching profile for:', user.id);
+        
+        // Try to find profile by clerk_user_id first
+        let { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('email', userEmail)
+          .eq('clerk_user_id', user.id)
           .maybeSingle();
         
-        if (emailProfile && !emailError) {
-          // Update profile with Clerk ID
-          const { data: updatedProfile } = await supabase
+        // If no profile found by clerk_user_id, try by email
+        if (!data && !error && userEmail) {
+          const { data: emailProfile, error: emailError } = await supabase
             .from('profiles')
-            .update({ 
-              clerk_user_id: user.id,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', emailProfile.id)
+            .select('*')
+            .eq('email', userEmail)
+            .maybeSingle();
+          
+          if (emailProfile && !emailError) {
+            // Update profile with Clerk ID
+            const { data: updatedProfile } = await supabase
+              .from('profiles')
+              .update({ 
+                clerk_user_id: user.id,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', emailProfile.id)
+              .select()
+              .single();
+            
+            data = updatedProfile;
+          }
+        }
+        
+        // Create new profile if none exists and user is admin
+        if (!data && isAdminEmail) {
+          const newProfile = {
+            id: crypto.randomUUID(),
+            clerk_user_id: user.id,
+            email: userEmail,
+            username: user.username || user.firstName || userEmail?.split('@')[0] || '',
+            role: 'super_admin',
+            member_id: crypto.randomUUID()
+          };
+          
+          const { data: createdProfile } = await supabase
+            .from('profiles')
+            .insert(newProfile)
             .select()
             .single();
           
-          data = updatedProfile;
+          data = createdProfile;
         }
-      }
-      
-      // Create new profile if none exists and user is admin
-      if (!data && isAdminEmail) {
-        const newProfile = {
-          id: crypto.randomUUID(),
-          clerk_user_id: user.id,
-          email: userEmail,
-          username: user.username || user.firstName || userEmail?.split('@')[0] || '',
-          role: 'super_admin',
-          member_id: crypto.randomUUID()
-        };
         
-        const { data: createdProfile } = await supabase
-          .from('profiles')
-          .insert(newProfile)
-          .select()
-          .single();
-        
-        data = createdProfile;
+        console.log('📋 Profile result:', data);
+        setProfile(data);
+      } catch (error) {
+        console.error('Profile fetch error:', error);
+        setProfile(null);
+      } finally {
+        setProfileLoading(false);
       }
-      
-      console.log('📋 Profile result:', data);
-      return data;
-    },
-    enabled: !!user?.id && isSignedIn,
-    retry: 1,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+    };
 
-  const profile = profileQuery.data;
-  const profileLoading = profileQuery.isLoading;
+    setProfileLoading(true);
+    fetchProfile();
+  }, [user?.id, userEmail, isAdminEmail, isSignedIn]);
 
   // Simplified role determination - prioritize admin emails
   const userRole: string = isAdminEmail ? 'super_admin' : (profile?.role || 'player');
   const userRoles: string[] = [userRole];
 
-  // Simplified admin check
+  // Simplified admin check - always true for admin emails
   const isAdmin: boolean = isAdminEmail || userRole === 'super_admin' || userRole === 'admin';
 
   // Simplified role checking
   const hasRole = (role: string): boolean => {
+    console.log('🔍 hasRole check:', { role, isAdminEmail, userRole, userRoles });
     return isAdminEmail || userRoles.includes(role) || userRole === 'super_admin';
   };
 
@@ -123,10 +141,11 @@ export const useClerkAuth = () => {
         isAdminEmail,
         userRole,
         isAdmin,
-        profileLoaded: !profileLoading
+        profileLoaded: !profileLoading,
+        hasProfile: !!profile
       });
     }
-  }, [isLoaded, isSignedIn, userEmail, isAdminEmail, userRole, isAdmin, profileLoading]);
+  }, [isLoaded, isSignedIn, userEmail, isAdminEmail, userRole, isAdmin, profileLoading, profile]);
 
   const signOut = async (): Promise<void> => {
     await clerkSignOut();
