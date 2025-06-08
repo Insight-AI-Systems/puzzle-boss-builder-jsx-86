@@ -67,9 +67,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
-        // If no profile exists, create one (let Supabase auto-generate the id)
+        // If no profile exists, create one with explicit id
         if (!existingProfile) {
           const profileData = {
+            id: crypto.randomUUID(), // Generate a UUID for the id field
             clerk_user_id: clerkUser.id,
             email: clerkUser.primaryEmailAddress?.emailAddress || '',
             username: clerkUser.username || clerkUser.firstName || clerkUser.primaryEmailAddress?.emailAddress?.split('@')[0] || '',
