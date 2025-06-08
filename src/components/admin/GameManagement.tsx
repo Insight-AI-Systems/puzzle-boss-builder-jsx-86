@@ -4,18 +4,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PuzzleManagement } from './PuzzleManagement';
 import HeroPuzzleManager from './hero-puzzle/HeroPuzzleManager';
+import { GameManagementAdmin } from './GameManagementAdmin';
 
 export function GameManagement() {
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="puzzles" className="w-full">
+      <Tabs defaultValue="games" className="w-full">
         <TabsList className="mb-4">
+          <TabsTrigger value="games">Game Management</TabsTrigger>
           <TabsTrigger value="puzzles">Puzzles</TabsTrigger>
           <TabsTrigger value="hero">Hero Puzzle</TabsTrigger>
           <TabsTrigger value="leaderboards">Leaderboards</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         
+        <TabsContent value="games">
+          <GameManagementAdmin />
+        </TabsContent>
+
         <TabsContent value="puzzles">
           <PuzzleManagement />
         </TabsContent>
