@@ -2207,6 +2207,243 @@ export type Database = {
           },
         ]
       }
+      trivia_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      trivia_leaderboard: {
+        Row: {
+          average_time: number
+          category_id: string | null
+          correct_answers: number
+          created_at: string
+          id: string
+          quiz_date: string
+          total_questions: number
+          total_score: number
+          user_id: string | null
+          username: string
+        }
+        Insert: {
+          average_time: number
+          category_id?: string | null
+          correct_answers: number
+          created_at?: string
+          id?: string
+          quiz_date?: string
+          total_questions: number
+          total_score: number
+          user_id?: string | null
+          username: string
+        }
+        Update: {
+          average_time?: number
+          category_id?: string | null
+          correct_answers?: number
+          created_at?: string
+          id?: string
+          quiz_date?: string
+          total_questions?: number
+          total_score?: number
+          user_id?: string | null
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trivia_leaderboard_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "trivia_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trivia_questions: {
+        Row: {
+          category_id: string | null
+          correct_answer: string
+          created_at: string
+          created_by: string | null
+          difficulty: string
+          explanation: string | null
+          id: string
+          is_active: boolean
+          question: string
+          time_limit: number
+          updated_at: string
+          wrong_answers: string[]
+        }
+        Insert: {
+          category_id?: string | null
+          correct_answer: string
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string
+          explanation?: string | null
+          id?: string
+          is_active?: boolean
+          question: string
+          time_limit?: number
+          updated_at?: string
+          wrong_answers?: string[]
+        }
+        Update: {
+          category_id?: string | null
+          correct_answer?: string
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string
+          explanation?: string | null
+          id?: string
+          is_active?: boolean
+          question?: string
+          time_limit?: number
+          updated_at?: string
+          wrong_answers?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trivia_questions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "trivia_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trivia_quiz_answers: {
+        Row: {
+          answered_at: string
+          id: string
+          is_correct: boolean
+          question_id: string | null
+          selected_answer: string
+          session_id: string | null
+          time_bonus: number
+          time_taken: number
+        }
+        Insert: {
+          answered_at?: string
+          id?: string
+          is_correct: boolean
+          question_id?: string | null
+          selected_answer: string
+          session_id?: string | null
+          time_bonus?: number
+          time_taken: number
+        }
+        Update: {
+          answered_at?: string
+          id?: string
+          is_correct?: boolean
+          question_id?: string | null
+          selected_answer?: string
+          session_id?: string | null
+          time_bonus?: number
+          time_taken?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trivia_quiz_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "trivia_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trivia_quiz_answers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "trivia_quiz_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trivia_quiz_sessions: {
+        Row: {
+          category_id: string | null
+          completed_at: string | null
+          correct_answers: number
+          created_at: string
+          current_question: number
+          id: string
+          score: number
+          session_data: Json | null
+          started_at: string
+          status: string
+          time_bonus: number
+          total_questions: number
+          user_id: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          completed_at?: string | null
+          correct_answers?: number
+          created_at?: string
+          current_question?: number
+          id?: string
+          score?: number
+          session_data?: Json | null
+          started_at?: string
+          status?: string
+          time_bonus?: number
+          total_questions?: number
+          user_id?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          completed_at?: string | null
+          correct_answers?: number
+          created_at?: string
+          current_question?: number
+          id?: string
+          score?: number
+          session_data?: Json | null
+          started_at?: string
+          status?: string
+          time_bonus?: number
+          total_questions?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trivia_quiz_sessions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "trivia_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_activity_metrics: {
         Row: {
           active_users: number | null
