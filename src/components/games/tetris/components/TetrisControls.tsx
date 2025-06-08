@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TetrisControls } from '../types/tetrisTypes';
+import type { TetrisControls } from '../types/tetrisTypes';
 import { 
   Play, 
   Pause, 
