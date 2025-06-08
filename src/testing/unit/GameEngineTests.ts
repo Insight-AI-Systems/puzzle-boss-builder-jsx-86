@@ -1,6 +1,7 @@
 
 import { CrosswordEngine } from '@/business/engines/crossword/CrosswordEngine';
 import { WordSearchEngine } from '@/business/engines/word-search/WordSearchEngine';
+import type { CrosswordState, WordSearchState } from '@/business/engines';
 
 export interface TestResult {
   testName: string;
@@ -70,14 +71,52 @@ export class GameEngineTests {
 
   // Crossword Engine Tests
   private async testCrosswordInitialization(): Promise<void> {
-    const engine = new CrosswordEngine('test', 'easy');
+    const initialState: CrosswordState = {
+      puzzle: null,
+      progress: null,
+      selectedCell: null,
+      selectedWord: null,
+      selectedDirection: 'across',
+      showHints: false,
+      isPaused: false,
+      gameStatus: 'loading',
+      id: 'test',
+      status: 'idle',
+      score: 0,
+      moves: 0,
+      startTime: null,
+      endTime: null,
+      isComplete: false,
+      error: null
+    };
+    
+    const engine = new CrosswordEngine(initialState, { difficulty: 'easy', enableHints: true });
     if (!engine) {
       throw new Error('CrosswordEngine failed to initialize');
     }
   }
 
   private async testCrosswordGridGeneration(): Promise<void> {
-    const engine = new CrosswordEngine('test', 'easy');
+    const initialState: CrosswordState = {
+      puzzle: null,
+      progress: null,
+      selectedCell: null,
+      selectedWord: null,
+      selectedDirection: 'across',
+      showHints: false,
+      isPaused: false,
+      gameStatus: 'loading',
+      id: 'test',
+      status: 'idle',
+      score: 0,
+      moves: 0,
+      startTime: null,
+      endTime: null,
+      isComplete: false,
+      error: null
+    };
+    
+    const engine = new CrosswordEngine(initialState, { difficulty: 'easy', enableHints: true });
     // Mock test since methods don't exist yet
     const grid = Array(10).fill(null).map(() => Array(10).fill({ letter: '', isBlocked: false }));
     
@@ -123,7 +162,26 @@ export class GameEngineTests {
 
   // Word Search Engine Tests
   private async testWordSearchInitialization(): Promise<void> {
-    const engine = new WordSearchEngine(['TEST'], 'easy');
+    const initialState: WordSearchState = {
+      grid: [],
+      words: ['TEST'],
+      foundWords: new Set<string>(),
+      selectedCells: [],
+      currentSelection: [],
+      difficulty: 'rookie',
+      timeElapsed: 0,
+      hintsUsed: 0,
+      id: 'test',
+      status: 'idle',
+      score: 0,
+      moves: 0,
+      startTime: null,
+      endTime: null,
+      isComplete: false,
+      error: null
+    };
+    
+    const engine = new WordSearchEngine(initialState, { difficulty: 'easy', enableHints: true });
     if (!engine) {
       throw new Error('WordSearchEngine failed to initialize');
     }

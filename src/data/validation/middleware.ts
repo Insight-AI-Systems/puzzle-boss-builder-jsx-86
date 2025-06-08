@@ -1,4 +1,3 @@
-
 import { ZodSchema, ZodError } from 'zod';
 import { ValidationError } from '@/infrastructure/errors/ValidationError';
 import { sanitizeObject, deepSanitize } from './sanitization';
@@ -52,19 +51,22 @@ export const validateFields = async <T extends Record<string, any>>(
   const processedData = sanitizeFields ? sanitizeObject(data) : data;
 
   // Validate each field
-  for (const [field, validator] of Object.entries(fieldValidators)) {
+  for (const fieldKey of Object.keys(fieldValidators)) {
+    const field = fieldKey as keyof T;
+    const validator = fieldValidators[field];
+    
     if (validator && field in processedData) {
       try {
-        results[field as keyof T] = await validator(processedData[field as keyof T]);
+        results[field] = await validator(processedData[field]);
       } catch (error) {
         if (error instanceof ValidationError) {
-          errors.push(`${field}: ${error.userMessage}`);
+          errors.push(`${String(field)}: ${error.userMessage}`);
         } else {
-          errors.push(`${field}: Validation failed`);
+          errors.push(`${String(field)}: Validation failed`);
         }
       }
     } else if (field in processedData) {
-      results[field as keyof T] = processedData[field as keyof T];
+      results[field] = processedData[field];
     }
   }
 
@@ -79,7 +81,7 @@ export const validateFields = async <T extends Record<string, any>>(
     );
   }
 
-  return { ...processedData, ...results };
+  return { ...processedData, ...results } as T;
 };
 
 // File validation middleware

@@ -157,3 +157,6 @@ export const validateUser = {
   adminCreate: (data: unknown) => adminUserCreateSchema.parse(data),
   roleUpdate: (data: unknown) => userRoleUpdateSchema.parse(data)
 };
+
+// Export as userValidation for backward compatibility
+export const userValidation = validateUser;

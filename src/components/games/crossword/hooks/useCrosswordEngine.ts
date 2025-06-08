@@ -3,8 +3,9 @@ import { useState, useEffect } from 'react';
 import { CrosswordEngine } from '@/business/engines/crossword/CrosswordEngine';
 import { GameError } from '@/infrastructure/errors';
 import { useGameContext } from '@/shared/contexts';
+import type { CrosswordState } from '@/business/engines/crossword/CrosswordEngine';
 
-export interface CrosswordState {
+export interface CrosswordGameState {
   grid: any[][];
   clues: { across: any[]; down: any[] };
   selectedCell: { row: number; col: number } | null;
@@ -17,8 +18,29 @@ export interface CrosswordState {
 
 export function useCrosswordEngine(gameId: string = 'crossword-1') {
   const { currentGame, updateGameState, startGame } = useGameContext();
-  const [engine] = useState(() => new CrosswordEngine('default', 'medium'));
-  const [gameState, setGameState] = useState<CrosswordState>({
+  
+  // Create initial state for CrosswordEngine
+  const initialState: CrosswordState = {
+    puzzle: null,
+    progress: null,
+    selectedCell: null,
+    selectedWord: null,
+    selectedDirection: 'across',
+    showHints: false,
+    isPaused: false,
+    gameStatus: 'loading',
+    id: gameId,
+    status: 'idle',
+    score: 0,
+    moves: 0,
+    startTime: null,
+    endTime: null,
+    isComplete: false,
+    error: null
+  };
+
+  const [engine] = useState(() => new CrosswordEngine(initialState, { difficulty: 'medium', enableHints: true }));
+  const [gameState, setGameState] = useState<CrosswordGameState>({
     grid: [],
     clues: { across: [], down: [] },
     selectedCell: null,
