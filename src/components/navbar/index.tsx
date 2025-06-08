@@ -1,11 +1,14 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, LogOut, Settings, Shield } from 'lucide-react';
+import { Menu, X, User, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ClerkAuthButtons } from '@/components/auth/ClerkAuthButtons';
 import { useUser } from '@clerk/clerk-react';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { mainNavItems, adminNavItems } from './NavbarData';
+import PuzzleDropdown from './PuzzleDropdown';
+import MobileMenu from './MobileMenu';
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,14 +16,12 @@ export const Navbar: React.FC = () => {
   const { isSignedIn, user } = useUser();
   const { hasRole } = useClerkAuth();
 
-  const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/categories', label: 'Categories' },
-    { href: '/puzzles/word-search', label: 'Word Search' },
-    { href: '/support', label: 'Support' },
-  ];
-
   const isActive = (path: string) => location.pathname === path;
+
+  // Filter admin nav items based on user role
+  const accessibleAdminItems = adminNavItems.filter(item => 
+    !item.roles || item.roles.some(role => hasRole(role))
+  );
 
   return (
     <nav className="bg-puzzle-black/95 backdrop-blur-sm border-b border-puzzle-border sticky top-0 z-50">
@@ -37,18 +38,37 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navLinks.map((link) => (
+          <div className="hidden md:flex items-center space-x-6">
+            {mainNavItems.map((item) => (
+              item.name === 'Puzzles' ? (
+                <PuzzleDropdown key={item.name} />
+              ) : (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className={`px-3 py-2 text-sm font-medium transition-colors ${
+                    isActive(item.href)
+                      ? 'text-puzzle-aqua border-b-2 border-puzzle-aqua'
+                      : 'text-puzzle-white hover:text-puzzle-aqua'
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              )
+            ))}
+            
+            {/* Admin links if user has admin role */}
+            {accessibleAdminItems.map((item) => (
               <Link
-                key={link.href}
-                to={link.href}
+                key={item.href}
+                to={item.href}
                 className={`px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive(link.href)
+                  isActive(item.href)
                     ? 'text-puzzle-aqua border-b-2 border-puzzle-aqua'
                     : 'text-puzzle-white hover:text-puzzle-aqua'
                 }`}
               >
-                {link.label}
+                {item.name}
               </Link>
             ))}
           </div>
@@ -90,29 +110,12 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* Mobile Navigation */}
-        {isOpen && (
-          <div className="md:hidden border-t border-puzzle-border">
-            <div className="px-4 py-4 space-y-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  to={link.href}
-                  className={`block px-3 py-2 text-base font-medium transition-colors ${
-                    isActive(link.href)
-                      ? 'text-puzzle-aqua bg-puzzle-gray/20'
-                      : 'text-puzzle-white hover:text-puzzle-aqua hover:bg-puzzle-gray/10'
-                  }`}
-                  onClick={() => setIsOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <div className="pt-4 border-t border-puzzle-border">
-                <ClerkAuthButtons isMobile={true} />
-              </div>
-            </div>
-          </div>
-        )}
+        <MobileMenu 
+          isOpen={isOpen} 
+          navItems={[...mainNavItems, ...accessibleAdminItems]} 
+          isLoggedIn={isSignedIn} 
+          onClose={() => setIsOpen(false)} 
+        />
       </div>
     </nav>
   );
