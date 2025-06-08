@@ -1,18 +1,11 @@
 
 import React from 'react';
 import { SparklesIcon, TrophyIcon, ClockIcon, UsersIcon } from '@heroicons/react/20/solid';
-import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 export const Hero = () => {
-  const {
-    hasRole,
-    isAuthenticated
-  } = useAuth();
-  const showCFOLink = isAuthenticated && (hasRole('super_admin') || hasRole('admin') || hasRole('cfo'));
-  
   return <div className="relative bg-black overflow-hidden">
       <div className="mx-auto max-w-7xl">
         <div className="relative z-10 bg-black pb-8 sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
@@ -142,9 +135,5 @@ export const Hero = () => {
           <div className="absolute bottom-20 left-8 text-lg animate-bounce" style={{ animationDelay: '1s' }}>⚡</div>
         </div>
       </div>
-      
-      {showCFOLink && <div className="absolute top-4 right-4 z-10">
-          
-        </div>}
     </div>;
 };
