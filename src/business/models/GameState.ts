@@ -21,13 +21,19 @@ export interface PlayerStats {
   efficiency?: number;
 }
 
-// Game configuration interface
+// Game configuration interface - aligned with existing GameConfig
 export interface GameConfig {
-  difficulty: 'easy' | 'medium' | 'hard';
+  gameType: string;
+  hasTimer: boolean;
+  hasScore: boolean;
+  hasMoves: boolean;
   timeLimit?: number;
-  hintsEnabled: boolean;
-  soundEnabled: boolean;
-  showGuide: boolean;
+  requiresPayment: boolean;
+  entryFee: number;
+  difficulty: string;
+  hintsEnabled?: boolean;
+  soundEnabled?: boolean;
+  showGuide?: boolean;
 }
 
 // Move validation result

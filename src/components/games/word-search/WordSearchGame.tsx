@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RotateCcw, Play, Clock, Trophy, Coins } from 'lucide-react';
+import { usePayment } from '../hooks/usePayment';
 
 interface WordSearchGameProps {
   difficulty?: 'rookie' | 'pro' | 'master';
@@ -31,6 +32,9 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
   const [gameKey, setGameKey] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
+
+  // Use new payment hook instead of usePaymentVerification
+  const { paymentStatus, isProcessing, processPayment } = usePayment(entryFee);
 
   const gameConfig: GameConfig = {
     gameType: 'word-search',
@@ -93,7 +97,15 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
     setGameKey(prev => prev + 1);
   };
 
-  const handleStartGame = (startGameFn: () => void) => {
+  const handleStartGame = async (startGameFn: () => void) => {
+    // Process payment first if required
+    if (entryFee > 0) {
+      const paymentSuccess = await processPayment(sessionId);
+      if (!paymentSuccess) {
+        return; // Payment failed, don't start game
+      }
+    }
+
     if (gameEngine) {
       gameEngine.start();
       setGameState(gameEngine.getState());
@@ -214,12 +226,10 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
                           Words: {gameState.foundWords.size}/{gameState.words.length}
                         </Badge>
 
-                        {payment && (
-                          <Badge variant="outline" className="text-puzzle-gold border-puzzle-gold">
-                            <Coins className="h-3 w-3 mr-1" />
-                            Available: {payment.paymentStatus?.credits || 0} credits
-                          </Badge>
-                        )}
+                        <Badge variant="outline" className="text-puzzle-gold border-puzzle-gold">
+                          <Coins className="h-3 w-3 mr-1" />
+                          Available: {paymentStatus.credits} credits
+                        </Badge>
                       </div>
                     </div>
 
@@ -242,9 +252,13 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
                       
                       <div className="flex items-end gap-2">
                         {!gameStarted && wrapperState === 'not_started' && (
-                          <Button onClick={() => handleStartGame(startGame)} className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold">
+                          <Button 
+                            onClick={() => handleStartGame(startGame)} 
+                            className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold"
+                            disabled={isProcessing || (!paymentStatus.hasAccess && entryFee > 0)}
+                          >
                             <Play className="h-4 w-4 mr-2" />
-                            Start Game
+                            {isProcessing ? 'Processing...' : 'Start Game'}
                           </Button>
                         )}
                       </div>
