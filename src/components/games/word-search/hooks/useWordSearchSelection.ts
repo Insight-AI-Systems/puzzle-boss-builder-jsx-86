@@ -1,5 +1,6 @@
 
 import { useState, useCallback } from 'react';
+import { cellToString, stringToCell } from '@/business/engines/word-search/utils';
 
 interface Cell {
   row: number;
@@ -8,32 +9,38 @@ interface Cell {
 
 export function useWordSearchSelection() {
   const [isSelecting, setIsSelecting] = useState(false);
-  const [dragStart, setDragStart] = useState<Cell | null>(null);
-  const [currentSelection, setCurrentSelection] = useState<Cell[]>([]);
+  const [dragStart, setDragStart] = useState<string | null>(null);
+  const [currentSelection, setCurrentSelection] = useState<string[]>([]);
 
-  const startSelection = useCallback((cell: Cell) => {
+  const startSelection = useCallback((cell: Cell | string) => {
+    const cellId = typeof cell === 'string' ? cell : cellToString(cell);
     setIsSelecting(true);
-    setDragStart(cell);
-    setCurrentSelection([cell]);
+    setDragStart(cellId);
+    setCurrentSelection([cellId]);
   }, []);
 
-  const updateSelection = useCallback((cell: Cell) => {
+  const updateSelection = useCallback((cell: Cell | string) => {
     if (!isSelecting || !dragStart) return;
 
-    const cellsBetween: Cell[] = [];
-    const rowDiff = Math.abs(cell.row - dragStart.row);
-    const colDiff = Math.abs(cell.col - dragStart.col);
+    const cellId = typeof cell === 'string' ? cell : cellToString(cell);
+    const startCell = stringToCell(dragStart);
+    const endCell = typeof cell === 'string' ? stringToCell(cell) : cell;
+
+    const cellsBetween: string[] = [];
+    const rowDiff = Math.abs(endCell.row - startCell.row);
+    const colDiff = Math.abs(endCell.col - startCell.col);
 
     // Only allow straight lines (horizontal, vertical, diagonal)
-    if (rowDiff <= 1 && colDiff <= 1) {
-      const rowDir = cell.row > dragStart.row ? 1 : cell.row < dragStart.row ? -1 : 0;
-      const colDir = cell.col > dragStart.col ? 1 : cell.col < dragStart.col ? -1 : 0;
+    if (rowDiff === 0 || colDiff === 0 || rowDiff === colDiff) {
+      const rowDir = endCell.row > startCell.row ? 1 : endCell.row < startCell.row ? -1 : 0;
+      const colDir = endCell.col > startCell.col ? 1 : endCell.col < startCell.col ? -1 : 0;
 
-      let currentRow = dragStart.row;
-      let currentCol = dragStart.col;
+      let currentRow = startCell.row;
+      let currentCol = startCell.col;
       
-      while (currentRow !== cell.row + rowDir || currentCol !== cell.col + colDir) {
-        cellsBetween.push({ row: currentRow, col: currentCol });
+      while (currentRow !== endCell.row + rowDir || currentCol !== endCell.col + colDir) {
+        cellsBetween.push(cellToString({ row: currentRow, col: currentCol }));
+        if (currentRow === endCell.row && currentCol === endCell.col) break;
         currentRow += rowDir;
         currentCol += colDir;
       }

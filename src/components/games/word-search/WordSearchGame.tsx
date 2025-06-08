@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -186,7 +185,7 @@ export function WordSearchGame() {
         setGameState(prev => prev ? {
           ...prev,
           foundWords: newFoundWords,
-          selectedCells: [...prev.selectedCells, ...selectedCellStrings],
+          selectedCells: [...prev.selectedCells, ...selection],
           score: newScore,
           moves: prev.moves + 1
         } : null);
@@ -269,8 +268,8 @@ export function WordSearchGame() {
             grid={gameState.grid}
             selectedCells={selectedCellsAsObjects}
             currentSelection={currentSelectionAsObjects}
-            onSelectionStart={(cell) => startSelection(typeof cell === 'object' ? `${cell.row}-${cell.col}` : cell)}
-            onSelectionMove={(cell) => updateSelection(typeof cell === 'object' ? `${cell.row}-${cell.col}` : cell)}
+            onSelectionStart={(cell) => startSelection(cell)}
+            onSelectionMove={(cell) => updateSelection(cell)}
             onSelectionEnd={handleSelectionEnd}
             isDisabled={gameStatus === 'completed'}
           />
