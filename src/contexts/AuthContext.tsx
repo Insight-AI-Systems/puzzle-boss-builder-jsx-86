@@ -70,12 +70,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // If no profile exists, create one
         if (!existingProfile) {
           const profileData = {
-            id: clerkUser.id, // Use Clerk ID as the primary key
             clerk_user_id: clerkUser.id,
             email: clerkUser.primaryEmailAddress?.emailAddress || '',
             username: clerkUser.username || clerkUser.firstName || clerkUser.primaryEmailAddress?.emailAddress?.split('@')[0] || '',
             role: 'player',
-            member_id: clerkUser.id // Use clerk ID as member_id for consistency
+            member_id: crypto.randomUUID() // Generate a unique member_id
           };
 
           const { data: newProfile, error: createError } = await supabase

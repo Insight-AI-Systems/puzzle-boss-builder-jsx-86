@@ -31,11 +31,11 @@ export function useUserProfile(): UserProfileReturn {
       if (!user) return null;
 
       try {
-        console.log('Profile data request for ID:', user.id);
+        console.log('Profile data request for Clerk ID:', user.id);
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', user.id)
+          .eq('clerk_user_id', user.id)
           .single();
 
         if (error) {
@@ -77,10 +77,19 @@ export function useUserProfile(): UserProfileReturn {
 
   const updateUserRole = useMutation({
     mutationFn: async ({ targetUserId, newRole }: { targetUserId: string; newRole: UserRole }) => {
+      // First get the Supabase profile ID from the Clerk user ID
+      const { data: targetProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('clerk_user_id', targetUserId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
       const { data, error } = await supabase
         .from('profiles')
         .update({ role: newRole })
-        .eq('id', targetUserId)
+        .eq('id', targetProfile.id)
         .select()
         .single();
 

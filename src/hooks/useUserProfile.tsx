@@ -16,7 +16,7 @@ export function useUserProfile() {
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', user.id)
+          .eq('clerk_user_id', user.id)
           .single();
 
         if (error && error.code !== 'PGRST116') {

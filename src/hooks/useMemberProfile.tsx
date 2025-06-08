@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,11 +31,11 @@ export function useMemberProfile(userId?: string) {
       try {
         console.log('Fetching profile for user:', targetUserId);
         
-        // Fetch the basic profile
+        // Fetch the basic profile using clerk_user_id
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', targetUserId)
+          .eq('clerk_user_id', targetUserId)
           .single();
 
         if (profileError) {
@@ -45,53 +44,55 @@ export function useMemberProfile(userId?: string) {
 
         console.log('Profile data fetched:', profileData);
 
-        // Fetch wallet information
+        const supabaseProfileId = profileData.id; // This is the actual Supabase profile ID
+
+        // Fetch wallet information using the Supabase profile ID
         const { data: walletData, error: walletError } = await supabase
           .from('user_wallets')
           .select('*')
-          .eq('user_id', targetUserId)
+          .eq('user_id', supabaseProfileId)
           .maybeSingle();
 
         if (walletError) {
           console.error('Error fetching wallet:', walletError);
         }
 
-        // Fetch addresses
+        // Fetch addresses using the Supabase profile ID
         const { data: addressesData, error: addressError } = await supabase
           .from('user_addresses')
           .select('*')
-          .eq('member_id', targetUserId);
+          .eq('member_id', supabaseProfileId);
 
         if (addressError) {
           console.error('Error fetching addresses:', addressError);
         }
 
-        // Fetch Xero mapping
+        // Fetch Xero mapping using the Supabase profile ID
         const { data: xeroMappingData, error: xeroError } = await supabase
           .from('xero_user_mappings')
           .select('*')
-          .eq('user_id', targetUserId)
+          .eq('user_id', supabaseProfileId)
           .maybeSingle();
 
         if (xeroError) {
           console.error('Error fetching Xero mapping:', xeroError);
         }
 
-        // Fetch membership details
+        // Fetch membership details using the Supabase profile ID
         const { data: membershipDetailsData, error: membershipError } = await supabase
           .from('user_membership_details')
           .select('*')
-          .eq('member_id', targetUserId)
+          .eq('member_id', supabaseProfileId)
           .maybeSingle();
 
         if (membershipError) {
           console.error('Error fetching membership details:', membershipError);
         }
 
-        // Get financial summary
+        // Get financial summary using the Supabase profile ID
         const { data: financialSummary, error: financialError } = await supabase.rpc(
           'get_member_financial_summary',
-          { member_id_param: targetUserId }
+          { member_id_param: supabaseProfileId }
         );
 
         if (financialError) {
@@ -140,16 +141,25 @@ export function useMemberProfile(userId?: string) {
     enabled: !!targetUserId,
   });
 
-  // Update profile mutation - Updated to include username
+  // Update profile mutation - Uses the Supabase profile ID for updates
   const updateProfile = useMutation({
     mutationFn: async (profileData: Partial<MemberDetailedProfile>) => {
       if (!targetUserId) throw new Error('No user ID provided');
+
+      // First get the Supabase profile ID
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('clerk_user_id', targetUserId)
+        .single();
+
+      if (fetchError) throw fetchError;
 
       const { data, error } = await supabase
         .from('profiles')
         .update({
           full_name: profileData.full_name,
-          username: profileData.username, // Added username field
+          username: profileData.username,
           bio: profileData.bio,
           phone: profileData.phone,
           date_of_birth: profileData.date_of_birth,
@@ -159,7 +169,7 @@ export function useMemberProfile(userId?: string) {
           terms_accepted_at: profileData.terms_accepted_at,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', targetUserId)
+        .eq('id', existingProfile.id)
         .select();
 
       if (error) throw error;
@@ -182,10 +192,21 @@ export function useMemberProfile(userId?: string) {
     },
   });
 
-  // Add/update address mutation
+  // Add/update address mutation - Uses the Supabase profile ID
   const upsertAddress = useMutation({
     mutationFn: async (address: Partial<MemberAddress> & { id?: string }) => {
       if (!targetUserId) throw new Error('No user ID provided');
+
+      // First get the Supabase profile ID
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('clerk_user_id', targetUserId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const supabaseProfileId = existingProfile.id;
 
       // If we have an ID, update existing address
       if (address.id) {
@@ -202,7 +223,7 @@ export function useMemberProfile(userId?: string) {
             country: address.country,
           })
           .eq('id', address.id)
-          .eq('member_id', targetUserId)
+          .eq('member_id', supabaseProfileId)
           .select();
 
         if (error) throw error;
@@ -213,8 +234,8 @@ export function useMemberProfile(userId?: string) {
         const { data, error } = await supabase
           .from('user_addresses')
           .insert({
-            user_id: targetUserId,
-            member_id: targetUserId, // Add required member_id field
+            user_id: supabaseProfileId,
+            member_id: supabaseProfileId,
             address_type: address.address_type,
             is_default: address.is_default,
             address_line1: address.address_line1,
@@ -246,16 +267,25 @@ export function useMemberProfile(userId?: string) {
     },
   });
 
-  // Delete address mutation
+  // Delete address mutation - Uses the Supabase profile ID
   const deleteAddress = useMutation({
     mutationFn: async (addressId: string) => {
       if (!targetUserId) throw new Error('No user ID provided');
+
+      // First get the Supabase profile ID
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('clerk_user_id', targetUserId)
+        .single();
+
+      if (fetchError) throw fetchError;
 
       const { error } = await supabase
         .from('user_addresses')
         .delete()
         .eq('id', addressId)
-        .eq('member_id', targetUserId);
+        .eq('member_id', existingProfile.id);
 
       if (error) throw error;
       return true;
@@ -276,10 +306,19 @@ export function useMemberProfile(userId?: string) {
     },
   });
 
-  // Accept terms mutation
+  // Accept terms mutation - Uses the Supabase profile ID
   const acceptTerms = useMutation({
     mutationFn: async () => {
       if (!targetUserId) throw new Error('No user ID provided');
+
+      // First get the Supabase profile ID
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('clerk_user_id', targetUserId)
+        .single();
+
+      if (fetchError) throw fetchError;
 
       const { data, error } = await supabase
         .from('profiles')
@@ -287,7 +326,7 @@ export function useMemberProfile(userId?: string) {
           terms_accepted: true,
           terms_accepted_at: new Date().toISOString(),
         })
-        .eq('id', targetUserId)
+        .eq('id', existingProfile.id)
         .select();
 
       if (error) throw error;
@@ -309,13 +348,22 @@ export function useMemberProfile(userId?: string) {
     },
   });
 
-  // Award credits mutation (admin only) - Enhanced with better error handling and logging
+  // Award credits mutation (admin only) - Uses the Supabase profile ID
   const awardCredits = useMutation({
     mutationFn: async ({ targetUserId, credits, adminNote }: { targetUserId: string; credits: number; adminNote?: string }) => {
       console.log('Awarding credits:', { targetUserId, credits, adminNote });
       
+      // First get the Supabase profile ID from the Clerk user ID
+      const { data: targetProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('clerk_user_id', targetUserId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
       const { error } = await supabase.rpc('award_credits', {
-        target_user_id: targetUserId,
+        target_user_id: targetProfile.id, // Use the Supabase profile ID
         credits_to_add: credits,
         admin_note: adminNote || null
       });
