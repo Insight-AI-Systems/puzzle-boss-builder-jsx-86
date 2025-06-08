@@ -4,7 +4,7 @@ export interface PlacedWord {
   startRow: number;
   startCol: number;
   direction: 'horizontal' | 'vertical' | 'diagonal';
-  cells: string[];
+  cells: Cell[];
 }
 
 export interface Cell {

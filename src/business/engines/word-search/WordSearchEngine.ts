@@ -352,11 +352,10 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
   private getSelectedWord(): string {
     if (this.gameState.currentSelection.length === 0) return '';
     
-    return this.gameState.currentSelection
-      .map(cellId => {
-        const [row, col] = cellId.split('-').map(Number);
-        return this.gameState.grid[row][col];
-      })
+    // Convert string cell IDs to coordinates and get letters
+    const cellCoordinates = stringsToCells(this.gameState.currentSelection);
+    return cellCoordinates
+      .map(cell => this.gameState.grid[cell.row][cell.col])
       .join('');
   }
 

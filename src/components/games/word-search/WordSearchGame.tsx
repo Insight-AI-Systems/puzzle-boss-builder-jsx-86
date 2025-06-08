@@ -16,7 +16,7 @@ import { useGamePersistence } from '../hooks/useGamePersistence';
 import { useLeaderboardSubmission } from '../hooks/useLeaderboardSubmission';
 import { WordSelectionValidator } from './WordSelectionValidator';
 import { Cell } from '@/business/engines/word-search/types';
-import { stringsToCells } from '@/business/engines/word-search/utils';
+import { stringsToCells, cellsToStrings } from '@/business/engines/word-search/utils';
 
 export function WordSearchGame() {
   const { user } = useAuth();
@@ -184,7 +184,7 @@ export function WordSearchGame() {
         setGameState(prev => prev ? {
           ...prev,
           foundWords: newFoundWords,
-          selectedCells: [...prev.selectedCells, ...selection],
+          selectedCells: [...prev.selectedCells, ...cellsToStrings(cellCoords)],
           score: newScore,
           moves: prev.moves + 1
         } : null);
