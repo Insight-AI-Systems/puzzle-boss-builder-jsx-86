@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ClerkAuthButtons } from '@/components/auth/ClerkAuthButtons';
 import { useUser } from '@clerk/clerk-react';
@@ -109,15 +109,6 @@ export const Navbar: React.FC = () => {
             {/* Auth Buttons */}
             <div className="hidden md:flex items-center space-x-4">
               <ClerkAuthButtons />
-              {/* Account link */}
-              {isSignedIn && (
-                <Link
-                  to="/account"
-                  className="text-puzzle-white hover:text-puzzle-aqua transition-colors"
-                >
-                  <User className="h-5 w-5" />
-                </Link>
-              )}
             </div>
 
             {/* Mobile menu button */}
