@@ -14,12 +14,12 @@ export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { isSignedIn, user } = useUser();
-  const { hasRole } = useClerkAuth();
+  const { hasRole, isAdmin } = useClerkAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Filter admin nav items based on user role
-  const accessibleAdminItems = adminNavItems.filter(item => 
+  // Filter admin nav items based on user role - show all admin items if user is admin
+  const accessibleAdminItems = isAdmin ? adminNavItems : adminNavItems.filter(item => 
     !item.roles || item.roles.some(role => hasRole(role))
   );
 
@@ -86,9 +86,9 @@ export const Navbar: React.FC = () => {
               </Link>
             )}
             {/* Show admin link if user has admin role */}
-            {hasRole('admin') && (
+            {isAdmin && (
               <Link
-                to="/admin"
+                to="/admin-dashboard"
                 className="text-puzzle-white hover:text-puzzle-aqua transition-colors"
               >
                 <Shield className="h-5 w-5" />
