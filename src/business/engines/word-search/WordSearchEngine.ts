@@ -3,6 +3,7 @@ import { GameEngine } from '../GameEngine';
 import { BaseGameState, GameConfig, MoveValidationResult, WinConditionResult, GameEvent } from '../../models/GameState';
 import { PlacedWord, Cell } from './types';
 import { cellsToStrings, stringsToCells } from './utils';
+import { WordPlacementEngine } from '../../../components/games/word-search/WordPlacementEngine';
 
 // Word search specific state
 export interface WordSearchState extends BaseGameState {
@@ -35,21 +36,47 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     
     // Generate word list based on difficulty
     const words = this.generateWordList();
+    console.log('Generated words:', words);
     
     // Create empty grid
-    const grid = this.createEmptyGrid();
+    const gridSize = this.getGridSize();
+    const emptyGrid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(''));
     
-    // Place words in grid
-    this.placeWordsInGrid(grid, words);
+    // CRITICAL FIX: Use WordPlacementEngine to place words in grid
+    console.log('Placing words in grid using WordPlacementEngine...');
+    this.placedWords = WordPlacementEngine.placeWords(words, emptyGrid);
     
-    // Fill empty cells with random letters
-    this.fillEmptyCells(grid);
+    // Verify word placement
+    console.log('Words successfully placed:', this.placedWords.length);
+    console.log('Placed words details:', this.placedWords.map(pw => ({ 
+      word: pw.word, 
+      direction: pw.direction, 
+      start: `${pw.startRow}-${pw.startCol}` 
+    })));
     
-    // Update initial state
+    // Ensure minimum words are placed
+    if (this.placedWords.length === 0) {
+      console.error('CRITICAL: No words were placed in the grid!');
+      // Try with a simpler word list as fallback
+      const simpleWords = ['CAT', 'DOG', 'SUN'];
+      this.placedWords = WordPlacementEngine.placeWords(simpleWords, emptyGrid);
+      if (this.placedWords.length === 0) {
+        throw new Error('Failed to place any words in the grid');
+      }
+    }
+    
+    // Fill remaining empty cells with random letters
+    this.fillEmptyCells(emptyGrid);
+    
+    // Verify grid is populated
+    console.log('Grid populated. Sample row:', emptyGrid[0]);
+    console.log('Grid contains letters:', emptyGrid.flat().some(cell => cell !== ''));
+    
+    // Update initial state with populated grid and placed words
     this.updateGameState({
       ...this.gameState,
-      grid,
-      words,
+      grid: emptyGrid, // Now contains actual letters
+      words: this.placedWords.map(pw => pw.word), // Use successfully placed words
       foundWords: new Set<string>(),
       selectedCells: [],
       currentSelection: [],
@@ -57,7 +84,8 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       hintsUsed: 0
     });
 
-    console.log('Word Search Engine initialized with', words.length, 'words');
+    console.log('Word Search Engine initialized with', this.placedWords.length, 'words');
+    console.log('Final game state words:', this.gameState.words);
   }
 
   start(): void {
@@ -200,110 +228,30 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     return difficultyWords[this.gameState.difficulty] || difficultyWords.rookie;
   }
 
-  private createEmptyGrid(): string[][] {
-    const size = 10;
-    return Array(size).fill(null).map(() => Array(size).fill(''));
-  }
-
-  private placeWordsInGrid(grid: string[][], words: string[]): void {
-    this.placedWords = [];
+  private getGridSize(): number {
+    const sizeMap = {
+      rookie: 10,
+      pro: 12,
+      master: 15
+    };
     
-    for (const word of words) {
-      const placement = this.findWordPlacement(grid, word);
-      if (placement) {
-        this.placedWords.push(placement);
-        this.placeWordInGrid(grid, placement);
-      }
-    }
-  }
-
-  private findWordPlacement(grid: string[][], word: string): PlacedWord | null {
-    const directions = ['horizontal', 'vertical', 'diagonal'] as const;
-    const size = grid.length;
-    
-    for (let attempts = 0; attempts < 100; attempts++) {
-      const direction = directions[Math.floor(Math.random() * directions.length)];
-      const startRow = Math.floor(Math.random() * size);
-      const startCol = Math.floor(Math.random() * size);
-      
-      if (this.canPlaceWord(grid, word, startRow, startCol, direction)) {
-        const cells = this.getWordCells(startRow, startCol, word.length, direction);
-        return {
-          word,
-          startRow,
-          startCol,
-          direction,
-          cells
-        };
-      }
-    }
-    
-    return null;
-  }
-
-  private canPlaceWord(grid: string[][], word: string, startRow: number, startCol: number, direction: string): boolean {
-    const size = grid.length;
-    const { rowDir, colDir } = this.getDirection(direction);
-    
-    for (let i = 0; i < word.length; i++) {
-      const row = startRow + i * rowDir;
-      const col = startCol + i * colDir;
-      
-      if (row < 0 || row >= size || col < 0 || col >= size) {
-        return false;
-      }
-      
-      if (grid[row][col] !== '' && grid[row][col] !== word[i]) {
-        return false;
-      }
-    }
-    
-    return true;
-  }
-
-  private placeWordInGrid(grid: string[][], placement: PlacedWord): void {
-    const { word, startRow, startCol, direction } = placement;
-    const { rowDir, colDir } = this.getDirection(direction);
-    
-    for (let i = 0; i < word.length; i++) {
-      const row = startRow + i * rowDir;
-      const col = startCol + i * colDir;
-      grid[row][col] = word[i];
-    }
-  }
-
-  private getDirection(direction: string): { rowDir: number; colDir: number } {
-    switch (direction) {
-      case 'horizontal': return { rowDir: 0, colDir: 1 };
-      case 'vertical': return { rowDir: 1, colDir: 0 };
-      case 'diagonal': return { rowDir: 1, colDir: 1 };
-      default: return { rowDir: 0, colDir: 1 };
-    }
-  }
-
-  private getWordCells(startRow: number, startCol: number, length: number, direction: string): Cell[] {
-    const { rowDir, colDir } = this.getDirection(direction);
-    const cells: Cell[] = [];
-    
-    for (let i = 0; i < length; i++) {
-      const row = startRow + i * rowDir;
-      const col = startCol + i * colDir;
-      cells.push({ row, col });
-    }
-    
-    return cells;
+    return sizeMap[this.gameState.difficulty] || 10;
   }
 
   private fillEmptyCells(grid: string[][]): void {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let cellsFilled = 0;
     
     for (let row = 0; row < grid.length; row++) {
       for (let col = 0; col < grid[row].length; col++) {
         if (grid[row][col] === '') {
           grid[row][col] = letters[Math.floor(Math.random() * letters.length)];
+          cellsFilled++;
         }
       }
     }
+    
+    console.log('Filled', cellsFilled, 'empty cells with random letters');
   }
 
   private validateSelection(): MoveValidationResult {
@@ -409,6 +357,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
   }
 
   public getPlacedWords(): PlacedWord[] {
+    console.log('Getting placed words for validator:', this.placedWords.length);
     return this.placedWords;
   }
 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -42,6 +43,8 @@ export function WordSearchGame() {
   useEffect(() => {
     const initializeGame = async () => {
       try {
+        console.log('Initializing Word Search Game...');
+        
         const initialState: WordSearchState = {
           id: `word-search-${Date.now()}`,
           status: 'idle',
@@ -79,9 +82,19 @@ export function WordSearchGame() {
           }
         });
 
+        console.log('Calling engine.initialize()...');
         await wordSearchEngine.initialize();
+        
         setEngine(wordSearchEngine);
-        setGameState(wordSearchEngine.getState());
+        const newGameState = wordSearchEngine.getState();
+        setGameState(newGameState);
+        
+        console.log('Game state after initialization:', {
+          gridSize: newGameState.grid.length,
+          wordsCount: newGameState.words.length,
+          gridSample: newGameState.grid[0]?.slice(0, 5),
+          words: newGameState.words
+        });
         
         if (entryFee > 0 && !paymentStatus.hasAccess) {
           setGameStatus('payment');
@@ -92,11 +105,16 @@ export function WordSearchGame() {
       } catch (error) {
         console.error('Failed to initialize game:', error);
         setGameStatus('error');
+        toast({
+          title: "Game Error",
+          description: "Failed to initialize the game. Please try again.",
+          variant: "destructive"
+        });
       }
     };
 
     initializeGame();
-  }, [entryFee, paymentStatus.hasAccess]);
+  }, [entryFee, paymentStatus.hasAccess, toast]);
 
   // Update game state when engine changes
   useEffect(() => {
@@ -110,8 +128,14 @@ export function WordSearchGame() {
   // Initialize validator when engine is ready
   useEffect(() => {
     if (engine && gameState) {
+      console.log('Setting up validator...');
       const placedWords = engine.getPlacedWords();
-      setValidator(new WordSelectionValidator(placedWords, gameState.grid));
+      console.log('Validator receiving placed words:', placedWords.length);
+      console.log('Validator placed words details:', placedWords.map(pw => pw.word));
+      
+      const newValidator = new WordSelectionValidator(placedWords, gameState.grid);
+      setValidator(newValidator);
+      console.log('Validator initialized successfully');
     }
   }, [engine, gameState]);
 
@@ -163,19 +187,20 @@ export function WordSearchGame() {
     const selection = endSelection();
     if (engine && gameState && selection.length > 0 && validator) {
       
+      console.log('Handling selection end:', selection);
+      
       // Convert string cell IDs to Cell objects for validation
       const cellCoords: Cell[] = stringsToCells(selection);
+      console.log('Cell coordinates for validation:', cellCoords);
       
       // Validate the selection
       const result = validator.validateSelection(cellCoords);
+      console.log('Validation result:', result);
       
       if (result.isValid && result.word) {
         // Valid word found
         const newFoundWords = new Set([...gameState.foundWords, result.word]);
         const newScore = gameState.score + result.word.length * 10;
-        
-        // Convert Cell objects back to string format for state
-        const selectedCellStrings = cellsToStrings(cellCoords);
         
         engine.makeMove({ 
           type: 'SELECT_CELLS', 
