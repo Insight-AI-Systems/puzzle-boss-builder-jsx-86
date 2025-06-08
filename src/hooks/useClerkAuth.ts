@@ -2,7 +2,6 @@
 import { useUser, useClerk } from '@clerk/clerk-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { UserRole } from '@/types/userTypes';
 
 export const useClerkAuth = () => {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -31,11 +30,11 @@ export const useClerkAuth = () => {
   });
 
   // Get user roles from Clerk metadata or Supabase
-  const userRoles = user?.publicMetadata?.roles as string[] || ['player'];
-  const userRole = userRoles[0] as UserRole || 'player';
+  const userRoles = (user?.publicMetadata?.roles as string[]) || ['player'];
+  const userRole = userRoles[0] || 'player';
 
   // Role checking functions
-  const hasRole = (role: UserRole): boolean => {
+  const hasRole = (role: string): boolean => {
     return userRoles.includes(role) || userRole === 'super_admin';
   };
 
