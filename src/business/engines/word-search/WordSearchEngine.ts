@@ -12,6 +12,7 @@ export interface WordSearchState extends BaseGameState {
   foundWords: Set<string>;
   selectedCells: string[]; // Keep as string[] for internal consistency
   currentSelection: string[]; // Keep as string[] for internal consistency
+  hintCells: string[]; // Add hint cells to engine state
   difficulty: 'rookie' | 'pro' | 'master';
   timeElapsed: number;
   hintsUsed: number;
@@ -21,6 +22,7 @@ export interface WordSearchState extends BaseGameState {
 export type WordSearchMove = 
   | { type: 'SELECT_CELLS'; cells: Cell[] }
   | { type: 'VALIDATE_SELECTION' }
+  | { type: 'WORD_FOUND'; word: string; cells: string[] }
   | { type: 'HINT' };
 
 export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove> {
@@ -80,6 +82,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       foundWords: new Set<string>(),
       selectedCells: [],
       currentSelection: [],
+      hintCells: [],
       timeElapsed: 0,
       hintsUsed: 0
     });
@@ -145,6 +148,23 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       case 'VALIDATE_SELECTION':
         return this.validateSelection();
       
+      case 'WORD_FOUND':
+        // Validate that the word exists and hasn't been found yet
+        const isValidWord = this.gameState.words.includes(move.word) && 
+                           !this.gameState.foundWords.has(move.word);
+        return {
+          isValid: isValidWord,
+          newState: isValidWord ? {
+            ...this.gameState,
+            foundWords: new Set([...this.gameState.foundWords, move.word]),
+            selectedCells: [...this.gameState.selectedCells, ...move.cells],
+            currentSelection: [],
+            hintCells: [], // Clear hints when word is found
+            score: this.gameState.score + move.word.length * 10
+          } : undefined,
+          scoreChange: isValidWord ? move.word.length * 10 : 0
+        };
+      
       case 'HINT':
         return { isValid: this.gameState.hintsUsed < 3 }; // Max 3 hints
       
@@ -175,6 +195,24 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
         this.processSelection();
         break;
       
+      case 'WORD_FOUND':
+        if (validation.newState) {
+          this.updateGameState(validation.newState);
+          
+          // Check win condition after word found
+          const winCheck = this.checkWinCondition();
+          if (winCheck.isWin) {
+            this.handleGameComplete();
+          }
+          
+          this.emitEvent({
+            type: 'WORD_FOUND',
+            word: move.word,
+            timestamp: Date.now()
+          });
+        }
+        break;
+      
       case 'HINT':
         this.provideHint();
         break;
@@ -200,6 +238,48 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       completionPercentage,
       finalScore: this.gameState.score
     };
+  }
+
+  // New method to validate selection and return word if found
+  validateWordSelection(cellStrings: string[]): { isValid: boolean; word?: string } {
+    if (cellStrings.length === 0) return { isValid: false };
+    
+    // Convert string cell IDs to coordinates and get letters
+    const cellCoordinates = stringsToCells(cellStrings);
+    const selectedWord = cellCoordinates
+      .map(cell => this.gameState.grid[cell.row][cell.col])
+      .join('');
+    
+    // Check if it's a valid word that hasn't been found yet
+    const isValidWord = this.gameState.words.includes(selectedWord) && 
+                       !this.gameState.foundWords.has(selectedWord);
+    
+    return {
+      isValid: isValidWord,
+      word: isValidWord ? selectedWord : undefined
+    };
+  }
+
+  // Method to get current hint cells
+  getHintCells(): string[] {
+    return this.gameState.hintCells || [];
+  }
+
+  // Method to save game state for persistence
+  getGameStateForSave() {
+    return {
+      ...this.gameState,
+      placedWords: this.placedWords // Include placed words for restoration
+    };
+  }
+
+  // Method to restore game state from save
+  restoreGameState(savedState: any) {
+    this.placedWords = savedState.placedWords || [];
+    this.updateGameState({
+      ...savedState,
+      foundWords: new Set(Array.from(savedState.foundWords || [])) // Ensure Set conversion
+    });
   }
 
   private startTimer(): void {
@@ -264,6 +344,8 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
           ...this.gameState,
           foundWords: new Set([...this.gameState.foundWords, selectedWord]),
           selectedCells: [...this.gameState.selectedCells, ...this.gameState.currentSelection],
+          currentSelection: [],
+          hintCells: [], // Clear hints when word is found
           score: this.gameState.score + selectedWord.length * 10
         },
         scoreChange: selectedWord.length * 10
@@ -316,12 +398,12 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     const wordPlacement = this.placedWords.find(p => p.word === randomWord);
     
     if (wordPlacement && wordPlacement.cells.length > 0) {
-      // Highlight the first letter of the word
-      const firstCell = wordPlacement.cells[0];
-      const cellId = `${firstCell.row}-${firstCell.col}`;
+      // Highlight the entire word as hint
+      const hintCellStrings = cellsToStrings(wordPlacement.cells);
       this.updateGameState({
         ...this.gameState,
-        currentSelection: [cellId],
+        hintCells: hintCellStrings,
+        currentSelection: [],
         hintsUsed: this.gameState.hintsUsed + 1
       });
       
