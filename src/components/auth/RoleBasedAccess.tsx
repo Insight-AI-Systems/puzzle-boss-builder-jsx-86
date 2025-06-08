@@ -23,7 +23,7 @@ export const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
   fallback = null,
 }) => {
   const { user, hasRole, isAdmin } = useAuth();
-  const { hasPermission, hasAllPermissions, hasAnyPermission } = usePermissions();
+  const { hasAllPermissions, hasAnyPermission } = usePermissions();
 
   // Add enhanced debugging
   useEffect(() => {

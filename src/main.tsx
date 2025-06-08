@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -76,17 +75,15 @@ class ErrorFallback extends React.Component<{children: React.ReactNode}, {hasErr
 
 const AppContent = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <GameProvider>
-        <BrowserRouter>
-          <Toaster />
-          <App />
-          {process.env.NODE_ENV === 'development' && (
-            <ReactQueryDevtools initialIsOpen={false} />
-          )}
-        </BrowserRouter>
-      </GameProvider>
-    </AuthProvider>
+    <GameProvider>
+      <BrowserRouter>
+        <Toaster />
+        <App />
+        {process.env.NODE_ENV === 'development' && (
+          <ReactQueryDevtools initialIsOpen={false} />
+        )}
+      </BrowserRouter>
+    </GameProvider>
   </QueryClientProvider>
 );
 
@@ -113,7 +110,9 @@ root.render(
             },
           }}
         >
-          <AppContent />
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
         </ClerkProvider>
       ) : (
         <AppContent />
@@ -121,4 +120,3 @@ root.render(
     </ErrorFallback>
   </React.StrictMode>
 );
-

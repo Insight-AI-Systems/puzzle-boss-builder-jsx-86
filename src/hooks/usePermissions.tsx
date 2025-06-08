@@ -8,8 +8,8 @@ export const usePermissions = () => {
   const checkPermission = (permission: string): boolean => {
     if (!user) return false;
     
-    // Get the user's role, either from the user object or from the auth context
-    const currentRole = (user as any)?.role || userRole as UserRole;
+    // Get the user's role
+    const currentRole = userRole as UserRole;
     
     // Super admin has all permissions
     if (currentRole === 'super_admin') return true;
@@ -17,6 +17,18 @@ export const usePermissions = () => {
     // Check if the user's role has the specific permission
     const roleDefinition = ROLE_DEFINITIONS[currentRole];
     return roleDefinition?.permissions.includes(permission) || false;
+  };
+
+  const hasPermission = (permission: string): boolean => {
+    return checkPermission(permission);
+  };
+
+  const hasAllPermissions = (permissions: string[]): boolean => {
+    return permissions.every(permission => checkPermission(permission));
+  };
+
+  const hasAnyPermission = (permissions: string[]): boolean => {
+    return permissions.some(permission => checkPermission(permission));
   };
 
   const canManageUsers = (): boolean => checkPermission('manage_users');
@@ -29,6 +41,9 @@ export const usePermissions = () => {
 
   return {
     checkPermission,
+    hasPermission,
+    hasAllPermissions,
+    hasAnyPermission,
     canManageUsers,
     canManageRoles,
     canManagePuzzles,
@@ -40,4 +55,3 @@ export const usePermissions = () => {
     hasRole,
   };
 };
-

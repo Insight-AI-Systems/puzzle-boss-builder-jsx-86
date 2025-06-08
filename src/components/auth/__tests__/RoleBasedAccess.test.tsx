@@ -2,7 +2,8 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { RoleBasedAccess } from '../RoleBasedAccess';
-import { AuthContext, AuthContextType } from '@/contexts/AuthContext';
+import { AuthContext } from '@/contexts/AuthContext';
+import type { AuthContextType } from '@/contexts/AuthContext';
 
 const mockAuthContext = (overrides: Partial<AuthContextType> = {}): AuthContextType => ({
   user: null,
@@ -40,7 +41,7 @@ describe('RoleBasedAccess', () => {
     });
 
     renderWithAuth(
-      <RoleBasedAccess requiredRole="admin">
+      <RoleBasedAccess allowedRoles={['admin']}>
         <div>Admin content</div>
       </RoleBasedAccess>,
       authValue
@@ -58,7 +59,7 @@ describe('RoleBasedAccess', () => {
     });
 
     renderWithAuth(
-      <RoleBasedAccess requiredRole="admin">
+      <RoleBasedAccess allowedRoles={['admin']}>
         <div>Admin content</div>
       </RoleBasedAccess>,
       authValue
@@ -76,7 +77,7 @@ describe('RoleBasedAccess', () => {
     });
 
     renderWithAuth(
-      <RoleBasedAccess requiredRole="admin">
+      <RoleBasedAccess allowedRoles={['admin']}>
         <div>Admin content</div>
       </RoleBasedAccess>,
       authValue
@@ -85,4 +86,3 @@ describe('RoleBasedAccess', () => {
     expect(screen.queryByText('Admin content')).not.toBeInTheDocument();
   });
 });
-
