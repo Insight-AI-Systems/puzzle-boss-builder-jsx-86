@@ -11,9 +11,17 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   userRole: UserRole | null;
+  userRoles: string[];
   isAdmin: boolean;
+  rolesLoaded: boolean;
   error: AuthError | Error | null;
   clearAuthError: () => void;
+  hasRole: (role: string) => boolean;
+  signIn: (email: string, password: string, options?: { rememberMe?: boolean }) => Promise<void>;
+  signUp: (email: string, password: string, metadata?: { username?: string; acceptTerms?: boolean }) => Promise<void>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,8 +34,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [userRoles, setUserRoles] = useState<string[]>([]);
+  const [rolesLoaded, setRolesLoaded] = useState(false);
   const [error, setError] = useState<AuthError | Error | null>(null);
+  const [lastAuthAttempt, setLastAuthAttempt] = useState<number>(0);
   const { toast } = useToast();
+
+  const MIN_TIME_BETWEEN_AUTH_ATTEMPTS = 2000;
 
   // Force loading to stop after timeout
   useEffect(() => {
@@ -35,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (isLoading) {
         console.warn('Auth loading timeout reached, forcing completion');
         setIsLoading(false);
+        setRolesLoaded(true);
       }
     }, LOADING_TIMEOUT);
 
@@ -95,17 +109,295 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         const role = await Promise.race([rolePromise, timeoutPromise]);
         setUserRole(role);
+        setUserRoles([role]);
+        setRolesLoaded(true);
       } else {
         setUserRole(null);
+        setUserRoles([]);
+        setRolesLoaded(true);
       }
     } catch (err) {
       console.error('Error in auth state change:', err);
       setError(err as Error);
       // Don't block loading on errors
       setUserRole('player');
+      setUserRoles(['player']);
+      setRolesLoaded(true);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Sign in with email and password
+  const signIn = async (email: string, password: string, options?: { rememberMe?: boolean }) => {
+    try {
+      // Rate limiting check
+      const now = Date.now();
+      if (now - lastAuthAttempt < MIN_TIME_BETWEEN_AUTH_ATTEMPTS) {
+        const errorMsg = 'Please wait before trying again';
+        setError(new Error(errorMsg));
+        toast({
+          title: 'Rate limited',
+          description: 'Please wait a moment before trying again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      setLastAuthAttempt(now);
+      
+      // Attempt sign in
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      });
+      
+      if (error) {
+        console.error('Sign in error:', error);
+        setError(error);
+        toast({
+          title: 'Authentication failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      console.log('Sign in successful:', data);
+      
+      // Clear any previous errors
+      setError(null);
+      
+      // Success toast
+      toast({
+        title: 'Welcome back!',
+        description: 'You have successfully signed in.',
+      });
+    } catch (error) {
+      console.error('Exception during sign in:', error);
+      setError(error as Error);
+      toast({
+        title: 'Authentication error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Sign up with email and password
+  const signUp = async (email: string, password: string, metadata?: { username?: string; acceptTerms?: boolean }) => {
+    try {
+      // Rate limiting check
+      const now = Date.now();
+      if (now - lastAuthAttempt < MIN_TIME_BETWEEN_AUTH_ATTEMPTS) {
+        const errorMsg = 'Please wait before trying again';
+        setError(new Error(errorMsg));
+        toast({
+          title: 'Rate limited',
+          description: 'Please wait a moment before trying again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      setLastAuthAttempt(now);
+      
+      const redirectUrl = `${window.location.origin}/`;
+      
+      // Attempt sign up
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            ...metadata,
+            display_name: metadata?.username || email.split('@')[0],
+          },
+        },
+      });
+      
+      if (error) {
+        console.error('Sign up error:', error);
+        setError(error);
+        toast({
+          title: 'Registration failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      console.log('Sign up successful:', data);
+      
+      // Clear any previous errors
+      setError(null);
+      
+      // Check if email confirmation is required
+      if (data.user && data.user.identities && data.user.identities.length === 0) {
+        toast({
+          title: 'Account already exists',
+          description: 'This email address is already registered. Please sign in.',
+        });
+        return;
+      }
+      
+      if (data.user && !data.session) {
+        toast({
+          title: 'Verification required',
+          description: 'Please check your email to verify your account.',
+        });
+      } else if (data.user) {
+        toast({
+          title: 'Welcome!',
+          description: 'Your account has been created successfully.',
+        });
+      }
+    } catch (error) {
+      console.error('Exception during sign up:', error);
+      setError(error as Error);
+      toast({
+        title: 'Registration error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Sign out
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Sign out error:', error);
+        setError(error);
+        toast({
+          title: 'Sign out failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Clear any previous errors
+      setError(null);
+      
+      toast({
+        title: 'Signed out',
+        description: 'You have been successfully signed out.',
+      });
+    } catch (error) {
+      console.error('Exception during sign out:', error);
+      setError(error as Error);
+      toast({
+        title: 'Sign out error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Reset password request
+  const resetPassword = async (email: string) => {
+    try {
+      // Rate limiting check
+      const now = Date.now();
+      if (now - lastAuthAttempt < MIN_TIME_BETWEEN_AUTH_ATTEMPTS) {
+        const errorMsg = 'Please wait before trying again';
+        setError(new Error(errorMsg));
+        toast({
+          title: 'Rate limited',
+          description: 'Please wait a moment before trying again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      setLastAuthAttempt(now);
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth?type=recovery`,
+      });
+      
+      if (error) {
+        console.error('Password reset request error:', error);
+        setError(error);
+        toast({
+          title: 'Password reset failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Clear any previous errors
+      setError(null);
+      
+      toast({
+        title: 'Password reset email sent',
+        description: 'Check your email for the password reset link.',
+      });
+    } catch (error) {
+      console.error('Exception during password reset request:', error);
+      setError(error as Error);
+      toast({
+        title: 'Password reset error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Update password after reset
+  const updatePassword = async (password: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password,
+      });
+      
+      if (error) {
+        console.error('Password update error:', error);
+        setError(error);
+        toast({
+          title: 'Password update failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Clear any previous errors
+      setError(null);
+      
+      toast({
+        title: 'Password updated',
+        description: 'Your password has been updated successfully.',
+      });
+    } catch (error) {
+      console.error('Exception during password update:', error);
+      setError(error as Error);
+      toast({
+        title: 'Password update error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Check if user has a specific role
+  const hasRole = (role: string): boolean => {
+    if (!rolesLoaded || !userRole) return false;
+    
+    // Direct role match
+    if (userRole === role) return true;
+    
+    // Admin roles have access to lower roles
+    if (userRole === 'super_admin') return true;
+    if (userRole === 'admin' && role === 'player') return true;
+    
+    // Check if role exists in userRoles array
+    return userRoles.includes(role);
   };
 
   useEffect(() => {
@@ -129,11 +421,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await handleAuthStateChange('INITIAL_SESSION', initialSession);
         } else {
           setIsLoading(false);
+          setRolesLoaded(true);
         }
       } catch (err) {
         console.error('Error initializing auth:', err);
         setError(err as Error);
         setIsLoading(false);
+        setRolesLoaded(true);
       }
     };
 
@@ -165,7 +459,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated,
     userRole,
     hasUser: !!user,
-    hasSession: !!session
+    hasSession: !!session,
+    rolesLoaded
   });
 
   return (
@@ -176,9 +471,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthenticated,
         userRole,
+        userRoles,
         isAdmin,
+        rolesLoaded,
         error,
         clearAuthError,
+        hasRole,
+        signIn,
+        signUp,
+        signOut,
+        resetPassword,
+        updatePassword,
       }}
     >
       {children}
@@ -193,3 +496,5 @@ export function useAuth() {
   }
   return context;
 }
+
+export { AuthContext, type AuthContextType };

@@ -40,7 +40,7 @@ export const AuthContent: React.FC<AuthContentProps> = ({
     setResetErrorMessage('');
     
     if (auth.error) {
-      setErrorMessage(auth.error);
+      setErrorMessage(auth.error.message || 'Authentication error occurred');
     }
   }, [currentView, auth.error]);
 
