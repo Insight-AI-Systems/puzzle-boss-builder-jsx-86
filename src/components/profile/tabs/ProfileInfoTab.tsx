@@ -19,7 +19,7 @@ import { UseMutationResult } from '@tanstack/react-query';
 import { MemberDetailedProfile } from '@/types/memberTypes';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, User, Calendar, FileText, CheckCircle, Gamepad2 } from "lucide-react";
+import { Loader2, User, Calendar, FileText, CheckCircle, Gamepad2, AlertCircle } from "lucide-react";
 import { CreditBalanceCard } from '../CreditBalanceCard';
 import { UserWallet } from '@/hooks/useMemberProfile';
 
@@ -56,17 +56,29 @@ export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredi
   });
 
   function onSubmit(values: ProfileFormValues) {
-    updateProfile.mutate({
-      ...values,
-    });
+    console.log('Form submitted with values:', values);
+    updateProfile.mutate(values);
   }
 
   const handleAcceptTerms = () => {
     acceptTerms.mutate();
   };
 
+  // Show any errors that occurred
+  const hasError = updateProfile.error || acceptTerms.error;
+
   return (
     <div className="space-y-6">
+      {/* Show error alert if there are any errors */}
+      {hasError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {updateProfile.error?.message || acceptTerms.error?.message || 'An error occurred'}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Credit & Balance Card - Only show if admin tools available */}
       {awardCredits && (
         <CreditBalanceCard 

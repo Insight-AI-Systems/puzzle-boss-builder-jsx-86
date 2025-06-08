@@ -1,416 +1,216 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { MemberDetailedProfile, MemberAddress, AddressType, MembershipDetail, XeroMemberMapping } from '@/types/memberTypes';
-import { toast } from '@/hooks/use-toast';
+import { MemberDetailedProfile } from '@/types/memberTypes';
+import { toast } from "sonner";
 
 export interface UserWallet {
-  id: string;
-  user_id: string;
   balance: number;
   currency: string;
-  created_at: string;
-  updated_at: string;
 }
 
-export function useMemberProfile(userId?: string) {
-  const { user } = useAuth();
+export function useMemberProfile() {
+  const { user, isAuthenticated } = useAuth();
   const [error, setError] = useState<Error | null>(null);
   const queryClient = useQueryClient();
-  
-  // Use currently logged in user ID if none provided
-  const targetUserId = userId || user?.id;
-  
-  // Fetch member profile with extended details including wallet
+
   const profileQuery = useQuery({
-    queryKey: ['member-profile', targetUserId],
-    queryFn: async () => {
-      if (!targetUserId) return null;
+    queryKey: ['member-profile', user?.id],
+    queryFn: async (): Promise<MemberDetailedProfile | null> => {
+      if (!user?.id) return null;
 
       try {
-        console.log('Fetching profile for user:', targetUserId);
+        console.log('Fetching profile for Clerk user ID:', user.id);
         
-        // Fetch the basic profile using clerk_user_id
-        const { data: profileData, error: profileError } = await supabase
+        const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('clerk_user_id', targetUserId)
+          .eq('clerk_user_id', user.id)
           .single();
 
-        if (profileError) {
-          throw new Error(`Failed to fetch profile: ${profileError.message}`);
+        if (error) {
+          console.error('Error fetching profile:', error);
+          throw new Error(`Failed to fetch profile: ${error.message}`);
         }
 
-        console.log('Profile data fetched:', profileData);
+        console.log('Profile data retrieved:', data);
+        
+        if (!data) return null;
 
-        const supabaseProfileId = profileData.id; // This is the actual Supabase profile ID
-
-        // Fetch wallet information using the Supabase profile ID
-        const { data: walletData, error: walletError } = await supabase
-          .from('user_wallets')
-          .select('*')
-          .eq('user_id', supabaseProfileId)
-          .maybeSingle();
-
-        if (walletError) {
-          console.error('Error fetching wallet:', walletError);
-        }
-
-        // Fetch addresses using the Supabase profile ID
-        const { data: addressesData, error: addressError } = await supabase
-          .from('user_addresses')
-          .select('*')
-          .eq('member_id', supabaseProfileId);
-
-        if (addressError) {
-          console.error('Error fetching addresses:', addressError);
-        }
-
-        // Fetch Xero mapping using the Supabase profile ID
-        const { data: xeroMappingData, error: xeroError } = await supabase
-          .from('xero_user_mappings')
-          .select('*')
-          .eq('user_id', supabaseProfileId)
-          .maybeSingle();
-
-        if (xeroError) {
-          console.error('Error fetching Xero mapping:', xeroError);
-        }
-
-        // Fetch membership details using the Supabase profile ID
-        const { data: membershipDetailsData, error: membershipError } = await supabase
-          .from('user_membership_details')
-          .select('*')
-          .eq('member_id', supabaseProfileId)
-          .maybeSingle();
-
-        if (membershipError) {
-          console.error('Error fetching membership details:', membershipError);
-        }
-
-        // Get financial summary using the Supabase profile ID
-        const { data: financialSummary, error: financialError } = await supabase.rpc(
-          'get_member_financial_summary',
-          { member_id_param: supabaseProfileId }
-        );
-
-        if (financialError) {
-          console.error('Error fetching financial summary:', financialError);
-        }
-
-        // Map addresses to correct type
-        const addresses: MemberAddress[] = addressesData ? addressesData.map((addr: any) => ({
-          ...addr,
-          address_type: addr.address_type as AddressType
-        })) : [];
-
-        // Map Xero mapping to correct type
-        const xeroMapping: XeroMemberMapping | undefined = xeroMappingData ? {
-          ...xeroMappingData,
-          member_id: xeroMappingData.user_id, // Map user_id to member_id for consistency
-          sync_status: xeroMappingData.sync_status as 'active' | 'inactive' | 'error'
-        } : undefined;
-
-        // Map membership details to correct type
-        const membershipDetails: MembershipDetail | undefined = membershipDetailsData ? {
-          ...membershipDetailsData,
-          status: membershipDetailsData.status as 'active' | 'expired' | 'canceled' | 'suspended'
-        } : undefined;
-
-        const memberProfile: MemberDetailedProfile & { wallet?: UserWallet } = {
-          ...profileData,
-          display_name: profileData.username || profileData.full_name || 'Member',
-          addresses,
-          xero_mapping: xeroMapping,
-          membership_details: membershipDetails,
-          financial_summary: financialSummary?.[0] || undefined,
-          terms_accepted: profileData.terms_accepted || false,
-          marketing_opt_in: profileData.marketing_opt_in || false,
-          wallet: walletData || undefined,
+        const profile: MemberDetailedProfile = {
+          id: data.id,
+          email: user.email || data.email || null,
+          display_name: data.username || data.full_name || null,
+          bio: data.bio || null,
+          avatar_url: data.avatar_url,
+          role: data.role || 'player',
+          country: data.country || null,
+          categories_played: data.categories_played || [],
+          credits: data.credits || 0,
+          achievements: [],
+          referral_code: null,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+          full_name: data.full_name || null,
+          username: data.username || null,
+          phone: data.phone || null,
+          address_line1: data.address_line1 || null,
+          address_line2: data.address_line2 || null,
+          city: data.city || null,
+          state: data.state || null,
+          postal_code: data.postal_code || null,
+          date_of_birth: data.date_of_birth || null,
+          tax_id: data.tax_id || null,
+          terms_accepted: data.terms_accepted || false,
+          terms_accepted_at: data.terms_accepted_at || null,
+          marketing_opt_in: data.marketing_opt_in || false,
         };
 
-        console.log('Final member profile:', memberProfile);
-        return memberProfile;
+        return profile;
       } catch (err) {
         console.error('Error in useMemberProfile:', err);
-        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+        setError(err instanceof Error ? err : new Error('Unknown error'));
         return null;
       }
     },
-    enabled: !!targetUserId,
+    enabled: !!user?.id && isAuthenticated,
   });
 
-  // Update profile mutation - Uses the Supabase profile ID for updates
   const updateProfile = useMutation({
-    mutationFn: async (profileData: Partial<MemberDetailedProfile>) => {
-      if (!targetUserId) throw new Error('No user ID provided');
+    mutationFn: async (updates: Partial<MemberDetailedProfile>) => {
+      if (!user?.id) {
+        throw new Error('No user ID available');
+      }
 
-      // First get the Supabase profile ID
-      const { data: existingProfile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('clerk_user_id', targetUserId)
-        .single();
+      console.log('Updating profile for user:', user.id, 'with data:', updates);
 
-      if (fetchError) throw fetchError;
+      // Only include fields that are actually being updated and exist in the database
+      const allowedFields = {
+        full_name: updates.full_name,
+        username: updates.username,
+        bio: updates.bio,
+        date_of_birth: updates.date_of_birth,
+      };
+
+      // Remove undefined values
+      const filteredUpdates = Object.fromEntries(
+        Object.entries(allowedFields).filter(([_, value]) => value !== undefined)
+      );
+
+      console.log('Filtered updates to send:', filteredUpdates);
 
       const { data, error } = await supabase
         .from('profiles')
         .update({
-          full_name: profileData.full_name,
-          username: profileData.username,
-          bio: profileData.bio,
-          phone: profileData.phone,
-          date_of_birth: profileData.date_of_birth,
-          tax_id: profileData.tax_id,
-          marketing_opt_in: profileData.marketing_opt_in,
-          terms_accepted: profileData.terms_accepted,
-          terms_accepted_at: profileData.terms_accepted_at,
-          updated_at: new Date().toISOString(),
+          ...filteredUpdates,
+          updated_at: new Date().toISOString()
         })
-        .eq('id', existingProfile.id)
-        .select();
+        .eq('clerk_user_id', user.id)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Profile update error:', error);
+        throw new Error(`Failed to update profile: ${error.message}`);
+      }
+
+      console.log('Profile update successful:', data);
       return data;
     },
-    onSuccess: () => {
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been successfully updated.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['member-profile', targetUserId] });
+    onSuccess: (data) => {
+      console.log('Profile update mutation succeeded:', data);
+      queryClient.invalidateQueries({ queryKey: ['member-profile', user?.id] });
+      toast.success('Profile updated successfully!');
     },
-    onError: (err) => {
-      toast({
-        title: "Update Failed",
-        description: err instanceof Error ? err.message : 'Failed to update profile',
-        variant: "destructive",
-      });
-      setError(err instanceof Error ? err : new Error('Failed to update profile'));
+    onError: (error) => {
+      console.error('Profile update mutation failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile';
+      setError(new Error(errorMessage));
+      toast.error(errorMessage);
     },
   });
 
-  // Add/update address mutation - Uses the Supabase profile ID
-  const upsertAddress = useMutation({
-    mutationFn: async (address: Partial<MemberAddress> & { id?: string }) => {
-      if (!targetUserId) throw new Error('No user ID provided');
-
-      // First get the Supabase profile ID
-      const { data: existingProfile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('clerk_user_id', targetUserId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      const supabaseProfileId = existingProfile.id;
-
-      // If we have an ID, update existing address
-      if (address.id) {
-        const { data, error } = await supabase
-          .from('user_addresses')
-          .update({
-            address_type: address.address_type,
-            is_default: address.is_default,
-            address_line1: address.address_line1,
-            address_line2: address.address_line2,
-            city: address.city,
-            state: address.state,
-            postal_code: address.postal_code,
-            country: address.country,
-          })
-          .eq('id', address.id)
-          .eq('member_id', supabaseProfileId)
-          .select();
-
-        if (error) throw error;
-        return data;
-      }
-      // Otherwise insert new address
-      else {
-        const { data, error } = await supabase
-          .from('user_addresses')
-          .insert({
-            user_id: supabaseProfileId,
-            member_id: supabaseProfileId,
-            address_type: address.address_type,
-            is_default: address.is_default,
-            address_line1: address.address_line1,
-            address_line2: address.address_line2,
-            city: address.city,
-            state: address.state,
-            postal_code: address.postal_code,
-            country: address.country,
-          })
-          .select();
-
-        if (error) throw error;
-        return data;
-      }
-    },
-    onSuccess: () => {
-      toast({
-        title: "Address Updated",
-        description: "Your address has been successfully updated.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['member-profile', targetUserId] });
-    },
-    onError: (err) => {
-      toast({
-        title: "Update Failed",
-        description: err instanceof Error ? err.message : 'Failed to update address',
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Delete address mutation - Uses the Supabase profile ID
-  const deleteAddress = useMutation({
-    mutationFn: async (addressId: string) => {
-      if (!targetUserId) throw new Error('No user ID provided');
-
-      // First get the Supabase profile ID
-      const { data: existingProfile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('clerk_user_id', targetUserId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      const { error } = await supabase
-        .from('user_addresses')
-        .delete()
-        .eq('id', addressId)
-        .eq('member_id', existingProfile.id);
-
-      if (error) throw error;
-      return true;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Address Deleted",
-        description: "The address has been removed from your profile.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['member-profile', targetUserId] });
-    },
-    onError: (err) => {
-      toast({
-        title: "Deletion Failed",
-        description: err instanceof Error ? err.message : 'Failed to delete address',
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Accept terms mutation - Uses the Supabase profile ID
   const acceptTerms = useMutation({
     mutationFn: async () => {
-      if (!targetUserId) throw new Error('No user ID provided');
-
-      // First get the Supabase profile ID
-      const { data: existingProfile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('clerk_user_id', targetUserId)
-        .single();
-
-      if (fetchError) throw fetchError;
+      if (!user?.id) {
+        throw new Error('No user ID available');
+      }
 
       const { data, error } = await supabase
         .from('profiles')
         .update({
           terms_accepted: true,
           terms_accepted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
-        .eq('id', existingProfile.id)
-        .select();
+        .eq('clerk_user_id', user.id)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(`Failed to accept terms: ${error.message}`);
+      }
+
       return data;
     },
     onSuccess: () => {
-      toast({
-        title: "Terms Accepted",
-        description: "You have successfully accepted the terms and conditions.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['member-profile', targetUserId] });
+      queryClient.invalidateQueries({ queryKey: ['member-profile', user?.id] });
+      toast.success('Terms accepted successfully!');
     },
-    onError: (err) => {
-      toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : 'Failed to accept terms',
-        variant: "destructive",
-      });
+    onError: (error) => {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to accept terms';
+      setError(new Error(errorMessage));
+      toast.error(errorMessage);
     },
   });
 
-  // Award credits mutation (admin only) - Uses the Supabase profile ID
+  // Mock implementations for other functions to maintain interface compatibility
+  const upsertAddress = useMutation({
+    mutationFn: async () => {
+      throw new Error('Address management not implemented yet');
+    },
+  });
+
+  const deleteAddress = useMutation({
+    mutationFn: async () => {
+      throw new Error('Address management not implemented yet');
+    },
+  });
+
   const awardCredits = useMutation({
     mutationFn: async ({ targetUserId, credits, adminNote }: { targetUserId: string; credits: number; adminNote?: string }) => {
-      console.log('Awarding credits:', { targetUserId, credits, adminNote });
-      
-      // First get the Supabase profile ID from the Clerk user ID
-      const { data: targetProfile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('clerk_user_id', targetUserId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
       const { error } = await supabase.rpc('award_credits', {
-        target_user_id: targetProfile.id, // Use the Supabase profile ID
+        target_user_id: targetUserId,
         credits_to_add: credits,
-        admin_note: adminNote || null
+        admin_note: adminNote
       });
 
       if (error) {
-        console.error('Error awarding credits:', error);
-        throw error;
+        throw new Error(`Failed to award credits: ${error.message}`);
       }
-      
-      console.log('Credits awarded successfully');
+
       return true;
     },
-    onSuccess: (_, variables) => {
-      console.log('Credits award mutation succeeded, invalidating queries');
-      toast({
-        title: "Credits Awarded",
-        description: "Free credits have been successfully awarded to the user.",
-      });
-      
-      // Invalidate multiple related queries to ensure UI updates
-      queryClient.invalidateQueries({ queryKey: ['member-profile', variables.targetUserId] });
-      queryClient.invalidateQueries({ queryKey: ['profile', variables.targetUserId] });
-      
-      // Also refetch the current profile data immediately
-      setTimeout(() => {
-        queryClient.refetchQueries({ queryKey: ['member-profile', variables.targetUserId] });
-      }, 100);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['member-profile'] });
+      toast.success('Credits awarded successfully!');
     },
-    onError: (err) => {
-      console.error('Credits award mutation failed:', err);
-      toast({
-        title: "Award Failed",
-        description: err instanceof Error ? err.message : 'Failed to award credits',
-        variant: "destructive",
-      });
+    onError: (error) => {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to award credits';
+      toast.error(errorMessage);
     },
   });
 
   return {
     profile: profileQuery.data,
     isLoading: profileQuery.isLoading,
-    error,
+    error: error || (profileQuery.error instanceof Error ? profileQuery.error : null),
     updateProfile,
+    acceptTerms,
     upsertAddress,
     deleteAddress,
-    acceptTerms,
     awardCredits,
-    refetch: profileQuery.refetch,
   };
 }
