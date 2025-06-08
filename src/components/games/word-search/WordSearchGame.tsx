@@ -175,7 +175,9 @@ export function WordSearchGame() {
         const newFoundWords = new Set([...gameState.foundWords, result.word]);
         const newScore = gameState.score + result.word.length * 10;
         
-        // Convert Cell objects back to engine format for move
+        // Convert Cell objects back to string format for state
+        const selectedCellStrings = cellsToStrings(cellCoords);
+        
         engine.makeMove({ 
           type: 'SELECT_CELLS', 
           cells: cellCoords
@@ -184,7 +186,7 @@ export function WordSearchGame() {
         setGameState(prev => prev ? {
           ...prev,
           foundWords: newFoundWords,
-          selectedCells: [...prev.selectedCells, ...cellsToStrings(cellCoords)],
+          selectedCells: [...prev.selectedCells, ...selectedCellStrings],
           score: newScore,
           moves: prev.moves + 1
         } : null);
@@ -267,8 +269,8 @@ export function WordSearchGame() {
             grid={gameState.grid}
             selectedCells={selectedCellsAsObjects}
             currentSelection={currentSelectionAsObjects}
-            onSelectionStart={startSelection}
-            onSelectionMove={updateSelection}
+            onSelectionStart={(cell) => startSelection(typeof cell === 'object' ? `${cell.row}-${cell.col}` : cell)}
+            onSelectionMove={(cell) => updateSelection(typeof cell === 'object' ? `${cell.row}-${cell.col}` : cell)}
             onSelectionEnd={handleSelectionEnd}
             isDisabled={gameStatus === 'completed'}
           />

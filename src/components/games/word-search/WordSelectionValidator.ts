@@ -118,16 +118,10 @@ export class WordSelectionValidator {
 
       const { cells: wordCells, word } = placedWord;
 
-      // Convert word cells from string format to Cell objects
-      const wordCellObjects = wordCells.map(cellId => {
-        const [row, col] = cellId.split('-').map(Number);
-        return { row, col };
-      });
-
       // Check if selection matches word cells exactly
-      if (selectedCells.length === wordCellObjects.length) {
+      if (selectedCells.length === wordCells.length) {
         const selectedCellIds = selectedCells.map(cell => `${cell.row}-${cell.col}`).sort();
-        const wordCellIds = wordCells.sort();
+        const wordCellIds = wordCells.map(cell => `${cell.row}-${cell.col}`).sort();
         
         if (JSON.stringify(selectedCellIds) === JSON.stringify(wordCellIds)) {
           return true;
