@@ -17,7 +17,8 @@ interface WordSearchGridProps {
 }
 
 const CELL_SIZE = 40;
-const HIGHLIGHT_COLOR = 'rgba(255, 255, 0, 0.5)';
+const CURRENT_SELECTION_COLOR = 'rgba(255, 255, 0, 0.6)'; // Yellow for current selection
+const FOUND_WORD_COLOR = 'rgba(0, 255, 128, 0.7)'; // Green for found words
 
 export function WordSearchGrid({
   grid,
@@ -55,16 +56,22 @@ export function WordSearchGrid({
         ctx.fillStyle = 'white';
         ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
 
-        // Highlight selected cells
-        const isSelected = selectedCells.some(selectedCell => 
+        // Check if cell is part of a found word (permanently highlighted)
+        const isFoundCell = selectedCells.some(selectedCell => 
           selectedCell.row === rowIndex && selectedCell.col === colIndex
         );
+        
+        // Check if cell is part of current selection
         const isCurrentSelection = currentSelection.some(selectedCell => 
           selectedCell.row === rowIndex && selectedCell.col === colIndex
         );
 
-        if (isSelected || isCurrentSelection) {
-          ctx.fillStyle = HIGHLIGHT_COLOR;
+        // Apply highlighting - found words take priority over current selection
+        if (isFoundCell) {
+          ctx.fillStyle = FOUND_WORD_COLOR;
+          ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+        } else if (isCurrentSelection) {
+          ctx.fillStyle = CURRENT_SELECTION_COLOR;
           ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
         }
 
