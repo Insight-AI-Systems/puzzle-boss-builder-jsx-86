@@ -3,14 +3,21 @@ import { useUser, useClerk } from '@clerk/clerk-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+interface Profile {
+  id: string;
+  clerk_user_id: string;
+  role?: string;
+  [key: string]: any;
+}
+
 export const useClerkAuth = () => {
   const { user, isSignedIn, isLoaded } = useUser();
   const { signOut: clerkSignOut } = useClerk();
 
   // Fetch user profile from Supabase based on Clerk user
-  const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ['profile', user?.id],
-    queryFn: async () => {
+  const { data: profile, isLoading: profileLoading } = useQuery<Profile | null>({
+    queryKey: ['profile', user?.id] as const,
+    queryFn: async (): Promise<Profile | null> => {
       if (!user?.id) return null;
       
       const { data, error } = await supabase
