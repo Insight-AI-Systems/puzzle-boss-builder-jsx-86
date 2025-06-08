@@ -1,8 +1,11 @@
 
 import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { QuizGameState, TriviaQuestion, TriviaCategory, QuestionAnswer, TriviaQuizSession } from '../types/triviaTypes';
+import { QuizGameState } from '../types/triviaTypes';
+import { useTriviaCategories } from './useTriviaCategories';
+import { useTriviaTimer } from './useTriviaTimer';
+import { useTriviaQuizSession } from './useTriviaQuizSession';
+import { useTriviaQuestions } from './useTriviaQuestions';
 
 export function useTriviaGame() {
   const [gameState, setGameState] = useState<QuizGameState>({
@@ -18,89 +21,30 @@ export function useTriviaGame() {
     questionStartTime: null,
   });
 
-  const [categories, setCategories] = useState<TriviaCategory[]>([]);
   const [loading, setLoading] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState<number>(0);
 
-  // Load categories
-  const loadCategories = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('trivia_categories')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
+  const { categories, loadCategories } = useTriviaCategories();
+  const { timeRemaining, setTimeRemaining, startTimer, resetTimer } = useTriviaTimer();
+  const { createQuizSession, updateQuizSession, completeQuizSession, recordAnswer } = useTriviaQuizSession();
+  const { loadQuestions } = useTriviaQuestions();
 
-      if (error) throw error;
-      setCategories(data || []);
-    } catch (error) {
-      console.error('Error loading categories:', error);
-      toast.error('Failed to load trivia categories');
-    }
-  }, []);
-
-  // Start a new quiz
   const startQuiz = useCallback(async (categoryId: string | null, questionCount: number = 10) => {
     setLoading(true);
     try {
-      // Get user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('Please log in to play trivia');
-        return;
-      }
+      const session = await createQuizSession(categoryId, questionCount);
+      if (!session) return;
 
-      // Create quiz session
-      const { data: session, error: sessionError } = await supabase
-        .from('trivia_quiz_sessions')
-        .insert({
-          user_id: user.id,
-          category_id: categoryId,
-          total_questions: questionCount,
-          current_question: 0,
-          score: 0,
-          correct_answers: 0,
-          time_bonus: 0,
-          status: 'active'
-        })
-        .select()
-        .single();
-
-      if (sessionError) throw sessionError;
-
-      // Get random questions
-      let query = supabase
-        .from('trivia_questions')
-        .select('*')
-        .eq('is_active', true);
-
-      if (categoryId) {
-        query = query.eq('category_id', categoryId);
-      }
-
-      const { data: allQuestions, error: questionsError } = await query;
-      if (questionsError) throw questionsError;
-
-      // Randomize and limit questions
-      const shuffled = [...(allQuestions || [])].sort(() => Math.random() - 0.5);
-      const selectedQuestions = shuffled.slice(0, questionCount);
-
+      const selectedQuestions = await loadQuestions(categoryId, questionCount);
       if (selectedQuestions.length === 0) {
         toast.error('No questions available for this category');
         return;
       }
 
-      // Transform database results to match our TypeScript interface
-      const typedQuestions: TriviaQuestion[] = selectedQuestions.map(q => ({
-        ...q,
-        difficulty: q.difficulty as 'easy' | 'medium' | 'hard'
-      }));
-
       const now = Date.now();
       setGameState({
         sessionId: session.id,
         categoryId,
-        questions: typedQuestions,
+        questions: selectedQuestions,
         currentQuestionIndex: 0,
         score: 0,
         correctAnswers: 0,
@@ -110,7 +54,7 @@ export function useTriviaGame() {
         questionStartTime: now,
       });
 
-      setTimeRemaining(typedQuestions[0]?.time_limit || 20);
+      startTimer(selectedQuestions[0]?.time_limit || 20);
       toast.success('Quiz started! Good luck!');
     } catch (error) {
       console.error('Error starting quiz:', error);
@@ -118,9 +62,8 @@ export function useTriviaGame() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [createQuizSession, loadQuestions, startTimer]);
 
-  // Submit an answer
   const submitAnswer = useCallback(async (selectedAnswer: string) => {
     if (!gameState.sessionId || gameState.status !== 'active') return;
 
@@ -131,36 +74,38 @@ export function useTriviaGame() {
     const timeTaken = gameState.questionStartTime ? now - gameState.questionStartTime : 0;
     const isCorrect = selectedAnswer === currentQuestion.correct_answer;
     
-    // Calculate time bonus (max 100 points for instant answer, decreasing over time)
-    const maxTime = currentQuestion.time_limit * 1000; // Convert to milliseconds
+    const maxTime = currentQuestion.time_limit * 1000;
     const timeBonus = isCorrect ? Math.max(0, Math.floor(100 * (1 - timeTaken / maxTime))) : 0;
     
     const baseScore = isCorrect ? 100 : 0;
     const questionScore = baseScore + timeBonus;
 
     try {
-      // Record the answer
-      await supabase
-        .from('trivia_quiz_answers')
-        .insert({
-          session_id: gameState.sessionId,
-          question_id: currentQuestion.id,
-          selected_answer: selectedAnswer,
-          is_correct: isCorrect,
-          time_taken: timeTaken,
-          time_bonus: timeBonus,
-        });
+      await recordAnswer(gameState.sessionId, currentQuestion.id, selectedAnswer, isCorrect, timeTaken, timeBonus);
 
       const newCorrectAnswers = gameState.correctAnswers + (isCorrect ? 1 : 0);
       const newScore = gameState.score + questionScore;
       const newTimeBonus = gameState.timeBonus + timeBonus;
       const nextQuestionIndex = gameState.currentQuestionIndex + 1;
 
-      // Check if quiz is complete
       if (nextQuestionIndex >= gameState.questions.length) {
-        await completeQuiz(newScore, newCorrectAnswers, newTimeBonus);
+        await completeQuizSession(
+          gameState.sessionId,
+          newScore,
+          newCorrectAnswers,
+          newTimeBonus,
+          gameState.categoryId,
+          gameState.questions.length,
+          gameState.startTime
+        );
+        setGameState(prev => ({
+          ...prev,
+          status: 'completed',
+          score: newScore,
+          correctAnswers: newCorrectAnswers,
+          timeBonus: newTimeBonus,
+        }));
       } else {
-        // Move to next question
         setGameState(prev => ({
           ...prev,
           currentQuestionIndex: nextQuestionIndex,
@@ -170,94 +115,27 @@ export function useTriviaGame() {
           questionStartTime: now,
         }));
 
-        setTimeRemaining(gameState.questions[nextQuestionIndex]?.time_limit || 20);
+        startTimer(gameState.questions[nextQuestionIndex]?.time_limit || 20);
 
-        // Update session
-        await supabase
-          .from('trivia_quiz_sessions')
-          .update({
-            current_question: nextQuestionIndex,
-            score: newScore,
-            correct_answers: newCorrectAnswers,
-            time_bonus: newTimeBonus,
-          })
-          .eq('id', gameState.sessionId);
+        await updateQuizSession(gameState.sessionId, {
+          current_question: nextQuestionIndex,
+          score: newScore,
+          correct_answers: newCorrectAnswers,
+          time_bonus: newTimeBonus,
+        });
       }
     } catch (error) {
       console.error('Error submitting answer:', error);
       toast.error('Failed to submit answer');
     }
-  }, [gameState]);
+  }, [gameState, recordAnswer, completeQuizSession, updateQuizSession, startTimer]);
 
-  // Complete the quiz
-  const completeQuiz = useCallback(async (finalScore: number, finalCorrectAnswers: number, finalTimeBonus: number) => {
-    if (!gameState.sessionId) return;
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Update session as completed
-      await supabase
-        .from('trivia_quiz_sessions')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-          score: finalScore,
-          correct_answers: finalCorrectAnswers,
-          time_bonus: finalTimeBonus,
-        })
-        .eq('id', gameState.sessionId);
-
-      // Get username
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('id', user.id)
-        .single();
-
-      const username = profile?.username || 'Anonymous';
-
-      // Calculate average time
-      const totalTime = gameState.startTime ? Date.now() - gameState.startTime : 0;
-      const averageTime = Math.floor(totalTime / gameState.questions.length);
-
-      // Add to leaderboard
-      await supabase
-        .from('trivia_leaderboard')
-        .insert({
-          user_id: user.id,
-          category_id: gameState.categoryId,
-          username,
-          total_score: finalScore,
-          correct_answers: finalCorrectAnswers,
-          total_questions: gameState.questions.length,
-          average_time: averageTime,
-        });
-
-      setGameState(prev => ({
-        ...prev,
-        status: 'completed',
-        score: finalScore,
-        correctAnswers: finalCorrectAnswers,
-        timeBonus: finalTimeBonus,
-      }));
-
-      toast.success(`Quiz completed! Your score: ${finalScore}`);
-    } catch (error) {
-      console.error('Error completing quiz:', error);
-      toast.error('Failed to complete quiz');
-    }
-  }, [gameState]);
-
-  // Handle time up
   const handleTimeUp = useCallback(() => {
     if (gameState.status === 'active') {
-      submitAnswer(''); // Submit empty answer when time runs out
+      submitAnswer('');
     }
   }, [gameState.status, submitAnswer]);
 
-  // Reset quiz
   const resetQuiz = useCallback(() => {
     setGameState({
       sessionId: null,
@@ -271,10 +149,9 @@ export function useTriviaGame() {
       startTime: null,
       questionStartTime: null,
     });
-    setTimeRemaining(0);
-  }, []);
+    resetTimer();
+  }, [resetTimer]);
 
-  // Timer effect
   useEffect(() => {
     if (gameState.status !== 'active' || timeRemaining <= 0) return;
 
@@ -289,9 +166,8 @@ export function useTriviaGame() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [gameState.status, timeRemaining, handleTimeUp]);
+  }, [gameState.status, timeRemaining, handleTimeUp, setTimeRemaining]);
 
-  // Load categories on mount
   useEffect(() => {
     loadCategories();
   }, [loadCategories]);
