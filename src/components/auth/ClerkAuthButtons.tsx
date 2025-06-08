@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/clerk-react';
+import { SignInButton, SignUpButton, useUser } from '@clerk/clerk-react';
 import { Button } from '@/components/ui/button';
 
 interface ClerkAuthButtonsProps {
@@ -21,8 +21,9 @@ export const ClerkAuthButtons: React.FC<ClerkAuthButtonsProps> = ({ isMobile = f
     );
   }
 
+  // For signed in users, don't render the UserButton (round circle)
   if (isSignedIn) {
-    return <UserButton afterSignOutUrl="/" />;
+    return null;
   }
 
   if (isMobile) {
@@ -52,3 +53,4 @@ export const ClerkAuthButtons: React.FC<ClerkAuthButtonsProps> = ({ isMobile = f
     </div>
   );
 };
+
