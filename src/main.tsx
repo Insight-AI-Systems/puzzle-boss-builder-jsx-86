@@ -1,6 +1,9 @@
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from '@/contexts/AuthContext';
 import App from './App.tsx';
 import './index.css';
 
@@ -11,6 +14,16 @@ const container = document.getElementById("root");
 if (!container) {
   throw new Error("Root element not found. Make sure there is a div with id 'root' in your HTML");
 }
+
+// Create a new QueryClient instance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
 // Simplified error boundary for the entire app
 class ErrorFallback extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
@@ -55,7 +68,13 @@ const root = createRoot(container);
 root.render(
   <React.StrictMode>
     <ErrorFallback>
-      <App />
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </AuthProvider>
+      </QueryClientProvider>
     </ErrorFallback>
   </React.StrictMode>
 );
