@@ -60,6 +60,25 @@ export function MemoryGame({
   const stats = getGameStats();
   const gameCompletedRef = useRef(false);
 
+  // Initialize game on mount
+  useEffect(() => {
+    if (!gameInitialized) {
+      console.log('🎮 Initializing memory game on mount');
+      initializeGame();
+    }
+  }, [gameInitialized, initializeGame]);
+
+  // Auto-start game when initialized
+  useEffect(() => {
+    if (gameInitialized && gameState.cards.length > 0 && !isGameActive && !gameState.isGameComplete) {
+      console.log('🚀 Auto-starting game');
+      // Small delay to ensure UI is ready
+      setTimeout(() => {
+        initializeGame(); // This sets state to 'ready'
+      }, 100);
+    }
+  }, [gameInitialized, gameState.cards.length, isGameActive, gameState.isGameComplete]);
+
   // Update scoring in real-time
   useEffect(() => {
     if (gameInitialized && isGameActive) {

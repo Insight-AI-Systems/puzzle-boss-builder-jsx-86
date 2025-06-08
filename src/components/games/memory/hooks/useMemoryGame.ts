@@ -1,131 +1,77 @@
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { MemoryLayout, MemoryTheme } from '../types/memoryTypes';
+import { useCallback } from 'react';
+import { MemoryLayout, MemoryTheme, LAYOUT_CONFIGS } from '../types/memoryTypes';
 import { MemoryGameHookInterface } from '../interfaces/memoryGameInterfaces';
-import { useMemoryGameLogic } from './useMemoryGameLogic';
-import { useMemoryGameScoring } from './useMemoryGameScoring';
-import { useAuth } from '@/contexts/AuthContext';
-import { useMemberProfile } from '@/hooks/useMemberProfile';
+import { useMemoryGameState } from './useMemoryGameState';
+import { useMemoryGameTimer } from './useMemoryGameTimer';
 
 export function useMemoryGame(
   layout: MemoryLayout,
   theme: MemoryTheme
 ): MemoryGameHookInterface {
-  const { user } = useAuth();
-  const { profile } = useMemberProfile();
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const [gameTime, setGameTime] = useState(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Use focused hooks for game logic and scoring
-  const gameLogic = useMemoryGameLogic(layout, theme);
-  const scoring = useMemoryGameScoring(gameLogic.layout);
-
-  // Timer management
-  useEffect(() => {
-    if (gameLogic.isGameActive && !timerRef.current) {
-      setStartTime(Date.now());
-      timerRef.current = setInterval(() => {
-        setGameTime(prev => prev + 1);
-      }, 1000);
-    } else if (!gameLogic.isGameActive && timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [gameLogic.isGameActive]);
-
-  // Update scoring in real-time
-  useEffect(() => {
-    if (gameLogic.isGameActive) {
-      const timeElapsed = startTime ? Date.now() - startTime : 0;
-      scoring.updateScore(gameLogic.matchedPairs, gameLogic.moves, timeElapsed);
-    }
-  }, [gameLogic.matchedPairs, gameLogic.moves, gameLogic.isGameActive, startTime]);
-
-  // Handle game completion
-  useEffect(() => {
-    if (gameLogic.isGameComplete && startTime) {
-      const timeElapsed = Date.now() - startTime;
-      const finalScore = scoring.updateScore(gameLogic.matchedPairs, gameLogic.moves, timeElapsed);
-      
-      // Submit to leaderboard
-      const playerName = profile?.username || profile?.display_name || profile?.full_name || 'Anonymous Player';
-      scoring.submitToLeaderboard(finalScore, playerName);
-    }
-  }, [gameLogic.isGameComplete, startTime, profile]);
+  const { 
+    layout: currentLayout, 
+    theme: currentTheme, 
+    gameState, 
+    isProcessingMatch,
+    actions 
+  } = useMemoryGameState(layout, theme);
+  
+  const { elapsedTime } = useMemoryGameTimer(gameState.state);
 
   const getGameStats = useCallback(() => {
-    const timeElapsed = startTime ? gameTime : 0;
-    const accuracy = gameLogic.moves > 0 ? (gameLogic.matchedPairs / gameLogic.moves * 100) : 0;
-    const gridSize = gameLogic.getGridSize();
+    const config = LAYOUT_CONFIGS[currentLayout];
+    const totalPairs = config.totalCards / 2;
+    const matchedPairs = gameState.matchedPairs.length / 2;
+    const accuracy = gameState.moves > 0 ? (matchedPairs / gameState.moves) * 100 : 0;
     
     return {
-      moves: gameLogic.moves,
-      timeElapsed,
-      matchedPairs: gameLogic.matchedPairs,
-      totalPairs: gridSize.totalPairs,
+      moves: gameState.moves,
+      timeElapsed: elapsedTime,
+      matchedPairs: Math.floor(matchedPairs),
+      totalPairs,
       accuracy: Math.round(accuracy * 100) / 100,
     };
-  }, [gameLogic.moves, gameLogic.matchedPairs, gameTime, startTime]);
+  }, [gameState.moves, gameState.matchedPairs.length, elapsedTime, currentLayout]);
 
-  const handleGameStart = useCallback(() => {
-    gameLogic.startGame();
-    setGameTime(0);
-    scoring.resetScore();
-  }, [gameLogic.startGame, scoring.resetScore]);
-
-  const handleGameReset = useCallback(() => {
-    gameLogic.resetGame();
-    setStartTime(null);
-    setGameTime(0);
-    scoring.resetScore();
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  }, [gameLogic.resetGame, scoring.resetScore]);
-
-  const handleInitializeGame = useCallback((newLayout?: MemoryLayout, newTheme?: MemoryTheme) => {
-    gameLogic.initializeGame(newLayout, newTheme);
-    handleGameReset();
-  }, [gameLogic.initializeGame, handleGameReset]);
+  const getGridSize = useCallback(() => {
+    const config = LAYOUT_CONFIGS[currentLayout];
+    return {
+      rows: config.rows,
+      cols: config.cols,
+      totalPairs: config.totalCards / 2
+    };
+  }, [currentLayout]);
 
   // Return the stable interface
   return {
     gameState: {
-      layout: gameLogic.layout,
-      theme: gameLogic.theme,
-      cards: gameLogic.cards,
-      isGameComplete: gameLogic.isGameComplete,
-      matchedPairs: gameLogic.matchedPairs,
-      moves: gameLogic.moves,
+      layout: currentLayout,
+      theme: currentTheme,
+      cards: gameState.cards,
+      isGameComplete: gameState.state === 'completed',
+      matchedPairs: Math.floor(gameState.matchedPairs.length / 2),
+      moves: gameState.moves,
     },
-    handleCardClick: gameLogic.handleCardFlip,
-    initializeGame: handleInitializeGame,
-    startGame: handleGameStart,
-    resetGame: handleGameReset,
+    handleCardClick: actions.handleCardClick,
+    initializeGame: actions.initialize,
+    startGame: actions.start,
+    resetGame: actions.reset,
     getGameStats,
-    isGameActive: gameLogic.isGameActive,
-    disabled: gameLogic.disabled,
-    gameInitialized: gameLogic.gameInitialized,
+    isGameActive: gameState.state === 'playing',
+    disabled: isProcessingMatch || gameState.state !== 'playing',
+    gameInitialized: gameState.state !== 'idle',
     
     // Backward compatibility properties
-    cards: gameLogic.cards,
-    moves: gameLogic.moves,
-    gameTime,
-    score: scoring.scoreData.finalScore,
-    leaderboard: scoring.leaderboard,
-    flipCard: gameLogic.handleCardFlip,
-    gridSize: gameLogic.getGridSize(),
+    cards: gameState.cards,
+    moves: gameState.moves,
+    gameTime: Math.floor(elapsedTime / 1000),
+    score: 0, // Will be handled by scoring hook
+    leaderboard: [],
+    flipCard: actions.handleCardClick,
+    gridSize: getGridSize(),
   };
 }
 
-// Export the scoring hook for components that need it
+// Re-export the scoring hook
 export { useMemoryGameScoring } from './useMemoryGameScoring';

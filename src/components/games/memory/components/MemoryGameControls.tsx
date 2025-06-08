@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Trophy, RotateCcw, Star } from 'lucide-react';
+import { Clock, Trophy, RotateCcw, Star, Play } from 'lucide-react';
 import { MemoryLayout, MemoryTheme, THEME_CONFIGS } from '../types/memoryTypes';
 
 interface MemoryGameControlsProps {
@@ -16,9 +16,11 @@ interface MemoryGameControlsProps {
   layout: MemoryLayout;
   theme: MemoryTheme;
   isGameActive: boolean;
+  gameReady?: boolean;
   onLayoutChange: (layout: MemoryLayout) => void;
   onThemeChange: (theme: MemoryTheme) => void;
   onRestart: () => void;
+  onStart?: () => void;
 }
 
 export function MemoryGameControls({
@@ -30,9 +32,11 @@ export function MemoryGameControls({
   layout,
   theme,
   isGameActive,
+  gameReady = true,
   onLayoutChange,
   onThemeChange,
-  onRestart
+  onRestart,
+  onStart
 }: MemoryGameControlsProps) {
   const formatTime = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
@@ -105,6 +109,16 @@ export function MemoryGameControls({
               ))}
             </SelectContent>
           </Select>
+
+          {gameReady && !isGameActive && onStart && (
+            <Button
+              onClick={onStart}
+              className="bg-puzzle-aqua text-puzzle-black hover:bg-puzzle-aqua/80"
+            >
+              <Play className="w-4 h-4 mr-2" />
+              Start Game
+            </Button>
+          )}
 
           <Button
             onClick={onRestart}
