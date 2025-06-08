@@ -1,6 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { userRepository } from '@/data/repositories/UserRepository';
 import { UserProfile, UserRole } from '@/types/userTypes';
 
 export function useProfileData(userId: string | null) {
@@ -9,32 +9,24 @@ export function useProfileData(userId: string | null) {
     queryFn: async () => {
       if (!userId) return null;
       
-      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const user = await userRepository.getUser(userId);
       
-      if (userError) throw userError;
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error) throw error;
+      if (!user) return null;
       
       const profile: UserProfile = {
-        id: data.id,
-        email: userData.user?.email || null,
-        display_name: data.username || null,
-        bio: data.bio || null,
-        avatar_url: data.avatar_url || null,
-        role: (data.role || 'player') as UserRole,
-        country: null,
+        id: user.id,
+        email: user.email,
+        display_name: user.username,
+        bio: user.bio,
+        avatar_url: user.avatar_url,
+        role: user.role as UserRole,
+        country: user.country,
         categories_played: [],
-        credits: data.credits || 0,
+        credits: user.credits,
         achievements: [],
         referral_code: null,
-        created_at: data.created_at,
-        updated_at: data.updated_at || data.created_at
+        created_at: user.created_at,
+        updated_at: user.updated_at
       };
       
       return profile;

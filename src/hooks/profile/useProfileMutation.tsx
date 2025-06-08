@@ -1,6 +1,6 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { userRepository } from '@/data/repositories/UserRepository';
 import { UserProfile, UserRole } from '@/types/userTypes';
 
 interface ProfileUpdateData {
@@ -16,38 +16,26 @@ export function useProfileMutation(userId: string | null) {
     mutationFn: async (profileData: ProfileUpdateData) => {
       if (!userId) throw new Error('No user ID provided');
       
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) throw userError;
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({
-          username: profileData.username,
-          bio: profileData.bio,
-          avatar_url: profileData.avatar_url,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId)
-        .select()
-        .single();
-      
-      if (error) throw error;
+      const updatedUser = await userRepository.updateUser(userId, {
+        username: profileData.username,
+        bio: profileData.bio,
+        avatar_url: profileData.avatar_url
+      });
       
       const profile: UserProfile = {
-        id: data.id,
-        email: userData.user?.email || null,
-        display_name: data.username || null,
-        bio: data.bio || null,
-        avatar_url: data.avatar_url || null,
-        role: (data.role || 'player') as UserRole,
-        country: null,
+        id: updatedUser.id,
+        email: updatedUser.email,
+        display_name: updatedUser.username,
+        bio: updatedUser.bio,
+        avatar_url: updatedUser.avatar_url,
+        role: updatedUser.role as UserRole,
+        country: updatedUser.country,
         categories_played: [],
-        credits: data.credits || 0,
+        credits: updatedUser.credits,
         achievements: [],
         referral_code: null,
-        created_at: data.created_at,
-        updated_at: data.updated_at
+        created_at: updatedUser.created_at,
+        updated_at: updatedUser.updated_at
       };
       
       return profile;

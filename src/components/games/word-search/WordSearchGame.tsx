@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -51,10 +52,10 @@ export function WordSearchGame() {
           isComplete: false,
           grid: [],
           words: [],
-          foundWords: [],
+          foundWords: new Set<string>(),
           selectedCells: [],
           currentSelection: [],
-          difficulty: 'medium',
+          difficulty: 'rookie',
           timeElapsed: 0,
           hintsUsed: 0
         };
@@ -66,7 +67,7 @@ export function WordSearchGame() {
           hasScore: true,
           hasMoves: false,
           entryFee: entryFee,
-          difficulty: 'medium',
+          difficulty: 'rookie',
           hintsEnabled: true,
           soundEnabled: true,
           showGuide: true
@@ -267,7 +268,7 @@ export function WordSearchGame() {
     setDragStart(null);
     setDragEnd(null);
 
-    engine.makeMove({ type: 'SUBMIT_SELECTION' });
+    engine.makeMove({ type: 'VALIDATE_SELECTION' });
   };
 
   const handleMouseLeave = () => {
@@ -366,7 +367,7 @@ export function WordSearchGame() {
                 Score: {gameState.score}
               </div>
               <div className="text-sm">
-                Found: {gameState.foundWords.length}/{gameState.words.length}
+                Found: {gameState.foundWords.size}/{gameState.words.length}
               </div>
             </div>
           </div>
@@ -446,7 +447,6 @@ export function WordSearchGame() {
 
               <Button
                 onClick={() => {
-                  // Implement hint functionality
                   engine.makeMove({ type: 'HINT' });
                 }}
                 variant="outline"
@@ -470,7 +470,7 @@ export function WordSearchGame() {
                   <div
                     key={index}
                     className={`p-2 rounded text-sm ${
-                      gameState.foundWords.includes(word)
+                      gameState.foundWords.has(word)
                         ? 'bg-green-100 text-green-800 line-through'
                         : 'bg-gray-50'
                     }`}
@@ -486,3 +486,5 @@ export function WordSearchGame() {
     </div>
   );
 }
+
+export default WordSearchGame;

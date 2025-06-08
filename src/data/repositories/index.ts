@@ -8,3 +8,4 @@ export {
   ConflictError 
 } from './IRepository';
 export { BaseRepository } from './BaseRepository';
+export { UserRepository, userRepository } from './UserRepository';
