@@ -2,6 +2,7 @@ import { GameEngine } from '../GameEngine';
 import type { BaseGameState, GameConfig, MoveValidationResult, WinConditionResult } from '../../models/GameState';
 import type { PlacedWord, Cell } from './types';
 import { cellToString, stringToCell, cellsToStrings, stringsToCells } from './utils';
+import { WordPlacementEngine } from '@/components/games/word-search/WordPlacementEngine';
 
 export interface WordSearchState extends BaseGameState {
   grid: string[][];
@@ -65,42 +66,9 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     const gridSize = 15;
     const words = ['PUZZLE', 'SEARCH', 'GAME', 'WORD', 'FIND', 'HIDDEN', 'GRID', 'LETTERS'];
     
-    // Create empty grid
-    const grid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(''));
-    
-    // Simple word placement (horizontal only for now)
-    const placedWords: PlacedWord[] = [];
-    let wordIndex = 0;
-    
-    for (let i = 0; i < Math.min(words.length, 8); i++) {
-      const word = words[i];
-      const row = Math.floor(Math.random() * gridSize);
-      const col = Math.floor(Math.random() * (gridSize - word.length));
-      
-      // Place word horizontally
-      for (let j = 0; j < word.length; j++) {
-        grid[row][col + j] = word[j];
-      }
-      
-      placedWords.push({
-        word,
-        startRow: row,
-        startCol: col,
-        endRow: row,
-        endCol: col + word.length - 1,
-        direction: 'horizontal'
-      });
-    }
-    
-    // Fill empty cells with random letters
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    for (let row = 0; row < gridSize; row++) {
-      for (let col = 0; col < gridSize; col++) {
-        if (grid[row][col] === '') {
-          grid[row][col] = letters[Math.floor(Math.random() * letters.length)];
-        }
-      }
-    }
+    // Use the placement engine for better word placement
+    const placementEngine = new WordPlacementEngine(gridSize);
+    const { grid, placedWords } = placementEngine.placeWords(words);
     
     this.placedWords = placedWords;
     this.gameState = {
@@ -285,8 +253,12 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
 
   checkWinCondition(): WinConditionResult {
     const isWin = this.gameState.foundWords.size === this.gameState.words.length;
+    const completionPercentage = (this.gameState.foundWords.size / this.gameState.words.length) * 100;
+    
     return {
-      isWin
+      isWin,
+      completionPercentage,
+      finalScore: this.gameState.score
     };
   }
 

@@ -1,4 +1,3 @@
-
 // Base game state interface that all puzzle games will extend
 export interface BaseGameState {
   id: string;
@@ -48,9 +47,8 @@ export interface MoveValidationResult {
 // Win condition check result
 export interface WinConditionResult {
   isWin: boolean;
-  completionPercentage: number;
-  finalScore: number;
-  bonusPoints?: number;
+  completionPercentage?: number;
+  finalScore?: number;
 }
 
 // Game event types for consistent event handling

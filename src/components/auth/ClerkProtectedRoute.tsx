@@ -25,7 +25,8 @@ export const ClerkProtectedRoute: React.FC<ClerkProtectedRouteProps> = ({
     isLoading,
     isAdmin,
     requiredRoles,
-    pathname: location.pathname
+    pathname: location.pathname,
+    userEmail: user?.primaryEmailAddress?.emailAddress
   });
 
   if (!isLoaded || isLoading) {
@@ -43,7 +44,7 @@ export const ClerkProtectedRoute: React.FC<ClerkProtectedRouteProps> = ({
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // Check roles if specified
+  // Enhanced role checking with admin prioritization
   if (requiredRoles.length > 0) {
     const hasRequiredRole = requiredRoles.some(role => 
       hasRole(role) || isAdmin
@@ -57,6 +58,7 @@ export const ClerkProtectedRoute: React.FC<ClerkProtectedRouteProps> = ({
     });
 
     if (!hasRequiredRole) {
+      console.log('🚫 Access denied - insufficient role');
       return <Navigate to="/" replace />;
     }
   }
