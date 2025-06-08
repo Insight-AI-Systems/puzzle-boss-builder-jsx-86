@@ -17,17 +17,17 @@ const PhaserPuzzlePage = () => {
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [showNumbers, setShowNumbers] = useState(false);
   
-  // Calculate rows and columns based on difficulty
+  // Calculate piece count based on difficulty
   const getDifficultySettings = (diff: string) => {
     switch(diff) {
-      case 'easy': return { rows: 3, cols: 3 };
-      case 'medium': return { rows: 4, cols: 4 };
-      case 'hard': return { rows: 5, cols: 5 };
-      default: return { rows: 4, cols: 4 };
+      case 'easy': return 9; // 3x3
+      case 'medium': return 16; // 4x4
+      case 'hard': return 25; // 5x5
+      default: return 16;
     }
   };
   
-  const { rows, cols } = getDifficultySettings(difficulty);
+  const pieceCount = getDifficultySettings(difficulty);
   
   return (
     <PageLayout
@@ -70,10 +70,8 @@ const PhaserPuzzlePage = () => {
           
           <PhaserPuzzleEngine
             imageUrl={selectedImage}
-            rows={rows}
-            columns={cols}
-            showNumbers={showNumbers}
-            puzzleId="phaser-test-1"
+            pieceCount={pieceCount}
+            difficulty={difficulty}
           />
         </Card>
       </div>

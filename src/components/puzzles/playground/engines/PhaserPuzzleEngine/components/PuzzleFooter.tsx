@@ -1,6 +1,6 @@
 
 import React from 'react';
-import AuthSection from './AuthSection';
+import { AuthSection } from './AuthSection';
 import LeaderboardSection from './LeaderboardSection';
 
 interface PuzzleFooterProps {

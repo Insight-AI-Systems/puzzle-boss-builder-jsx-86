@@ -15,13 +15,15 @@ interface PhaserPuzzleEngineProps {
   pieceCount: number;
   onComplete?: (time: number, moves: number) => void;
   difficulty?: 'easy' | 'medium' | 'hard';
+  onError?: () => void;
 }
 
 export const PhaserPuzzleEngine: React.FC<PhaserPuzzleEngineProps> = ({
   imageUrl,
   pieceCount,
   onComplete,
-  difficulty = 'medium'
+  difficulty = 'medium',
+  onError
 }) => {
   const gameRef = useRef<HTMLDivElement>(null);
   const phaserGameRef = useRef<Phaser.Game | null>(null);

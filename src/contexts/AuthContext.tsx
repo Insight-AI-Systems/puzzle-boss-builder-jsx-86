@@ -69,15 +69,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // If no profile exists, create one
         if (!existingProfile) {
+          const profileData = {
+            clerk_user_id: clerkUser.id,
+            email: clerkUser.primaryEmailAddress?.emailAddress || '',
+            username: clerkUser.username || clerkUser.firstName || clerkUser.primaryEmailAddress?.emailAddress?.split('@')[0] || '',
+            role: 'player',
+            member_id: clerkUser.id // Use clerk ID as member_id for consistency
+          };
+
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
-            .insert({
-              clerk_user_id: clerkUser.id,
-              email: clerkUser.primaryEmailAddress?.emailAddress,
-              username: clerkUser.username || clerkUser.firstName || clerkUser.primaryEmailAddress?.emailAddress?.split('@')[0],
-              role: 'player',
-              member_id: clerkUser.id // Use clerk ID as member_id for consistency
-            })
+            .insert(profileData)
             .select()
             .single();
 

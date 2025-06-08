@@ -52,6 +52,7 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
   // Calculate rows and columns based on difficulty
   const rows = miniRows || (difficulty === 'easy' ? 3 : difficulty === 'medium' ? 4 : 5);
   const columns = miniColumns || (difficulty === 'easy' ? 3 : difficulty === 'medium' ? 4 : 5);
+  const pieceCount = rows * columns;
 
   // Generate a unique puzzle ID for the Phaser engine
   const phaserPuzzleId = useMemo(() => {
@@ -96,10 +97,8 @@ const PuzzleEnginePlayground: React.FC<PuzzleEnginePlaygroundProps> = ({
         {engine === 'phaser' && (
           <PhaserPuzzleEngine
             imageUrl={selectedImage}
-            rows={rows}
-            columns={columns}
-            showNumbers={showNumbers}
-            puzzleId={phaserPuzzleId}
+            pieceCount={pieceCount}
+            difficulty={difficulty}
             onError={handleEngineError}
           />
         )}
