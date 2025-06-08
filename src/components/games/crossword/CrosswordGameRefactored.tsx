@@ -32,7 +32,7 @@ export function CrosswordGame() {
     if (gameState.puzzle && gameState.progress && hasAccess) {
       const saveTimer = setInterval(() => {
         saveProgress(gameState.puzzle!.id, gameState.progress!);
-      }, 30000);
+      }, 30000); // Save every 30 seconds
 
       return () => clearInterval(saveTimer);
     }
@@ -92,6 +92,7 @@ export function CrosswordGame() {
 
   return (
     <div className="w-full space-y-6">
+      {/* Header */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -112,6 +113,7 @@ export function CrosswordGame() {
         </CardHeader>
       </Card>
 
+      {/* Game Completed Message */}
       {gameState.gameStatus === 'completed' && (
         <Alert className="border-green-200 bg-green-50">
           <AlertDescription className="text-green-800">
@@ -121,7 +123,9 @@ export function CrosswordGame() {
         </Alert>
       )}
 
+      {/* Main Game Area */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Crossword Grid */}
         <div className="xl:col-span-2">
           <Card>
             <CardContent className="p-4">
@@ -140,7 +144,9 @@ export function CrosswordGame() {
           </Card>
         </div>
 
+        {/* Controls and Clues */}
         <div className="space-y-6">
+          {/* Controls */}
           <CrosswordControls
             isPaused={gameState.isPaused}
             isCompleted={gameState.gameStatus === 'completed'}
@@ -153,6 +159,7 @@ export function CrosswordGame() {
             onToggleDirection={handleToggleDirection}
           />
 
+          {/* Clues */}
           <Card>
             <CardHeader>
               <CardTitle className="text-puzzle-white">Clues</CardTitle>
