@@ -1,416 +1,186 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { UserRole } from '@/types/userTypes';
 
-interface AuthUser extends User {
-  member_id?: string;
-  credits?: number;
-}
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { User, Session, AuthError } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { UserRole } from '@/types/userTypes';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
-  user: AuthUser | null;
+  user: User | null;
   session: Session | null;
   isLoading: boolean;
-  error: string | null;
-  userRoles: UserRole[];
-  userRole: UserRole | null;
-  rolesLoaded: boolean;
   isAuthenticated: boolean;
+  userRole: UserRole | null;
   isAdmin: boolean;
-  signIn: (email: string, password: string, options?: any) => Promise<void>;
-  signUp: (email: string, password: string, options?: any) => Promise<void>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updatePassword: (password: string) => Promise<void>;
-  hasRole: (role: UserRole) => boolean;
+  error: AuthError | Error | null;
   clearAuthError: () => void;
-  refreshSession: () => Promise<void>;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const fetchUserProfile = async (userId: string): Promise<Partial<AuthUser>> => {
-  try {
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('member_id, credits, role')
-      .eq('id', userId)
-      .single();
+const LOADING_TIMEOUT = 10000; // 10 seconds max loading time
+const AUTH_RETRY_DELAY = 2000; // 2 seconds between retries
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error fetching user profile:', error);
-      return {};
-    }
-
-    return {
-      member_id: profile?.member_id,
-      credits: profile?.credits || 0
-    };
-  } catch (error) {
-    console.error('Exception fetching user profile:', error);
-    return {};
-  }
-};
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [rolesLoaded, setRolesLoaded] = useState(false);
+  const [error, setError] = useState<AuthError | Error | null>(null);
   const { toast } = useToast();
 
-  const updateLastSignIn = async (userId: string, isSignIn: boolean = false) => {
+  // Force loading to stop after timeout
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.warn('Auth loading timeout reached, forcing completion');
+        setIsLoading(false);
+      }
+    }, LOADING_TIMEOUT);
+
+    return () => clearTimeout(timeout);
+  }, [isLoading]);
+
+  const clearAuthError = () => setError(null);
+
+  const fetchUserRole = async (userId: string, retryCount = 0): Promise<UserRole> => {
     try {
-      console.log('AuthContext - Updating last_sign_in for user:', userId, isSignIn ? '(SIGN_IN)' : '(ACTIVITY)');
-      
-      const { error: directError } = await supabase
-        .from('profiles')
-        .update({ last_sign_in: new Date().toISOString() })
-        .eq('id', userId);
-      
-      if (directError) {
-        console.error('AuthContext - Error updating last_sign_in directly:', directError);
-      } else {
-        console.log('AuthContext - Successfully updated last_sign_in directly');
+      // Special case for super admin email
+      if (session?.user?.email === 'alan@insight-ai-systems.com') {
+        return 'super_admin';
       }
 
-      if (isSignIn) {
-        try {
-          const { error: functionError } = await supabase.functions.invoke('handle_user_signin', {
-            body: { userId }
-          });
-          
-          if (functionError) {
-            console.error('AuthContext - Edge function error (non-critical):', functionError);
-          }
-        } catch (functionException) {
-          console.error('AuthContext - Edge function exception (non-critical):', functionException);
-        }
-      }
-    } catch (error) {
-      console.error('AuthContext - Exception updating last_sign_in:', error);
-    }
-  };
-
-  const fetchUserRole = async (userId: string, email: string | undefined) => {
-    try {
-      console.log('AuthContext - Fetching role for user:', { userId, email });
-      
-      const { data: profile, error } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
 
-      if (error) {
-        console.error('AuthContext - Error fetching user profile:', error);
-        setUserRole('player');
-      } else if (profile?.role) {
-        console.log('AuthContext - Role found in profile:', profile.role);
-        setUserRole(profile.role as UserRole);
-      } else {
-        console.log('AuthContext - No role found, defaulting to player');
-        setUserRole('player');
+      if (profileError) {
+        if (profileError.code === 'PGRST116') {
+          // No profile found, default to player
+          return 'player';
+        }
+        throw profileError;
       }
-    } catch (error) {
-      console.error('AuthContext - Exception fetching user role:', error);
+
+      return (profile?.role as UserRole) || 'player';
+    } catch (err) {
+      console.error('Error fetching user role:', err);
+      
+      // Retry once on failure
+      if (retryCount < 1) {
+        await new Promise(resolve => setTimeout(resolve, AUTH_RETRY_DELAY));
+        return fetchUserRole(userId, retryCount + 1);
+      }
+      
+      // Default to player on persistent failure
+      return 'player';
+    }
+  };
+
+  const handleAuthStateChange = async (event: string, newSession: Session | null) => {
+    console.log('Auth state change:', event, !!newSession);
+    
+    try {
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+      
+      if (newSession?.user) {
+        // Fetch role with timeout protection
+        const rolePromise = fetchUserRole(newSession.user.id);
+        const timeoutPromise = new Promise<UserRole>((resolve) => {
+          setTimeout(() => resolve('player'), 5000); // 5 second timeout for role fetch
+        });
+        
+        const role = await Promise.race([rolePromise, timeoutPromise]);
+        setUserRole(role);
+      } else {
+        setUserRole(null);
+      }
+    } catch (err) {
+      console.error('Error in auth state change:', err);
+      setError(err as Error);
+      // Don't block loading on errors
       setUserRole('player');
     } finally {
-      setRolesLoaded(true);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    let mounted = true;
+    console.log('AuthProvider initializing...');
+    setIsLoading(true);
 
-    const getInitialSession = async () => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+
+    // Get initial session with timeout protection
+    const initializeAuth = async () => {
       try {
-        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<{ data: { session: Session | null } }>((resolve) => {
+          setTimeout(() => resolve({ data: { session: null } }), 5000);
+        });
+
+        const { data: { session: initialSession } } = await Promise.race([sessionPromise, timeoutPromise]);
         
-        if (error) {
-          console.error("Error getting initial session:", error);
-          setError(error.message);
-        }
-        
-        if (mounted) {
-          setSession(initialSession);
-          
-          if (initialSession?.user) {
-            // Fetch additional profile data
-            const profileData = await fetchUserProfile(initialSession.user.id);
-            const enhancedUser: AuthUser = { ...initialSession.user, ...profileData };
-            setUser(enhancedUser);
-            
-            updateLastSignIn(initialSession.user.id, false);
-            await fetchUserRole(initialSession.user.id, initialSession.user.email);
-          } else {
-            setUser(null);
-            setRolesLoaded(true);
-          }
-        }
-      } catch (error) {
-        console.error("Error getting initial session:", error);
-        if (mounted) {
-          setError(error instanceof Error ? error.message : 'Unknown error');
-          setRolesLoaded(true);
-        }
-      } finally {
-        if (mounted) {
+        if (initialSession) {
+          await handleAuthStateChange('INITIAL_SESSION', initialSession);
+        } else {
           setIsLoading(false);
         }
+      } catch (err) {
+        console.error('Error initializing auth:', err);
+        setError(err as Error);
+        setIsLoading(false);
       }
     };
 
-    getInitialSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, currentSession: Session | null) => {
-        console.log('Auth state change:', event, currentSession?.user?.email);
-        
-        if (mounted) {
-          setSession(currentSession);
-          setError(null);
-          
-          if (currentSession?.user) {
-            // Fetch additional profile data
-            const profileData = await fetchUserProfile(currentSession.user.id);
-            const enhancedUser: AuthUser = { ...currentSession.user, ...profileData };
-            setUser(enhancedUser);
-            
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-              console.log('AuthContext - User activity detected, updating last_sign_in');
-              setTimeout(() => {
-                updateLastSignIn(currentSession.user.id, event === 'SIGNED_IN');
-              }, 100);
-            }
-            
-            setTimeout(() => {
-              if (mounted) {
-                fetchUserRole(currentSession.user.id, currentSession.user.email);
-              }
-            }, 0);
-          } else {
-            setUser(null);
-            setUserRole(null);
-            setRolesLoaded(true);
-          }
-        }
-      }
-    );
+    initializeAuth();
 
     return () => {
-      mounted = false;
+      console.log('AuthProvider cleanup');
       subscription.unsubscribe();
     };
   }, []);
 
-  const signIn = async (email: string, password: string, options?: any) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        console.error('Authentication error:', error.message);
-        setError(error.message);
-        toast({
-          title: 'Authentication Failed',
-          description: error.message,
-          variant: 'destructive',
-        });
-      } else {
-        console.log('Sign in successful for:', email);
-      }
-    } catch (error) {
-      console.error('Authentication error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-      setError(errorMessage);
+  // Show error toast when error occurs
+  useEffect(() => {
+    if (error) {
+      console.error('Auth error:', error);
       toast({
-        title: 'Authentication Failed',
-        description: errorMessage,
+        title: 'Authentication Error',
+        description: 'There was a problem with authentication. Some features may not work properly.',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [error, toast]);
 
-  const signUp = async (email: string, password: string, options?: any) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: email,
-        password: password,
-        options: {
-          data: options,
-          emailRedirectTo: `${window.location.origin}/`
-        },
-      });
+  const isAuthenticated = !!user && !!session;
+  const isAdmin = userRole === 'super_admin' || userRole === 'admin';
 
-      if (error) {
-        console.error('Signup error:', error.message);
-        setError(error.message);
-        toast({
-          title: 'Signup Failed',
-          description: error.message,
-          variant: 'destructive',
-        });
-      } else {
-        console.log('Sign up successful for:', email);
-        toast({
-          title: 'Signup Successful',
-          description: 'Please check your email to verify your account.',
-        });
-      }
-    } catch (error) {
-      console.error('Signup error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-      setError(errorMessage);
-      toast({
-        title: 'Signup Failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const signOut = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      if (user?.id) {
-        console.log('AuthContext - Updating last_sign_in timestamp for logout:', user.id);
-        try {
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ last_sign_in: new Date().toISOString() })
-            .eq('id', user.id);
-          
-          if (updateError) {
-            console.error('AuthContext - Error updating last_sign_in on logout:', updateError);
-          } else {
-            console.log('AuthContext - Successfully updated last_sign_in on logout');
-          }
-        } catch (updateException) {
-          console.error('AuthContext - Exception updating last_sign_in on logout:', updateException);
-        }
-      }
-
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Signout error:', error.message);
-        setError(error.message);
-        toast({
-          title: 'Signout Failed',
-          description: error.message,
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Signout error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-      setError(errorMessage);
-      toast({
-        title: 'Signout Failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const resetPassword = async (email: string) => {
-    setError(null);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
-      });
-      if (error) {
-        setError(error.message);
-        throw error;
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-      setError(errorMessage);
-      throw error;
-    }
-  };
-
-  const updatePassword = async (password: string) => {
-    setError(null);
-    try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) {
-        setError(error.message);
-        throw error;
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-      setError(errorMessage);
-      throw error;
-    }
-  };
-
-  const refreshSession = async () => {
-    try {
-      const { data, error } = await supabase.auth.refreshSession();
-      if (error) {
-        console.error('Session refresh error:', error);
-        setError(error.message);
-      } else {
-        setSession(data.session);
-        if (data.user) {
-          const profileData = await fetchUserProfile(data.user.id);
-          const enhancedUser: AuthUser = { ...data.user, ...profileData };
-          setUser(enhancedUser);
-        }
-      }
-    } catch (error) {
-      console.error('Session refresh error:', error);
-      setError(error instanceof Error ? error.message : 'Failed to refresh session');
-    }
-  };
-
-  const clearAuthError = () => {
-    setError(null);
-  };
-
-  const hasRole = (role: UserRole): boolean => {
-    return userRole === role;
-  };
-
-  const userRoles: UserRole[] = userRole ? [userRole] : [];
-  const isAdmin = userRole === 'admin' || userRole === 'super_admin';
-
-  const value: AuthContextType = {
-    user,
-    session,
+  console.log('AuthProvider state:', {
     isLoading,
-    error,
-    userRoles,
+    isAuthenticated,
     userRole,
-    rolesLoaded,
-    isAuthenticated: !!user,
-    isAdmin,
-    signIn,
-    signUp,
-    signOut,
-    resetPassword,
-    updatePassword,
-    refreshSession,
-    clearAuthError,
-    hasRole,
-  };
+    hasUser: !!user,
+    hasSession: !!session
+  });
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        isLoading,
+        isAuthenticated,
+        userRole,
+        isAdmin,
+        error,
+        clearAuthError,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -423,5 +193,3 @@ export function useAuth() {
   }
   return context;
 }
-
-export type { AuthContextType };
