@@ -18,7 +18,7 @@ const profileEditSchema = z.object({
   country: z.string().max(100, 'Country must be less than 100 characters').optional(),
   gender: z.enum(['male', 'female', 'non-binary', 'custom', 'prefer-not-to-say', 'other']).optional(),
   custom_gender: z.string().max(50, 'Custom gender must be less than 50 characters').optional(),
-  age_group: z.enum(['under_18', '18_24', '25_34', '35_44', '45_54', '55_64', '65_plus']).optional(),
+  age_group: z.enum(['13-17', '18-24', '25-34', '35-44', '45-60', '60+']).optional(),
   role: z.enum(['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo', 'player'])
 }).refine(
   (data) => {
@@ -180,13 +180,12 @@ export function ProfileEditForm({ user, currentUserRole, onSave, onCancel, isLoa
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="under_18">Under 18</SelectItem>
-                  <SelectItem value="18_24">18-24</SelectItem>
-                  <SelectItem value="25_34">25-34</SelectItem>
-                  <SelectItem value="35_44">35-44</SelectItem>
-                  <SelectItem value="45_54">45-54</SelectItem>
-                  <SelectItem value="55_64">55-64</SelectItem>
-                  <SelectItem value="65_plus">65+</SelectItem>
+                  <SelectItem value="13-17">13-17</SelectItem>
+                  <SelectItem value="18-24">18-24</SelectItem>
+                  <SelectItem value="25-34">25-34</SelectItem>
+                  <SelectItem value="35-44">35-44</SelectItem>
+                  <SelectItem value="45-60">45-60</SelectItem>
+                  <SelectItem value="60+">60+</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />

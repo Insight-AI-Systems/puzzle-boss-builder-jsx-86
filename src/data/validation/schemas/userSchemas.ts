@@ -30,7 +30,7 @@ export const genderSchema = z.enum([
   'other'
 ]);
 
-// Age group validation
+// Age group validation - updated to match database enum
 export const ageGroupSchema = z.enum([
   '13-17',
   '18-24',
