@@ -6,8 +6,14 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface Profile {
   id: string;
-  clerk_user_id: string;
+  clerk_user_id?: string | null;
   role?: string;
+  username?: string | null;
+  email?: string | null;
+  avatar_url?: string | null;
+  bio?: string | null;
+  created_at?: string;
+  updated_at?: string;
   [key: string]: any;
 }
 
@@ -16,9 +22,9 @@ export const useClerkAuth = () => {
   const { signOut: clerkSignOut } = useClerk();
 
   // Fetch user profile from Supabase based on Clerk user
-  const profileQuery = useQuery({
+  const profileQuery = useQuery<Profile | null>({
     queryKey: ['profile', user?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<Profile | null> => {
       if (!user?.id) return null;
       
       const { data, error } = await supabase
@@ -32,7 +38,7 @@ export const useClerkAuth = () => {
         return null;
       }
       
-      return data as Profile | null;
+      return data ? data as Profile : null;
     },
     enabled: !!user?.id && isSignedIn,
   });
