@@ -19,7 +19,7 @@ const RegistrationForm: React.FC = () => {
   });
 
   const { errors, validateForm, clearError } = useRegistrationValidation();
-  const { handleSubmit, isLoading } = useRegistrationSubmit();
+  const { submitRegistration, isSubmitting } = useRegistrationSubmit();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -41,7 +41,18 @@ const RegistrationForm: React.FC = () => {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm(formData)) {
-      await handleSubmit(formData);
+      await submitRegistration({
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.name.split(' ')[0] || '',
+        lastName: formData.name.split(' ').slice(1).join(' ') || '',
+        username: formData.email.split('@')[0],
+        country: '',
+        dateOfBirth: '',
+        acceptTerms: formData.agreeTerms,
+        acceptPrivacy: formData.agreeTerms,
+        acceptMarketing: false
+      });
     }
   };
 
@@ -56,7 +67,7 @@ const RegistrationForm: React.FC = () => {
           value={formData.name}
           onChange={handleChange}
           error={errors.name}
-          disabled={isLoading}
+          disabled={isSubmitting}
         />
         
         <FormField
@@ -67,7 +78,7 @@ const RegistrationForm: React.FC = () => {
           value={formData.email}
           onChange={handleChange}
           error={errors.email}
-          disabled={isLoading}
+          disabled={isSubmitting}
         />
         
         <FormField
@@ -78,7 +89,7 @@ const RegistrationForm: React.FC = () => {
           value={formData.password}
           onChange={handleChange}
           error={errors.password}
-          disabled={isLoading}
+          disabled={isSubmitting}
         />
         
         <FormField
@@ -89,7 +100,7 @@ const RegistrationForm: React.FC = () => {
           value={formData.confirmPassword}
           onChange={handleChange}
           error={errors.confirmPassword}
-          disabled={isLoading}
+          disabled={isSubmitting}
         />
         
         <div className="flex items-center space-x-2">
@@ -97,7 +108,7 @@ const RegistrationForm: React.FC = () => {
             id="agreeTerms"
             checked={formData.agreeTerms}
             onCheckedChange={handleCheckboxChange}
-            disabled={isLoading}
+            disabled={isSubmitting}
           />
           <Label htmlFor="agreeTerms" className="text-sm">
             I agree to the Terms & Conditions and Privacy Policy
@@ -105,8 +116,8 @@ const RegistrationForm: React.FC = () => {
         </div>
         {errors.agreeTerms && <p className="text-red-500 text-sm">{errors.agreeTerms}</p>}
         
-        <Button type="submit" className="w-full bg-puzzle-gold text-puzzle-black hover:bg-puzzle-gold/90" disabled={isLoading}>
-          {isLoading ? (
+        <Button type="submit" className="w-full bg-puzzle-gold text-puzzle-black hover:bg-puzzle-gold/90" disabled={isSubmitting}>
+          {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Creating Account...

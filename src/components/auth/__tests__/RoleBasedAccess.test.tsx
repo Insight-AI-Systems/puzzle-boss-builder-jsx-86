@@ -45,7 +45,6 @@ describe('RoleBasedAccess Component', () => {
       signOut: jest.fn(),
       resetPassword: jest.fn(),
       updatePassword: jest.fn(),
-      refreshSession: jest.fn(),
       clearAuthError: jest.fn(),
     };
 
@@ -78,7 +77,6 @@ describe('RoleBasedAccess Component', () => {
       signOut: jest.fn(),
       resetPassword: jest.fn(),
       updatePassword: jest.fn(),
-      refreshSession: jest.fn(),
       clearAuthError: jest.fn(),
     };
 
@@ -111,7 +109,6 @@ describe('RoleBasedAccess Component', () => {
       signOut: jest.fn(),
       resetPassword: jest.fn(),
       updatePassword: jest.fn(),
-      refreshSession: jest.fn(),
       clearAuthError: jest.fn(),
     };
 
