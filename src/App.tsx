@@ -74,6 +74,14 @@ function App() {
             </ClerkProtectedRoute>
           } 
         />
+        <Route 
+          path="/admin-dashboard/finance" 
+          element={
+            <ClerkProtectedRoute requiredRoles={['admin', 'super_admin', 'cfo']}>
+              <AdminDashboard />
+            </ClerkProtectedRoute>
+          } 
+        />
       </Routes>
     </MainLayout>
   );

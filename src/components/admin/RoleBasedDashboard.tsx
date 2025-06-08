@@ -8,9 +8,10 @@ import { getTabDefinitions } from './dashboard/TabDefinitions';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useSearchParams } from 'react-router-dom';
 import { UserRole } from '@/types/userTypes';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 export const RoleBasedDashboard: React.FC = () => {
-  const { hasRole } = useAuth();
+  const { hasRole } = useClerkAuth();
   const { profile } = useUserProfile();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
@@ -38,6 +39,13 @@ export const RoleBasedDashboard: React.FC = () => {
     setActiveTab(newTab);
     setSearchParams({ tab: newTab });
   };
+
+  // Update active tab when URL changes
+  React.useEffect(() => {
+    if (tabParam && accessibleTabs.some(tab => tab.id === tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam, accessibleTabs]);
 
   if (!profile) {
     return null;
