@@ -1,3 +1,4 @@
+
 import { CrosswordEngine } from '@/business/engines/crossword/CrosswordEngine';
 import { WordSearchEngine } from '@/business/engines/word-search/WordSearchEngine';
 import type { CrosswordState, WordSearchState } from '@/business/engines';
@@ -186,7 +187,7 @@ export class GameEngineTests {
       foundWords: new Set<string>(),
       selectedCells: [],
       currentSelection: [],
-      hintCells: [], // Add missing property
+      hintCells: [],
       difficulty: 'rookie',
       timeElapsed: 0,
       hintsUsed: 0,

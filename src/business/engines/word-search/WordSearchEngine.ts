@@ -1,3 +1,4 @@
+
 import { GameEngine } from '../GameEngine';
 import type { BaseGameState, GameConfig, MoveValidationResult, WinConditionResult } from '../../models/GameState';
 import type { PlacedWord, Cell } from './types';
@@ -84,8 +85,10 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       
       placedWords.push({
         word,
-        start: { row, col },
-        end: { row, col: col + word.length - 1 },
+        startRow: row,
+        startCol: col,
+        endRow: row,
+        endCol: col + word.length - 1,
         direction: 'horizontal'
       });
     }
@@ -119,15 +122,19 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     };
     this.emitEvent({
       type: 'GAME_STARTED',
-      timestamp: Date.now(),
-      data: {}
+      timestamp: Date.now()
     });
     this.notifyListeners();
   }
 
   validateMove(move: WordSearchMove): MoveValidationResult {
     if (move.type === 'WORD_FOUND' && move.word && move.cells) {
-      const result = this.validateWordSelection(move.cells);
+      // Ensure cells are in string format
+      const cellStrings = Array.isArray(move.cells[0]) && typeof move.cells[0] === 'object'
+        ? cellsToStrings(move.cells as Cell[])
+        : move.cells as string[];
+      
+      const result = this.validateWordSelection(cellStrings);
       return {
         isValid: result.isValid,
         error: result.isValid ? null : 'Invalid word selection'
@@ -172,8 +179,8 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
 
             this.emitEvent({
               type: 'MOVE_MADE',
-              timestamp: Date.now(),
-              data: { word: validation.word }
+              move: move,
+              timestamp: Date.now()
             });
 
             // Check for completion
@@ -186,8 +193,8 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
               };
               this.emitEvent({
                 type: 'GAME_COMPLETED',
-                timestamp: Date.now(),
-                data: {}
+                finalScore: this.gameState.score,
+                timestamp: Date.now()
               });
             }
           }
@@ -210,7 +217,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
             const hintCells: string[] = [];
             for (let i = 0; i < placedWord.word.length; i++) {
               if (placedWord.direction === 'horizontal') {
-                hintCells.push(cellToString({ row: placedWord.start.row, col: placedWord.start.col + i }));
+                hintCells.push(cellToString({ row: placedWord.startRow, col: placedWord.startCol + i }));
               }
             }
             
@@ -223,8 +230,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
         
         this.emitEvent({
           type: 'HINT_USED',
-          timestamp: Date.now(),
-          data: {}
+          timestamp: Date.now()
         });
         break;
     }
@@ -279,10 +285,10 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
   }
 
   checkWinCondition(): WinConditionResult {
-    const isWon = this.gameState.foundWords.size === this.gameState.words.length;
+    const isWin = this.gameState.foundWords.size === this.gameState.words.length;
     return {
-      isWon,
-      message: isWon ? 'Congratulations! You found all words!' : ''
+      isWin,
+      message: isWin ? 'Congratulations! You found all words!' : ''
     };
   }
 
@@ -293,8 +299,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     };
     this.emitEvent({
       type: 'GAME_PAUSED',
-      timestamp: Date.now(),
-      data: {}
+      timestamp: Date.now()
     });
     this.notifyListeners();
   }
@@ -306,8 +311,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     };
     this.emitEvent({
       type: 'GAME_RESUMED',
-      timestamp: Date.now(),
-      data: {}
+      timestamp: Date.now()
     });
     this.notifyListeners();
   }

@@ -253,7 +253,11 @@ export function WordSearchGame() {
 
         {/* Game Status and Instructions */}
         {gameState.status === 'idle' && (
-          <WordSearchInstructions />
+          <WordSearchInstructions 
+            difficulty={gameState.difficulty}
+            category="General"
+            totalWords={gameState.words.length}
+          />
         )}
 
         {/* Game Completed */}
@@ -265,7 +269,9 @@ export function WordSearchGame() {
             timeElapsed={gameState.timeElapsed}
             wordsFound={gameState.foundWords.size}
             totalWords={gameState.words.length}
+            incorrectSelections={0}
             onPlayAgain={handleReset}
+            onViewLeaderboard={() => {}}
           />
         )}
 
