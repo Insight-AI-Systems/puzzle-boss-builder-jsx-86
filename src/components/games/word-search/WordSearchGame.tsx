@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { BaseGameWrapper } from '../BaseGameWrapper';
 import { ResponsiveGameContainer } from '../ResponsiveGameContainer';
-import WordSearchEngine from './WordSearchEngine';
+import { WordSearchEngine, WordSearchState } from '../../../business/engines/word-search/WordSearchEngine';
 import { WordSearchInstructions } from './WordSearchInstructions';
 import { wordCategories, getRandomWordsFromCategory, getDifficultyWordCount } from './WordListManager';
 import { GameConfig } from '../types/GameTypes';
@@ -25,13 +26,11 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
   onComplete
 }) => {
   const [selectedCategory, setSelectedCategory] = useState(initialCategory || 'animals');
-  const [currentWords, setCurrentWords] = useState<string[]>([]);
+  const [gameEngine, setGameEngine] = useState<WordSearchEngine | null>(null);
+  const [gameState, setGameState] = useState<WordSearchState | null>(null);
   const [gameKey, setGameKey] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
-  const [wordsFound, setWordsFound] = useState(0);
-  const [totalWords, setTotalWords] = useState(0);
-  const [enablePenalties] = useState(true); // Always enable penalties for competitive play
 
   const gameConfig: GameConfig = {
     gameType: 'word-search',
@@ -41,59 +40,114 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
     timeLimit: difficulty === 'master' ? 600 : difficulty === 'pro' ? 480 : 360,
     requiresPayment: entryFee > 0,
     entryFee,
-    difficulty // Add difficulty to config
+    difficulty
   };
 
-  // Generate unique session ID for game state persistence
   const [sessionId] = useState(() => `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
 
-  // Initialize words when category or difficulty changes
+  // Initialize game engine when category or difficulty changes
   useEffect(() => {
-    const wordCount = getDifficultyWordCount(difficulty);
-    const words = getRandomWordsFromCategory(selectedCategory, wordCount, difficulty);
-    setCurrentWords(words);
-    setTotalWords(words.length);
-    setWordsFound(0);
-    setGameStarted(false);
-    setShowInstructions(true);
-  }, [selectedCategory, difficulty]);
+    const initializeEngine = async () => {
+      const wordCount = getDifficultyWordCount(difficulty);
+      const words = getRandomWordsFromCategory(selectedCategory, wordCount, difficulty);
+      
+      const initialState: WordSearchState = {
+        id: sessionId,
+        status: 'idle',
+        startTime: null,
+        endTime: null,
+        score: 0,
+        moves: 0,
+        isComplete: false,
+        grid: [],
+        gridSize: 0,
+        words,
+        foundWords: new Set(),
+        placedWords: [],
+        selectedCells: [],
+        incorrectSelections: 0,
+        category: selectedCategory,
+        difficulty
+      };
+
+      const engine = new WordSearchEngine(initialState, gameConfig);
+      
+      // Listen to engine events
+      engine.addEventListener((event) => {
+        console.log('Game event:', event);
+        setGameState(engine.getState());
+      });
+
+      await engine.initialize();
+      setGameEngine(engine);
+      setGameState(engine.getState());
+      setGameStarted(false);
+      setShowInstructions(true);
+    };
+
+    initializeEngine();
+  }, [selectedCategory, difficulty, sessionId]);
 
   const handleCategoryChange = (newCategory: string) => {
     setSelectedCategory(newCategory);
     setGameKey(prev => prev + 1);
-    setGameStarted(false);
-    setShowInstructions(true);
   };
 
   const handleStartGame = (startGameFn: () => void) => {
-    startGameFn(); // Call the BaseGameWrapper's startGame function
+    if (gameEngine) {
+      gameEngine.start();
+      setGameState(gameEngine.getState());
+    }
+    startGameFn();
     setGameStarted(true);
     setShowInstructions(false);
   };
 
-  const handleWordFound = (word: string, found: number, total: number) => {
-    setWordsFound(found);
-    setTotalWords(total);
+  const handleCellSelection = (selectedCells: string[]) => {
+    if (gameEngine && gameState) {
+      gameEngine.makeMove({
+        type: 'SELECT_CELLS',
+        selectedCells
+      });
+      setGameState(gameEngine.getState());
+    }
   };
 
-  const handleGameComplete = (stats: {
-    timeElapsed: number;
-    wordsFound: number;
-    totalWords: number;
-    incorrectSelections: number;
-  }) => {
-    // Calculate competitive score with penalties
-    const baseScore = 1000;
-    const timeBonus = Math.max(0, (gameConfig.timeLimit! - Math.floor(stats.timeElapsed / 1000)) * 10);
-    const completionBonus = stats.wordsFound === stats.totalWords ? 500 : 0;
-    const penaltyDeduction = stats.incorrectSelections * 50;
-    const finalScore = Math.max(0, baseScore + timeBonus + completionBonus - penaltyDeduction);
+  const handleWordValidation = (selectedCells: string[]) => {
+    if (gameEngine && gameState) {
+      gameEngine.makeMove({
+        type: 'VALIDATE_SELECTION',
+        selectedCells
+      });
+      
+      const newState = gameEngine.getState();
+      setGameState(newState);
+
+      // Check win condition
+      const winResult = gameEngine.checkWinCondition();
+      if (winResult.isWin) {
+        handleGameComplete();
+      }
+    }
+  };
+
+  const handleGameComplete = () => {
+    if (!gameState || !gameEngine) return;
+
+    const stats = {
+      timeElapsed: gameState.endTime && gameState.startTime 
+        ? gameState.endTime - gameState.startTime 
+        : 0,
+      wordsFound: gameState.foundWords.size,
+      totalWords: gameState.words.length,
+      incorrectSelections: gameState.incorrectSelections
+    };
 
     onComplete?.({
       sessionId,
-      score: finalScore,
+      score: gameState.score,
       timeElapsed: stats.timeElapsed,
-      moves: 0,
+      moves: gameState.moves,
       completed: stats.wordsFound === stats.totalWords,
       gameType: 'word-search',
       wordsFound: stats.wordsFound,
@@ -104,6 +158,16 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
 
   const categoryOptions = wordCategories.find(cat => cat.id === selectedCategory);
 
+  if (!gameState) {
+    return (
+      <ResponsiveGameContainer maxWidth="full" className="min-h-screen bg-puzzle-black">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-puzzle-white">Loading game...</div>
+        </div>
+      </ResponsiveGameContainer>
+    );
+  }
+
   return (
     <ResponsiveGameContainer maxWidth="full" className="min-h-screen bg-puzzle-black">
       <BaseGameWrapper 
@@ -111,11 +175,11 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
         hooks={{
           onGameStart: () => setGameStarted(true),
           onScoreUpdate: score => {
-            // Score is calculated based on words found, time, and penalties
+            // Score updates handled by engine
           }
         }}
       >
-        {({ gameState, startGame, timer, payment, session }) => (
+        {({ gameState: wrapperState, startGame, timer, payment, session }) => (
           <div className="space-y-4">
             {/* Game Configuration */}
             {showInstructions && (
@@ -125,7 +189,7 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
                     <CardTitle className="text-puzzle-white">Competitive Word Search</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* Game Metrics - Always Visible */}
+                    {/* Game Metrics */}
                     <div className="p-4 bg-gray-800 rounded-lg">
                       <h4 className="text-puzzle-aqua font-semibold mb-3 text-sm">Live Game Metrics</h4>
                       <div className="flex flex-wrap items-center gap-4">
@@ -136,7 +200,7 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
                         
                         <Badge variant="outline" className="text-puzzle-gold border-puzzle-gold">
                           <Trophy className="h-3 w-3 mr-1" />
-                          Score: {session?.score?.toLocaleString() || '0'}
+                          Score: {gameState.score.toLocaleString()}
                         </Badge>
                         
                         {gameConfig.requiresPayment && (
@@ -147,7 +211,7 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
                         )}
                         
                         <Badge variant="outline" className="text-puzzle-white border-gray-400">
-                          Words: {wordsFound}/{totalWords}
+                          Words: {gameState.foundWords.size}/{gameState.words.length}
                         </Badge>
 
                         {payment && (
@@ -177,7 +241,7 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
                       </div>
                       
                       <div className="flex items-end gap-2">
-                        {!gameStarted && gameState === 'not_started' && (
+                        {!gameStarted && wrapperState === 'not_started' && (
                           <Button onClick={() => handleStartGame(startGame)} className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold">
                             <Play className="h-4 w-4 mr-2" />
                             Start Game
@@ -190,7 +254,7 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
                       <div className="p-3 bg-gray-800 rounded-lg">
                         <p className="text-sm text-gray-300">{categoryOptions.description}</p>
                         <p className="text-xs text-gray-400 mt-1">
-                          {totalWords} words to find • {difficulty} difficulty
+                          {gameState.words.length} words to find • {difficulty} difficulty
                         </p>
                       </div>
                     )}
@@ -210,28 +274,26 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
                   </CardContent>
                 </Card>
 
-                {/* Enhanced Instructions */}
                 <WordSearchInstructions 
                   difficulty={difficulty} 
                   category={categoryOptions?.name || 'Unknown'} 
-                  totalWords={totalWords} 
+                  totalWords={gameState.words.length} 
                   competitive={true} 
                 />
               </>
             )}
 
-            {/* Enhanced Word Search Engine */}
-            {gameStarted && currentWords.length > 0 && (
-              <WordSearchEngine 
-                key={gameKey}
-                difficulty={difficulty}
-                category={categoryOptions?.name || 'Unknown'}
-                wordList={currentWords}
-                onComplete={handleGameComplete}
-                onWordFound={handleWordFound}
-                enablePenalties={enablePenalties}
-                sessionId={sessionId}
-              />
+            {/* Game Grid - Render existing WordSearchEngine component */}
+            {gameStarted && gameEngine && (
+              <div className="bg-gray-900 rounded-lg p-4">
+                <WordSearchEngineRenderer
+                  key={gameKey}
+                  gameState={gameState}
+                  onCellSelection={handleCellSelection}
+                  onWordValidation={handleWordValidation}
+                  sessionId={sessionId}
+                />
+              </div>
             )}
 
             {/* Game Actions */}
@@ -263,6 +325,102 @@ const WordSearchGame: React.FC<WordSearchGameProps> = ({
         )}
       </BaseGameWrapper>
     </ResponsiveGameContainer>
+  );
+};
+
+// Temporary renderer component - will be replaced with the existing WordSearchEngine component
+const WordSearchEngineRenderer: React.FC<{
+  gameState: WordSearchState;
+  onCellSelection: (cells: string[]) => void;
+  onWordValidation: (cells: string[]) => void;
+  sessionId: string;
+}> = ({ gameState, onCellSelection, onWordValidation }) => {
+  const [selectedCells, setSelectedCells] = useState<string[]>([]);
+  const [isSelecting, setIsSelecting] = useState(false);
+
+  const handleCellClick = (rowIndex: number, colIndex: number) => {
+    const cellId = `${rowIndex}-${colIndex}`;
+    
+    if (!isSelecting) {
+      setSelectedCells([cellId]);
+      setIsSelecting(true);
+    } else {
+      const newSelection = [...selectedCells, cellId];
+      setSelectedCells(newSelection);
+      onCellSelection(newSelection);
+    }
+  };
+
+  const handleSelectionEnd = () => {
+    if (selectedCells.length > 1) {
+      onWordValidation(selectedCells);
+    }
+    setSelectedCells([]);
+    setIsSelecting(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Word List */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mb-4">
+        {gameState.words.map((word, index) => (
+          <div
+            key={index}
+            className={`p-2 rounded text-center text-sm font-medium ${
+              gameState.foundWords.has(word)
+                ? 'bg-puzzle-aqua text-puzzle-black line-through'
+                : 'bg-gray-800 text-puzzle-white'
+            }`}
+          >
+            {word}
+          </div>
+        ))}
+      </div>
+
+      {/* Game Grid */}
+      <div className="flex justify-center">
+        <div className="inline-block">
+          <div
+            className="grid gap-1 p-4 bg-gray-800 rounded-lg"
+            style={{
+              gridTemplateColumns: `repeat(${gameState.gridSize}, minmax(0, 1fr))`
+            }}
+          >
+            {gameState.grid.map((row, rowIndex) =>
+              row.map((letter, colIndex) => {
+                const cellId = `${rowIndex}-${colIndex}`;
+                const isSelected = selectedCells.includes(cellId);
+                
+                return (
+                  <button
+                    key={cellId}
+                    className={`
+                      w-8 h-8 md:w-10 md:h-10 text-sm md:text-base font-bold rounded
+                      transition-colors duration-200 border
+                      ${isSelected
+                        ? 'bg-puzzle-aqua text-puzzle-black border-puzzle-aqua'
+                        : 'bg-gray-700 text-puzzle-white border-gray-600 hover:bg-gray-600'
+                      }
+                    `}
+                    onClick={() => handleCellClick(rowIndex, colIndex)}
+                    onMouseUp={handleSelectionEnd}
+                  >
+                    {letter}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Game Stats */}
+      <div className="flex justify-center gap-4 text-sm text-gray-300">
+        <span>Words Found: {gameState.foundWords.size}/{gameState.words.length}</span>
+        <span>Incorrect: {gameState.incorrectSelections}</span>
+        <span>Score: {gameState.score}</span>
+      </div>
+    </div>
   );
 };
 
