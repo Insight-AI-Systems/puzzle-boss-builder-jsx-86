@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { RoleBasedAccess } from '../RoleBasedAccess';
 import { AuthContext } from '@/contexts/AuthContext';
 import type { AuthContextType } from '@/contexts/AuthContext';
@@ -40,14 +40,14 @@ describe('RoleBasedAccess', () => {
       hasRole: (role: string) => role === 'admin',
     });
 
-    renderWithAuth(
+    const { getByText } = renderWithAuth(
       <RoleBasedAccess allowedRoles={['admin']}>
         <div>Admin content</div>
       </RoleBasedAccess>,
       authValue
     );
 
-    expect(screen.getByText('Admin content')).toBeInTheDocument();
+    expect(getByText('Admin content')).toBeInTheDocument();
   });
 
   it('does not render content when user lacks required role', () => {
@@ -58,14 +58,14 @@ describe('RoleBasedAccess', () => {
       hasRole: (role: string) => role === 'player',
     });
 
-    renderWithAuth(
+    const { queryByText } = renderWithAuth(
       <RoleBasedAccess allowedRoles={['admin']}>
         <div>Admin content</div>
       </RoleBasedAccess>,
       authValue
     );
 
-    expect(screen.queryByText('Admin content')).not.toBeInTheDocument();
+    expect(queryByText('Admin content')).not.toBeInTheDocument();
   });
 
   it('does not render content when user is not authenticated', () => {
@@ -76,13 +76,13 @@ describe('RoleBasedAccess', () => {
       hasRole: () => false,
     });
 
-    renderWithAuth(
+    const { queryByText } = renderWithAuth(
       <RoleBasedAccess allowedRoles={['admin']}>
         <div>Admin content</div>
       </RoleBasedAccess>,
       authValue
     );
 
-    expect(screen.queryByText('Admin content')).not.toBeInTheDocument();
+    expect(queryByText('Admin content')).not.toBeInTheDocument();
   });
 });

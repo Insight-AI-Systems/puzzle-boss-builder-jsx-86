@@ -70,6 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // If no profile exists, create one
         if (!existingProfile) {
           const profileData = {
+            id: clerkUser.id, // Use Clerk ID as the primary key
             clerk_user_id: clerkUser.id,
             email: clerkUser.primaryEmailAddress?.emailAddress || '',
             username: clerkUser.username || clerkUser.firstName || clerkUser.primaryEmailAddress?.emailAddress?.split('@')[0] || '',
