@@ -1,33 +1,13 @@
 
 import React from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Zap } from 'lucide-react';
+import { TriviaGame } from '@/components/games/trivia';
 
 const TriviaGamePage: React.FC = () => {
   return (
     <PageLayout title="Trivia Lightning">
       <div className="max-w-4xl mx-auto">
-        <Card className="bg-puzzle-black/50 border-puzzle-aqua/30">
-          <CardHeader>
-            <CardTitle className="text-puzzle-white flex items-center gap-2">
-              <Zap className="h-6 w-6 text-puzzle-aqua" />
-              Trivia Lightning
-            </CardTitle>
-            <CardDescription>
-              Quick-fire questions across multiple categories
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-12">
-              <Zap className="h-16 w-16 text-puzzle-aqua mx-auto mb-4" />
-              <h3 className="text-puzzle-white text-xl font-semibold mb-2">Coming Soon</h3>
-              <p className="text-puzzle-white/60">
-                The Trivia game is currently in development. Check back soon!
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <TriviaGame />
       </div>
     </PageLayout>
   );
