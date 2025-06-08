@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, LogOut, ShieldCheck } from 'lucide-react';
+import { User, LogOut, ShieldCheck, Settings, BarChart3, Users, Puzzle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -51,13 +51,16 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/profile">
+          <Link to="/account">
             <User className="mr-2 h-4 w-4" />
             <span>Profile</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/settings">Settings</Link>
+          <Link to="/settings">
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Settings</span>
+          </Link>
         </DropdownMenuItem>
         
         {/* Admin Menu Section */}
@@ -68,6 +71,28 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
               <ShieldCheck className="mr-2 h-4 w-4" />
               Admin Access
             </DropdownMenuLabel>
+            <DropdownMenuItem asChild>
+              <Link to="/admin">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                <span>Admin Dashboard</span>
+              </Link>
+            </DropdownMenuItem>
+            {(hasRole('super_admin') || hasRole('admin')) && (
+              <DropdownMenuItem asChild>
+                <Link to="/admin?tab=users">
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>User Management</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
+            {(hasRole('super_admin') || hasRole('admin') || hasRole('category_manager')) && (
+              <DropdownMenuItem asChild>
+                <Link to="/admin?tab=puzzles">
+                  <Puzzle className="mr-2 h-4 w-4" />
+                  <span>Puzzle Management</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
           </>
         )}
         

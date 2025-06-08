@@ -81,7 +81,7 @@ const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center space-x-2">
             {!isLoading && userProfile && isAdminUser && (
               <Link 
-                to="/admin-dashboard"
+                to="/admin"
                 className="flex items-center px-3 py-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
               >
                 <LayoutDashboard className="h-5 w-5 mr-2" />
@@ -101,7 +101,7 @@ const Navbar: React.FC = () => {
               <>
                 {isAdminUser && (
                   <Link 
-                    to="/admin-dashboard"
+                    to="/admin"
                     className="flex items-center px-3 py-2 mr-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
                   >
                     <LayoutDashboard className="h-5 w-5" />
