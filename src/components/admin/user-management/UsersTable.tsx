@@ -29,7 +29,6 @@ export function UsersTable({
   onEditProfile
 }: UsersTableProps) {
   const allSelected = users.length > 0 && users.every(user => selectedUsers.has(user.id));
-  const someSelected = users.some(user => selectedUsers.has(user.id));
 
   const handleSelectAll = (checked: boolean) => {
     onSelectAll(checked);
@@ -64,7 +63,6 @@ export function UsersTable({
             <TableHead className="w-12">
               <Checkbox
                 checked={allSelected}
-                indeterminate={someSelected && !allSelected}
                 onCheckedChange={handleSelectAll}
               />
             </TableHead>
