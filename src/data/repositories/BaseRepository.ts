@@ -21,7 +21,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
         .from(this.tableName)
         .select('*')
         .eq('id', id)
-        .maybeSingle();
+        .maybeSingle() as Promise<T | null>;
     });
   }
 
@@ -37,7 +37,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
         });
       }
       
-      return query;
+      return query as Promise<T[]>;
     });
   }
 
@@ -48,7 +48,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
         .from(this.tableName)
         .insert(entity as any)
         .select()
-        .single();
+        .single() as Promise<T>;
     });
   }
 
@@ -60,7 +60,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
         .update(updates as any)
         .eq('id', id)
         .select()
-        .single();
+        .single() as Promise<T>;
     });
 
     if (!result) {
@@ -79,7 +79,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
           .delete()
           .eq('id', id)
           .select()
-          .single();
+          .single() as Promise<T>;
       });
       return true;
     } catch (error) {
@@ -96,7 +96,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
         .getClient()
         .from(this.tableName)
         .insert(entities as any[])
-        .select();
+        .select() as Promise<T[]>;
     });
   }
 
@@ -113,7 +113,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
         }
       });
       
-      return query.select();
+      return query.select() as Promise<T[]>;
     });
   }
 
@@ -127,7 +127,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
         }
       });
       
-      return query.select();
+      return query.select() as Promise<T[]>;
     });
 
     return result.length;
@@ -187,7 +187,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
         query = query.order(String(sortBy), { ascending: sortOrder === 'asc' });
       }
       
-      return query.range(offset, offset + limit - 1);
+      return query.range(offset, offset + limit - 1) as Promise<T[]>;
     });
 
     const totalPages = Math.ceil(total / limit);
