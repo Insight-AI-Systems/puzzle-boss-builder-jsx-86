@@ -6,3 +6,6 @@ export type { BaseGameState, PlayerStats, GameConfig, MoveValidationResult, WinC
 // Specific game engines
 export { WordSearchEngine } from './word-search';
 export type { WordSearchState, PlacedWord, WordSearchMove } from './word-search';
+
+export { CrosswordEngine } from './crossword';
+export type { CrosswordState, CrosswordPuzzle, CrosswordProgress, CrosswordCell, CrosswordWord, CrosswordClue, CrosswordMove } from './crossword';

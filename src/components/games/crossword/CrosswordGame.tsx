@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CrosswordGrid } from './components/CrosswordGrid';
@@ -7,12 +7,13 @@ import { CrosswordClues } from './components/CrosswordClues';
 import { CrosswordControls } from './components/CrosswordControls';
 import { CrosswordTimer } from './components/CrosswordTimer';
 import { useCrosswordGame } from './hooks/useCrosswordGame';
-import { validateCrosswordPuzzle, logValidationResults } from './utils/puzzleValidator';
+import { CrosswordEngine, CrosswordState } from '@/business/engines/crossword';
+import { GameConfig } from '@/business/models/GameState';
 import { Loader2, AlertCircle, AlertTriangle } from 'lucide-react';
 
 export function CrosswordGame() {
   const {
-    gameState,
+    gameState: hookGameState,
     selectCell,
     inputLetter,
     toggleDirection,
@@ -22,59 +23,150 @@ export function CrosswordGame() {
     togglePause
   } = useCrosswordGame();
 
-  // Validate puzzle when it loads
+  const [crosswordEngine, setCrosswordEngine] = useState<CrosswordEngine | null>(null);
+  const [engineState, setEngineState] = useState<CrosswordState | null>(null);
+
+  // Initialize engine when puzzle loads
   useEffect(() => {
-    if (gameState.puzzle) {
-      const validationResult = validateCrosswordPuzzle(gameState.puzzle);
-      logValidationResults(gameState.puzzle.id, validationResult);
+    if (hookGameState.puzzle && !crosswordEngine) {
+      const initialState: CrosswordState = {
+        id: hookGameState.puzzle.id,
+        status: 'idle',
+        startTime: null,
+        endTime: null,
+        score: 0,
+        moves: 0,
+        isComplete: false,
+        puzzle: hookGameState.puzzle,
+        progress: hookGameState.progress,
+        selectedCell: null,
+        selectedWord: null,
+        selectedDirection: 'across',
+        showHints: false,
+        isPaused: false,
+        gameStatus: 'loading'
+      };
+
+      const config: GameConfig = {
+        gameType: 'crossword',
+        hasTimer: true,
+        hasScore: true,
+        hasMoves: false,
+        entryFee: 0,
+        difficulty: hookGameState.puzzle.difficulty
+      };
+
+      const engine = new CrosswordEngine(initialState, config);
       
-      if (!validationResult.isValid) {
-        console.error('Puzzle validation failed, switching to fallback mode');
-      }
+      // Listen to engine events
+      engine.addEventListener((event) => {
+        console.log('Crossword engine event:', event);
+        setEngineState(engine.getState());
+      });
+
+      engine.initialize();
+      setCrosswordEngine(engine);
+      setEngineState(engine.getState());
     }
-  }, [gameState.puzzle]);
+  }, [hookGameState.puzzle, crosswordEngine]);
 
   // Handle keyboard input
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (gameState.gameStatus !== 'playing' || gameState.isPaused) return;
+      if (!crosswordEngine || !engineState || engineState.gameStatus !== 'playing' || engineState.isPaused) return;
 
       // Letter input
       if (/^[a-zA-Z]$/.test(event.key)) {
         event.preventDefault();
-        inputLetter(event.key);
+        crosswordEngine.makeMove({
+          type: 'INPUT_LETTER',
+          letter: event.key
+        });
       }
       // Backspace/Delete
       else if (event.key === 'Backspace' || event.key === 'Delete') {
         event.preventDefault();
-        inputLetter('');
+        crosswordEngine.makeMove({
+          type: 'INPUT_LETTER',
+          letter: ''
+        });
       }
       // Tab to toggle direction
       else if (event.key === 'Tab') {
         event.preventDefault();
-        toggleDirection();
+        crosswordEngine.makeMove({
+          type: 'TOGGLE_DIRECTION'
+        });
       }
       // Space for hint
       else if (event.key === ' ' && event.ctrlKey) {
         event.preventDefault();
-        getHint();
+        crosswordEngine.makeMove({
+          type: 'GET_HINT'
+        });
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState.gameStatus, gameState.isPaused, inputLetter, toggleDirection, getHint]);
+  }, [crosswordEngine, engineState]);
+
+  const handleCellClick = (row: number, col: number) => {
+    if (!crosswordEngine) return;
+    
+    crosswordEngine.makeMove({
+      type: 'SELECT_CELL',
+      row,
+      col
+    });
+  };
 
   const handleClueClick = (wordId: string, direction: 'across' | 'down') => {
-    if (!gameState.puzzle) return;
+    if (!engineState?.puzzle) return;
 
-    const word = gameState.puzzle.words.find(w => w.id === wordId);
-    if (word) {
-      selectCell(word.startRow, word.startCol);
+    const word = engineState.puzzle.words.find(w => w.id === wordId);
+    if (word && crosswordEngine) {
+      crosswordEngine.makeMove({
+        type: 'SELECT_CELL',
+        row: word.startRow,
+        col: word.startCol
+      });
     }
   };
 
-  if (gameState.gameStatus === 'loading') {
+  const handleTogglePause = () => {
+    if (!crosswordEngine) return;
+    
+    if (engineState?.isPaused) {
+      crosswordEngine.resume();
+    } else {
+      crosswordEngine.pause();
+    }
+  };
+
+  const handleReset = () => {
+    if (!crosswordEngine) return;
+    crosswordEngine.reset();
+  };
+
+  const handleGetHint = () => {
+    if (!crosswordEngine) return;
+    crosswordEngine.makeMove({
+      type: 'GET_HINT'
+    });
+  };
+
+  const handleToggleDirection = () => {
+    if (!crosswordEngine) return;
+    crosswordEngine.makeMove({
+      type: 'TOGGLE_DIRECTION'
+    });
+  };
+
+  // Use engine state if available, otherwise fall back to hook state
+  const gameState = engineState || hookGameState;
+
+  if (gameState.gameStatus === 'loading' || !gameState.puzzle) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex items-center gap-2">
@@ -85,7 +177,7 @@ export function CrosswordGame() {
     );
   }
 
-  if (gameState.gameStatus === 'error' || !gameState.puzzle) {
+  if (gameState.gameStatus === 'error') {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
@@ -96,25 +188,8 @@ export function CrosswordGame() {
     );
   }
 
-  // Check puzzle validity and show warning if needed
-  const validationResult = validateCrosswordPuzzle(gameState.puzzle);
-  const showValidationWarning = !validationResult.isValid || validationResult.warnings.length > 0;
-
   return (
     <div className="w-full space-y-6">
-      {/* Validation Warning */}
-      {showValidationWarning && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            {!validationResult.isValid 
-              ? 'This puzzle has validation errors. Some features may not work correctly.'
-              : 'This puzzle has some minor issues that may affect gameplay.'
-            }
-          </AlertDescription>
-        </Alert>
-      )}
-
       {/* Header */}
       <Card>
         <CardHeader>
@@ -156,7 +231,7 @@ export function CrosswordGame() {
                 <div className="min-w-fit">
                   <CrosswordGrid
                     grid={gameState.puzzle.grid}
-                    onCellClick={selectCell}
+                    onCellClick={handleCellClick}
                     disabled={gameState.isPaused || gameState.gameStatus === 'completed'}
                   />
                 </div>
@@ -173,11 +248,11 @@ export function CrosswordGame() {
             isCompleted={gameState.gameStatus === 'completed'}
             hintsUsed={gameState.progress?.hintsUsed || 0}
             selectedDirection={gameState.selectedDirection}
-            onTogglePause={togglePause}
-            onReset={resetPuzzle}
-            onGetHint={getHint}
+            onTogglePause={handleTogglePause}
+            onReset={handleReset}
+            onGetHint={handleGetHint}
             onSave={savePuzzle}
-            onToggleDirection={toggleDirection}
+            onToggleDirection={handleToggleDirection}
           />
 
           {/* Clues */}
