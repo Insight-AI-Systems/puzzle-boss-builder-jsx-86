@@ -8,7 +8,18 @@ interface ClerkAuthButtonsProps {
 }
 
 export const ClerkAuthButtons: React.FC<ClerkAuthButtonsProps> = ({ isMobile = false }) => {
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn, user, isLoaded } = useUser();
+
+  console.log('ClerkAuthButtons state:', { isSignedIn, isLoaded, hasUser: !!user });
+
+  // Show loading state while Clerk is initializing
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center space-x-2">
+        <div className="animate-pulse bg-gray-300 rounded px-4 py-2 w-20 h-8"></div>
+      </div>
+    );
+  }
 
   if (isSignedIn) {
     return <UserButton afterSignOutUrl="/" />;

@@ -10,10 +10,14 @@ import { Toaster } from '@/components/ui/toaster';
 import App from './App.tsx';
 import './index.css';
 
-// Get the Clerk publishable key from environment variables
-const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+// Get the Clerk publishable key - try both possible environment variable names
+const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 
+                            'pk_test_cXVpY2stZHVjay05My5jbGVyay5hY2NvdW50cy5kZXYk';
+
+console.log('Clerk publishable key:', clerkPublishableKey ? 'Found' : 'Missing');
 
 if (!clerkPublishableKey) {
+  console.error('Clerk publishable key is missing. Available env vars:', Object.keys(import.meta.env));
   throw new Error('Missing Clerk Publishable Key. Please add VITE_CLERK_PUBLISHABLE_KEY to your environment variables.');
 }
 
