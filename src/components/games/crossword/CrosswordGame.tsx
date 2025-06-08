@@ -7,7 +7,7 @@ import { CrosswordClues } from './components/CrosswordClues';
 import { CrosswordControls } from './components/CrosswordControls';
 import { CrosswordTimer } from './components/CrosswordTimer';
 import { useCrosswordEngine } from './hooks/useCrosswordEngine';
-import { usePaymentVerification } from '@/components/games/hooks/usePaymentVerification';
+import { usePayment } from '@/components/games/hooks/usePayment';
 import { useGameRepository } from './hooks/useGameRepository';
 import { Loader2, AlertCircle } from 'lucide-react';
 
@@ -24,8 +24,10 @@ export function CrosswordGame() {
     handleGetHint
   } = useCrosswordEngine();
 
-  const { hasAccess, isVerifying } = usePaymentVerification(0); // Free game
+  const { paymentStatus, isVerifying } = usePayment();
   const { saveProgress } = useGameRepository();
+
+  const hasAccess = paymentStatus === 'verified' || paymentStatus === 'free';
 
   // Auto-save progress
   useEffect(() => {

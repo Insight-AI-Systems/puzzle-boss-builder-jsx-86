@@ -17,7 +17,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
   async findById(id: K): Promise<T | null> {
     const { data, error } = await this.supabaseClient
       .getClient()
-      .from(this.tableName)
+      .from(this.tableName as any)
       .select('*')
       .eq('id', id)
       .maybeSingle();
@@ -27,7 +27,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
   }
 
   async findMany(filter?: Partial<T>): Promise<T[]> {
-    let query = this.supabaseClient.getClient().from(this.tableName).select('*');
+    let query = this.supabaseClient.getClient().from(this.tableName as any).select('*');
     
     if (filter) {
       Object.entries(filter).forEach(([key, value]) => {
@@ -45,7 +45,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
   async create(entity: Omit<T, 'id' | 'created_at' | 'updated_at'>): Promise<T> {
     const { data, error } = await this.supabaseClient
       .getClient()
-      .from(this.tableName)
+      .from(this.tableName as any)
       .insert(entity as any)
       .select()
       .single();
@@ -57,7 +57,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
   async update(id: K, updates: Partial<T>): Promise<T> {
     const { data, error } = await this.supabaseClient
       .getClient()
-      .from(this.tableName)
+      .from(this.tableName as any)
       .update(updates as any)
       .eq('id', id)
       .select()
@@ -76,7 +76,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
   async delete(id: K): Promise<boolean> {
     const { error } = await this.supabaseClient
       .getClient()
-      .from(this.tableName)
+      .from(this.tableName as any)
       .delete()
       .eq('id', id);
     
@@ -93,7 +93,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
   async createMany(entities: Omit<T, 'id' | 'created_at' | 'updated_at'>[]): Promise<T[]> {
     const { data, error } = await this.supabaseClient
       .getClient()
-      .from(this.tableName)
+      .from(this.tableName as any)
       .insert(entities as any[])
       .select();
     
@@ -104,7 +104,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
   async updateMany(filter: Partial<T>, updates: Partial<T>): Promise<T[]> {
     let query = this.supabaseClient
       .getClient()
-      .from(this.tableName)
+      .from(this.tableName as any)
       .update(updates as any);
     
     Object.entries(filter).forEach(([key, value]) => {
@@ -119,7 +119,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
   }
 
   async deleteMany(filter: Partial<T>): Promise<number> {
-    let query = this.supabaseClient.getClient().from(this.tableName).delete();
+    let query = this.supabaseClient.getClient().from(this.tableName as any).delete();
     
     Object.entries(filter).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
@@ -135,7 +135,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
   async count(filter?: Partial<T>): Promise<number> {
     let query = this.supabaseClient
       .getClient()
-      .from(this.tableName)
+      .from(this.tableName as any)
       .select('*', { count: 'exact', head: true });
     
     if (filter) {
@@ -169,7 +169,7 @@ export abstract class BaseRepository<T extends Record<string, any>, K = string> 
     const total = await this.count(filter);
     
     // Get paginated data
-    let query = this.supabaseClient.getClient().from(this.tableName).select('*');
+    let query = this.supabaseClient.getClient().from(this.tableName as any).select('*');
     
     if (filter) {
       Object.entries(filter).forEach(([key, value]) => {
