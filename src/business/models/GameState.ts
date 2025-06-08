@@ -1,4 +1,3 @@
-
 // Base game state interface that all puzzle games will extend
 export interface BaseGameState {
   id: string;
@@ -34,6 +33,7 @@ export interface GameConfig {
   hintsEnabled?: boolean;
   soundEnabled?: boolean;
   showGuide?: boolean;
+  enableHints?: boolean; // Add missing property for game engines
 }
 
 // Move validation result

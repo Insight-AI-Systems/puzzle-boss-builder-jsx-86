@@ -1,3 +1,4 @@
+
 import { ZodSchema, ZodError } from 'zod';
 import { ValidationError } from '@/infrastructure/errors/ValidationError';
 import { sanitizeObject, deepSanitize } from './sanitization';
@@ -57,7 +58,8 @@ export const validateFields = async <T extends Record<string, any>>(
     
     if (validator && field in processedData) {
       try {
-        results[field] = await validator(processedData[field]);
+        const fieldValue = (processedData as any)[field]; // Fix: Safe property access
+        results[field] = await validator(fieldValue);
       } catch (error) {
         if (error instanceof ValidationError) {
           errors.push(`${String(field)}: ${error.userMessage}`);
@@ -66,7 +68,8 @@ export const validateFields = async <T extends Record<string, any>>(
         }
       }
     } else if (field in processedData) {
-      results[field] = processedData[field];
+      const fieldValue = (processedData as any)[field]; // Fix: Safe property access
+      results[field] = fieldValue;
     }
   }
 
