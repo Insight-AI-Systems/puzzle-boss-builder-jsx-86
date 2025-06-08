@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import type { CrosswordPuzzle } from '@/business/engines/crossword/CrosswordEngine';
 
@@ -16,7 +15,7 @@ function generateSampleGrid() {
   const grid = Array(10).fill(null).map((_, row) => 
     Array(10).fill(null).map((_, col) => ({
       letter: '',
-      isBlocked: true, // Start with all blocked, unblock specific cells
+      isBlocked: true,
       number: undefined,
       belongsToWords: []
     }))
@@ -31,11 +30,13 @@ function generateSampleGrid() {
   };
   grid[1][2] = { 
     letter: '', 
+    number: undefined,
     isBlocked: false, 
     belongsToWords: ['1-across'] 
   };
   grid[1][3] = { 
     letter: '', 
+    number: undefined,
     isBlocked: false, 
     belongsToWords: ['1-across'] 
   };
@@ -43,11 +44,13 @@ function generateSampleGrid() {
   // CAR vertical at 1,1 (sharing first cell)
   grid[2][1] = { 
     letter: '', 
+    number: undefined,
     isBlocked: false, 
     belongsToWords: ['1-down'] 
   };
   grid[3][1] = { 
     letter: '', 
+    number: undefined,
     isBlocked: false, 
     belongsToWords: ['1-down'] 
   };
