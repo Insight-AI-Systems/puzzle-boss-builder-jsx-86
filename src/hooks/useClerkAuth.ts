@@ -4,16 +4,17 @@ import { useUser, useClerk } from '@clerk/clerk-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-interface Profile {
+// Define a simple, explicit interface for the profile data
+interface ClerkProfile {
   id: string;
-  clerk_user_id?: string | null;
-  role?: string;
-  username?: string | null;
-  email?: string | null;
-  avatar_url?: string | null;
-  bio?: string | null;
-  created_at?: string;
-  updated_at?: string;
+  clerk_user_id: string | null;
+  role: string | null;
+  username: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export const useClerkAuth = () => {
@@ -21,9 +22,9 @@ export const useClerkAuth = () => {
   const { signOut: clerkSignOut } = useClerk();
 
   // Fetch user profile from Supabase based on Clerk user
-  const profileQuery = useQuery({
-    queryKey: ['profile', user?.id] as const,
-    queryFn: async () => {
+  const profileQuery = useQuery<ClerkProfile | null>({
+    queryKey: ['clerk-profile', user?.id],
+    queryFn: async (): Promise<ClerkProfile | null> => {
       if (!user?.id) return null;
       
       const { data, error } = await supabase
@@ -37,7 +38,17 @@ export const useClerkAuth = () => {
         return null;
       }
       
-      return data as Profile | null;
+      return data ? {
+        id: data.id,
+        clerk_user_id: data.clerk_user_id,
+        role: data.role,
+        username: data.username,
+        email: data.email,
+        avatar_url: data.avatar_url,
+        bio: data.bio,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      } : null;
     },
     enabled: !!user?.id && isSignedIn,
   });
@@ -46,17 +57,17 @@ export const useClerkAuth = () => {
   const profileLoading = profileQuery.isLoading;
 
   // Get user roles from Clerk metadata or Supabase
-  const userRoles = (user?.publicMetadata?.roles as string[]) || ['player'];
-  const userRole = userRoles[0] || 'player';
+  const userRoles: string[] = (user?.publicMetadata?.roles as string[]) || ['player'];
+  const userRole: string = userRoles[0] || 'player';
 
   // Role checking functions
   const hasRole = (role: string): boolean => {
     return userRoles.includes(role) || userRole === 'super_admin';
   };
 
-  const isAdmin = hasRole('admin') || hasRole('super_admin');
+  const isAdmin: boolean = hasRole('admin') || hasRole('super_admin');
 
-  const signOut = async () => {
+  const signOut = async (): Promise<void> => {
     await clerkSignOut();
   };
 
