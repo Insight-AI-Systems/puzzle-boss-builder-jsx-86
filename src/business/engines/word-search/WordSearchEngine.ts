@@ -8,8 +8,8 @@ export interface WordSearchState extends BaseGameState {
   grid: string[][];
   words: string[];
   foundWords: Set<string>;
-  selectedCells: Cell[];
-  currentSelection: Cell[];
+  selectedCells: string[]; // Keep as string[] for internal consistency
+  currentSelection: string[]; // Keep as string[] for internal consistency
   difficulty: 'rookie' | 'pro' | 'master';
   timeElapsed: number;
   hintsUsed: number;
@@ -133,9 +133,11 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
 
     switch (move.type) {
       case 'SELECT_CELLS':
+        // Convert Cell[] to string[] for internal state
+        const cellStrings = move.cells.map(cell => `${cell.row}-${cell.col}`);
         this.updateGameState({
           ...this.gameState,
-          currentSelection: move.cells,
+          currentSelection: cellStrings,
           moves: this.gameState.moves + 1
         });
         break;
@@ -350,7 +352,10 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     if (this.gameState.currentSelection.length === 0) return '';
     
     return this.gameState.currentSelection
-      .map(cell => this.gameState.grid[cell.row][cell.col])
+      .map(cellId => {
+        const [row, col] = cellId.split('-').map(Number);
+        return this.gameState.grid[row][col];
+      })
       .join('');
   }
 
@@ -365,9 +370,10 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     if (wordPlacement && wordPlacement.cells.length > 0) {
       // Highlight the first letter of the word
       const firstCell = wordPlacement.cells[0];
+      const cellId = `${firstCell.row}-${firstCell.col}`;
       this.updateGameState({
         ...this.gameState,
-        currentSelection: [firstCell],
+        currentSelection: [cellId],
         hintsUsed: this.gameState.hintsUsed + 1
       });
       

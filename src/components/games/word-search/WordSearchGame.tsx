@@ -14,6 +14,7 @@ import { useWordSearchSelection } from './hooks/useWordSearchSelection';
 import { useGamePersistence } from '../hooks/useGamePersistence';
 import { useLeaderboardSubmission } from '../hooks/useLeaderboardSubmission';
 import { WordSelectionValidator } from './WordSelectionValidator';
+import { Cell } from '@/business/engines/word-search/types';
 
 export function WordSearchGame() {
   const { user } = useAuth();
@@ -108,7 +109,7 @@ export function WordSearchGame() {
   // Initialize validator when engine is ready
   useEffect(() => {
     if (engine && gameState) {
-      const placedWords = (engine as any).placedWords || [];
+      const placedWords = engine.getPlacedWords();
       setValidator(new WordSelectionValidator(placedWords, gameState.grid));
     }
   }, [engine, gameState]);
@@ -161,17 +162,24 @@ export function WordSearchGame() {
     const selection = endSelection();
     if (engine && gameState && selection.length > 0 && validator) {
       
+      // Convert string cell IDs to Cell objects for validation
+      const cellCoords: Cell[] = selection.map(cellId => {
+        const [row, col] = cellId.split('-').map(Number);
+        return { row, col };
+      });
+      
       // Validate the selection
-      const result = validator.validateSelection(selection);
+      const result = validator.validateSelection(cellCoords);
       
       if (result.isValid && result.word) {
         // Valid word found
         const newFoundWords = new Set([...gameState.foundWords, result.word]);
         const newScore = gameState.score + result.word.length * 10;
         
+        // Convert Cell objects back to engine format for move
         engine.makeMove({ 
           type: 'SELECT_CELLS', 
-          cells: selection.map(cell => ({ row: cell.row, col: cell.col }))
+          cells: cellCoords
         });
         
         setGameState(prev => prev ? {
