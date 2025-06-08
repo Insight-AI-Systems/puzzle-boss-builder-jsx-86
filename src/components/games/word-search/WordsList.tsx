@@ -18,10 +18,10 @@ export function WordsList({ words, foundWords }: WordsListProps) {
           {words.map((word, index) => (
             <div
               key={index}
-              className={`p-2 rounded text-sm ${
+              className={`p-2 rounded text-sm font-medium ${
                 foundWords.has(word)
-                  ? 'bg-green-100 text-green-800 line-through'
-                  : 'bg-gray-50'
+                  ? 'bg-puzzle-aqua/20 text-puzzle-aqua line-through border border-puzzle-aqua/30'
+                  : 'bg-puzzle-black/80 text-puzzle-white border border-puzzle-aqua/20 hover:bg-puzzle-aqua/10'
               }`}
             >
               {word.toUpperCase()}
