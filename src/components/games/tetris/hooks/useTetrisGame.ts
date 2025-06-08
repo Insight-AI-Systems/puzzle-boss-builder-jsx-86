@@ -22,7 +22,20 @@ export function useTetrisGame() {
         .limit(10);
 
       if (error) throw error;
-      setHighScores(data || []);
+      
+      // Type the response data correctly
+      const typedData: HighScore[] = (data || []).map(item => ({
+        id: item.id,
+        user_id: item.user_id,
+        username: item.username,
+        score: item.score,
+        lines: item.lines,
+        level: item.level,
+        duration: item.duration,
+        created_at: item.created_at
+      }));
+      
+      setHighScores(typedData);
     } catch (error) {
       console.error('Error loading high scores:', error);
     }

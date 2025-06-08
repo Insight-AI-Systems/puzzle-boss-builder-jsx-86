@@ -18,6 +18,7 @@ export interface Cell {
   filled: boolean;
   color: string;
   type: BlockType | null;
+  isGhost?: boolean; // Added optional isGhost property
 }
 
 export interface GameStats {

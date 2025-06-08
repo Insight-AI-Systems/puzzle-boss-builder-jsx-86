@@ -2121,6 +2121,39 @@ export type Database = {
         }
         Relationships: []
       }
+      tetris_high_scores: {
+        Row: {
+          created_at: string
+          duration: number
+          id: string
+          level: number
+          lines: number
+          score: number
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          duration: number
+          id?: string
+          level: number
+          lines: number
+          score: number
+          user_id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          duration?: number
+          id?: string
+          level?: number
+          lines?: number
+          score?: number
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
       tickets: {
         Row: {
           assigned_to: string | null
