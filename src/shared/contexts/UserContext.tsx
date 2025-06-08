@@ -2,7 +2,9 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { UserRole } from '@/types/userTypes';
+
+// Define UserRole type locally to fix the build error
+export type UserRole = 'player' | 'admin' | 'super_admin' | 'category_manager' | 'finance_manager';
 
 // User session state interface
 export interface UserSessionState {

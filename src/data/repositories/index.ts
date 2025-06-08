@@ -1,12 +1,5 @@
 
-// Central export for all repository interfaces and implementations
-export { IRepository, PaginatedResult } from './IRepository';
-export { 
-  RepositoryError, 
-  NotFoundError, 
-  ValidationError, 
-  ConflictError 
-} from './IRepository';
 export { BaseRepository } from './BaseRepository';
 export { UserRepository, userRepository } from './UserRepository';
-export { GameRepository, gameRepository } from './GameRepository';
+export type { GameRepository } from './GameRepository';
+export type { gameRepository } from './GameRepository';

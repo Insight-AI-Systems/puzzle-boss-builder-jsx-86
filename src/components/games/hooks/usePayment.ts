@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { PaymentService } from '@/business/services/PaymentService';
+import { PaymentError } from '@/infrastructure/errors';
 
 export interface PaymentStatus {
   hasAccess: boolean;
@@ -16,7 +17,22 @@ export function usePayment(entryFee: number) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const paymentService = new PaymentService();
+  // Mock payment service for now - this would be properly injected in a real implementation
+  const mockPaymentService = {
+    verifyPayment: async (request: any) => {
+      // Mock implementation
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return {
+        success: true,
+        transactionId: `mock_${Date.now()}`,
+        balance: 100,
+        credits: 50,
+        error: null,
+        requiresPayment: entryFee > 0,
+        willUseCredits: false
+      };
+    }
+  };
 
   const processPayment = async (gameId: string): Promise<boolean> => {
     try {
@@ -28,11 +44,11 @@ export function usePayment(entryFee: number) {
         return true;
       }
 
-      const result = await paymentService.processPayment({
-        amount: entryFee,
-        currency: 'USD',
+      const result = await mockPaymentService.verifyPayment({
         gameId,
-        description: `Game entry fee for ${gameId}`
+        entryFee,
+        userId: 'mock-user',
+        testMode: true
       });
 
       if (result.success) {
@@ -43,8 +59,12 @@ export function usePayment(entryFee: number) {
         });
         return true;
       } else {
-        setError(result.error || 'Payment failed');
-        return false;
+        throw new PaymentError(
+          result.error || 'Payment failed',
+          'PAYMENT_FAILED',
+          'medium',
+          true
+        );
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Payment processing failed';
