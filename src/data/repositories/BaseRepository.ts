@@ -8,7 +8,7 @@ import {
 } from './IRepository';
 
 // Abstract base repository implementing common CRUD operations
-export abstract class BaseRepository<T, K = string> implements IRepository<T, K> {
+export abstract class BaseRepository<T extends Record<string, any>, K = string> implements IRepository<T, K> {
   constructor(
     protected supabaseClient: SupabaseClient,
     protected tableName: string

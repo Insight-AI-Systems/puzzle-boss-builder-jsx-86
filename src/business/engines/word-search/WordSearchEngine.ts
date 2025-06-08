@@ -53,8 +53,8 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     this.fillEmptyCells(grid);
     
     // Update initial state
-    this.updateState({
-      ...this.state,
+    this.updateGameState({
+      ...this.gameState,
       grid,
       words,
       foundWords: new Set<string>(),
@@ -69,8 +69,8 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
 
   start(): void {
     console.log('Starting word search game');
-    this.updateState({
-      ...this.state,
+    this.updateGameState({
+      ...this.gameState,
       status: 'playing',
       startTime: Date.now()
     });
@@ -86,8 +86,8 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
 
   pause(): void {
     console.log('Pausing word search game');
-    this.updateState({
-      ...this.state,
+    this.updateGameState({
+      ...this.gameState,
       status: 'paused'
     });
     this.stopTimer();
@@ -95,8 +95,8 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
 
   resume(): void {
     console.log('Resuming word search game');
-    this.updateState({
-      ...this.state,
+    this.updateGameState({
+      ...this.gameState,
       status: 'playing'
     });
     this.startTimer();
@@ -108,6 +108,14 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     this.initialize();
   }
 
+  calculateScore(): number {
+    const baseScore = this.gameState.score;
+    const timeBonus = Math.max(0, 300 - this.gameState.timeElapsed) * 2;
+    const hintPenalty = this.gameState.hintsUsed * 50;
+    
+    return Math.max(0, baseScore + timeBonus - hintPenalty);
+  }
+
   validateMove(move: WordSearchMove): MoveValidationResult {
     switch (move.type) {
       case 'SELECT_CELLS':
@@ -117,46 +125,45 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
         return this.validateSelection();
       
       case 'HINT':
-        return { isValid: this.state.hintsUsed < 3 }; // Max 3 hints
+        return { isValid: this.gameState.hintsUsed < 3 }; // Max 3 hints
       
       default:
         return { isValid: false, error: 'Invalid move type' };
     }
   }
 
-  makeMove(move: WordSearchMove): boolean {
+  makeMove(move: WordSearchMove): void {
     const validation = this.validateMove(move);
     if (!validation.isValid) {
       console.warn('Invalid move:', validation.error);
-      return false;
+      return;
     }
 
     switch (move.type) {
       case 'SELECT_CELLS':
-        this.updateState({
-          ...this.state,
+        this.updateGameState({
+          ...this.gameState,
           currentSelection: move.cells,
-          moves: this.state.moves + 1
+          moves: this.gameState.moves + 1
         });
-        return true;
+        break;
       
       case 'VALIDATE_SELECTION':
-        return this.processSelection();
+        this.processSelection();
+        break;
       
       case 'HINT':
-        return this.provideHint();
-      
-      default:
-        return false;
+        this.provideHint();
+        break;
     }
   }
 
   checkWinCondition(): WinConditionResult {
-    const foundAllWords = this.state.foundWords.size === this.state.words.length;
-    const completionPercentage = (this.state.foundWords.size / this.state.words.length) * 100;
+    const foundAllWords = this.gameState.foundWords.size === this.gameState.words.length;
+    const completionPercentage = (this.gameState.foundWords.size / this.gameState.words.length) * 100;
     
     if (foundAllWords) {
-      const finalScore = this.calculateFinalScore();
+      const finalScore = this.calculateScore();
       return {
         isWin: true,
         completionPercentage: 100,
@@ -168,16 +175,16 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     return {
       isWin: false,
       completionPercentage,
-      finalScore: this.state.score
+      finalScore: this.gameState.score
     };
   }
 
   // Private methods
   private startTimer(): void {
     this.timer = setInterval(() => {
-      this.updateState({
-        ...this.state,
-        timeElapsed: this.state.timeElapsed + 1
+      this.updateGameState({
+        ...this.gameState,
+        timeElapsed: this.gameState.timeElapsed + 1
       });
     }, 1000);
   }
@@ -196,7 +203,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       master: ['ALGORITHM', 'CHALLENGE', 'DIAGONAL', 'VERTICAL', 'HORIZONTAL', 'PATTERN']
     };
 
-    return difficultyWords[this.state.difficulty] || difficultyWords.rookie;
+    return difficultyWords[this.gameState.difficulty] || difficultyWords.rookie;
   }
 
   private createEmptyGrid(): string[][] {
@@ -309,14 +316,14 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
   private validateSelection(): MoveValidationResult {
     const selectedWord = this.getSelectedWord();
     
-    if (selectedWord && this.state.words.includes(selectedWord) && !this.state.foundWords.has(selectedWord)) {
+    if (selectedWord && this.gameState.words.includes(selectedWord) && !this.gameState.foundWords.has(selectedWord)) {
       return {
         isValid: true,
         newState: {
-          ...this.state,
-          foundWords: new Set([...this.state.foundWords, selectedWord]),
-          selectedCells: [...this.state.selectedCells, ...this.state.currentSelection],
-          score: this.state.score + selectedWord.length * 10
+          ...this.gameState,
+          foundWords: new Set([...this.gameState.foundWords, selectedWord]),
+          selectedCells: [...this.gameState.selectedCells, ...this.gameState.currentSelection],
+          score: this.gameState.score + selectedWord.length * 10
         },
         scoreChange: selectedWord.length * 10
       };
@@ -329,7 +336,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     const validation = this.validateSelection();
     
     if (validation.isValid && validation.newState) {
-      this.updateState(validation.newState);
+      this.updateGameState(validation.newState);
       
       // Check win condition
       const winCheck = this.checkWinCondition();
@@ -341,8 +348,8 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     }
     
     // Clear selection on invalid word
-    this.updateState({
-      ...this.state,
+    this.updateGameState({
+      ...this.gameState,
       currentSelection: []
     });
     
@@ -350,15 +357,15 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
   }
 
   private getSelectedWord(): string {
-    if (this.state.currentSelection.length === 0) return '';
+    if (this.gameState.currentSelection.length === 0) return '';
     
-    return this.state.currentSelection
-      .map(cell => this.state.grid[cell.row][cell.col])
+    return this.gameState.currentSelection
+      .map(cell => this.gameState.grid[cell.row][cell.col])
       .join('');
   }
 
   private provideHint(): boolean {
-    const unFoundWords = this.state.words.filter(word => !this.state.foundWords.has(word));
+    const unFoundWords = this.gameState.words.filter(word => !this.gameState.foundWords.has(word));
     
     if (unFoundWords.length === 0) return false;
     
@@ -368,10 +375,10 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     if (wordPlacement) {
       // Highlight the first letter of the word
       const firstCell = wordPlacement.cells[0];
-      this.updateState({
-        ...this.state,
+      this.updateGameState({
+        ...this.gameState,
         currentSelection: [firstCell],
-        hintsUsed: this.state.hintsUsed + 1
+        hintsUsed: this.gameState.hintsUsed + 1
       });
       
       return true;
@@ -380,17 +387,9 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     return false;
   }
 
-  private calculateFinalScore(): number {
-    const baseScore = this.state.score;
-    const timeBonus = Math.max(0, 300 - this.state.timeElapsed) * 2; // Time bonus
-    const hintPenalty = this.state.hintsUsed * 50; // Penalty for using hints
-    
-    return Math.max(0, baseScore + timeBonus - hintPenalty);
-  }
-
   private calculateBonusPoints(): number {
-    const timeBonus = Math.max(0, 300 - this.state.timeElapsed) * 2;
-    const noHintBonus = this.state.hintsUsed === 0 ? 100 : 0;
+    const timeBonus = Math.max(0, 300 - this.gameState.timeElapsed) * 2;
+    const noHintBonus = this.gameState.hintsUsed === 0 ? 100 : 0;
     
     return timeBonus + noHintBonus;
   }
@@ -398,17 +397,17 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
   private handleGameComplete(): void {
     this.stopTimer();
     
-    this.updateState({
-      ...this.state,
+    this.updateGameState({
+      ...this.gameState,
       status: 'completed',
       endTime: Date.now(),
       isComplete: true,
-      score: this.calculateFinalScore()
+      score: this.calculateScore()
     });
     
     this.emitEvent({
       type: 'GAME_COMPLETED',
-      finalScore: this.state.score,
+      finalScore: this.gameState.score,
       timestamp: Date.now()
     });
   }

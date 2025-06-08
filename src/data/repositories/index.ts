@@ -9,3 +9,4 @@ export {
 } from './IRepository';
 export { BaseRepository } from './BaseRepository';
 export { UserRepository, userRepository } from './UserRepository';
+export { GameRepository, gameRepository } from './GameRepository';
