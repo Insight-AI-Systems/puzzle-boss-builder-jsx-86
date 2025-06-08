@@ -1,4 +1,3 @@
-
 import { GameEngine } from '../GameEngine';
 import type { BaseGameState, GameConfig, MoveValidationResult, WinConditionResult } from '../../models/GameState';
 import type { PlacedWord, Cell } from './types';
@@ -287,8 +286,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
   checkWinCondition(): WinConditionResult {
     const isWin = this.gameState.foundWords.size === this.gameState.words.length;
     return {
-      isWin,
-      message: isWin ? 'Congratulations! You found all words!' : ''
+      isWin
     };
   }
 

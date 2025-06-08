@@ -254,7 +254,7 @@ export function WordSearchGame() {
         {/* Game Status and Instructions */}
         {gameState.status === 'idle' && (
           <WordSearchInstructions 
-            difficulty={gameState.difficulty}
+            difficulty={gameState.difficulty === 'expert' ? 'pro' : gameState.difficulty as 'rookie' | 'master' | 'pro'}
             category="General"
             totalWords={gameState.words.length}
           />

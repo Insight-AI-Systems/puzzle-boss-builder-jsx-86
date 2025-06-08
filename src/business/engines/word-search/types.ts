@@ -3,8 +3,10 @@ export interface PlacedWord {
   word: string;
   startRow: number;
   startCol: number;
+  endRow: number;
+  endCol: number;
   direction: 'horizontal' | 'vertical' | 'diagonal';
-  cells: Cell[];
+  cells?: Cell[];
 }
 
 export interface Cell {
