@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Edit, UserCircle } from 'lucide-react';
+import { Edit } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserProfile } from '@/types/userTypes';
@@ -24,24 +24,11 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 rounded-full bg-puzzle-aqua/20 flex items-center justify-center">
-            {profile?.avatar_url ? (
-              <img 
-                src={profile.avatar_url} 
-                alt="Profile" 
-                className="w-full h-full rounded-full object-cover"
-              />
-            ) : (
-              <UserCircle className="h-8 w-8 text-puzzle-aqua" />
-            )}
-          </div>
-          <div>
-            <h3 className="text-lg font-medium text-puzzle-white">
-              {profile?.display_name || 'Puzzle Enthusiast'}
-            </h3>
-            <p className="text-sm text-puzzle-white/70">{profile?.role || 'player'}</p>
-          </div>
+        <div className="space-y-2">
+          <h3 className="text-lg font-medium text-puzzle-white">
+            {profile?.display_name || 'Puzzle Enthusiast'}
+          </h3>
+          <p className="text-sm text-puzzle-white/70 capitalize">{profile?.role || 'player'}</p>
         </div>
         
         <div className="pt-4 border-t border-puzzle-aqua/10">
