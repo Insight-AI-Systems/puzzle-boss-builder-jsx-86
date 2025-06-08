@@ -14,7 +14,6 @@ interface Profile {
   bio?: string | null;
   created_at?: string;
   updated_at?: string;
-  [key: string]: any;
 }
 
 export const useClerkAuth = () => {
@@ -22,9 +21,9 @@ export const useClerkAuth = () => {
   const { signOut: clerkSignOut } = useClerk();
 
   // Fetch user profile from Supabase based on Clerk user
-  const profileQuery = useQuery<Profile | null>({
+  const profileQuery = useQuery({
     queryKey: ['profile', user?.id],
-    queryFn: async (): Promise<Profile | null> => {
+    queryFn: async () => {
       if (!user?.id) return null;
       
       const { data, error } = await supabase
@@ -38,7 +37,7 @@ export const useClerkAuth = () => {
         return null;
       }
       
-      return data ? data as Profile : null;
+      return data;
     },
     enabled: !!user?.id && isSignedIn,
   });
