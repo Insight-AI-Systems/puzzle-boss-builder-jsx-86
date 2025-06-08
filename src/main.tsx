@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -6,6 +7,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ClerkProvider } from '@clerk/clerk-react';
 import { GameProvider } from '@/shared/contexts/GameContext';
 import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/contexts/AuthContext';
 import App from './App.tsx';
 import './index.css';
 
@@ -70,8 +72,6 @@ class ErrorFallback extends React.Component<{children: React.ReactNode}, {hasErr
     return this.props.children;
   }
 }
-
-import { AuthProvider } from '@/contexts/AuthContext';
 
 const AppContent = () => (
   <QueryClientProvider client={queryClient}>

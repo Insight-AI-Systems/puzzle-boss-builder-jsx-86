@@ -1,15 +1,24 @@
 
 import React, { createContext, useContext } from 'react';
 
-interface AuthContextType {
-  user: null;
+export interface AuthContextType {
+  user: { id: string; email?: string } | null;
   userRole: string;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isAdmin: boolean;
+  session: any;
+  error: Error | null;
+  rolesLoaded: boolean;
   hasRole: (role: string) => boolean;
+  signUp: (email: string, password: string, options?: any) => Promise<any>;
+  signIn: (email: string, password: string) => Promise<any>;
+  signOut: () => Promise<any>;
+  resetPassword: (email: string) => Promise<any>;
+  updatePassword: (password: string) => Promise<any>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const contextValue: AuthContextType = {
@@ -17,7 +26,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     userRole: 'player',
     isAuthenticated: false,
     isLoading: false,
+    isAdmin: false,
+    session: null,
+    error: null,
+    rolesLoaded: true,
     hasRole: () => false,
+    signUp: async () => ({ error: new Error('Authentication not configured') }),
+    signIn: async () => ({ error: new Error('Authentication not configured') }),
+    signOut: async () => ({ error: new Error('Authentication not configured') }),
+    resetPassword: async () => ({ error: new Error('Authentication not configured') }),
+    updatePassword: async () => ({ error: new Error('Authentication not configured') }),
   };
 
   return (
