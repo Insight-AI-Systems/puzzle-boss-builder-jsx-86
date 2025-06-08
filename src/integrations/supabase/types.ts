@@ -1338,6 +1338,7 @@ export type Database = {
           bio: string | null
           categories_played: string[] | null
           city: string | null
+          clerk_user_id: string | null
           country: string | null
           created_at: string | null
           credits: number | null
@@ -1377,6 +1378,7 @@ export type Database = {
           bio?: string | null
           categories_played?: string[] | null
           city?: string | null
+          clerk_user_id?: string | null
           country?: string | null
           created_at?: string | null
           credits?: number | null
@@ -1416,6 +1418,7 @@ export type Database = {
           bio?: string | null
           categories_played?: string[] | null
           city?: string | null
+          clerk_user_id?: string | null
           country?: string | null
           created_at?: string | null
           credits?: number | null
