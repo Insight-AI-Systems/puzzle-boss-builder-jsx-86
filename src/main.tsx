@@ -4,6 +4,8 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { GameProvider } from '@/shared/contexts/GameContext';
+import { Toaster } from '@/components/ui/toaster';
 import App from './App.tsx';
 import './index.css';
 
@@ -63,16 +65,19 @@ class ErrorFallback extends React.Component<{children: React.ReactNode}, {hasErr
   }
 }
 
-// Create root and render app with error boundary
+// Create root and render app with consolidated provider hierarchy
 const root = createRoot(container);
 root.render(
   <React.StrictMode>
     <ErrorFallback>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <GameProvider>
+            <BrowserRouter>
+              <Toaster />
+              <App />
+            </BrowserRouter>
+          </GameProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorFallback>

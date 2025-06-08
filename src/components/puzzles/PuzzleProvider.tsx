@@ -1,9 +1,8 @@
 
-import React, { createContext, useContext, ReactNode, useState } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { usePuzzleSettings } from '@/hooks/usePuzzleSettings';
 import { usePuzzleProgress } from '@/hooks/usePuzzleProgress';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PuzzleContextType {
   settings: ReturnType<typeof usePuzzleSettings>;
@@ -20,18 +19,7 @@ export function PuzzleProvider({
   children: ReactNode;
   puzzleId?: string;
 }) {
-  const [progressData, setProgressData] = useState(null);
-  
-  // Check authentication status
-  const { data: authData, isLoading: authLoading } = useQuery({
-    queryKey: ['auth-status'],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      return { isAuthenticated: !!user };
-    }
-  });
-
-  const isAuthenticated = authData?.isAuthenticated || false;
+  const { isAuthenticated } = useAuth();
   
   const settings = usePuzzleSettings();
   

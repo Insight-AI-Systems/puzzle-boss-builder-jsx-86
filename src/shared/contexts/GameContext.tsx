@@ -1,86 +1,139 @@
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 
 export interface GameState {
-  status: 'idle' | 'playing' | 'paused' | 'completed' | 'failed';
+  currentGame: string | null;
+  isPlaying: boolean;
   score: number;
   timeElapsed: number;
-  moves?: number;
-  hintsUsed?: number;
-  startTime?: number;
-  lastPaused?: number;
+  moves: number;
+  isComplete: boolean;
+  difficulty: 'rookie' | 'pro' | 'master';
+  gameData: any;
+}
+
+export interface GameAction {
+  type: 'START_GAME' | 'END_GAME' | 'UPDATE_SCORE' | 'UPDATE_TIME' | 'UPDATE_MOVES' | 'COMPLETE_GAME' | 'RESET_GAME';
+  payload?: any;
 }
 
 export interface GameContextType {
-  currentGame: GameState | null;
-  gameId: string | null;
-  updateGameState: (gameId: string, updates: Partial<GameState>) => void;
-  startGame: (gameId: string) => void;
-  pauseGame: () => void;
-  resumeGame: () => void;
-  endGame: (finalScore?: number) => void;
+  gameState: GameState;
+  dispatch: React.Dispatch<GameAction>;
+  startGame: (gameType: string, difficulty: 'rookie' | 'pro' | 'master') => void;
+  endGame: () => void;
+  updateScore: (score: number) => void;
+  updateTime: (time: number) => void;
+  updateMoves: (moves: number) => void;
+  completeGame: () => void;
   resetGame: () => void;
+}
+
+const initialState: GameState = {
+  currentGame: null,
+  isPlaying: false,
+  score: 0,
+  timeElapsed: 0,
+  moves: 0,
+  isComplete: false,
+  difficulty: 'rookie',
+  gameData: null
+};
+
+function gameReducer(state: GameState, action: GameAction): GameState {
+  switch (action.type) {
+    case 'START_GAME':
+      return {
+        ...state,
+        currentGame: action.payload.gameType,
+        difficulty: action.payload.difficulty,
+        isPlaying: true,
+        isComplete: false,
+        score: 0,
+        timeElapsed: 0,
+        moves: 0,
+        gameData: action.payload.gameData
+      };
+    case 'END_GAME':
+      return {
+        ...state,
+        isPlaying: false,
+        currentGame: null
+      };
+    case 'UPDATE_SCORE':
+      return {
+        ...state,
+        score: action.payload
+      };
+    case 'UPDATE_TIME':
+      return {
+        ...state,
+        timeElapsed: action.payload
+      };
+    case 'UPDATE_MOVES':
+      return {
+        ...state,
+        moves: action.payload
+      };
+    case 'COMPLETE_GAME':
+      return {
+        ...state,
+        isPlaying: false,
+        isComplete: true
+      };
+    case 'RESET_GAME':
+      return initialState;
+    default:
+      return state;
+  }
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
-export function GameProvider({ children }: { children: React.ReactNode }) {
-  const [currentGame, setCurrentGame] = useState<GameState | null>(null);
-  const [gameId, setGameId] = useState<string | null>(null);
+export function GameProvider({ children }: { children: ReactNode }) {
+  const [gameState, dispatch] = useReducer(gameReducer, initialState);
 
-  const updateGameState = useCallback((id: string, updates: Partial<GameState>) => {
-    if (gameId === id) {
-      setCurrentGame(prev => prev ? { ...prev, ...updates } : null);
-    }
-  }, [gameId]);
-
-  const startGame = useCallback((id: string) => {
-    setGameId(id);
-    setCurrentGame({
-      status: 'playing',
-      score: 0,
-      timeElapsed: 0,
-      startTime: Date.now()
+  const startGame = (gameType: string, difficulty: 'rookie' | 'pro' | 'master') => {
+    dispatch({ 
+      type: 'START_GAME', 
+      payload: { gameType, difficulty } 
     });
-  }, []);
+  };
 
-  const pauseGame = useCallback(() => {
-    setCurrentGame(prev => prev ? {
-      ...prev,
-      status: 'paused',
-      lastPaused: Date.now()
-    } : null);
-  }, []);
+  const endGame = () => {
+    dispatch({ type: 'END_GAME' });
+  };
 
-  const resumeGame = useCallback(() => {
-    setCurrentGame(prev => prev ? {
-      ...prev,
-      status: 'playing'
-    } : null);
-  }, []);
+  const updateScore = (score: number) => {
+    dispatch({ type: 'UPDATE_SCORE', payload: score });
+  };
 
-  const endGame = useCallback((finalScore?: number) => {
-    setCurrentGame(prev => prev ? {
-      ...prev,
-      status: 'completed',
-      score: finalScore ?? prev.score
-    } : null);
-  }, []);
+  const updateTime = (time: number) => {
+    dispatch({ type: 'UPDATE_TIME', payload: time });
+  };
 
-  const resetGame = useCallback(() => {
-    setCurrentGame(null);
-    setGameId(null);
-  }, []);
+  const updateMoves = (moves: number) => {
+    dispatch({ type: 'UPDATE_MOVES', payload: moves });
+  };
+
+  const completeGame = () => {
+    dispatch({ type: 'COMPLETE_GAME' });
+  };
+
+  const resetGame = () => {
+    dispatch({ type: 'RESET_GAME' });
+  };
 
   return (
     <GameContext.Provider value={{
-      currentGame,
-      gameId,
-      updateGameState,
+      gameState,
+      dispatch,
       startGame,
-      pauseGame,
-      resumeGame,
       endGame,
+      updateScore,
+      updateTime,
+      updateMoves,
+      completeGame,
       resetGame
     }}>
       {children}
