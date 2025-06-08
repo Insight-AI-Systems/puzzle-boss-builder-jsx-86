@@ -2,6 +2,7 @@
 import { GameEngine } from '../GameEngine';
 import { BaseGameState, GameConfig, MoveValidationResult, WinConditionResult, GameEvent } from '../../models/GameState';
 import { PlacedWord, Cell } from './types';
+import { cellsToStrings, stringsToCells } from './utils';
 
 // Word search specific state
 export interface WordSearchState extends BaseGameState {
@@ -134,7 +135,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     switch (move.type) {
       case 'SELECT_CELLS':
         // Convert Cell[] to string[] for internal state
-        const cellStrings = move.cells.map(cell => `${cell.row}-${cell.col}`);
+        const cellStrings = cellsToStrings(move.cells);
         this.updateGameState({
           ...this.gameState,
           currentSelection: cellStrings,

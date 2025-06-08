@@ -16,6 +16,7 @@ import { useGamePersistence } from '../hooks/useGamePersistence';
 import { useLeaderboardSubmission } from '../hooks/useLeaderboardSubmission';
 import { WordSelectionValidator } from './WordSelectionValidator';
 import { Cell } from '@/business/engines/word-search/types';
+import { stringsToCells } from '@/business/engines/word-search/utils';
 
 export function WordSearchGame() {
   const { user } = useAuth();
@@ -164,10 +165,7 @@ export function WordSearchGame() {
     if (engine && gameState && selection.length > 0 && validator) {
       
       // Convert string cell IDs to Cell objects for validation
-      const cellCoords: Cell[] = selection.map(cellId => {
-        const [row, col] = cellId.split('-').map(Number);
-        return { row, col };
-      });
+      const cellCoords: Cell[] = stringsToCells(selection);
       
       // Validate the selection
       const result = validator.validateSelection(cellCoords);
@@ -236,16 +234,10 @@ export function WordSearchGame() {
   }
 
   // Convert selectedCells string[] to Cell[] for the grid component
-  const selectedCellsAsObjects: Cell[] = gameState.selectedCells.map(cellId => {
-    const [row, col] = cellId.split('-').map(Number);
-    return { row, col };
-  });
+  const selectedCellsAsObjects: Cell[] = stringsToCells(gameState.selectedCells);
 
   // Convert currentSelection string[] to Cell[] for the grid component
-  const currentSelectionAsObjects: Cell[] = currentSelection.map(cellId => {
-    const [row, col] = cellId.split('-').map(Number);
-    return { row, col };
-  });
+  const currentSelectionAsObjects: Cell[] = stringsToCells(currentSelection);
 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-4">
