@@ -33,7 +33,7 @@ export function CrosswordClues({
           }
         }}>
               <div className="flex items-start gap-2">
-                <span className="font-bold text-sm min-w-[2rem]">
+                <span className="font-bold text-sm min-w-[2rem] text-zinc-950">
                   {clue.number}.
                 </span>
                 <span className="text-sm text-neutral-950">
