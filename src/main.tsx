@@ -10,8 +10,8 @@ import { Toaster } from '@/components/ui/toaster';
 import App from './App.tsx';
 import './index.css';
 
-// Use your actual Clerk publishable key
-const clerkPublishableKey = 'pk_test_ZmFjdHVhbC1kYW5lLTQ5LmNsZXJrLmFjY291bnRzLmRldiQ';
+// Use the Clerk publishable key from environment variables (Supabase secrets)
+const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 console.log('Clerk publishable key:', clerkPublishableKey ? 'Found' : 'Missing');
 
