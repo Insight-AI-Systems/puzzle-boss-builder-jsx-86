@@ -8,6 +8,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useSearchParams } from 'react-router-dom';
 import { UserRole } from '@/types/userTypes';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { AdminErrorBoundary } from './ErrorBoundary';
 
 export const RoleBasedDashboard: React.FC = () => {
   const { hasRole, userRole, isAdmin } = useClerkAuth();
@@ -15,39 +16,24 @@ export const RoleBasedDashboard: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   
-  // Debug logging
-  React.useEffect(() => {
-    console.log('📊 RoleBasedDashboard Debug:', {
-      userRole,
-      isAdmin,
-      tabParam,
-      hasAdminRole: hasRole('admin'),
-      hasSuperAdminRole: hasRole('super_admin')
-    });
-  }, [userRole, isAdmin, tabParam, hasRole]);
-  
-  // Get all tab definitions
+  // Get tab definitions and filter by role
   const allTabs = getTabDefinitions();
-  
-  // Enhanced role checking - if user is admin, show all tabs
   const accessibleTabs = allTabs.filter(tab => {
     if (isAdmin) return true; // Admins see all tabs
     return tab.roles.some(role => hasRole(role as UserRole));
   });
   
-  console.log('📊 Accessible tabs:', accessibleTabs.map(t => t.id));
+  console.log('📊 RoleBasedDashboard - Accessible tabs:', accessibleTabs.map(t => t.id));
   
-  // Set initial active tab from URL or default to first accessible tab
+  // Set active tab
   const [activeTab, setActiveTab] = React.useState(() => {
-    // Check if the tab from URL is accessible to the user
     if (tabParam && accessibleTabs.some(tab => tab.id === tabParam)) {
       return tabParam;
     }
-    // Default to the first accessible tab
     return accessibleTabs.length > 0 ? accessibleTabs[0].id : "users";
   });
   
-  // Update URL when tab changes
+  // Handle tab changes
   const handleTabChange = (newTab: string) => {
     console.log('📊 Tab changing to:', newTab);
     setActiveTab(newTab);
@@ -57,17 +43,11 @@ export const RoleBasedDashboard: React.FC = () => {
   // Update active tab when URL changes
   React.useEffect(() => {
     if (tabParam && accessibleTabs.some(tab => tab.id === tabParam)) {
-      console.log('📊 Setting active tab from URL:', tabParam);
       setActiveTab(tabParam);
     }
   }, [tabParam, accessibleTabs]);
 
-  if (!profile && !isAdmin) {
-    console.log('📊 No profile and not admin, showing loading or null');
-    return null;
-  }
-
-  // Convert the profile to match expected interface
+  // Create mapped profile for compatibility
   const mappedProfile = profile ? {
     ...profile,
     display_name: profile.display_name || profile.email || 'Unknown User',
@@ -95,23 +75,25 @@ export const RoleBasedDashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-game text-puzzle-aqua">Admin Dashboard</h1>
-      
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <DashboardTabSelector 
-          accessibleTabs={accessibleTabs}
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
+    <AdminErrorBoundary>
+      <div className="space-y-8">
+        <h1 className="text-3xl font-game text-puzzle-aqua">Admin Dashboard</h1>
         
-        <DashboardContent 
-          accessibleTabs={accessibleTabs}
-          profile={mappedProfile}
-          activeTab={activeTab}
-        />
-      </Tabs>
-    </div>
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <DashboardTabSelector 
+            accessibleTabs={accessibleTabs}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+          
+          <DashboardContent 
+            accessibleTabs={accessibleTabs}
+            profile={mappedProfile}
+            activeTab={activeTab}
+          />
+        </Tabs>
+      </div>
+    </AdminErrorBoundary>
   );
 };
 
