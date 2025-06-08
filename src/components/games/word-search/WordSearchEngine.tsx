@@ -36,32 +36,15 @@ export const WordSearchEngine: React.FC<WordSearchEngineProps> = ({
   }, [grid, placedWords]);
 
   const initializeGame = () => {
-    // Create empty grid
-    const newGrid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(''));
-    
-    // Place words using the engine
-    const newPlacedWords = WordPlacementEngine.placeWords(words, newGrid);
-    
-    // Fill remaining cells with random letters
-    fillEmptyCells(newGrid);
+    // Create and use WordPlacementEngine instance
+    const placementEngine = new WordPlacementEngine(gridSize);
+    const { grid: newGrid, placedWords: newPlacedWords } = placementEngine.placeWords(words);
     
     setGrid(newGrid);
     setPlacedWords(newPlacedWords);
     setFoundWords([]);
     setSelectedCells([]);
     setCurrentSelection([]);
-  };
-
-  const fillEmptyCells = (grid: string[][]) => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    
-    for (let row = 0; row < grid.length; row++) {
-      for (let col = 0; col < grid[row].length; col++) {
-        if (grid[row][col] === '') {
-          grid[row][col] = letters[Math.floor(Math.random() * letters.length)];
-        }
-      }
-    }
   };
 
   const handleSelectionStart = (cellId: string) => {
