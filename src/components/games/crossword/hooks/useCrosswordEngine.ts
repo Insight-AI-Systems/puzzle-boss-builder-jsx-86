@@ -81,13 +81,9 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
           ...initialState,
           puzzle,
           progress: {
-            puzzleId: puzzle.id,
-            startTime: Date.now(),
-            currentTime: Date.now(),
-            hintsUsed: 0,
-            isCompleted: false,
-            grid: puzzle.grid.map(row => row.map(cell => cell.letter)),
-            completedWords: []
+            completedWords: [],
+            userInput: {},
+            incorrectAttempts: 0
           }
         };
 
@@ -168,7 +164,7 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
       if (!engine || !localGameState.selectedCell) return;
       
       engine.makeMove({
-        type: 'INPUT_LETTER',
+        type: 'ENTER_LETTER',
         row: localGameState.selectedCell.row,
         col: localGameState.selectedCell.col,
         letter
