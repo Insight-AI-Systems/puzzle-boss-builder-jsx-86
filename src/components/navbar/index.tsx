@@ -18,8 +18,29 @@ export const Navbar: React.FC = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  // Enhanced admin detection for navbar
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
+  const isAdminEmail = userEmail === 'alan@insight-ai-systems.com' || 
+                     userEmail === 'alantbooth@xtra.co.nz' ||
+                     userEmail === 'rob.small.1234@gmail.com';
+  
+  const showAdminItems = isAdmin || isAdminEmail;
+
+  // Debug logging for navbar admin detection
+  React.useEffect(() => {
+    if (isSignedIn) {
+      console.log('🧭 Navbar Admin Check:', {
+        userEmail,
+        isAdminEmail,
+        isAdmin,
+        showAdminItems,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [userEmail, isAdminEmail, isAdmin, showAdminItems, isSignedIn]);
+
   // Filter admin nav items based on user role - show all admin items if user is admin
-  const accessibleAdminItems = isAdmin ? adminNavItems : adminNavItems.filter(item => 
+  const accessibleAdminItems = showAdminItems ? adminNavItems : adminNavItems.filter(item => 
     !item.roles || item.roles.some(role => hasRole(role))
   );
 
@@ -86,10 +107,11 @@ export const Navbar: React.FC = () => {
               </Link>
             )}
             {/* Show admin link if user has admin role */}
-            {isAdmin && (
+            {showAdminItems && (
               <Link
                 to="/admin-dashboard"
                 className="text-puzzle-white hover:text-puzzle-aqua transition-colors"
+                title="Admin Dashboard"
               >
                 <Shield className="h-5 w-5" />
               </Link>

@@ -12,36 +12,60 @@ import { adminLog, DebugLevel } from '@/utils/debug';
 
 const AdminDashboard = () => {
   const { profile, isLoading } = useUserProfile();
-  const { user, hasRole, userRole, isAdmin } = useClerkAuth();
+  const { user, hasRole, userRole, isAdmin, isAuthenticated } = useClerkAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
-  // Enhanced admin access check
+  // Enhanced admin access check with multiple fallbacks
   const userEmail = user?.primaryEmailAddress?.emailAddress;
   const isAdminEmail = userEmail === 'alan@insight-ai-systems.com' || 
                      userEmail === 'alantbooth@xtra.co.nz' ||
                      userEmail === 'rob.small.1234@gmail.com';
   
-  const hasAdminAccess = isAdmin || isAdminEmail || hasRole('super_admin') || hasRole('admin') || 
-                        hasRole('category_manager') || hasRole('social_media_manager') || 
-                        hasRole('partner_manager') || hasRole('cfo');
+  // Multiple ways to determine admin access
+  const hasAdminAccess = isAdmin || 
+                        isAdminEmail || 
+                        hasRole('super_admin') || 
+                        hasRole('admin') || 
+                        hasRole('category_manager') || 
+                        hasRole('social_media_manager') || 
+                        hasRole('partner_manager') || 
+                        hasRole('cfo') ||
+                        profile?.role === 'super_admin' ||
+                        profile?.role === 'admin';
   
+  // Debug logging
   useEffect(() => {
-    if (isLoading) return;
+    console.log('🏛️ AdminDashboard Debug:', {
+      isLoading,
+      isAuthenticated,
+      userEmail,
+      isAdminEmail,
+      isAdmin,
+      hasAdminAccess,
+      profileRole: profile?.role,
+      userRole,
+      user: user ? { id: user.id, email: userEmail } : null
+    });
     
     adminLog('AdminDashboard', 'Access Check', DebugLevel.INFO, { 
       isLoggedIn: !!user,
-      userEmail: user?.primaryEmailAddress?.emailAddress,
+      userEmail,
       isAdminEmail,
       isAdmin,
       hasAdminAccess,
       profileRole: profile?.role,
       userRole
     });
+  }, [isLoading, isAuthenticated, userEmail, isAdminEmail, isAdmin, hasAdminAccess, profile, user, userRole]);
 
-    // Don't redirect if user has admin access
-    if (!hasAdminAccess && user && !isLoading) {
+  useEffect(() => {
+    if (isLoading) return;
+    
+    // Only redirect if user is authenticated but doesn't have admin access
+    if (isAuthenticated && !hasAdminAccess && !isLoading) {
+      console.log('🚫 Access denied, redirecting to homepage');
       adminLog('AdminDashboard', 'Access denied, redirecting to homepage', DebugLevel.WARN);
       toast({
         title: "Access Denied",
@@ -50,7 +74,7 @@ const AdminDashboard = () => {
       });
       navigate('/', { replace: true });
     }
-  }, [isLoading, hasAdminAccess, navigate, profile, user, toast, isAdmin, hasRole, userRole, isAdminEmail]);
+  }, [isLoading, isAuthenticated, hasAdminAccess, navigate, profile, user, toast, userRole]);
 
   const showDebugInfo = () => {
     const info = {
@@ -67,10 +91,18 @@ const AdminDashboard = () => {
       access: {
         isAdminEmail,
         isAdmin,
-        hasAdminAccess
+        hasAdminAccess,
+        isAuthenticated,
+        isLoading
+      },
+      checks: {
+        hasRoleAdmin: hasRole('admin'),
+        hasRoleSuperAdmin: hasRole('super_admin'),
+        hasRoleCategoryManager: hasRole('category_manager')
       }
     };
     setDebugInfo(JSON.stringify(info, null, 2));
+    console.log('🔍 Admin Dashboard Debug Info:', info);
   };
 
   if (isLoading) {
@@ -81,7 +113,8 @@ const AdminDashboard = () => {
     );
   }
 
-  if (user && !hasAdminAccess && !isLoading) {
+  // Show access denied only if user is authenticated but lacks admin access
+  if (isAuthenticated && !hasAdminAccess && !isLoading) {
     return (
       <AdminAccessCheck 
         user={user}
@@ -92,6 +125,7 @@ const AdminDashboard = () => {
     );
   }
 
+  // Show admin dashboard if user has admin access
   if (hasAdminAccess) {
     return (
       <div className="min-h-screen bg-puzzle-black p-6">
@@ -116,7 +150,12 @@ const AdminDashboard = () => {
     );
   }
 
-  return null;
+  // Show loading state if we're still determining access
+  return (
+    <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
+      <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+    </div>
+  );
 };
 
 export default AdminDashboard;
