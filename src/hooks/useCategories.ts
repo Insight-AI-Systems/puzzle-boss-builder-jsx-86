@@ -16,13 +16,21 @@ export function useCategories() {
   return useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
+      console.log('Fetching categories from database...');
       const { data, error } = await supabase
         .from('categories')
         .select('*')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching categories:', error);
+        throw error;
+      }
+      
+      console.log('Categories fetched:', data);
       return data as Category[];
-    }
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2
   });
 }

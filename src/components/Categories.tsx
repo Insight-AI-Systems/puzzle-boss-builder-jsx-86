@@ -33,6 +33,9 @@ const Categories: React.FC = () => {
     refetch();
   };
 
+  // Filter for active categories only
+  const activeCategories = categories?.filter(category => category.status === 'active') || [];
+
   if (isLoading) {
     return <CategoriesLoading />;
   }
@@ -41,7 +44,7 @@ const Categories: React.FC = () => {
     return <CategoriesError onRetry={handleManualRefresh} error={error} />;
   }
 
-  if (!categories?.length) {
+  if (!activeCategories.length) {
     return <CategoriesEmpty onRefresh={handleManualRefresh} />;
   }
 
@@ -63,7 +66,7 @@ const Categories: React.FC = () => {
           </Button>
         </div>
         
-        <CategoryGrid categories={categories} />
+        <CategoryGrid categories={activeCategories} />
       </div>
     </section>
   );

@@ -7,6 +7,7 @@ import HomePage from '@/pages/HomePage';
 import AccountDashboard from '@/pages/AccountDashboard';
 import AdminDashboard from '@/pages/AdminDashboard';
 import Auth from '@/pages/Auth';
+import Categories from '@/pages/Categories';
 import WordSearchGamePage from '@/pages/games/WordSearchGamePage';
 import SupportPage from '@/pages/SupportPage';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -28,6 +29,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/categories" element={<Categories />} />
         <Route path="/puzzles/word-search" element={<WordSearchGamePage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route 
