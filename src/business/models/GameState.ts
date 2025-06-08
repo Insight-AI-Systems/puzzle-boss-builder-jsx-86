@@ -28,8 +28,8 @@ export interface GameConfig {
   hasScore: boolean;
   hasMoves: boolean;
   timeLimit?: number;
-  requiresPayment?: boolean; // Made optional to match existing GameTypes
-  entryFee: number;
+  requiresPayment?: boolean;
+  entryFee?: number; // Made optional to match existing GameTypes
   difficulty: string;
   hintsEnabled?: boolean;
   soundEnabled?: boolean;
