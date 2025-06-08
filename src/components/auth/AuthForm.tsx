@@ -1,60 +1,24 @@
 
-import React, { useEffect, useState } from 'react';
-import { AuthContent } from './AuthContent';
-import { useSearchParams } from 'react-router-dom';
-import { AuthView } from '@/types/auth';
+import React from 'react';
+import { ClerkAuthButtons } from './ClerkAuthButtons';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-interface AuthFormProps {
-  initialView?: AuthView;
-}
-
-export const AuthForm: React.FC<AuthFormProps> = ({ initialView }) => {
-  const [searchParams] = useSearchParams();
-  const [currentView, setCurrentView] = useState<AuthView>(initialView || 'signin');
-  const [lastEnteredEmail, setLastEnteredEmail] = useState('');
-  
-  // Update view based on URL parameters
-  useEffect(() => {
-    // Check for verification success
-    if (searchParams.get('verificationSuccess') === 'true') {
-      setCurrentView('verification-success');
-      return;
-    }
-    
-    // Check for verification pending
-    if (searchParams.get('view') === 'verification-pending') {
-      setCurrentView('verification-pending');
-      return;
-    }
-    
-    // Check for password reset
-    const type = searchParams.get('type');
-    if (type === 'recovery') {
-      setCurrentView('reset-password-confirm');
-      return;
-    }
-    
-    // Check for signup parameter
-    if (initialView) {
-      setCurrentView(initialView);
-    } else if (searchParams.get('signup') === 'true') {
-      setCurrentView('signup');
-    }
-  }, [searchParams, initialView]);
-  
-  // Update lastEnteredEmail when email changes
-  useEffect(() => {
-    const email = document.querySelector<HTMLInputElement>('input[type="email"]')?.value;
-    if (email) {
-      setLastEnteredEmail(email);
-    }
-  }, [currentView]);
-
+export const AuthForm: React.FC = () => {
   return (
-    <AuthContent
-      currentView={currentView}
-      setCurrentView={setCurrentView}
-      lastEnteredEmail={lastEnteredEmail}
-    />
+    <Card className="bg-puzzle-gray border-puzzle-border">
+      <CardHeader>
+        <CardTitle className="text-center text-puzzle-white">
+          Get Started
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="text-center">
+          <p className="text-puzzle-white/70 mb-6">
+            Sign in or create an account to start playing puzzles and track your progress.
+          </p>
+          <ClerkAuthButtons />
+        </div>
+      </CardContent>
+    </Card>
   );
 };

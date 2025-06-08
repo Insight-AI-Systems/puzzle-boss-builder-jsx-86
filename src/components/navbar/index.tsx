@@ -3,19 +3,15 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User, LogOut, Settings, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
 import { ClerkAuthButtons } from '@/components/auth/ClerkAuthButtons';
 import { useUser } from '@clerk/clerk-react';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const { user: supabaseUser, hasRole } = useAuth();
-  const { isSignedIn, user: clerkUser } = useUser();
-  
-  // Use Clerk user if signed in, otherwise fall back to Supabase
-  const currentUser = clerkUser || supabaseUser;
-  const isAuthenticated = isSignedIn || !!supabaseUser;
+  const { isSignedIn, user } = useUser();
+  const { hasRole } = useClerkAuth();
 
   const navLinks = [
     { href: '/', label: 'Home' },
@@ -61,7 +57,7 @@ export const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center space-x-4">
             <ClerkAuthButtons />
             {/* Show account link if authenticated */}
-            {isAuthenticated && (
+            {isSignedIn && (
               <Link
                 to="/account"
                 className="text-puzzle-white hover:text-puzzle-aqua transition-colors"

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { MainLayout } from '@/components/MainLayout';
 import HomePage from '@/pages/HomePage';
 import AccountDashboard from '@/pages/AccountDashboard';
@@ -10,11 +10,11 @@ import Auth from '@/pages/Auth';
 import Categories from '@/pages/Categories';
 import WordSearchGamePage from '@/pages/games/WordSearchGamePage';
 import SupportPage from '@/pages/SupportPage';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { ClerkProtectedRoute } from '@/components/auth/ClerkProtectedRoute';
 import './App.css';
 
 function App() {
-  const { isLoading } = useAuth();
+  const { isLoading } = useClerkAuth();
 
   if (isLoading) {
     return (
@@ -35,17 +35,17 @@ function App() {
         <Route 
           path="/account" 
           element={
-            <ProtectedRoute>
+            <ClerkProtectedRoute>
               <AccountDashboard />
-            </ProtectedRoute>
+            </ClerkProtectedRoute>
           } 
         />
         <Route 
           path="/admin" 
           element={
-            <ProtectedRoute requiredRoles={['admin']}>
+            <ClerkProtectedRoute requiredRoles={['admin', 'super_admin']}>
               <AdminDashboard />
-            </ProtectedRoute>
+            </ClerkProtectedRoute>
           } 
         />
       </Routes>
