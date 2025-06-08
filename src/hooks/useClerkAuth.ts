@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useUser, useClerk } from '@clerk/clerk-react';
 import { useQuery } from '@tanstack/react-query';
@@ -92,3 +93,4 @@ export const useClerkAuth = () => {
     error: null,
   };
 };
+

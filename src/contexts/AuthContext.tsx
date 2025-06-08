@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext } from 'react';
 
 export interface AuthContextType {
@@ -52,3 +53,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

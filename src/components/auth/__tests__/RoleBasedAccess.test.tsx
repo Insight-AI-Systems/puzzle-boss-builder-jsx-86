@@ -1,125 +1,88 @@
 
 import React from 'react';
-import { render } from '@testing-library/react';
-import { AuthContext, AuthContextType } from '@/contexts/AuthContext';
+import { render, screen } from '@testing-library/react';
 import { RoleBasedAccess } from '../RoleBasedAccess';
-import { Session, User } from '@supabase/supabase-js';
-import { UserRole } from '@/types/userTypes';
-import '@testing-library/jest-dom';
+import { AuthContext, AuthContextType } from '@/contexts/AuthContext';
 
-// Mock user and session
-const mockUser: User = {
-  id: 'test-user-id',
-  email: 'test@example.com',
-  app_metadata: {},
-  user_metadata: {},
-  aud: 'authenticated',
-  created_at: '',
+const mockAuthContext = (overrides: Partial<AuthContextType> = {}): AuthContextType => ({
+  user: null,
+  userRole: 'player',
+  isAuthenticated: false,
+  isLoading: false,
+  isAdmin: false,
+  session: null,
+  error: null,
+  rolesLoaded: true,
+  hasRole: () => false,
+  signUp: async () => ({ error: new Error('Authentication not configured') }),
+  signIn: async () => ({ error: new Error('Authentication not configured') }),
+  signOut: async () => ({ error: new Error('Authentication not configured') }),
+  resetPassword: async () => ({ error: new Error('Authentication not configured') }),
+  updatePassword: async () => ({ error: new Error('Authentication not configured') }),
+  ...overrides,
+});
+
+const renderWithAuth = (component: React.ReactElement, authValue: AuthContextType) => {
+  return render(
+    <AuthContext.Provider value={authValue}>
+      {component}
+    </AuthContext.Provider>
+  );
 };
 
-const mockSession: Session = {
-  access_token: 'test-access-token',
-  refresh_token: 'test-refresh-token',
-  user: mockUser,
-  expires_at: 123456789,
-  expires_in: 3600,
-  token_type: 'bearer'
-};
-
-describe('RoleBasedAccess Component', () => {
-  test('renders children when user has required role', () => {
-    // Mock auth context with admin role
-    const mockAuthContext: AuthContextType = {
-      user: mockUser,
-      session: mockSession,
+describe('RoleBasedAccess', () => {
+  it('renders content when user has required role', () => {
+    const authValue = mockAuthContext({
+      user: { id: '1', email: 'test@example.com' },
       isAuthenticated: true,
-      isLoading: false,
-      error: null,
-      userRole: 'super_admin' as UserRole,
-      userRoles: ['super_admin'] as UserRole[],
-      hasRole: (role: string) => role === 'super_admin',
-      isAdmin: true,
-      rolesLoaded: true,
-      signIn: jest.fn(),
-      signUp: jest.fn(),
-      signOut: jest.fn(),
-      resetPassword: jest.fn(),
-      updatePassword: jest.fn(),
-      clearAuthError: jest.fn(),
-    };
+      userRole: 'admin',
+      hasRole: (role: string) => role === 'admin',
+    });
 
-    const { getByTestId } = render(
-      <AuthContext.Provider value={mockAuthContext}>
-        <RoleBasedAccess allowedRoles={['super_admin']}>
-          <div data-testid="protected-content">Protected Content</div>
-        </RoleBasedAccess>
-      </AuthContext.Provider>
+    renderWithAuth(
+      <RoleBasedAccess requiredRole="admin">
+        <div>Admin content</div>
+      </RoleBasedAccess>,
+      authValue
     );
 
-    expect(getByTestId('protected-content')).toBeInTheDocument();
+    expect(screen.getByText('Admin content')).toBeInTheDocument();
   });
 
-  test('does not render children when user lacks required role', () => {
-    // Mock auth context with player role
-    const mockAuthContext: AuthContextType = {
-      user: mockUser,
-      session: mockSession,
+  it('does not render content when user lacks required role', () => {
+    const authValue = mockAuthContext({
+      user: { id: '1', email: 'test@example.com' },
       isAuthenticated: true,
-      isLoading: false,
-      error: null,
-      userRole: 'player' as UserRole,
-      userRoles: ['player'] as UserRole[],
+      userRole: 'player',
       hasRole: (role: string) => role === 'player',
-      isAdmin: false,
-      rolesLoaded: true,
-      signIn: jest.fn(),
-      signUp: jest.fn(),
-      signOut: jest.fn(),
-      resetPassword: jest.fn(),
-      updatePassword: jest.fn(),
-      clearAuthError: jest.fn(),
-    };
+    });
 
-    const { queryByTestId } = render(
-      <AuthContext.Provider value={mockAuthContext}>
-        <RoleBasedAccess allowedRoles={['admin']}>
-          <div data-testid="protected-content">Protected Content</div>
-        </RoleBasedAccess>
-      </AuthContext.Provider>
+    renderWithAuth(
+      <RoleBasedAccess requiredRole="admin">
+        <div>Admin content</div>
+      </RoleBasedAccess>,
+      authValue
     );
 
-    expect(queryByTestId('protected-content')).not.toBeInTheDocument();
+    expect(screen.queryByText('Admin content')).not.toBeInTheDocument();
   });
 
-  test('renders children when user has any of the multiple required roles', () => {
-    // Mock auth context with custom hasRole implementation
-    const mockAuthContext: AuthContextType = {
-      user: mockUser,
-      session: mockSession,
-      isAuthenticated: true,
-      isLoading: false,
-      error: null,
-      userRole: 'admin' as UserRole,
-      userRoles: ['admin', 'editor'] as UserRole[],
-      hasRole: (testRole: string) => ['admin', 'editor'].includes(testRole),
-      isAdmin: false,
-      rolesLoaded: true,
-      signIn: jest.fn(),
-      signUp: jest.fn(),
-      signOut: jest.fn(),
-      resetPassword: jest.fn(),
-      updatePassword: jest.fn(),
-      clearAuthError: jest.fn(),
-    };
+  it('does not render content when user is not authenticated', () => {
+    const authValue = mockAuthContext({
+      user: null,
+      isAuthenticated: false,
+      userRole: 'player',
+      hasRole: () => false,
+    });
 
-    const { getByTestId } = render(
-      <AuthContext.Provider value={mockAuthContext}>
-        <RoleBasedAccess allowedRoles={['super_admin', 'admin']}>
-          <div data-testid="protected-content">Protected Content</div>
-        </RoleBasedAccess>
-      </AuthContext.Provider>
+    renderWithAuth(
+      <RoleBasedAccess requiredRole="admin">
+        <div>Admin content</div>
+      </RoleBasedAccess>,
+      authValue
     );
 
-    expect(getByTestId('protected-content')).toBeInTheDocument();
+    expect(screen.queryByText('Admin content')).not.toBeInTheDocument();
   });
 });
+

@@ -1,62 +1,43 @@
 
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
-import { UserRole } from '@/types/userTypes';
+import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 
-export function usePermissions() {
-  const { user, isAdmin } = useAuth();
+export const usePermissions = () => {
+  const { user, userRole, hasRole, isAdmin } = useAuth();
 
-  // Fetch all permissions for the current user
-  const { data: userPermissions, isLoading } = useQuery({
-    queryKey: ['userPermissions', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      
-      // Option 1: Direct database check using role-permission relationship
-      const { data: permissions, error } = await supabase
-        .from('permissions')
-        .select(`
-          name,
-          description,
-          role_permissions!inner(role)
-        `)
-        .eq('role_permissions.role', user.role as UserRole);
-      
-      if (error) throw error;
-      
-      // Extract permission names from the results
-      return permissions.map(p => p.name);
-    },
-    enabled: !!user,
-  });
-
-  // Check if user has a specific permission
-  const hasPermission = (permissionName: string): boolean => {
+  const checkPermission = (permission: string): boolean => {
     if (!user) return false;
-    if (isAdmin) return true; // Admins have all permissions
-    return userPermissions?.includes(permissionName) || false;
+    
+    // Get the user's role, either from the user object or from the auth context
+    const currentRole = (user as any)?.role || userRole as UserRole;
+    
+    // Super admin has all permissions
+    if (currentRole === 'super_admin') return true;
+    
+    // Check if the user's role has the specific permission
+    const roleDefinition = ROLE_DEFINITIONS[currentRole];
+    return roleDefinition?.permissions.includes(permission) || false;
   };
 
-  // Check if user has any of the permissions
-  const hasAnyPermission = (permissionNames: string[]): boolean => {
-    if (!user) return false;
-    if (isAdmin) return true;
-    return permissionNames.some(name => userPermissions?.includes(name));
-  };
-
-  // Check if user has all of the permissions
-  const hasAllPermissions = (permissionNames: string[]): boolean => {
-    if (!user) return false;
-    if (isAdmin) return true;
-    return permissionNames.every(name => userPermissions?.includes(name));
-  };
+  const canManageUsers = (): boolean => checkPermission('manage_users');
+  const canManageRoles = (): boolean => checkPermission('manage_roles');
+  const canManagePuzzles = (): boolean => checkPermission('manage_puzzles');
+  const canManageCategories = (): boolean => checkPermission('manage_categories');
+  const canManagePartners = (): boolean => checkPermission('manage_partners');
+  const canManageFinances = (): boolean => checkPermission('manage_finances');
+  const canAccessAnalytics = (): boolean => checkPermission('access_analytics');
 
   return {
-    userPermissions,
-    isLoading,
-    hasPermission,
-    hasAnyPermission,
-    hasAllPermissions
+    checkPermission,
+    canManageUsers,
+    canManageRoles,
+    canManagePuzzles,
+    canManageCategories,
+    canManagePartners,
+    canManageFinances,
+    canAccessAnalytics,
+    isAdmin,
+    hasRole,
   };
-}
+};
+

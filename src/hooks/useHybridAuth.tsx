@@ -1,4 +1,5 @@
 
+
 import { useAuth } from '@/contexts/AuthContext';
 import { useUser } from '@clerk/clerk-react';
 
@@ -23,9 +24,10 @@ export const useHybridAuth = () => {
     
     // Role checking (prefer Supabase roles for now)
     hasRole: supabaseAuth.hasRole,
-    userRoles: supabaseAuth.userRoles,
+    userRole: supabaseAuth.userRole,
     
     // Auth methods (use Supabase for now, can be extended)
     signOut: supabaseAuth.signOut,
   };
 };
+
