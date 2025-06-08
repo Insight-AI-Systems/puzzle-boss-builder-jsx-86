@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -25,6 +24,7 @@ export function WordSearchGame() {
   const [gameState, setGameState] = useState<WordSearchState | null>(null);
   const [gameStatus, setGameStatus] = useState<'loading' | 'payment' | 'playing' | 'completed' | 'error'>('loading');
   const [validator, setValidator] = useState<WordSelectionValidator | null>(null);
+  const [hintCells, setHintCells] = useState<Cell[]>([]); // New state for hint highlighting
   
   const entryFee = 1.99;
   const { paymentStatus, isProcessing, processPayment } = usePayment(entryFee);
@@ -183,11 +183,55 @@ export function WordSearchGame() {
     }
   };
 
+  const handleHint = useCallback(() => {
+    if (!engine || !gameState || !validator) return;
+    
+    // Clear any existing hint
+    setHintCells([]);
+    
+    // Get unfound words
+    const unFoundWords = gameState.words.filter(word => !gameState.foundWords.has(word));
+    
+    if (unFoundWords.length === 0) {
+      toast({
+        title: "No More Words",
+        description: "You've found all the words!",
+      });
+      return;
+    }
+    
+    // Get placed words from engine
+    const placedWords = engine.getPlacedWords();
+    const randomWord = unFoundWords[Math.floor(Math.random() * unFoundWords.length)];
+    const wordPlacement = placedWords.find(p => p.word === randomWord);
+    
+    if (wordPlacement && wordPlacement.cells.length > 0) {
+      // Highlight the entire word for the hint
+      setHintCells([...wordPlacement.cells]);
+      
+      // Update engine state
+      engine.makeMove({ type: 'HINT' });
+      
+      toast({
+        title: "Hint!",
+        description: `Look for the word "${randomWord}" highlighted in orange`,
+      });
+      
+      // Clear hint after 5 seconds
+      setTimeout(() => {
+        setHintCells([]);
+      }, 5000);
+    }
+  }, [engine, gameState, validator, toast]);
+
   const handleSelectionEnd = useCallback(() => {
     const selection = endSelection();
     if (engine && gameState && selection.length > 0 && validator) {
       
       console.log('Handling selection end:', selection);
+      
+      // Clear any active hints when user makes a selection
+      setHintCells([]);
       
       // Convert string cell IDs to Cell objects for validation
       const cellCoords: Cell[] = stringsToCells(selection);
@@ -293,6 +337,7 @@ export function WordSearchGame() {
             grid={gameState.grid}
             selectedCells={selectedCellsAsObjects}
             currentSelection={currentSelectionAsObjects}
+            hintCells={hintCells}
             onSelectionStart={(cell) => startSelection(cell)}
             onSelectionMove={(cell) => updateSelection(cell)}
             onSelectionEnd={handleSelectionEnd}
@@ -307,7 +352,7 @@ export function WordSearchGame() {
             onPause={() => engine.pause()}
             onResume={() => engine.resume()}
             onReset={() => { engine.reset(); setGameStatus('playing'); }}
-            onHint={() => engine.makeMove({ type: 'HINT' })}
+            onHint={handleHint}
             hintsUsed={gameState.hintsUsed}
             isGameComplete={gameStatus === 'completed'}
           />

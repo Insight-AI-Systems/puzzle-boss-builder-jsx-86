@@ -10,6 +10,7 @@ interface WordSearchGridProps {
   grid: string[][];
   selectedCells: Cell[];
   currentSelection: Cell[];
+  hintCells?: Cell[]; // New prop for hint highlighting
   onSelectionStart: (cell: Cell) => void;
   onSelectionMove: (cell: Cell) => void;
   onSelectionEnd: () => void;
@@ -19,11 +20,13 @@ interface WordSearchGridProps {
 const CELL_SIZE = 40;
 const CURRENT_SELECTION_COLOR = 'rgba(255, 255, 0, 0.6)'; // Yellow for current selection
 const FOUND_WORD_COLOR = 'rgba(0, 255, 128, 0.7)'; // Green for found words
+const HINT_COLOR = 'rgba(255, 165, 0, 0.8)'; // Orange for hints - high visibility
 
 export function WordSearchGrid({
   grid,
   selectedCells,
   currentSelection,
+  hintCells = [],
   onSelectionStart,
   onSelectionMove,
   onSelectionEnd,
@@ -66,9 +69,17 @@ export function WordSearchGrid({
           selectedCell.row === rowIndex && selectedCell.col === colIndex
         );
 
-        // Apply highlighting - found words take priority over current selection
+        // Check if cell is part of a hint
+        const isHintCell = hintCells.some(hintCell => 
+          hintCell.row === rowIndex && hintCell.col === colIndex
+        );
+
+        // Apply highlighting with priority: found words > hints > current selection
         if (isFoundCell) {
           ctx.fillStyle = FOUND_WORD_COLOR;
+          ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+        } else if (isHintCell) {
+          ctx.fillStyle = HINT_COLOR;
           ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
         } else if (isCurrentSelection) {
           ctx.fillStyle = CURRENT_SELECTION_COLOR;
@@ -87,7 +98,7 @@ export function WordSearchGrid({
         ctx.fillText(cell, x + CELL_SIZE / 2, y + CELL_SIZE / 2);
       });
     });
-  }, [grid, selectedCells, currentSelection]);
+  }, [grid, selectedCells, currentSelection, hintCells]);
 
   useEffect(() => {
     drawGrid();
