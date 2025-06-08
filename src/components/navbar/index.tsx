@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Shield } from 'lucide-react';
+import { Menu, X, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ClerkAuthButtons } from '@/components/auth/ClerkAuthButtons';
 import { useUser } from '@clerk/clerk-react';
@@ -90,7 +90,7 @@ export const Navbar: React.FC = () => {
                 )
               ))}
               
-              {/* Admin links - with enhanced visibility */}
+              {/* Admin links - single consolidated dashboard */}
               {showAdminItems && accessibleAdminItems.map((item) => (
                 <Link
                   key={item.href}
@@ -116,16 +116,6 @@ export const Navbar: React.FC = () => {
                   className="text-puzzle-white hover:text-puzzle-aqua transition-colors"
                 >
                   <User className="h-5 w-5" />
-                </Link>
-              )}
-              {/* Admin dashboard link - with enhanced visibility */}
-              {showAdminItems && (
-                <Link
-                  to="/admin-dashboard"
-                  className="text-puzzle-aqua hover:text-puzzle-aqua/80 transition-colors bg-puzzle-aqua/10 p-2 rounded"
-                  title="Admin Dashboard"
-                >
-                  <Shield className="h-5 w-5" />
                 </Link>
               )}
             </div>

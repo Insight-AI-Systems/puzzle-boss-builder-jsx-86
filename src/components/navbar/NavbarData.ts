@@ -21,8 +21,7 @@ export const mainNavItems: MainNavItem[] = [
   { name: 'Categories', href: '/categories' }
 ];
 
-// Admin navigation items
+// Admin navigation items - consolidated to single dashboard entry
 export const adminNavItems: MainNavItem[] = [
-  { name: 'Admin Dashboard', href: '/admin-dashboard', roles: ["super_admin", "admin", "category_manager", "partner_manager", "cfo"] },
-  { name: 'Financial Dashboard', href: '/admin-dashboard?tab=finance', roles: ["super_admin", "cfo", "admin"] }
+  { name: 'Admin Dashboard', href: '/admin-dashboard', roles: ["super_admin", "admin", "category_manager", "partner_manager", "cfo"] }
 ];
