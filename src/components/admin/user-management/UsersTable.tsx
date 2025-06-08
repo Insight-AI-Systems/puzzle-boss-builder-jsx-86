@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { UserProfile, UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 import { Edit, Mail } from 'lucide-react';
+import { UserLoginStatus } from './UserLoginStatus';
 
 interface UsersTableProps {
   users: UserProfile[];
@@ -71,9 +72,7 @@ export function UsersTable({
             <TableHead className="cursor-pointer" onClick={onSortByRole}>
               Role
             </TableHead>
-            <TableHead>Country</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead>Last Sign In</TableHead>
+            <TableHead>Login Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -108,12 +107,12 @@ export function UsersTable({
                   {ROLE_DEFINITIONS[user.role]?.label || user.role}
                 </Badge>
               </TableCell>
-              <TableCell>{user.country || 'Not specified'}</TableCell>
               <TableCell>
-                {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
-              </TableCell>
-              <TableCell>
-                {user.last_sign_in ? new Date(user.last_sign_in).toLocaleDateString() : 'Never'}
+                <UserLoginStatus 
+                  lastSignIn={user.last_sign_in} 
+                  createdAt={user.created_at}
+                  displayName={user.display_name}
+                />
               </TableCell>
               <TableCell className="text-right">
                 <Button
