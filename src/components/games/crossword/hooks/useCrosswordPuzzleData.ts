@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import type { CrosswordPuzzle } from '@/business/engines/crossword/CrosswordEngine';
 
@@ -15,21 +16,41 @@ function generateSampleGrid() {
   const grid = Array(10).fill(null).map((_, row) => 
     Array(10).fill(null).map((_, col) => ({
       letter: '',
-      isBlocked: Math.random() > 0.7, // 30% blocked cells
+      isBlocked: true, // Start with all blocked, unblock specific cells
       number: undefined,
       belongsToWords: []
     }))
   );
 
-  // Set up sample words
-  // CAT horizontal at 1,1
-  grid[1][1] = { ...grid[1][1], letter: 'C', number: 1, isBlocked: false, belongsToWords: ['1-across', '1-down'] };
-  grid[1][2] = { ...grid[1][2], letter: 'A', isBlocked: false, belongsToWords: ['1-across'] };
-  grid[1][3] = { ...grid[1][3], letter: 'T', isBlocked: false, belongsToWords: ['1-across'] };
+  // Set up sample words - CAT horizontal at 1,1
+  grid[1][1] = { 
+    letter: '', 
+    number: 1, 
+    isBlocked: false, 
+    belongsToWords: ['1-across', '1-down'] 
+  };
+  grid[1][2] = { 
+    letter: '', 
+    isBlocked: false, 
+    belongsToWords: ['1-across'] 
+  };
+  grid[1][3] = { 
+    letter: '', 
+    isBlocked: false, 
+    belongsToWords: ['1-across'] 
+  };
 
-  // CAR vertical at 1,1
-  grid[2][1] = { ...grid[2][1], letter: 'A', isBlocked: false, belongsToWords: ['1-down'] };
-  grid[3][1] = { ...grid[3][1], letter: 'R', isBlocked: false, belongsToWords: ['1-down'] };
+  // CAR vertical at 1,1 (sharing first cell)
+  grid[2][1] = { 
+    letter: '', 
+    isBlocked: false, 
+    belongsToWords: ['1-down'] 
+  };
+  grid[3][1] = { 
+    letter: '', 
+    isBlocked: false, 
+    belongsToWords: ['1-down'] 
+  };
 
   return grid;
 }
@@ -77,11 +98,15 @@ export function useCrosswordPuzzleData() {
     const loadPuzzle = async () => {
       try {
         setIsLoading(true);
-        // TODO: Load actual puzzle data from API
+        console.log('Loading crossword puzzle data...');
+        
+        // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 500));
         
+        console.log('Puzzle data loaded:', samplePuzzle);
         setPuzzle(samplePuzzle);
       } catch (err) {
+        console.error('Error loading puzzle:', err);
         setError(err instanceof Error ? err.message : 'Failed to load puzzle');
       } finally {
         setIsLoading(false);

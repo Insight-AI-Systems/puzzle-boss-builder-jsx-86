@@ -6,7 +6,7 @@ import { CrosswordTimer } from './components/CrosswordTimer';
 import { useCrosswordEngine } from './hooks/useCrosswordEngine';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pause, Play, RotateCcw, Lightbulb } from 'lucide-react';
+import { Pause, Play, RotateCcw, Lightbulb, Clock } from 'lucide-react';
 
 export function CrosswordGame() {
   const {
@@ -21,12 +21,40 @@ export function CrosswordGame() {
     handleGetHint
   } = useCrosswordEngine();
 
+  console.log('CrosswordGame rendering:', { isLoading, error, gameState });
+
   if (isLoading) {
-    return <div className="flex justify-center items-center h-64">Loading crossword...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-puzzle-aqua mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading crossword puzzle...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-red-500 text-center">{error}</div>;
+    return (
+      <div className="text-center p-8">
+        <div className="text-red-500 text-lg mb-4">Failed to load crossword</div>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <Button onClick={() => window.location.reload()}>
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  if (!gameState.grid || gameState.grid.length === 0) {
+    return (
+      <div className="text-center p-8">
+        <div className="text-gray-500 text-lg mb-4">No puzzle data available</div>
+        <Button onClick={() => window.location.reload()}>
+          Reload
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -36,13 +64,12 @@ export function CrosswordGame() {
         <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Crossword Puzzle</span>
+              <span>Daily Crossword</span>
               <div className="flex items-center gap-4">
-                <CrosswordTimer 
-                  startTime={Date.now()}
-                  isPaused={false}
-                  isCompleted={gameState.isComplete}
-                />
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  <span className="font-mono text-sm">00:00</span>
+                </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={handleTogglePause}>
                     <Pause className="h-4 w-4" />
@@ -59,8 +86,16 @@ export function CrosswordGame() {
           </CardHeader>
           <CardContent>
             <div className="text-sm text-gray-600 mb-4">
-              Score: {gameState.score} | Hints Used: {gameState.hintsUsed}
+              Score: {gameState.score} | Hints Used: {gameState.hintsUsed} | Direction: {gameState.selectedDirection}
             </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleToggleDirection}
+              className="mb-4"
+            >
+              Toggle Direction ({gameState.selectedDirection})
+            </Button>
           </CardContent>
         </Card>
 
@@ -71,6 +106,7 @@ export function CrosswordGame() {
               grid={gameState.grid}
               selectedCell={gameState.selectedCell}
               onCellClick={handleCellClick}
+              onCellInput={handleLetterInput}
             />
           </CardContent>
         </Card>
@@ -83,6 +119,7 @@ export function CrosswordGame() {
           <CardContent>
             <CrosswordClues
               clues={gameState.clues}
+              selectedDirection={gameState.selectedDirection}
               onClueClick={(clueId) => console.log('Clue clicked:', clueId)}
             />
           </CardContent>
