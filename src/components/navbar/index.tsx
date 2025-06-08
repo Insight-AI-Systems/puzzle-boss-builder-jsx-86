@@ -1,135 +1,123 @@
 
-import React, { useEffect, useState } from 'react';
-import { Menu, X, LayoutDashboard } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Menu, X, User, LogOut, Settings, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useMobileMenu } from '@/hooks/use-mobile-menu';
-import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import Logo from './Logo';
-import NavLinks from './NavLinks';
-import UserMenu from './UserMenu';
-import AuthButtons from './AuthButtons';
-import MobileMenu from './MobileMenu';
-import PuzzleDropdown from './PuzzleDropdown';
-import { mainNavItems } from './NavbarData';
+import { ClerkAuthButtons } from '@/components/auth/ClerkAuthButtons';
+import { useUser } from '@clerk/clerk-react';
 
-const Navbar: React.FC = () => {
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const { user, hasRole, isAuthenticated, isLoading, userRole, isAdmin } = useAuth();
-  const isMobile = useIsMobile();
-  const { isMenuOpen, toggleMenu, closeMenu } = useMobileMenu();
+export const Navbar: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  const { user: supabaseUser, hasRole } = useAuth();
+  const { isSignedIn, user: clerkUser } = useUser();
   
-  useEffect(() => {
-    console.log('Navbar - Auth state changed:', { 
-      isAuthenticated, 
-      user: !!user, 
-      userEmail: user?.email,
-      userRole,
-      isAdmin,
-      isLoading 
-    });
-    
-    if (isAuthenticated && user) {
-      // Create a simple profile object from auth user
-      setUserProfile({
-        id: user.id,
-        email: user.email,
-        display_name: user.email?.split('@')[0] || 'User',
-        avatar_url: null,
-        role: userRole || 'player'
-      });
-    } else {
-      setUserProfile(null);
-    }
-  }, [isAuthenticated, user, isLoading, userRole, isAdmin]);
-  
-  // Use the isAdmin from AuthContext which is based on database role
-  const isAdminUser = isAdmin;
-  
-  // Filter out "Puzzles" from main nav items since we'll handle it separately
-  const filteredNavItems = mainNavItems.filter(item => item.name !== 'Puzzles');
-  
-  console.log('Navbar render state:', {
-    isLoading,
-    isAuthenticated,
-    hasUser: !!user,
-    hasProfile: !!userProfile,
-    isAdminUser,
-    userRole
-  });
+  // Use Clerk user if signed in, otherwise fall back to Supabase
+  const currentUser = clerkUser || supabaseUser;
+  const isAuthenticated = isSignedIn || !!supabaseUser;
+
+  const navLinks = [
+    { href: '/', label: 'Home' },
+    { href: '/categories', label: 'Categories' },
+    { href: '/puzzles/word-search', label: 'Word Search' },
+    { href: '/support', label: 'Support' },
+  ];
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="bg-puzzle-black border-b border-puzzle-aqua/20">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
+    <nav className="bg-puzzle-black/95 backdrop-blur-sm border-b border-puzzle-border sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
           {/* Logo */}
-          <Logo />
-          
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-1 items-center">
-            <NavLinks 
-              items={filteredNavItems} 
-              className="px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              isMobile={false}
-            />
-            {/* Desktop Puzzle Dropdown */}
-            <PuzzleDropdown />
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-puzzle-aqua rounded-lg flex items-center justify-center">
+                <span className="text-puzzle-black font-bold text-lg">P</span>
+              </div>
+              <span className="text-puzzle-white font-bold text-xl">PuzzleBoss</span>
+            </Link>
           </div>
-          
-          {/* User Menu / Auth Buttons */}
-          <div className="hidden md:flex items-center space-x-2">
-            {!isLoading && userProfile && isAdminUser && (
-              <Link 
-                to="/admin"
-                className="flex items-center px-3 py-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                to={link.href}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive(link.href)
+                    ? 'text-puzzle-aqua border-b-2 border-puzzle-aqua'
+                    : 'text-puzzle-white hover:text-puzzle-aqua'
+                }`}
               >
-                <LayoutDashboard className="h-5 w-5 mr-2" />
-                Admin
+                {link.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Auth Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            <ClerkAuthButtons />
+            {/* Show account link if authenticated */}
+            {isAuthenticated && (
+              <Link
+                to="/account"
+                className="text-puzzle-white hover:text-puzzle-aqua transition-colors"
+              >
+                <User className="h-5 w-5" />
               </Link>
             )}
-            {!isLoading && userProfile ? (
-              <UserMenu profile={userProfile} />
-            ) : (
-              <AuthButtons />
+            {/* Show admin link if user has admin role */}
+            {hasRole('admin') && (
+              <Link
+                to="/admin"
+                className="text-puzzle-white hover:text-puzzle-aqua transition-colors"
+              >
+                <Shield className="h-5 w-5" />
+              </Link>
             )}
           </div>
-          
-          {/* Mobile Navigation Toggle */}
+
+          {/* Mobile menu button */}
           <div className="md:hidden flex items-center">
-            {!isLoading && userProfile ? (
-              <>
-                {isAdminUser && (
-                  <Link 
-                    to="/admin"
-                    className="flex items-center px-3 py-2 mr-2 text-sm font-medium text-puzzle-aqua hover:bg-white/10 rounded-md transition-colors"
-                  >
-                    <LayoutDashboard className="h-5 w-5" />
-                  </Link>
-                )}
-                <UserMenu profile={userProfile} isMobile={true} />
-              </>
-            ) : (
-              <AuthButtons isMobile={true} />
-            )}
             <Button
               variant="ghost"
-              className="border border-puzzle-aqua/20"
-              onClick={toggleMenu}
+              size="sm"
+              onClick={() => setIsOpen(!isOpen)}
+              className="text-puzzle-white hover:text-puzzle-aqua"
             >
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
           </div>
         </div>
+
+        {/* Mobile Navigation */}
+        {isOpen && (
+          <div className="md:hidden border-t border-puzzle-border">
+            <div className="px-4 py-4 space-y-2">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className={`block px-3 py-2 text-base font-medium transition-colors ${
+                    isActive(link.href)
+                      ? 'text-puzzle-aqua bg-puzzle-gray/20'
+                      : 'text-puzzle-white hover:text-puzzle-aqua hover:bg-puzzle-gray/10'
+                  }`}
+                  onClick={() => setIsOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <div className="pt-4 border-t border-puzzle-border">
+                <ClerkAuthButtons isMobile={true} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      
-      {/* Mobile Menu */}
-      <MobileMenu 
-        isOpen={isMenuOpen} 
-        navItems={mainNavItems} 
-        isLoggedIn={!!userProfile} 
-        onClose={closeMenu} 
-      />
     </nav>
   );
 };
