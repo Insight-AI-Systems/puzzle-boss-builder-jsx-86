@@ -32,7 +32,7 @@ export const useClerkAuth = () => {
         return null;
       }
       
-      return data;
+      return data as Profile | null;
     },
     enabled: !!user?.id && isSignedIn,
   });
