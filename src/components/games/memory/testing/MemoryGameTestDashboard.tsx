@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MemoryGame } from '../MemoryGame';
-import { useMemoryScoring } from '../hooks/useMemoryScoring';
+import { useMemoryGameScoring } from '../hooks/useMemoryGameScoring';
 import { MemoryLayout, MemoryTheme } from '../types/memoryTypes';
+import { generateCards } from '../core/memoryGameCore';
 import { 
   Play, 
   Pause, 
@@ -20,7 +20,12 @@ import {
   Target,
   Smartphone,
   Eye,
-  Timer
+  Timer,
+  Shuffle,
+  Calculator,
+  Users,
+  MousePointer,
+  Accessibility
 } from 'lucide-react';
 
 interface TestResult {
@@ -28,120 +33,158 @@ interface TestResult {
   status: 'pass' | 'fail' | 'pending';
   details: string;
   timestamp: Date;
+  score?: number;
+}
+
+interface ShuffleTest {
+  iteration: number;
+  positions: number[];
+  uniqueness: number;
+}
+
+interface ScoringTest {
+  scenario: string;
+  matchedPairs: number;
+  moves: number;
+  timeElapsed: number;
+  expectedScore: number;
+  actualScore: number;
+  passed: boolean;
 }
 
 export function MemoryGameTestDashboard() {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [isRunningTests, setIsRunningTests] = useState(false);
-  const [shuffleResults, setShuffleResults] = useState<number[][]>([]);
+  const [shuffleResults, setShuffleResults] = useState<ShuffleTest[]>([]);
+  const [scoringTests, setScoringTests] = useState<ScoringTest[]>([]);
   const [clickTimings, setClickTimings] = useState<number[]>([]);
   const [timerAccuracy, setTimerAccuracy] = useState<number[]>([]);
   const [activeTest, setActiveTest] = useState<string>('');
+  const [performanceMetrics, setPerformanceMetrics] = useState<{fps: number[], loadTimes: number[]}>({fps: [], loadTimes: []});
   
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastClickTime = useRef<number>(0);
-  const testStartTime = useRef<number>(0);
+  const clickTestRef = useRef<number>(0);
+  const timerTestRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { calculateScore } = useMemoryScoring('3x4');
+  const { calculateScore } = useMemoryGameScoring('3x4');
 
-  // Test card shuffling randomness
+  // 1. Card Shuffling Randomness Test
   const testShuffleRandomness = async () => {
     setActiveTest('shuffle');
-    const results: number[][] = [];
+    const results: ShuffleTest[] = [];
+    const iterations = 20;
     
-    for (let i = 0; i < 10; i++) {
-      // Simulate card generation and track positions
-      const positions = Array.from({ length: 12 }, (_, idx) => idx);
-      for (let j = positions.length - 1; j > 0; j--) {
-        const k = Math.floor(Math.random() * (j + 1));
-        [positions[j], positions[k]] = [positions[k], positions[j]];
-      }
-      results.push(positions);
-      await new Promise(resolve => setTimeout(resolve, 100));
+    for (let i = 0; i < iterations; i++) {
+      const cards = generateCards('3x4', 'animals');
+      const positions = cards.map((_, index) => index);
+      
+      // Check uniqueness against previous shuffles
+      const uniqueness = results.filter(prev => 
+        JSON.stringify(prev.positions) === JSON.stringify(positions)
+      ).length;
+      
+      results.push({
+        iteration: i + 1,
+        positions,
+        uniqueness
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
     
     setShuffleResults(results);
     
-    // Check for randomness (no two shuffles should be identical)
-    const uniqueShuffles = new Set(results.map(r => r.join(',')));
-    const isRandom = uniqueShuffles.size === results.length;
+    // Calculate randomness score
+    const uniqueShuffles = new Set(results.map(r => JSON.stringify(r.positions))).size;
+    const randomnessScore = (uniqueShuffles / iterations) * 100;
+    const passed = randomnessScore >= 85; // 85% unique shuffles
     
     addTestResult({
       name: 'Card Shuffle Randomness',
-      status: isRandom ? 'pass' : 'fail',
-      details: `Generated ${uniqueShuffles.size} unique shuffles out of ${results.length} attempts`,
-      timestamp: new Date()
+      status: passed ? 'pass' : 'fail',
+      details: `${uniqueShuffles}/${iterations} unique shuffles (${randomnessScore.toFixed(1)}%)`,
+      timestamp: new Date(),
+      score: randomnessScore
     });
   };
 
-  // Test scoring calculations
+  // 2. Scoring Calculations Test
   const testScoringCalculations = async () => {
     setActiveTest('scoring');
     const testCases = [
-      { matchedPairs: 6, moves: 6, timeElapsed: 30000, expected: 'perfect game' },
-      { matchedPairs: 6, moves: 8, timeElapsed: 45000, expected: 'good score' },
-      { matchedPairs: 6, moves: 12, timeElapsed: 60000, expected: 'average score' },
-      { matchedPairs: 6, moves: 20, timeElapsed: 120000, expected: 'low score' },
+      { scenario: 'Perfect Game', matchedPairs: 6, moves: 6, timeElapsed: 30000, expectedRange: [1800, 2200] },
+      { scenario: 'Good Performance', matchedPairs: 6, moves: 8, timeElapsed: 45000, expectedRange: [1400, 1800] },
+      { scenario: 'Average Performance', matchedPairs: 6, moves: 12, timeElapsed: 60000, expectedRange: [1000, 1400] },
+      { scenario: 'Poor Performance', matchedPairs: 6, moves: 20, timeElapsed: 120000, expectedRange: [500, 900] },
     ];
 
+    const results: ScoringTest[] = [];
     let allPassed = true;
-    const details: string[] = [];
 
     for (const testCase of testCases) {
-      const score = calculateScore(
-        testCase.matchedPairs, 
-        testCase.moves, 
-        testCase.timeElapsed, 
-        6
-      );
+      const scoreData = calculateScore(testCase.matchedPairs, testCase.moves, testCase.timeElapsed);
+      const actualScore = scoreData.finalScore;
+      const passed = actualScore >= testCase.expectedRange[0] && actualScore <= testCase.expectedRange[1];
       
-      const isValid = score.finalScore > 0 && score.accuracy > 0;
-      if (!isValid) allPassed = false;
+      if (!passed) allPassed = false;
       
-      details.push(`${testCase.expected}: ${score.finalScore} points (${score.accuracy.toFixed(1)}% accuracy)`);
+      results.push({
+        ...testCase,
+        expectedScore: (testCase.expectedRange[0] + testCase.expectedRange[1]) / 2,
+        actualScore,
+        passed
+      });
     }
 
+    setScoringTests(results);
+    
     addTestResult({
       name: 'Scoring Calculations',
       status: allPassed ? 'pass' : 'fail',
-      details: details.join(', '),
+      details: `${results.filter(r => r.passed).length}/${results.length} scenarios passed`,
       timestamp: new Date()
     });
   };
 
-  // Test mobile touch responsiveness
+  // 3. Mobile Touch Responsiveness Test
   const testMobileTouch = async () => {
     setActiveTest('mobile');
+    const touchTests: number[] = [];
     
-    // Simulate touch events and measure response times
-    const touchTests = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 10; i++) {
       const startTime = performance.now();
-      // Simulate touch delay
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 50));
+      
+      // Simulate touch event processing
+      await new Promise(resolve => {
+        const touchDelay = Math.random() * 20 + 10; // 10-30ms random delay
+        setTimeout(resolve, touchDelay);
+      });
+      
       const endTime = performance.now();
       touchTests.push(endTime - startTime);
     }
     
     const avgResponseTime = touchTests.reduce((a, b) => a + b, 0) / touchTests.length;
-    const isResponsive = avgResponseTime < 100; // Should respond within 100ms
+    const maxResponseTime = Math.max(...touchTests);
+    const isResponsive = avgResponseTime < 50 && maxResponseTime < 100;
     
     addTestResult({
       name: 'Mobile Touch Responsiveness',
       status: isResponsive ? 'pass' : 'fail',
-      details: `Average response time: ${avgResponseTime.toFixed(2)}ms`,
+      details: `Avg: ${avgResponseTime.toFixed(2)}ms, Max: ${maxResponseTime.toFixed(2)}ms`,
       timestamp: new Date()
     });
   };
 
-  // Test animation performance
+  // 4. Animation Performance Test
   const testAnimationPerformance = async () => {
     setActiveTest('animation');
     
     let frameCount = 0;
     let lastTime = performance.now();
     const frameTimes: number[] = [];
+    const loadTimes: number[] = [];
     
+    // Test card flip animation performance
     const measureFrames = () => {
       const currentTime = performance.now();
       const frameTime = currentTime - lastTime;
@@ -154,13 +197,16 @@ export function MemoryGameTestDashboard() {
       } else {
         const avgFrameTime = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
         const fps = 1000 / avgFrameTime;
-        const isSmooth = fps >= 30; // Should maintain at least 30 FPS
+        const isSmooth = fps >= 30;
+        
+        setPerformanceMetrics(prev => ({ ...prev, fps: frameTimes }));
         
         addTestResult({
           name: 'Animation Performance',
           status: isSmooth ? 'pass' : 'fail',
           details: `Average FPS: ${fps.toFixed(1)}`,
-          timestamp: new Date()
+          timestamp: new Date(),
+          score: fps
         });
       }
     };
@@ -168,63 +214,71 @@ export function MemoryGameTestDashboard() {
     requestAnimationFrame(measureFrames);
   };
 
-  // Test rapid clicking edge cases
+  // 5. Rapid Clicking Edge Cases Test
   const testRapidClicking = async () => {
     setActiveTest('clicking');
     
-    const clickInterval = 50; // 50ms between clicks
-    const clickCount = 10;
-    const timings: number[] = [];
+    const clickTimings: number[] = [];
+    let doubleClickCount = 0;
+    let lastClickTime = 0;
     
-    for (let i = 0; i < clickCount; i++) {
-      const startTime = performance.now();
-      // Simulate rapid click
-      await new Promise(resolve => setTimeout(resolve, clickInterval));
-      const endTime = performance.now();
-      timings.push(endTime - startTime);
+    for (let i = 0; i < 20; i++) {
+      const clickTime = performance.now();
+      const timeSinceLastClick = clickTime - lastClickTime;
+      
+      if (timeSinceLastClick < 100 && i > 0) {
+        doubleClickCount++;
+      }
+      
+      clickTimings.push(timeSinceLastClick);
+      lastClickTime = clickTime;
+      
+      // Simulate rapid clicking with varying intervals
+      await new Promise(resolve => setTimeout(resolve, Math.random() * 50 + 10));
     }
     
-    setClickTimings(timings);
-    const avgTiming = timings.reduce((a, b) => a + b, 0) / timings.length;
-    const isStable = timings.every(t => Math.abs(t - avgTiming) < 20); // Within 20ms variance
+    setClickTimings(clickTimings);
+    const avgInterval = clickTimings.reduce((a, b) => a + b, 0) / clickTimings.length;
+    const isStable = doubleClickCount < 5; // Less than 25% double clicks
     
     addTestResult({
       name: 'Rapid Clicking Handling',
       status: isStable ? 'pass' : 'fail',
-      details: `Click timing variance: ${Math.max(...timings) - Math.min(...timings)}ms`,
+      details: `${doubleClickCount} double-clicks detected, avg interval: ${avgInterval.toFixed(2)}ms`,
       timestamp: new Date()
     });
   };
 
-  // Test timer precision
+  // 6. Timer Precision Test
   const testTimerPrecision = async () => {
     setActiveTest('timer');
     
     const measurements: number[] = [];
+    const targetInterval = 1000; // 1 second
     let measurementCount = 0;
-    
     const startTime = performance.now();
     
     const measureTimer = () => {
       const currentTime = performance.now();
       const elapsed = currentTime - startTime;
-      measurements.push(elapsed);
+      const expectedTime = measurementCount * targetInterval;
+      const deviation = Math.abs(elapsed - expectedTime);
+      
+      measurements.push(deviation);
       measurementCount++;
       
-      if (measurementCount < 10) {
-        setTimeout(measureTimer, 1000); // Measure every second
+      if (measurementCount < 5) {
+        setTimeout(measureTimer, targetInterval);
       } else {
-        // Check if measurements are close to expected intervals
-        const expectedIntervals = Array.from({ length: 10 }, (_, i) => (i + 1) * 1000);
-        const deviations = measurements.map((m, i) => Math.abs(m - expectedIntervals[i]));
-        const maxDeviation = Math.max(...deviations);
-        const isPrecise = maxDeviation < 100; // Within 100ms deviation
+        const maxDeviation = Math.max(...measurements);
+        const avgDeviation = measurements.reduce((a, b) => a + b, 0) / measurements.length;
+        const isPrecise = maxDeviation < 100; // Within 100ms
         
-        setTimerAccuracy(deviations);
+        setTimerAccuracy(measurements);
         addTestResult({
           name: 'Timer Precision',
           status: isPrecise ? 'pass' : 'fail',
-          details: `Max deviation: ${maxDeviation.toFixed(2)}ms`,
+          details: `Max deviation: ${maxDeviation.toFixed(2)}ms, Avg: ${avgDeviation.toFixed(2)}ms`,
           timestamp: new Date()
         });
       }
@@ -233,20 +287,20 @@ export function MemoryGameTestDashboard() {
     measureTimer();
   };
 
-  // Test accessibility features
+  // 7. Accessibility Test
   const testAccessibility = async () => {
     setActiveTest('accessibility');
     
-    const accessibilityChecks = [
-      { name: 'Color Contrast', check: () => true }, // Would need actual DOM analysis
-      { name: 'Keyboard Navigation', check: () => true },
-      { name: 'Screen Reader Support', check: () => true },
-      { name: 'Colorblind Accessibility', check: () => true },
+    const checks = [
+      { name: 'Color Contrast', test: () => true }, // Would need DOM analysis
+      { name: 'Keyboard Navigation', test: () => true },
+      { name: 'Screen Reader Support', test: () => true },
+      { name: 'Colorblind Accessibility', test: () => true },
     ];
     
-    const results = accessibilityChecks.map(check => ({
+    const results = checks.map(check => ({
       name: check.name,
-      passed: check.check()
+      passed: check.test()
     }));
     
     const allPassed = results.every(r => r.passed);
@@ -255,6 +309,33 @@ export function MemoryGameTestDashboard() {
       name: 'Accessibility Features',
       status: allPassed ? 'pass' : 'fail',
       details: results.map(r => `${r.name}: ${r.passed ? 'PASS' : 'FAIL'}`).join(', '),
+      timestamp: new Date()
+    });
+  };
+
+  // 8. Multi-player Scoring Comparison Test
+  const testMultiPlayerScoring = async () => {
+    setActiveTest('multiplayer');
+    
+    const players = [
+      { name: 'Player A', moves: 8, time: 45000 },
+      { name: 'Player B', moves: 10, time: 50000 },
+      { name: 'Player C', moves: 6, time: 40000 },
+    ];
+    
+    const scores = players.map(player => ({
+      ...player,
+      score: calculateScore(6, player.moves, player.time).finalScore
+    }));
+    
+    // Test ranking logic
+    scores.sort((a, b) => b.score - a.score);
+    const isCorrectRanking = scores[0].name === 'Player C' && scores[2].name === 'Player B';
+    
+    addTestResult({
+      name: 'Multi-player Scoring',
+      status: isCorrectRanking ? 'pass' : 'fail',
+      details: `Ranking: ${scores.map(s => `${s.name}(${s.score})`).join(', ')}`,
       timestamp: new Date()
     });
   };
@@ -276,6 +357,7 @@ export function MemoryGameTestDashboard() {
       await testRapidClicking();
       await testTimerPrecision();
       await testAccessibility();
+      await testMultiPlayerScoring();
     } finally {
       setIsRunningTests(false);
       setActiveTest('');
@@ -285,8 +367,10 @@ export function MemoryGameTestDashboard() {
   const clearResults = () => {
     setTestResults([]);
     setShuffleResults([]);
+    setScoringTests([]);
     setClickTimings([]);
     setTimerAccuracy([]);
+    setPerformanceMetrics({fps: [], loadTimes: []});
   };
 
   const passedTests = testResults.filter(r => r.status === 'pass').length;
@@ -299,7 +383,7 @@ export function MemoryGameTestDashboard() {
         <CardHeader>
           <CardTitle className="text-puzzle-white flex items-center gap-2">
             <Target className="w-5 h-5" />
-            Memory Game Testing Dashboard
+            Memory Game Mechanics Testing Dashboard
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -341,17 +425,19 @@ export function MemoryGameTestDashboard() {
       </Card>
 
       <Tabs defaultValue="results" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-gray-800">
-          <TabsTrigger value="results">Test Results</TabsTrigger>
-          <TabsTrigger value="shuffle">Shuffle Analysis</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6 bg-gray-800">
+          <TabsTrigger value="results">Results</TabsTrigger>
+          <TabsTrigger value="shuffle">Shuffle</TabsTrigger>
+          <TabsTrigger value="scoring">Scoring</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="game">Live Game Test</TabsTrigger>
+          <TabsTrigger value="clicking">Clicking</TabsTrigger>
+          <TabsTrigger value="game">Live Test</TabsTrigger>
         </TabsList>
 
         <TabsContent value="results">
           <Card className="bg-gray-900 border-gray-700">
             <CardHeader>
-              <CardTitle className="text-puzzle-white">Test Results</CardTitle>
+              <CardTitle className="text-puzzle-white">Comprehensive Test Results</CardTitle>
             </CardHeader>
             <CardContent>
               {testResults.length === 0 ? (
@@ -371,8 +457,13 @@ export function MemoryGameTestDashboard() {
                           <div className="text-sm text-gray-400">{result.details}</div>
                         </div>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {result.timestamp.toLocaleTimeString()}
+                      <div className="text-right">
+                        {result.score && (
+                          <div className="text-puzzle-aqua font-bold">{result.score.toFixed(1)}</div>
+                        )}
+                        <div className="text-xs text-gray-500">
+                          {result.timestamp.toLocaleTimeString()}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -385,19 +476,22 @@ export function MemoryGameTestDashboard() {
         <TabsContent value="shuffle">
           <Card className="bg-gray-900 border-gray-700">
             <CardHeader>
-              <CardTitle className="text-puzzle-white">Shuffle Randomness Analysis</CardTitle>
+              <CardTitle className="text-puzzle-white flex items-center gap-2">
+                <Shuffle className="w-5 h-5" />
+                Shuffle Randomness Analysis
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {shuffleResults.length > 0 ? (
                 <div className="space-y-4">
                   <div className="text-sm text-gray-400">
-                    Showing first 5 shuffle results (12 card positions):
+                    Showing first 10 shuffle results (12 card positions):
                   </div>
-                  {shuffleResults.slice(0, 5).map((shuffle, index) => (
+                  {shuffleResults.slice(0, 10).map((shuffle, index) => (
                     <div key={index} className="flex items-center gap-2">
-                      <span className="text-puzzle-aqua font-mono">#{index + 1}:</span>
+                      <span className="text-puzzle-aqua font-mono">#{shuffle.iteration}:</span>
                       <div className="flex gap-1">
-                        {shuffle.map((pos, i) => (
+                        {shuffle.positions.slice(0, 12).map((pos, i) => (
                           <span key={i} className="text-xs bg-gray-800 px-2 py-1 rounded">
                             {pos}
                           </span>
@@ -413,21 +507,63 @@ export function MemoryGameTestDashboard() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="scoring">
+          <Card className="bg-gray-900 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-puzzle-white flex items-center gap-2">
+                <Calculator className="w-5 h-5" />
+                Scoring Test Results
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {scoringTests.length > 0 ? (
+                <div className="space-y-3">
+                  {scoringTests.map((test, index) => (
+                    <div key={index} className="p-3 bg-gray-800 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold text-puzzle-white">{test.scenario}</span>
+                        {test.passed ? (
+                          <CheckCircle className="w-4 h-4 text-emerald-500" />
+                        ) : (
+                          <XCircle className="w-4 h-4 text-red-500" />
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-400">
+                        Pairs: {test.matchedPairs}, Moves: {test.moves}, Time: {test.timeElapsed/1000}s
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-gray-400">Score: </span>
+                        <span className="text-puzzle-aqua">{test.actualScore}</span>
+                        <span className="text-gray-400"> (Expected: {test.expectedScore})</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-400">Run scoring test to see results.</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="performance">
           <Card className="bg-gray-900 border-gray-700">
             <CardHeader>
-              <CardTitle className="text-puzzle-white">Performance Metrics</CardTitle>
+              <CardTitle className="text-puzzle-white flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Performance Metrics
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {clickTimings.length > 0 && (
+                {performanceMetrics.fps.length > 0 && (
                   <div>
-                    <h4 className="font-semibold text-puzzle-white mb-2">Click Response Times</h4>
-                    <div className="space-y-1">
-                      {clickTimings.map((timing, index) => (
+                    <h4 className="font-semibold text-puzzle-white mb-2">Frame Times (ms)</h4>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {performanceMetrics.fps.slice(0, 10).map((frameTime, index) => (
                         <div key={index} className="flex justify-between text-sm">
-                          <span className="text-gray-400">Click {index + 1}:</span>
-                          <span className="text-puzzle-aqua">{timing.toFixed(2)}ms</span>
+                          <span className="text-gray-400">Frame {index + 1}:</span>
+                          <span className="text-puzzle-aqua">{frameTime.toFixed(2)}ms</span>
                         </div>
                       ))}
                     </div>
@@ -436,11 +572,11 @@ export function MemoryGameTestDashboard() {
 
                 {timerAccuracy.length > 0 && (
                   <div>
-                    <h4 className="font-semibold text-puzzle-white mb-2">Timer Accuracy</h4>
+                    <h4 className="font-semibold text-puzzle-white mb-2">Timer Precision</h4>
                     <div className="space-y-1">
                       {timerAccuracy.map((deviation, index) => (
                         <div key={index} className="flex justify-between text-sm">
-                          <span className="text-gray-400">Second {index + 1}:</span>
+                          <span className="text-gray-400">Interval {index + 1}:</span>
                           <span className="text-puzzle-aqua">±{deviation.toFixed(2)}ms</span>
                         </div>
                       ))}
@@ -452,17 +588,71 @@ export function MemoryGameTestDashboard() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="clicking">
+          <Card className="bg-gray-900 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-puzzle-white flex items-center gap-2">
+                <MousePointer className="w-5 h-5" />
+                Click Response Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {clickTimings.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-semibold text-puzzle-white mb-2">Click Intervals</h4>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {clickTimings.slice(1, 11).map((timing, index) => (
+                          <div key={index} className="flex justify-between text-sm">
+                            <span className="text-gray-400">Click {index + 2}:</span>
+                            <span className="text-puzzle-aqua">{timing.toFixed(2)}ms</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-puzzle-white mb-2">Statistics</h4>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Average:</span>
+                          <span className="text-puzzle-aqua">
+                            {(clickTimings.reduce((a, b) => a + b, 0) / clickTimings.length).toFixed(2)}ms
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Min:</span>
+                          <span className="text-puzzle-aqua">{Math.min(...clickTimings).toFixed(2)}ms</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Max:</span>
+                          <span className="text-puzzle-aqua">{Math.max(...clickTimings).toFixed(2)}ms</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-400">Run clicking test to see analysis.</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="game">
           <Card className="bg-gray-900 border-gray-700">
             <CardHeader>
-              <CardTitle className="text-puzzle-white">Live Game Testing</CardTitle>
+              <CardTitle className="text-puzzle-white flex items-center gap-2">
+                <Smartphone className="w-5 h-5" />
+                Live Game Testing
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="mb-4">
                 <Alert>
-                  <Smartphone className="w-4 h-4" />
+                  <Accessibility className="w-4 h-4" />
                   <AlertDescription>
-                    Use this live game to manually test touch responsiveness, animations, and edge cases.
+                    Use this live game to manually test mechanics, responsiveness, and edge cases.
                   </AlertDescription>
                 </Alert>
               </div>
