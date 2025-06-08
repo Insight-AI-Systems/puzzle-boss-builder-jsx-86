@@ -1,13 +1,12 @@
 
-// Central export for all business models
-export * from './User';
-export * from './Game';
-// Export GameState but rename GameConfig to avoid conflicts
-export { 
-  BaseGameState, 
-  PlayerStats, 
-  MoveValidationResult, 
-  WinConditionResult, 
-  GameEvent 
-} from './GameState';
-export type { GameConfig } from './GameState';
+// Export all model types and interfaces
+export type { BaseGameState, PlayerStats, GameConfig, MoveValidationResult, WinConditionResult, GameEvent } from './GameState';
+export type { User, UserRole, UserStatus } from './User';
+export type { Game, GameStatus, GameDifficulty } from './Game';
+
+// Export services and engines
+export { GameEngine } from '../engines/GameEngine';
+export { CrosswordEngine } from '../engines/crossword/CrosswordEngine';
+export { WordSearchEngine } from '../engines/word-search/WordSearchEngine';
+export { GameService } from '../services/GameService';
+export { PaymentService } from '../services/PaymentService';

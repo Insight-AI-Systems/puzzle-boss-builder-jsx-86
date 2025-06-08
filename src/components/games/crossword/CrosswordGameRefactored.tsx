@@ -1,189 +1,120 @@
-
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { LoadingGame, GameComplete } from '@/presentation/components/game';
+import { useGameContext } from '@/shared/contexts/GameContext';
+import { usePayment } from '@/components/games/hooks/usePayment';
+import { useCrosswordEngine } from './hooks/useCrosswordEngine';
+import { useGameRepository } from './hooks/useGameRepository';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { CrosswordGrid } from './components/CrosswordGrid';
 import { CrosswordClues } from './components/CrosswordClues';
-import { CrosswordControls } from './components/CrosswordControls';
 import { CrosswordTimer } from './components/CrosswordTimer';
-import { useCrosswordEngine } from './hooks/useCrosswordEngine';
-import { usePayment } from '@/components/games/hooks/usePayment';
-import { useGameRepository } from './hooks/useGameRepository';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { CrosswordControls } from './components/CrosswordControls';
 
-export function CrosswordGame() {
-  const {
-    gameState,
-    isLoading,
-    error,
-    handleCellClick,
-    handleLetterInput,
-    handleToggleDirection,
-    handleTogglePause,
-    handleReset,
-    handleGetHint
-  } = useCrosswordEngine();
+export function CrosswordGameRefactored() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { gameState, startGame, pauseGame, resumeGame, endGame } = useGameContext();
+  
+  const entryFee = 2.99;
+  const { paymentStatus, isProcessing, processPayment } = usePayment(entryFee);
+  
+  const { engine, isLoading: engineLoading, error: engineError } = useCrosswordEngine();
+  const { saveProgress, loadProgress } = useGameRepository();
 
-  const { paymentStatus, isVerifying } = usePayment();
-  const { saveProgress } = useGameRepository();
-
-  const hasAccess = paymentStatus === 'verified' || paymentStatus === 'free';
-
-  // Auto-save progress
-  useEffect(() => {
-    if (gameState.puzzle && gameState.progress && hasAccess) {
-      const saveTimer = setInterval(() => {
-        saveProgress(gameState.puzzle!.id, gameState.progress!);
-      }, 30000); // Save every 30 seconds
-
-      return () => clearInterval(saveTimer);
+  // Handle payment verification
+  const handlePayment = async () => {
+    if (!user) {
+      toast({ title: "Authentication Required", description: "Please log in to play", variant: "destructive" });
+      return;
     }
-  }, [gameState.puzzle, gameState.progress, hasAccess, saveProgress]);
+    
+    const success = await processPayment(`crossword-${Date.now()}`);
+    if (success) {
+      startGame('crossword', { entryFee, difficulty: 'medium' });
+    }
+  };
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!gameState.puzzle || gameState.isPaused) return;
+  // Handle game completion
+  const handleComplete = () => {
+    endGame({ score: engine?.getScore() || 0, completed: true });
+    toast({ title: "Congratulations!", description: "Crossword completed!" });
+  };
 
-      if (/^[a-zA-Z]$/.test(event.key)) {
-        event.preventDefault();
-        handleLetterInput(event.key);
-      } else if (event.key === 'Backspace' || event.key === 'Delete') {
-        event.preventDefault();
-        handleLetterInput('');
-      } else if (event.key === 'Tab') {
-        event.preventDefault();
-        handleToggleDirection();
-      } else if (event.key === ' ' && event.ctrlKey) {
-        event.preventDefault();
-        handleGetHint();
-      }
-    };
+  if (engineLoading) {
+    return <LoadingGame message="Loading crossword puzzle..." />;
+  }
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState.puzzle, gameState.isPaused, handleLetterInput, handleToggleDirection, handleGetHint]);
+  if (engineError) {
+    return <Alert variant="destructive"><AlertDescription>Failed to load crossword</AlertDescription></Alert>;
+  }
 
-  if (isVerifying || isLoading) {
+  if (entryFee > 0 && !paymentStatus.hasAccess && gameState.status !== 'playing') {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex items-center gap-2">
-          <Loader2 className="w-6 h-6 animate-spin" />
-          <span>Loading crossword puzzle...</span>
-        </div>
-      </div>
+      <Card className="max-w-md mx-auto">
+        <CardHeader><CardTitle>Crossword Puzzle</CardTitle></CardHeader>
+        <CardContent className="text-center space-y-4">
+          <p>Entry fee: ${entryFee.toFixed(2)}</p>
+          <button onClick={handlePayment} disabled={isProcessing} className="btn-primary">
+            {isProcessing ? 'Processing...' : `Play Now - $${entryFee.toFixed(2)}`}
+          </button>
+        </CardContent>
+      </Card>
     );
   }
 
-  if (error) {
+  if (gameState.status === 'completed') {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (!hasAccess) {
-    return (
-      <Alert>
-        <AlertDescription>Payment verification required to play this game.</AlertDescription>
-      </Alert>
+      <GameComplete
+        score={gameState.score}
+        timeElapsed={gameState.timeElapsed}
+        onPlayAgain={() => startGame('crossword', { entryFee, difficulty: 'medium' })}
+      />
     );
   }
 
   return (
-    <div className="w-full space-y-6">
-      {/* Header */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-2xl text-puzzle-white">{gameState.puzzle?.title}</CardTitle>
-              <p className="text-puzzle-aqua">
-                Difficulty: {gameState.puzzle?.difficulty} • {gameState.puzzle?.date}
-              </p>
-            </div>
-            {gameState.progress && (
-              <CrosswordTimer
-                startTime={gameState.progress.startTime}
-                isPaused={gameState.isPaused}
-                isCompleted={gameState.progress.isCompleted}
-              />
-            )}
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* Game Completed Message */}
-      {gameState.gameStatus === 'completed' && (
-        <Alert className="border-green-200 bg-green-50">
-          <AlertDescription className="text-green-800">
-            🎉 Congratulations! You've completed the crossword puzzle!
-            {gameState.progress && ` Hints used: ${gameState.progress.hintsUsed}`}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Main Game Area */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Crossword Grid */}
-        <div className="xl:col-span-2">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex justify-center overflow-auto">
-                <div className="min-w-fit">
-                  {gameState.puzzle && (
-                    <CrosswordGrid
-                      grid={gameState.puzzle.grid}
-                      onCellClick={handleCellClick}
-                      disabled={gameState.isPaused || gameState.gameStatus === 'completed'}
-                    />
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Controls and Clues */}
-        <div className="space-y-6">
-          {/* Controls */}
-          <CrosswordControls
-            isPaused={gameState.isPaused}
-            isCompleted={gameState.gameStatus === 'completed'}
-            hintsUsed={gameState.progress?.hintsUsed || 0}
-            selectedDirection={gameState.selectedDirection}
-            onTogglePause={handleTogglePause}
-            onReset={handleReset}
-            onGetHint={handleGetHint}
-            onSave={() => gameState.puzzle && gameState.progress && saveProgress(gameState.puzzle.id, gameState.progress)}
-            onToggleDirection={handleToggleDirection}
+    <div className="max-w-6xl mx-auto p-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <CrosswordGrid
+            grid={engine?.getGrid() || []}
+            selectedCell={engine?.getSelectedCell()}
+            onCellClick={(row, col) => engine?.selectCell(row, col)}
+            onCellInput={(value) => engine?.inputLetter(value)}
           />
-
-          {/* Clues */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-puzzle-white">Clues</CardTitle>
-            </CardHeader>
-            <CardContent className="max-h-96 overflow-y-auto">
-              {gameState.puzzle && (
-                <CrosswordClues
-                  clues={gameState.puzzle.clues}
-                  selectedWord={gameState.selectedWord}
-                  selectedDirection={gameState.selectedDirection}
-                  onClueClick={(wordId, direction) => {
-                    const word = gameState.puzzle!.words.find(w => w.id === wordId);
-                    if (word) {
-                      handleCellClick(word.startRow, word.startCol);
-                    }
-                  }}
-                />
-              )}
-            </CardContent>
-          </Card>
+        </div>
+        
+        <div className="space-y-4">
+          <CrosswordTimer
+            startTime={gameState.startTime || Date.now()}
+            isPaused={gameState.status === 'paused'}
+            isCompleted={gameState.status === 'completed'}
+          />
+          
+          <CrosswordControls
+            isPaused={gameState.status === 'paused'}
+            isCompleted={gameState.status === 'completed'}
+            hintsUsed={engine?.getHintsUsed() || 0}
+            selectedDirection={engine?.getDirection() || 'across'}
+            onTogglePause={() => gameState.status === 'paused' ? resumeGame() : pauseGame()}
+            onReset={() => startGame('crossword', { entryFee, difficulty: 'medium' })}
+            onGetHint={() => engine?.useHint()}
+            onSave={() => saveProgress(gameState)}
+            onToggleDirection={() => engine?.toggleDirection()}
+          />
+          
+          <CrosswordClues
+            clues={engine?.getClues() || { across: [], down: [] }}
+            selectedClue={engine?.getSelectedClue()}
+            onClueClick={(clue) => engine?.selectClue(clue)}
+          />
         </div>
       </div>
     </div>
   );
 }
+
+export default CrosswordGameRefactored;
