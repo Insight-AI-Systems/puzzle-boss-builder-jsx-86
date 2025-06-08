@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -234,6 +235,18 @@ export function WordSearchGame() {
     return <Alert variant="destructive"><AlertDescription>Failed to load game</AlertDescription></Alert>;
   }
 
+  // Convert selectedCells string[] to Cell[] for the grid component
+  const selectedCellsAsObjects: Cell[] = gameState.selectedCells.map(cellId => {
+    const [row, col] = cellId.split('-').map(Number);
+    return { row, col };
+  });
+
+  // Convert currentSelection string[] to Cell[] for the grid component
+  const currentSelectionAsObjects: Cell[] = currentSelection.map(cellId => {
+    const [row, col] = cellId.split('-').map(Number);
+    return { row, col };
+  });
+
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-4">
       <Card>
@@ -260,8 +273,8 @@ export function WordSearchGame() {
         <div className="lg:col-span-2">
           <WordSearchGrid
             grid={gameState.grid}
-            selectedCells={gameState.selectedCells}
-            currentSelection={currentSelection}
+            selectedCells={selectedCellsAsObjects}
+            currentSelection={currentSelectionAsObjects}
             onSelectionStart={startSelection}
             onSelectionMove={updateSelection}
             onSelectionEnd={handleSelectionEnd}
