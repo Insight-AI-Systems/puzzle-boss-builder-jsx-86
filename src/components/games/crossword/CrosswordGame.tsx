@@ -7,7 +7,8 @@ import { CrosswordClues } from './components/CrosswordClues';
 import { CrosswordControls } from './components/CrosswordControls';
 import { CrosswordTimer } from './components/CrosswordTimer';
 import { useCrosswordGame } from './hooks/useCrosswordGame';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { validateCrosswordPuzzle, logValidationResults } from './utils/puzzleValidator';
+import { Loader2, AlertCircle, AlertTriangle } from 'lucide-react';
 
 export function CrosswordGame() {
   const {
@@ -20,6 +21,18 @@ export function CrosswordGame() {
     resetPuzzle,
     togglePause
   } = useCrosswordGame();
+
+  // Validate puzzle when it loads
+  useEffect(() => {
+    if (gameState.puzzle) {
+      const validationResult = validateCrosswordPuzzle(gameState.puzzle);
+      logValidationResults(gameState.puzzle.id, validationResult);
+      
+      if (!validationResult.isValid) {
+        console.error('Puzzle validation failed, switching to fallback mode');
+      }
+    }
+  }, [gameState.puzzle]);
 
   // Handle keyboard input
   useEffect(() => {
@@ -83,8 +96,25 @@ export function CrosswordGame() {
     );
   }
 
+  // Check puzzle validity and show warning if needed
+  const validationResult = validateCrosswordPuzzle(gameState.puzzle);
+  const showValidationWarning = !validationResult.isValid || validationResult.warnings.length > 0;
+
   return (
     <div className="w-full space-y-6">
+      {/* Validation Warning */}
+      {showValidationWarning && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            {!validationResult.isValid 
+              ? 'This puzzle has validation errors. Some features may not work correctly.'
+              : 'This puzzle has some minor issues that may affect gameplay.'
+            }
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Header */}
       <Card>
         <CardHeader>

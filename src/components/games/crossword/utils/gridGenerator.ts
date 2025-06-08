@@ -1,26 +1,20 @@
+
 import { CrosswordCell, CrosswordPuzzle, CrosswordWord } from '../types/crosswordTypes';
+import { validateCrosswordPuzzle, logValidationResults } from './puzzleValidator';
 
 export function generateGridFromPuzzle(puzzle: CrosswordPuzzle): CrosswordCell[][] {
-  const { size, words } = puzzle;
-  const grid: CrosswordCell[][] = [];
+  // Validate puzzle before generating grid
+  const validationResult = validateCrosswordPuzzle(puzzle);
+  logValidationResults(puzzle.id, validationResult);
 
-  // Initialize empty grid with all cells blocked
-  for (let row = 0; row < size; row++) {
-    grid[row] = [];
-    for (let col = 0; col < size; col++) {
-      grid[row][col] = {
-        id: `${row}-${col}`,
-        row,
-        col,
-        letter: '',
-        correctLetter: '',
-        isBlocked: true,
-        belongsToWords: [],
-        isHighlighted: false,
-        isSelected: false
-      };
-    }
+  if (!validationResult.isValid) {
+    console.error('Cannot generate grid from invalid puzzle data');
+    // Return a minimal grid to prevent crashes
+    return createEmptyGrid(puzzle.size);
   }
+
+  const { size, words } = puzzle;
+  const grid: CrosswordCell[][] = createEmptyGrid(size);
 
   // Place words in grid and unblock cells
   words.forEach(word => {
@@ -45,6 +39,42 @@ export function generateGridFromPuzzle(puzzle: CrosswordPuzzle): CrosswordCell[]
     }
   });
 
+  // Generate cell IDs for words
+  words.forEach(word => {
+    const cells: string[] = [];
+    for (let i = 0; i < word.answer.length; i++) {
+      const row = word.direction === 'down' ? word.startRow + i : word.startRow;
+      const col = word.direction === 'across' ? word.startCol + i : word.startCol;
+      if (row < size && col < size) {
+        cells.push(`${row}-${col}`);
+      }
+    }
+    word.cells = cells;
+  });
+
+  return grid;
+}
+
+function createEmptyGrid(size: number): CrosswordCell[][] {
+  const grid: CrosswordCell[][] = [];
+  
+  for (let row = 0; row < size; row++) {
+    grid[row] = [];
+    for (let col = 0; col < size; col++) {
+      grid[row][col] = {
+        id: `${row}-${col}`,
+        row,
+        col,
+        letter: '',
+        correctLetter: '',
+        isBlocked: true,
+        belongsToWords: [],
+        isHighlighted: false,
+        isSelected: false
+      };
+    }
+  }
+  
   return grid;
 }
 
