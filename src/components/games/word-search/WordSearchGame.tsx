@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -12,6 +11,9 @@ import { WordSearchGrid } from './WordSearchGrid';
 import { WordSearchControls } from './WordSearchControls';
 import { WordsList } from './WordsList';
 import { useWordSearchSelection } from './hooks/useWordSearchSelection';
+import { useGamePersistence } from '../hooks/useGamePersistence';
+import { useLeaderboardSubmission } from '../hooks/useLeaderboardSubmission';
+import { WordSelectionValidator } from './WordSelectionValidator';
 
 export function WordSearchGame() {
   const { user } = useAuth();
@@ -19,9 +21,12 @@ export function WordSearchGame() {
   const [engine, setEngine] = useState<WordSearchEngine | null>(null);
   const [gameState, setGameState] = useState<WordSearchState | null>(null);
   const [gameStatus, setGameStatus] = useState<'loading' | 'payment' | 'playing' | 'completed' | 'error'>('loading');
+  const [validator, setValidator] = useState<WordSelectionValidator | null>(null);
   
   const entryFee = 1.99;
   const { paymentStatus, isProcessing, processPayment } = usePayment(entryFee);
+  const { saveGameState, loadGameState } = useGamePersistence(`word-search-${Date.now()}`, 'word-search');
+  const { submitScore } = useLeaderboardSubmission();
   
   const {
     currentSelection,
@@ -100,11 +105,45 @@ export function WordSearchGame() {
     }
   }, [engine]);
 
-  const handleGameComplete = useCallback(() => {
+  // Initialize validator when engine is ready
+  useEffect(() => {
+    if (engine && gameState) {
+      const placedWords = (engine as any).placedWords || [];
+      setValidator(new WordSelectionValidator(placedWords, gameState.grid));
+    }
+  }, [engine, gameState]);
+
+  // Auto-save game state
+  useEffect(() => {
+    if (gameState && gameStatus === 'playing') {
+      saveGameState(gameState, user?.id);
+    }
+  }, [gameState, gameStatus, saveGameState, user?.id]);
+
+  const handleGameComplete = useCallback(async () => {
+    if (!engine || !gameState) return;
+    
     setGameStatus('completed');
     confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-    toast({ title: "Congratulations!", description: "You've found all the words!" });
-  }, [toast]);
+    
+    const completionTime = gameState.timeElapsed;
+    const finalScore = engine.calculateScore();
+    
+    // Submit to leaderboard
+    await submitScore({
+      gameId: gameState.id,
+      gameType: 'word-search',
+      score: finalScore,
+      completionTime,
+      moves: gameState.moves,
+      difficulty: gameState.difficulty
+    });
+    
+    toast({ 
+      title: "Congratulations!", 
+      description: `You've found all words! Score: ${finalScore}` 
+    });
+  }, [engine, gameState, submitScore, toast]);
 
   const handlePayment = async () => {
     if (!user) {
@@ -120,12 +159,50 @@ export function WordSearchGame() {
 
   const handleSelectionEnd = useCallback(() => {
     const selection = endSelection();
-    if (engine && selection.length > 0) {
-      engine.makeMove({ type: 'SELECT_CELLS', cells: selection });
-      engine.makeMove({ type: 'VALIDATE_SELECTION' });
+    if (engine && gameState && selection.length > 0 && validator) {
+      
+      // Validate the selection
+      const result = validator.validateSelection(selection);
+      
+      if (result.isValid && result.word) {
+        // Valid word found
+        const newFoundWords = new Set([...gameState.foundWords, result.word]);
+        const newScore = gameState.score + result.word.length * 10;
+        
+        engine.makeMove({ 
+          type: 'SELECT_CELLS', 
+          cells: selection.map(cell => ({ row: cell.row, col: cell.col }))
+        });
+        
+        setGameState(prev => prev ? {
+          ...prev,
+          foundWords: newFoundWords,
+          selectedCells: [...prev.selectedCells, ...selection],
+          score: newScore,
+          moves: prev.moves + 1
+        } : null);
+        
+        // Check for completion
+        if (newFoundWords.size === gameState.words.length) {
+          handleGameComplete();
+        }
+        
+        toast({
+          title: "Word Found!",
+          description: `${result.word} (+${result.word.length * 10} points)`,
+        });
+      } else {
+        // Invalid selection
+        toast({
+          title: "Try Again",
+          description: "That's not a valid word.",
+          variant: "destructive"
+        });
+      }
+      
       clearSelection();
     }
-  }, [engine, endSelection, clearSelection]);
+  }, [engine, gameState, validator, endSelection, clearSelection, handleGameComplete, toast]);
 
   if (gameStatus === 'loading' || !engine || !gameState) {
     return <div className="flex justify-center items-center min-h-[400px]">Loading...</div>;

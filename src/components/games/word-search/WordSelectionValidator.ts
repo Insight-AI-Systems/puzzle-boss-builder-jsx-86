@@ -1,5 +1,5 @@
 
-import { PlacedWord } from './WordPlacementEngine';
+import { PlacedWord } from '@/business/engines/word-search/WordSearchEngine';
 
 export class WordSelectionValidator {
   private placedWords: PlacedWord[];
@@ -10,7 +10,7 @@ export class WordSelectionValidator {
     this.grid = grid || [];
   }
 
-  public validateSelection(selectedCells: string[]): {
+  public validateSelection(selectedCells: Array<{ row: number; col: number }>): {
     isValid: boolean;
     word?: string;
     foundWord?: PlacedWord;
@@ -49,7 +49,7 @@ export class WordSelectionValidator {
     }
   }
 
-  private getWordFromCells(selectedCells: string[]): string {
+  private getWordFromCells(selectedCells: Array<{ row: number; col: number }>): string {
     try {
       if (!selectedCells || selectedCells.length === 0) {
         return '';
@@ -58,12 +58,11 @@ export class WordSelectionValidator {
       // Sort cells to form a proper word sequence
       const sortedCells = this.sortCellsInSequence(selectedCells);
       
-      return sortedCells.map(cellId => {
-        const [row, col] = cellId.split('-').map(Number);
-        if (isNaN(row) || isNaN(col) || row < 0 || row >= this.grid.length || col < 0 || col >= this.grid[0]?.length) {
+      return sortedCells.map(cell => {
+        if (cell.row < 0 || cell.row >= this.grid.length || cell.col < 0 || cell.col >= this.grid[0]?.length) {
           return '';
         }
-        return this.grid[row]?.[col] || '';
+        return this.grid[cell.row]?.[cell.col] || '';
       }).join('');
     } catch (error) {
       console.error('Error getting word from cells:', error);
@@ -71,21 +70,13 @@ export class WordSelectionValidator {
     }
   }
 
-  private sortCellsInSequence(cells: string[]): string[] {
+  private sortCellsInSequence(cells: Array<{ row: number; col: number }>): Array<{ row: number; col: number }> {
     try {
       if (!cells || cells.length <= 1) return cells || [];
 
-      // Convert to coordinates
-      const coords = cells.map(cell => {
-        const [row, col] = cell.split('-').map(Number);
-        return { cellId: cell, row: isNaN(row) ? 0 : row, col: isNaN(col) ? 0 : col };
-      });
-
-      if (coords.length === 0) return [];
-
       // Determine direction and sort accordingly
-      const first = coords[0];
-      const last = coords[coords.length - 1];
+      const first = cells[0];
+      const last = cells[cells.length - 1];
       
       const deltaRow = last.row - first.row;
       const deltaCol = last.col - first.col;
@@ -93,33 +84,33 @@ export class WordSelectionValidator {
       // Sort based on direction
       if (deltaRow === 0) {
         // Horizontal
-        coords.sort((a, b) => a.col - b.col);
+        cells.sort((a, b) => a.col - b.col);
       } else if (deltaCol === 0) {
         // Vertical
-        coords.sort((a, b) => a.row - b.row);
+        cells.sort((a, b) => a.row - b.row);
       } else if (deltaRow === deltaCol) {
         // Diagonal down-right
-        coords.sort((a, b) => a.row - b.row);
+        cells.sort((a, b) => a.row - b.row);
       } else if (deltaRow === -deltaCol) {
         // Diagonal up-right
-        coords.sort((a, b) => a.row - b.row);
+        cells.sort((a, b) => a.row - b.row);
       } else {
         // Try to sort by primary direction
         if (Math.abs(deltaRow) > Math.abs(deltaCol)) {
-          coords.sort((a, b) => a.row - b.row);
+          cells.sort((a, b) => a.row - b.row);
         } else {
-          coords.sort((a, b) => a.col - b.col);
+          cells.sort((a, b) => a.col - b.col);
         }
       }
 
-      return coords.map(coord => coord.cellId);
+      return cells;
     } catch (error) {
       console.error('Error sorting cells in sequence:', error);
       return cells || [];
     }
   }
 
-  private isSelectionMatchingWord(selectedCells: string[], placedWord: PlacedWord): boolean {
+  private isSelectionMatchingWord(selectedCells: Array<{ row: number; col: number }>, placedWord: PlacedWord): boolean {
     try {
       if (!selectedCells || !placedWord || !placedWord.cells || !placedWord.word) {
         return false;
@@ -129,15 +120,15 @@ export class WordSelectionValidator {
 
       // Check if selection matches word cells exactly
       if (selectedCells.length === wordCells.length) {
-        const sortedSelected = [...selectedCells].sort();
-        const sortedWordCells = [...wordCells].sort();
+        const selectedCellIds = selectedCells.map(cell => `${cell.row}-${cell.col}`).sort();
+        const wordCellIds = wordCells.sort();
         
-        if (JSON.stringify(sortedSelected) === JSON.stringify(sortedWordCells)) {
+        if (JSON.stringify(selectedCellIds) === JSON.stringify(wordCellIds)) {
           return true;
         }
       }
 
-      // Check if selection is a subset that forms the word
+      // Check if selection forms the word
       const selectedWord = this.getWordFromCells(selectedCells);
       const reverseWord = selectedWord.split('').reverse().join('');
 
@@ -166,7 +157,7 @@ export class WordSelectionValidator {
       if (unfound.length === 0) return null;
       
       const randomIndex = Math.floor(Math.random() * unfound.length);
-      return unfound[randomIndex] || null;
+      return unfound[randomIndex];
     } catch (error) {
       console.error('Error getting random unfound word:', error);
       return null;

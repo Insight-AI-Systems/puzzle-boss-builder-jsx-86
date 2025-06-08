@@ -1,5 +1,4 @@
-
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface Cell {
@@ -30,6 +29,7 @@ export function WordSearchGrid({
   isDisabled = false
 }: WordSearchGridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isMouseDown, setIsMouseDown] = useState(false);
 
   const drawGrid = useCallback(() => {
     if (!canvasRef.current || !grid.length) return;
@@ -86,30 +86,64 @@ export function WordSearchGrid({
     drawGrid();
   }, [drawGrid]);
 
-  const getCellCoordinates = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  const getCellCoordinates = (clientX: number, clientY: number) => {
     if (!canvasRef.current) return null;
 
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
 
     const col = Math.floor(x / CELL_SIZE);
     const row = Math.floor(y / CELL_SIZE);
 
-    return { row, col };
+    if (row >= 0 && row < grid.length && col >= 0 && col < grid[0]?.length) {
+      return { row, col };
+    }
+    return null;
   };
 
+  // Mouse events
   const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
     if (isDisabled) return;
-    const cell = getCellCoordinates(event);
+    setIsMouseDown(true);
+    const cell = getCellCoordinates(event.clientX, event.clientY);
     if (cell) onSelectionStart(cell);
   };
 
   const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (isDisabled) return;
-    const cell = getCellCoordinates(event);
+    if (isDisabled || !isMouseDown) return;
+    const cell = getCellCoordinates(event.clientX, event.clientY);
     if (cell) onSelectionMove(cell);
+  };
+
+  const handleMouseUp = () => {
+    if (isDisabled) return;
+    setIsMouseDown(false);
+    onSelectionEnd();
+  };
+
+  // Touch events for mobile
+  const handleTouchStart = (event: React.TouchEvent<HTMLCanvasElement>) => {
+    if (isDisabled) return;
+    event.preventDefault();
+    const touch = event.touches[0];
+    const cell = getCellCoordinates(touch.clientX, touch.clientY);
+    if (cell) onSelectionStart(cell);
+  };
+
+  const handleTouchMove = (event: React.TouchEvent<HTMLCanvasElement>) => {
+    if (isDisabled) return;
+    event.preventDefault();
+    const touch = event.touches[0];
+    const cell = getCellCoordinates(touch.clientX, touch.clientY);
+    if (cell) onSelectionMove(cell);
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLCanvasElement>) => {
+    if (isDisabled) return;
+    event.preventDefault();
+    onSelectionEnd();
   };
 
   return (
@@ -117,11 +151,14 @@ export function WordSearchGrid({
       <CardContent className="p-4">
         <canvas
           ref={canvasRef}
-          className="border border-gray-200 cursor-crosshair max-w-full"
+          className="border border-gray-200 cursor-crosshair max-w-full touch-none"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
-          onMouseUp={onSelectionEnd}
-          onMouseLeave={onSelectionEnd}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         />
       </CardContent>
     </Card>
