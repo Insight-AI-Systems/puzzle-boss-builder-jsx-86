@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { CrosswordEngine } from '@/business/engines/crossword/CrosswordEngine';
 import { GameError } from '@/infrastructure/errors';
@@ -20,7 +21,7 @@ export interface CrosswordGameState {
 }
 
 export function useCrosswordEngine(gameId: string = 'crossword-1') {
-  const { currentGame, updateGameState, startGame } = useGameContext();
+  const { gameState, updateGameState, startGame } = useGameContext();
   const { puzzle, isLoading: puzzleLoading } = useCrosswordPuzzleData();
   const { saveGameState, loadGameState } = useGamePersistence(gameId, 'crossword');
   const { submitScore } = useLeaderboardSubmission();
@@ -55,7 +56,7 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
   };
 
   const [engine, setEngine] = useState<CrosswordEngine | null>(null);
-  const [gameState, setGameState] = useState<CrosswordGameState>({
+  const [localGameState, setLocalGameState] = useState<CrosswordGameState>({
     grid: [],
     clues: { across: [], down: [] },
     selectedCell: null,
@@ -96,7 +97,7 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
         setEngine(crosswordEngine);
         
         // Set game state from puzzle
-        setGameState({
+        setLocalGameState({
           grid: puzzle.grid,
           clues: puzzle.clues,
           selectedCell: null,
@@ -110,10 +111,10 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
         // Try to load saved progress
         const savedState = await loadGameState();
         if (savedState) {
-          setGameState(savedState);
+          setLocalGameState(savedState);
         }
         
-        startGame(gameId);
+        startGame(gameId, 'medium');
         setIsLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to initialize crossword');
@@ -128,10 +129,10 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
 
   // Auto-save game state
   useEffect(() => {
-    if (engine && gameState) {
-      saveGameState(gameState);
+    if (engine && localGameState) {
+      saveGameState(localGameState);
     }
-  }, [gameState, engine, saveGameState]);
+  }, [localGameState, engine, saveGameState]);
 
   const handleGameComplete = useCallback(async () => {
     if (!engine) return;
@@ -148,12 +149,12 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
       difficulty: gameConfig.difficulty
     });
     
-    setGameState(prev => ({ ...prev, isComplete: true, score: finalScore }));
+    setLocalGameState(prev => ({ ...prev, isComplete: true, score: finalScore }));
   }, [engine, gameId, gameConfig.difficulty, submitScore]);
 
   const handleCellClick = (row: number, col: number) => {
     try {
-      setGameState(prev => ({
+      setLocalGameState(prev => ({
         ...prev,
         selectedCell: { row, col }
       }));
@@ -164,18 +165,18 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
 
   const handleLetterInput = useCallback((letter: string) => {
     try {
-      if (!engine || !gameState.selectedCell) return;
+      if (!engine || !localGameState.selectedCell) return;
       
       engine.makeMove({
         type: 'INPUT_LETTER',
-        row: gameState.selectedCell.row,
-        col: gameState.selectedCell.col,
+        row: localGameState.selectedCell.row,
+        col: localGameState.selectedCell.col,
         letter
       });
       
       const newState = engine.getState();
       if (newState.puzzle) {
-        setGameState(prev => ({
+        setLocalGameState(prev => ({
           ...prev,
           grid: newState.puzzle!.grid,
           score: newState.score
@@ -192,10 +193,10 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
     } catch (err) {
       console.error('Error inputting letter:', err);
     }
-  }, [engine, gameState.selectedCell, gameId, updateGameState, handleGameComplete]);
+  }, [engine, localGameState.selectedCell, gameId, updateGameState, handleGameComplete]);
 
   const handleToggleDirection = () => {
-    setGameState(prev => ({
+    setLocalGameState(prev => ({
       ...prev,
       selectedDirection: prev.selectedDirection === 'across' ? 'down' : 'across'
     }));
@@ -208,14 +209,14 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
 
   const handleReset = () => {
     try {
-      setGameState(prev => ({
+      setLocalGameState(prev => ({
         ...prev,
         grid: Array(10).fill(null).map(() => Array(10).fill({ letter: '', isBlocked: false })),
         score: 0,
         hintsUsed: 0,
         isComplete: false
       }));
-      updateGameState(gameId, { score: 0, status: 'playing' });
+      updateGameState(gameId, { score: 0, isComplete: false });
     } catch (err) {
       console.error('Error resetting game:', err);
     }
@@ -223,7 +224,7 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
 
   const handleGetHint = () => {
     try {
-      setGameState(prev => ({
+      setLocalGameState(prev => ({
         ...prev,
         hintsUsed: prev.hintsUsed + 1
       }));
@@ -234,7 +235,7 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
 
   if (puzzleLoading || isLoading) {
     return {
-      gameState,
+      gameState: localGameState,
       isLoading: true,
       error: '',
       handleCellClick: () => {},
@@ -247,7 +248,7 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
   }
 
   return {
-    gameState,
+    gameState: localGameState,
     isLoading,
     error,
     handleCellClick,
