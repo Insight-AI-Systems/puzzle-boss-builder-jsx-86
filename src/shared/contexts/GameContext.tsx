@@ -13,7 +13,7 @@ export interface GameState {
 }
 
 export interface GameAction {
-  type: 'START_GAME' | 'END_GAME' | 'UPDATE_SCORE' | 'UPDATE_TIME' | 'UPDATE_MOVES' | 'COMPLETE_GAME' | 'RESET_GAME';
+  type: 'START_GAME' | 'END_GAME' | 'UPDATE_SCORE' | 'UPDATE_TIME' | 'UPDATE_MOVES' | 'COMPLETE_GAME' | 'RESET_GAME' | 'UPDATE_GAME_STATE';
   payload?: any;
 }
 
@@ -27,6 +27,8 @@ export interface GameContextType {
   updateMoves: (moves: number) => void;
   completeGame: () => void;
   resetGame: () => void;
+  updateGameState: (gameId: string, updates: Partial<GameState>) => void;
+  currentGame: string | null;
 }
 
 const initialState: GameState = {
@@ -81,6 +83,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         isPlaying: false,
         isComplete: true
       };
+    case 'UPDATE_GAME_STATE':
+      return {
+        ...state,
+        ...action.payload
+      };
     case 'RESET_GAME':
       return initialState;
     default:
@@ -124,6 +131,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'RESET_GAME' });
   };
 
+  const updateGameState = (gameId: string, updates: Partial<GameState>) => {
+    dispatch({ type: 'UPDATE_GAME_STATE', payload: updates });
+  };
+
   return (
     <GameContext.Provider value={{
       gameState,
@@ -134,7 +145,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       updateTime,
       updateMoves,
       completeGame,
-      resetGame
+      resetGame,
+      updateGameState,
+      currentGame: gameState.currentGame
     }}>
       {children}
     </GameContext.Provider>

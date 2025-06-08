@@ -4,8 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/userTypes';
 
+interface AuthUser extends User {
+  member_id?: string;
+  credits?: number;
+}
+
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   session: Session | null;
   isLoading: boolean;
   error: string | null;
@@ -26,8 +31,31 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const fetchUserProfile = async (userId: string): Promise<Partial<AuthUser>> => {
+  try {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('member_id, credits, role')
+      .eq('id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching user profile:', error);
+      return {};
+    }
+
+    return {
+      member_id: profile?.member_id,
+      credits: profile?.credits || 0
+    };
+  } catch (error) {
+    console.error('Exception fetching user profile:', error);
+    return {};
+  }
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +67,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('AuthContext - Updating last_sign_in for user:', userId, isSignIn ? '(SIGN_IN)' : '(ACTIVITY)');
       
-      // Always update directly to profiles table for immediate effect
       const { error: directError } = await supabase
         .from('profiles')
         .update({ last_sign_in: new Date().toISOString() })
@@ -51,7 +78,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('AuthContext - Successfully updated last_sign_in directly');
       }
 
-      // For sign-in events, also try the edge function as backup
       if (isSignIn) {
         try {
           const { error: functionError } = await supabase.functions.invoke('handle_user_signin', {
@@ -82,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('AuthContext - Error fetching user profile:', error);
-        setUserRole('player'); // Default fallback
+        setUserRole('player');
       } else if (profile?.role) {
         console.log('AuthContext - Role found in profile:', profile.role);
         setUserRole(profile.role as UserRole);
@@ -112,13 +138,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (mounted) {
           setSession(initialSession);
-          setUser(initialSession?.user || null);
           
           if (initialSession?.user) {
-            // Update activity for existing session
+            // Fetch additional profile data
+            const profileData = await fetchUserProfile(initialSession.user.id);
+            const enhancedUser: AuthUser = { ...initialSession.user, ...profileData };
+            setUser(enhancedUser);
+            
             updateLastSignIn(initialSession.user.id, false);
             await fetchUserRole(initialSession.user.id, initialSession.user.email);
           } else {
+            setUser(null);
             setRolesLoaded(true);
           }
         }
@@ -143,11 +173,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (mounted) {
           setSession(currentSession);
-          setUser(currentSession?.user || null);
           setError(null);
           
           if (currentSession?.user) {
-            // Update last_sign_in when user signs in or token refreshes
+            // Fetch additional profile data
+            const profileData = await fetchUserProfile(currentSession.user.id);
+            const enhancedUser: AuthUser = { ...currentSession.user, ...profileData };
+            setUser(enhancedUser);
+            
             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
               console.log('AuthContext - User activity detected, updating last_sign_in');
               setTimeout(() => {
@@ -155,13 +188,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }, 100);
             }
             
-            // Use setTimeout to prevent potential recursive issues
             setTimeout(() => {
               if (mounted) {
                 fetchUserRole(currentSession.user.id, currentSession.user.email);
               }
             }, 0);
           } else {
+            setUser(null);
             setUserRole(null);
             setRolesLoaded(true);
           }
@@ -190,7 +223,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       } else {
         console.log('Sign in successful for:', email);
-        // The onAuthStateChange handler will update last_sign_in
       }
     } catch (error) {
       console.error('Authentication error:', error);
@@ -252,7 +284,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      // Update last_sign_in timestamp before logging out to mark user as offline
       if (user?.id) {
         console.log('AuthContext - Updating last_sign_in timestamp for logout:', user.id);
         try {
@@ -335,7 +366,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setError(error.message);
       } else {
         setSession(data.session);
-        setUser(data.user);
+        if (data.user) {
+          const profileData = await fetchUserProfile(data.user.id);
+          const enhancedUser: AuthUser = { ...data.user, ...profileData };
+          setUser(enhancedUser);
+        }
       }
     } catch (error) {
       console.error('Session refresh error:', error);
@@ -351,7 +386,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return userRole === role;
   };
 
-  // Computed values - now based purely on database role
   const userRoles: UserRole[] = userRole ? [userRole] : [];
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
 

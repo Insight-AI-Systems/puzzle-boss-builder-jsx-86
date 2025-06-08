@@ -2,7 +2,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import MainLayout from '@/components/MainLayout';
+import { MainLayout } from '@/components/MainLayout';
 import Home from '@/pages/Home';
 import Account from '@/pages/Account';
 import AdminPage from '@/pages/AdminPage';
@@ -41,7 +41,7 @@ function App() {
         <Route 
           path="/admin" 
           element={
-            <ProtectedRoute requiredRole="admin">
+            <ProtectedRoute requiredRoles={['admin']}>
               <AdminPage />
             </ProtectedRoute>
           } 
