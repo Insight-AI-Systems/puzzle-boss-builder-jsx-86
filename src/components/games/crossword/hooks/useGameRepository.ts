@@ -1,36 +1,44 @@
 
-import { useCallback } from 'react';
+import { useState } from 'react';
 import { gameRepository } from '@/data/repositories/GameRepository';
-import { CrosswordProgress } from '@/business/engines/crossword';
+import { GameState } from '@/shared/contexts/GameContext';
 
 export function useGameRepository() {
-  const saveProgress = useCallback(async (puzzleId: string, progress: CrosswordProgress) => {
-    try {
-      await gameRepository.saveGameState({
-        gameId: puzzleId,
-        userId: 'current-user', // This should come from auth context
-        gameState: progress,
-        score: 0,
-        moves: 0,
-        timeElapsed: Date.now() - progress.startTime
-      });
-    } catch (error) {
-      console.error('Failed to save progress:', error);
-    }
-  }, []);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const loadProgress = useCallback(async (puzzleId: string) => {
+  const saveProgress = async (gameState: GameState) => {
     try {
-      const history = await gameRepository.getGameHistory('current-user', 1);
-      return history.find(session => session.game_id === puzzleId);
-    } catch (error) {
-      console.error('Failed to load progress:', error);
-      return null;
+      setIsLoading(true);
+      setError(null);
+      await gameRepository.saveProgress(gameState);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save progress';
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  };
+
+  const loadProgress = async (userId: string, gameId: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await gameRepository.loadProgress(userId, gameId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load progress';
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return {
     saveProgress,
-    loadProgress
+    loadProgress,
+    isLoading,
+    error
   };
 }

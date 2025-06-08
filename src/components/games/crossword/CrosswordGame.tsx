@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingGame, GameComplete } from '@/presentation/components/game';
 import { useGameContext } from '@/shared/contexts/GameContext';
+import { useUserContext } from '@/shared/contexts/UserContext';
 import { usePayment } from '@/components/games/hooks/usePayment';
 import { useCrosswordEngine } from './hooks/useCrosswordEngine';
 import { useGameRepository } from './hooks/useGameRepository';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { CrosswordGrid } from './components/CrosswordGrid';
 import { CrosswordClues } from './components/CrosswordClues';
@@ -15,19 +15,19 @@ import { CrosswordTimer } from './components/CrosswordTimer';
 import { CrosswordControls } from './components/CrosswordControls';
 
 export function CrosswordGame() {
-  const { user } = useAuth();
+  const { userState } = useUserContext();
   const { toast } = useToast();
   const { gameState, startGame, pauseGame, resumeGame, endGame } = useGameContext();
   
   const entryFee = 2.99;
   const { paymentStatus, isProcessing, processPayment } = usePayment(entryFee);
   
-  const { engine, isLoading: engineLoading, error: engineError } = useCrosswordEngine();
+  const { gameState: crosswordState, isLoading: engineLoading, error: engineError, handleCellClick, handleLetterInput, handleToggleDirection, handleTogglePause, handleReset, handleGetHint } = useCrosswordEngine();
   const { saveProgress, loadProgress } = useGameRepository();
 
   // Handle payment verification
   const handlePayment = async () => {
-    if (!user) {
+    if (!userState.user) {
       toast({ title: "Authentication Required", description: "Please log in to play", variant: "destructive" });
       return;
     }
@@ -40,7 +40,7 @@ export function CrosswordGame() {
 
   // Handle game completion
   const handleComplete = () => {
-    endGame({ score: engine?.getScore() || 0, completed: true });
+    endGame({ score: crosswordState.score || 0, completed: true });
     toast({ title: "Congratulations!", description: "Crossword completed!" });
   };
 
@@ -81,10 +81,9 @@ export function CrosswordGame() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
           <CrosswordGrid
-            grid={engine?.getGrid() || []}
-            selectedCell={engine?.getSelectedCell()}
-            onCellClick={(row, col) => engine?.selectCell(row, col)}
-            onCellInput={(value) => engine?.inputLetter(value)}
+            grid={crosswordState.grid || []}
+            onCellClick={handleCellClick}
+            onCellInput={handleLetterInput}
           />
         </div>
         
@@ -98,19 +97,18 @@ export function CrosswordGame() {
           <CrosswordControls
             isPaused={gameState.status === 'paused'}
             isCompleted={gameState.status === 'completed'}
-            hintsUsed={engine?.getHintsUsed() || 0}
-            selectedDirection={engine?.getDirection() || 'across'}
-            onTogglePause={() => gameState.status === 'paused' ? resumeGame() : pauseGame()}
-            onReset={() => startGame('crossword', { entryFee, difficulty: 'medium' })}
-            onGetHint={() => engine?.useHint()}
+            hintsUsed={crosswordState.hintsUsed || 0}
+            selectedDirection={crosswordState.direction || 'across'}
+            onTogglePause={handleTogglePause}
+            onReset={handleReset}
+            onGetHint={handleGetHint}
             onSave={() => saveProgress(gameState)}
-            onToggleDirection={() => engine?.toggleDirection()}
+            onToggleDirection={handleToggleDirection}
           />
           
           <CrosswordClues
-            clues={engine?.getClues() || { across: [], down: [] }}
-            selectedClue={engine?.getSelectedClue()}
-            onClueClick={(clue) => engine?.selectClue(clue)}
+            clues={crosswordState.clues || { across: [], down: [] }}
+            onClueClick={() => {}}
           />
         </div>
       </div>
