@@ -20,7 +20,10 @@ interface ClerkProfile {
 const ADMIN_EMAILS = [
   'alan@insight-ai-systems.com',
   'alantbooth@xtra.co.nz',
-  'rob.small.1234@gmail.com'
+  'rob.small.1234@gmail.com',
+  'benbooth@xtra.co.nz',
+  'tamara@insight-ai-systems.com',
+  '0sunnysideup0@gmail.com'
 ];
 
 export const useClerkAuth = () => {
