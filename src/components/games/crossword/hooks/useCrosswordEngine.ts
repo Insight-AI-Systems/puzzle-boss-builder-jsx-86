@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { CrosswordEngine } from '@/business/engines/crossword/CrosswordEngine';
 import { GameError } from '@/infrastructure/errors';
 import { useGameContext } from '@/shared/contexts';
 import type { CrosswordState } from '@/business/engines/crossword/CrosswordEngine';
+import type { GameConfig } from '@/business/models/GameState';
 
 export interface CrosswordGameState {
   grid: any[][];
@@ -39,7 +39,16 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
     error: null
   };
 
-  const [engine] = useState(() => new CrosswordEngine(initialState, { difficulty: 'medium', enableHints: true }));
+  const gameConfig: GameConfig = { 
+    gameType: 'crossword',
+    hasTimer: true,
+    hasScore: true,
+    hasMoves: true,
+    difficulty: 'medium', 
+    enableHints: true 
+  };
+
+  const [engine] = useState(() => new CrosswordEngine(initialState, gameConfig));
   const [gameState, setGameState] = useState<CrosswordGameState>({
     grid: [],
     clues: { across: [], down: [] },

@@ -1,7 +1,7 @@
-
 import { CrosswordEngine } from '@/business/engines/crossword/CrosswordEngine';
 import { WordSearchEngine } from '@/business/engines/word-search/WordSearchEngine';
 import type { CrosswordState, WordSearchState } from '@/business/engines';
+import type { GameConfig } from '@/business/models/GameState';
 
 export interface TestResult {
   testName: string;
@@ -89,8 +89,17 @@ export class GameEngineTests {
       isComplete: false,
       error: null
     };
+
+    const gameConfig: GameConfig = { 
+      gameType: 'crossword',
+      hasTimer: true,
+      hasScore: true,
+      hasMoves: true,
+      difficulty: 'easy', 
+      enableHints: true 
+    };
     
-    const engine = new CrosswordEngine(initialState, { difficulty: 'easy', enableHints: true });
+    const engine = new CrosswordEngine(initialState, gameConfig);
     if (!engine) {
       throw new Error('CrosswordEngine failed to initialize');
     }
@@ -115,8 +124,17 @@ export class GameEngineTests {
       isComplete: false,
       error: null
     };
+
+    const gameConfig: GameConfig = { 
+      gameType: 'crossword',
+      hasTimer: true,
+      hasScore: true,
+      hasMoves: true,
+      difficulty: 'easy', 
+      enableHints: true 
+    };
     
-    const engine = new CrosswordEngine(initialState, { difficulty: 'easy', enableHints: true });
+    const engine = new CrosswordEngine(initialState, gameConfig);
     // Mock test since methods don't exist yet
     const grid = Array(10).fill(null).map(() => Array(10).fill({ letter: '', isBlocked: false }));
     
@@ -180,8 +198,17 @@ export class GameEngineTests {
       isComplete: false,
       error: null
     };
+
+    const gameConfig: GameConfig = { 
+      gameType: 'word-search',
+      hasTimer: true,
+      hasScore: true,
+      hasMoves: true,
+      difficulty: 'easy', 
+      enableHints: true 
+    };
     
-    const engine = new WordSearchEngine(initialState, { difficulty: 'easy', enableHints: true });
+    const engine = new WordSearchEngine(initialState, gameConfig);
     if (!engine) {
       throw new Error('WordSearchEngine failed to initialize');
     }

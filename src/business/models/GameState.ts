@@ -1,3 +1,4 @@
+
 // Base game state interface that all puzzle games will extend
 export interface BaseGameState {
   id: string;
@@ -22,10 +23,10 @@ export interface PlayerStats {
 
 // Game configuration interface - aligned with existing GameConfig
 export interface GameConfig {
-  gameType: string;
-  hasTimer: boolean;
-  hasScore: boolean;
-  hasMoves: boolean;
+  gameType?: string;        // Make optional for flexibility
+  hasTimer?: boolean;       // Make optional for flexibility
+  hasScore?: boolean;       // Make optional for flexibility
+  hasMoves?: boolean;       // Make optional for flexibility
   timeLimit?: number;
   requiresPayment?: boolean;
   entryFee?: number; // Made optional to match existing GameTypes
