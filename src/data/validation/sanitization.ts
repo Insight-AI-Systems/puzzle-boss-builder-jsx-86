@@ -1,197 +1,301 @@
 
+import DOMPurify from 'dompurify';
+import * as z from 'zod';
+
+// Sanitization configuration
+const PURIFY_CONFIG = {
+  ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br'],
+  ALLOWED_ATTR: [],
+  KEEP_CONTENT: true,
+  RETURN_DOM: false,
+  RETURN_DOM_FRAGMENT: false,
+  RETURN_TRUSTED_TYPE: false
+};
+
 /**
- * Input Sanitization Utilities
- * Provides comprehensive input sanitization for security
+ * Sanitize HTML content
  */
+export function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html, PURIFY_CONFIG);
+}
 
-// HTML sanitization (install dompurify if not already installed)
-export const sanitizeHtml = (html: string): string => {
-  // Basic HTML sanitization without DOMPurify dependency
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
-    .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
-    .replace(/javascript:/gi, '')
-    .replace(/vbscript:/gi, '')
-    .replace(/onload=/gi, '')
-    .replace(/onerror=/gi, '')
-    .replace(/onclick=/gi, '')
-    .replace(/onmouseover=/gi, '');
-};
+/**
+ * Sanitize plain text input
+ */
+export function sanitizeText(text: string): string {
+  return text
+    .trim()
+    .replace(/[<>]/g, '') // Remove potential HTML tags
+    .replace(/javascript:/gi, '') // Remove javascript: URLs
+    .replace(/vbscript:/gi, '') // Remove vbscript: URLs
+    .replace(/data:/gi, '') // Remove data: URLs
+    .substring(0, 10000); // Limit length
+}
 
-// Plain text sanitization (removes all HTML)
-export const sanitizeText = (text: string): string => {
-  return text.replace(/<[^>]*>/g, '').trim();
-};
+/**
+ * Sanitize email input
+ */
+export function sanitizeEmail(email: string): string {
+  return email
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w@.-]/g, '') // Only allow word chars, @, ., -
+    .substring(0, 320); // RFC limit
+}
 
-// Email sanitization
-export const sanitizeEmail = (email: string): string => {
-  return email.trim().toLowerCase();
-};
+/**
+ * Sanitize username input
+ */
+export function sanitizeUsername(username: string): string {
+  return username
+    .trim()
+    .replace(/[^\w.-]/g, '') // Only allow word chars, ., -
+    .substring(0, 50);
+}
 
-// URL sanitization
-export const sanitizeUrl = (url: string): string => {
+/**
+ * Sanitize numeric input
+ */
+export function sanitizeNumber(value: any): number {
+  const num = parseFloat(value);
+  return isNaN(num) ? 0 : num;
+}
+
+/**
+ * Sanitize boolean input
+ */
+export function sanitizeBoolean(value: any): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    return value.toLowerCase() === 'true' || value === '1';
+  }
+  return Boolean(value);
+}
+
+/**
+ * Sanitize URL input
+ */
+export function sanitizeUrl(url: string): string {
   try {
-    const urlObj = new URL(url);
-    // Only allow safe protocols
-    if (!['http:', 'https:'].includes(urlObj.protocol)) {
+    const parsed = new URL(url);
+    // Only allow http and https protocols
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
       return '';
     }
-    return url.trim();
+    return parsed.toString().substring(0, 2048);
   } catch {
     return '';
   }
-};
+}
 
-// Phone number sanitization
-export const sanitizePhone = (phone: string): string => {
-  return phone.replace(/[^\d\+\-\s\(\)]/g, '').trim();
-};
+/**
+ * Sanitize phone number
+ */
+export function sanitizePhone(phone: string): string {
+  return phone
+    .replace(/[^\d+\-\s()]/g, '') // Only allow digits, +, -, space, ()
+    .trim()
+    .substring(0, 20);
+}
 
-// Filename sanitization
-export const sanitizeFilename = (filename: string): string => {
-  return filename
-    .replace(/[^a-zA-Z0-9\.\-_]/g, '')
-    .replace(/\.{2,}/g, '.')
-    .substring(0, 255);
-};
-
-// SQL injection prevention
-export const sanitizeSql = (input: string): string => {
-  return input
-    .replace(/['";\\]/g, '')
-    .replace(/(-{2}|\/\*|\*\/)/g, '')
-    .replace(/(union|select|insert|update|delete|drop|create|alter|exec|execute)/gi, '');
-};
-
-// XSS prevention
-export const sanitizeXss = (input: string): string => {
-  return input
-    .replace(/[<>]/g, (match) => {
-      switch (match) {
-        case '<': return '&lt;';
-        case '>': return '&gt;';
-        default: return match;
-      }
-    })
-    .replace(/['"]/g, (match) => {
-      switch (match) {
-        case '"': return '&quot;';
-        case "'": return '&#x27;';
-        default: return match;
-      }
-    })
-    .replace(/&(?!amp;|lt;|gt;|quot;|&#x27;)/g, '&amp;');
-};
-
-// Path traversal prevention
-export const sanitizePath = (path: string): string => {
-  return path
-    .replace(/\.\./g, '')
-    .replace(/[^a-zA-Z0-9\/\-_\.]/g, '')
-    .replace(/\/{2,}/g, '/');
-};
-
-// Credit card number sanitization (for display)
-export const sanitizeCreditCard = (cardNumber: string): string => {
-  const cleaned = cardNumber.replace(/\D/g, '');
-  if (cleaned.length >= 4) {
-    return '**** **** **** ' + cleaned.slice(-4);
-  }
-  return '**** **** **** ****';
-};
-
-// General purpose sanitization
-export const sanitizeInput = (input: string, type: 'text' | 'html' | 'email' | 'url' | 'phone' | 'filename' = 'text'): string => {
-  if (typeof input !== 'string') {
-    return '';
-  }
-
-  switch (type) {
-    case 'html':
-      return sanitizeHtml(input);
-    case 'email':
-      return sanitizeEmail(input);
-    case 'url':
-      return sanitizeUrl(input);
-    case 'phone':
-      return sanitizePhone(input);
-    case 'filename':
-      return sanitizeFilename(input);
-    case 'text':
-    default:
-      return sanitizeText(input);
-  }
-};
-
-// Batch sanitization for objects
-export const sanitizeObject = <T extends Record<string, any>>(
-  obj: T,
-  fieldTypes: Partial<Record<keyof T, 'text' | 'html' | 'email' | 'url' | 'phone' | 'filename'>> = {}
-): T => {
-  const sanitized = { ...obj };
+/**
+ * Deep sanitize object
+ */
+export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
+  const sanitized = {} as T;
   
-  Object.keys(sanitized).forEach((key) => {
-    const value = sanitized[key];
+  for (const [key, value] of Object.entries(obj)) {
     if (typeof value === 'string') {
-      const type = fieldTypes[key] || 'text';
-      sanitized[key] = sanitizeInput(value, type);
+      (sanitized as any)[key] = sanitizeText(value);
+    } else if (typeof value === 'number') {
+      (sanitized as any)[key] = sanitizeNumber(value);
+    } else if (typeof value === 'boolean') {
+      (sanitized as any)[key] = sanitizeBoolean(value);
+    } else if (Array.isArray(value)) {
+      (sanitized as any)[key] = value.map(item => 
+        typeof item === 'object' && item !== null 
+          ? sanitizeObject(item)
+          : typeof item === 'string'
+          ? sanitizeText(item)
+          : item
+      );
+    } else if (typeof value === 'object' && value !== null) {
+      (sanitized as any)[key] = sanitizeObject(value);
+    } else {
+      (sanitized as any)[key] = value;
     }
-  });
+  }
   
   return sanitized;
-};
+}
 
-// Deep sanitization for nested objects
-export const deepSanitize = (obj: any): any => {
-  if (obj === null || obj === undefined) {
-    return obj;
+/**
+ * Sanitization middleware for form data
+ */
+export function sanitizeFormData(formData: FormData): Record<string, any> {
+  const sanitized: Record<string, any> = {};
+  
+  for (const [key, value] of formData.entries()) {
+    if (typeof value === 'string') {
+      sanitized[key] = sanitizeText(value);
+    } else {
+      sanitized[key] = value; // File objects, etc.
+    }
   }
   
-  if (typeof obj === 'string') {
-    return sanitizeText(obj);
+  return sanitized;
+}
+
+/**
+ * SQL injection prevention (basic)
+ */
+export function preventSqlInjection(input: string): string {
+  return input
+    .replace(/['";]/g, '') // Remove quotes and semicolons
+    .replace(/--/g, '') // Remove SQL comments
+    .replace(/\/\*/g, '') // Remove /* comments
+    .replace(/\*\//g, '') // Remove */ comments
+    .replace(/\bUNION\b/gi, '') // Remove UNION
+    .replace(/\bSELECT\b/gi, '') // Remove SELECT
+    .replace(/\bINSERT\b/gi, '') // Remove INSERT
+    .replace(/\bUPDATE\b/gi, '') // Remove UPDATE
+    .replace(/\bDELETE\b/gi, '') // Remove DELETE
+    .replace(/\bDROP\b/gi, ''); // Remove DROP
+}
+
+/**
+ * XSS prevention for text content
+ */
+export function preventXss(input: string): string {
+  return input
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+}
+
+/**
+ * Validate and sanitize file upload
+ */
+export interface FileValidationOptions {
+  maxSize?: number;
+  allowedTypes?: string[];
+  allowedExtensions?: string[];
+}
+
+export function validateFile(
+  file: File, 
+  options: FileValidationOptions = {}
+): { isValid: boolean; error?: string; sanitizedName?: string } {
+  const {
+    maxSize = 10 * 1024 * 1024, // 10MB default
+    allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+    allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+  } = options;
+
+  // Check file size
+  if (file.size > maxSize) {
+    return {
+      isValid: false,
+      error: `File size too large. Maximum ${maxSize / 1024 / 1024}MB allowed.`
+    };
   }
+
+  // Check file type
+  if (!allowedTypes.includes(file.type)) {
+    return {
+      isValid: false,
+      error: `File type not allowed. Allowed types: ${allowedTypes.join(', ')}`
+    };
+  }
+
+  // Check file extension
+  const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+  if (!allowedExtensions.includes(extension)) {
+    return {
+      isValid: false,
+      error: `File extension not allowed. Allowed extensions: ${allowedExtensions.join(', ')}`
+    };
+  }
+
+  // Sanitize filename
+  const sanitizedName = file.name
+    .replace(/[^a-zA-Z0-9.-]/g, '_') // Replace special chars with underscore
+    .replace(/_{2,}/g, '_') // Replace multiple underscores with single
+    .toLowerCase();
+
+  return {
+    isValid: true,
+    sanitizedName
+  };
+}
+
+/**
+ * Rate limiting data structure
+ */
+interface RateLimitEntry {
+  count: number;
+  resetTime: number;
+}
+
+const rateLimitStore = new Map<string, RateLimitEntry>();
+
+/**
+ * Simple rate limiting
+ */
+export function checkRateLimit(
+  identifier: string, 
+  maxRequests: number = 100, 
+  windowMs: number = 60000 // 1 minute
+): { allowed: boolean; remaining: number; resetTime: number } {
+  const now = Date.now();
+  const entry = rateLimitStore.get(identifier);
+
+  if (!entry || now > entry.resetTime) {
+    // Create new entry or reset expired entry
+    const newEntry: RateLimitEntry = {
+      count: 1,
+      resetTime: now + windowMs
+    };
+    rateLimitStore.set(identifier, newEntry);
+    
+    return {
+      allowed: true,
+      remaining: maxRequests - 1,
+      resetTime: newEntry.resetTime
+    };
+  }
+
+  // Increment existing entry
+  entry.count++;
   
-  if (Array.isArray(obj)) {
-    return obj.map(deepSanitize);
+  if (entry.count > maxRequests) {
+    return {
+      allowed: false,
+      remaining: 0,
+      resetTime: entry.resetTime
+    };
   }
-  
-  if (typeof obj === 'object') {
-    const sanitized: any = {};
-    Object.keys(obj).forEach(key => {
-      sanitized[key] = deepSanitize(obj[key]);
-    });
-    return sanitized;
+
+  return {
+    allowed: true,
+    remaining: maxRequests - entry.count,
+    resetTime: entry.resetTime
+  };
+}
+
+/**
+ * Clean up expired rate limit entries
+ */
+export function cleanupRateLimit(): void {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitStore.entries()) {
+    if (now > entry.resetTime) {
+      rateLimitStore.delete(key);
+    }
   }
-  
-  return obj;
-};
+}
 
-// Validation helpers
-export const isValidEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
-
-export const isValidUrl = (url: string): boolean => {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-export const isValidPhone = (phone: string): boolean => {
-  const phoneRegex = /^\+?[\d\s\-\(\)]{10,}$/;
-  return phoneRegex.test(phone);
-};
-
-export const containsHtml = (text: string): boolean => {
-  return /<[^>]*>/g.test(text);
-};
-
-export const containsScript = (text: string): boolean => {
-  return /<script|javascript:|vbscript:|onload|onerror/i.test(text);
-};
+// Auto cleanup every 5 minutes
+setInterval(cleanupRateLimit, 5 * 60 * 1000);

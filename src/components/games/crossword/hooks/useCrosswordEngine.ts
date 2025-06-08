@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { CrosswordEngine } from '@/business/engines/crossword/CrosswordEngine';
 import { GameError } from '@/infrastructure/errors';
+import { useGameContext } from '@/shared/contexts';
 
 export interface CrosswordState {
   grid: any[][];
@@ -14,7 +15,8 @@ export interface CrosswordState {
   hintsUsed: number;
 }
 
-export function useCrosswordEngine() {
+export function useCrosswordEngine(gameId: string = 'crossword-1') {
+  const { currentGame, updateGameState, startGame } = useGameContext();
   const [engine] = useState(() => new CrosswordEngine());
   const [gameState, setGameState] = useState<CrosswordState>({
     grid: [],
@@ -45,12 +47,15 @@ export function useCrosswordEngine() {
         score: 0,
         hintsUsed: 0
       });
+      
+      // Start the game context
+      startGame(gameId);
       setIsLoading(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to initialize crossword');
       setIsLoading(false);
     }
-  }, []);
+  }, [gameId, startGame]);
 
   const handleCellClick = (row: number, col: number) => {
     try {
@@ -75,10 +80,15 @@ export function useCrosswordEngine() {
           letter: letter.toUpperCase()
         };
         
+        const newScore = prev.score + 10;
+        
+        // Update game context
+        updateGameState(gameId, { score: newScore });
+        
         return {
           ...prev,
           grid: newGrid,
-          score: prev.score + 10
+          score: newScore
         };
       });
     } catch (err) {
@@ -107,6 +117,7 @@ export function useCrosswordEngine() {
         hintsUsed: 0,
         isComplete: false
       }));
+      updateGameState(gameId, { score: 0, status: 'playing' });
     } catch (err) {
       console.error('Error resetting game:', err);
     }
