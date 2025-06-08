@@ -2,84 +2,47 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { validateUser } from '@/data/validation';
+import { toast } from 'sonner';
 import { UserError } from '@/infrastructure/errors';
-
-export type UserRole = 'player' | 'admin' | 'category_manager' | 'moderator';
+import { userValidation } from '@/data/validation/schemas/userSchemas';
 
 export interface UserProfile {
   id: string;
-  member_id: string;
   email: string;
-  username?: string;
   full_name?: string;
+  username?: string;
   avatar_url?: string;
-  credits: number;
-  role: UserRole;
-  marketing_opt_in: boolean;
-  terms_accepted: boolean;
-  created_at: string;
-  updated_at: string;
+  role?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface UserSessionState {
   user: User | null;
   profile: UserProfile | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  sessionTimeout: number | null;
-  lastActivity: number;
+  loading: boolean;
+  error: string | null;
 }
 
-export interface UserContextType {
-  session: UserSessionState;
-  signIn: (email: string, password: string) => Promise<void>;
+export interface UserContextType extends UserSessionState {
   signUp: (email: string, password: string, userData?: Partial<UserProfile>) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
-  updateCredits: (amount: number) => Promise<void>;
-  refreshSession: () => Promise<void>;
-  extendSession: () => void;
-  clearSession: () => void;
+  refreshProfile: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
-const STORAGE_KEY = 'puzzleboss_session';
-
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<UserSessionState>({
-    user: null,
-    profile: null,
-    isLoading: true,
-    isAuthenticated: false,
-    sessionTimeout: null,
-    lastActivity: Date.now()
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const clearSession = useCallback(() => {
-    setSession({
-      user: null,
-      profile: null,
-      isLoading: false,
-      isAuthenticated: false,
-      sessionTimeout: null,
-      lastActivity: Date.now()
-    });
-    localStorage.removeItem(STORAGE_KEY);
-  }, []);
+  const refreshProfile = useCallback(async () => {
+    if (!user) return;
 
-  const extendSession = useCallback(() => {
-    const now = Date.now();
-    setSession(prev => ({
-      ...prev,
-      lastActivity: now,
-      sessionTimeout: now + SESSION_TIMEOUT
-    }));
-  }, []);
-
-  const loadProfile = useCallback(async (user: User): Promise<UserProfile | null> => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -87,226 +50,178 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         .eq('id', user.id)
         .single();
 
-      if (error) throw error;
-      if (!data) return null;
-
-      // Convert database profile to UserProfile type
-      const profile: UserProfile = {
-        id: data.id,
-        member_id: data.member_id,
-        email: data.email || user.email || '',
-        username: data.username,
-        full_name: data.full_name,
-        avatar_url: data.avatar_url,
-        credits: data.credits || 0,
-        role: (data.role as UserRole) || 'player',
-        marketing_opt_in: data.marketing_opt_in || false,
-        terms_accepted: data.terms_accepted || false,
-        created_at: data.created_at,
-        updated_at: data.updated_at
-      };
-
-      return validateUser.profile(profile);
-    } catch (error) {
-      console.error('Error loading profile:', error);
-      return null;
-    }
-  }, []);
-
-  const refreshSession = useCallback(async () => {
-    try {
-      const { data: { session: authSession }, error } = await supabase.auth.getSession();
-      
-      if (error) throw new UserError('Failed to refresh session', 'REFRESH_ERROR');
-
-      if (authSession?.user) {
-        const profile = await loadProfile(authSession.user);
-        const now = Date.now();
-        
-        setSession({
-          user: authSession.user,
-          profile,
-          isLoading: false,
-          isAuthenticated: true,
-          sessionTimeout: now + SESSION_TIMEOUT,
-          lastActivity: now
-        });
-
-        // Persist session
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-          userId: authSession.user.id,
-          lastActivity: now
-        }));
-      } else {
-        clearSession();
-      }
-    } catch (error) {
-      console.error('Session refresh error:', error);
-      clearSession();
-    }
-  }, [loadProfile, clearSession]);
-
-  const signIn = useCallback(async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) throw new UserError(error.message, 'SIGNIN_ERROR');
-      if (!data.user) throw new UserError('No user returned', 'SIGNIN_ERROR');
-
-      const profile = await loadProfile(data.user);
-      const now = Date.now();
-
-      setSession({
-        user: data.user,
-        profile,
-        isLoading: false,
-        isAuthenticated: true,
-        sessionTimeout: now + SESSION_TIMEOUT,
-        lastActivity: now
-      });
-    } catch (error) {
-      console.error('Sign in error:', error);
-      throw error;
-    }
-  }, [loadProfile]);
-
-  const signUp = useCallback(async (email: string, password: string, userData?: Partial<UserProfile>) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: userData || {}
-        }
-      });
-
-      if (error) throw new UserError(error.message, 'SIGNUP_ERROR');
-      if (!data.user) throw new UserError('No user returned', 'SIGNUP_ERROR');
-
-      // User will need to verify email before session is established
-      setSession(prev => ({ ...prev, isLoading: false }));
-    } catch (error) {
-      console.error('Sign up error:', error);
-      throw error;
-    }
-  }, []);
-
-  const signOut = useCallback(async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw new UserError(error.message, 'SIGNOUT_ERROR');
-      
-      clearSession();
-    } catch (error) {
-      console.error('Sign out error:', error);
-      clearSession(); // Clear anyway
-    }
-  }, [clearSession]);
-
-  const updateProfile = useCallback(async (updates: Partial<UserProfile>) => {
-    try {
-      if (!session.user) throw new UserError('No authenticated user', 'UPDATE_ERROR');
-
-      const validatedUpdates = validateUser.profileUpdate(updates);
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update(validatedUpdates)
-        .eq('id', session.user.id);
-
-      if (error) throw new UserError(error.message, 'UPDATE_ERROR');
-
-      setSession(prev => ({
-        ...prev,
-        profile: prev.profile ? { ...prev.profile, ...validatedUpdates } : null
-      }));
-    } catch (error) {
-      console.error('Profile update error:', error);
-      throw error;
-    }
-  }, [session.user]);
-
-  const updateCredits = useCallback(async (amount: number) => {
-    try {
-      if (!session.user || !session.profile) {
-        throw new UserError('No authenticated user', 'CREDITS_ERROR');
+      if (error && error.code !== 'PGRST116') {
+        throw new UserError(error.message, 'PROFILE_FETCH_FAILED');
       }
 
-      const newCredits = Math.max(0, session.profile.credits + amount);
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({ credits: newCredits })
-        .eq('id', session.user.id);
-
-      if (error) throw new UserError(error.message, 'CREDITS_ERROR');
-
-      setSession(prev => ({
-        ...prev,
-        profile: prev.profile ? { ...prev.profile, credits: newCredits } : null
-      }));
-    } catch (error) {
-      console.error('Credits update error:', error);
-      throw error;
+      setProfile(data);
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch profile');
     }
-  }, [session.user, session.profile]);
+  }, [user]);
 
-  // Initialize session on mount
   useEffect(() => {
-    refreshSession();
-  }, [refreshSession]);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-  // Set up auth listener
-  useEffect(() => {
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, authSession) => {
-        if (event === 'SIGNED_IN' && authSession?.user) {
-          const profile = await loadProfile(authSession.user);
-          const now = Date.now();
-          
-          setSession({
-            user: authSession.user,
-            profile,
-            isLoading: false,
-            isAuthenticated: true,
-            sessionTimeout: now + SESSION_TIMEOUT,
-            lastActivity: now
-          });
-        } else if (event === 'SIGNED_OUT') {
-          clearSession();
+      async (event, session) => {
+        setUser(session?.user ?? null);
+        setLoading(false);
+        
+        if (session?.user) {
+          await refreshProfile();
+        } else {
+          setProfile(null);
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [loadProfile, clearSession]);
+  }, [refreshProfile]);
 
-  // Session timeout handler
   useEffect(() => {
-    if (!session.sessionTimeout) return;
+    if (user) {
+      refreshProfile();
+    }
+  }, [user, refreshProfile]);
 
-    const timeoutId = setTimeout(() => {
-      console.log('Session timeout reached');
-      clearSession();
-    }, session.sessionTimeout - Date.now());
+  const signUp = async (email: string, password: string, userData?: Partial<UserProfile>) => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    return () => clearTimeout(timeoutId);
-  }, [session.sessionTimeout, clearSession]);
+      // Validate input
+      const validationResult = userValidation.registration({
+        email,
+        password,
+        ...userData
+      });
+
+      const { error } = await supabase.auth.signUp({
+        email: validationResult.email,
+        password: validationResult.password,
+        options: {
+          data: {
+            full_name: validationResult.full_name,
+            username: validationResult.username,
+          }
+        }
+      });
+
+      if (error) {
+        throw new UserError(error.message, 'SIGNUP_FAILED');
+      }
+
+      toast.success('Account created successfully! Please check your email to verify your account.');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Validate input
+      const validationResult = userValidation.signIn({ email, password });
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: validationResult.email,
+        password: validationResult.password,
+      });
+
+      if (error) {
+        throw new UserError(error.message, 'SIGNIN_FAILED');
+      }
+
+      toast.success('Signed in successfully!');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to sign in';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        throw new UserError(error.message, 'SIGNOUT_FAILED');
+      }
+
+      setProfile(null);
+      toast.success('Signed out successfully!');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to sign out';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!user) {
+      throw new UserError('User not authenticated', 'USER_NOT_AUTHENTICATED');
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Validate updates
+      const validationResult = userValidation.profileUpdate(updates);
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(validationResult)
+        .eq('id', user.id);
+
+      if (error) {
+        throw new UserError(error.message, 'PROFILE_UPDATE_FAILED');
+      }
+
+      await refreshProfile();
+      toast.success('Profile updated successfully!');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update profile';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <UserContext.Provider value={{
-      session,
-      signIn,
+      user,
+      profile,
+      loading,
+      error,
       signUp,
+      signIn,
       signOut,
       updateProfile,
-      updateCredits,
-      refreshSession,
-      extendSession,
-      clearSession
+      refreshProfile
     }}>
       {children}
     </UserContext.Provider>

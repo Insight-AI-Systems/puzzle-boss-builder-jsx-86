@@ -1,301 +1,142 @@
 
 import DOMPurify from 'dompurify';
-import * as z from 'zod';
-
-// Sanitization configuration
-const PURIFY_CONFIG = {
-  ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br'],
-  ALLOWED_ATTR: [],
-  KEEP_CONTENT: true,
-  RETURN_DOM: false,
-  RETURN_DOM_FRAGMENT: false,
-  RETURN_TRUSTED_TYPE: false
-};
 
 /**
- * Sanitize HTML content
+ * Comprehensive Input Sanitization System
+ * Handles all user input sanitization across the application
  */
-export function sanitizeHtml(html: string): string {
-  return DOMPurify.sanitize(html, PURIFY_CONFIG);
-}
 
-/**
- * Sanitize plain text input
- */
-export function sanitizeText(text: string): string {
-  return text
-    .trim()
-    .replace(/[<>]/g, '') // Remove potential HTML tags
-    .replace(/javascript:/gi, '') // Remove javascript: URLs
-    .replace(/vbscript:/gi, '') // Remove vbscript: URLs
-    .replace(/data:/gi, '') // Remove data: URLs
-    .substring(0, 10000); // Limit length
-}
-
-/**
- * Sanitize email input
- */
-export function sanitizeEmail(email: string): string {
-  return email
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w@.-]/g, '') // Only allow word chars, @, ., -
-    .substring(0, 320); // RFC limit
-}
-
-/**
- * Sanitize username input
- */
-export function sanitizeUsername(username: string): string {
-  return username
-    .trim()
-    .replace(/[^\w.-]/g, '') // Only allow word chars, ., -
-    .substring(0, 50);
-}
-
-/**
- * Sanitize numeric input
- */
-export function sanitizeNumber(value: any): number {
-  const num = parseFloat(value);
-  return isNaN(num) ? 0 : num;
-}
-
-/**
- * Sanitize boolean input
- */
-export function sanitizeBoolean(value: any): boolean {
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'string') {
-    return value.toLowerCase() === 'true' || value === '1';
-  }
-  return Boolean(value);
-}
-
-/**
- * Sanitize URL input
- */
-export function sanitizeUrl(url: string): string {
-  try {
-    const parsed = new URL(url);
-    // Only allow http and https protocols
-    if (!['http:', 'https:'].includes(parsed.protocol)) {
-      return '';
-    }
-    return parsed.toString().substring(0, 2048);
-  } catch {
+export const sanitizeInput = (input: string): string => {
+  if (typeof input !== 'string') {
     return '';
   }
-}
-
-/**
- * Sanitize phone number
- */
-export function sanitizePhone(phone: string): string {
-  return phone
-    .replace(/[^\d+\-\s()]/g, '') // Only allow digits, +, -, space, ()
+  
+  return input
     .trim()
-    .substring(0, 20);
-}
+    .replace(/[<>]/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+=/gi, '')
+    .substring(0, 1000); // Max length limit
+};
 
-/**
- * Deep sanitize object
- */
-export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
-  const sanitized = {} as T;
+export const sanitizeObject = (obj: Record<string, any>): Record<string, any> => {
+  const sanitized: Record<string, any> = {};
   
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === 'string') {
-      (sanitized as any)[key] = sanitizeText(value);
-    } else if (typeof value === 'number') {
-      (sanitized as any)[key] = sanitizeNumber(value);
-    } else if (typeof value === 'boolean') {
-      (sanitized as any)[key] = sanitizeBoolean(value);
+      sanitized[key] = sanitizeInput(value);
+    } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      sanitized[key] = sanitizeObject(value);
     } else if (Array.isArray(value)) {
-      (sanitized as any)[key] = value.map(item => 
-        typeof item === 'object' && item !== null 
-          ? sanitizeObject(item)
-          : typeof item === 'string'
-          ? sanitizeText(item)
-          : item
+      sanitized[key] = value.map(item => 
+        typeof item === 'string' ? sanitizeInput(item) : 
+        typeof item === 'object' && item !== null ? sanitizeObject(item) : item
       );
-    } else if (typeof value === 'object' && value !== null) {
-      (sanitized as any)[key] = sanitizeObject(value);
     } else {
-      (sanitized as any)[key] = value;
+      sanitized[key] = value;
     }
   }
   
   return sanitized;
-}
+};
 
-/**
- * Sanitization middleware for form data
- */
-export function sanitizeFormData(formData: FormData): Record<string, any> {
-  const sanitized: Record<string, any> = {};
+export const deepSanitize = (data: any): any => {
+  if (typeof data === 'string') {
+    return sanitizeInput(data);
+  }
   
-  for (const [key, value] of formData.entries()) {
-    if (typeof value === 'string') {
-      sanitized[key] = sanitizeText(value);
-    } else {
-      sanitized[key] = value; // File objects, etc.
+  if (Array.isArray(data)) {
+    return data.map(deepSanitize);
+  }
+  
+  if (typeof data === 'object' && data !== null) {
+    return sanitizeObject(data);
+  }
+  
+  return data;
+};
+
+export const sanitizeHtml = (html: string): string => {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br'],
+    ALLOWED_ATTR: ['href']
+  });
+};
+
+export const sanitizeFileName = (fileName: string): string => {
+  return fileName
+    .replace(/[^a-zA-Z0-9.-]/g, '_')
+    .replace(/_{2,}/g, '_')
+    .substring(0, 255);
+};
+
+export const sanitizeUrl = (url: string): string => {
+  try {
+    const urlObj = new URL(url);
+    if (!['http:', 'https:'].includes(urlObj.protocol)) {
+      return '';
     }
+    return urlObj.toString();
+  } catch {
+    return '';
   }
-  
-  return sanitized;
-}
+};
 
-/**
- * SQL injection prevention (basic)
- */
-export function preventSqlInjection(input: string): string {
-  return input
-    .replace(/['";]/g, '') // Remove quotes and semicolons
-    .replace(/--/g, '') // Remove SQL comments
-    .replace(/\/\*/g, '') // Remove /* comments
-    .replace(/\*\//g, '') // Remove */ comments
-    .replace(/\bUNION\b/gi, '') // Remove UNION
-    .replace(/\bSELECT\b/gi, '') // Remove SELECT
-    .replace(/\bINSERT\b/gi, '') // Remove INSERT
-    .replace(/\bUPDATE\b/gi, '') // Remove UPDATE
-    .replace(/\bDELETE\b/gi, '') // Remove DELETE
-    .replace(/\bDROP\b/gi, ''); // Remove DROP
-}
+export const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
 
-/**
- * XSS prevention for text content
- */
-export function preventXss(input: string): string {
-  return input
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;')
-    .replace(/\//g, '&#x2F;');
-}
+export const validatePassword = (password: string): boolean => {
+  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).{8,}$/;
+  return strongPasswordRegex.test(password);
+};
 
-/**
- * Validate and sanitize file upload
- */
-export interface FileValidationOptions {
-  maxSize?: number;
-  allowedTypes?: string[];
-  allowedExtensions?: string[];
-}
+export const validatePhoneNumber = (phone: string): boolean => {
+  const phoneRegex = /^\+?[\d\s\-\(\)]{10,}$/;
+  return phoneRegex.test(phone.replace(/\s/g, ''));
+};
 
-export function validateFile(
-  file: File, 
-  options: FileValidationOptions = {}
-): { isValid: boolean; error?: string; sanitizedName?: string } {
-  const {
-    maxSize = 10 * 1024 * 1024, // 10MB default
-    allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-    allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
-  } = options;
-
-  // Check file size
-  if (file.size > maxSize) {
-    return {
-      isValid: false,
-      error: `File size too large. Maximum ${maxSize / 1024 / 1024}MB allowed.`
-    };
-  }
-
-  // Check file type
+export const validateFile = (file: File, allowedTypes: string[], maxSize: number): boolean => {
   if (!allowedTypes.includes(file.type)) {
-    return {
-      isValid: false,
-      error: `File type not allowed. Allowed types: ${allowedTypes.join(', ')}`
-    };
+    return false;
   }
-
-  // Check file extension
-  const extension = '.' + file.name.split('.').pop()?.toLowerCase();
-  if (!allowedExtensions.includes(extension)) {
-    return {
-      isValid: false,
-      error: `File extension not allowed. Allowed extensions: ${allowedExtensions.join(', ')}`
-    };
-  }
-
-  // Sanitize filename
-  const sanitizedName = file.name
-    .replace(/[^a-zA-Z0-9.-]/g, '_') // Replace special chars with underscore
-    .replace(/_{2,}/g, '_') // Replace multiple underscores with single
-    .toLowerCase();
-
-  return {
-    isValid: true,
-    sanitizedName
-  };
-}
-
-/**
- * Rate limiting data structure
- */
-interface RateLimitEntry {
-  count: number;
-  resetTime: number;
-}
-
-const rateLimitStore = new Map<string, RateLimitEntry>();
-
-/**
- * Simple rate limiting
- */
-export function checkRateLimit(
-  identifier: string, 
-  maxRequests: number = 100, 
-  windowMs: number = 60000 // 1 minute
-): { allowed: boolean; remaining: number; resetTime: number } {
-  const now = Date.now();
-  const entry = rateLimitStore.get(identifier);
-
-  if (!entry || now > entry.resetTime) {
-    // Create new entry or reset expired entry
-    const newEntry: RateLimitEntry = {
-      count: 1,
-      resetTime: now + windowMs
-    };
-    rateLimitStore.set(identifier, newEntry);
-    
-    return {
-      allowed: true,
-      remaining: maxRequests - 1,
-      resetTime: newEntry.resetTime
-    };
-  }
-
-  // Increment existing entry
-  entry.count++;
   
-  if (entry.count > maxRequests) {
-    return {
-      allowed: false,
-      remaining: 0,
-      resetTime: entry.resetTime
-    };
+  if (file.size > maxSize) {
+    return false;
   }
+  
+  return true;
+};
 
-  return {
-    allowed: true,
-    remaining: maxRequests - entry.count,
-    resetTime: entry.resetTime
-  };
-}
+export const validateCreditCard = (cardNumber: string): boolean => {
+  const cleaned = cardNumber.replace(/\s/g, '');
+  const cardRegex = /^\d{13,19}$/;
+  return cardRegex.test(cleaned);
+};
 
-/**
- * Clean up expired rate limit entries
- */
-export function cleanupRateLimit(): void {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitStore.entries()) {
-    if (now > entry.resetTime) {
-      rateLimitStore.delete(key);
-    }
+export const validateCVV = (cvv: string): boolean => {
+  const cvvRegex = /^\d{3,4}$/;
+  return cvvRegex.test(cvv);
+};
+
+export const validateExpiryDate = (expiry: string): boolean => {
+  const expiryRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;
+  if (!expiryRegex.test(expiry)) {
+    return false;
   }
-}
-
-// Auto cleanup every 5 minutes
-setInterval(cleanupRateLimit, 5 * 60 * 1000);
+  
+  const [month, year] = expiry.split('/');
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear() % 100;
+  const currentMonth = currentDate.getMonth() + 1;
+  
+  const expYear = parseInt(year, 10);
+  const expMonth = parseInt(month, 10);
+  
+  if (expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)) {
+    return false;
+  }
+  
+  return true;
+};

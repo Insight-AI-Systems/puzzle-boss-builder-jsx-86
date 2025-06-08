@@ -3,6 +3,7 @@ export { GameError } from './GameError';
 export { PaymentError } from './PaymentError';
 export { DataError } from './DataError';
 export { ValidationError } from './ValidationError';
+export { UserError } from './UserError';
 export { errorLogger } from './ErrorLogger';
 export { ErrorBoundary } from './ErrorBoundary';
 export { GameErrorBoundary } from './GameErrorBoundary';

@@ -1,6 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { TestRunner } from '@/testing';
+import { ErrorDetectionDashboard } from '@/components/testing/ErrorDetectionDashboard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function TestingDashboard() {
   return (
@@ -14,7 +16,20 @@ export default function TestingDashboard() {
         </p>
       </div>
       
-      <TestRunner />
+      <Tabs defaultValue="error-detection" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="error-detection">Error Detection</TabsTrigger>
+          <TabsTrigger value="test-runner">Test Suite</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="error-detection" className="space-y-4">
+          <ErrorDetectionDashboard />
+        </TabsContent>
+        
+        <TabsContent value="test-runner" className="space-y-4">
+          <TestRunner />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

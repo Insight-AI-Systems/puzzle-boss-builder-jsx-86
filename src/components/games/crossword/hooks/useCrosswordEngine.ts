@@ -17,7 +17,7 @@ export interface CrosswordState {
 
 export function useCrosswordEngine(gameId: string = 'crossword-1') {
   const { currentGame, updateGameState, startGame } = useGameContext();
-  const [engine] = useState(() => new CrosswordEngine());
+  const [engine] = useState(() => new CrosswordEngine('default', 'medium'));
   const [gameState, setGameState] = useState<CrosswordState>({
     grid: [],
     clues: { across: [], down: [] },

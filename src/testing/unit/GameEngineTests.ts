@@ -70,14 +70,14 @@ export class GameEngineTests {
 
   // Crossword Engine Tests
   private async testCrosswordInitialization(): Promise<void> {
-    const engine = new CrosswordEngine();
+    const engine = new CrosswordEngine('test', 'easy');
     if (!engine) {
       throw new Error('CrosswordEngine failed to initialize');
     }
   }
 
   private async testCrosswordGridGeneration(): Promise<void> {
-    const engine = new CrosswordEngine();
+    const engine = new CrosswordEngine('test', 'easy');
     // Mock test since methods don't exist yet
     const grid = Array(10).fill(null).map(() => Array(10).fill({ letter: '', isBlocked: false }));
     
@@ -123,7 +123,7 @@ export class GameEngineTests {
 
   // Word Search Engine Tests
   private async testWordSearchInitialization(): Promise<void> {
-    const engine = new WordSearchEngine();
+    const engine = new WordSearchEngine(['TEST'], 'easy');
     if (!engine) {
       throw new Error('WordSearchEngine failed to initialize');
     }

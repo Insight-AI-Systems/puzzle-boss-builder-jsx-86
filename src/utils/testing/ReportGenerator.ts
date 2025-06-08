@@ -1,51 +1,90 @@
 
 /**
- * Report Generator - Handles all reporting and logging
+ * Report Generator - Creates comprehensive test reports
  */
 
 import { ComprehensiveTestResult } from './TestingCoordinator';
 import { ProcessingResult } from './ErrorProcessor';
+import { HealthCheckResult } from './BuildHealthMonitor';
 
 export class ReportGenerator {
-  addInitialScanResults(finalReport: string[], initialScan: any): void {
-    finalReport.push(`Initial scan found ${initialScan.totalIssues} issues across:`);
-    finalReport.push(`  - TypeScript errors: ${initialScan.typeScriptErrors.length}`);
-    finalReport.push(`  - Interface mismatches: ${initialScan.interfaceMismatches.length}`);
-    finalReport.push(`  - Unused code: ${initialScan.unusedCode.length}`);
-    finalReport.push(`  - Build issues: ${initialScan.buildIssues.length}`);
+  addInitialScanResults(report: string[], scanResult: HealthCheckResult): void {
+    report.push('📋 INITIAL COMPREHENSIVE SCAN RESULTS');
+    report.push('═'.repeat(50));
+    report.push(`Total Issues Found: ${scanResult.totalIssues}`);
+    report.push(`Scan Duration: ${scanResult.duration}ms`);
+    report.push('');
+    
+    if (scanResult.totalIssues > 0) {
+      report.push('Issue Breakdown:');
+      report.push(`  🔴 TypeScript Errors: ${scanResult.typeScriptErrors.length}`);
+      report.push(`  🟡 Interface Mismatches: ${scanResult.interfaceMismatches.length}`);
+      report.push(`  🔵 Unused Code: ${scanResult.unusedCode.length}`);
+      report.push(`  🟠 Build Issues: ${scanResult.buildIssues.length}`);
+      report.push(`  🟣 Performance Issues: ${scanResult.performanceIssues.length}`);
+    } else {
+      report.push('🎉 No issues found - codebase is healthy!');
+    }
+    
+    report.push('');
   }
 
-  addIterationResults(finalReport: string[], processingResult: ProcessingResult): void {
-    processingResult.results.forEach(result => {
-      if (result.success) {
-        finalReport.push(`✅ Fixed: ${result.fixDescription}`);
-      } else {
-        finalReport.push(`❌ Failed to fix: ${result.fixDescription} - ${result.rollbackReason}`);
+  addIterationResults(report: string[], fixResults: ProcessingResult): void {
+    report.push(`🔧 Fix Results: ${fixResults.successCount} fixed, ${fixResults.failureCount} failed`);
+    
+    if (fixResults.fixes.length > 0) {
+      report.push('Successful Fixes:');
+      fixResults.fixes
+        .filter(fix => fix.success)
+        .slice(0, 5)
+        .forEach(fix => {
+          report.push(`  ✅ ${fix.fixDescription}`);
+        });
+      
+      const failedFixes = fixResults.fixes.filter(fix => !fix.success);
+      if (failedFixes.length > 0) {
+        report.push('Failed Fixes:');
+        failedFixes.slice(0, 3).forEach(fix => {
+          report.push(`  ❌ ${fix.fixDescription} (${fix.rollbackReason})`);
+        });
       }
-    });
+    }
+    
+    report.push('');
   }
 
   generateFinalReport(result: ComprehensiveTestResult): void {
-    console.log('\n📊 COMPREHENSIVE BUG-FIXING SYSTEM FINAL REPORT');
-    console.log('='.repeat(60));
-    console.log(`🎯 Total Issues Found: ${result.totalIssuesFound}`);
-    console.log(`✅ Total Issues Fixed: ${result.totalIssuesFixed}`);
-    console.log(`⚠️  Remaining Issues: ${result.remainingIssues}`);
-    console.log(`🔄 Iterations: ${result.iterationCount}`);
-    console.log(`⏱️  Duration: ${(result.duration / 1000).toFixed(2)}s`);
-    console.log(`🏆 Success: ${result.success ? 'YES' : 'NO'}`);
-    console.log('\n📋 Detailed Report:');
-    result.finalReport.forEach(line => console.log(`  ${line}`));
+    console.log('\n' + '═'.repeat(60));
+    console.log('🎯 COMPREHENSIVE AUTOMATED BUG-FIXING SYSTEM REPORT');
+    console.log('═'.repeat(60));
     
+    console.log(`\n📊 SUMMARY STATISTICS`);
+    console.log('─'.repeat(30));
+    console.log(`Total Issues Found: ${result.totalIssuesFound}`);
+    console.log(`Total Issues Fixed: ${result.totalIssuesFixed}`);
+    console.log(`Remaining Issues: ${result.remainingIssues}`);
+    console.log(`Iterations Required: ${result.iterationCount}`);
+    console.log(`Total Duration: ${(result.duration / 1000).toFixed(2)}s`);
+    console.log(`Success Rate: ${((result.totalIssuesFixed / Math.max(result.totalIssuesFound, 1)) * 100).toFixed(1)}%`);
+    
+    console.log(`\n🎯 FINAL STATUS`);
+    console.log('─'.repeat(20));
     if (result.success) {
-      console.log('\n🎉 SUCCESS: All issues have been resolved!');
-      console.log('✅ TypeScript compilation: PASSED');
-      console.log('✅ Build process: PASSED');
-      console.log('✅ Interface alignment: PASSED');
-      console.log('✅ Code quality: PASSED');
+      console.log('✅ BUILD SYSTEM IS HEALTHY');
+      console.log('🎉 All critical issues have been resolved!');
+      console.log('🚀 Application is ready for production use.');
     } else {
-      console.log('\n⚠️  PARTIAL SUCCESS: Some issues remain');
-      console.log('🔍 Run the system again to continue fixing remaining issues');
+      console.log('⚠️  BUILD SYSTEM NEEDS ATTENTION');
+      console.log(`📊 ${result.remainingIssues} issues still require manual intervention.`);
+      console.log('🔧 Review the remaining issues in the detailed report.');
     }
+    
+    if (result.finalReport.length > 0) {
+      console.log(`\n📋 DETAILED REPORT`);
+      console.log('─'.repeat(25));
+      result.finalReport.forEach(line => console.log(line));
+    }
+    
+    console.log('\n' + '═'.repeat(60));
   }
 }
