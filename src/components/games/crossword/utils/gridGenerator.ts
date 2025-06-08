@@ -1,11 +1,10 @@
-
 import { CrosswordCell, CrosswordPuzzle, CrosswordWord } from '../types/crosswordTypes';
 
 export function generateGridFromPuzzle(puzzle: CrosswordPuzzle): CrosswordCell[][] {
   const { size, words } = puzzle;
   const grid: CrosswordCell[][] = [];
 
-  // Initialize empty grid
+  // Initialize empty grid with all cells blocked
   for (let row = 0; row < size; row++) {
     grid[row] = [];
     for (let col = 0; col < size; col++) {
@@ -23,7 +22,7 @@ export function generateGridFromPuzzle(puzzle: CrosswordPuzzle): CrosswordCell[]
     }
   }
 
-  // Place words in grid
+  // Place words in grid and unblock cells
   words.forEach(word => {
     const { startRow, startCol, direction, answer, number } = word;
     
@@ -31,7 +30,8 @@ export function generateGridFromPuzzle(puzzle: CrosswordPuzzle): CrosswordCell[]
       const row = direction === 'down' ? startRow + i : startRow;
       const col = direction === 'across' ? startCol + i : startCol;
       
-      if (row < size && col < size) {
+      // Ensure we don't go out of bounds
+      if (row >= 0 && row < size && col >= 0 && col < size) {
         const cell = grid[row][col];
         cell.isBlocked = false;
         cell.correctLetter = answer[i];

@@ -84,14 +84,14 @@ export function CrosswordGame() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4 space-y-6">
+    <div className="w-full space-y-6">
       {/* Header */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-2xl">{gameState.puzzle.title}</CardTitle>
-              <p className="text-muted-foreground">
+              <CardTitle className="text-2xl text-puzzle-white">{gameState.puzzle.title}</CardTitle>
+              <p className="text-puzzle-aqua">
                 Difficulty: {gameState.puzzle.difficulty} • {gameState.puzzle.date}
               </p>
             </div>
@@ -117,17 +117,19 @@ export function CrosswordGame() {
       )}
 
       {/* Main Game Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Crossword Grid */}
-        <div className="lg:col-span-2">
+        <div className="xl:col-span-2">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex justify-center">
-                <CrosswordGrid
-                  grid={gameState.puzzle.grid}
-                  onCellClick={selectCell}
-                  disabled={gameState.isPaused || gameState.gameStatus === 'completed'}
-                />
+            <CardContent className="p-4">
+              <div className="flex justify-center overflow-auto">
+                <div className="min-w-fit">
+                  <CrosswordGrid
+                    grid={gameState.puzzle.grid}
+                    onCellClick={selectCell}
+                    disabled={gameState.isPaused || gameState.gameStatus === 'completed'}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -151,7 +153,7 @@ export function CrosswordGame() {
           {/* Clues */}
           <Card>
             <CardHeader>
-              <CardTitle>Clues</CardTitle>
+              <CardTitle className="text-puzzle-white">Clues</CardTitle>
             </CardHeader>
             <CardContent className="max-h-96 overflow-y-auto">
               <CrosswordClues
