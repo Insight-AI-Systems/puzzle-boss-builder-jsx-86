@@ -2,13 +2,14 @@
 import React from 'react';
 import { CrosswordGrid } from './components/CrosswordGrid';
 import { CrosswordClues } from './components/CrosswordClues';
-import { CrosswordTimer } from './components/CrosswordTimer';
 import { useCrosswordEngine } from './hooks/useCrosswordEngine';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Pause, Play, RotateCcw, Lightbulb, Clock } from 'lucide-react';
 
 export function CrosswordGame() {
+  console.log('🎯 CrosswordGame: Component rendering...');
+  
   const {
     gameState,
     isLoading,
@@ -21,9 +22,16 @@ export function CrosswordGame() {
     handleGetHint
   } = useCrosswordEngine();
 
-  console.log('CrosswordGame rendering:', { isLoading, error, gameState });
+  console.log('📊 CrosswordGame: Received state:', { 
+    isLoading, 
+    hasError: !!error, 
+    hasGrid: !!gameState.grid,
+    gridLength: gameState.grid?.length,
+    hasClues: !!gameState.clues 
+  });
 
   if (isLoading) {
+    console.log('⏳ CrosswordGame: Showing loading state');
     return (
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
@@ -35,6 +43,7 @@ export function CrosswordGame() {
   }
 
   if (error) {
+    console.error('❌ CrosswordGame: Showing error state:', error);
     return (
       <div className="text-center p-8">
         <div className="text-red-500 text-lg mb-4">Failed to load crossword</div>
@@ -47,6 +56,7 @@ export function CrosswordGame() {
   }
 
   if (!gameState.grid || gameState.grid.length === 0) {
+    console.warn('⚠️ CrosswordGame: No grid data in game state');
     return (
       <div className="text-center p-8">
         <div className="text-gray-500 text-lg mb-4">No puzzle data available</div>
@@ -56,6 +66,8 @@ export function CrosswordGame() {
       </div>
     );
   }
+
+  console.log('✅ CrosswordGame: Rendering game with valid state');
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -120,7 +132,7 @@ export function CrosswordGame() {
             <CrosswordClues
               clues={gameState.clues}
               selectedDirection={gameState.selectedDirection}
-              onClueClick={(clueId) => console.log('Clue clicked:', clueId)}
+              onClueClick={(clueId) => console.log('🔍 CrosswordGame: Clue clicked:', clueId)}
             />
           </CardContent>
         </Card>
