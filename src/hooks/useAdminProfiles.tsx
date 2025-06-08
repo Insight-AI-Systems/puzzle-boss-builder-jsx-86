@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types/userTypes';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@clerk/clerk-react';
 
 // Define the return type for the hook
 interface AdminProfilesData {
@@ -16,12 +17,13 @@ interface AdminProfilesData {
 export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useUser();
 
   const query = useQuery({
     queryKey: ['admin-all-users'],
     queryFn: async (): Promise<AdminProfilesData> => {
-      if (!isAdmin || !currentUserId) {
-        console.log('Not authorized to fetch profiles or no user ID');
+      if (!isAdmin || !currentUserId || !user?.primaryEmailAddress?.emailAddress) {
+        console.log('Not authorized to fetch profiles or missing user data');
         return {
           data: [],
           count: 0,
@@ -36,7 +38,7 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
       try {
         const { data, error } = await supabase.functions.invoke('get-all-users', {
           headers: {
-            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+            'x-user-email': user.primaryEmailAddress.emailAddress,
           },
         });
         
@@ -119,7 +121,7 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
         throw error;
       }
     },
-    enabled: !!currentUserId && isAdmin,
+    enabled: !!currentUserId && isAdmin && !!user?.primaryEmailAddress?.emailAddress,
     retry: 2,
     retryDelay: 1000,
   });
@@ -130,7 +132,7 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
       const { data, error } = await supabase.functions.invoke('admin-update-roles', {
         body: { userIds: [userId], newRole },
         headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'x-user-email': user?.primaryEmailAddress?.emailAddress || '',
         },
       });
       
@@ -159,7 +161,7 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
       const { data, error } = await supabase.functions.invoke('admin-update-roles', {
         body: { userIds, newRole },
         headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'x-user-email': user?.primaryEmailAddress?.emailAddress || '',
         },
       });
       
@@ -188,7 +190,7 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
       const { data, error } = await supabase.functions.invoke('admin-email-users', {
         body: { userIds, subject, body },
         headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'x-user-email': user?.primaryEmailAddress?.emailAddress || '',
         },
       });
       

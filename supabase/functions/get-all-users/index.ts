@@ -4,8 +4,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-user-email',
 };
+
+// Admin emails - centralized for consistency
+const ADMIN_EMAILS = [
+  'alan@insight-ai-systems.com',
+  'alantbooth@xtra.co.nz',
+  'rob.small.1234@gmail.com'
+];
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -22,63 +29,33 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
-    // Extract auth token from request
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      console.error('No authorization header provided');
+    // Get user email from custom header (sent by Clerk-authenticated frontend)
+    const userEmail = req.headers.get("x-user-email");
+    
+    if (!userEmail) {
+      console.error('No user email provided in headers');
       return new Response(
-        JSON.stringify({ error: "No authorization header provided" }),
+        JSON.stringify({ error: "No user email provided" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get JWT token from header and verify user
-    const token = authHeader.replace("Bearer ", "");
-    console.log('Verifying user token...');
+    console.log('User email from header:', userEmail);
+
+    // Check if user is admin based on email
+    const isAdminEmail = ADMIN_EMAILS.includes(userEmail);
     
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (userError || !user) {
-      console.error("Auth error:", userError);
-      return new Response(
-        JSON.stringify({ error: "Unauthorized - invalid or expired token" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log('User authenticated:', user.email);
-
-    // Check if user is admin or super_admin
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError) {
-      console.error("Profile error:", profileError);
-      return new Response(
-        JSON.stringify({ error: "Error fetching user profile" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Check for admin roles including the protected admin email
-    const adminRoles = ["admin", "super_admin", "cfo", "category_manager", "social_media_manager", "partner_manager"];
-    const isProtectedAdmin = user.email === 'alantbooth@xtra.co.nz';
-    const hasAdminRole = profile && adminRoles.includes(profile.role);
-    
-    if (!isProtectedAdmin && !hasAdminRole) {
-      console.error("Access denied - not an admin. User role:", profile?.role);
+    if (!isAdminEmail) {
+      console.error("Access denied - not an admin email. User email:", userEmail);
       return new Response(
         JSON.stringify({ error: "Unauthorized - admin access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log('Admin access granted. Fetching users...');
+    console.log('Admin access granted for email:', userEmail);
 
-    // Fetch all users from auth.users
+    // Fetch all users from auth.users using admin client
     const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
     
     if (authError) {
