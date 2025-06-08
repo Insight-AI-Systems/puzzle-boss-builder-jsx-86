@@ -86,14 +86,9 @@ export function UsersTable({
                 />
               </TableCell>
               <TableCell>
-                <div className="flex items-center space-x-2">
-                  <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                    {user.display_name?.charAt(0) || user.email?.charAt(0) || 'U'}
-                  </div>
-                  <div>
-                    <div className="font-medium">{user.display_name || 'No Name'}</div>
-                    <div className="text-xs text-muted-foreground">{user.id.substring(0, 8)}...</div>
-                  </div>
+                <div>
+                  <div className="font-medium">{user.display_name || 'No Name'}</div>
+                  <div className="text-xs text-muted-foreground">{user.id.substring(0, 8)}...</div>
                 </div>
               </TableCell>
               <TableCell>
@@ -112,6 +107,8 @@ export function UsersTable({
                   lastSignIn={user.last_sign_in} 
                   createdAt={user.created_at}
                   displayName={user.display_name}
+                  currentUserEmail={currentUserEmail}
+                  userEmail={user.email}
                 />
               </TableCell>
               <TableCell className="text-right">

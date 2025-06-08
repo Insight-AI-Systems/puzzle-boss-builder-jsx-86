@@ -12,14 +12,21 @@ interface MemberLoginStatusProps {
   lastSignIn: string | null;
   createdAt: string;
   displayName?: string | null;
+  currentUserEmail?: string;
+  userEmail?: string | null;
 }
 
 export const UserLoginStatus: React.FC<MemberLoginStatusProps> = ({ 
   lastSignIn, 
   createdAt, 
-  displayName 
+  displayName,
+  currentUserEmail,
+  userEmail
 }) => {
   const getLoginStatus = (date: string | null) => {
+    // Check if this is the currently logged-in user
+    const isCurrentUser = currentUserEmail && userEmail && currentUserEmail === userEmail;
+    
     if (!date) return { 
       indicator: '⚫', 
       text: 'Never', 
@@ -41,10 +48,20 @@ export const UserLoginStatus: React.FC<MemberLoginStatusProps> = ({
       const diffInMinutes = Math.floor((now.getTime() - loginDate.getTime()) / (1000 * 60));
       const diffInDays = Math.floor(diffInMinutes / (60 * 24));
       
-      if (diffInMinutes < 3) {
+      // If this is the current user, show as "Now" regardless of last sign in time
+      if (isCurrentUser) {
         return { 
           indicator: '🟢', 
-          text: 'Online', 
+          text: 'Now', 
+          color: 'text-green-600'
+        };
+      }
+      
+      // Increased threshold to 15 minutes for "Now" status
+      if (diffInMinutes < 15) {
+        return { 
+          indicator: '🟢', 
+          text: 'Now', 
           color: 'text-green-600'
         };
       } else if (isToday(loginDate)) {
@@ -84,6 +101,7 @@ export const UserLoginStatus: React.FC<MemberLoginStatusProps> = ({
 
   const formatTooltipContent = () => {
     const joinedDate = createdAt ? format(new Date(createdAt), 'PPpp') : 'Unknown';
+    const isCurrentUser = currentUserEmail && userEmail && currentUserEmail === userEmail;
     
     if (!lastSignIn) {
       return (
@@ -111,6 +129,7 @@ export const UserLoginStatus: React.FC<MemberLoginStatusProps> = ({
       
       return (
         <div className="space-y-1">
+          {isCurrentUser && <div><strong>Status:</strong> Currently logged in</div>}
           <div><strong>Last Login:</strong> {formattedLogin}</div>
           <div><strong>Relative:</strong> {relativeTime}</div>
           <div><strong>Joined:</strong> {joinedDate}</div>
