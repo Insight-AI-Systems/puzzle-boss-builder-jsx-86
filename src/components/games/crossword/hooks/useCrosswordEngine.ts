@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { CrosswordEngine } from '@/business/engines/crossword/CrosswordEngine';
 import { GameError } from '@/infrastructure/errors';
@@ -92,10 +91,10 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
         
         setEngine(crosswordEngine);
         
-        // Set game state from puzzle
+        // Set game state from puzzle - puzzle.clues is already in the correct format
         setLocalGameState({
           grid: puzzle.grid,
-          clues: puzzle.clues,
+          clues: puzzle.clues, // This is already { across: [], down: [] }
           selectedCell: null,
           selectedDirection: 'across',
           selectedWord: null,
@@ -249,9 +248,38 @@ export function useCrosswordEngine(gameId: string = 'crossword-1') {
     error,
     handleCellClick,
     handleLetterInput,
-    handleToggleDirection,
-    handleTogglePause,
-    handleReset,
-    handleGetHint
+    handleToggleDirection: () => {
+      setLocalGameState(prev => ({
+        ...prev,
+        selectedDirection: prev.selectedDirection === 'across' ? 'down' : 'across'
+      }));
+    },
+    handleTogglePause: () => {
+      console.log('Toggle pause');
+    },
+    handleReset: () => {
+      try {
+        setLocalGameState(prev => ({
+          ...prev,
+          grid: Array(10).fill(null).map(() => Array(10).fill({ letter: '', isBlocked: false })),
+          score: 0,
+          hintsUsed: 0,
+          isComplete: false
+        }));
+        updateGameState(gameId, { score: 0, isComplete: false });
+      } catch (err) {
+        console.error('Error resetting game:', err);
+      }
+    },
+    handleGetHint: () => {
+      try {
+        setLocalGameState(prev => ({
+          ...prev,
+          hintsUsed: prev.hintsUsed + 1
+        }));
+      } catch (err) {
+        console.error('Error getting hint:', err);
+      }
+    }
   };
 }
