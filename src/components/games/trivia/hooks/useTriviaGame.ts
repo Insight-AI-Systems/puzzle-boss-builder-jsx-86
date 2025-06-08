@@ -90,11 +90,17 @@ export function useTriviaGame() {
         return;
       }
 
+      // Transform database results to match our TypeScript interface
+      const typedQuestions: TriviaQuestion[] = selectedQuestions.map(q => ({
+        ...q,
+        difficulty: q.difficulty as 'easy' | 'medium' | 'hard'
+      }));
+
       const now = Date.now();
       setGameState({
         sessionId: session.id,
         categoryId,
-        questions: selectedQuestions,
+        questions: typedQuestions,
         currentQuestionIndex: 0,
         score: 0,
         correctAnswers: 0,
@@ -104,7 +110,7 @@ export function useTriviaGame() {
         questionStartTime: now,
       });
 
-      setTimeRemaining(selectedQuestions[0]?.time_limit || 20);
+      setTimeRemaining(typedQuestions[0]?.time_limit || 20);
       toast.success('Quiz started! Good luck!');
     } catch (error) {
       console.error('Error starting quiz:', error);
