@@ -10,10 +10,23 @@ import { Toaster } from '@/components/ui/toaster';
 import App from './App.tsx';
 import './index.css';
 
-// Use the Clerk publishable key from environment variables (Supabase secrets)
-const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+// Try to get the Clerk publishable key from environment variables first
+let clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+// Fallback to the key you provided if environment variable is not available
+if (!clerkPublishableKey) {
+  clerkPublishableKey = 'pk_test_ZmFjdHVhbC1kYW5lLTQ5LmNsZXJrLmFjY291bnRzLmRldiQ';
+  console.log('Using fallback Clerk publishable key');
+} else {
+  console.log('Using Clerk publishable key from environment variables');
+}
 
 console.log('Clerk publishable key:', clerkPublishableKey ? 'Found' : 'Missing');
+console.log('Environment check:', {
+  hasViteClerkKey: !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+  nodeEnv: import.meta.env.NODE_ENV,
+  allEnvKeys: Object.keys(import.meta.env).filter(key => key.includes('CLERK'))
+});
 
 if (!clerkPublishableKey) {
   console.error('Clerk publishable key is missing.');
