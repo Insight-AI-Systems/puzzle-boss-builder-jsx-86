@@ -86,25 +86,20 @@ export function useMemberProfile() {
 
       console.log('Updating profile for user:', user.id, 'with data:', updates);
 
-      // Only include fields that are actually being updated and exist in the database
-      const allowedFields = {
-        full_name: updates.full_name,
-        username: updates.username,
-        bio: updates.bio,
-        date_of_birth: updates.date_of_birth,
-      };
+      // Only include the specific fields that are being updated from the form
+      const allowedFields: Record<string, any> = {};
+      
+      if (updates.full_name !== undefined) allowedFields.full_name = updates.full_name;
+      if (updates.username !== undefined) allowedFields.username = updates.username;
+      if (updates.bio !== undefined) allowedFields.bio = updates.bio;
+      if (updates.date_of_birth !== undefined) allowedFields.date_of_birth = updates.date_of_birth;
 
-      // Remove undefined values
-      const filteredUpdates = Object.fromEntries(
-        Object.entries(allowedFields).filter(([_, value]) => value !== undefined)
-      );
-
-      console.log('Filtered updates to send:', filteredUpdates);
+      console.log('Filtered updates to send:', allowedFields);
 
       const { data, error } = await supabase
         .from('profiles')
         .update({
-          ...filteredUpdates,
+          ...allowedFields,
           updated_at: new Date().toISOString()
         })
         .eq('clerk_user_id', user.id)
@@ -123,6 +118,7 @@ export function useMemberProfile() {
       console.log('Profile update mutation succeeded:', data);
       queryClient.invalidateQueries({ queryKey: ['member-profile', user?.id] });
       toast.success('Profile updated successfully!');
+      setError(null); // Clear any previous errors
     },
     onError: (error) => {
       console.error('Profile update mutation failed:', error);
@@ -212,5 +208,6 @@ export function useMemberProfile() {
     upsertAddress,
     deleteAddress,
     awardCredits,
+    refetch: profileQuery.refetch, // Add back the refetch function
   };
 }
