@@ -1,448 +1,552 @@
-
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useCallback
+} from 'react';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { UserRole } from '@/business/models/User';
 
-// Define UserRole type locally to fix the build error
-export type UserRole = 'player' | 'admin' | 'super_admin' | 'category_manager' | 'finance_manager';
-
-// User session state interface
-export interface UserSessionState {
-  user: User | null;
-  session: Session | null;
-  profile: UserProfile | null;
-  credits: number;
-  currentGames: string[];
-  achievements: Achievement[];
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  error?: string;
-  lastActivity: number;
-  sessionTimeout: number;
-}
-
+// Define the types for the context
 export interface UserProfile {
   id: string;
   email: string | null;
   username: string | null;
+  full_name: string | null;
   avatar_url: string | null;
   role: UserRole;
-  bio: string | null;
   credits: number;
   created_at: string;
   updated_at: string;
+  last_sign_in: string | null;
 }
 
-export interface Achievement {
+export interface UserCurrentGame {
+  id: string;
+  gameId: string;
+  startTime: number;
+  endTime?: number;
+  score: number;
+  status: 'active' | 'paused' | 'completed' | 'abandoned';
+}
+
+export interface UserAchievement {
   id: string;
   name: string;
   description: string;
+  icon: string;
   earned_at: string;
 }
 
-// User session actions
-type UserSessionAction =
-  | { type: 'SET_SESSION'; payload: { user: User | null; session: Session | null } }
-  | { type: 'SET_PROFILE'; payload: UserProfile | null }
-  | { type: 'UPDATE_CREDITS'; payload: number }
-  | { type: 'ADD_CURRENT_GAME'; payload: string }
-  | { type: 'REMOVE_CURRENT_GAME'; payload: string }
-  | { type: 'ADD_ACHIEVEMENT'; payload: Achievement }
-  | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'SET_ERROR'; payload: string }
-  | { type: 'CLEAR_ERROR' }
-  | { type: 'UPDATE_ACTIVITY' }
-  | { type: 'CLEAR_SESSION' }
-  | { type: 'LOAD_SAVED_STATE'; payload: Partial<UserSessionState> };
+export interface UserContextState {
+  isAuthenticated: boolean;
+  user: SupabaseUser | null;
+  profile: UserProfile | null;
+  credits: number;
+  currentGames: UserCurrentGame[];
+  achievements: UserAchievement[];
+  sessionStartTime: number | null;
+  lastActivity: number | null;
+}
 
-// Initial state
-const initialState: UserSessionState = {
+interface UserContextType {
+  state: UserContextState;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string, userData?: {
+    username?: string;
+    full_name?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
+  signOut: () => Promise<void>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>;
+  updateCredits: (amount: number) => Promise<{ success: boolean; error?: string }>;
+  addCurrentGame: (game: UserCurrentGame) => void;
+  removeCurrentGame: (gameId: string) => void;
+  updateCurrentGame: (gameId: string, updates: Partial<UserCurrentGame>) => void;
+  addAchievement: (achievement: UserAchievement) => void;
+  refreshSession: () => void;
+  initializeAuth: () => void;
+  subscribe: (listener: (state: UserContextState) => void) => () => void;
+  getState: () => UserContextState;
+}
+
+const defaultState: UserContextState = {
+  isAuthenticated: false,
   user: null,
-  session: null,
   profile: null,
   credits: 0,
   currentGames: [],
   achievements: [],
-  isLoading: true,
-  isAuthenticated: false,
-  lastActivity: Date.now(),
-  sessionTimeout: 30 * 60 * 1000, // 30 minutes
+  sessionStartTime: null,
+  lastActivity: null
 };
 
-// User session reducer
-function userSessionReducer(state: UserSessionState, action: UserSessionAction): UserSessionState {
-  switch (action.type) {
-    case 'SET_SESSION':
-      return {
-        ...state,
-        user: action.payload.user,
-        session: action.payload.session,
-        isAuthenticated: !!action.payload.user,
-        isLoading: false,
-        error: undefined,
-        lastActivity: Date.now(),
-      };
+const UserContext = createContext<UserContextType>({
+  state: defaultState,
+  signIn: async () => ({ success: false, error: 'Not implemented' }),
+  signUp: async () => ({ success: false, error: 'Not implemented' }),
+  signOut: async () => { },
+  updateProfile: async () => ({ success: false, error: 'Not implemented' }),
+  updateCredits: async () => ({ success: false, error: 'Not implemented' }),
+  addCurrentGame: () => { },
+  removeCurrentGame: () => { },
+  updateCurrentGame: () => { },
+  addAchievement: () => { },
+  refreshSession: () => { },
+  initializeAuth: () => { },
+  subscribe: () => () => { },
+  getState: () => defaultState,
+});
 
-    case 'SET_PROFILE':
-      return {
-        ...state,
-        profile: action.payload,
-        credits: action.payload?.credits || 0,
-      };
+const SESSION_TIMEOUT = 1000 * 60 * 60; // 1 hour
+const STORAGE_KEY = 'puzzleboss_user_context';
 
-    case 'UPDATE_CREDITS':
-      return {
-        ...state,
-        credits: action.payload,
-        profile: state.profile ? { ...state.profile, credits: action.payload } : null,
-      };
+class UserContextService {
+  private state: UserContextState = defaultState;
+  private listeners: Set<(state: UserContextState) => void> = new Set();
+  private sessionTimeoutId: NodeJS.Timeout | null = null;
 
-    case 'ADD_CURRENT_GAME':
-      return {
-        ...state,
-        currentGames: [...state.currentGames.filter(id => id !== action.payload), action.payload],
-      };
-
-    case 'REMOVE_CURRENT_GAME':
-      return {
-        ...state,
-        currentGames: state.currentGames.filter(id => id !== action.payload),
-      };
-
-    case 'ADD_ACHIEVEMENT':
-      return {
-        ...state,
-        achievements: [...state.achievements, action.payload],
-      };
-
-    case 'SET_LOADING':
-      return {
-        ...state,
-        isLoading: action.payload,
-      };
-
-    case 'SET_ERROR':
-      return {
-        ...state,
-        error: action.payload,
-        isLoading: false,
-      };
-
-    case 'CLEAR_ERROR':
-      return {
-        ...state,
-        error: undefined,
-      };
-
-    case 'UPDATE_ACTIVITY':
-      return {
-        ...state,
-        lastActivity: Date.now(),
-      };
-
-    case 'CLEAR_SESSION':
-      return {
-        ...initialState,
-        isLoading: false,
-      };
-
-    case 'LOAD_SAVED_STATE':
-      return {
-        ...state,
-        ...action.payload,
-        isLoading: false,
-      };
-
-    default:
-      return state;
+  constructor() {
+    this.state = this.loadFromStorage();
+    this.startSessionTimeout();
   }
-}
 
-// Context interface
-interface UserContextType {
-  userState: UserSessionState;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, options?: any) => Promise<void>;
-  signOut: () => Promise<void>;
-  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
-  updateCredits: (credits: number) => void;
-  addCurrentGame: (gameId: string) => void;
-  removeCurrentGame: (gameId: string) => void;
-  addAchievement: (achievement: Achievement) => void;
-  clearError: () => void;
-  checkSessionTimeout: () => boolean;
-  refreshSession: () => Promise<void>;
-}
-
-// Create context
-const UserContext = createContext<UserContextType | undefined>(undefined);
-
-// Storage key for persistence
-const USER_STORAGE_KEY = 'puzzleboss-user-session';
-
-// Provider component
-export function UserProvider({ children }: { children: ReactNode }) {
-  const [userState, dispatch] = useReducer(userSessionReducer, initialState);
-
-  // Load saved state on mount
-  useEffect(() => {
-    try {
-      const savedState = localStorage.getItem(USER_STORAGE_KEY);
-      if (savedState) {
-        const parsed = JSON.parse(savedState);
-        // Don't restore session tokens, let Supabase handle that
-        const stateToRestore = {
-          ...parsed,
-          user: null,
-          session: null,
-          isAuthenticated: false,
-          isLoading: true,
-        };
-        dispatch({ type: 'LOAD_SAVED_STATE', payload: stateToRestore });
-      }
-    } catch (error) {
-      console.error('Failed to load saved user state:', error);
-    }
-
-    // Initialize Supabase session
-    initializeAuth();
-  }, []);
-
-  // Save state to localStorage (excluding sensitive data)
-  useEffect(() => {
-    try {
-      const stateToSave = {
-        profile: userState.profile,
-        credits: userState.credits,
-        currentGames: userState.currentGames,
-        achievements: userState.achievements,
-        lastActivity: userState.lastActivity,
-      };
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(stateToSave));
-    } catch (error) {
-      console.error('Failed to save user state:', error);
-    }
-  }, [userState.profile, userState.credits, userState.currentGames, userState.achievements]);
-
-  // Activity tracker
-  useEffect(() => {
-    const handleActivity = () => {
-      dispatch({ type: 'UPDATE_ACTIVITY' });
-    };
-
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-    events.forEach(event => {
-      document.addEventListener(event, handleActivity, { passive: true });
-    });
-
-    return () => {
-      events.forEach(event => {
-        document.removeEventListener(event, handleActivity);
-      });
-    };
-  }, []);
-
-  // Session timeout checker
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (userState.isAuthenticated && checkSessionTimeout()) {
-        console.log('Session timed out due to inactivity');
-        signOut();
-      }
-    }, 60000); // Check every minute
-
-    return () => clearInterval(interval);
-  }, [userState.isAuthenticated, userState.lastActivity]);
-
-  const initializeAuth = async () => {
-    try {
-      // Get initial session
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) throw error;
-
-      if (session) {
-        dispatch({ type: 'SET_SESSION', payload: { user: session.user, session } });
-        await loadUserProfile(session.user.id);
+  private startSessionTimeout(): void {
+    if (this.state.isAuthenticated && this.state.sessionStartTime) {
+      const timeLeft = this.state.sessionStartTime + SESSION_TIMEOUT - Date.now();
+      if (timeLeft > 0) {
+        this.sessionTimeoutId = setTimeout(() => this.handleSessionExpired(), timeLeft);
       } else {
-        dispatch({ type: 'SET_LOADING', payload: false });
+        this.handleSessionExpired();
       }
-
-      // Listen for auth changes
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          console.log('Auth state change:', event);
-          
-          if (session) {
-            dispatch({ type: 'SET_SESSION', payload: { user: session.user, session } });
-            await loadUserProfile(session.user.id);
-          } else {
-            dispatch({ type: 'CLEAR_SESSION' });
-          }
-        }
-      );
-
-      return () => subscription.unsubscribe();
-    } catch (error) {
-      console.error('Auth initialization error:', error);
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to initialize authentication' });
     }
-  };
+  }
 
-  const loadUserProfile = async (userId: string) => {
+  private clearSessionTimeout(): void {
+    if (this.sessionTimeoutId) {
+      clearTimeout(this.sessionTimeoutId);
+      this.sessionTimeoutId = null;
+    }
+  }
+
+  private resetSessionTimeout(): void {
+    this.clearSessionTimeout();
+    if (this.state.isAuthenticated) {
+      this.state.sessionStartTime = Date.now();
+      this.startSessionTimeout();
+    }
+  }
+
+  private loadFromStorage(): UserContextState {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
-
-      if (data) {
-        const profile: UserProfile = {
-          id: data.id,
-          email: data.email,
-          username: data.username,
-          avatar_url: data.avatar_url,
-          role: data.role || 'player',
-          bio: data.bio,
-          credits: data.credits || 0,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
+      const storedState = localStorage.getItem(STORAGE_KEY);
+      if (storedState) {
+        const parsedState = JSON.parse(storedState);
+        return {
+          ...defaultState,
+          ...parsedState,
+          isAuthenticated: parsedState.isAuthenticated || false,
+          user: parsedState.user || null,
+          profile: parsedState.profile || null,
+          credits: parsedState.credits || 0,
+          currentGames: parsedState.currentGames || [],
+          achievements: parsedState.achievements || [],
+          sessionStartTime: parsedState.sessionStartTime || null,
+          lastActivity: parsedState.lastActivity || null
         };
-        dispatch({ type: 'SET_PROFILE', payload: profile });
       }
     } catch (error) {
-      console.error('Failed to load user profile:', error);
+      console.error('Error loading user context from local storage:', error);
     }
-  };
+    return defaultState;
+  }
 
-  const signIn = async (email: string, password: string) => {
+  private saveToStorage(state: UserContextState): void {
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      dispatch({ type: 'CLEAR_ERROR' });
-
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Sign in failed';
-      dispatch({ type: 'SET_ERROR', payload: message });
-      throw error;
+      console.warn('Unable to save user context to local storage:', error);
     }
-  };
+  }
 
-  const signUp = async (email: string, password: string, options?: any) => {
+  private clearStorage(): void {
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      dispatch({ type: 'CLEAR_ERROR' });
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (error) {
+      console.warn('Unable to clear user context from local storage:', error);
+    }
+  }
 
-      const { error } = await supabase.auth.signUp({
+  private handleSessionExpired(): void {
+    console.log('Session expired due to inactivity.');
+    this.signOut();
+  }
+
+  // Authentication methods
+  async signIn(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        // Fetch user profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
+        const updatedState: UserContextState = {
+          isAuthenticated: true,
+          user: data.user,
+          profile: profile || null,
+          credits: profile?.credits || 0,
+          currentGames: [],
+          achievements: [],
+          sessionStartTime: Date.now(),
+          lastActivity: Date.now()
+        };
+
+        this.setState(updatedState);
+        this.saveToStorage(updatedState);
+        this.resetSessionTimeout();
+
+        return { success: true };
+      }
+
+      return { success: false, error: 'Authentication failed' };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Sign in failed' 
+      };
+    }
+  }
+
+  async signUp(email: string, password: string, userData?: {
+    username?: string;
+    full_name?: string;
+  }): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          ...options,
-          emailRedirectTo: `${window.location.origin}/`,
-        },
+          data: userData
+        }
       });
-      if (error) throw error;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Sign up failed';
-      dispatch({ type: 'SET_ERROR', payload: message });
-      throw error;
-    }
-  };
 
-  const signOut = async () => {
+      if (error) throw error;
+
+      if (data.user) {
+        return { success: true };
+      }
+
+      return { success: false, error: 'Sign up failed' };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Sign up failed' 
+      };
+    }
+  }
+
+  async signOut(): Promise<void> {
     try {
       await supabase.auth.signOut();
-      localStorage.removeItem(USER_STORAGE_KEY);
+      
+      const clearedState: UserContextState = {
+        isAuthenticated: false,
+        user: null,
+        profile: null,
+        credits: 0,
+        currentGames: [],
+        achievements: [],
+        sessionStartTime: null,
+        lastActivity: null
+      };
+
+      this.setState(clearedState);
+      this.clearStorage();
+      this.clearSessionTimeout();
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('Error signing out:', error);
     }
-  };
+  }
 
-  const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!userState.user) return;
-
+  // Profile methods
+  async updateProfile(updates: Partial<UserProfile>): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase
+      if (!this.state.user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      const { data, error } = await supabase
         .from('profiles')
         .update(updates)
-        .eq('id', userState.user.id);
+        .eq('id', this.state.user.id)
+        .select()
+        .single();
 
       if (error) throw error;
 
-      const updatedProfile = { ...userState.profile, ...updates } as UserProfile;
-      dispatch({ type: 'SET_PROFILE', payload: updatedProfile });
+      this.setState({
+        ...this.state,
+        profile: data as UserProfile,
+        lastActivity: Date.now()
+      });
+
+      this.saveToStorage(this.state);
+      return { success: true };
     } catch (error) {
-      console.error('Failed to update profile:', error);
-      throw error;
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Profile update failed' 
+      };
     }
-  };
+  }
 
-  const updateCredits = (credits: number) => {
-    dispatch({ type: 'UPDATE_CREDITS', payload: credits });
-  };
-
-  const addCurrentGame = (gameId: string) => {
-    dispatch({ type: 'ADD_CURRENT_GAME', payload: gameId });
-  };
-
-  const removeCurrentGame = (gameId: string) => {
-    dispatch({ type: 'REMOVE_CURRENT_GAME', payload: gameId });
-  };
-
-  const addAchievement = (achievement: Achievement) => {
-    dispatch({ type: 'ADD_ACHIEVEMENT', payload: achievement });
-  };
-
-  const clearError = () => {
-    dispatch({ type: 'CLEAR_ERROR' });
-  };
-
-  const checkSessionTimeout = (): boolean => {
-    const now = Date.now();
-    const timeSinceActivity = now - userState.lastActivity;
-    return timeSinceActivity > userState.sessionTimeout;
-  };
-
-  const refreshSession = async () => {
+  // Credits methods
+  async updateCredits(amount: number): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase.auth.refreshSession();
-      if (error) throw error;
-    } catch (error) {
-      console.error('Session refresh error:', error);
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to refresh session' });
-    }
-  };
+      if (!this.state.user?.id) {
+        throw new Error('User not authenticated');
+      }
 
-  const value: UserContextType = {
-    userState,
-    signIn,
-    signUp,
-    signOut,
-    updateProfile,
-    updateCredits,
-    addCurrentGame,
-    removeCurrentGame,
-    addAchievement,
-    clearError,
-    checkSessionTimeout,
-    refreshSession,
-  };
+      const newCredits = Math.max(0, this.state.credits + amount);
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ credits: newCredits })
+        .eq('id', this.state.user.id);
+
+      if (error) throw error;
+
+      this.setState({
+        ...this.state,
+        credits: newCredits,
+        lastActivity: Date.now()
+      });
+
+      this.saveToStorage(this.state);
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Credits update failed' 
+      };
+    }
+  }
+
+  // Games methods
+  addCurrentGame(game: UserCurrentGame): void {
+    const updatedGames = [...this.state.currentGames, game];
+    this.setState({
+      ...this.state,
+      currentGames: updatedGames,
+      lastActivity: Date.now()
+    });
+    this.saveToStorage(this.state);
+  }
+
+  removeCurrentGame(gameId: string): void {
+    const updatedGames = this.state.currentGames.filter(game => game.id !== gameId);
+    this.setState({
+      ...this.state,
+      currentGames: updatedGames,
+      lastActivity: Date.now()
+    });
+    this.saveToStorage(this.state);
+  }
+
+  updateCurrentGame(gameId: string, updates: Partial<UserCurrentGame>): void {
+    const updatedGames = this.state.currentGames.map(game =>
+      game.id === gameId ? { ...game, ...updates } : game
+    );
+    this.setState({
+      ...this.state,
+      currentGames: updatedGames,
+      lastActivity: Date.now()
+    });
+    this.saveToStorage(this.state);
+  }
+
+  // Achievements methods
+  addAchievement(achievement: UserAchievement): void {
+    const updatedAchievements = [...this.state.achievements, achievement];
+    this.setState({
+      ...this.state,
+      achievements: updatedAchievements,
+      lastActivity: Date.now()
+    });
+    this.saveToStorage(this.state);
+  }
+
+  // Session management
+  refreshSession(): void {
+    this.setState({
+      ...this.state,
+      lastActivity: Date.now()
+    });
+    this.resetSessionTimeout();
+    this.saveToStorage(this.state);
+  }
+
+  // State management
+  setState(newState: UserContextState): void {
+    this.state = newState;
+    this.listeners.forEach(listener => listener(newState));
+  }
+
+  getState(): UserContextState {
+    return this.state;
+  }
+
+  subscribe(listener: (state: UserContextState) => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  // Initialize authentication listener
+  initializeAuth(): void {
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        // Fetch user profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        const role = profile?.role || 'player';
+
+        const updatedState: UserContextState = {
+          isAuthenticated: true,
+          user: session.user,
+          profile: profile ? { ...profile, role: role as UserRole } : null,
+          credits: profile?.credits || 0,
+          currentGames: this.state.currentGames,
+          achievements: this.state.achievements,
+          sessionStartTime: Date.now(),
+          lastActivity: Date.now()
+        };
+
+        this.setState(updatedState);
+        this.saveToStorage(updatedState);
+        this.resetSessionTimeout();
+      } else if (event === 'SIGNED_OUT') {
+        const clearedState: UserContextState = {
+          isAuthenticated: false,
+          user: null,
+          profile: null,
+          credits: 0,
+          currentGames: [],
+          achievements: [],
+          sessionStartTime: null,
+          lastActivity: null
+        };
+
+        this.setState(clearedState);
+        this.clearStorage();
+        this.clearSessionTimeout();
+      }
+    });
+  }
+}
+
+// Create the service instance
+const userContextService = new UserContextService();
+
+// Create the provider component
+export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [state, setState] = useState<UserContextState>(userContextService.getState());
+
+  useEffect(() => {
+    const unsubscribe = userContextService.subscribe(setState);
+    userContextService.initializeAuth();
+    return () => unsubscribe();
+  }, []);
+
+  const signIn = useCallback(
+    (email: string, password: string) => userContextService.signIn(email, password),
+    []
+  );
+
+  const signUp = useCallback(
+    (email: string, password: string, userData?: { username?: string; full_name?: string }) => userContextService.signUp(email, password, userData),
+    []
+  );
+
+  const signOut = useCallback(
+    () => userContextService.signOut(),
+    []
+  );
+
+  const updateProfile = useCallback(
+    (updates: Partial<UserProfile>) => userContextService.updateProfile(updates),
+    []
+  );
+
+  const updateCredits = useCallback(
+    (amount: number) => userContextService.updateCredits(amount),
+    []
+  );
+
+  const addCurrentGame = useCallback(
+    (game: UserCurrentGame) => userContextService.addCurrentGame(game),
+    []
+  );
+
+  const removeCurrentGame = useCallback(
+    (gameId: string) => userContextService.removeCurrentGame(gameId),
+    []
+  );
+
+  const updateCurrentGame = useCallback(
+    (gameId: string, updates: Partial<UserCurrentGame>) => userContextService.updateCurrentGame(gameId, updates),
+    []
+  );
+
+  const addAchievement = useCallback(
+    (achievement: UserAchievement) => userContextService.addAchievement(achievement),
+    []
+  );
+
+  const refreshSession = useCallback(
+    () => userContextService.refreshSession(),
+    []
+  );
 
   return (
-    <UserContext.Provider value={value}>
+    <UserContext.Provider
+      value={{
+        state,
+        signIn,
+        signUp,
+        signOut,
+        updateProfile,
+        updateCredits,
+        addCurrentGame,
+        removeCurrentGame,
+        updateCurrentGame,
+        addAchievement,
+        refreshSession,
+        initializeAuth: userContextService.initializeAuth,
+        subscribe: userContextService.subscribe,
+        getState: userContextService.getState,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );
-}
+};
 
-// Hook to use user context
-export function useUserContext() {
-  const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error('useUserContext must be used within a UserProvider');
-  }
-  return context;
-}
+// Create the hook
+export const useUser = (): UserContextType => {
+  return useContext(UserContext);
+};

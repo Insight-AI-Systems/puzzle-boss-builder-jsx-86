@@ -1,415 +1,211 @@
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Clock, Users, Trophy, Zap, Search, Play, CreditCard, Wallet } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { Link } from 'react-router-dom';
-import { useMemberProfile } from '@/hooks/useMemberProfile';
-import { usePaymentSystem } from '@/hooks/usePaymentSystem';
-import { CreditBalanceDisplay } from '@/components/games/CreditBalanceDisplay';
-import { PaymentMethodSelector } from '@/components/games/PaymentMethodSelector';
-import { PaymentConfirmationDialog } from '@/components/games/PaymentConfirmationDialog';
-import WordSearchGame from '@/components/games/word-search/WordSearchGame';
+import { Trophy, Clock, Users, DollarSign, Star } from 'lucide-react';
 
-interface CompetitionTier {
-  id: string;
-  name: string;
+// Mock word search component for now
+const MockWordSearchGame = ({ difficulty, entryFee, onComplete }: {
+  difficulty: string;
   entryFee: number;
-  prizePool: number;
-  nextTournament: Date;
-  activePlayers: number;
-  difficulty: 'rookie' | 'pro' | 'master';
-  color: string;
-}
+  onComplete: (result: any) => void;
+}) => {
+  return (
+    <div className="p-8 text-center">
+      <h3 className="text-lg font-semibold mb-4">Word Search Game ({difficulty})</h3>
+      <p className="text-gray-600 mb-4">Entry Fee: ${entryFee}</p>
+      <Button onClick={() => onComplete({ score: 100, time: 120 })}>
+        Complete Mock Game
+      </Button>
+    </div>
+  );
+};
 
-const WordSearchArena: React.FC = () => {
-  const { isAuthenticated } = useAuth();
-  const { profile } = useMemberProfile();
-  const { wallet, fetchWallet } = usePaymentSystem();
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [selectedTier, setSelectedTier] = useState<CompetitionTier | null>(null);
-  const [showGame, setShowGame] = useState(false);
+export default function WordSearchArena() {
+  const [selectedArena, setSelectedArena] = React.useState<string | null>(null);
 
-  // Mock data for competition tiers
-  const [tiers] = useState<CompetitionTier[]>([
+  const arenas = [
     {
       id: 'rookie',
       name: 'Rookie Arena',
-      entryFee: 1,
+      difficulty: 'rookie' as const,
+      entryFee: 1.99,
       prizePool: 50,
-      nextTournament: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
-      activePlayers: 24,
-      difficulty: 'rookie',
-      color: 'bg-green-500'
+      players: 24,
+      timeLimit: 300,
+      description: 'Perfect for beginners. Find 8-12 words in easy grids.',
+      icon: '🌟'
     },
     {
       id: 'pro',
-      name: 'Pro Championship',
-      entryFee: 5,
-      prizePool: 250,
-      nextTournament: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4 hours from now
-      activePlayers: 18,
-      difficulty: 'pro',
-      color: 'bg-blue-500'
+      name: 'Pro Arena',
+      difficulty: 'pro' as const,
+      entryFee: 4.99,
+      prizePool: 150,
+      players: 18,
+      timeLimit: 600,
+      description: 'Challenging grids with 15-20 words. For experienced players.',
+      icon: '⚡'
     },
     {
       id: 'master',
-      name: 'Master Elite',
-      entryFee: 15,
-      prizePool: 750,
-      nextTournament: new Date(Date.now() + 6 * 60 * 60 * 1000), // 6 hours from now
-      activePlayers: 12,
-      difficulty: 'master',
-      color: 'bg-purple-500'
+      name: 'Master Arena',
+      difficulty: 'master' as const,
+      entryFee: 9.99,
+      prizePool: 500,
+      players: 12,
+      timeLimit: 900,
+      description: 'Expert level with 25+ words. Ultimate word search challenge.',
+      icon: '🏆'
     }
-  ]);
+  ];
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchWallet();
-    }
-  }, [isAuthenticated, fetchWallet]);
-
-  const formatCountdown = (targetDate: Date) => {
-    const now = currentTime.getTime();
-    const target = targetDate.getTime();
-    const difference = target - now;
-
-    if (difference <= 0) {
-      return "Tournament Starting!";
-    }
-
-    const hours = Math.floor(difference / (1000 * 60 * 60));
-    const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  const getTotalActivePlayers = () => {
-    return tiers.reduce((total, tier) => total + tier.activePlayers, 0);
-  };
-
-  const getTotalPrizePool = () => {
-    return tiers.reduce((total, tier) => total + tier.prizePool, 0);
-  };
-
-  const handleEnterTournament = (tier: CompetitionTier) => {
-    setSelectedTier(tier);
-    setShowGame(true);
+  const handleArenaSelect = (arena: typeof arenas[0]) => {
+    setSelectedArena(arena.id);
   };
 
   const handleGameComplete = (result: any) => {
     console.log('Game completed:', result);
-    // Here you would submit the score to the leaderboard
-    setShowGame(false);
-    setSelectedTier(null);
+    setSelectedArena(null);
   };
 
-  if (showGame && selectedTier) {
+  if (selectedArena) {
+    const arena = arenas.find(a => a.id === selectedArena);
     return (
-      <main className="min-h-screen bg-puzzle-black">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-puzzle-white">
-              {selectedTier.name} - Word Search
-            </h1>
-            <Button
-              onClick={() => {
-                setShowGame(false);
-                setSelectedTier(null);
-              }}
-              variant="outline"
-              className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black"
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setSelectedArena(null)}
+              className="mb-4"
             >
-              Back to Arena
+              ← Back to Arenas
             </Button>
           </div>
           
-          <WordSearchGame
-            difficulty={selectedTier.difficulty}
-            entryFee={selectedTier.entryFee}
-            onComplete={handleGameComplete}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span className="text-2xl">{arena?.icon}</span>
+                {arena?.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MockWordSearchGame
+                difficulty={arena?.difficulty || 'rookie'}
+                entryFee={arena?.entryFee || 0}
+                onComplete={handleGameComplete}
+              />
+            </CardContent>
+          </Card>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-puzzle-black">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-puzzle-black via-gray-900 to-puzzle-black py-20">
-        <div className="absolute inset-0 bg-[url('/hero-bg.png')] bg-cover bg-center opacity-10"></div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center max-w-4xl mx-auto">
-            <div className="flex justify-center mb-6">
-              <div className="p-4 bg-puzzle-aqua/20 rounded-full">
-                <Search className="h-16 w-16 text-puzzle-aqua" />
-              </div>
-            </div>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              <span className="text-puzzle-white">Word Search</span>{' '}
-              <span className="text-puzzle-aqua">Arena</span>
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-300 mb-8">
-              Compete for Cash Prizes in Real-Time Tournaments
-            </p>
-            
-            {/* Credit Balance Display for Authenticated Users */}
-            {isAuthenticated && (profile || wallet) && (
-              <div className="mb-8 max-w-md mx-auto">
-                <CreditBalanceDisplay
-                  credits={profile?.credits || 0}
-                  balance={wallet?.balance || 0}
-                  entryFee={0}
-                  willUseCredits={false}
-                  compact={true}
-                />
-              </div>
-            )}
-            
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-                <Users className="h-8 w-8 text-puzzle-aqua mx-auto mb-2" />
-                <div className="text-2xl font-bold text-puzzle-white">{getTotalActivePlayers()}</div>
-                <div className="text-sm text-gray-300">Active Players</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-                <Trophy className="h-8 w-8 text-puzzle-gold mx-auto mb-2" />
-                <div className="text-2xl font-bold text-puzzle-white">${getTotalPrizePool()}</div>
-                <div className="text-sm text-gray-300">Today's Prize Pool</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-                <Clock className="h-8 w-8 text-puzzle-aqua mx-auto mb-2" />
-                <div className="text-2xl font-bold text-puzzle-white">Live</div>
-                <div className="text-sm text-gray-300">Tournaments</div>
-              </div>
-            </div>
-
-            {/* Quick Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold px-8 py-3"
-                onClick={() => handleEnterTournament(tiers[0])}
-                disabled={!isAuthenticated}
-              >
-                <Zap className="h-5 w-5 mr-2" />
-                {isAuthenticated ? 'Quick Play' : 'Login to Play'}
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black px-8 py-3"
-              >
-                View Leaderboard
-              </Button>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Word Search Arena
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Compete against players worldwide in timed word search challenges. 
+            Choose your arena and win cash prizes!
+          </p>
         </div>
-      </section>
 
-      {/* Competition Tiers */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-puzzle-white mb-4">
-              Choose Your Arena
-            </h2>
-            <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-              Select your skill level and compete against players worldwide
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {tiers.map((tier) => {
-              const credits = profile?.credits || 0;
-              const balance = wallet?.balance || 0;
-              const canPlayWithCredits = credits >= tier.entryFee;
-              const canPlayWithWallet = balance >= tier.entryFee;
-              const canPlay = canPlayWithCredits || canPlayWithWallet;
-
-              return (
-                <Card key={tier.id} className="bg-gray-900 border-gray-700 hover:border-puzzle-aqua/50 transition-all duration-300">
-                  <CardHeader className="text-center">
-                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${tier.color} text-white mb-4`}>
-                      {tier.difficulty.charAt(0).toUpperCase() + tier.difficulty.slice(1)}
+        {/* Arena Cards */}
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          {arenas.map((arena) => (
+            <Card key={arena.id} className="hover:shadow-lg transition-shadow cursor-pointer group">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-3xl">{arena.icon}</span>
+                    <div>
+                      <CardTitle className="text-xl">{arena.name}</CardTitle>
+                      <Badge variant="secondary" className="mt-1">
+                        {arena.difficulty}
+                      </Badge>
                     </div>
-                    <CardTitle className="text-2xl text-puzzle-white">{tier.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Entry Fee & Prize Pool */}
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-puzzle-aqua mb-2">
-                        ${tier.entryFee}
-                      </div>
-                      <div className="text-sm text-gray-400">Entry Fee</div>
-                      
-                      {/* Payment Method Indicator */}
-                      {isAuthenticated && (
-                        <div className="mt-2">
-                          {canPlayWithCredits ? (
-                            <Badge className="bg-puzzle-gold/20 text-puzzle-gold border-puzzle-gold/50">
-                              <CreditCard className="h-3 w-3 mr-1" />
-                              Use {tier.entryFee} Credits
-                            </Badge>
-                          ) : canPlayWithWallet ? (
-                            <Badge className="bg-puzzle-aqua/20 text-puzzle-aqua border-puzzle-aqua/50">
-                              Pay ${tier.entryFee}
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="border-red-500/50 text-red-400">
-                              Insufficient Funds
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-                      
-                      <div className="mt-4">
-                        <div className="text-xl font-semibold text-puzzle-gold">
-                          ${tier.prizePool} Prize Pool
-                        </div>
-                      </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-green-600">
+                      ${arena.prizePool}
                     </div>
+                    <div className="text-sm text-gray-500">Prize Pool</div>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent>
+                <p className="text-gray-600 mb-4">{arena.description}</p>
+                
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm">${arena.entryFee} entry</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm">{arena.players} players</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm">{arena.timeLimit / 60} min limit</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm">Top 3 win</span>
+                  </div>
+                </div>
 
-                    {/* Tournament Countdown */}
-                    <div className="bg-gray-800 rounded-lg p-4 text-center">
-                      <div className="flex items-center justify-center mb-2">
-                        <Clock className="h-4 w-4 text-puzzle-aqua mr-2" />
-                        <span className="text-sm text-gray-300">Next Tournament</span>
-                      </div>
-                      <div className="text-2xl font-mono font-bold text-puzzle-white">
-                        {formatCountdown(tier.nextTournament)}
-                      </div>
-                    </div>
-
-                    {/* Active Players */}
-                    <div className="flex items-center justify-center text-gray-300">
-                      <Users className="h-4 w-4 mr-2" />
-                      <span className="text-sm">{tier.activePlayers} players active</span>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="space-y-3">
-                      <Button 
-                        className="w-full bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold"
-                        disabled={!isAuthenticated || !canPlay}
-                        onClick={() => handleEnterTournament(tier)}
-                      >
-                        <Play className="h-4 w-4 mr-2" />
-                        {!isAuthenticated 
-                          ? 'Login to Enter' 
-                          : canPlay 
-                            ? 'Enter Tournament' 
-                            : 'Insufficient Funds'
-                        }
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
-                        onClick={() => handleEnterTournament({ ...tier, entryFee: 0 })}
-                      >
-                        Practice Mode
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-16 bg-gray-900/50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-puzzle-white mb-4">
-              How It Works
-            </h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-            <div className="text-center">
-              <div className="bg-puzzle-aqua/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-puzzle-aqua">1</span>
-              </div>
-              <h3 className="text-lg font-semibold text-puzzle-white mb-2">Choose Arena</h3>
-              <p className="text-sm text-gray-400">Select your skill level and entry fee</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="bg-puzzle-aqua/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-puzzle-aqua">2</span>
-              </div>
-              <h3 className="text-lg font-semibold text-puzzle-white mb-2">Find Words</h3>
-              <p className="text-sm text-gray-400">Search for hidden words in the grid</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="bg-puzzle-aqua/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-puzzle-aqua">3</span>
-              </div>
-              <h3 className="text-lg font-semibold text-puzzle-white mb-2">Race the Clock</h3>
-              <p className="text-sm text-gray-400">Complete puzzles faster than opponents</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="bg-puzzle-aqua/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-puzzle-aqua">4</span>
-              </div>
-              <h3 className="text-lg font-semibold text-puzzle-white mb-2">Win Prizes</h3>
-              <p className="text-sm text-gray-400">Top finishers share the prize pool</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Authentication Prompt */}
-      {!isAuthenticated && (
-        <section className="py-16">
-          <div className="container mx-auto px-4 text-center">
-            <div className="bg-gray-900 rounded-lg p-8 max-w-2xl mx-auto">
-              <h3 className="text-2xl font-bold text-puzzle-white mb-4">
-                Ready to Compete?
-              </h3>
-              <p className="text-gray-300 mb-6">
-                Create your account to enter tournaments and compete for cash prizes
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
-                  asChild 
-                  className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold"
+                  className="w-full group-hover:bg-primary/90"
+                  onClick={() => handleArenaSelect(arena)}
                 >
-                  <Link to="/auth?signup=true">Sign Up Now</Link>
+                  Enter Arena - ${arena.entryFee}
                 </Button>
-                <Button 
-                  asChild 
-                  variant="outline" 
-                  className="border-puzzle-aqua text-puzzle-aqua hover:bg-puzzle-aqua hover:text-puzzle-black"
-                >
-                  <Link to="/auth">Sign In</Link>
-                </Button>
-              </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Recent Winners */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Star className="w-5 h-5 text-yellow-500" />
+              Recent Winners
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-3 gap-4">
+              {[
+                { name: 'Sarah M.', arena: 'Master Arena', prize: '$166.67', time: '7:23' },
+                { name: 'Mike R.', arena: 'Pro Arena', prize: '$50.00', time: '4:15' },
+                { name: 'Lisa K.', arena: 'Rookie Arena', prize: '$16.67', time: '3:45' }
+              ].map((winner, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <div className="font-semibold">{winner.name}</div>
+                    <div className="text-sm text-gray-600">{winner.arena}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-green-600">{winner.prize}</div>
+                    <div className="text-sm text-gray-600">{winner.time}</div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        </section>
-      )}
-    </main>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
-};
-
-export default WordSearchArena;
+}

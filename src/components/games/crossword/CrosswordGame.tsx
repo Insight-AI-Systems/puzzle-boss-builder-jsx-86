@@ -1,119 +1,115 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { LoadingGame, GameComplete } from '@/presentation/components/game';
-import { useGameContext } from '@/shared/contexts/GameContext';
-import { useUserContext } from '@/shared/contexts/UserContext';
-import { usePayment } from '@/components/games/hooks/usePayment';
-import { useCrosswordEngine } from './hooks/useCrosswordEngine';
-import { useGameRepository } from './hooks/useGameRepository';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 import { CrosswordGrid } from './components/CrosswordGrid';
 import { CrosswordClues } from './components/CrosswordClues';
 import { CrosswordTimer } from './components/CrosswordTimer';
-import { CrosswordControls } from './components/CrosswordControls';
+import { useCrosswordEngine } from './hooks/useCrosswordEngine';
+import { useGameContext } from '@/shared/contexts/GameContext';
+import { GameErrorBoundary } from '@/infrastructure/errors/GameErrorBoundary';
 
 export function CrosswordGame() {
-  const { userState } = useUserContext();
-  const { toast } = useToast();
-  const { gameState, startGame, pauseGame, resumeGame, endGame } = useGameContext();
-  
-  const entryFee = 2.99;
-  const { paymentStatus, isProcessing, processPayment } = usePayment(entryFee);
-  
-  const { gameState: crosswordState, isLoading: engineLoading, error: engineError, handleCellClick, handleLetterInput, handleToggleDirection, handleTogglePause, handleReset, handleGetHint } = useCrosswordEngine();
-  const { saveProgress, loadProgress } = useGameRepository();
+  const { gameState, isLoading, error, handleCellClick, handleLetterInput, handleToggleDirection, handleTogglePause, handleReset, handleGetHint } = useCrosswordEngine();
+  const { currentGame, updateGameState } = useGameContext();
 
-  // Handle payment verification
-  const handlePayment = async () => {
-    if (!userState.user) {
-      toast({ title: "Authentication Required", description: "Please log in to play", variant: "destructive" });
-      return;
+  React.useEffect(() => {
+    if (currentGame?.status !== 'playing') {
+      updateGameState('crossword-1', {
+        status: 'playing',
+        score: gameState.score,
+        timeElapsed: 0
+      });
     }
-    
-    const success = await processPayment(`crossword-${Date.now()}`);
-    if (success) {
-      startGame('crossword', { entryFee, difficulty: 'medium' });
-    }
-  };
+  }, [gameState.score, currentGame, updateGameState]);
 
-  // Handle game completion
-  const handleComplete = () => {
-    endGame({ score: crosswordState.score || 0, completed: true });
-    toast({ title: "Congratulations!", description: "Crossword completed!" });
-  };
-
-  if (engineLoading) {
-    return <LoadingGame message="Loading crossword puzzle..." />;
-  }
-
-  if (engineError) {
-    return <Alert variant="destructive"><AlertDescription>Failed to load crossword</AlertDescription></Alert>;
-  }
-
-  if (entryFee > 0 && !paymentStatus.hasAccess && gameState.status !== 'playing') {
+  if (isLoading) {
     return (
-      <Card className="max-w-md mx-auto">
-        <CardHeader><CardTitle>Crossword Puzzle</CardTitle></CardHeader>
-        <CardContent className="text-center space-y-4">
-          <p>Entry fee: ${entryFee.toFixed(2)}</p>
-          <button onClick={handlePayment} disabled={isProcessing} className="btn-primary">
-            {isProcessing ? 'Processing...' : `Play Now - $${entryFee.toFixed(2)}`}
-          </button>
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (gameState.status === 'completed') {
+  if (error) {
     return (
-      <GameComplete
-        score={gameState.score}
-        timeElapsed={gameState.timeElapsed}
-        onPlayAgain={() => startGame('crossword', { entryFee, difficulty: 'medium' })}
-      />
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardContent className="p-6">
+          <div className="text-center text-red-600">
+            <p>Error loading crossword: {error}</p>
+            <Button onClick={handleReset} className="mt-4">Try Again</Button>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
-          <CrosswordGrid
-            grid={crosswordState.grid || []}
-            onCellClick={handleCellClick}
-            onCellInput={handleLetterInput}
-          />
-        </div>
-        
-        <div className="space-y-4">
-          <CrosswordTimer
-            startTime={gameState.startTime || Date.now()}
-            isPaused={gameState.status === 'paused'}
-            isCompleted={gameState.status === 'completed'}
-          />
-          
-          <CrosswordControls
-            isPaused={gameState.status === 'paused'}
-            isCompleted={gameState.status === 'completed'}
-            hintsUsed={crosswordState.hintsUsed || 0}
-            selectedDirection={crosswordState.direction || 'across'}
-            onTogglePause={handleTogglePause}
-            onReset={handleReset}
-            onGetHint={handleGetHint}
-            onSave={() => saveProgress(gameState)}
-            onToggleDirection={handleToggleDirection}
-          />
-          
-          <CrosswordClues
-            clues={crosswordState.clues || { across: [], down: [] }}
-            onClueClick={() => {}}
-          />
-        </div>
+    <GameErrorBoundary gameType="crossword" onGameRestart={handleReset}>
+      <div className="w-full max-w-6xl mx-auto space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Daily Crossword</span>
+              <div className="flex items-center gap-4">
+                <CrosswordTimer />
+                <div className="text-sm">
+                  Score: {gameState.score} | Hints: {gameState.hintsUsed}
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleTogglePause}>
+                    {currentGame?.status === 'paused' ? 'Resume' : 'Pause'}
+                  </Button>
+                  <Button variant="outline" onClick={handleGetHint}>
+                    Hint
+                  </Button>
+                  <Button variant="outline" onClick={handleReset}>
+                    Reset
+                  </Button>
+                </div>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <CrosswordGrid
+                  grid={gameState.grid}
+                  selectedCell={gameState.selectedCell}
+                  onCellClick={handleCellClick}
+                  onCellInput={handleLetterInput}
+                />
+              </div>
+              <div>
+                {currentGame?.status === 'completed' && (
+                  <div className="mb-4 p-4 bg-green-100 border border-green-300 rounded-lg">
+                    <h3 className="font-bold text-green-800">Congratulations!</h3>
+                    <p className="text-green-700">You completed the crossword!</p>
+                  </div>
+                )}
+                
+                {currentGame?.status === 'completed' && (
+                  <div className="mb-4 p-4 bg-yellow-100 border border-yellow-300 rounded-lg">
+                    <h3 className="font-bold text-yellow-800">Game Paused</h3>
+                    <p className="text-yellow-700">Click Resume to continue.</p>
+                  </div>
+                )}
+
+                <CrosswordClues
+                  clues={gameState.clues}
+                  selectedWord={gameState.selectedWord}
+                  selectedDirection={gameState.selectedDirection}
+                  onClueClick={() => {}}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </GameErrorBoundary>
   );
 }
-
-export default CrosswordGame;
