@@ -8,6 +8,7 @@ import AccountDashboard from '@/pages/AccountDashboard';
 import AdminDashboard from '@/pages/AdminDashboard';
 import Auth from '@/pages/Auth';
 import Categories from '@/pages/Categories';
+import CategoryPuzzles from '@/pages/CategoryPuzzles';
 import Puzzles from '@/pages/Puzzles';
 import Leaderboard from '@/pages/Leaderboard';
 import PrizesWon from '@/pages/PrizesWon';
@@ -39,7 +40,9 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/categories" element={<Categories />} />
+        <Route path="/category/:categoryId" element={<CategoryPuzzles />} />
         <Route path="/puzzles" element={<Puzzles />} />
+        <Route path="/puzzle/:puzzleId" element={<div>Individual Puzzle Page - Coming Soon</div>} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/prizes-won" element={<PrizesWon />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
