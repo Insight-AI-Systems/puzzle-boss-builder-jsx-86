@@ -1,4 +1,3 @@
-
 import { GameEngine } from '../GameEngine';
 import type { BaseGameState, GameConfig, MoveValidationResult, WinConditionResult } from '../../models/GameState';
 
@@ -7,7 +6,7 @@ export interface CrosswordPuzzle {
   title: string;
   grid: CrosswordCell[][];
   words: CrosswordWord[];
-  clues: CrosswordClue[];
+  clues: { across: CrosswordClue[]; down: CrosswordClue[]; }; // Changed to match the expected structure
   difficulty: string;
 }
 

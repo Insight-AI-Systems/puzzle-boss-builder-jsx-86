@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import type { CrosswordPuzzle } from '@/business/engines/crossword/CrosswordEngine';
 
@@ -57,10 +56,15 @@ function generateSampleWords() {
 }
 
 function generateSampleClues() {
-  return [
+  const allClues = [
     { id: '1-across-clue', number: 1, clue: 'Feline pet', answer: 'CAT', direction: 'across' as const },
     { id: '1-down-clue', number: 1, clue: 'Vehicle', answer: 'CAR', direction: 'down' as const }
   ];
+
+  return {
+    across: allClues.filter(clue => clue.direction === 'across'),
+    down: allClues.filter(clue => clue.direction === 'down')
+  };
 }
 
 export function useCrosswordPuzzleData() {
@@ -76,16 +80,7 @@ export function useCrosswordPuzzleData() {
         // TODO: Load actual puzzle data from API
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Create clues object with across and down arrays
-        const cluesObject = {
-          across: samplePuzzle.clues.filter(clue => clue.direction === 'across'),
-          down: samplePuzzle.clues.filter(clue => clue.direction === 'down')
-        };
-        
-        setPuzzle({
-          ...samplePuzzle,
-          clues: cluesObject
-        });
+        setPuzzle(samplePuzzle);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load puzzle');
       } finally {
