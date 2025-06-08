@@ -1,3 +1,4 @@
+
 import { GameEngine } from '../GameEngine';
 import { BaseGameState, GameConfig, MoveValidationResult, WinConditionResult, GameEvent } from '../../models/GameState';
 import { PlacedWord, Cell } from './types';
@@ -277,14 +278,14 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     }
   }
 
-  private getWordCells(startRow: number, startCol: number, length: number, direction: string): string[] {
+  private getWordCells(startRow: number, startCol: number, length: number, direction: string): Cell[] {
     const { rowDir, colDir } = this.getDirection(direction);
-    const cells = [];
+    const cells: Cell[] = [];
     
     for (let i = 0; i < length; i++) {
       const row = startRow + i * rowDir;
       const col = startCol + i * colDir;
-      cells.push(`${row}-${col}`);
+      cells.push({ row, col });
     }
     
     return cells;
@@ -361,7 +362,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     const randomWord = unFoundWords[Math.floor(Math.random() * unFoundWords.length)];
     const wordPlacement = this.placedWords.find(p => p.word === randomWord);
     
-    if (wordPlacement) {
+    if (wordPlacement && wordPlacement.cells.length > 0) {
       // Highlight the first letter of the word
       const firstCell = wordPlacement.cells[0];
       this.updateGameState({

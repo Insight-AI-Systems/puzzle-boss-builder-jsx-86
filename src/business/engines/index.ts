@@ -17,9 +17,13 @@ export type {
 
 export type { 
   WordSearchState, 
-  PlacedWord, 
   WordSearchMove 
 } from './word-search/WordSearchEngine';
+
+export type { 
+  PlacedWord, 
+  Cell 
+} from './word-search/types';
 
 export type { 
   BaseGameState, 
