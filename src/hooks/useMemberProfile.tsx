@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -84,7 +83,10 @@ export function useMemberProfile() {
         throw new Error('No user ID available');
       }
 
-      console.log('Updating profile for user:', user.id, 'with data:', updates);
+      console.log('=== PROFILE UPDATE DEBUG ===');
+      console.log('Clerk User ID:', user.id);
+      console.log('User authenticated:', isAuthenticated);
+      console.log('Updates to apply:', updates);
 
       // Only include the specific fields that are being updated from the form
       const allowedFields: Record<string, any> = {};
@@ -96,18 +98,39 @@ export function useMemberProfile() {
 
       console.log('Filtered updates to send:', allowedFields);
 
+      // First, verify the current profile exists
+      const { data: currentProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id, clerk_user_id, email, username')
+        .eq('clerk_user_id', user.id)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching current profile for update:', fetchError);
+        throw new Error(`Failed to find profile: ${fetchError.message}`);
+      }
+
+      console.log('Current profile found:', currentProfile);
+
+      // Perform the update using the profile ID
       const { data, error } = await supabase
         .from('profiles')
         .update({
           ...allowedFields,
           updated_at: new Date().toISOString()
         })
-        .eq('clerk_user_id', user.id)
+        .eq('id', currentProfile.id)
         .select()
         .single();
 
       if (error) {
-        console.error('Profile update error:', error);
+        console.error('Profile update error details:', {
+          error,
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
         throw new Error(`Failed to update profile: ${error.message}`);
       }
 
@@ -208,6 +231,6 @@ export function useMemberProfile() {
     upsertAddress,
     deleteAddress,
     awardCredits,
-    refetch: profileQuery.refetch, // Add back the refetch function
+    refetch: profileQuery.refetch,
   };
 }
