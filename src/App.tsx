@@ -19,6 +19,7 @@ import MemoryGamePage from '@/pages/games/MemoryGamePage';
 import TriviaGamePage from '@/pages/games/TriviaGamePage';
 import BlocksGamePage from '@/pages/games/BlocksGamePage';
 import CrosswordGamePage from '@/pages/games/CrosswordGamePage';
+import MahjongGamePage from '@/pages/games/MahjongGamePage';
 import SupportPage from '@/pages/SupportPage';
 import { ClerkProtectedRoute } from '@/components/auth/ClerkProtectedRoute';
 import './App.css';
@@ -52,6 +53,7 @@ function App() {
         <Route path="/puzzles/trivia" element={<TriviaGamePage />} />
         <Route path="/puzzles/blocks" element={<BlocksGamePage />} />
         <Route path="/puzzles/crossword" element={<CrosswordGamePage />} />
+        <Route path="/puzzles/mahjong" element={<MahjongGamePage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route 
           path="/account" 

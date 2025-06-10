@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, Search, Grid3X3, Brain, Zap, Square, BookOpen, Puzzle, Loader2 } from 'lucide-react';
@@ -19,7 +18,8 @@ const PuzzleDropdown: React.FC = () => {
     { name: 'Memory Master', href: '/puzzles/memory', icon: Brain },
     { name: 'Trivia Lightning', href: '/puzzles/trivia', icon: Zap },
     { name: 'Block Puzzle Pro', href: '/puzzles/blocks', icon: Square },
-    { name: 'Daily Crossword', href: '/puzzles/crossword', icon: BookOpen }
+    { name: 'Daily Crossword', href: '/puzzles/crossword', icon: BookOpen },
+    { name: 'Mahjong Solitaire', href: '/puzzles/mahjong', icon: Puzzle }
   ];
 
   // Filter active categories and get puzzle counts
