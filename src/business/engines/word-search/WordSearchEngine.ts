@@ -1,8 +1,6 @@
-
 import { GameEngine } from '../GameEngine';
 import { PlacedWord, Cell } from './types';
-import { cellsToStrings, stringsToCells } from './utils';
-import { MoveValidationResult, WinConditionResult } from '../../models/GameState';
+import { cellToString, stringToCell, cellsToStrings, stringsToCells } from './utils';
 
 export interface WordSearchState {
   id: string;
@@ -26,146 +24,108 @@ export interface WordSearchState {
 
 export interface WordSearchMove {
   type: 'SELECT_CELLS' | 'WORD_FOUND' | 'HINT';
-  cells?: string[] | Cell[];
+  cells?: string[];
   word?: string;
 }
 
 export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove> {
   private placedWords: PlacedWord[] = [];
-  private timerInterval: NodeJS.Timeout | null = null;
-  private listeners: ((state: WordSearchState) => void)[] = [];
+  private gameTimer: number | null = null;
 
   constructor(initialState: WordSearchState, config: any) {
     super(initialState, config);
   }
 
-  // Implement abstract methods from GameEngine
-  validateMove(move: WordSearchMove): MoveValidationResult {
-    if (this.gameState.status !== 'playing') {
-      return { isValid: false, error: 'Game is not in playing state' };
-    }
-
+  protected validateMove(move: WordSearchMove): boolean {
     switch (move.type) {
       case 'SELECT_CELLS':
-        return { isValid: true };
+        return true; // Cell selection is always valid
       case 'WORD_FOUND':
-        if (!move.word || !move.cells) {
-          return { isValid: false, error: 'Word and cells are required' };
-        }
-        return { isValid: true };
+        return !!move.word && !!move.cells;
       case 'HINT':
-        return { isValid: true };
+        return this.state.hintsUsed < 3; // Limit hints
       default:
-        return { isValid: false, error: 'Invalid move type' };
+        return false;
     }
   }
 
-  calculateScore(): number {
-    return this.gameState.score;
+  protected calculateScore(): number {
+    const baseScore = this.state.foundWords.size * 100;
+    const timeBonus = Math.max(0, 300 - this.state.timeElapsed);
+    const hintPenalty = this.state.hintsUsed * 50;
+    return Math.max(0, baseScore + timeBonus - hintPenalty);
   }
 
-  checkWinCondition(): WinConditionResult {
-    const isWin = this.gameState.foundWords.size === this.gameState.words.length;
+  protected checkWinCondition() {
+    const isWin = this.state.foundWords.size === this.state.words.length;
     return {
-      isGameComplete: isWin,
-      winner: isWin ? 'player' : null,
-      reason: isWin ? 'all_words_found' : null
+      isWin,
+      score: this.calculateScore(),
+      message: isWin ? 'Congratulations! You found all words!' : ''
     };
-  }
-
-  // Subscription system for React component
-  subscribe(listener: (state: WordSearchState) => void): () => void {
-    this.listeners.push(listener);
-    return () => {
-      const index = this.listeners.indexOf(listener);
-      if (index > -1) {
-        this.listeners.splice(index, 1);
-      }
-    };
-  }
-
-  private notifyListeners(): void {
-    this.listeners.forEach(listener => listener(this.gameState));
-  }
-
-  private startTimer(): void {
-    this.stopTimer(); // Clear any existing timer
-    
-    this.timerInterval = setInterval(() => {
-      if (this.gameState.status === 'playing' && this.gameState.startTime) {
-        const timeElapsed = Math.floor((Date.now() - this.gameState.startTime) / 1000);
-        this.updateGameState({
-          ...this.gameState,
-          timeElapsed
-        });
-        this.notifyListeners();
-      }
-    }, 1000);
-  }
-
-  private stopTimer(): void {
-    if (this.timerInterval) {
-      clearInterval(this.timerInterval);
-      this.timerInterval = null;
-    }
   }
 
   async initialize(): Promise<void> {
-    console.log('WordSearchEngine: Initializing...');
+    console.log('Initializing Word Search Engine...');
     
-    const words = ['JAVASCRIPT', 'REACT', 'TYPESCRIPT', 'HTML', 'CSS', 'NODE', 'EXPRESS', 'DATABASE'];
-    const { grid, placedWords } = this.generateGrid(words, 15);
+    // Generate words and grid
+    const words = this.generateWords();
+    const { grid, placedWords } = this.generateGrid(words);
     
     this.placedWords = placedWords;
-    this.updateGameState({
-      ...this.gameState,
+    
+    this.updateState({
+      ...this.state,
       grid,
       words,
       foundWords: new Set(),
       selectedCells: [],
       currentSelection: [],
       hintCells: [],
-      isComplete: false,
+      score: 0,
+      moves: 0,
+      timeElapsed: 0,
+      hintsUsed: 0,
       status: 'idle'
     });
-    
-    console.log('WordSearchEngine: Initialized with', words.length, 'words and', placedWords.length, 'placed words');
-    this.notifyListeners();
+
+    console.log('Word Search Engine initialized successfully');
   }
 
   start(): void {
-    this.updateGameState({
-      ...this.gameState,
+    console.log('Starting Word Search game...');
+    this.updateState({
+      ...this.state,
       status: 'playing',
-      startTime: Date.now(),
-      timeElapsed: 0
+      startTime: Date.now()
     });
+    
     this.startTimer();
-    this.notifyListeners();
+    this.emitEvent('gameStarted', this.state);
   }
 
   pause(): void {
-    this.updateGameState({
-      ...this.gameState,
+    this.updateState({
+      ...this.state,
       status: 'paused'
     });
     this.stopTimer();
-    this.notifyListeners();
+    this.emitEvent('gamePaused', this.state);
   }
 
   resume(): void {
-    this.updateGameState({
-      ...this.gameState,
+    this.updateState({
+      ...this.state,
       status: 'playing'
     });
     this.startTimer();
-    this.notifyListeners();
+    this.emitEvent('gameResumed', this.state);
   }
 
   reset(): void {
     this.stopTimer();
-    this.updateGameState({
-      ...this.gameState,
+    this.updateState({
+      ...this.state,
       status: 'idle',
       score: 0,
       moves: 0,
@@ -179,235 +139,227 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       timeElapsed: 0,
       hintsUsed: 0
     });
-    this.notifyListeners();
+    this.emitEvent('gameReset', this.state);
   }
 
-  makeMove(move: WordSearchMove): void {
-    const validation = this.validateMove(move);
-    if (!validation.isValid) {
-      console.warn('Invalid move:', validation.error);
-      return;
+  makeMove(move: WordSearchMove): boolean {
+    if (!this.validateMove(move)) {
+      return false;
     }
-    
+
+    let newState = { ...this.state };
+
     switch (move.type) {
       case 'SELECT_CELLS':
-        if (move.cells) {
-          const cellStrings = Array.isArray(move.cells) && move.cells.length > 0 && typeof move.cells[0] === 'object'
-            ? cellsToStrings(move.cells as Cell[])
-            : move.cells as string[];
-          
-          this.updateGameState({
-            ...this.gameState,
-            currentSelection: cellStrings,
-            hintCells: [] // Clear hints when selecting
-          });
-          this.notifyListeners();
-        }
+        newState.currentSelection = move.cells || [];
         break;
 
       case 'WORD_FOUND':
         if (move.word && move.cells) {
-          const cellStrings = Array.isArray(move.cells) && move.cells.length > 0 && typeof move.cells[0] === 'object'
-            ? cellsToStrings(move.cells as Cell[])
-            : move.cells as string[];
-
-          const validation = this.validateWordSelection(cellStrings);
-          if (validation.isValid && validation.word) {
-            this.updateGameState({
-              ...this.gameState,
-              foundWords: new Set([...this.gameState.foundWords, validation.word]),
-              selectedCells: [...this.gameState.selectedCells, ...cellStrings],
-              currentSelection: [],
-              score: this.gameState.score + validation.word.length * 10,
-              moves: this.gameState.moves + 1
-            });
-
-            // Check for completion
-            const winCondition = this.checkWinCondition();
-            if (winCondition.isGameComplete) {
-              this.updateGameState({
-                ...this.gameState,
-                status: 'completed',
-                isComplete: true,
-                endTime: Date.now()
-              });
-              this.stopTimer();
-            }
-            this.notifyListeners();
-          }
+          newState.foundWords = new Set([...newState.foundWords, move.word]);
+          newState.selectedCells = [...newState.selectedCells, ...move.cells];
+          newState.currentSelection = [];
+          newState.moves += 1;
+          newState.score = this.calculateScore();
         }
         break;
 
       case 'HINT':
-        const unfoundWords = this.gameState.words.filter(word => !this.gameState.foundWords.has(word));
-        
-        if (unfoundWords.length > 0 && this.placedWords.length > 0) {
-          const randomWord = unfoundWords[Math.floor(Math.random() * unfoundWords.length)];
-          const placedWord = this.placedWords.find(pw => pw.word === randomWord);
-          
-          if (placedWord && placedWord.cells) {
-            const hintCells = cellsToStrings(placedWord.cells.slice(0, Math.ceil(placedWord.cells.length / 2)));
-            
-            this.updateGameState({
-              ...this.gameState,
-              hintCells,
-              hintsUsed: this.gameState.hintsUsed + 1
-            });
-            
-            console.log('Hint generated for word:', randomWord, 'cells:', hintCells);
-          }
-        }
-        this.notifyListeners();
+        const hintCells = this.generateHint();
+        newState.hintCells = hintCells;
+        newState.hintsUsed += 1;
         break;
     }
-  }
 
-  clearHints(): void {
-    this.updateGameState({
-      ...this.gameState,
-      hintCells: []
-    });
-    this.notifyListeners();
-  }
+    this.updateState(newState);
 
-  validateWordSelection(cells: string[]): { isValid: boolean; word?: string } {
-    if (!this.placedWords || this.placedWords.length === 0) {
-      console.warn('No placed words available for validation');
-      return { isValid: false };
+    // Check win condition
+    const winResult = this.checkWinCondition();
+    if (winResult.isWin && !this.state.isComplete) {
+      this.handleGameComplete();
     }
 
-    for (const placedWord of this.placedWords) {
-      if (placedWord.cells) {
-        const placedCells = cellsToStrings(placedWord.cells);
-        
-        if (this.arraysEqual(cells.sort(), placedCells.sort()) || 
-            this.arraysEqual(cells.sort(), placedCells.reverse().sort())) {
-          return { isValid: true, word: placedWord.word };
-        }
-      }
-    }
-    
-    return { isValid: false };
-  }
-
-  private arraysEqual(a: string[], b: string[]): boolean {
-    return a.length === b.length && a.every((val, i) => val === b[i]);
-  }
-
-  private generateGrid(words: string[], size: number): { grid: string[][]; placedWords: PlacedWord[] } {
-    const grid: string[][] = Array(size).fill(null).map(() => Array(size).fill(''));
-    const placedWords: PlacedWord[] = [];
-    
-    // Simple word placement algorithm
-    for (const word of words) {
-      let placed = false;
-      let attempts = 0;
-      
-      while (!placed && attempts < 100) {
-        const direction = Math.random() < 0.5 ? 'horizontal' : 'vertical';
-        const row = Math.floor(Math.random() * size);
-        const col = Math.floor(Math.random() * size);
-        
-        if (this.canPlaceWord(grid, word, row, col, direction, size)) {
-          const cells = this.placeWord(grid, word, row, col, direction);
-          const startRow = row;
-          const startCol = col;
-          const endRow = direction === 'vertical' ? row + word.length - 1 : row;
-          const endCol = direction === 'horizontal' ? col + word.length - 1 : col;
-          
-          placedWords.push({ 
-            word, 
-            cells, 
-            direction: direction as 'horizontal' | 'vertical',
-            startRow,
-            startCol,
-            endRow,
-            endCol
-          });
-          placed = true;
-        }
-        attempts++;
-      }
-    }
-    
-    // Fill empty cells with random letters
-    for (let i = 0; i < size; i++) {
-      for (let j = 0; j < size; j++) {
-        if (grid[i][j] === '') {
-          grid[i][j] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
-        }
-      }
-    }
-    
-    return { grid, placedWords };
-  }
-
-  private canPlaceWord(grid: string[][], word: string, row: number, col: number, direction: string, size: number): boolean {
-    if (direction === 'horizontal') {
-      if (col + word.length > size) return false;
-      for (let i = 0; i < word.length; i++) {
-        if (grid[row][col + i] !== '' && grid[row][col + i] !== word[i]) {
-          return false;
-        }
-      }
-    } else {
-      if (row + word.length > size) return false;
-      for (let i = 0; i < word.length; i++) {
-        if (grid[row + i][col] !== '' && grid[row + i][col] !== word[i]) {
-          return false;
-        }
-      }
-    }
+    this.emitEvent('moveMade', { move, state: this.state });
     return true;
   }
 
-  private placeWord(grid: string[][], word: string, row: number, col: number, direction: string): Cell[] {
-    const cells: Cell[] = [];
-    
-    for (let i = 0; i < word.length; i++) {
-      if (direction === 'horizontal') {
-        grid[row][col + i] = word[i];
-        cells.push({ row, col: col + i });
-      } else {
-        grid[row + i][col] = word[i];
-        cells.push({ row: row + i, col });
-      }
-    }
-    
-    return cells;
+  private handleGameComplete(): void {
+    this.stopTimer();
+    this.updateState({
+      ...this.state,
+      status: 'completed',
+      isComplete: true,
+      endTime: Date.now()
+    });
+    this.emitEvent('gameCompleted', this.state);
   }
 
-  restoreGameState(savedState: any): void {
-    const restoredState: WordSearchState = {
-      ...this.gameState,
-      ...savedState,
-      foundWords: new Set(savedState.foundWords || [])
-    };
-    
-    if (savedState.placedWords) {
-      this.placedWords = savedState.placedWords;
+  validateWordSelection(cellIds: string[]): { isValid: boolean; word?: string } {
+    if (cellIds.length < 2) {
+      return { isValid: false };
     }
-    
-    this.updateGameState(restoredState);
-    
-    // Restart timer if game was playing
-    if (restoredState.status === 'playing') {
-      this.startTimer();
-    }
-    
-    this.notifyListeners();
-  }
 
-  getGameStateForSave(): any {
+    const cells = stringsToCells(cellIds);
+    
+    // Check if selection forms a valid line
+    if (!this.isValidLine(cells)) {
+      return { isValid: false };
+    }
+
+    // Get the word from the selection
+    const word = this.getWordFromCells(cells);
+    
+    // Check if this word exists in our placed words and hasn't been found yet
+    const isValidWord = this.placedWords.some(placedWord => 
+      placedWord.word.toLowerCase() === word.toLowerCase() &&
+      !this.state.foundWords.has(placedWord.word)
+    );
+
     return {
-      ...this.gameState,
-      foundWords: Array.from(this.gameState.foundWords),
+      isValid: isValidWord,
+      word: isValidWord ? this.placedWords.find(pw => pw.word.toLowerCase() === word.toLowerCase())?.word : undefined
+    };
+  }
+
+  clearHints(): void {
+    this.updateState({
+      ...this.state,
+      hintCells: []
+    });
+  }
+
+  getGameStateForSave() {
+    return {
+      ...this.state,
+      foundWords: Array.from(this.state.foundWords),
       placedWords: this.placedWords
     };
   }
 
-  // Clean up timer when engine is destroyed
-  destroy(): void {
-    this.stopTimer();
+  restoreGameState(savedState: any): void {
+    if (savedState.placedWords) {
+      this.placedWords = savedState.placedWords;
+    }
+    
+    this.updateState({
+      ...savedState,
+      foundWords: new Set(savedState.foundWords || [])
+    });
+    
+    if (this.state.status === 'playing') {
+      this.startTimer();
+    }
+  }
+
+  subscribe(callback: (state: WordSearchState) => void) {
+    return this.addEventListener('stateChanged', callback);
+  }
+
+  // Private helper methods
+  private generateWords(): string[] {
+    return ['JAVASCRIPT', 'REACT', 'TYPESCRIPT', 'HTML', 'CSS', 'NODE', 'EXPRESS', 'MONGODB'];
+  }
+
+  private generateGrid(words: string[]): { grid: string[][]; placedWords: PlacedWord[] } {
+    const size = 15;
+    const grid: string[][] = Array(size).fill(null).map(() => Array(size).fill(''));
+    const placedWords: PlacedWord[] = [];
+
+    // Simple word placement logic
+    words.forEach((word, index) => {
+      const row = Math.floor(index / 3) * 3 + 2;
+      const col = (index % 3) * 4 + 1;
+      
+      for (let i = 0; i < word.length && col + i < size; i++) {
+        grid[row][col + i] = word[i];
+      }
+      
+      placedWords.push({
+        word,
+        startRow: row,
+        startCol: col,
+        endRow: row,
+        endCol: col + word.length - 1,
+        direction: 'horizontal',
+        cells: Array.from({ length: word.length }, (_, i) => ({
+          row,
+          col: col + i
+        }))
+      });
+    });
+
+    // Fill empty cells with random letters
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        if (!grid[i][j]) {
+          grid[i][j] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+        }
+      }
+    }
+
+    return { grid, placedWords };
+  }
+
+  private isValidLine(cells: Cell[]): boolean {
+    if (cells.length < 2) return false;
+    
+    const first = cells[0];
+    const last = cells[cells.length - 1];
+    
+    // Check if all cells form a straight line
+    const deltaRow = last.row - first.row;
+    const deltaCol = last.col - first.col;
+    
+    // Must be horizontal, vertical, or diagonal
+    if (deltaRow !== 0 && deltaCol !== 0 && Math.abs(deltaRow) !== Math.abs(deltaCol)) {
+      return false;
+    }
+    
+    return true;
+  }
+
+  private getWordFromCells(cells: Cell[]): string {
+    return cells
+      .map(cell => this.state.grid[cell.row]?.[cell.col] || '')
+      .join('');
+  }
+
+  private generateHint(): string[] {
+    const unFoundWords = this.placedWords.filter(
+      word => !this.state.foundWords.has(word.word)
+    );
+    
+    if (unFoundWords.length === 0) {
+      return [];
+    }
+    
+    const randomWord = unFoundWords[Math.floor(Math.random() * unFoundWords.length)];
+    const cells = randomWord.cells || [];
+    
+    // Show first few cells as hint
+    const hintCells = cells.slice(0, Math.min(3, cells.length));
+    return hintCells.map(cell => cellToString(cell));
+  }
+
+  private startTimer(): void {
+    if (this.gameTimer) {
+      clearInterval(this.gameTimer);
+    }
+    
+    this.gameTimer = window.setInterval(() => {
+      if (this.state.status === 'playing') {
+        this.updateState({
+          ...this.state,
+          timeElapsed: this.state.timeElapsed + 1
+        });
+      }
+    }, 1000);
+  }
+
+  private stopTimer(): void {
+    if (this.gameTimer) {
+      clearInterval(this.gameTimer);
+      this.gameTimer = null;
+    }
   }
 }
