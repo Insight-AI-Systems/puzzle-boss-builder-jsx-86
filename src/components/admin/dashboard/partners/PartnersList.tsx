@@ -28,7 +28,7 @@ import {
   FilterIcon 
 } from "lucide-react";
 import { usePartnerManagement, Partner } from '@/hooks/admin/usePartnerManagement';
-import AddPartnerDialog from './AddPartnerDialog';
+import { AddPartnerDialog } from './AddPartnerDialog';
 
 interface PartnersListProps {
   onSelectPartner: (partnerId: string) => void;
@@ -178,7 +178,11 @@ const PartnersList: React.FC<PartnersListProps> = ({ onSelectPartner }) => {
 
       <AddPartnerDialog 
         open={showAddDialog} 
-        onOpenChange={setShowAddDialog} 
+        setOpen={setShowAddDialog}
+        onAddPartner={(partnerData) => {
+          console.log('Adding partner:', partnerData);
+          setShowAddDialog(false);
+        }}
       />
     </div>
   );
