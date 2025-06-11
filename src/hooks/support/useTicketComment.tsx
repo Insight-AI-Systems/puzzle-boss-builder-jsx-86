@@ -2,11 +2,11 @@
 import { useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useClerkAuth } from "@/hooks/useClerkAuth";
 
 export const useTicketComment = (onCommentAdded: () => void) => {
   const { toast } = useToast();
-  const { user, hasRole } = useAuth();
+  const { user, hasRole } = useClerkAuth();
   const isAdmin = hasRole('super_admin') || hasRole('admin');
 
   const addComment = useCallback(async (ticketId: string, content: string): Promise<boolean> => {

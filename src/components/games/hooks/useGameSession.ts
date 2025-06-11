@@ -1,10 +1,9 @@
-
 import { useState, useCallback, useRef } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { GameSession, GameState, GameConfig } from '../types/GameTypes';
 
 export function useGameSession(config: GameConfig) {
-  const { user } = useAuth();
+  const { user } = useClerkAuth();
   const [session, setSession] = useState<GameSession | null>(null);
   const sessionRef = useRef<string | null>(null);
 

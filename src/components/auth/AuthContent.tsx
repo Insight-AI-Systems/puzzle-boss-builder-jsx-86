@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { SignInView } from './views/SignInView';
 import { ResetPasswordRequestView } from './views/ResetPasswordRequestView';
 import { ResetPasswordConfirmView } from './views/ResetPasswordConfirmView';
 import { ResetPasswordSuccessView } from './views/ResetPasswordSuccessView';
 import { VerificationPendingView } from './views/VerificationPendingView';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { AuthView } from '@/types/auth';
 
 interface AuthContentProps {
@@ -19,7 +18,7 @@ export const AuthContent: React.FC<AuthContentProps> = ({
   setCurrentView,
   lastEnteredEmail
 }) => {
-  const auth = useAuth();
+  const auth = useClerkAuth();
   
   // Local state for form handling
   const [email, setEmail] = React.useState('');

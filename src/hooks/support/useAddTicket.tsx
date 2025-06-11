@@ -1,12 +1,12 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { useToast } from '@/hooks/use-toast';
 
 export function useAddTicket() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user } = useAuth();
+  const { user } = useClerkAuth();
   const { toast } = useToast();
 
   const submitTicket = async (title: string, description: string) => {

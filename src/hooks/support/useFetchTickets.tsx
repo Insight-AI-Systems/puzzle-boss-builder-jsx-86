@@ -2,7 +2,7 @@
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { SupportTicket, TicketFilters } from "@/types/supportTicketTypes";
-import { useAuth } from "@/contexts/AuthContext";
+import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { useInternalIssues } from "./useInternalIssues";
 import { useUserTickets } from "./useUserTickets";
 
@@ -11,7 +11,7 @@ export const useFetchTickets = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const { toast } = useToast();
-  const { user, hasRole } = useAuth();
+  const { user, hasRole } = useClerkAuth();
   const isAdmin = hasRole('super_admin') || hasRole('admin');
   const { fetchInternalIssues } = useInternalIssues();
   const { fetchUserTickets } = useUserTickets();

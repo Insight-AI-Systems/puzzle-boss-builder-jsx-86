@@ -2,11 +2,11 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { useQueryClient } from '@tanstack/react-query';
 
 export function useAvatarUpload() {
-  const { user } = useAuth();
+  const { user } = useClerkAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isUploading, setIsUploading] = useState(false);
