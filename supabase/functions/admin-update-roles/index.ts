@@ -4,8 +4,18 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-user-email',
 };
+
+// Admin emails - centralized for consistency and security
+const ADMIN_EMAILS = [
+  'alan@insight-ai-systems.com',
+  'alantbooth@xtra.co.nz',
+  'rob.small.1234@gmail.com',
+  'benbooth@xtra.co.nz',
+  'tamara@insight-ai-systems.com',
+  '0sunnysideup0@gmail.com'
+];
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -22,47 +32,30 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
-    // Extract auth token from request
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      console.error('No authorization header provided');
+    // Get user email from header (sent by Clerk frontend)
+    const userEmail = req.headers.get("x-user-email");
+    if (!userEmail) {
+      console.error('No user email provided in headers');
       return new Response(
-        JSON.stringify({ error: "No authorization header provided" }),
+        JSON.stringify({ error: "No user email provided" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get JWT token and verify user
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    console.log('User email from header:', userEmail);
+
+    // Check if user is admin by email
+    const isAdminUser = ADMIN_EMAILS.includes(userEmail);
     
-    if (userError || !user) {
-      console.error("Auth error:", userError);
+    if (!isAdminUser) {
+      console.error("Access denied - not an admin user:", userEmail);
       return new Response(
-        JSON.stringify({ error: "Unauthorized - invalid token" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log('User authenticated:', user.email);
-
-    // Check if user is super_admin or protected admin
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    const isProtectedAdmin = user.email === 'alantbooth@xtra.co.nz';
-    const isSuperAdmin = profile?.role === 'super_admin';
-    
-    if (!isProtectedAdmin && !isSuperAdmin) {
-      console.error("Access denied - not a super admin");
-      return new Response(
-        JSON.stringify({ error: "Unauthorized - super admin access required" }),
+        JSON.stringify({ error: "Unauthorized - admin access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log('Admin access granted for email:', userEmail);
 
     // Parse request body
     const { userIds, newRole } = await req.json();
@@ -79,7 +72,10 @@ serve(async (req) => {
     // Update roles for all specified users
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .update({ role: newRole })
+      .update({ 
+        role: newRole,
+        updated_at: new Date().toISOString()
+      })
       .in("id", userIds)
       .select();
 

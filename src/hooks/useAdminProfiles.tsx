@@ -130,14 +130,24 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
   // Mutation for updating user roles
   const updateUserRole = useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: UserRole }) => {
+      if (!user?.primaryEmailAddress?.emailAddress) {
+        throw new Error('User email not available');
+      }
+
+      console.log('Updating user role:', { userId, newRole, userEmail: user.primaryEmailAddress.emailAddress });
+
       const { data, error } = await supabase.functions.invoke('admin-update-roles', {
         body: { userIds: [userId], newRole },
         headers: {
-          'x-user-email': user?.primaryEmailAddress?.emailAddress || '',
+          'x-user-email': user.primaryEmailAddress.emailAddress,
         },
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Role update error:', error);
+        throw new Error(error.message || 'Failed to update user role');
+      }
+      
       return data;
     },
     onSuccess: () => {
@@ -148,6 +158,7 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
       });
     },
     onError: (error: any) => {
+      console.error('Role update mutation error:', error);
       toast({
         title: "Error updating role",
         description: error.message || "Failed to update user role",
@@ -159,14 +170,24 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
   // Mutation for bulk role updates
   const bulkUpdateRoles = useMutation({
     mutationFn: async ({ userIds, newRole }: { userIds: string[]; newRole: UserRole }) => {
+      if (!user?.primaryEmailAddress?.emailAddress) {
+        throw new Error('User email not available');
+      }
+
+      console.log('Bulk updating user roles:', { userIds, newRole, userEmail: user.primaryEmailAddress.emailAddress });
+
       const { data, error } = await supabase.functions.invoke('admin-update-roles', {
         body: { userIds, newRole },
         headers: {
-          'x-user-email': user?.primaryEmailAddress?.emailAddress || '',
+          'x-user-email': user.primaryEmailAddress.emailAddress,
         },
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Bulk role update error:', error);
+        throw new Error(error.message || 'Failed to update user roles');
+      }
+      
       return data;
     },
     onSuccess: () => {
@@ -177,6 +198,7 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
       });
     },
     onError: (error: any) => {
+      console.error('Bulk role update mutation error:', error);
       toast({
         title: "Error updating roles",
         description: error.message || "Failed to update user roles",
@@ -188,10 +210,14 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
   // Mutation for sending bulk emails
   const sendBulkEmail = useMutation({
     mutationFn: async ({ userIds, subject, body }: { userIds: string[]; subject: string; body: string }) => {
+      if (!user?.primaryEmailAddress?.emailAddress) {
+        throw new Error('User email not available');
+      }
+
       const { data, error } = await supabase.functions.invoke('admin-email-users', {
         body: { userIds, subject, body },
         headers: {
-          'x-user-email': user?.primaryEmailAddress?.emailAddress || '',
+          'x-user-email': user.primaryEmailAddress.emailAddress,
         },
       });
       
