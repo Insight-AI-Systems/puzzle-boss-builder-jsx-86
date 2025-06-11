@@ -1,386 +1,244 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { WordSearchGrid } from './WordSearchGrid';
-import { WordsList } from './WordsList';
-import { WordSearchControls } from './WordSearchControls';
-import { WordSearchCongratulations } from './WordSearchCongratulations';
-import { WordSearchInstructions } from './WordSearchInstructions';
-import { ResponsiveGameContainer } from '../ResponsiveGameContainer';
-import { useGamePersistence } from '../hooks/useGamePersistence';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Clock, Trophy, RotateCw } from 'lucide-react';
+import { WordSearchEngine, WordSearchState } from '@/business/engines/word-search';
 import { useToast } from '@/hooks/use-toast';
-import { WordSearchEngine } from '@/business/engines/word-search/WordSearchEngine';
-import type { WordSearchState } from '@/business/engines/word-search/WordSearchEngine';
-import { stringsToCells, cellsToStrings, cellToString } from '@/business/engines/word-search/utils';
 
-interface Cell {
-  row: number;
-  col: number;
-}
+const SAMPLE_WORDS = ['PUZZLE', 'GAME', 'WORD', 'SEARCH', 'FUN', 'PLAY', 'SOLVE', 'BRAIN'];
 
-export function WordSearchGame() {
-  const { toast } = useToast();
-  const { saveGameState, loadGameState } = useGamePersistence('word-search', 'word-search');
-  
-  const [engine, setEngine] = useState<WordSearchEngine | null>(null);
+export const WordSearchGame: React.FC = () => {
+  const [engine] = useState(() => new WordSearchEngine(12));
   const [gameState, setGameState] = useState<WordSearchState | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
+  const { toast } = useToast();
 
-  // Initialize the game engine
-  useEffect(() => {
-    const initializeEngine = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const initialState: WordSearchState = {
-          id: 'word-search-game',
-          status: 'idle',
-          score: 0,
-          moves: 0,
-          startTime: null,
-          endTime: null,
-          isComplete: false,
-          error: null,
-          grid: [],
-          words: [],
-          foundWords: new Set<string>(),
-          selectedCells: [],
-          currentSelection: [],
-          hintCells: [],
-          difficulty: 'rookie',
-          timeElapsed: 0,
-          hintsUsed: 0
-        };
-
-        const gameConfig = {
-          gameType: 'word-search' as const,
-          hasTimer: true,
-          hasScore: true,
-          hasMoves: true,
-          difficulty: 'easy' as const,
-          enableHints: true
-        };
-
-        const newEngine = new WordSearchEngine(initialState, gameConfig);
-        
-        // Try to load saved state first
-        const savedState = await loadGameState();
-        if (savedState) {
-          console.log('Loading saved game state:', savedState);
-          newEngine.restoreGameState(savedState);
-        } else {
-          await newEngine.initialize();
-        }
-        
-        setEngine(newEngine);
-        setGameState(newEngine.getState());
-        
-        // Subscribe to engine state changes
-        const unsubscribe = newEngine.subscribe((newState) => {
-          console.log('Game state updated:', newState);
-          setGameState(newState);
-          // Auto-save when state changes
-          saveGameState(newEngine.getGameStateForSave());
-        });
-        
-        // Cleanup subscription on unmount
-        return () => {
-          unsubscribe();
-        };
-        
-      } catch (error) {
-        console.error('Failed to initialize Word Search engine:', error);
-        setError('Failed to initialize the word search game.');
-        toast({
-          title: "Game Error",
-          description: "Failed to initialize the word search game.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    const cleanup = initializeEngine();
-    return () => {
-      cleanup?.then(cleanupFn => cleanupFn?.());
-    };
-  }, []);
-
-  // Safe cell conversion with error handling
-  const safeStringsToCells = useCallback((cellIds: string[]): Cell[] => {
-    try {
-      return stringsToCells(cellIds.filter(id => typeof id === 'string' && id.includes('-')));
-    } catch (error) {
-      console.error('Error converting cell strings:', error, cellIds);
-      return [];
-    }
-  }, []);
-
-  const handleSelectionStart = useCallback((cell: Cell) => {
-    if (!engine || gameState?.status !== 'playing') return;
+  const handleGameStateChange = useCallback((state: WordSearchState) => {
+    setGameState(state);
     
-    try {
-      const cellId = cellToString(cell);
-      engine.makeMove({
-        type: 'SELECT_CELLS',
-        cells: [cellId]
-      });
-    } catch (error) {
-      console.error('Error starting selection:', error);
-    }
-  }, [engine, gameState?.status]);
-
-  const handleSelectionMove = useCallback((cell: Cell) => {
-    if (!engine || gameState?.status !== 'playing') return;
-    
-    try {
-      const cellId = cellToString(cell);
-      const currentSelection = gameState?.currentSelection || [];
-      
-      if (!currentSelection.includes(cellId)) {
-        const newSelection = [...currentSelection, cellId];
-        engine.makeMove({
-          type: 'SELECT_CELLS',
-          cells: newSelection
-        });
-      }
-    } catch (error) {
-      console.error('Error updating selection:', error);
-    }
-  }, [engine, gameState?.status, gameState?.currentSelection]);
-
-  const handleSelectionEnd = useCallback(() => {
-    if (!engine || !gameState || !gameState.currentSelection.length) {
-      return;
-    }
-
-    try {
-      // Use engine to validate the selection
-      const validation = engine.validateWordSelection(gameState.currentSelection);
-      
-      if (validation.isValid && validation.word) {
-        // Word found! Use engine to handle the move
-        engine.makeMove({
-          type: 'WORD_FOUND',
-          word: validation.word,
-          cells: gameState.currentSelection
-        });
-        
-        toast({
-          title: "Word Found!",
-          description: `You found "${validation.word.toUpperCase()}"`,
-          duration: 2000,
-        });
-      } else {
-        // Clear selection if word not found
-        engine.makeMove({
-          type: 'SELECT_CELLS',
-          cells: []
-        });
-      }
-    } catch (error) {
-      console.error('Error ending selection:', error);
-      // Clear selection on error
-      if (engine) {
-        engine.makeMove({
-          type: 'SELECT_CELLS',
-          cells: []
-        });
-      }
-    }
-  }, [engine, gameState, toast]);
-
-  const handleStart = useCallback(() => {
-    if (engine) {
-      engine.start();
-    }
-  }, [engine]);
-
-  const handlePause = useCallback(() => {
-    if (engine) {
-      engine.pause();
-    }
-  }, [engine]);
-
-  const handleResume = useCallback(() => {
-    if (engine) {
-      engine.resume();
-    }
-  }, [engine]);
-
-  const handleReset = useCallback(() => {
-    if (engine) {
-      engine.reset();
-    }
-  }, [engine]);
-
-  const handleHint = useCallback(() => {
-    if (engine && gameState) {
-      console.log('Hint requested from component');
-      engine.makeMove({ type: 'HINT' });
-      
-      // Clear hint after 3 seconds using the engine's method
-      setTimeout(() => {
-        if (engine) {
-          engine.clearHints();
-        }
-      }, 3000);
-    }
-  }, [engine, gameState]);
-
-  const handleSave = useCallback(async () => {
-    if (engine) {
-      await saveGameState(engine.getGameStateForSave());
+    if (state.gameCompleted && gameStarted) {
       toast({
-        title: "Game Saved",
-        description: "Your progress has been saved.",
+        title: "Congratulations!",
+        description: `You found all words! Score: ${state.score}`,
       });
     }
-  }, [engine, saveGameState, toast]);
+  }, [gameStarted, toast]);
 
-  if (isLoading) {
+  useEffect(() => {
+    const unsubscribe = engine.subscribe(handleGameStateChange);
+    return unsubscribe;
+  }, [engine, handleGameStateChange]);
+
+  const startNewGame = () => {
+    try {
+      engine.initializeGame(SAMPLE_WORDS);
+      setSelectedCells(new Set());
+      setGameStarted(true);
+    } catch (error) {
+      console.error('Error starting game:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start game. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCellClick = (row: number, col: number) => {
+    if (!gameState || gameState.gameCompleted) return;
+
+    const cellId = `${row}-${col}`;
+    
+    if (!isSelecting) {
+      // Start new selection
+      setSelectedCells(new Set([cellId]));
+      setIsSelecting(true);
+      engine.makeMove({ type: 'select_cells', cellIds: [cellId] });
+    } else {
+      // Continue selection
+      const newSelection = new Set(selectedCells);
+      if (newSelection.has(cellId)) {
+        newSelection.delete(cellId);
+      } else {
+        newSelection.add(cellId);
+      }
+      setSelectedCells(newSelection);
+      engine.makeMove({ type: 'select_cells', cellIds: Array.from(newSelection) });
+    }
+  };
+
+  const handleSubmitSelection = () => {
+    if (!gameState || selectedCells.size === 0) return;
+
+    const cellIds = Array.from(selectedCells);
+    const result = engine.validateWordSelection(cellIds);
+    
+    if (result.isValid && result.word) {
+      engine.makeMove({ type: 'submit_word', cellIds });
+      toast({
+        title: "Word Found!",
+        description: `You found: ${result.word}`,
+      });
+    } else {
+      toast({
+        title: "Not a word",
+        description: "Try selecting a different combination of letters.",
+        variant: "destructive"
+      });
+    }
+    
+    setSelectedCells(new Set());
+    setIsSelecting(false);
+    engine.makeMove({ type: 'clear_selection' });
+  };
+
+  const clearSelection = () => {
+    setSelectedCells(new Set());
+    setIsSelecting(false);
+    engine.makeMove({ type: 'clear_selection' });
+  };
+
+  const getCellClasses = (row: number, col: number) => {
+    const cellId = `${row}-${col}`;
+    const isSelected = selectedCells.has(cellId);
+    const isFoundWord = gameState?.foundWords.some(word => {
+      // Check if this cell is part of any found word
+      return gameState.placedWords.some(placedWord => 
+        placedWord.word === word && 
+        placedWord.cells?.some(cell => cell.row === row && cell.col === col)
+      );
+    });
+
+    return `
+      w-8 h-8 border border-gray-300 flex items-center justify-center cursor-pointer text-sm font-bold
+      transition-colors duration-200
+      ${isSelected ? 'bg-blue-200 border-blue-400' : ''}
+      ${isFoundWord ? 'bg-green-200 border-green-400' : ''}
+      ${!isSelected && !isFoundWord ? 'hover:bg-gray-100' : ''}
+    `.trim();
+  };
+
+  if (!gameStarted || !gameState) {
     return (
-      <ResponsiveGameContainer>
-        <Card className="w-full">
-          <CardContent className="flex items-center justify-center p-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-              <p>Loading Word Search...</p>
-            </div>
+      <div className="max-w-4xl mx-auto p-4">
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Word Search Game</CardTitle>
+            <p className="text-muted-foreground">Find all the hidden words in the grid!</p>
+          </CardHeader>
+          <CardContent className="text-center">
+            <Button onClick={startNewGame} size="lg">
+              Start New Game
+            </Button>
           </CardContent>
         </Card>
-      </ResponsiveGameContainer>
+      </div>
     );
   }
-
-  if (error || !gameState || !engine) {
-    return (
-      <ResponsiveGameContainer>
-        <Card className="w-full">
-          <CardContent className="p-8">
-            <p className="text-center text-red-600">
-              {error || 'Failed to load the game. Please refresh the page.'}
-            </p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="mt-4 mx-auto block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Reload Game
-            </button>
-          </CardContent>
-        </Card>
-      </ResponsiveGameContainer>
-    );
-  }
-
-  // Convert engine state to component props with safe conversions
-  const selectedCells = safeStringsToCells(gameState.selectedCells);
-  const currentSelectionForGrid = safeStringsToCells(gameState.currentSelection);
-  const hintCells = safeStringsToCells(gameState.hintCells || []);
 
   return (
-    <ResponsiveGameContainer>
-      <div className="w-full max-w-6xl mx-auto space-y-6">
-        {/* Game Header */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-center text-2xl font-bold">
-              Word Search Arena
-            </CardTitle>
-          </CardHeader>
-        </Card>
-
-        {/* Game Status and Instructions */}
-        {gameState.status === 'idle' && (
-          <WordSearchInstructions 
-            difficulty={gameState.difficulty === 'expert' ? 'pro' : gameState.difficulty as 'rookie' | 'master' | 'pro'}
-            category="General"
-            totalWords={gameState.words.length}
-          />
-        )}
-
-        {/* Game Completed */}
-        {gameState.isComplete && (
-          <WordSearchCongratulations 
-            isOpen={true}
-            onClose={handleReset}
-            score={gameState.score}
-            timeElapsed={gameState.timeElapsed}
-            wordsFound={gameState.foundWords.size}
-            totalWords={gameState.words.length}
-            incorrectSelections={0}
-            onPlayAgain={handleReset}
-            onViewLeaderboard={() => {}}
-          />
-        )}
-
-        {/* Main Game Area */}
-        {gameState.status !== 'idle' && !gameState.isComplete && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Game Grid */}
-            <div className="lg:col-span-2">
-              <WordSearchGrid
-                grid={gameState.grid}
-                selectedCells={selectedCells}
-                currentSelection={currentSelectionForGrid}
-                hintCells={hintCells}
-                onSelectionStart={handleSelectionStart}
-                onSelectionMove={handleSelectionMove}
-                onSelectionEnd={handleSelectionEnd}
-                isDisabled={gameState.status === 'paused'}
-              />
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Game Controls */}
-              <WordSearchControls
-                timeElapsed={gameState.timeElapsed}
-                isPaused={gameState.status === 'paused'}
-                onPause={handlePause}
-                onResume={handleResume}
-                onReset={handleReset}
-                onHint={handleHint}
-                hintsUsed={gameState.hintsUsed}
-                isGameComplete={gameState.isComplete}
-              />
-
-              {/* Words List */}
-              <WordsList
-                words={gameState.words}
-                foundWords={gameState.foundWords}
-              />
-
-              {/* Save Game Button */}
-              <Card>
-                <CardContent className="p-4">
-                  <button
-                    onClick={handleSave}
-                    className="w-full bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-white px-4 py-2 rounded-lg font-medium"
-                  >
-                    Save Game
-                  </button>
-                </CardContent>
-              </Card>
+    <div className="max-w-6xl mx-auto p-4 space-y-6">
+      {/* Game Header */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-xl">Word Search</CardTitle>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-yellow-500" />
+                <span className="font-semibold">Score: {gameState.score}</span>
+              </div>
+              <Button onClick={startNewGame} variant="outline" size="sm">
+                <RotateCw className="h-4 w-4 mr-2" />
+                New Game
+              </Button>
             </div>
           </div>
-        )}
+        </CardHeader>
+      </Card>
 
-        {/* Start Game Button for idle state */}
-        {gameState.status === 'idle' && (
-          <div className="text-center">
-            <button
-              onClick={handleStart}
-              className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-white px-8 py-3 rounded-lg text-lg font-semibold"
-            >
-              Start Game
-            </button>
-          </div>
-        )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Game Grid */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardContent className="p-6">
+              <div className="grid gap-1 justify-center" style={{ 
+                gridTemplateColumns: `repeat(${gameState.grid.length}, 1fr)`,
+                maxWidth: 'fit-content',
+                margin: '0 auto'
+              }}>
+                {gameState.grid.map((row, rowIndex) =>
+                  row.map((letter, colIndex) => (
+                    <div
+                      key={`${rowIndex}-${colIndex}`}
+                      className={getCellClasses(rowIndex, colIndex)}
+                      onClick={() => handleCellClick(rowIndex, colIndex)}
+                    >
+                      {letter}
+                    </div>
+                  ))
+                )}
+              </div>
+              
+              {/* Selection Controls */}
+              {selectedCells.size > 0 && (
+                <div className="mt-4 flex justify-center gap-2">
+                  <Button onClick={handleSubmitSelection} variant="default">
+                    Submit Word ({selectedCells.size} letters)
+                  </Button>
+                  <Button onClick={clearSelection} variant="outline">
+                    Clear Selection
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Words List */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Words to Find</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {gameState.foundWords.length} of {gameState.targetWords.length} found
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {gameState.targetWords.map(word => (
+                  <div key={word} className="flex items-center justify-between">
+                    <span className={`font-medium ${
+                      gameState.foundWords.includes(word) 
+                        ? 'line-through text-muted-foreground' 
+                        : ''
+                    }`}>
+                      {word}
+                    </span>
+                    {gameState.foundWords.includes(word) && (
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                        Found
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+              
+              {gameState.gameCompleted && (
+                <div className="mt-4 p-4 bg-green-50 rounded-lg text-center">
+                  <h3 className="font-bold text-green-800 mb-2">Congratulations!</h3>
+                  <p className="text-green-700">You found all the words!</p>
+                  <p className="text-sm text-green-600 mt-1">Final Score: {gameState.score}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </ResponsiveGameContainer>
+    </div>
   );
-}
+};
