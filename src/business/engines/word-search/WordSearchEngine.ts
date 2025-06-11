@@ -65,8 +65,8 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       this.placedWords = savedState.placedWords;
     }
     
-    // Use the protected setState method to update state
-    this.setState(restoredState);
+    // Use the protected updateGameState method to update state
+    this.updateGameState(restoredState);
     this.notifyListeners();
   }
 
@@ -85,7 +85,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     
     this.placedWords = placedWords;
     const currentState = this.getState();
-    this.setState({
+    this.updateGameState({
       ...currentState,
       grid,
       words,
@@ -98,7 +98,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
 
   start(): void {
     const currentState = this.getState();
-    this.setState({
+    this.updateGameState({
       ...currentState,
       status: 'playing',
       startTime: Date.now()
@@ -137,7 +137,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
             ? cellsToStrings(move.cells as Cell[])
             : move.cells as string[];
           
-          this.setState({
+          this.updateGameState({
             ...currentState,
             currentSelection: cellStrings,
             // Clear hint cells when user starts selecting to avoid confusion
@@ -154,7 +154,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
 
           const validation = this.validateWordSelection(cellStrings);
           if (validation.isValid && validation.word) {
-            this.setState({
+            this.updateGameState({
               ...currentState,
               foundWords: new Set([...currentState.foundWords, validation.word]),
               selectedCells: [...currentState.selectedCells, ...cellStrings],
@@ -173,7 +173,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
             // Check for completion
             const updatedState = this.getState();
             if (updatedState.foundWords.size === updatedState.words.length) {
-              this.setState({
+              this.updateGameState({
                 ...updatedState,
                 status: 'completed',
                 isComplete: true,
@@ -230,7 +230,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
           console.warn('No unfound words or no placed words available for hints');
         }
         
-        this.setState(newState);
+        this.updateGameState(newState);
         
         this.emitEvent({
           type: 'HINT_USED',
@@ -245,7 +245,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
   // Add a method to clear hints that can be called externally
   clearHints(): void {
     const currentState = this.getState();
-    this.setState({
+    this.updateGameState({
       ...currentState,
       hintCells: []
     });
@@ -313,7 +313,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
 
   pause(): void {
     const currentState = this.getState();
-    this.setState({
+    this.updateGameState({
       ...currentState,
       status: 'paused'
     });
@@ -326,7 +326,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
 
   resume(): void {
     const currentState = this.getState();
-    this.setState({
+    this.updateGameState({
       ...currentState,
       status: 'playing'
     });
@@ -339,7 +339,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
 
   reset(): void {
     const currentState = this.getState();
-    this.setState({
+    this.updateGameState({
       ...currentState,
       status: 'idle',
       score: 0,
