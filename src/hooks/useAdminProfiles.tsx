@@ -70,7 +70,8 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
           role: (user.role || 'player') as UserRole,
           country: user.country || null,
           categories_played: user.categories_played || [],
-          credits: 0,
+          credits: user.credits || 0,
+          tokens: user.tokens || 0, // Include tokens field
           achievements: [],
           referral_code: null,
           created_at: user.created_at || new Date().toISOString(),

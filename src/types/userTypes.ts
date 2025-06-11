@@ -36,6 +36,7 @@ export interface UserProfile {
   country: string | null;
   categories_played: string[];
   credits: number;
+  tokens: number; // Added tokens field
   achievements: string[];
   referral_code: string | null;
   gender?: Gender;
@@ -44,6 +45,19 @@ export interface UserProfile {
   created_at: string;
   updated_at: string;
   last_sign_in?: string | null;
+}
+
+// Token transaction interface
+export interface TokenTransaction {
+  id: string;
+  user_id: string;
+  amount: number;
+  transaction_type: string;
+  description: string | null;
+  admin_user_id: string | null;
+  puzzle_id: string | null;
+  created_at: string;
+  metadata: Record<string, any>;
 }
 
 // Define the interface for role definition
@@ -71,7 +85,8 @@ export const ROLE_DEFINITIONS: Record<UserRole, RoleDefinition> = {
       'manage_site_settings',
       'access_analytics',
       'manage_emails',
-      'manage_security'
+      'manage_security',
+      'manage_tokens'
     ],
     canBeAssignedBy: ['super_admin']
   },
@@ -85,7 +100,8 @@ export const ROLE_DEFINITIONS: Record<UserRole, RoleDefinition> = {
       'manage_categories',
       'manage_partners',
       'access_analytics',
-      'manage_emails'
+      'manage_emails',
+      'manage_tokens'
     ],
     canBeAssignedBy: ['super_admin']
   },

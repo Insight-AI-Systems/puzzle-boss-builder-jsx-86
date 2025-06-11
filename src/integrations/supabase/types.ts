@@ -1364,6 +1364,7 @@ export type Database = {
           tax_id: string | null
           terms_accepted: boolean | null
           terms_accepted_at: string | null
+          tokens: number
           two_factor_enabled: boolean | null
           updated_at: string | null
           username: string | null
@@ -1404,6 +1405,7 @@ export type Database = {
           tax_id?: string | null
           terms_accepted?: boolean | null
           terms_accepted_at?: string | null
+          tokens?: number
           two_factor_enabled?: boolean | null
           updated_at?: string | null
           username?: string | null
@@ -1444,6 +1446,7 @@ export type Database = {
           tax_id?: string | null
           terms_accepted?: boolean | null
           terms_accepted_at?: string | null
+          tokens?: number
           two_factor_enabled?: boolean | null
           updated_at?: string | null
           username?: string | null
@@ -2198,6 +2201,64 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      token_transactions: {
+        Row: {
+          admin_user_id: string | null
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          puzzle_id: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          admin_user_id?: string | null
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          puzzle_id?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          admin_user_id?: string | null
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          puzzle_id?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "token_transactions_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "token_transactions_puzzle_id_fkey"
+            columns: ["puzzle_id"]
+            isOneToOne: false
+            referencedRelation: "puzzles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "token_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transaction_receipts: {
         Row: {
@@ -3138,6 +3199,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      award_tokens: {
+        Args: {
+          target_user_id: string
+          tokens_to_add: number
+          admin_note?: string
+        }
+        Returns: undefined
+      }
       calculate_daily_metrics: {
         Args: { date_param: string }
         Returns: {
@@ -3319,6 +3388,15 @@ export type Database = {
           gender: string
           age_group: string
         }[]
+      }
+      spend_tokens: {
+        Args: {
+          spending_user_id: string
+          tokens_to_spend: number
+          target_puzzle_id?: string
+          spend_description?: string
+        }
+        Returns: boolean
       }
       terminate_other_sessions: {
         Args: { current_session_id: string }
