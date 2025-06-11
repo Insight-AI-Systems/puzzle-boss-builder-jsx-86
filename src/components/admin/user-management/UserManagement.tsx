@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,7 @@ import { EmailDialog } from './EmailDialog';
 import { BulkRoleDialog } from './BulkRoleDialog';
 import { MemberDetailView } from './MemberDetailView';
 import { MemberDetailErrorBoundary } from './MemberDetailErrorBoundary';
+import { UserLoginStatus } from './UserLoginStatus';
 
 export function UserManagement() {
   const { profile: currentUserProfile } = useUserProfile();
@@ -174,9 +174,6 @@ export function UserManagement() {
                     </th>
                     <th className="text-left p-4 font-medium">User</th>
                     <th className="text-left p-4 font-medium">Role</th>
-                    <th className="text-left p-4 font-medium">Credits</th>
-                    <th className="text-left p-4 font-medium">Tokens</th>
-                    <th className="text-left p-4 font-medium">Country</th>
                     <th className="text-left p-4 font-medium">Last Sign In</th>
                     <th className="text-left p-4 font-medium">Actions</th>
                   </tr>
@@ -210,18 +207,13 @@ export function UserManagement() {
                         />
                       </td>
                       <td className="p-4">
-                        <span className="font-medium">{user.credits}</span>
-                      </td>
-                      <td className="p-4">
-                        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                          {user.tokens} tokens
-                        </Badge>
-                      </td>
-                      <td className="p-4">
-                        <span className="text-sm">{user.country || 'Not specified'}</span>
-                      </td>
-                      <td className="p-4">
-                        <span className="text-sm">{formatDate(user.last_sign_in)}</span>
+                        <UserLoginStatus 
+                          lastSignIn={user.last_sign_in} 
+                          createdAt={user.created_at}
+                          displayName={user.display_name}
+                          currentUserEmail={currentUserProfile?.email}
+                          userEmail={user.email}
+                        />
                       </td>
                       <td className="p-4">
                         <Button
