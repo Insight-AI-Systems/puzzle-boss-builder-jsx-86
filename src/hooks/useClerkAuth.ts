@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useUser, useClerk } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,42 +66,6 @@ export const useClerkAuth = () => {
     }
   }, [isSignedIn, userEmail, user?.id]);
 
-  // Update last_sign_in when user becomes active
-  React.useEffect(() => {
-    let heartbeatInterval: NodeJS.Timeout;
-
-    const updateLastSignIn = async () => {
-      if (user?.id && profile?.id) {
-        try {
-          console.log('🔄 Updating last_sign_in for user:', userEmail);
-          await supabase
-            .from('profiles')
-            .update({ 
-              last_sign_in: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', profile.id);
-        } catch (error) {
-          console.error('❌ Error updating last_sign_in:', error);
-        }
-      }
-    };
-
-    if (isSignedIn && profile?.id) {
-      // Update immediately when signed in
-      updateLastSignIn();
-      
-      // Set up heartbeat to update every 5 minutes while active
-      heartbeatInterval = setInterval(updateLastSignIn, 5 * 60 * 1000);
-    }
-
-    return () => {
-      if (heartbeatInterval) {
-        clearInterval(heartbeatInterval);
-      }
-    };
-  }, [isSignedIn, profile?.id, user?.id, userEmail]);
-
   // Enhanced profile fetch with admin prioritization
   React.useEffect(() => {
     if (!user?.id || !isSignedIn) {
@@ -135,7 +100,7 @@ export const useClerkAuth = () => {
             const updateData = { 
               clerk_user_id: user.id,
               updated_at: new Date().toISOString(),
-              last_sign_in: new Date().toISOString(), // Update last_sign_in on profile sync
+              last_sign_in: new Date().toISOString(), // SINGLE update on profile sync
               ...(isAdminEmail && { role: 'super_admin' }) // Force admin role for admin emails
             };
             
@@ -160,7 +125,7 @@ export const useClerkAuth = () => {
             username: user.username || user.firstName || userEmail?.split('@')[0] || '',
             role: isAdminEmail ? 'super_admin' : 'player', // Admin emails always get super_admin
             member_id: crypto.randomUUID(),
-            last_sign_in: new Date().toISOString() // Set initial last_sign_in
+            last_sign_in: new Date().toISOString() // SINGLE update on profile creation
           };
           
           const { data: createdProfile } = await supabase
@@ -171,14 +136,14 @@ export const useClerkAuth = () => {
           
           data = createdProfile;
         } else if (data && isAdminEmail && data.role !== 'super_admin') {
-          // Ensure existing admin profiles have the correct role and update last_sign_in
+          // Ensure existing admin profiles have the correct role and update last_sign_in ONCE
           console.log('🔧 Fixing admin role for existing profile');
           const { data: updatedProfile } = await supabase
             .from('profiles')
             .update({ 
               role: 'super_admin', 
               updated_at: new Date().toISOString(),
-              last_sign_in: new Date().toISOString()
+              last_sign_in: new Date().toISOString() // SINGLE update for admin role fix
             })
             .eq('id', data.id)
             .select()
@@ -186,11 +151,11 @@ export const useClerkAuth = () => {
           
           data = updatedProfile;
         } else if (data) {
-          // Update last_sign_in for existing profile
+          // Update last_sign_in ONCE for existing profile
           const { data: updatedProfile } = await supabase
             .from('profiles')
             .update({ 
-              last_sign_in: new Date().toISOString(),
+              last_sign_in: new Date().toISOString(), // SINGLE update on sign-in
               updated_at: new Date().toISOString()
             })
             .eq('id', data.id)
