@@ -1,3 +1,4 @@
+
 import { GameEngine } from '../GameEngine';
 import { PlacedWord, Cell } from './types';
 import { cellToString, stringToCell, cellsToStrings, stringsToCells } from './utils';
@@ -141,7 +142,6 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       timeElapsed: 0,
       hintsUsed: 0
     });
-    // Note: There's no GAME_RESET in the allowed event types, so we'll use GAME_STARTED instead
     this.emitEvent({ type: 'GAME_STARTED', timestamp: Date.now() });
     this.notifyStateChange();
   }
@@ -156,6 +156,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
 
     switch (move.type) {
       case 'SELECT_CELLS':
+        // Ensure we always store string cell IDs
         updates.currentSelection = move.cells || [];
         break;
 
@@ -205,7 +206,14 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       return { isValid: false };
     }
 
-    const cells = stringsToCells(cellIds);
+    // Add type guard to ensure we have string IDs
+    const validCellIds = cellIds.filter(id => typeof id === 'string' && id.includes('-'));
+    if (validCellIds.length !== cellIds.length) {
+      console.warn('Invalid cell IDs detected:', cellIds);
+      return { isValid: false };
+    }
+
+    const cells = stringsToCells(validCellIds);
     
     // Check if selection forms a valid line
     if (!this.isValidLine(cells)) {
@@ -235,27 +243,54 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
   }
 
   getGameStateForSave() {
+    const state = this.getState();
     return {
-      ...this.getState(),
-      foundWords: Array.from(this.getState().foundWords),
+      ...state,
+      foundWords: Array.from(state.foundWords),
       placedWords: this.placedWords
     };
   }
 
   restoreGameState(savedState: any): void {
-    if (savedState.placedWords) {
-      this.placedWords = savedState.placedWords;
+    try {
+      if (savedState.placedWords) {
+        this.placedWords = savedState.placedWords;
+      }
+      
+      // Ensure all cell arrays are string arrays
+      const normalizedState = {
+        ...savedState,
+        foundWords: new Set(savedState.foundWords || []),
+        selectedCells: this.normalizeToStringArray(savedState.selectedCells || []),
+        currentSelection: this.normalizeToStringArray(savedState.currentSelection || []),
+        hintCells: this.normalizeToStringArray(savedState.hintCells || [])
+      };
+      
+      this.updateGameState(normalizedState);
+      
+      if (this.getState().status === 'playing') {
+        this.startTimer();
+      }
+      this.notifyStateChange();
+    } catch (error) {
+      console.error('Error restoring game state:', error);
+      // Fallback to initializing a new game
+      this.initialize();
     }
-    
-    this.updateGameState({
-      ...savedState,
-      foundWords: new Set(savedState.foundWords || [])
+  }
+
+  private normalizeToStringArray(input: any[]): string[] {
+    return input.map(item => {
+      if (typeof item === 'string') {
+        return item;
+      } else if (item && typeof item === 'object' && 'row' in item && 'col' in item) {
+        // Convert Cell object to string
+        return cellToString(item as Cell);
+      } else {
+        console.warn('Invalid cell data:', item);
+        return '0-0'; // Fallback
+      }
     });
-    
-    if (this.getState().status === 'playing') {
-      this.startTimer();
-    }
-    this.notifyStateChange();
   }
 
   subscribe(callback: (state: WordSearchState) => void): () => void {

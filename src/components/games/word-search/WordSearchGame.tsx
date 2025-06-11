@@ -11,7 +11,7 @@ import { useGamePersistence } from '../hooks/useGamePersistence';
 import { useToast } from '@/hooks/use-toast';
 import { WordSearchEngine } from '@/business/engines/word-search/WordSearchEngine';
 import type { WordSearchState } from '@/business/engines/word-search/WordSearchEngine';
-import { stringsToCells, cellsToStrings } from '@/business/engines/word-search/utils';
+import { stringsToCells, cellsToStrings, cellToString } from '@/business/engines/word-search/utils';
 
 interface Cell {
   row: number;
@@ -25,12 +25,14 @@ export function WordSearchGame() {
   const [engine, setEngine] = useState<WordSearchEngine | null>(null);
   const [gameState, setGameState] = useState<WordSearchState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Initialize the game engine
   useEffect(() => {
     const initializeEngine = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         
         const initialState: WordSearchState = {
           id: 'word-search-game',
@@ -77,6 +79,7 @@ export function WordSearchGame() {
         
         // Subscribe to engine state changes
         const unsubscribe = newEngine.subscribe((newState) => {
+          console.log('Game state updated:', newState);
           setGameState(newState);
           // Auto-save when state changes
           saveGameState(newEngine.getGameStateForSave());
@@ -89,6 +92,7 @@ export function WordSearchGame() {
         
       } catch (error) {
         console.error('Failed to initialize Word Search engine:', error);
+        setError('Failed to initialize the word search game.');
         toast({
           title: "Game Error",
           description: "Failed to initialize the word search game.",
@@ -105,28 +109,46 @@ export function WordSearchGame() {
     };
   }, []);
 
+  // Safe cell conversion with error handling
+  const safeStringsToCells = useCallback((cellIds: string[]): Cell[] => {
+    try {
+      return stringsToCells(cellIds.filter(id => typeof id === 'string' && id.includes('-')));
+    } catch (error) {
+      console.error('Error converting cell strings:', error, cellIds);
+      return [];
+    }
+  }, []);
+
   const handleSelectionStart = useCallback((cell: Cell) => {
     if (!engine || gameState?.status !== 'playing') return;
     
-    engine.makeMove({
-      type: 'SELECT_CELLS',
-      cells: [cellsToStrings([cell])[0]]
-    });
+    try {
+      const cellId = cellToString(cell);
+      engine.makeMove({
+        type: 'SELECT_CELLS',
+        cells: [cellId]
+      });
+    } catch (error) {
+      console.error('Error starting selection:', error);
+    }
   }, [engine, gameState?.status]);
 
   const handleSelectionMove = useCallback((cell: Cell) => {
     if (!engine || gameState?.status !== 'playing') return;
     
-    // Get current selection from engine state and add new cell
-    const currentSelection = stringsToCells(gameState?.currentSelection || []);
-    const cellExists = currentSelection.find(c => c.row === cell.row && c.col === cell.col);
-    
-    if (!cellExists) {
-      const newSelection = [...currentSelection, cell];
-      engine.makeMove({
-        type: 'SELECT_CELLS',
-        cells: cellsToStrings(newSelection)
-      });
+    try {
+      const cellId = cellToString(cell);
+      const currentSelection = gameState?.currentSelection || [];
+      
+      if (!currentSelection.includes(cellId)) {
+        const newSelection = [...currentSelection, cellId];
+        engine.makeMove({
+          type: 'SELECT_CELLS',
+          cells: newSelection
+        });
+      }
+    } catch (error) {
+      console.error('Error updating selection:', error);
     }
   }, [engine, gameState?.status, gameState?.currentSelection]);
 
@@ -135,28 +157,39 @@ export function WordSearchGame() {
       return;
     }
 
-    // Use engine to validate the selection
-    const validation = engine.validateWordSelection(gameState.currentSelection);
-    
-    if (validation.isValid && validation.word) {
-      // Word found! Use engine to handle the move
-      engine.makeMove({
-        type: 'WORD_FOUND',
-        word: validation.word,
-        cells: gameState.currentSelection
-      });
+    try {
+      // Use engine to validate the selection
+      const validation = engine.validateWordSelection(gameState.currentSelection);
       
-      toast({
-        title: "Word Found!",
-        description: `You found "${validation.word.toUpperCase()}"`,
-        duration: 2000,
-      });
-    } else {
-      // Clear selection if word not found
-      engine.makeMove({
-        type: 'SELECT_CELLS',
-        cells: []
-      });
+      if (validation.isValid && validation.word) {
+        // Word found! Use engine to handle the move
+        engine.makeMove({
+          type: 'WORD_FOUND',
+          word: validation.word,
+          cells: gameState.currentSelection
+        });
+        
+        toast({
+          title: "Word Found!",
+          description: `You found "${validation.word.toUpperCase()}"`,
+          duration: 2000,
+        });
+      } else {
+        // Clear selection if word not found
+        engine.makeMove({
+          type: 'SELECT_CELLS',
+          cells: []
+        });
+      }
+    } catch (error) {
+      console.error('Error ending selection:', error);
+      // Clear selection on error
+      if (engine) {
+        engine.makeMove({
+          type: 'SELECT_CELLS',
+          cells: []
+        });
+      }
     }
   }, [engine, gameState, toast]);
 
@@ -223,22 +256,30 @@ export function WordSearchGame() {
     );
   }
 
-  if (!gameState || !engine) {
+  if (error || !gameState || !engine) {
     return (
       <ResponsiveGameContainer>
         <Card className="w-full">
           <CardContent className="p-8">
-            <p className="text-center text-red-600">Failed to load the game. Please refresh the page.</p>
+            <p className="text-center text-red-600">
+              {error || 'Failed to load the game. Please refresh the page.'}
+            </p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 mx-auto block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              Reload Game
+            </button>
           </CardContent>
         </Card>
       </ResponsiveGameContainer>
     );
   }
 
-  // Convert engine state to component props
-  const selectedCells = stringsToCells(gameState.selectedCells);
-  const currentSelectionForGrid = stringsToCells(gameState.currentSelection);
-  const hintCells = stringsToCells(gameState.hintCells || []);
+  // Convert engine state to component props with safe conversions
+  const selectedCells = safeStringsToCells(gameState.selectedCells);
+  const currentSelectionForGrid = safeStringsToCells(gameState.currentSelection);
+  const hintCells = safeStringsToCells(gameState.hintCells || []);
 
   return (
     <ResponsiveGameContainer>
