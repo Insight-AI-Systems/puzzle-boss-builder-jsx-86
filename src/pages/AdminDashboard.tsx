@@ -6,114 +6,94 @@ import { RoleBasedDashboard } from '@/components/admin/RoleBasedDashboard';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useToast } from '@/hooks/use-toast';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { AdminAccessCheck } from '@/components/admin/dashboard/AdminAccessCheck';
 import { AdminToolbar } from '@/components/admin/dashboard/AdminToolbar';
 import { AdminErrorBoundary } from '@/components/admin/ErrorBoundary';
+import { AdminDebugInfo } from '@/components/admin/AdminDebugInfo';
 import { adminLog, DebugLevel } from '@/utils/debug';
 
 const AdminDashboard = () => {
   const { profile, isLoading: profileLoading } = useUserProfile();
-  const { user, hasRole, userRole, isAdmin, isAuthenticated, isLoading: authLoading } = useClerkAuth();
+  const clerkAuth = useClerkAuth();
+  const contextAuth = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [debugInfo, setDebugInfo] = useState<string | null>(null);
+  const [showDebug, setShowDebug] = useState(false);
 
-  const isLoading = authLoading || profileLoading;
+  const isLoading = clerkAuth.isLoading || profileLoading;
 
-  // Enhanced admin access check
-  const userEmail = user?.primaryEmailAddress?.emailAddress;
-  const hasAdminAccess = isAdmin || 
-                        hasRole('super_admin') || 
-                        hasRole('admin') || 
-                        hasRole('category_manager') || 
-                        hasRole('social_media_manager') || 
-                        hasRole('partner_manager') || 
-                        hasRole('cfo');
+  // Use both auth sources for comprehensive access check
+  const userEmail = clerkAuth.user?.primaryEmailAddress?.emailAddress;
+  const hasAdminAccess = clerkAuth.isAdmin || 
+                        clerkAuth.hasRole('super_admin') || 
+                        clerkAuth.hasRole('admin') || 
+                        clerkAuth.hasRole('category_manager') || 
+                        clerkAuth.hasRole('social_media_manager') || 
+                        clerkAuth.hasRole('partner_manager') || 
+                        clerkAuth.hasRole('cfo') ||
+                        contextAuth.isAdmin ||
+                        contextAuth.hasRole('super_admin') ||
+                        contextAuth.hasRole('admin');
 
-  console.log('🏛️ AdminDashboard Detailed State:', {
-    isAuthenticated,
+  console.log('🏛️ AdminDashboard Comprehensive State:', {
+    isAuthenticated: clerkAuth.isAuthenticated,
     userEmail,
-    isAdmin,
-    hasAdminAccess,
-    userRole,
-    profileRole: profile?.role,
-    isLoading,
-    authLoading,
-    profileLoading,
-    hasRoleChecks: {
-      super_admin: hasRole('super_admin'),
-      admin: hasRole('admin'),
-      category_manager: hasRole('category_manager')
-    }
+    clerkAuth: {
+      isAdmin: clerkAuth.isAdmin,
+      userRole: clerkAuth.userRole,
+      hasAdminAccess: clerkAuth.isAdmin || clerkAuth.hasRole('super_admin') || clerkAuth.hasRole('admin')
+    },
+    contextAuth: {
+      isAdmin: contextAuth.isAdmin,
+      userRole: contextAuth.userRole,
+      hasAdminAccess: contextAuth.isAdmin || contextAuth.hasRole('super_admin') || contextAuth.hasRole('admin')
+    },
+    finalHasAdminAccess: hasAdminAccess,
+    isLoading
   });
   
   // Debug logging
   useEffect(() => {
     if (!isLoading) {
-      console.log('🏛️ AdminDashboard State:', {
-        isAuthenticated,
+      console.log('🏛️ AdminDashboard Final State:', {
+        isAuthenticated: clerkAuth.isAuthenticated,
         userEmail,
-        isAdmin,
         hasAdminAccess,
-        userRole,
-        profileRole: profile?.role
+        userRole: clerkAuth.userRole
       });
       
       adminLog('AdminDashboard', 'Access Check Complete', DebugLevel.INFO, { 
-        isAuthenticated,
+        isAuthenticated: clerkAuth.isAuthenticated,
         hasAdminAccess,
-        userRole
+        userRole: clerkAuth.userRole
       });
     }
-  }, [isLoading, isAuthenticated, hasAdminAccess, userRole, profile, userEmail, isAdmin]);
+  }, [isLoading, clerkAuth.isAuthenticated, hasAdminAccess, clerkAuth.userRole, userEmail]);
 
   // Handle access control with enhanced logging
   useEffect(() => {
     if (!isLoading) {
       console.log('🚦 Access Control Check:', {
-        isAuthenticated,
+        isAuthenticated: clerkAuth.isAuthenticated,
         hasAdminAccess,
-        shouldRedirect: isAuthenticated && !hasAdminAccess
+        shouldRedirect: clerkAuth.isAuthenticated && !hasAdminAccess
       });
 
-      if (isAuthenticated && !hasAdminAccess) {
+      if (clerkAuth.isAuthenticated && !hasAdminAccess) {
         console.log('🚫 Access denied, redirecting to homepage');
         toast({
           title: "Access Denied",
-          description: `You don't have admin privileges. Current role: ${userRole}`,
+          description: `You don't have admin privileges. Current role: ${clerkAuth.userRole}`,
           variant: "destructive",
         });
         navigate('/', { replace: true });
       }
     }
-  }, [isLoading, isAuthenticated, hasAdminAccess, navigate, toast, userRole]);
+  }, [isLoading, clerkAuth.isAuthenticated, hasAdminAccess, navigate, toast, clerkAuth.userRole]);
 
   const showDebugInfo = () => {
-    const info = {
-      user: user ? {
-        id: user.id,
-        email: userEmail,
-        role: userRole
-      } : null,
-      profile: profile ? {
-        id: profile.id,
-        role: profile.role,
-        email: profile.email
-      } : null,
-      access: {
-        isAdmin,
-        hasAdminAccess,
-        isAuthenticated,
-        isLoading
-      },
-      roleChecks: {
-        super_admin: hasRole('super_admin'),
-        admin: hasRole('admin'),
-        category_manager: hasRole('category_manager')
-      }
-    };
-    setDebugInfo(JSON.stringify(info, null, 2));
-    console.log('🔍 Debug Info:', info);
+    setShowDebug(!showDebug);
   };
 
   if (isLoading) {
@@ -126,13 +106,13 @@ const AdminDashboard = () => {
   }
 
   // Show access denied if not authenticated or no admin access
-  if (!isAuthenticated || !hasAdminAccess) {
+  if (!clerkAuth.isAuthenticated || !hasAdminAccess) {
     console.log('🚫 Showing access denied screen');
     return (
       <AdminAccessCheck 
-        user={user}
-        userRole={userRole}
-        hasRole={hasRole}
+        user={clerkAuth.user}
+        userRole={clerkAuth.userRole}
+        hasRole={clerkAuth.hasRole}
         profile={profile}
       />
     );
@@ -146,18 +126,14 @@ const AdminDashboard = () => {
       <div className="min-h-screen bg-puzzle-black p-6">
         <div className="max-w-6xl mx-auto space-y-8">
           <h1 className="text-3xl font-game text-puzzle-aqua">
-            {userRole === 'super_admin' ? 'Super Admin Dashboard' : 
-             userRole === 'admin' ? 'Admin Dashboard' : 
-             `${userRole?.replace('_', ' ')} Dashboard`}
+            {clerkAuth.userRole === 'super_admin' ? 'Super Admin Dashboard' : 
+             clerkAuth.userRole === 'admin' ? 'Admin Dashboard' : 
+             `${clerkAuth.userRole?.replace('_', ' ')} Dashboard`}
           </h1>
 
           <AdminToolbar showDebugInfo={showDebugInfo} />
           
-          {debugInfo && (
-            <pre className="mt-4 p-4 bg-black/30 text-white rounded-md overflow-x-auto text-xs">
-              {debugInfo}
-            </pre>
-          )}
+          {showDebug && <AdminDebugInfo />}
 
           <RoleBasedDashboard />
         </div>

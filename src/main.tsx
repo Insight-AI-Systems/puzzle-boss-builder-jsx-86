@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ClerkProvider } from '@clerk/clerk-react';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { GameProvider } from '@/shared/contexts/GameContext';
 import { Toaster } from '@/components/ui/toaster';
 import App from './App.tsx';
@@ -76,15 +77,17 @@ class ErrorFallback extends React.Component<{children: React.ReactNode}, {hasErr
 
 const AppContent = () => (
   <QueryClientProvider client={queryClient}>
-    <GameProvider>
-      <BrowserRouter>
-        <Toaster />
-        <App />
-        {process.env.NODE_ENV === 'development' && (
-          <ReactQueryDevtools initialIsOpen={false} />
-        )}
-      </BrowserRouter>
-    </GameProvider>
+    <AuthProvider>
+      <GameProvider>
+        <BrowserRouter>
+          <Toaster />
+          <App />
+          {process.env.NODE_ENV === 'development' && (
+            <ReactQueryDevtools initialIsOpen={false} />
+          )}
+        </BrowserRouter>
+      </GameProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

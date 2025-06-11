@@ -4,10 +4,10 @@ import { Link } from 'react-router-dom';
 import { Shield, ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 const Unauthorized: React.FC = () => {
-  const { userRole } = useAuth();
+  const { userRole } = useClerkAuth();
 
   return (
     <div className="min-h-screen bg-puzzle-black flex items-center justify-center p-4">
@@ -55,4 +55,3 @@ const Unauthorized: React.FC = () => {
 };
 
 export default Unauthorized;
-
