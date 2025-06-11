@@ -5,6 +5,7 @@ import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { MainLayout } from '@/components/MainLayout';
 import HomePage from '@/pages/HomePage';
 import AccountDashboard from '@/pages/AccountDashboard';
+import Profile from '@/pages/Profile';
 import AdminDashboard from '@/pages/AdminDashboard';
 import Auth from '@/pages/Auth';
 import Categories from '@/pages/Categories';
@@ -60,6 +61,14 @@ function App() {
           element={
             <ClerkProtectedRoute>
               <AccountDashboard />
+            </ClerkProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/profile" 
+          element={
+            <ClerkProtectedRoute>
+              <Profile />
             </ClerkProtectedRoute>
           } 
         />
