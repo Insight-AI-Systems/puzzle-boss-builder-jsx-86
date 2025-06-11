@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ResetPasswordRequestForm } from '../forms/ResetPasswordRequestForm';
+import { CustomPasswordResetForm } from '../forms/CustomPasswordResetForm';
 
 interface ResetPasswordRequestViewProps {
   email: string;
@@ -21,6 +22,12 @@ export const ResetPasswordRequestView: React.FC<ResetPasswordRequestViewProps> =
   handlePasswordResetRequest,
   goBack,
 }) => {
+  const [useCustomReset, setUseCustomReset] = useState(false);
+
+  if (useCustomReset) {
+    return <CustomPasswordResetForm onBack={() => setUseCustomReset(false)} />;
+  }
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -39,6 +46,22 @@ export const ResetPasswordRequestView: React.FC<ResetPasswordRequestViewProps> =
         handleSubmit={handlePasswordResetRequest}
         goBack={goBack}
       />
+
+      {/* Alternative option if standard reset fails */}
+      {errorMessage && (
+        <div className="text-center pt-4 border-t">
+          <p className="text-sm text-muted-foreground mb-2">
+            Not receiving emails?
+          </p>
+          <button
+            type="button"
+            onClick={() => setUseCustomReset(true)}
+            className="text-sm text-puzzle-aqua hover:underline"
+          >
+            Try our reliable reset service
+          </button>
+        </div>
+      )}
     </div>
   );
 };

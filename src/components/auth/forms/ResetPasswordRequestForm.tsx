@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,7 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
   goBack,
 }) => {
   const [validationError, setValidationError] = useState<string>('');
+  const [showSendGridOption, setShowSendGridOption] = useState(false);
   
   useEffect(() => {
     if (email) {
@@ -72,6 +74,24 @@ export const ResetPasswordRequestForm: React.FC<ResetPasswordRequestFormProps> =
         <Alert variant="warning" className="border-yellow-500 bg-yellow-500/10">
           <AlertCircle className="h-4 w-4 text-yellow-300" />
           <AlertDescription className="text-yellow-300">{validationError}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Show alternative SendGrid option if default fails */}
+      {errorMessage && !showSendGridOption && (
+        <Alert className="bg-blue-50 border-blue-200">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800">
+            Having trouble receiving emails? 
+            <Button
+              type="button"
+              variant="link"
+              className="p-0 h-auto font-semibold text-blue-600"
+              onClick={() => setShowSendGridOption(true)}
+            >
+              Try our reliable email service
+            </Button>
+          </AlertDescription>
         </Alert>
       )}
 
