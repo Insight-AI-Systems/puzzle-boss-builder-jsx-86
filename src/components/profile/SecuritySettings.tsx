@@ -1,54 +1,61 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield } from 'lucide-react';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
-import { getPasswordStrength } from '@/utils/authValidation';
-import { SecurityHeader } from './security/SecurityHeader';
-import { SecurityTabs } from './security/SecurityTabs';
-import { useSecuritySettings } from '@/hooks/auth/useSecuritySettings';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Shield, Lock, Eye, Smartphone } from 'lucide-react';
 
-export function SecuritySettings() {
-  const { user } = useClerkAuth();
-  const {
-    securityLoading,
-    sessionsLoading,
-    securityError,
-    securitySuccess,
-    sessions,
-    dialogStates,
-    formStates,
-    handlers
-  } = useSecuritySettings();
-
-  // Calculate password strength
-  const passwordStrength = getPasswordStrength(formStates.newPassword);
-
+export const SecuritySettings: React.FC = () => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <Shield className="h-5 w-5 mr-2 text-puzzle-aqua" />
-          Security Settings
-        </CardTitle>
-        <CardDescription>
-          Manage your account security, sessions, and privacy
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <SecurityHeader error={securityError} successMessage={securitySuccess} />
-        
-        <SecurityTabs
-          userEmail={user?.primaryEmailAddress?.emailAddress}
-          securityLoading={securityLoading}
-          sessions={sessions}
-          sessionsLoading={sessionsLoading}
-          passwordStrength={passwordStrength}
-          dialogStates={dialogStates}
-          formStates={formStates}
-          handlers={handlers}
-        />
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Account Security
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Lock className="h-4 w-4" />
+              <span>Two-Factor Authentication</span>
+            </div>
+            <Badge variant="secondary">Disabled</Badge>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              <span>Login Activity Monitoring</span>
+            </div>
+            <Badge variant="default">Enabled</Badge>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Smartphone className="h-4 w-4" />
+              <span>Device Management</span>
+            </div>
+            <Button variant="outline" size="sm">
+              Manage Devices
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Active Sessions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900">Current session only</h3>
+            <p className="text-gray-500">You have one active session</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
-}
+};

@@ -19,6 +19,11 @@ export interface MemberDetailedProfile {
   created_at?: string;
   updated_at?: string;
   clerk_user_id?: string;
+  location?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  ageGroup?: string;
+  phone?: string;
   // Add other profile fields as needed
 }
 
@@ -37,6 +42,11 @@ export const useMemberProfile = () => {
     created_at: clerkProfile.created_at,
     updated_at: clerkProfile.updated_at,
     clerk_user_id: clerkProfile.clerk_user_id,
+    location: '', // Default values for missing fields
+    dateOfBirth: '',
+    gender: '',
+    ageGroup: '',
+    phone: '',
     addresses: [], // Mock for now
     membership_details: null // Mock for now
   } : null;

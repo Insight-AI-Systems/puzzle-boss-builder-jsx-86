@@ -2,10 +2,12 @@
 import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 export const useUserProfile = () => {
-  const { isLoading, isAdmin } = useClerkAuth();
+  const { profile, isLoading, isAdmin } = useClerkAuth();
 
   return {
+    profile,
     isLoading,
-    isAdmin
+    isAdmin,
+    currentUserId: profile?.id || null
   };
 };
