@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { MemberDetailedProfile } from '@/types/memberTypes';
+import { UserRole } from '@/types/userTypes';
 import { toast } from "sonner";
 
 export interface UserWallet {
@@ -45,10 +46,11 @@ export function useMemberProfile() {
           display_name: data.username || data.full_name || null,
           bio: data.bio || null,
           avatar_url: data.avatar_url,
-          role: data.role || 'player',
+          role: (data.role || 'player') as UserRole,
           country: data.country || null,
           categories_played: data.categories_played || [],
           credits: data.credits || 0,
+          tokens: data.tokens || 0,
           achievements: [],
           referral_code: null,
           created_at: data.created_at,
@@ -66,7 +68,7 @@ export function useMemberProfile() {
           terms_accepted: data.terms_accepted || false,
           terms_accepted_at: data.terms_accepted_at || null,
           marketing_opt_in: data.marketing_opt_in || false,
-          gender: data.gender as 'male' | 'female' | 'non-binary' | 'custom' | 'prefer-not-to-say' | 'other' | null || null,
+          gender: data.gender || null,
           custom_gender: data.custom_gender || null,
           age_group: data.age_group || null,
         };
