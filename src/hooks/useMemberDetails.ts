@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { MemberDetailedProfile, MemberFinancialSummary, AddressType } from '@/types/memberTypes';
+import { UserRole } from '@/types/userTypes';
 import { useToast } from '@/hooks/use-toast';
 
 export function useMemberDetails() {
@@ -67,10 +68,11 @@ export function useMemberDetails() {
         display_name: profile.username || profile.full_name,
         bio: profile.bio,
         avatar_url: profile.avatar_url,
-        role: profile.role || 'player',
+        role: (profile.role || 'player') as UserRole,
         country: profile.country,
         categories_played: profile.categories_played || [],
         credits: profile.credits || 0,
+        tokens: profile.tokens || 0,
         achievements: [],
         referral_code: null,
         created_at: profile.created_at,
@@ -89,11 +91,14 @@ export function useMemberDetails() {
         marketing_opt_in: profile.marketing_opt_in || false,
         addresses: addresses ? addresses.map(addr => ({
           ...addr,
-          address_type: addr.address_type as AddressType
+          type: addr.address_type as AddressType,
+          line1: addr.address_line1,
+          line2: addr.address_line2
         })) : [],
         membership_details: membershipDetails ? {
           ...membershipDetails,
-          status: membershipDetails.status as 'active' | 'expired' | 'canceled' | 'suspended'
+          tier: membershipDetails.tier || 'basic',
+          status: membershipDetails.status as 'active' | 'inactive' | 'suspended' | 'expired' | 'canceled'
         } : undefined,
         financial_summary: financialData && financialData[0] ? {
           total_spend: financialData[0].total_spend || 0,

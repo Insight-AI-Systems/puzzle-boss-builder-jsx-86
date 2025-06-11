@@ -46,24 +46,37 @@ export interface Address {
   id: string;
   user_id: string;
   type: 'billing' | 'shipping';
+  address_type: 'billing' | 'shipping';
   line1: string;
+  address_line1: string;
   line2?: string;
+  address_line2?: string;
   city: string;
   state: string;
   postal_code: string;
   country: string;
   is_default: boolean;
+  member_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export type AddressType = 'billing' | 'shipping';
 export type UserAddress = Address; // Alias for backward compatibility
 
 export interface MembershipDetails {
-  status: 'active' | 'inactive' | 'suspended';
+  id: string;
+  status: 'active' | 'inactive' | 'suspended' | 'expired' | 'canceled';
   tier: string;
   start_date: string;
   end_date: string | null;
   auto_renew: boolean;
+  notes?: string | null;
+  membership_id?: string | null;
+  member_id: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export type UserMembershipDetail = MembershipDetails; // Alias for backward compatibility
@@ -87,6 +100,7 @@ export interface XeroUserMapping {
   xero_invoice_id?: string;
   sync_status: 'pending' | 'synced' | 'error';
   last_sync_at: string | null;
+  last_synced?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -96,6 +110,8 @@ export interface FinancialTransaction {
   user_id: string;
   amount: number;
   transaction_type: string;
+  transaction_date: string;
+  currency?: string;
   description: string | null;
   status: string;
   created_at: string;
