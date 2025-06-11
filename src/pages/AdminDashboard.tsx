@@ -12,6 +12,7 @@ import { AdminAccessCheck } from '@/components/admin/dashboard/AdminAccessCheck'
 import { AdminToolbar } from '@/components/admin/dashboard/AdminToolbar';
 import { AdminErrorBoundary } from '@/components/admin/ErrorBoundary';
 import { AdminDebugInfo } from '@/components/admin/AdminDebugInfo';
+import { AdminRoleDebug } from '@/components/admin/AdminRoleDebug';
 import { adminLog, DebugLevel } from '@/utils/debug';
 
 const AdminDashboard = () => {
@@ -22,10 +23,16 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showDebug, setShowDebug] = useState(false);
+  const [showRoleDebug, setShowRoleDebug] = useState(false);
 
   const isLoading = clerkAuth.isLoading || profileLoading;
   const userEmail = clerkAuth.user?.primaryEmailAddress?.emailAddress;
   const hasAdminAccess = canAccessAdminDashboard();
+
+  // Show role debug panel for key users or when there are role issues
+  const shouldShowRoleDebug = userEmail === 'alan@insight-ai-systems.com' || 
+                              userEmail === 'alantbooth@xtra.co.nz' ||
+                              (userEmail === 'alan@insight-ai-systems.com' && userRole !== 'super_admin');
 
   console.log('🏛️ AdminDashboard Comprehensive State:', {
     isAuthenticated: clerkAuth.isAuthenticated,
@@ -33,7 +40,8 @@ const AdminDashboard = () => {
     userRole,
     hasAdminAccess,
     canAccessAdminDashboard: canAccessAdminDashboard(),
-    isLoading
+    isLoading,
+    shouldShowRoleDebug
   });
   
   // Debug logging
@@ -43,13 +51,15 @@ const AdminDashboard = () => {
         isAuthenticated: clerkAuth.isAuthenticated,
         userEmail,
         userRole,
-        hasAdminAccess
+        hasAdminAccess,
+        roleSource: 'database_only'
       });
       
       adminLog('AdminDashboard', 'Access Check Complete', DebugLevel.INFO, { 
         isAuthenticated: clerkAuth.isAuthenticated,
         hasAdminAccess,
-        userRole
+        userRole,
+        roleSource: 'database_only'
       });
     }
   }, [isLoading, clerkAuth.isAuthenticated, hasAdminAccess, userRole, userEmail]);
@@ -57,7 +67,7 @@ const AdminDashboard = () => {
   // Handle access control with enhanced logging
   useEffect(() => {
     if (!isLoading) {
-      console.log('🚦 Access Control Check:', {
+      console.log('🚦 Access Control Check (Database Role Only):', {
         isAuthenticated: clerkAuth.isAuthenticated,
         hasAdminAccess,
         shouldRedirect: clerkAuth.isAuthenticated && !hasAdminAccess
@@ -77,6 +87,10 @@ const AdminDashboard = () => {
 
   const showDebugInfo = () => {
     setShowDebug(!showDebug);
+  };
+
+  const showRoleDebugPanel = () => {
+    setShowRoleDebug(!showRoleDebug);
   };
 
   if (isLoading) {
@@ -110,6 +124,13 @@ const AdminDashboard = () => {
         <div className="max-w-6xl mx-auto space-y-8">
           <AdminToolbar showDebugInfo={showDebugInfo} />
           
+          {/* Role Debug Panel - Always show for key users */}
+          {shouldShowRoleDebug && (
+            <div className="space-y-4">
+              <AdminRoleDebug />
+            </div>
+          )}
+
           {showDebug && <AdminDebugInfo />}
 
           <RoleBasedDashboard />

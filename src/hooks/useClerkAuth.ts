@@ -134,8 +134,8 @@ export const useClerkAuth = () => {
             data = createdProfile;
           }
         } else if (data) {
-          // For existing profiles, update last_sign_in only (keep existing role)
-          console.log(`✅ Found existing profile with role: ${data.role}`);
+          // For existing profiles, update last_sign_in only (keep existing role from database)
+          console.log(`✅ Found existing profile with database role: ${data.role}`);
           
           const { data: updatedProfile } = await supabase
             .from('profiles')
@@ -155,7 +155,7 @@ export const useClerkAuth = () => {
           const transformedProfile: ClerkProfile = {
             id: data.id,
             clerk_user_id: data.clerk_user_id,
-            role: data.role,
+            role: data.role, // Use database role ONLY
             username: data.username,
             email: data.email,
             avatar_url: data.avatar_url,
@@ -165,7 +165,11 @@ export const useClerkAuth = () => {
             updated_at: data.updated_at
           };
           
-          console.log('📋 Final profile result:', transformedProfile);
+          console.log('📋 Final profile result (Database Role Only):', {
+            email: transformedProfile.email,
+            role: transformedProfile.role,
+            source: 'database_only'
+          });
           setProfile(transformedProfile);
         }
       } catch (error) {
@@ -189,11 +193,12 @@ export const useClerkAuth = () => {
 
   // Enhanced role checking with proper hierarchy
   const hasRole = React.useCallback((role: string): boolean => {
-    console.log('🔍 hasRole check:', { 
+    console.log('🔍 hasRole check (Database Only):', { 
       role, 
       userRole, 
       userRoles,
-      hasRoleResult: userRoles.includes(role) || userRole === 'super_admin'
+      hasRoleResult: userRoles.includes(role) || userRole === 'super_admin',
+      source: 'database_only'
     });
     
     // Super admins have all roles
@@ -206,7 +211,7 @@ export const useClerkAuth = () => {
   // Enhanced debug logging
   React.useEffect(() => {
     if (isLoaded) {
-      console.log('🔐 Auth Summary:', {
+      console.log('🔐 Auth Summary (Database Role Only):', {
         isSignedIn,
         userEmail,
         userRole,
@@ -214,7 +219,8 @@ export const useClerkAuth = () => {
         profileLoaded: !profileLoading,
         hasProfile: !!profile,
         clerkUserId: user?.id,
-        roleSource: 'database_only'
+        roleSource: 'database_only',
+        securityNote: 'No hardcoded admin emails - database role is the only source of truth'
       });
     }
   }, [isLoaded, isSignedIn, userEmail, userRole, isAdmin, profileLoading, profile, user?.id]);

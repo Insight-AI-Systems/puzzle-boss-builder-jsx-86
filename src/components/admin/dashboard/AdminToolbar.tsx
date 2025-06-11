@@ -1,31 +1,31 @@
 
 import React from 'react';
-import { Bug } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Link } from 'react-router-dom';
-import { debugAuthState, forceProtectedAdminAccess } from '@/utils/admin/debugAuth';
+import { Bug, Shield, Info } from "lucide-react";
 
 interface AdminToolbarProps {
   showDebugInfo: () => void;
 }
 
-export const AdminToolbar: React.FC<AdminToolbarProps> = ({
-  showDebugInfo
-}) => <div className="mb-6 space-y-2">
-    <h2 className="text-xl font-game text-puzzle-gold">Admin Tools</h2>
-    <div className="flex flex-wrap gap-2">
-      <Button onClick={() => debugAuthState()} variant="outline" size="sm">
-        Debug Auth State
-      </Button>
+export const AdminToolbar: React.FC<AdminToolbarProps> = ({ showDebugInfo }) => {
+  return (
+    <div className="flex items-center justify-between">
+      <div>
+        <h1 className="text-2xl font-bold text-puzzle-white">Admin Dashboard</h1>
+        <p className="text-puzzle-white/70">Database Role-Based Access Control</p>
+      </div>
       
-      <Button onClick={showDebugInfo} variant="outline" size="sm">
-        <Bug className="h-4 w-4 mr-1" />
-        Show Debug Info
-      </Button>
-      <Button asChild variant="outline" size="lg">
-        <Link to="/puzzle-test-playground">
-          Open Puzzle Engine Test Playground
-        </Link>
-      </Button>
+      <div className="flex gap-2">
+        <Button 
+          onClick={showDebugInfo}
+          variant="outline" 
+          size="sm"
+          className="border-puzzle-aqua/50 text-puzzle-aqua hover:bg-puzzle-aqua/10"
+        >
+          <Bug className="h-4 w-4 mr-1" />
+          Debug Info
+        </Button>
+      </div>
     </div>
-  </div>;
+  );
+};
