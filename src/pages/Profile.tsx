@@ -16,8 +16,8 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { Loader2, User, Phone, MapPin, Settings, CreditCard, Receipt, DollarSign, Gamepad2, Shield, AlertCircle } from 'lucide-react';
 
 const Profile: React.FC = () => {
-  const { profile, isLoading: isLoadingMemberProfile, updateProfile, upsertAddress, deleteAddress, acceptTerms } = useMemberProfile();
-  const { isLoading: isLoadingUserProfile, isAdmin } = useUserProfile();
+  const { profile, isLoading: isLoadingMemberProfile, isAdmin, updateProfile, upsertAddress, deleteAddress, acceptTerms } = useMemberProfile();
+  const { isLoading: isLoadingUserProfile } = useUserProfile();
   const [activeTab, setActiveTab] = useState('personal');
   
   const isLoading = isLoadingUserProfile || isLoadingMemberProfile;
