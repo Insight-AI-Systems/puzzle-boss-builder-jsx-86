@@ -1,14 +1,14 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProfileInfoTab } from '@/components/profile/tabs/ProfileInfoTab';
+import ProfileInfoTab from '@/components/profile/tabs/ProfileInfoTab';
 import { ProfileContactTab } from '@/components/profile/tabs/ProfileContactTab';
 import { ProfileAddressTab } from '@/components/profile/tabs/ProfileAddressTab';
 import { ProfilePreferencesTab } from '@/components/profile/tabs/ProfilePreferencesTab';
 import { ProfileMembershipTab } from '@/components/profile/tabs/ProfileMembershipTab';
 import { ProfilePaymentMethodsTab } from '@/components/profile/tabs/ProfilePaymentMethodsTab';
 import { ProfileTransactionHistoryTab } from '@/components/profile/tabs/ProfileTransactionHistoryTab';
-import { ProfileFinancialTab } from '@/components/profile/tabs/ProfileFinancialTab';
+import ProfileFinancialTab from '@/components/profile/tabs/ProfileFinancialTab';
 import { ProfileGameHistoryTab } from '@/components/profile/tabs/ProfileGameHistoryTab';
 import { SecuritySettings } from '@/components/profile/SecuritySettings';
 import { useMemberProfile } from '@/hooks/useMemberProfile';
@@ -16,7 +16,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { Loader2, User, Phone, MapPin, Settings, CreditCard, Receipt, DollarSign, Gamepad2, Shield, AlertCircle } from 'lucide-react';
 
 const Profile: React.FC = () => {
-  const { profile, isLoading: isLoadingMemberProfile, updateProfile, upsertAddress, deleteAddress, acceptTerms, awardCredits } = useMemberProfile();
+  const { profile, isLoading: isLoadingMemberProfile, updateProfile, upsertAddress, deleteAddress, acceptTerms } = useMemberProfile();
   const { isLoading: isLoadingUserProfile, isAdmin } = useUserProfile();
   const [activeTab, setActiveTab] = useState('personal');
   
@@ -80,7 +80,7 @@ const Profile: React.FC = () => {
             <div className="text-right">
               <p className="text-sm text-puzzle-white/60">Member</p>
               <p className="text-puzzle-aqua font-medium text-lg">{getDisplayName()}</p>
-              <p className="text-sm text-puzzle-white/60 mt-1">Credits: {profile.credits}</p>
+              <p className="text-sm text-puzzle-white/60 mt-1">Credits: {profile.credits || 0}</p>
             </div>
           </div>
           
@@ -166,7 +166,6 @@ const Profile: React.FC = () => {
                 profile={profile} 
                 updateProfile={updateProfile} 
                 acceptTerms={acceptTerms}
-                awardCredits={isAdmin ? awardCredits.mutate : undefined}
               />
             </TabsContent>
             
@@ -215,11 +214,7 @@ const Profile: React.FC = () => {
             {/* Financial tab content - only accessible by admins */}
             {isAdmin && (
               <TabsContent value="financial" className="pt-4">
-                <ProfileFinancialTab 
-                  profile={profile}
-                  awardCredits={awardCredits}
-                  isAdmin={isAdmin}
-                />
+                <ProfileFinancialTab />
               </TabsContent>
             )}
             

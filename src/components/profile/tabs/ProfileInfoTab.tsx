@@ -4,12 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { User, Mail, MapPin, Calendar, Crown } from 'lucide-react';
-import { useMemberProfile } from '@/hooks/useMemberProfile';
 
-const ProfileInfoTab: React.FC = () => {
-  const { profile, isLoading } = useMemberProfile();
+interface ProfileInfoTabProps {
+  profile: any;
+  updateProfile: (data: any) => Promise<any>;
+  acceptTerms: () => Promise<any>;
+}
 
-  if (isLoading) {
+const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({ profile, updateProfile, acceptTerms }) => {
+  if (!profile) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
