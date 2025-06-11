@@ -84,9 +84,8 @@ export function WordSearchGame() {
         
         // Cleanup subscription on unmount
         return () => {
-          unsubscribe();
-          if (newEngine) {
-            newEngine.destroy?.();
+          if (unsubscribe) {
+            unsubscribe();
           }
         };
         
@@ -110,7 +109,7 @@ export function WordSearchGame() {
     
     engine.makeMove({
       type: 'SELECT_CELLS',
-      cells: [cell]
+      cells: [cellsToStrings([cell])[0]]
     });
   }, [engine, gameState?.status]);
 
@@ -125,7 +124,7 @@ export function WordSearchGame() {
       const newSelection = [...currentSelection, cell];
       engine.makeMove({
         type: 'SELECT_CELLS',
-        cells: newSelection
+        cells: cellsToStrings(newSelection)
       });
     }
   }, [engine, gameState?.status, gameState?.currentSelection]);
