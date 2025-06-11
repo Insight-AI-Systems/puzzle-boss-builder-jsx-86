@@ -1,3 +1,4 @@
+
 import { GameEngine } from '../GameEngine';
 import type { BaseGameState, GameConfig, MoveValidationResult, WinConditionResult } from '../../models/GameState';
 import type { PlacedWord, Cell } from './types';
@@ -57,7 +58,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     this.notifyListeners();
   }
 
-  private notifyListeners(): void {
+  public notifyListeners(): void {
     this.listeners.forEach(listener => listener(this.gameState));
   }
 
@@ -122,7 +123,9 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
           
           this.gameState = {
             ...this.gameState,
-            currentSelection: cellStrings
+            currentSelection: cellStrings,
+            // Clear hint cells when user starts selecting to avoid confusion
+            hintCells: []
           };
         }
         break;
@@ -141,7 +144,8 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
               selectedCells: [...this.gameState.selectedCells, ...cellStrings],
               moves: this.gameState.moves + 1,
               score: this.gameState.score + validation.word.length * 10,
-              currentSelection: []
+              currentSelection: [],
+              hintCells: [] // Clear hints when word is found
             };
 
             this.emitEvent({
@@ -185,12 +189,17 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
             for (let i = 0; i < placedWord.word.length; i++) {
               if (placedWord.direction === 'horizontal') {
                 hintCells.push(cellToString({ row: placedWord.startRow, col: placedWord.startCol + i }));
+              } else if (placedWord.direction === 'vertical') {
+                hintCells.push(cellToString({ row: placedWord.startRow + i, col: placedWord.startCol }));
+              } else if (placedWord.direction === 'diagonal') {
+                hintCells.push(cellToString({ row: placedWord.startRow + i, col: placedWord.startCol + i }));
               }
             }
             
             this.gameState = {
               ...this.gameState,
-              hintCells
+              hintCells,
+              currentSelection: [] // Clear any current selection when showing hint
             };
           }
         }

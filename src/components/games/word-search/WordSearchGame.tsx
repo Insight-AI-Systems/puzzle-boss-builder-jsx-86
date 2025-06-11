@@ -7,7 +7,6 @@ import { WordSearchControls } from './WordSearchControls';
 import { WordSearchCongratulations } from './WordSearchCongratulations';
 import { WordSearchInstructions } from './WordSearchInstructions';
 import { ResponsiveGameContainer } from '../ResponsiveGameContainer';
-import { GameControls } from '@/presentation/components/game/GameControls';
 import { useGamePersistence } from '../hooks/useGamePersistence';
 import { useToast } from '@/hooks/use-toast';
 import { WordSearchEngine } from '@/business/engines/word-search/WordSearchEngine';
@@ -183,15 +182,20 @@ export function WordSearchGame() {
   }, [engine]);
 
   const handleHint = useCallback(() => {
-    if (engine) {
+    if (engine && gameState) {
       engine.makeMove({ type: 'HINT' });
       
-      // Clear hint after 3 seconds
+      // Clear hint after 3 seconds and ensure game state is properly updated
       setTimeout(() => {
-        if (engine && gameState) {
-          // Create new state with cleared hint cells
-          const clearedState = { ...gameState, hintCells: [] };
-          setGameState(clearedState);
+        if (engine) {
+          // Force a clean state update by creating a new state without hint cells
+          const currentState = engine.getGameState();
+          engine.gameState = {
+            ...currentState,
+            hintCells: []
+          };
+          // Notify all listeners of the state change
+          engine['notifyListeners']();
         }
       }, 3000);
     }
@@ -293,22 +297,8 @@ export function WordSearchGame() {
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Game Controls */}
-              <GameControls
-                isPaused={gameState.status === 'paused'}
-                isCompleted={gameState.isComplete}
-                onPause={handlePause}
-                onResume={handleResume}
-                onReset={handleReset}
-                onSave={handleSave}
-                onHint={handleHint}
-                hintsUsed={gameState.hintsUsed}
-                showHint={true}
-                showSave={true}
-              />
-
-              {/* Game Stats */}
               <WordSearchControls
                 timeElapsed={gameState.timeElapsed}
                 isPaused={gameState.status === 'paused'}
@@ -325,6 +315,18 @@ export function WordSearchGame() {
                 words={gameState.words}
                 foundWords={gameState.foundWords}
               />
+
+              {/* Save Game Button */}
+              <Card>
+                <CardContent className="p-4">
+                  <button
+                    onClick={handleSave}
+                    className="w-full bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-white px-4 py-2 rounded-lg font-medium"
+                  >
+                    Save Game
+                  </button>
+                </CardContent>
+              </Card>
             </div>
           </div>
         )}
