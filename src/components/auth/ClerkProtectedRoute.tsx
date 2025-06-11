@@ -16,8 +16,11 @@ export const ClerkProtectedRoute: React.FC<ClerkProtectedRouteProps> = ({
   requiredRoles = [],
   redirectTo = '/auth'
 }) => {
-  const { isAuthenticated, isLoading, hasRole, userRole, profile } = useClerkAuth();
+  const { isAuthenticated, isLoading, hasRole, userRole, profile, user } = useClerkAuth();
   const location = useLocation();
+
+  // Fix: Only show loading if Clerk itself is loading OR if we're authenticated but don't have a profile yet
+  const shouldShowLoading = isLoading || (isAuthenticated && !profile);
 
   console.log('🛡️ ClerkProtectedRoute Check:', {
     path: location.pathname,
@@ -25,11 +28,12 @@ export const ClerkProtectedRoute: React.FC<ClerkProtectedRouteProps> = ({
     isLoading,
     userRole,
     requiredRoles,
-    hasProfile: !!profile
+    hasProfile: !!profile,
+    shouldShowLoading
   });
 
   // Show loading spinner while authentication is being determined
-  if (isLoading) {
+  if (shouldShowLoading) {
     return (
       <div className="min-h-screen bg-puzzle-black flex items-center justify-center">
         <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
