@@ -1,7 +1,5 @@
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
+
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,217 +11,103 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { usePartnerManagement } from '@/hooks/admin/usePartnerManagement';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
-import { Mail, Phone, Users, CalendarIcon } from 'lucide-react';
-
-const formSchema = z.object({
-  subject: z.string().min(1, "Subject is required"),
-  content: z.string().min(1, "Content is required"),
-});
 
 interface CommunicationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   partnerId: string;
-  type: 'email' | 'call' | 'meeting' | 'note';
-  partnerEmail?: string;
-  partnerName?: string;
 }
 
-const CommunicationDialog: React.FC<CommunicationDialogProps> = ({ 
+export const CommunicationDialog: React.FC<CommunicationDialogProps> = ({ 
   open, 
   onOpenChange,
-  partnerId,
-  type,
-  partnerEmail,
-  partnerName
+  partnerId
 }) => {
-  const { user } = useClerkAuth();
   const { createCommunication } = usePartnerManagement(partnerId);
-  
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      subject: '',
-      content: '',
-    }
-  });
+  const [type, setType] = useState<'email' | 'phone' | 'meeting' | 'note'>('email');
+  const [subject, setSubject] = useState('');
+  const [content, setContent] = useState('');
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    const communicationData = {
+  const handleSubmit = async () => {
+    if (!subject || !content) return;
+
+    await createCommunication({
       partner_id: partnerId,
-      type: type,
-      subject: data.subject,
-      content: data.content,
-      sent_by: user?.id,
-    };
-    
-    createCommunication(communicationData);
+      type,
+      subject,
+      content
+    });
+
+    setSubject('');
+    setContent('');
     onOpenChange(false);
-    form.reset();
-  };
-
-  const getTitle = () => {
-    switch (type) {
-      case 'email':
-        return 'Send Email';
-      case 'call':
-        return 'Log Call';
-      case 'meeting':
-        return 'Schedule Meeting';
-      case 'note':
-        return 'Add Note';
-      default:
-        return 'New Communication';
-    }
-  };
-
-  const getIcon = () => {
-    switch (type) {
-      case 'email':
-        return <Mail className="h-5 w-5" />;
-      case 'call':
-        return <Phone className="h-5 w-5" />;
-      case 'meeting':
-        return <Users className="h-5 w-5" />;
-      default:
-        return <CalendarIcon className="h-5 w-5" />;
-    }
-  };
-
-  const getDescription = () => {
-    switch (type) {
-      case 'email':
-        return `Compose an email to ${partnerName || 'the partner'}.`;
-      case 'call':
-        return `Log a phone call with ${partnerName || 'the partner'}.`;
-      case 'meeting':
-        return `Schedule a meeting with ${partnerName || 'the partner'}.`;
-      case 'note':
-        return `Add a note about ${partnerName || 'the partner'}.`;
-      default:
-        return 'Create a new communication record.';
-    }
-  };
-
-  const getSubjectLabel = () => {
-    switch (type) {
-      case 'email':
-        return 'Email Subject';
-      case 'call':
-        return 'Call Subject';
-      case 'meeting':
-        return 'Meeting Subject';
-      case 'note':
-        return 'Note Title';
-      default:
-        return 'Subject';
-    }
-  };
-
-  const getContentLabel = () => {
-    switch (type) {
-      case 'email':
-        return 'Email Content';
-      case 'call':
-        return 'Call Notes';
-      case 'meeting':
-        return 'Meeting Details';
-      case 'note':
-        return 'Note Content';
-      default:
-        return 'Content';
-    }
-  };
-
-  const getSubmitButtonText = () => {
-    switch (type) {
-      case 'email':
-        return 'Send Email';
-      case 'call':
-        return 'Log Call';
-      case 'meeting':
-        return 'Schedule Meeting';
-      case 'note':
-        return 'Save Note';
-      default:
-        return 'Save';
-    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {getIcon()}
-            {getTitle()}
-          </DialogTitle>
+          <DialogTitle>New Communication</DialogTitle>
           <DialogDescription>
-            {getDescription()}
+            Send a message to your partner or schedule a meeting.
           </DialogDescription>
         </DialogHeader>
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {type === 'email' && partnerEmail && (
-              <div className="flex items-center space-x-2">
-                <FormLabel className="w-16">To:</FormLabel>
-                <div className="flex-1 px-3 py-2 bg-gray-100 rounded-md text-gray-700">{partnerEmail}</div>
-              </div>
-            )}
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="type">Type</Label>
+            <Select value={type} onValueChange={(value: any) => setType(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select communication type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="email">Email</SelectItem>
+                <SelectItem value="phone">Phone Call</SelectItem>
+                <SelectItem value="meeting">Meeting</SelectItem>
+                <SelectItem value="note">Note</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-            <FormField
-              control={form.control}
-              name="subject"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{getSubjectLabel()}</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter subject" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          <div>
+            <Label htmlFor="subject">Subject</Label>
+            <Input
+              id="subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Enter subject or title"
             />
+          </div>
 
-            <FormField
-              control={form.control}
-              name="content"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{getContentLabel()}</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder={type === 'email' ? 'Enter email body' : 'Enter details'}
-                      className="min-h-[200px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          <div>
+            <Label htmlFor="content">Message</Label>
+            <Textarea
+              id="content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Enter your message"
+              rows={4}
             />
+          </div>
+        </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                {getSubmitButtonText()}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit}>
+            Send
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
