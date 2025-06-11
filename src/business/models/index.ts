@@ -1,7 +1,7 @@
 
 // Export all model types and interfaces
 export type { BaseGameState, PlayerStats, GameConfig, MoveValidationResult, WinConditionResult, GameEvent } from './GameState';
-export type { User, UserRole, UserStats } from './User';
+export type { User } from './User';
 export type { Game, GameStatus, GameDifficulty } from './Game';
 
 // Export services and engines

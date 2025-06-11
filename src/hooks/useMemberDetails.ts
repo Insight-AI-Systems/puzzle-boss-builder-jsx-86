@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { MemberDetailedProfile, MemberFinancialSummary, AddressType } from '@/types/memberTypes';
-import { UserRole } from '@/types/userTypes';
+import { UserRole, Gender } from '@/types/userTypes';
 import { useToast } from '@/hooks/use-toast';
 
 export function useMemberDetails() {
@@ -90,7 +90,7 @@ export function useMemberDetails() {
         terms_accepted: profile.terms_accepted || false,
         terms_accepted_at: profile.terms_accepted_at,
         marketing_opt_in: profile.marketing_opt_in || false,
-        gender: profile.gender,
+        gender: profile.gender as Gender | null,
         custom_gender: profile.custom_gender,
         age_group: profile.age_group,
         addresses: addresses ? addresses.map(addr => ({

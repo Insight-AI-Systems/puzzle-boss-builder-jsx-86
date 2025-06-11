@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { MemberDetailedProfile } from '@/types/memberTypes';
-import { UserRole } from '@/types/userTypes';
+import { UserRole, Gender } from '@/types/userTypes';
 import { toast } from "sonner";
 
 export interface UserWallet {
@@ -68,7 +67,7 @@ export function useMemberProfile() {
           terms_accepted: data.terms_accepted || false,
           terms_accepted_at: data.terms_accepted_at || null,
           marketing_opt_in: data.marketing_opt_in || false,
-          gender: data.gender || null,
+          gender: data.gender as Gender | null,
           custom_gender: data.custom_gender || null,
           age_group: data.age_group || null,
         };
