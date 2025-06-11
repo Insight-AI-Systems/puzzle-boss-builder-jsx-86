@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Users, Search } from "lucide-react";
-import { UserProfile } from '@/types/userTypes';
+import { UserProfile, UserRole } from '@/types/userTypes';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { UserActionButtons } from './UserActionButtons';
@@ -203,7 +204,7 @@ export function UserManagement() {
                         <RoleSelector
                           currentRole={user.role}
                           onRoleChange={(newRole) => handleRoleChange(user.id, newRole)}
-                          currentUserRole={currentUserProfile?.role || 'player'}
+                          currentUserRole={(currentUserProfile?.role as UserRole) || 'player'}
                         />
                       </td>
                       <td className="p-4">
@@ -253,11 +254,11 @@ export function UserManagement() {
         open={isBulkRoleDialogOpen}
         onOpenChange={setIsBulkRoleDialogOpen}
         selectedUserIds={Array.from(selectedUsers)}
-        currentRole={bulkRole}
+        currentRole={(bulkRole as UserRole)}
         onRoleChange={setBulkRole}
         onUpdateRoles={bulkUpdateRoles}
         isUpdating={isBulkRoleChanging}
-        currentUserRole={currentUserProfile?.role || 'player'}
+        currentUserRole={(currentUserProfile?.role as UserRole) || 'player'}
       />
 
       <MemberDetailErrorBoundary>

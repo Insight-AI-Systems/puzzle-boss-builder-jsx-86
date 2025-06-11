@@ -1,32 +1,46 @@
 
 import { useEffect } from 'react';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { supabase } from '@/integrations/supabase/client';
 
-export function useActivityTracker() {
-  const { user } = useClerkAuth();
+interface ActivityData {
+  user_id: string;
+  action: string;
+  page: string;
+  timestamp: string;
+}
+
+export const useActivityTracker = (userId?: string) => {
+  const trackActivity = async (action: string, page: string) => {
+    if (!userId) return;
+
+    try {
+      // Since user_activity table doesn't exist, we'll use security_audit_logs instead
+      const { error } = await supabase
+        .from('security_audit_logs')
+        .insert({
+          user_id: userId,
+          event_type: 'user_activity',
+          severity: 'info',
+          details: {
+            action,
+            page,
+            timestamp: new Date().toISOString()
+          }
+        });
+
+      if (error) {
+        console.error('Error tracking activity:', error);
+      }
+    } catch (error) {
+      console.error('Error tracking activity:', error);
+    }
+  };
 
   useEffect(() => {
-    if (!user) return;
+    if (userId) {
+      trackActivity('page_view', window.location.pathname);
+    }
+  }, [userId]);
 
-    const trackActivity = async () => {
-      try {
-        const { error } = await supabase
-          .from('user_activity')
-          .insert({
-            user_id: user.id,
-            activity_type: 'page_view',
-            timestamp: new Date().toISOString()
-          });
-
-        if (error) {
-          console.error('Error tracking activity:', error);
-        }
-      } catch (error) {
-        console.error('Activity tracking error:', error);
-      }
-    };
-
-    trackActivity();
-  }, [user]);
-}
+  return { trackActivity };
+};

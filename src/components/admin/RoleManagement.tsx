@@ -13,12 +13,12 @@ export function RoleManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
-  const currentUserRole: UserRole = currentUserProfile?.role || 'player';
+  const currentUserRole: UserRole = (currentUserProfile?.role as UserRole) || 'player';
   const currentUserEmail = currentUserProfile?.email;
   
   // Check admin privileges based on role, not hardcoded emails
-  const isSuperAdmin = currentUserRole === 'super_admin' as UserRole;
-  const isAdmin = currentUserRole === 'admin' as UserRole;
+  const isSuperAdmin = currentUserRole === 'super_admin';
+  const isAdmin = currentUserRole === 'admin';
   const canAssignAnyRole = isSuperAdmin;
 
   // Mock profiles data for now since we don't have allProfiles working yet
@@ -43,7 +43,7 @@ export function RoleManagement() {
     if (isSuperAdmin) return true;
     
     // Regular admins can assign roles except super_admin
-    if (isAdmin && role !== 'super_admin' as UserRole) return true;
+    if (isAdmin && role !== 'super_admin') return true;
     
     return false;
   };

@@ -1,126 +1,134 @@
 
 import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useBetaNotes } from '@/hooks/useBetaNotes';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import PageLayout from '@/components/layouts/PageLayout';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { useAuth } from '@/contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
+import { Loader2, Plus } from 'lucide-react';
 
-const BetaNotes: React.FC = () => {
+export default function BetaNotes() {
   const { notes, isLoading, addNote, updateNoteStatus } = useBetaNotes();
+  const { user } = useAuth();
   const [newNote, setNewNote] = useState('');
-  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!newNote.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a note before submitting.",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (!newNote.trim()) return;
 
-    const result = await addNote(newNote);
-    
-    if (result) {
-      setNewNote('');
-      toast({
-        title: "Note Submitted",
-        description: "Your beta note has been added successfully.",
-      });
+    setIsSubmitting(true);
+    try {
+      const result = await addNote({ content: newNote.trim() });
+      if (result) {
+        setNewNote('');
+      }
+    } catch (error) {
+      console.error('Error adding note:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const toggleNoteStatus = async (noteId: string, currentStatus: 'wip' | 'completed') => {
-    const newStatus = currentStatus === 'wip' ? 'completed' : 'wip';
-    await updateNoteStatus(noteId, newStatus);
+  const handleStatusUpdate = async (id: string, status: string) => {
+    try {
+      await updateNoteStatus(id, status);
+    } catch (error) {
+      console.error('Error updating note status:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'completed': return 'default';
+      case 'in_progress': return 'secondary';
+      case 'wip': return 'outline';
+      default: return 'outline';
+    }
   };
 
   return (
-    <ProtectedRoute>
-      <PageLayout 
-        title="Beta Testing Notes" 
-        subtitle="Share insights and track improvements for our platform"
-      >
-        <div className="max-w-2xl mx-auto space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Submit a Note</CardTitle>
-              <CardDescription>
-                Help us improve by sharing your observations, suggestions, or bugs.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <Textarea 
-                  placeholder="Enter your beta testing note..."
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  className="min-h-[100px]"
-                />
-                <Button type="submit" className="w-full">
-                  Submit Note
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+    <div className="container mx-auto py-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>Beta Notes & Feedback</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="mb-6">
+            <Textarea
+              placeholder="Share your feedback, suggestions, or report issues..."
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              className="mb-4"
+              rows={4}
+            />
+            <Button type="submit" disabled={isSubmitting || !newNote.trim()}>
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4 mr-2" />
+              )}
+              Add Note
+            </Button>
+          </form>
 
           <div className="space-y-4">
-            {isLoading ? (
-              <div className="flex justify-center items-center h-32">
-                <Loader2 className="h-8 w-8 animate-spin text-puzzle-aqua" />
-              </div>
+            {notes.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                No notes yet. Share your first feedback!
+              </p>
             ) : (
               notes.map((note) => (
-                <Card key={note.id} className="hover:bg-background/50 transition-colors">
-                  <CardContent className="flex items-start space-x-4 p-4">
-                    <Avatar>
-                      <AvatarImage src="" alt="User" />
-                      <AvatarFallback>U</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium">User</p>
-                          <p className="text-sm text-muted-foreground">{new Date(note.created_at).toLocaleString()}</p>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => toggleNoteStatus(note.id, note.status)}
-                          className={`
-                            ${note.status === 'completed' 
-                              ? 'text-green-500 hover:text-green-600' 
-                              : 'text-amber-500 hover:text-amber-600'
-                            }`
-                          }
-                        >
-                          {note.status === 'completed' ? <CheckCircle /> : <AlertCircle />}
-                        </Button>
-                      </div>
-                      <p className="mt-2">{note.content}</p>
+                <Card key={note.id} className="border-l-4 border-l-blue-500">
+                  <CardContent className="pt-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <Badge variant={getStatusBadgeVariant(note.status)}>
+                        {note.status}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(note.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-sm">{note.content}</p>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusUpdate(note.id, 'in_progress')}
+                        disabled={note.status === 'in_progress'}
+                      >
+                        In Progress
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusUpdate(note.id, 'completed')}
+                        disabled={note.status === 'completed'}
+                      >
+                        Completed
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
               ))
             )}
-            {!isLoading && notes.length === 0 && (
-              <div className="text-center text-muted-foreground py-8">
-                No beta notes yet. Be the first to submit one!
-              </div>
-            )}
           </div>
-        </div>
-      </PageLayout>
-    </ProtectedRoute>
+        </CardContent>
+      </Card>
+    </div>
   );
-};
-
-export default BetaNotes;
+}

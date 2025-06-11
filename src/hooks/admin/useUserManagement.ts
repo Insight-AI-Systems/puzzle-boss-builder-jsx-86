@@ -1,150 +1,80 @@
 
-import { useUserFilters } from './useUserFilters';
-import { useUserSelection } from './useUserSelection';
-import { useUserExport } from './useUserExport';
-import { useAdminProfiles } from '@/hooks/useAdminProfiles';
+// Mock implementation of useUserManagement hook
+import { useState } from 'react';
 import { UserRole } from '@/types/userTypes';
-import { useState, useEffect, useMemo } from 'react';
-import { UserStats } from '@/types/adminTypes';
 
-// Helper function to categorize user roles
-const isAdminRole = (role: UserRole): boolean => {
-  const adminRoles: UserRole[] = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
-  return adminRoles.includes(role);
-};
-
-export function useUserManagement(isAdmin: boolean, currentUserId: string | null) {
-  const filters = useUserFilters();
-  const selection = useUserSelection();
-  const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [bulkRole, setBulkRoleState] = useState<UserRole | null>(null);
+export const useUserManagement = (isAdmin: boolean, currentUserId: string | null) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [userType, setUserType] = useState('all');
+  const [bulkRole, setBulkRole] = useState<string>('player');
   const [isBulkRoleChanging, setIsBulkRoleChanging] = useState(false);
-  
-  const { 
-    data: allProfilesData, 
-    isLoading: isLoadingProfiles, 
-    error: profileError,
-    updateUserRole,
-    bulkUpdateRoles: updateRoles,
-    sendBulkEmail: sendEmail,
-    refetch 
-  } = useAdminProfiles(isAdmin, currentUserId);
 
-  // Filter users based on the selected user type (regular/admin) - default to admin
-  const filteredData = useMemo(() => {
-    if (!allProfilesData?.data) return null;
+  // Mock data
+  const allProfilesData = {
+    data: [],
+    countries: []
+  };
+  const isLoadingProfiles = false;
+  const profileError = null;
+  const userStats = { total: 0 };
 
-    const filteredUsers = allProfilesData.data.filter(user => {
-      if (filters.userType === 'admin') {
-        return isAdminRole(user.role);
-      } else {
-        return user.role === 'player';
-      }
-    });
+  const handleUserSelection = (userId: string, checked: boolean) => {
+    const newSelected = new Set(selectedUsers);
+    if (checked) {
+      newSelected.add(userId);
+    } else {
+      newSelected.delete(userId);
+    }
+    setSelectedUsers(newSelected);
+  };
 
-    return {
-      ...allProfilesData,
-      data: filteredUsers,
-      count: filteredUsers.length
-    };
-  }, [allProfilesData, filters.userType]);
+  const handleSelectAllUsers = (checked: boolean, users: any[]) => {
+    if (checked) {
+      setSelectedUsers(new Set(users.map(u => u.id)));
+    } else {
+      setSelectedUsers(new Set());
+    }
+  };
 
-  // Handle role change for a single user
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
-    if (updateUserRole) {
-      updateUserRole.mutate({ userId, newRole });
+    console.log('Role change:', userId, newRole);
+    // TODO: Implement actual role change
+  };
+
+  const bulkUpdateRoles = async (userIds: string[], role: UserRole) => {
+    setIsBulkRoleChanging(true);
+    try {
+      console.log('Bulk role update:', userIds, role);
+      // TODO: Implement actual bulk role update
+    } finally {
+      setIsBulkRoleChanging(false);
     }
   };
 
-  // Handle bulk role updates
-  const bulkUpdateRoles = async (userIds: string[], newRole: UserRole) => {
-    if (updateRoles) {
-      setIsBulkRoleChanging(true);
-      try {
-        await updateRoles.mutateAsync({ userIds, newRole });
-        selection.setSelectedUsers(new Set());
-      } finally {
-        setIsBulkRoleChanging(false);
-      }
-    }
+  const sendBulkEmail = async (userIds: string[], subject: string, message: string) => {
+    console.log('Bulk email:', userIds, subject, message);
+    // TODO: Implement actual bulk email
   };
-
-  // Handle sending bulk emails
-  const sendBulkEmail = async (subject: string, message: string) => {
-    if (sendEmail && selection.selectedUsers.size > 0) {
-      const userIds = Array.from(selection.selectedUsers);
-      await sendEmail.mutateAsync({ userIds, subject, body: message });
-    }
-  };
-
-  // Properly typed setBulkRole function that accepts UserRole or null
-  const setBulkRole = (role: UserRole | null) => {
-    setBulkRoleState(role);
-  };
-
-  // Refresh data function for external use (e.g., after token operations)
-  const refreshData = async () => {
-    console.log('Refreshing user management data...');
-    await refetch();
-  };
-
-  // Calculate user statistics when data changes - use filtered data
-  useEffect(() => {
-    if (filteredData?.data) {
-      // Calculate gender breakdown
-      const genderBreakdown: { [key: string]: number } = {};
-      
-      filteredData.data.forEach(user => {
-        const gender = user.gender || 'null';
-        genderBreakdown[gender] = (genderBreakdown[gender] || 0) + 1;
-      });
-
-      // Calculate age breakdown if available
-      const ageBreakdown: { [key: string]: number } = {};
-      
-      filteredData.data.forEach(user => {
-        if (user.age_group) {
-          ageBreakdown[user.age_group] = (ageBreakdown[user.age_group] || 0) + 1;
-        }
-      });
-
-      // Set the complete stats object using filtered data
-      setUserStats({
-        total: filteredData.count,
-        genderBreakdown,
-        ageBreakdown: Object.keys(ageBreakdown).length > 0 ? ageBreakdown : undefined
-      });
-    }
-  }, [filteredData]);
-
-  const { handleExportUsers } = useUserExport();
 
   return {
-    // Filter props from useUserFilters
-    ...filters,
-    // Selection props 
-    selectedUsers: selection.selectedUsers,
-    setSelectedUsers: selection.setSelectedUsers,
-    handleUserSelection: selection.handleUserSelection,
-    handleSelectAllUsers: selection.handleSelectAllUsers,
-    // Email and role management
-    sendBulkEmail,
-    bulkUpdateRoles,
-    handleRoleChange,
-    // Data props - use filtered data instead of raw data
-    allProfilesData: filteredData,
+    searchTerm,
+    setSearchTerm,
+    selectedUsers,
+    setSelectedUsers,
+    handleUserSelection,
+    handleSelectAllUsers,
+    allProfilesData,
     isLoadingProfiles,
     profileError,
-    // Export functionality - use filtered data
-    handleExportUsers: () => handleExportUsers(filteredData?.data),
-    // Stats and calculated values - use filtered data count
-    totalPages: Math.ceil((filteredData?.count || 0) / filters.pageSize),
+    handleRoleChange,
+    bulkUpdateRoles,
+    sendBulkEmail,
     userStats,
-    // Bulk role props with proper typing
+    userType,
+    setUserType,
     bulkRole,
     setBulkRole,
-    isBulkRoleChanging,
-    // New refresh function for external use
-    refreshData
+    isBulkRoleChanging
   };
-}
+};

@@ -1,23 +1,23 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
-import { Label } from "@/components/ui/label";
 
 interface BulkRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedUserIds: string[];
-  currentRole: UserRole | null;
-  onRoleChange: (role: UserRole) => void;
-  onUpdateRoles: (userIds: string[], newRole: UserRole) => Promise<void>;
+  currentRole: UserRole;
+  onRoleChange: (role: string) => void;
+  onUpdateRoles: (userIds: string[], role: UserRole) => Promise<void>;
   isUpdating: boolean;
   currentUserRole: UserRole;
 }
 
-export function BulkRoleDialog({
+export const BulkRoleDialog: React.FC<BulkRoleDialogProps> = ({
   open,
   onOpenChange,
   selectedUserIds,
@@ -26,9 +26,9 @@ export function BulkRoleDialog({
   onUpdateRoles,
   isUpdating,
   currentUserRole
-}: BulkRoleDialogProps) {
-  const handleUpdate = async () => {
-    if (!currentRole) return;
+}) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     await onUpdateRoles(selectedUserIds, currentRole);
     onOpenChange(false);
   };
@@ -40,19 +40,14 @@ export function BulkRoleDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[400px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Update User Roles</DialogTitle>
+          <DialogTitle>Change Role for {selectedUserIds.length} Users</DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-4">
-          <div className="text-sm text-muted-foreground">
-            Updating roles for {selectedUserIds.length} selected users
-          </div>
-          
-          <div className="space-y-2">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
             <Label htmlFor="role">New Role</Label>
-            <Select value={currentRole || ''} onValueChange={onRoleChange}>
+            <Select value={currentRole} onValueChange={onRoleChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
@@ -65,20 +60,16 @@ export function BulkRoleDialog({
               </SelectContent>
             </Select>
           </div>
-          
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleUpdate} 
-              disabled={!currentRole || isUpdating}
-            >
+            <Button type="submit" disabled={isUpdating}>
               {isUpdating ? 'Updating...' : 'Update Roles'}
             </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
-}
+};

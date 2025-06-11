@@ -1,97 +1,41 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Edit, MoreHorizontal } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { UserProfile, UserRole } from '@/types/userTypes';
+import { Button } from '@/components/ui/button';
+import { Mail, UserCog } from 'lucide-react';
 
 interface UserActionButtonsProps {
-  user?: UserProfile;
-  currentUserRole?: UserRole;
-  onEditProfile?: (user: UserProfile) => void;
-  onRoleChange?: (userId: string, newRole: UserRole) => void;
-  selectedUsers?: Set<string>;
-  onEmailClick?: () => void;
-  onRoleClick?: () => void;
-  onExportClick?: () => void;
+  selectedUsers: Set<string>;
+  onEmailClick: () => void;
+  onRoleClick: () => void;
 }
 
 export const UserActionButtons: React.FC<UserActionButtonsProps> = ({
-  user,
-  currentUserRole,
-  onEditProfile,
-  onRoleChange,
   selectedUsers,
   onEmailClick,
-  onRoleClick,
-  onExportClick
+  onRoleClick
 }) => {
-  // If we have bulk action props, render bulk action buttons
-  if (selectedUsers !== undefined && onEmailClick && onRoleClick && onExportClick) {
-    return (
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onEmailClick}
-          disabled={selectedUsers.size === 0}
-        >
-          Email ({selectedUsers.size})
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onRoleClick}
-          disabled={selectedUsers.size === 0}
-        >
-          Change Role ({selectedUsers.size})
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onExportClick}
-        >
-          Export
-        </Button>
-      </div>
-    );
-  }
-
-  // If we have individual user props, render individual action buttons
-  if (!user || !currentUserRole || !onEditProfile) {
-    return null;
-  }
-
-  const isAdmin = currentUserRole === 'admin' || currentUserRole === 'super_admin';
-
-  if (!isAdmin) {
-    return null;
-  }
+  const hasSelectedUsers = selectedUsers.size > 0;
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex gap-2">
       <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => onEditProfile(user)}
-        title="Edit Profile"
+        variant="outline"
+        size="sm"
+        onClick={onEmailClick}
+        disabled={!hasSelectedUsers}
       >
-        <Edit className="h-4 w-4" />
+        <Mail className="h-4 w-4 mr-2" />
+        Email ({selectedUsers.size})
       </Button>
-      
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => onEditProfile(user)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Profile
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onRoleClick}
+        disabled={!hasSelectedUsers}
+      >
+        <UserCog className="h-4 w-4 mr-2" />
+        Change Role ({selectedUsers.size})
+      </Button>
     </div>
   );
 };

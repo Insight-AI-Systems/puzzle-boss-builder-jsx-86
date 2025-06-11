@@ -1,49 +1,43 @@
 
-import { Ticket } from '@/types/ticketTypes';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import React from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow } from 'date-fns';
+import { Ticket } from '@/hooks/useTickets';
 
 interface TicketListProps {
   tickets: Ticket[];
 }
 
-export function TicketList({ tickets }: TicketListProps) {
+export const TicketList: React.FC<TicketListProps> = ({ tickets }) => {
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case 'open': return 'destructive';
+      case 'in_progress': return 'default';
+      case 'closed': return 'secondary';
+      default: return 'outline';
+    }
+  };
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Title</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Assigned To</TableHead>
-          <TableHead>Last Updated</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {tickets.map((ticket) => (
-          <TableRow key={ticket.id}>
-            <TableCell>{ticket.title}</TableCell>
-            <TableCell>
-              <Badge variant={ticket.status === 'open' ? 'default' : 'secondary'}>
+    <div className="space-y-4">
+      {tickets.map((ticket) => (
+        <Card key={ticket.id}>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">{ticket.title}</h3>
+              <Badge variant={getStatusVariant(ticket.status)}>
                 {ticket.status}
               </Badge>
-            </TableCell>
-            <TableCell>
-              {ticket.assigned_to ? 'Admin' : 'Unassigned'}
-            </TableCell>
-            <TableCell>
-              {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-2">{ticket.description}</p>
+            <p className="text-xs text-muted-foreground">
+              Created: {new Date(ticket.created_at).toLocaleDateString()}
+            </p>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
-}
+};
