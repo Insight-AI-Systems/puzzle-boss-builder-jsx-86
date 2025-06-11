@@ -1,12 +1,13 @@
 
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ClerkAuthButtons } from '@/components/auth/ClerkAuthButtons';
+import UserMenu from './UserMenu';
 import { useUser } from '@clerk/clerk-react';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { mainNavItems, adminNavItems } from './NavbarData';
 import PuzzleDropdown from './PuzzleDropdown';
 import MobileMenu from './MobileMenu';
@@ -17,6 +18,7 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
   const { isSignedIn, user } = useUser();
   const { hasRole, isAdmin, isLoading } = useClerkAuth();
+  const { profile } = useUserProfile();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -109,15 +111,10 @@ export const Navbar: React.FC = () => {
 
             {/* Auth Buttons */}
             <div className="hidden md:flex items-center space-x-4">
-              <ClerkAuthButtons />
-              {/* Account link */}
-              {isSignedIn && (
-                <Link
-                  to="/account"
-                  className="text-puzzle-white hover:text-puzzle-aqua transition-colors"
-                >
-                  <User className="h-5 w-5" />
-                </Link>
+              {isSignedIn ? (
+                <UserMenu profile={profile} />
+              ) : (
+                <ClerkAuthButtons />
               )}
             </div>
 
@@ -148,4 +145,3 @@ export const Navbar: React.FC = () => {
 };
 
 export default Navbar;
-
