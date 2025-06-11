@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSupportTickets } from '@/hooks/support/useSupportTickets';
 import { TicketStatus, TicketFilters } from '@/types/supportTicketTypes';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
 import { TicketFilters as TicketFilterComponent } from './ticket-list/TicketFilters';
@@ -15,7 +15,7 @@ import { TicketTable } from './ticket-list/TicketTable';
 export const TicketList = () => {
   const { tickets, isLoading, fetchTickets, isAdmin } = useSupportTickets();
   const navigate = useNavigate();
-  const { user, hasRole } = useAuth();
+  const { user, hasRole } = useClerkAuth();
   const [searchParams] = useSearchParams();
   const isInternalView = searchParams.get('view') === 'internal';
   const { toast } = useToast();

@@ -2,14 +2,14 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { getPasswordStrength } from '@/utils/authValidation';
 import { SecurityHeader } from './security/SecurityHeader';
 import { SecurityTabs } from './security/SecurityTabs';
 import { useSecuritySettings } from '@/hooks/auth/useSecuritySettings';
 
 export function SecuritySettings() {
-  const { user } = useAuth();
+  const { user } = useClerkAuth();
   const {
     securityLoading,
     sessionsLoading,
@@ -39,7 +39,7 @@ export function SecuritySettings() {
         <SecurityHeader error={securityError} successMessage={securitySuccess} />
         
         <SecurityTabs
-          userEmail={user?.email}
+          userEmail={user?.primaryEmailAddress?.emailAddress}
           securityLoading={securityLoading}
           sessions={sessions}
           sessionsLoading={sessionsLoading}

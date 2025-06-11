@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { SupportFAQ } from './SupportFAQ';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { useToast } from '@/hooks/use-toast';
 
 export const SupportHome = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin } = useClerkAuth();
   const { toast } = useToast();
 
   return (
@@ -14,4 +14,3 @@ export const SupportHome = () => {
     </div>
   );
 };
-

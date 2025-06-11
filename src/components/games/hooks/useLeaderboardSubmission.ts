@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { useToast } from '@/hooks/use-toast';
 
 interface GameResult {
@@ -13,7 +13,7 @@ interface GameResult {
 }
 
 export function useLeaderboardSubmission() {
-  const { user } = useAuth();
+  const { user } = useClerkAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -30,7 +30,7 @@ export function useLeaderboardSubmission() {
       // For now, just log the submission
       console.log('Submitting score to leaderboard:', {
         userId: user.id,
-        username: user.email?.split('@')[0] || 'Anonymous',
+        username: user.primaryEmailAddress?.emailAddress?.split('@')[0] || 'Anonymous',
         ...result,
         timestamp: new Date().toISOString()
       });

@@ -2,7 +2,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { usePuzzleSettings } from '@/hooks/usePuzzleSettings';
 import { usePuzzleProgress } from '@/hooks/usePuzzleProgress';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 interface PuzzleContextType {
   settings: ReturnType<typeof usePuzzleSettings>;
@@ -19,7 +19,7 @@ export function PuzzleProvider({
   children: ReactNode;
   puzzleId?: string;
 }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useClerkAuth();
   
   const settings = usePuzzleSettings();
   

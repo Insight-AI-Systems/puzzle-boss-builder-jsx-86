@@ -1,11 +1,7 @@
 
-import { useContext } from 'react';
-import { AuthContext } from '@/contexts/AuthContext';
+// Legacy compatibility wrapper for useClerkAuth
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
+export const useAuth = () => {
+  return useClerkAuth();
+};

@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSupportTickets } from '@/hooks/support/useSupportTickets';
 import { TicketFilters } from '@/components/support/ticket-list/TicketFilters';
 import { TicketTable } from '@/components/support/ticket-list/TicketTable';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const AdminTicketDashboard = () => {
   const { tickets, isLoading, fetchTickets, isAdmin, updateTicketStatus } = useSupportTickets();
   const navigate = useNavigate();
-  const { hasRole } = useAuth();
+  const { hasRole } = useClerkAuth();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const isSuperAdmin = hasRole('super_admin');

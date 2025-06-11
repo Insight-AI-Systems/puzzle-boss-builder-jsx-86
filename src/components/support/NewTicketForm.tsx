@@ -6,7 +6,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSupportTickets } from '@/hooks/support/useSupportTickets';
 import { SupportTicket, TicketCategory } from '@/types/supportTicketTypes';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { AuthCheck } from './form/AuthCheck';
 import { TicketFormHeader } from './form/TicketFormHeader';
 import { InternalTicketFormFields } from './form/InternalTicketFormFields';
@@ -15,7 +15,7 @@ export const NewTicketForm = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const ticketType = searchParams.get('type') || 'user';
-  const { user, hasRole } = useAuth();
+  const { user, hasRole } = useClerkAuth();
   const { addTicket } = useSupportTickets();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isAdmin = hasRole('super_admin') || hasRole('admin');

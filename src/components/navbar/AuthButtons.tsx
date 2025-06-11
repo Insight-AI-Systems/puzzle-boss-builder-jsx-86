@@ -3,14 +3,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 interface AuthButtonsProps {
   isMobile?: boolean;
 }
 
 const AuthButtons: React.FC<AuthButtonsProps> = ({ isMobile = false }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useClerkAuth();
   
   console.log('AuthButtons render:', { isAuthenticated, isMobile });
   

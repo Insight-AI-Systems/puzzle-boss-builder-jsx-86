@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import EnhancedJigsawPuzzle from './engines/EnhancedJigsawPuzzle';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 interface PuzzleGameProps {
   imageUrl: string;
@@ -27,7 +27,7 @@ const PuzzleGame: React.FC<PuzzleGameProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useClerkAuth();
   
   useEffect(() => {
     const img = new Image();

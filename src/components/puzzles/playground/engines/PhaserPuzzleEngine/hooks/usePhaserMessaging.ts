@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/auth/useAuth';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { usePuzzleTimer } from '@/components/puzzles/playground/engines/hooks/usePuzzleTimer';
 
 interface PhaserMessagingProps {
@@ -31,7 +31,7 @@ export function usePhaserMessaging({
   setIsComplete,
   onMoveCount
 }: PhaserMessagingProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useClerkAuth();
   const [moveCount, setMoveCount] = useState(0);
   
   // Use our puzzle timer hook

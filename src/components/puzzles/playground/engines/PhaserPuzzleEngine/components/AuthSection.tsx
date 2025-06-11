@@ -2,19 +2,19 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { SignInButton, SignUpButton, UserButton } from '@clerk/clerk-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 interface AuthSectionProps {
   onAuthRequired?: () => void;
 }
 
 export const AuthSection: React.FC<AuthSectionProps> = ({ onAuthRequired }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user } = useClerkAuth();
 
   if (isAuthenticated && user) {
     return (
       <div className="flex items-center gap-4">
-        <span className="text-puzzle-white">Welcome, {user.username || user.email}!</span>
+        <span className="text-puzzle-white">Welcome, {user.username || user.firstName || user.primaryEmailAddress?.emailAddress}!</span>
         <UserButton afterSignOutUrl="/" />
       </div>
     );
