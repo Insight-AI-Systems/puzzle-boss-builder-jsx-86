@@ -30,28 +30,45 @@ const CategoryPuzzles = () => {
   // Find the current category
   const currentCategory = categories?.find(cat => cat.id === categoryId);
 
-  // Fetch puzzles for this category
-  const { data: puzzles, isLoading } = useQuery({
+  // Fetch puzzles for this category with better error handling
+  const { data: puzzles, isLoading, error } = useQuery({
     queryKey: ['category-puzzles', categoryId],
     queryFn: async () => {
-      if (!categoryId) return [];
+      if (!categoryId) {
+        console.log('No categoryId provided');
+        return [];
+      }
       
-      const { data, error } = await supabase
-        .from('puzzles')
-        .select('*')
-        .eq('category_id', categoryId)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
+      console.log('Fetching puzzles for category:', categoryId);
+      
+      try {
+        const { data, error } = await supabase
+          .from('puzzles')
+          .select('*')
+          .eq('category_id', categoryId)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          console.error('Database error fetching puzzles:', error);
+          throw error;
+        }
         
-      if (error) throw error;
-      
-      return data.map(puzzle => ({
-        ...puzzle,
-        total_plays: puzzle.completions || 0,
-        prize_amount: puzzle.prize_value || 0
-      })) as CategoryPuzzle[];
+        console.log('Fetched puzzles:', data);
+        
+        return (data || []).map(puzzle => ({
+          ...puzzle,
+          total_plays: puzzle.completions || 0,
+          prize_amount: puzzle.prize_value || 0
+        })) as CategoryPuzzle[];
+      } catch (err) {
+        console.error('Error in puzzle fetch:', err);
+        throw err;
+      }
     },
-    enabled: !!categoryId
+    enabled: !!categoryId,
+    retry: 3,
+    retryDelay: 1000
   });
 
   // Filter puzzles based on search term
@@ -118,6 +135,21 @@ const CategoryPuzzles = () => {
         </div>
       </section>
 
+      {/* Error Display */}
+      {error && (
+        <div className="text-center py-12">
+          <div className="text-red-500 mb-4">
+            Failed to load puzzles: {error instanceof Error ? error.message : 'Unknown error'}
+          </div>
+          <Button 
+            onClick={() => window.location.reload()} 
+            variant="outline"
+          >
+            Retry
+          </Button>
+        </div>
+      )}
+
       {/* Puzzles Grid */}
       {isLoading ? (
         <div className="flex justify-center py-12">
@@ -163,9 +195,11 @@ const CategoryPuzzles = () => {
       ) : (
         <div className="text-center py-12">
           <p className="text-muted-foreground mb-4">
-            {searchTerm ? 'No puzzles found matching your search.' : 'No puzzles available in this category yet.'}
+            {error ? 'Failed to load puzzles.' : 
+             searchTerm ? 'No puzzles found matching your search.' : 
+             'No puzzles available in this category yet.'}
           </p>
-          {searchTerm && (
+          {searchTerm && !error && (
             <Button onClick={() => setSearchTerm('')} variant="outline">
               Clear Search
             </Button>
