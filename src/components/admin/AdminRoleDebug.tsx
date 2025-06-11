@@ -54,6 +54,10 @@ export const AdminRoleDebug: React.FC = () => {
           title: "Success",
           description: "alantbooth@xtra.co.nz admin access has been removed",
         });
+        // Refresh if this is the current user
+        if (userEmail === 'alantbooth@xtra.co.nz') {
+          setTimeout(() => window.location.reload(), 1000);
+        }
       } else {
         toast({
           title: "Error",

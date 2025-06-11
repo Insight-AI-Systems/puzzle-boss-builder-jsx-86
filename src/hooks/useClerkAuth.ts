@@ -220,7 +220,7 @@ export const useClerkAuth = () => {
         hasProfile: !!profile,
         clerkUserId: user?.id,
         roleSource: 'database_only',
-        securityNote: 'No hardcoded admin emails - database role is the only source of truth'
+        securityNote: 'Database role is the only source of truth'
       });
     }
   }, [isLoaded, isSignedIn, userEmail, userRole, isAdmin, profileLoading, profile, user?.id]);

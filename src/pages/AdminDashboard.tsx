@@ -41,7 +41,9 @@ const AdminDashboard = () => {
     hasAdminAccess,
     canAccessAdminDashboard: canAccessAdminDashboard(),
     isLoading,
-    shouldShowRoleDebug
+    shouldShowRoleDebug,
+    profileRole: profile?.role,
+    clerkRole: clerkAuth.userRole
   });
   
   // Debug logging
@@ -115,7 +117,7 @@ const AdminDashboard = () => {
     );
   }
 
-  console.log('✅ Showing admin dashboard');
+  console.log('✅ Showing admin dashboard for user:', userEmail, 'with role:', userRole);
   
   // Show admin dashboard
   return (
