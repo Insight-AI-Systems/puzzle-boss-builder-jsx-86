@@ -1,78 +1,90 @@
 
 import React from 'react';
-import { Routes, Route, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { ExternalLink, PlusCircle, ShieldAlert } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import PageLayout from '@/components/layouts/PageLayout';
-import { useAuth } from '@/contexts/AuthContext';
-import { SUPPORT_SYSTEM_CONFIG } from '@/services/openSupportsConfig';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MessageSquare, HelpCircle, Ticket } from 'lucide-react';
 import { SupportHome } from '@/components/support/SupportHome';
-import { TicketList } from '@/components/support/TicketList';
-import { TicketDetails } from '@/components/support/ticket-details/TicketDetails';
-import { NewTicketForm } from '@/components/support/NewTicketForm';
-import { useToast } from '@/hooks/use-toast';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 const Support = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { hasRole, user } = useAuth();
-  const { toast } = useToast();
-  const isAdmin = hasRole('super_admin') || hasRole('admin');
-  const isInternalView = searchParams.get('view') === 'internal';
-
-  let subtitle = "Get help with your account, puzzles, and prizes";
-  if (location.pathname.includes('/tickets')) {
-    subtitle = "View and manage your support tickets";
-  } else if (location.pathname.includes('/new-ticket')) {
-    subtitle = "Create a new support ticket";
-  }
-
-  const handleInternalIssuesClick = () => {
-    navigate('/support/new-ticket?type=internal');
-  };
-
-  const handleNewTicketClick = () => {
-    navigate('/support/new-ticket');
-  };
+  const { isAuthenticated } = useClerkAuth();
 
   return (
-    <PageLayout 
-      title={isAdmin ? "Admin Support Center" : "Support Center"} 
-      subtitle={subtitle}
-    >
-      <div className="flex justify-between items-center mb-6">
-        {isAdmin && (
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="destructive" 
-              className="flex items-center gap-2" 
-              onClick={handleInternalIssuesClick}
-            >
-              <ShieldAlert size={16} />
-              <span>Create Internal Ticket</span>
-            </Button>
-          </div>
-        )}
-        
-        {user && (
-          <Button 
-            className="flex items-center gap-2 ml-auto" 
-            onClick={handleNewTicketClick}
-          >
-            <PlusCircle size={16} />
-            <span>New Support Ticket</span>
-          </Button>
-        )}
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold tracking-tight mb-2">Support Center</h1>
+          <p className="text-muted-foreground text-lg">
+            Get help and find answers to your questions
+          </p>
+        </div>
+
+        <Tabs defaultValue="help" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="help" className="flex items-center">
+              <HelpCircle className="mr-2 h-4 w-4" />
+              Help & FAQ
+            </TabsTrigger>
+            <TabsTrigger value="tickets" className="flex items-center">
+              <Ticket className="mr-2 h-4 w-4" />
+              Support Tickets
+            </TabsTrigger>
+            <TabsTrigger value="contact" className="flex items-center">
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Contact Us
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="help">
+            <SupportHome />
+          </TabsContent>
+
+          <TabsContent value="tickets">
+            {isAuthenticated ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Support Tickets</CardTitle>
+                  <CardDescription>
+                    View and manage your support requests
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p>Support ticket functionality will be implemented here.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <Ticket className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium mb-2">Sign in required</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Please sign in to view your support tickets
+                    </p>
+                    <Button>Sign In</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="contact">
+            <Card>
+              <CardHeader>
+                <CardTitle>Contact Information</CardTitle>
+                <CardDescription>
+                  Get in touch with our support team
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p>Contact information and forms will be implemented here.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-      
-      <Routes>
-        <Route path="/" element={<SupportHome />} />
-        <Route path="/tickets" element={<TicketList />} />
-        <Route path="/tickets/:ticketId" element={<TicketDetails />} />
-        <Route path="/new-ticket" element={<NewTicketForm />} />
-      </Routes>
-    </PageLayout>
+    </div>
   );
 };
 

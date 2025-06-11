@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { AdminCategory } from '@/types/categoryTypes';
 import { useCategoryManagement } from '@/hooks/admin/useCategoryManagement';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useCategoryOperations = () => {
@@ -12,7 +12,7 @@ export const useCategoryOperations = () => {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useClerkAuth();
   const { 
     categories,
     isLoading,

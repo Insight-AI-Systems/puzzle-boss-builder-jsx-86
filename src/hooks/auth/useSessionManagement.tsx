@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 export interface SessionInfo {
   id: string;
@@ -14,7 +13,7 @@ export interface SessionInfo {
 }
 
 export function useSessionManagement() {
-  const { user, session } = useAuth();
+  const { user, session } = useClerkAuth();
   const { toast } = useToast();
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [isLoading, setIsLoading] = useState(false);

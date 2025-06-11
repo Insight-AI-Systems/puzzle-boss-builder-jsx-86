@@ -1,122 +1,36 @@
 
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { UserProfile, UserRole } from '@/types/userTypes';
 
-interface UserProfileReturn {
-  profile: UserProfile | null;
-  isLoading: boolean;
-  error: string | null;
-  isAdmin: boolean;
-  currentUserId: string | null;
-  allProfiles: { data: UserProfile[] | null };
-  isLoadingProfiles: boolean;
-  updateUserRole: {
-    mutate: (params: { targetUserId: string; newRole: UserRole }) => void;
-    mutateAsync: (params: { targetUserId: string; newRole: UserRole }) => Promise<any>;
-  };
-  refetch: () => void;
-}
+export function useUserProfile() {
+  const { user } = useClerkAuth();
+  const [profile, setProfile] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-export function useUserProfile(): UserProfileReturn {
-  const { user, isAuthenticated } = useAuth();
-  const [error, setError] = useState<string | null>(null);
-  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!user) return;
 
-  const profileQuery = useQuery({
-    queryKey: ['profile', user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-
+    const fetchProfile = async () => {
+      setIsLoading(true);
       try {
-        console.log('Profile data request for Clerk ID:', user.id);
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('clerk_user_id', user.id)
+          .eq('id', user.id)
           .single();
 
-        if (error) {
-          console.error('Error fetching profile:', error);
-          throw new Error(`Failed to fetch profile: ${error.message}`);
-        }
-
-        console.log('Profile data retrieved:', data);
-        
-        const userProfile: UserProfile = {
-          id: data.id,
-          email: user.email || null,
-          display_name: data.username || data.full_name || null,
-          bio: data.bio || null,
-          avatar_url: data.avatar_url,
-          role: (data.role || 'player') as UserRole,
-          country: data.country || null,
-          categories_played: data.categories_played || [],
-          credits: data.credits || 0,
-          tokens: data.tokens || 0, // Added tokens field
-          achievements: [],
-          referral_code: null,
-          created_at: data.created_at,
-          updated_at: data.updated_at || data.created_at
-        };
-
-        return userProfile;
-      } catch (err) {
-        console.error('Error in useUserProfile:', err);
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-        return null;
+        if (error) throw error;
+        setProfile(data);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      } finally {
+        setIsLoading(false);
       }
-    },
-    enabled: !!user && isAuthenticated,
-  });
+    };
 
-  // Mock implementation for allProfiles to satisfy interface
-  const allProfiles = { data: null };
-  const isLoadingProfiles = false;
+    fetchProfile();
+  }, [user]);
 
-  const updateUserRole = useMutation({
-    mutationFn: async ({ targetUserId, newRole }: { targetUserId: string; newRole: UserRole }) => {
-      // First get the Supabase profile ID from the Clerk user ID
-      const { data: targetProfile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('clerk_user_id', targetUserId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({ role: newRole })
-        .eq('id', targetProfile.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-      queryClient.invalidateQueries({ queryKey: ['all-users'] });
-    },
-    onError: (err) => {
-      setError(err instanceof Error ? err.message : 'Failed to update user role');
-    },
-  });
-
-  const isAdmin = profileQuery.data?.role === 'admin' || profileQuery.data?.role === 'super_admin';
-
-  return {
-    profile: profileQuery.data,
-    isLoading: profileQuery.isLoading,
-    error: error || (profileQuery.error instanceof Error ? profileQuery.error.message : null),
-    isAdmin,
-    currentUserId: user?.id || null,
-    allProfiles,
-    isLoadingProfiles,
-    updateUserRole,
-    refetch: profileQuery.refetch
-  };
+  return { profile, isLoading };
 }

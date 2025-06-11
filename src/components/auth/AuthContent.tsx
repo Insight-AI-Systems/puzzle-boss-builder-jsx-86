@@ -1,195 +1,149 @@
-import React from 'react';
-import { SignInView } from './views/SignInView';
-import { ResetPasswordRequestView } from './views/ResetPasswordRequestView';
-import { ResetPasswordConfirmView } from './views/ResetPasswordConfirmView';
-import { ResetPasswordSuccessView } from './views/ResetPasswordSuccessView';
-import { VerificationPendingView } from './views/VerificationPendingView';
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
-import { AuthView } from '@/types/auth';
+import { useSignIn, useSignUp } from '@clerk/clerk-react';
+import { useNavigate } from 'react-router-dom';
 
-interface AuthContentProps {
-  currentView: AuthView;
-  setCurrentView: (view: AuthView) => void;
-  lastEnteredEmail: string;
-}
-
-export const AuthContent: React.FC<AuthContentProps> = ({
-  currentView,
-  setCurrentView,
-  lastEnteredEmail
-}) => {
-  const auth = useClerkAuth();
+export const AuthContent = () => {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  // Local state for form handling
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [confirmPassword, setConfirmPassword] = React.useState('');
-  const [username, setUsername] = React.useState('');
-  const [rememberMe, setRememberMe] = React.useState(false);
-  const [acceptTerms, setAcceptTerms] = React.useState(false);
-  const [errorMessage, setErrorMessage] = React.useState('');
-  const [resetPasswordVal, setResetPassword] = React.useState('');
-  const [resetConfirmPassword, setResetConfirmPassword] = React.useState('');
-  const [resetErrorMessage, setResetErrorMessage] = React.useState('');
-  const [resetSuccessMessage, setResetSuccessMessage] = React.useState('');
-  
-  // Clear error messages when changing views
-  React.useEffect(() => {
-    setErrorMessage('');
-    setResetErrorMessage('');
-    
-    if (auth.error) {
-      setErrorMessage(auth.error.message || 'Authentication error occurred');
-    }
-  }, [currentView, auth.error]);
+  const { isLoading: authLoading } = useClerkAuth();
+  const { signIn } = useSignIn();
+  const { signUp } = useSignUp();
+  const navigate = useNavigate();
 
-  // Helper functions for auth operations
-  const handleEmailAuth = async (isSignUp: boolean) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
     try {
       if (isSignUp) {
-        await auth.signUp(email, password, { username, acceptTerms });
-        setCurrentView('verification-pending');
+        if (password !== confirmPassword) {
+          throw new Error('Passwords do not match');
+        }
+        
+        if (!signUp) {
+          throw new Error('Sign up not available');
+        }
+
+        const result = await signUp.create({
+          emailAddress: email,
+          password,
+        });
+
+        if (result.status === 'complete') {
+          navigate('/');
+        }
       } else {
-        await auth.signIn(email, password);
+        if (!signIn) {
+          throw new Error('Sign in not available');
+        }
+
+        const result = await signIn.create({
+          identifier: email,
+          password,
+        });
+
+        if (result.status === 'complete') {
+          navigate('/');
+        }
       }
-    } catch (err) {
-      const error = err as Error;
-      setErrorMessage(error.message || 'Authentication failed');
-    }
-  };
-  
-  const handleGoogleAuth = async () => {
-    // Implement Google auth if needed
-    console.log("Google auth not implemented");
-  };
-  
-  const handlePasswordResetRequest = async () => {
-    try {
-      await auth.resetPassword(resetPasswordVal);
-      setResetSuccessMessage('Password reset email sent successfully');
-      setCurrentView('reset-password-success');
-    } catch (err) {
-      const error = err as Error;
-      setResetErrorMessage(error.message || 'Failed to send reset email');
+    } catch (err: any) {
+      setError(err.message || 'Authentication failed');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handlePasswordUpdate = async () => {
-    try {
-      await auth.updatePassword(resetPasswordVal);
-      setResetSuccessMessage('Password updated successfully');
-      setCurrentView('reset-password-success');
-    } catch (err) {
-      const error = err as Error;
-      setResetErrorMessage(error.message || 'Failed to update password');
-    }
-  };
-
-  const handleForgotPassword = () => {
-    setCurrentView('reset-password-request');
-  };
-
-  const handleGoToSignIn = () => {
-    setCurrentView('signin');
-  };
-
-  const handleGoBack = () => {
-    setCurrentView('signin');
-  };
-
-  // Render different views based on current state
-  switch (currentView) {
-    case 'signin':
-    case 'signup':
-      return (
-        <SignInView
-          currentView={currentView}
-          setCurrentView={setCurrentView}
-          email={email}
-          setEmail={setEmail}
-          password={password}
-          setPassword={setPassword}
-          confirmPassword={confirmPassword}
-          setConfirmPassword={setConfirmPassword}
-          username={username}
-          setUsername={setUsername}
-          rememberMe={rememberMe}
-          setRememberMe={setRememberMe}
-          acceptTerms={acceptTerms}
-          setAcceptTerms={setAcceptTerms}
-          errorMessage={errorMessage}
-          handleEmailAuth={handleEmailAuth}
-          handleGoogleAuth={handleGoogleAuth}
-          onForgotPassword={handleForgotPassword}
-          isLoading={auth.isLoading}
-        />
-      );
-
-    case 'reset-password-request':
-      return (
-        <ResetPasswordRequestView
-          email={resetPasswordVal}
-          errorMessage={resetErrorMessage}
-          successMessage={resetSuccessMessage}
-          isLoading={auth.isLoading}
-          setEmail={setResetPassword}
-          handlePasswordResetRequest={handlePasswordResetRequest}
-          goBack={handleGoBack}
-        />
-      );
-
-    case 'reset-password-confirm':
-      return (
-        <ResetPasswordConfirmView
-          password={resetPasswordVal}
-          confirmPassword={resetConfirmPassword}
-          errorMessage={resetErrorMessage}
-          successMessage={resetSuccessMessage}
-          isLoading={auth.isLoading}
-          setPassword={setResetPassword}
-          setConfirmPassword={setResetConfirmPassword}
-          handlePasswordReset={handlePasswordUpdate}
-        />
-      );
-
-    case 'reset-password-success':
-      return (
-        <ResetPasswordSuccessView 
-          goToSignIn={handleGoToSignIn}
-        />
-      );
-
-    case 'verification-pending':
-      return (
-        <VerificationPendingView
-          email={lastEnteredEmail || email}
-          goToSignIn={handleGoToSignIn}
-        />
-      );
-
-    default:
-      return (
-        <SignInView
-          currentView="signin"
-          setCurrentView={setCurrentView}
-          email={email}
-          setEmail={setEmail}
-          password={password}
-          setPassword={setPassword}
-          confirmPassword={confirmPassword}
-          setConfirmPassword={setConfirmPassword}
-          username={username}
-          setUsername={setUsername}
-          rememberMe={rememberMe}
-          setRememberMe={setRememberMe}
-          acceptTerms={acceptTerms}
-          setAcceptTerms={setAcceptTerms}
-          errorMessage={errorMessage}
-          handleEmailAuth={handleEmailAuth}
-          handleGoogleAuth={handleGoogleAuth}
-          onForgotPassword={handleForgotPassword}
-          isLoading={auth.isLoading}
-        />
-      );
+  if (authLoading) {
+    return <div>Loading...</div>;
   }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-puzzle-black to-gray-900 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>{isSignUp ? 'Create Account' : 'Welcome Back'}</CardTitle>
+          <CardDescription>
+            {isSignUp 
+              ? 'Sign up to start solving puzzles'
+              : 'Sign in to your account'
+            }
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            {isSignUp && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+            </Button>
+          </form>
+
+          <div className="mt-4 text-center">
+            <Button
+              variant="link"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-sm"
+            >
+              {isSignUp 
+                ? 'Already have an account? Sign in'
+                : 'Need an account? Sign up'
+              }
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 };

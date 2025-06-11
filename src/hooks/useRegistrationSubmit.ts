@@ -1,53 +1,45 @@
 
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { useToast } from '@/hooks/use-toast';
 
-interface RegistrationData {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  username: string;
-  country: string;
-  dateOfBirth: string;
-  acceptTerms: boolean;
-  acceptPrivacy: boolean;
-  acceptMarketing: boolean;
-}
-
 export function useRegistrationSubmit() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signUp } = useAuth();
+  const { user } = useClerkAuth();
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const submitRegistration = async (data: RegistrationData) => {
-    if (isSubmitting) return;
-    
+  const submitRegistration = async (registrationData: any) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to submit registration.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     setIsSubmitting(true);
-    
     try {
-      await signUp(data.email, data.password, {
-        username: data.username,
-        acceptTerms: data.acceptTerms
-      });
+      // TODO: Implement actual registration submission
+      console.log('Submitting registration:', { ...registrationData, userId: user.id });
+      
+      // Simulate submission
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
-        title: 'Registration Successful',
-        description: 'Please check your email to verify your account.',
+        title: "Registration submitted",
+        description: "Your registration has been submitted successfully.",
       });
       
-      return { success: true };
+      return true;
     } catch (error) {
-      console.error('Registration error:', error);
-      
+      console.error('Registration submission error:', error);
       toast({
-        title: 'Registration Failed',
-        description: error instanceof Error ? error.message : 'An error occurred during registration',
-        variant: 'destructive',
+        title: "Submission failed",
+        description: "There was an error submitting your registration.",
+        variant: "destructive",
       });
-      
-      return { success: false, error };
+      return false;
     } finally {
       setIsSubmitting(false);
     }

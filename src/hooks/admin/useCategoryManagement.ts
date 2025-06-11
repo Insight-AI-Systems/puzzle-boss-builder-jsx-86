@@ -1,13 +1,13 @@
 
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { AdminCategory } from '@/types/categoryTypes';
 import { useAdminCategoryQueries } from './useAdminCategoryQueries';
 import { useAdminCategoryMutations } from './useAdminCategoryMutations';
 
 export function useCategoryManagement() {
   const [editingCategory, setEditingCategory] = useState<AdminCategory | null>(null);
-  const { user } = useAuth();
+  const { user } = useClerkAuth();
   
   const {
     data: categories = [],

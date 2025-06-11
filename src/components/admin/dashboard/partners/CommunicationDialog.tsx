@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -23,7 +22,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { usePartnerManagement } from '@/hooks/admin/usePartnerManagement';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { Mail, Phone, Users, CalendarIcon } from 'lucide-react';
 
 const formSchema = z.object({
@@ -48,7 +47,7 @@ const CommunicationDialog: React.FC<CommunicationDialogProps> = ({
   partnerEmail,
   partnerName
 }) => {
-  const { user } = useAuth();
+  const { user } = useClerkAuth();
   const { createCommunication } = usePartnerManagement(partnerId);
   
   const form = useForm<z.infer<typeof formSchema>>({

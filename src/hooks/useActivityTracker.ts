@@ -1,66 +1,32 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 export function useActivityTracker() {
-  const { user, isAuthenticated } = useAuth();
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { user } = useClerkAuth();
 
   useEffect(() => {
-    if (!isAuthenticated || !user) return;
+    if (!user) return;
 
-    // Track activity every 2 minutes (reduced from 5 minutes)
-    const ACTIVITY_INTERVAL = 2 * 60 * 1000; // 2 minutes
-
-    const updateActivity = async () => {
+    const trackActivity = async () => {
       try {
-        console.log('Activity tracker - Updating last_sign_in for user:', user.id);
-        
         const { error } = await supabase
-          .from('profiles')
-          .update({ last_sign_in: new Date().toISOString() })
-          .eq('id', user.id);
+          .from('user_activity')
+          .insert({
+            user_id: user.id,
+            activity_type: 'page_view',
+            timestamp: new Date().toISOString()
+          });
 
         if (error) {
-          console.error('Activity tracker - Error updating activity:', error);
-        } else {
-          console.log('Activity tracker - Successfully updated activity');
+          console.error('Error tracking activity:', error);
         }
       } catch (error) {
-        console.error('Activity tracker - Exception:', error);
+        console.error('Activity tracking error:', error);
       }
     };
 
-    // Update activity immediately on mount
-    updateActivity();
-
-    // Set up interval for periodic updates
-    const intervalId = setInterval(updateActivity, ACTIVITY_INTERVAL);
-
-    // Track user interactions
-    const handleUserActivity = () => {
-      // Debounce updates to avoid too frequent calls (reduced from 30 to 20 seconds)
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      timeoutRef.current = setTimeout(updateActivity, 20000); // 20 seconds
-    };
-
-    // Add event listeners for user activity
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-    events.forEach(event => {
-      document.addEventListener(event, handleUserActivity, { passive: true });
-    });
-
-    return () => {
-      clearInterval(intervalId);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      events.forEach(event => {
-        document.removeEventListener(event, handleUserActivity);
-      });
-    };
-  }, [isAuthenticated, user]);
+    trackActivity();
+  }, [user]);
 }
