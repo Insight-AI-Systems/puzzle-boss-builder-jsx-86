@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,6 +66,9 @@ export function useMemberProfile() {
           terms_accepted: data.terms_accepted || false,
           terms_accepted_at: data.terms_accepted_at || null,
           marketing_opt_in: data.marketing_opt_in || false,
+          gender: data.gender || null,
+          custom_gender: data.custom_gender || null,
+          age_group: data.age_group || null,
         };
 
         return profile;
@@ -95,6 +99,9 @@ export function useMemberProfile() {
       if (updates.username !== undefined) allowedFields.username = updates.username;
       if (updates.bio !== undefined) allowedFields.bio = updates.bio;
       if (updates.date_of_birth !== undefined) allowedFields.date_of_birth = updates.date_of_birth;
+      if (updates.gender !== undefined) allowedFields.gender = updates.gender;
+      if (updates.custom_gender !== undefined) allowedFields.custom_gender = updates.custom_gender;
+      if (updates.age_group !== undefined) allowedFields.age_group = updates.age_group;
 
       console.log('Filtered updates to send:', allowedFields);
 
@@ -139,7 +146,9 @@ export function useMemberProfile() {
     },
     onSuccess: (data) => {
       console.log('Profile update mutation succeeded:', data);
+      // Invalidate and refetch the profile data
       queryClient.invalidateQueries({ queryKey: ['member-profile', user?.id] });
+      queryClient.refetchQueries({ queryKey: ['member-profile', user?.id] });
       toast.success('Profile updated successfully!');
       setError(null); // Clear any previous errors
     },
@@ -176,6 +185,7 @@ export function useMemberProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['member-profile', user?.id] });
+      queryClient.refetchQueries({ queryKey: ['member-profile', user?.id] });
       toast.success('Terms accepted successfully!');
     },
     onError: (error) => {
