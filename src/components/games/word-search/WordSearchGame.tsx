@@ -84,9 +84,7 @@ export function WordSearchGame() {
         
         // Cleanup subscription on unmount
         return () => {
-          if (unsubscribe) {
-            unsubscribe();
-          }
+          unsubscribe();
         };
         
       } catch (error) {
@@ -101,7 +99,10 @@ export function WordSearchGame() {
       }
     };
 
-    initializeEngine();
+    const cleanup = initializeEngine();
+    return () => {
+      cleanup?.then(cleanupFn => cleanupFn?.());
+    };
   }, []);
 
   const handleSelectionStart = useCallback((cell: Cell) => {

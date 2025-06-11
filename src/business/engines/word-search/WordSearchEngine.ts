@@ -37,7 +37,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     super(initialState, config);
   }
 
-  protected validateMove(move: WordSearchMove): { isValid: boolean; reason?: string } {
+  public validateMove(move: WordSearchMove): { isValid: boolean; reason?: string } {
     switch (move.type) {
       case 'SELECT_CELLS':
         return { isValid: true }; // Cell selection is always valid
@@ -77,7 +77,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     
     this.placedWords = placedWords;
     
-    this.setState({
+    this.updateState({
       ...this.getState(),
       grid,
       words,
@@ -97,37 +97,37 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
 
   start(): void {
     console.log('Starting Word Search game...');
-    this.setState({
+    this.updateState({
       ...this.getState(),
       status: 'playing',
       startTime: Date.now()
     });
     
     this.startTimer();
-    this.emitEvent('gameStarted');
+    this.emit('gameStarted', { type: 'gameStarted', data: {} });
   }
 
   pause(): void {
-    this.setState({
+    this.updateState({
       ...this.getState(),
       status: 'paused'
     });
     this.stopTimer();
-    this.emitEvent('gamePaused');
+    this.emit('gamePaused', { type: 'gamePaused', data: {} });
   }
 
   resume(): void {
-    this.setState({
+    this.updateState({
       ...this.getState(),
       status: 'playing'
     });
     this.startTimer();
-    this.emitEvent('gameResumed');
+    this.emit('gameResumed', { type: 'gameResumed', data: {} });
   }
 
   reset(): void {
     this.stopTimer();
-    this.setState({
+    this.updateState({
       ...this.getState(),
       status: 'idle',
       score: 0,
@@ -142,7 +142,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       timeElapsed: 0,
       hintsUsed: 0
     });
-    this.emitEvent('gameReset');
+    this.emit('gameReset', { type: 'gameReset', data: {} });
   }
 
   makeMove(move: WordSearchMove): boolean {
@@ -175,7 +175,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
         break;
     }
 
-    this.setState(newState);
+    this.updateState(newState);
 
     // Check win condition
     const winResult = this.checkWinCondition();
@@ -183,19 +183,19 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       this.handleGameComplete();
     }
 
-    this.emitEvent('moveMade');
+    this.emit('moveMade', { type: 'moveMade', data: move });
     return true;
   }
 
   private handleGameComplete(): void {
     this.stopTimer();
-    this.setState({
+    this.updateState({
       ...this.getState(),
       status: 'completed',
       isComplete: true,
       endTime: Date.now()
     });
-    this.emitEvent('gameCompleted');
+    this.emit('gameCompleted', { type: 'gameCompleted', data: {} });
   }
 
   validateWordSelection(cellIds: string[]): { isValid: boolean; word?: string } {
@@ -226,7 +226,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
   }
 
   clearHints(): void {
-    this.setState({
+    this.updateState({
       ...this.getState(),
       hintCells: []
     });
@@ -245,7 +245,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       this.placedWords = savedState.placedWords;
     }
     
-    this.setState({
+    this.updateState({
       ...savedState,
       foundWords: new Set(savedState.foundWords || [])
     });
@@ -255,7 +255,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     }
   }
 
-  subscribe(callback: (state: WordSearchState) => void) {
+  subscribe(callback: (state: WordSearchState) => void): () => void {
     return this.addEventListener('stateChanged', callback);
   }
 
@@ -352,7 +352,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     
     this.gameTimer = window.setInterval(() => {
       if (this.getState().status === 'playing') {
-        this.setState({
+        this.updateState({
           ...this.getState(),
           timeElapsed: this.getState().timeElapsed + 1
         });
