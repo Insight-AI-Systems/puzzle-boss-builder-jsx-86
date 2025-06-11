@@ -87,6 +87,10 @@ export interface MemberDetailedProfile {
   terms_accepted: boolean;
   terms_accepted_at?: string;
   marketing_opt_in: boolean;
+  // Add missing gender and age fields
+  gender?: string | null;
+  custom_gender?: string | null;
+  age_group?: string | null;
   addresses?: MemberAddress[];
   membership_details?: MembershipDetail;
   xero_mapping?: XeroMemberMapping;
