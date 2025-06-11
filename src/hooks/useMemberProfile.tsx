@@ -66,7 +66,7 @@ export function useMemberProfile() {
           terms_accepted: data.terms_accepted || false,
           terms_accepted_at: data.terms_accepted_at || null,
           marketing_opt_in: data.marketing_opt_in || false,
-          gender: data.gender || null,
+          gender: data.gender as 'male' | 'female' | 'non-binary' | 'custom' | 'prefer-not-to-say' | 'other' | null || null,
           custom_gender: data.custom_gender || null,
           age_group: data.age_group || null,
         };
