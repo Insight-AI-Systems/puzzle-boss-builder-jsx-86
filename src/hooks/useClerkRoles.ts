@@ -15,12 +15,18 @@ export const useClerkRoles = () => {
   });
 
   // Get user's role from Clerk organization membership - fix the role extraction
-  const userRole = membership?.role || 'player';
+  let userRole = membership?.role || 'player';
+  
+  // Remove any "org:" prefix if it exists
+  if (typeof userRole === 'string' && userRole.startsWith('org:')) {
+    userRole = userRole.replace('org:', '');
+  }
   
   console.log('🎭 Role Detection:', {
     rawMembershipRole: membership?.role,
     finalUserRole: userRole,
-    isString: typeof userRole === 'string'
+    isString: typeof userRole === 'string',
+    hasOrgPrefix: membership?.role?.includes('org:')
   });
   
   // Check if user has a specific role
@@ -30,10 +36,17 @@ export const useClerkRoles = () => {
       return false;
     }
     
-    const currentRole = membership.role;
+    let currentRole = membership.role;
+    
+    // Remove "org:" prefix if it exists
+    if (typeof currentRole === 'string' && currentRole.startsWith('org:')) {
+      currentRole = currentRole.replace('org:', '');
+    }
+    
     console.log('🔍 hasRole check:', { 
       requestedRole: role, 
       currentRole, 
+      rawRole: membership.role,
       match: currentRole === role,
       superAdminOverride: currentRole === 'super_admin'
     });
@@ -67,7 +80,12 @@ export const useClerkRoles = () => {
   const hasPermission = (permission: string): boolean => {
     if (!isSignedIn || !membership) return false;
     
-    const currentRole = membership.role;
+    let currentRole = membership.role;
+    
+    // Remove "org:" prefix if it exists
+    if (typeof currentRole === 'string' && currentRole.startsWith('org:')) {
+      currentRole = currentRole.replace('org:', '');
+    }
     
     // Define role permissions
     const rolePermissions: Record<string, string[]> = {
@@ -86,6 +104,7 @@ export const useClerkRoles = () => {
     console.log('🔑 hasPermission check:', {
       permission,
       currentRole,
+      rawRole: membership.role,
       userPermissions,
       hasPermissionResult
     });

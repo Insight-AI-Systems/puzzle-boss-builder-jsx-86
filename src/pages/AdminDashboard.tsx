@@ -26,7 +26,8 @@ const AdminDashboard = () => {
     userId,
     userRole,
     hasAdminAccess,
-    isLoaded
+    isLoaded,
+    cleanedRole: userRole // This should now be just "super_admin" not "org:super_admin"
   });
   
   // Debug logging
@@ -49,26 +50,18 @@ const AdminDashboard = () => {
     }
   }, [isLoaded, isSignedIn, hasAdminAccess, userRole, userId]);
 
-  // Handle access control
+  // Handle access control - remove the redirect that's causing the reload loop
   useEffect(() => {
-    if (isLoaded) {
-      console.log('🚦 Access Control Check (Clerk RBAC):', {
-        isSignedIn,
-        hasAdminAccess,
-        shouldRedirect: isSignedIn && !hasAdminAccess
+    if (isLoaded && isSignedIn && !hasAdminAccess) {
+      console.log('🚫 Access denied - showing access check component instead of redirecting');
+      toast({
+        title: "Access Denied",
+        description: `You don't have admin privileges. Current role: ${userRole}`,
+        variant: "destructive",
       });
-
-      if (isSignedIn && !hasAdminAccess) {
-        console.log('🚫 Access denied, redirecting to homepage');
-        toast({
-          title: "Access Denied",
-          description: `You don't have admin privileges. Current role: ${userRole}`,
-          variant: "destructive",
-        });
-        navigate('/', { replace: true });
-      }
+      // Don't navigate away - just show the access denied component
     }
-  }, [isLoaded, isSignedIn, hasAdminAccess, navigate, toast, userRole]);
+  }, [isLoaded, isSignedIn, hasAdminAccess, toast, userRole]);
 
   const showDebugInfo = () => {
     setShowDebug(!showDebug);
@@ -89,7 +82,7 @@ const AdminDashboard = () => {
 
   // Show access denied if not authenticated or no admin access
   if (!isSignedIn || !hasAdminAccess) {
-    console.log('🚫 Showing access denied screen');
+    console.log('🚫 Showing access denied screen for role:', userRole);
     return (
       <AdminAccessCheck 
         userId={userId}
