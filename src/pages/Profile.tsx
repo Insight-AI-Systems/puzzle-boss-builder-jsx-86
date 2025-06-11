@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileInfoTab } from '@/components/profile/tabs/ProfileInfoTab';
@@ -21,7 +22,7 @@ const Profile: React.FC = () => {
   
   const isLoading = isLoadingUserProfile || isLoadingMemberProfile;
 
-  console.log('Profile component render:', { profile, isLoading, isLoadingMemberProfile, isLoadingUserProfile });
+  console.log('Profile component render:', { profile, isLoading, isLoadingMemberProfile, isLoadingUserProfile, isAdmin });
 
   if (isLoading) {
     return (

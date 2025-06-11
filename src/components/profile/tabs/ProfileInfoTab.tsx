@@ -11,6 +11,7 @@ import { MemberDetailedProfile } from '@/types/memberTypes';
 import { UseMutationResult } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { User, Shield, Calendar, Award, Coins } from 'lucide-react';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 interface ProfileInfoTabProps {
   profile: MemberDetailedProfile;
@@ -23,8 +24,11 @@ export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredi
   const [isEditing, setIsEditing] = useState(false);
   const [adminCredits, setAdminCredits] = useState('');
   const [adminNote, setAdminNote] = useState('');
+  
+  // Get the current user's admin status from useUserProfile
+  const { isAdmin } = useUserProfile();
 
-  const { register, handleSubmit, formState: { isDirty } } = useForm({
+  const { register, handleSubmit, formState: { isDirty }, setValue, watch } = useForm({
     defaultValues: {
       full_name: profile.full_name || '',
       username: profile.username || '',
@@ -36,6 +40,8 @@ export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredi
     }
   });
 
+  const watchedGender = watch('gender');
+
   const onSubmit = (data: any) => {
     updateProfile.mutate(data, {
       onSuccess: () => {
@@ -45,7 +51,7 @@ export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredi
   };
 
   const handleAwardCredits = () => {
-    if (!awardCredits) return;
+    if (!awardCredits || !isAdmin) return;
     
     const credits = parseInt(adminCredits);
     if (isNaN(credits) || credits <= 0) return;
@@ -139,7 +145,10 @@ export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredi
               <div className="space-y-2">
                 <Label htmlFor="age_group">Age Group</Label>
                 {isEditing ? (
-                  <Select>
+                  <Select 
+                    value={watch('age_group')} 
+                    onValueChange={(value) => setValue('age_group', value)}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select age group" />
                     </SelectTrigger>
@@ -161,6 +170,46 @@ export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredi
                 )}
               </div>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender</Label>
+              {isEditing ? (
+                <Select 
+                  value={watchedGender} 
+                  onValueChange={(value) => setValue('gender', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="non-binary">Non-binary</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
+                    <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  value={profile.gender === 'custom' && profile.custom_gender 
+                    ? profile.custom_gender 
+                    : profile.gender || 'Not specified'}
+                  disabled
+                  className="bg-muted"
+                />
+              )}
+            </div>
+
+            {isEditing && watchedGender === 'custom' && (
+              <div className="space-y-2">
+                <Label htmlFor="custom_gender">Custom Gender</Label>
+                <Input
+                  id="custom_gender"
+                  {...register('custom_gender')}
+                  placeholder="Please specify"
+                />
+              </div>
+            )}
 
             {isEditing && (
               <div className="flex gap-2 pt-4">
@@ -245,8 +294,8 @@ export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredi
         </Card>
       </div>
 
-      {/* Admin Tools (if available) */}
-      {awardCredits && (
+      {/* Admin Tools (only visible to admins) */}
+      {isAdmin && awardCredits && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
