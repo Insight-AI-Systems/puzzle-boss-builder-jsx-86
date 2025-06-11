@@ -24,7 +24,6 @@ export function WordSearchGame() {
   
   const [engine, setEngine] = useState<WordSearchEngine | null>(null);
   const [gameState, setGameState] = useState<WordSearchState | null>(null);
-  const [currentSelection, setCurrentSelection] = useState<Cell[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Initialize the game engine
@@ -96,12 +95,18 @@ export function WordSearchGame() {
     };
 
     initializeEngine();
+
+    // Cleanup timer when component unmounts
+    return () => {
+      if (engine) {
+        engine.destroy?.();
+      }
+    };
   }, []);
 
   const handleSelectionStart = useCallback((cell: Cell) => {
     if (!engine || gameState?.status !== 'playing') return;
     
-    setCurrentSelection([cell]);
     engine.makeMove({
       type: 'SELECT_CELLS',
       cells: [cell]
@@ -111,38 +116,33 @@ export function WordSearchGame() {
   const handleSelectionMove = useCallback((cell: Cell) => {
     if (!engine || gameState?.status !== 'playing') return;
     
-    setCurrentSelection(prev => {
-      const newSelection = prev.find(c => c.row === cell.row && c.col === cell.col) 
-        ? prev 
-        : [...prev, cell];
-      
+    // Get current selection from engine state and add new cell
+    const currentSelection = stringsToCells(gameState?.currentSelection || []);
+    const cellExists = currentSelection.find(c => c.row === cell.row && c.col === cell.col);
+    
+    if (!cellExists) {
+      const newSelection = [...currentSelection, cell];
       engine.makeMove({
         type: 'SELECT_CELLS',
         cells: newSelection
       });
-      
-      return newSelection;
-    });
-  }, [engine, gameState?.status]);
+    }
+  }, [engine, gameState?.status, gameState?.currentSelection]);
 
   const handleSelectionEnd = useCallback(() => {
-    if (!engine || !gameState || currentSelection.length === 0) {
-      setCurrentSelection([]);
+    if (!engine || !gameState || !gameState.currentSelection.length) {
       return;
     }
 
-    // Convert current selection to string format for engine validation
-    const cellStrings = cellsToStrings(currentSelection);
-    
     // Use engine to validate the selection
-    const validation = engine.validateWordSelection(cellStrings);
+    const validation = engine.validateWordSelection(gameState.currentSelection);
     
     if (validation.isValid && validation.word) {
       // Word found! Use engine to handle the move
       engine.makeMove({
         type: 'WORD_FOUND',
         word: validation.word,
-        cells: cellStrings
+        cells: gameState.currentSelection
       });
       
       toast({
@@ -150,11 +150,14 @@ export function WordSearchGame() {
         description: `You found "${validation.word.toUpperCase()}"`,
         duration: 2000,
       });
+    } else {
+      // Clear selection if word not found
+      engine.makeMove({
+        type: 'SELECT_CELLS',
+        cells: []
+      });
     }
-    
-    // Clear current selection
-    setCurrentSelection([]);
-  }, [engine, gameState, currentSelection, toast]);
+  }, [engine, gameState, toast]);
 
   const handleStart = useCallback(() => {
     if (engine) {
@@ -177,7 +180,6 @@ export function WordSearchGame() {
   const handleReset = useCallback(() => {
     if (engine) {
       engine.reset();
-      setCurrentSelection([]);
     }
   }, [engine]);
 
@@ -234,7 +236,7 @@ export function WordSearchGame() {
 
   // Convert engine state to component props
   const selectedCells = stringsToCells(gameState.selectedCells);
-  const currentSelectionForGrid = currentSelection;
+  const currentSelectionForGrid = stringsToCells(gameState.currentSelection);
   const hintCells = stringsToCells(gameState.hintCells || []);
 
   return (
