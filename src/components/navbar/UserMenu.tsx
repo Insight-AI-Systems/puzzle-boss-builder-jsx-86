@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { UserProfile } from '@/types/userTypes';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 interface UserMenuProps {
   profile: UserProfile | null;
@@ -21,19 +21,28 @@ interface UserMenuProps {
 }
 
 const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
-  const { user, hasRole, signOut } = useAuth();
+  const { hasRole, signOut } = useClerkAuth();
 
   // Check admin privileges based on role, not hardcoded emails
   const isAdminUser = hasRole('super_admin') || hasRole('admin') || hasRole('category_manager') || 
                      hasRole('social_media_manager') || hasRole('partner_manager') || hasRole('cfo');
   
   console.log('UserMenu - Admin Check:', {
-    userEmail: user?.email,
     isAdminUser,
     profileRole: profile?.role
   });
 
   if (!profile) return null;
+
+  const handleSignOut = async () => {
+    try {
+      console.log('UserMenu - Initiating sign out');
+      await signOut();
+      console.log('UserMenu - Sign out completed');
+    } catch (error) {
+      console.error('UserMenu - Sign out error:', error);
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -97,7 +106,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
         )}
         
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => signOut()}>
+        <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>

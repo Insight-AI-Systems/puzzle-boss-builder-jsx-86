@@ -57,11 +57,17 @@ export const UserLoginStatus: React.FC<MemberLoginStatusProps> = ({
         };
       }
       
-      // Increased threshold to 15 minutes for "Now" status
-      if (diffInMinutes < 15) {
+      // Enhanced thresholds for better real-time detection
+      if (diffInMinutes < 10) {
         return { 
           indicator: '🟢', 
           text: 'Now', 
+          color: 'text-green-600'
+        };
+      } else if (diffInMinutes < 30) {
+        return { 
+          indicator: '🟢', 
+          text: 'Active', 
           color: 'text-green-600'
         };
       } else if (isToday(loginDate)) {
@@ -129,10 +135,11 @@ export const UserLoginStatus: React.FC<MemberLoginStatusProps> = ({
       
       return (
         <div className="space-y-1">
-          {isCurrentUser && <div><strong>Status:</strong> Currently logged in</div>}
+          {isCurrentUser && <div><strong>Status:</strong> Currently logged in (You)</div>}
           <div><strong>Last Login:</strong> {formattedLogin}</div>
           <div><strong>Relative:</strong> {relativeTime}</div>
           <div><strong>Joined:</strong> {joinedDate}</div>
+          {displayName && <div><strong>User:</strong> {displayName}</div>}
         </div>
       );
     } catch (error) {

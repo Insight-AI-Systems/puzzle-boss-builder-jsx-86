@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { ChevronDown, Search, Grid3X3, Brain, Zap, Square, BookOpen, Puzzle, User } from 'lucide-react';
 import { MainNavItem } from './NavbarData';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -16,7 +16,7 @@ interface MobileMenuProps {
 const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, navItems, isLoggedIn, onClose }) => {
   const [expandedPuzzles, setExpandedPuzzles] = useState(false);
   const { profile } = useUserProfile();
-  const { hasRole, isAdmin } = useAuth();
+  const { hasRole, isAdmin } = useClerkAuth();
 
   if (!isOpen) return null;
 
