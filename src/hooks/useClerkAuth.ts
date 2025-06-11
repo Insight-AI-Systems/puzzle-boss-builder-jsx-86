@@ -19,7 +19,7 @@ interface ClerkProfile {
   updated_at: string;
 }
 
-// Admin emails - only used for initial profile creation, not ongoing role enforcement
+// Admin emails - these users ALWAYS get super_admin role
 const ADMIN_EMAILS = [
   'alan@insight-ai-systems.com',
   'alantbooth@xtra.co.nz',
@@ -35,15 +35,14 @@ export const useClerkAuth = () => {
   const [profile, setProfile] = React.useState<ClerkProfile | null>(null);
   const [profileLoading, setProfileLoading] = React.useState(true);
 
-  // Only check admin email status for new profile creation, not role determination
   const userEmail = user?.primaryEmailAddress?.emailAddress;
-  const isAdminEmailForNewProfiles = userEmail ? ADMIN_EMAILS.includes(userEmail) : false;
+  const isAdminEmail = userEmail ? ADMIN_EMAILS.includes(userEmail) : false;
 
   console.log('🔐 useClerkAuth Hook State:', {
     isSignedIn,
     isLoaded,
     userEmail,
-    isAdminEmailForNewProfiles,
+    isAdminEmail,
     profileLoading,
     hasProfile: !!profile
   });
@@ -54,20 +53,18 @@ export const useClerkAuth = () => {
     return cleanup;
   }, []);
 
-  // Session tracking - start/end sessions based on auth state
+  // Session tracking
   React.useEffect(() => {
     if (isSignedIn && userEmail && user?.id) {
-      // Start session tracking
       sessionTracker.startSession(userEmail, user.id);
       setCurrentUserForCleanup(userEmail);
     } else if (userEmail) {
-      // End session tracking on logout
       sessionTracker.endSession(userEmail);
       setCurrentUserForCleanup(null);
     }
   }, [isSignedIn, userEmail, user?.id]);
 
-  // Optimized profile fetch - respects manual role changes with better error handling
+  // Enhanced profile fetch with proper role assignment
   React.useEffect(() => {
     if (!user?.id || !isSignedIn) {
       setProfile(null);
@@ -96,10 +93,12 @@ export const useClerkAuth = () => {
             .maybeSingle();
           
           if (emailProfile && !emailError) {
-            console.log('📧 Found profile by email, updating with Clerk ID');
-            // Update profile with Clerk ID but DON'T change role for existing profiles
+            console.log('📧 Found profile by email, updating with Clerk ID and role');
+            // Update profile with Clerk ID and ensure correct role for admins
+            const correctRole = isAdminEmail ? 'super_admin' : emailProfile.role;
             const updateData = { 
               clerk_user_id: user.id,
+              role: correctRole,
               updated_at: new Date().toISOString(),
               last_sign_in: new Date().toISOString()
             };
@@ -117,7 +116,7 @@ export const useClerkAuth = () => {
           }
         }
         
-        // Create new profile if none exists - only here we apply admin email logic
+        // Create new profile if none exists
         if (!data) {
           console.log('📝 Creating new profile for user');
           const newProfile = {
@@ -125,7 +124,7 @@ export const useClerkAuth = () => {
             clerk_user_id: user.id,
             email: userEmail,
             username: user.username || user.firstName || userEmail?.split('@')[0] || '',
-            role: isAdminEmailForNewProfiles ? 'super_admin' : 'player',
+            role: isAdminEmail ? 'super_admin' : 'player',
             member_id: crypto.randomUUID(),
             last_sign_in: new Date().toISOString()
           };
@@ -140,11 +139,14 @@ export const useClerkAuth = () => {
             data = createdProfile;
           }
         } else if (data) {
-          // For existing profiles, only update last_sign_in - RESPECT existing role
-          console.log('✅ Found existing profile, respecting current role:', data.role);
+          // For existing profiles, update last_sign_in and ensure admin emails have correct role
+          const correctRole = isAdminEmail ? 'super_admin' : data.role;
+          console.log(`✅ Found existing profile, ensuring correct role: ${correctRole}`);
+          
           const { data: updatedProfile } = await supabase
             .from('profiles')
             .update({ 
+              role: correctRole,
               last_sign_in: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
@@ -155,7 +157,7 @@ export const useClerkAuth = () => {
           data = updatedProfile || data;
         }
         
-        // Transform to ClerkProfile format with display_name
+        // Transform to ClerkProfile format
         if (data) {
           const transformedProfile: ClerkProfile = {
             id: data.id,
@@ -175,9 +177,9 @@ export const useClerkAuth = () => {
         }
       } catch (error) {
         console.error('❌ Profile fetch error:', error);
-        // For admin emails, create a fallback profile state only for new users
-        if (isAdminEmailForNewProfiles) {
-          console.log('🆘 Creating fallback admin profile state for new user');
+        // For admin emails, create a fallback profile state
+        if (isAdminEmail) {
+          console.log('🆘 Creating fallback admin profile state');
           setProfile({
             id: user.id,
             clerk_user_id: user.id,
@@ -200,21 +202,22 @@ export const useClerkAuth = () => {
 
     setProfileLoading(true);
     fetchProfile();
-  }, [user?.id, userEmail, isAdminEmailForNewProfiles, isSignedIn]);
+  }, [user?.id, userEmail, isAdminEmail, isSignedIn]);
 
-  // Role determination - use database role value, no more automatic elevation
-  const userRole: string = profile?.role || 'player';
+  // Role determination - use database role value with admin email override
+  const userRole: string = profile?.role || (isAdminEmail ? 'super_admin' : 'player');
   const userRoles: string[] = [userRole];
 
-  // Admin check - based on actual database role, not email
+  // Admin check - based on actual role
   const isAdmin: boolean = userRole === 'super_admin' || userRole === 'admin';
 
-  // Enhanced role checking - no more admin email override
+  // Enhanced role checking with proper hierarchy
   const hasRole = React.useCallback((role: string): boolean => {
     console.log('🔍 hasRole check:', { 
       role, 
       userRole, 
       userRoles,
+      isAdminEmail,
       hasRoleResult: userRoles.includes(role) || userRole === 'super_admin'
     });
     
@@ -223,7 +226,7 @@ export const useClerkAuth = () => {
     
     // Check specific role
     return userRoles.includes(role);
-  }, [userRole, userRoles]);
+  }, [userRole, userRoles, isAdminEmail]);
 
   // Enhanced debug logging
   React.useEffect(() => {
@@ -233,18 +236,18 @@ export const useClerkAuth = () => {
         userEmail,
         userRole,
         isAdmin,
+        isAdminEmail,
         profileLoaded: !profileLoading,
         hasProfile: !!profile,
         clerkUserId: user?.id,
-        roleSource: 'database'
+        roleSource: 'database_with_admin_override'
       });
     }
-  }, [isLoaded, isSignedIn, userEmail, userRole, isAdmin, profileLoading, profile, user?.id]);
+  }, [isLoaded, isSignedIn, userEmail, userRole, isAdmin, isAdminEmail, profileLoading, profile, user?.id]);
 
   const signOut = async (): Promise<void> => {
     console.log('🚪 Starting sign out process');
     try {
-      // End session tracking immediately
       if (userEmail) {
         sessionTracker.endSession(userEmail);
         setCurrentUserForCleanup(null);
@@ -252,7 +255,6 @@ export const useClerkAuth = () => {
       
       await clerkSignOut();
       console.log('✅ Sign out completed successfully');
-      // Clear local state
       setProfile(null);
     } catch (error) {
       console.error('❌ Sign out error:', error);
@@ -267,7 +269,7 @@ export const useClerkAuth = () => {
     isAuthenticated: isSignedIn,
     isLoading: !isLoaded || profileLoading,
     
-    // Role checking - respects manual changes
+    // Role checking - with admin email override
     userRole,
     userRoles,
     hasRole,
@@ -279,6 +281,6 @@ export const useClerkAuth = () => {
     
     // Legacy compatibility
     error: null,
-    session: null, // Add session property for compatibility
+    session: null,
   };
 };

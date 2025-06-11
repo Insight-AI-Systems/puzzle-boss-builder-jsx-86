@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
 import { UserActionButtons } from './UserActionButtons';
 import { UserFilters } from './UserFilters';
@@ -14,9 +15,15 @@ import { Loader2, Search, Users } from 'lucide-react';
 import { UserRole } from '@/types/userTypes';
 
 export const UserManagement = () => {
-  const { userRole, user } = useAuth();
-  const isAdmin = userRole === 'admin';
+  const { user } = useAuth();
+  const { canManageUsers, userRole } = usePermissions();
   const currentUserId = user?.id || null;
+
+  console.log('🧑‍💼 UserManagement - Permission check:', {
+    canManageUsers: canManageUsers(),
+    userRole,
+    currentUserId
+  });
 
   const {
     searchTerm,
@@ -36,7 +43,7 @@ export const UserManagement = () => {
     bulkRole,
     setBulkRole,
     isBulkRoleChanging
-  } = useUserManagement(isAdmin, currentUserId);
+  } = useUserManagement(canManageUsers(), currentUserId);
 
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
@@ -67,11 +74,28 @@ export const UserManagement = () => {
     setShowRoleDialog(false);
   };
 
-  if (!isAdmin) {
+  // Check permissions first
+  if (!canManageUsers()) {
+    console.log('🚫 UserManagement - Access denied:', {
+      canManageUsers: canManageUsers(),
+      userRole,
+      message: 'User does not have manage_users permission'
+    });
+    
     return (
       <Card>
         <CardContent className="p-6">
-          <p className="text-muted-foreground">You don't have permission to access user management.</p>
+          <div className="text-center">
+            <div className="text-red-500 text-lg font-semibold mb-2">Access Denied</div>
+            <p className="text-muted-foreground mb-4">
+              You don't have permission to access user management.
+            </p>
+            <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
+              <strong>Current Role:</strong> {userRole}<br/>
+              <strong>Required Permission:</strong> manage_users<br/>
+              <strong>Can Manage Users:</strong> {canManageUsers() ? 'Yes' : 'No'}
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
@@ -162,6 +186,10 @@ export const UserManagement = () => {
             <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>User management interface placeholder</p>
             <p className="text-sm">Selected users: {selectedUsers.size}</p>
+            <div className="mt-4 text-xs bg-muted p-3 rounded">
+              <strong>Debug Info:</strong><br/>
+              Role: {userRole} | Can Manage: {canManageUsers() ? 'Yes' : 'No'}
+            </div>
           </div>
         </CardContent>
       </Card>

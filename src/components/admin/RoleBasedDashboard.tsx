@@ -7,18 +7,29 @@ import { getTabDefinitions } from './dashboard/TabDefinitions';
 import { useSearchParams } from 'react-router-dom';
 import { UserRole } from '@/types/userTypes';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { AdminErrorBoundary } from './ErrorBoundary';
 
 export const RoleBasedDashboard: React.FC = () => {
-  const { hasRole, userRole, isAdmin, profile } = useClerkAuth();
+  const { profile } = useClerkAuth();
+  const { canAccessAdminDashboard, userRole } = usePermissions();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   
-  // Get tab definitions and filter by role
+  console.log('📊 RoleBasedDashboard - Access check:', {
+    userRole,
+    canAccessAdminDashboard: canAccessAdminDashboard(),
+    profile: !!profile
+  });
+  
+  // Get tab definitions and filter by permissions
   const allTabs = getTabDefinitions();
   const accessibleTabs = allTabs.filter(tab => {
-    if (isAdmin) return true; // Admins see all tabs
-    return tab.roles.some(role => hasRole(role as UserRole));
+    // Super admins see all tabs
+    if (userRole === 'super_admin') return true;
+    
+    // Check if current role is in the tab's allowed roles
+    return tab.roles.some(role => role === userRole);
   });
   
   console.log('📊 RoleBasedDashboard - Accessible tabs:', accessibleTabs.map(t => t.id));
@@ -45,7 +56,7 @@ export const RoleBasedDashboard: React.FC = () => {
     }
   }, [tabParam, accessibleTabs]);
 
-  // Create mapped profile for compatibility using consolidated profile data
+  // Create mapped profile for compatibility
   const mappedProfile = profile ? {
     ...profile,
     display_name: profile.username || profile.email || 'Unknown User',
@@ -80,7 +91,16 @@ export const RoleBasedDashboard: React.FC = () => {
   return (
     <AdminErrorBoundary>
       <div className="space-y-8">
-        <h1 className="text-3xl font-game text-puzzle-aqua">Admin Dashboard</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-game text-puzzle-aqua">
+            {userRole === 'super_admin' ? 'Super Admin Dashboard' : 
+             userRole === 'admin' ? 'Admin Dashboard' : 
+             `${userRole?.replace('_', ' ')} Dashboard`}
+          </h1>
+          <div className="text-sm text-muted-foreground">
+            Role: {userRole} | Access: {canAccessAdminDashboard() ? 'Granted' : 'Denied'}
+          </div>
+        </div>
         
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <DashboardTabSelector 
