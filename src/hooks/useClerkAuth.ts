@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useUser, useClerk } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,7 +66,7 @@ export const useClerkAuth = () => {
     }
   }, [isSignedIn, userEmail, user?.id]);
 
-  // Enhanced profile fetch - respects manual role changes
+  // Optimized profile fetch - respects manual role changes with better error handling
   React.useEffect(() => {
     if (!user?.id || !isSignedIn) {
       setProfile(null);
@@ -99,17 +100,19 @@ export const useClerkAuth = () => {
             const updateData = { 
               clerk_user_id: user.id,
               updated_at: new Date().toISOString(),
-              last_sign_in: new Date().toISOString() // SINGLE update on profile sync
+              last_sign_in: new Date().toISOString()
             };
             
-            const { data: updatedProfile } = await supabase
+            const { data: updatedProfile, error: updateError } = await supabase
               .from('profiles')
               .update(updateData)
               .eq('id', emailProfile.id)
               .select()
               .single();
             
-            data = updatedProfile;
+            if (!updateError) {
+              data = updatedProfile;
+            }
           }
         }
         
@@ -121,25 +124,27 @@ export const useClerkAuth = () => {
             clerk_user_id: user.id,
             email: userEmail,
             username: user.username || user.firstName || userEmail?.split('@')[0] || '',
-            role: isAdminEmailForNewProfiles ? 'super_admin' : 'player', // Only for NEW profiles
+            role: isAdminEmailForNewProfiles ? 'super_admin' : 'player',
             member_id: crypto.randomUUID(),
-            last_sign_in: new Date().toISOString() // SINGLE update on profile creation
+            last_sign_in: new Date().toISOString()
           };
           
-          const { data: createdProfile } = await supabase
+          const { data: createdProfile, error: createError } = await supabase
             .from('profiles')
             .insert(newProfile)
             .select()
             .single();
           
-          data = createdProfile;
+          if (!createError) {
+            data = createdProfile;
+          }
         } else if (data) {
           // For existing profiles, only update last_sign_in - RESPECT existing role
           console.log('✅ Found existing profile, respecting current role:', data.role);
           const { data: updatedProfile } = await supabase
             .from('profiles')
             .update({ 
-              last_sign_in: new Date().toISOString(), // SINGLE update on sign-in
+              last_sign_in: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
             .eq('id', data.id)
@@ -187,7 +192,7 @@ export const useClerkAuth = () => {
   const isAdmin: boolean = userRole === 'super_admin' || userRole === 'admin';
 
   // Enhanced role checking - no more admin email override
-  const hasRole = (role: string): boolean => {
+  const hasRole = React.useCallback((role: string): boolean => {
     console.log('🔍 hasRole check:', { 
       role, 
       userRole, 
@@ -200,7 +205,7 @@ export const useClerkAuth = () => {
     
     // Check specific role
     return userRoles.includes(role);
-  };
+  }, [userRole, userRoles]);
 
   // Enhanced debug logging
   React.useEffect(() => {
@@ -213,7 +218,7 @@ export const useClerkAuth = () => {
         profileLoaded: !profileLoading,
         hasProfile: !!profile,
         clerkUserId: user?.id,
-        roleSource: 'database' // Now always from database
+        roleSource: 'database'
       });
     }
   }, [isLoaded, isSignedIn, userEmail, userRole, isAdmin, profileLoading, profile, user?.id]);

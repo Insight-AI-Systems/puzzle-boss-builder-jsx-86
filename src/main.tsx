@@ -7,7 +7,6 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ClerkProvider } from '@clerk/clerk-react';
 import { GameProvider } from '@/shared/contexts/GameContext';
 import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/contexts/AuthContext';
 import App from './App.tsx';
 import './index.css';
 
@@ -34,11 +33,13 @@ if (!container) {
   throw new Error("Root element not found");
 }
 
+// Optimized QueryClient configuration for better performance
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 15, // 15 minutes - longer cache for better performance
       retry: 1,
+      refetchOnWindowFocus: false, // Reduce unnecessary refetches
     },
   },
 });
@@ -110,9 +111,7 @@ root.render(
             },
           }}
         >
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
+          <AppContent />
         </ClerkProvider>
       ) : (
         <AppContent />

@@ -4,15 +4,13 @@ import { Tabs } from "@/components/ui/tabs"
 import { DashboardContent } from './dashboard/DashboardContent';
 import { DashboardTabSelector } from './dashboard/DashboardTabSelector';
 import { getTabDefinitions } from './dashboard/TabDefinitions';
-import { useUserProfile } from '@/hooks/useUserProfile';
 import { useSearchParams } from 'react-router-dom';
 import { UserRole } from '@/types/userTypes';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { AdminErrorBoundary } from './ErrorBoundary';
 
 export const RoleBasedDashboard: React.FC = () => {
-  const { hasRole, userRole, isAdmin } = useClerkAuth();
-  const { profile } = useUserProfile();
+  const { hasRole, userRole, isAdmin, profile } = useClerkAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   
@@ -47,18 +45,21 @@ export const RoleBasedDashboard: React.FC = () => {
     }
   }, [tabParam, accessibleTabs]);
 
-  // Create mapped profile for compatibility
+  // Create mapped profile for compatibility using consolidated profile data
   const mappedProfile = profile ? {
     ...profile,
-    display_name: profile.display_name || profile.email || 'Unknown User',
+    display_name: profile.username || profile.email || 'Unknown User',
     bio: profile.bio || '',
-    role: profile.role,
-    country: profile.country || '',
-    categories_played: profile.categories_played || [],
-    credits: profile.credits || 0,
-    tokens: profile.tokens || 0, // Added tokens field
-    achievements: profile.achievements || [],
-    referral_code: profile.referral_code || null
+    role: profile.role as UserRole,
+    country: '',
+    categories_played: [],
+    credits: 0,
+    tokens: 0,
+    achievements: [],
+    referral_code: null,
+    avatar_url: profile.avatar_url,
+    created_at: profile.created_at,
+    updated_at: profile.updated_at
   } : {
     id: 'temp-admin',
     display_name: 'Admin User',
@@ -67,7 +68,7 @@ export const RoleBasedDashboard: React.FC = () => {
     country: '',
     categories_played: [],
     credits: 0,
-    tokens: 0, // Added tokens field
+    tokens: 0,
     achievements: [],
     referral_code: null,
     email: '',

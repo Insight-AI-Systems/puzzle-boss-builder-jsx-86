@@ -12,11 +12,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { UserProfile } from '@/types/userTypes';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
 
+interface ClerkProfile {
+  id: string;
+  clerk_user_id: string | null;
+  role: string | null;
+  username: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 interface UserMenuProps {
-  profile: UserProfile | null;
+  profile: ClerkProfile | null;
   isMobile?: boolean;
 }
 
@@ -49,9 +60,9 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className={`relative h-8 w-8 rounded-full ${isMobile ? 'mr-2' : ''}`}>
           <Avatar className="h-8 w-8">
-            <AvatarImage src={profile.avatar_url || ''} alt={profile.display_name || 'User'} />
+            <AvatarImage src={profile.avatar_url || ''} alt={profile.username || 'User'} />
             <AvatarFallback className="bg-puzzle-aqua/20">
-              {profile.display_name?.charAt(0) || 'U'}
+              {profile.username?.charAt(0) || 'U'}
             </AvatarFallback>
           </Avatar>
         </Button>

@@ -7,7 +7,6 @@ import { ClerkAuthButtons } from '@/components/auth/ClerkAuthButtons';
 import UserMenu from './UserMenu';
 import { useUser } from '@clerk/clerk-react';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
-import { useUserProfile } from '@/hooks/useUserProfile';
 import { mainNavItems } from './NavbarData';
 import PuzzleDropdown from './PuzzleDropdown';
 import MobileMenu from './MobileMenu';
@@ -17,8 +16,7 @@ export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { isSignedIn, user } = useUser();
-  const { hasRole, isAdmin, isLoading } = useClerkAuth();
-  const { profile } = useUserProfile();
+  const { hasRole, isAdmin, isLoading, profile } = useClerkAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
