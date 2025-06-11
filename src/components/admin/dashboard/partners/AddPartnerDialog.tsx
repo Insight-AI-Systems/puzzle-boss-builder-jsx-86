@@ -1,412 +1,256 @@
-
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { usePartnerManagement, Partner } from '@/hooks/admin/usePartnerManagement';
-import { useAuth } from '@/contexts/AuthContext';
-
-const formSchema = z.object({
-  company_name: z.string().min(1, "Company name is required"),
-  contact_name: z.string().min(1, "Contact name is required"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  postal_code: z.string().optional(),
-  country: z.string().optional(),
-  website: z.string().optional(),
-  tax_id: z.string().optional(),
-  description: z.string().optional(),
-  status: z.enum(['prospect', 'active', 'inactive', 'suspended']),
-  onboarding_stage: z.enum([
-    'invited',
-    'registration_started',
-    'registration_completed',
-    'documents_pending',
-    'documents_submitted',
-    'contract_sent',
-    'contract_signed',
-    'approved',
-    'rejected'
-  ]),
-  notes: z.string().optional(),
-});
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Plus, 
+  Building2, 
+  Mail, 
+  Phone, 
+  Globe, 
+  MapPin, 
+  User,
+  AlertCircle,
+  Loader2
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { 
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useToast } from '@/hooks/use-toast';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 interface AddPartnerDialogProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  editPartner?: Partner;
+  setOpen: (open: boolean) => void;
+  onAddPartner: (partnerData: any) => void;
 }
 
-const AddPartnerDialog: React.FC<AddPartnerDialogProps> = ({ 
-  open, 
-  onOpenChange,
-  editPartner 
-}) => {
-  const { user } = useAuth();
-  const { createPartner, updatePartner } = usePartnerManagement(editPartner?.id || null);
-  
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: editPartner ? {
-      company_name: editPartner.company_name,
-      contact_name: editPartner.contact_name,
-      email: editPartner.email,
-      phone: editPartner.phone || '',
-      address: editPartner.address || '',
-      city: editPartner.city || '',
-      state: editPartner.state || '',
-      postal_code: editPartner.postal_code || '',
-      country: editPartner.country || '',
-      website: editPartner.website || '',
-      tax_id: editPartner.tax_id || '',
-      description: editPartner.description || '',
-      status: editPartner.status,
-      onboarding_stage: editPartner.onboarding_stage,
-      notes: editPartner.notes || '',
-    } : {
-      company_name: '',
-      contact_name: '',
-      email: '',
-      phone: '',
-      address: '',
-      city: '',
-      state: '',
-      postal_code: '',
-      country: '',
-      website: '',
-      tax_id: '',
-      description: '',
-      status: 'prospect',
-      onboarding_stage: 'invited',
-      notes: '',
-    }
-  });
+export function AddPartnerDialog({ open, setOpen, onAddPartner }: AddPartnerDialogProps) {
+  const [name, setName] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [website, setWebsite] = useState('');
+  const [address, setAddress] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [status, setStatus] = useState('pending');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useClerkAuth();
+  const { toast } = useToast();
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    // Fix: Ensure the required fields are explicitly set
-    const partnerData = {
-      company_name: data.company_name,
-      contact_name: data.contact_name,
-      email: data.email,
-      assigned_to: user?.id,
-      ...data // Include the rest of the data
-    };
-    
-    if (editPartner) {
-      updatePartner(editPartner.id, partnerData);
-    } else {
-      createPartner(partnerData);
+  const categories = [
+    { value: 'technology', label: 'Technology' },
+    { value: 'education', label: 'Education' },
+    { value: 'healthcare', label: 'Healthcare' },
+    { value: 'finance', label: 'Finance' },
+    { value: 'other', label: 'Other' },
+  ];
+
+  const statuses = [
+    { value: 'pending', label: 'Pending' },
+    { value: 'active', label: 'Active' },
+    { value: 'inactive', label: 'Inactive' },
+    { value: 'rejected', label: 'Rejected' },
+  ];
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Validate input
+      if (!name || !companyName || !email || !category) {
+        setError('Please fill in all required fields.');
+        return;
+      }
+
+      // Create partner data object
+      const partnerData = {
+        name,
+        companyName,
+        email,
+        phone,
+        website,
+        address,
+        description,
+        category,
+        status,
+        addedBy: user?.id,
+        addedAt: new Date().toISOString(),
+      };
+
+      // Call onAddPartner function
+      onAddPartner(partnerData);
+
+      // Reset form
+      setName('');
+      setCompanyName('');
+      setEmail('');
+      setPhone('');
+      setWebsite('');
+      setAddress('');
+      setDescription('');
+      setCategory('');
+      setStatus('pending');
+
+      // Show success message
+      toast({
+        title: 'Success',
+        description: 'Partner added successfully.',
+      });
+
+      // Close dialog
+      setOpen(false);
+    } catch (err: any) {
+      setError(err.message || 'Failed to add partner.');
+    } finally {
+      setIsLoading(false);
     }
-    
-    onOpenChange(false);
-    form.reset();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>
-            {editPartner ? 'Edit Partner' : 'Add New Partner'}
-          </DialogTitle>
+          <DialogTitle>Add New Partner</DialogTitle>
           <DialogDescription>
-            {editPartner 
-              ? 'Update the partner information below.' 
-              : 'Fill out the form below to add a new partner to the system.'}
+            Add a new partner to the system.
           </DialogDescription>
         </DialogHeader>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="company_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company Name *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter company name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="contact_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contact Person *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter contact person's name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email Address *</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="name@company.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter phone number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Partner Status *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="prospect">Prospect</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                        <SelectItem value="suspended">Suspended</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="onboarding_stage"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Onboarding Stage *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select stage" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="invited">Invited</SelectItem>
-                        <SelectItem value="registration_started">Registration Started</SelectItem>
-                        <SelectItem value="registration_completed">Registration Completed</SelectItem>
-                        <SelectItem value="documents_pending">Documents Pending</SelectItem>
-                        <SelectItem value="documents_submitted">Documents Submitted</SelectItem>
-                        <SelectItem value="contract_sent">Contract Sent</SelectItem>
-                        <SelectItem value="contract_signed">Contract Signed</SelectItem>
-                        <SelectItem value="approved">Approved</SelectItem>
-                        <SelectItem value="rejected">Rejected</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Contact Name</Label>
+              <Input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
               />
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter street address" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>City</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter city" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>State/Province</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter state/province" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="postal_code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Postal Code</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter postal code" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="country"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Country</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter country" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="website"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Website</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://www.example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="tax_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tax ID</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter tax ID number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            <div>
+              <Label htmlFor="companyName">Company Name</Label>
+              <Input
+                type="text"
+                id="companyName"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                required
               />
             </div>
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Business Description</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Enter a brief description of the partner's business"
-                      className="min-h-20"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Internal Notes</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Add any internal notes about this partner"
-                      className="min-h-20"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+          <div>
+            <Label htmlFor="phone">Phone</Label>
+            <Input
+              type="tel"
+              id="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
             />
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                {editPartner ? 'Update Partner' : 'Add Partner'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+          </div>
+          <div>
+            <Label htmlFor="website">Website</Label>
+            <Input
+              type="url"
+              id="website"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="address">Address</Label>
+            <Input
+              type="text"
+              id="address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="category">Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="status">Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statuses.map((stat) => (
+                  <SelectItem key={stat.value} value={stat.value}>
+                    {stat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <DialogFooter>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Please wait
+                </>
+              ) : (
+                'Add Partner'
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
-};
-
-export default AddPartnerDialog;
+}

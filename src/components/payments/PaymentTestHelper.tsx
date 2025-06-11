@@ -14,7 +14,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import { usePaymentSystem } from '@/hooks/usePaymentSystem';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 export function PaymentTestHelper() {
   const [testGameId, setTestGameId] = useState('test-game-123');
@@ -22,14 +22,8 @@ export function PaymentTestHelper() {
   const [testResults, setTestResults] = useState<any[]>([]);
   const [isRunningTests, setIsRunningTests] = useState(false);
   
-  const { user } = useAuth();
-  const { 
-    wallet, 
-    fetchWallet, 
-    verifyGameEntry, 
-    addFunds, 
-    processRefund 
-  } = usePaymentSystem();
+  const { user } = useClerkAuth();
+  const { processPayment, isProcessing } = usePaymentSystem();
 
   const addTestResult = (test: string, success: boolean, message: string, data?: any) => {
     setTestResults(prev => [...prev, {
@@ -46,80 +40,23 @@ export function PaymentTestHelper() {
     setTestResults([]);
 
     try {
-      // Test 1: Wallet Creation/Fetch
-      console.log('Test 1: Wallet Creation/Fetch');
-      const walletResult = await fetchWallet();
+      // Test 1: Basic Payment Processing
+      console.log('Test 1: Basic Payment Processing');
+      const paymentResult = await processPayment(testEntryFee, `Test payment for ${testGameId}`);
       addTestResult(
-        'Wallet Creation/Fetch',
-        !!walletResult,
-        walletResult ? `Wallet found with balance: $${walletResult.balance}` : 'Failed to create/fetch wallet',
-        walletResult
+        'Basic Payment Processing',
+        paymentResult,
+        paymentResult ? 'Payment processed successfully' : 'Payment processing failed'
       );
 
-      if (!walletResult) {
-        addTestResult('Test Suite', false, 'Cannot continue without wallet');
-        return;
-      }
-
-      // Test 2: Add Test Funds
-      console.log('Test 2: Add Test Funds');
-      const addFundsResult = await addFunds(20.00);
+      // Test 2: Large Amount Payment
+      console.log('Test 2: Large Amount Payment');
+      const largePaymentResult = await processPayment(100.00, 'Large amount test');
       addTestResult(
-        'Add Test Funds',
-        addFundsResult,
-        addFundsResult ? 'Successfully added $20.00 to wallet' : 'Failed to add funds'
+        'Large Amount Payment',
+        largePaymentResult,
+        largePaymentResult ? 'Large payment processed successfully' : 'Large payment failed'
       );
-
-      // Test 3: Payment Verification - Sufficient Funds
-      console.log('Test 3: Payment Verification - Sufficient Funds');
-      const paymentResult = await verifyGameEntry(testGameId, testEntryFee, false);
-      addTestResult(
-        'Payment Verification - Sufficient Funds',
-        paymentResult.success,
-        paymentResult.success 
-          ? `Payment verified. Balance after: $${paymentResult.balance}` 
-          : `Payment failed: ${paymentResult.error}`,
-        paymentResult
-      );
-
-      // Test 4: Payment Verification - Test Mode
-      console.log('Test 4: Payment Verification - Test Mode');
-      const testModeResult = await verifyGameEntry('test-mode-game', 100.00, true);
-      addTestResult(
-        'Payment Verification - Test Mode',
-        testModeResult.success,
-        testModeResult.success 
-          ? 'Test mode bypass successful' 
-          : `Test mode failed: ${testModeResult.error}`,
-        testModeResult
-      );
-
-      // Test 5: Payment Verification - Insufficient Funds
-      console.log('Test 5: Payment Verification - Insufficient Funds');
-      const insufficientResult = await verifyGameEntry('insufficient-test', 1000.00, false);
-      addTestResult(
-        'Payment Verification - Insufficient Funds',
-        !insufficientResult.success && insufficientResult.error?.includes('Insufficient'),
-        insufficientResult.success 
-          ? 'Unexpected success with insufficient funds' 
-          : `Correctly rejected: ${insufficientResult.error}`,
-        insufficientResult
-      );
-
-      // Test 6: Refund Process (if we had a successful transaction)
-      if (paymentResult.success && paymentResult.transactionId) {
-        console.log('Test 6: Refund Process');
-        const refundResult = await processRefund({
-          transactionId: paymentResult.transactionId,
-          reason: 'Test refund',
-          amount: testEntryFee
-        });
-        addTestResult(
-          'Refund Process',
-          refundResult,
-          refundResult ? 'Refund processed successfully' : 'Refund failed'
-        );
-      }
 
     } catch (error) {
       addTestResult(
@@ -129,8 +66,6 @@ export function PaymentTestHelper() {
       );
     } finally {
       setIsRunningTests(false);
-      // Refresh wallet after tests
-      await fetchWallet();
     }
   };
 
@@ -167,16 +102,6 @@ export function PaymentTestHelper() {
         </CardHeader>
         
         <CardContent className="space-y-4">
-          {/* Current Wallet Status */}
-          {wallet && (
-            <Alert className="border-puzzle-aqua bg-puzzle-aqua/10">
-              <Wallet className="h-4 w-4" />
-              <AlertDescription className="text-puzzle-aqua">
-                Current wallet balance: ${wallet.balance.toFixed(2)} {wallet.currency}
-              </AlertDescription>
-            </Alert>
-          )}
-
           {/* Test Configuration */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

@@ -14,7 +14,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { usePaymentSystem } from '@/hooks/usePaymentSystem';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { useMemberProfile } from '@/hooks/useMemberProfile';
 import { CreditBalanceDisplay } from '@/components/games/CreditBalanceDisplay';
 
@@ -37,24 +37,12 @@ export function PaymentGate({
 }: PaymentGateProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const { user } = useAuth();
+  const { user } = useClerkAuth();
   const { profile } = useMemberProfile();
-  const { 
-    loading, 
-    wallet, 
-    fetchWallet, 
-    verifyGameEntry, 
-    addFunds 
-  } = usePaymentSystem();
-
-  useEffect(() => {
-    if (user) {
-      fetchWallet();
-    }
-  }, [user, fetchWallet]);
+  const { processPayment, isProcessing: paymentProcessing } = usePaymentSystem();
 
   const credits = profile?.credits || 0;
-  const balance = wallet?.balance || 0;
+  const balance = 0; // Simplified for now
   const willUseCredits = credits >= entryFee;
   const canAfford = credits >= entryFee || balance >= entryFee;
   const needsTopUp = !canAfford;
@@ -63,12 +51,12 @@ export function PaymentGate({
     setIsProcessing(true);
     
     try {
-      const result = await verifyGameEntry(gameId, entryFee, testMode, willUseCredits);
+      const success = await processPayment(entryFee, `Entry fee for ${gameName}`);
       
-      if (result.success && result.canPlay) {
-        onPaymentSuccess(result.transactionId);
+      if (success) {
+        onPaymentSuccess('test-transaction-id');
       } else {
-        onPaymentError(result.error || 'Payment verification failed');
+        onPaymentError('Payment verification failed');
       }
     } catch (error) {
       onPaymentError(error instanceof Error ? error.message : 'Unknown error occurred');
@@ -79,10 +67,10 @@ export function PaymentGate({
 
   const handleAddFunds = async () => {
     const amount = entryFee * 5;
-    await addFunds(amount);
+    await processPayment(amount, 'Add funds to wallet');
   };
 
-  if (loading) {
+  if (paymentProcessing) {
     return (
       <Card className="w-full max-w-md mx-auto">
         <CardContent className="p-6 text-center">

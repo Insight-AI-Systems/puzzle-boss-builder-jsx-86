@@ -13,5 +13,4 @@ export type {
   GameHooks, 
   LeaderboardEntry 
 } from './types/GameTypes';
-export type { PaymentStatus } from './hooks/usePaymentVerification';
 export { ExampleGameWithWrapper } from './examples/ExamplePuzzleGame';

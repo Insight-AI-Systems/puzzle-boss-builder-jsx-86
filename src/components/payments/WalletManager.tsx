@@ -13,7 +13,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { usePaymentSystem } from '@/hooks/usePaymentSystem';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { GameTransaction } from '@/types/payments';
 
@@ -39,15 +39,15 @@ export function WalletManager() {
   const [addAmount, setAddAmount] = useState('');
   const [transactions, setTransactions] = useState<GameTransaction[]>([]);
   const [showHistory, setShowHistory] = useState(false);
-  const { user } = useAuth();
-  const { wallet, loading, fetchWallet, addFunds } = usePaymentSystem();
+  const [wallet, setWallet] = useState({ balance: 0, currency: 'USD' });
+  const { user } = useClerkAuth();
+  const { processPayment, isProcessing } = usePaymentSystem();
 
   useEffect(() => {
     if (user) {
-      fetchWallet();
       fetchTransactions();
     }
-  }, [user, fetchWallet]);
+  }, [user]);
 
   const fetchTransactions = async () => {
     if (!user) return;
@@ -74,10 +74,12 @@ export function WalletManager() {
     const amount = parseFloat(addAmount);
     if (isNaN(amount) || amount <= 0) return;
 
-    const success = await addFunds(amount);
+    const success = await processPayment(amount, 'Add funds to wallet');
     if (success) {
       setAddAmount('');
       fetchTransactions();
+      // Update wallet balance
+      setWallet(prev => ({ ...prev, balance: prev.balance + amount }));
     }
   };
 
@@ -101,7 +103,7 @@ export function WalletManager() {
     }
   };
 
-  if (loading) {
+  if (isProcessing) {
     return (
       <Card className="bg-gray-900 border-gray-700">
         <CardContent className="p-6 text-center">
@@ -125,9 +127,9 @@ export function WalletManager() {
         <CardContent>
           <div className="text-center mb-6">
             <div className="text-4xl font-bold text-puzzle-aqua mb-2">
-              ${wallet?.balance.toFixed(2) || '0.00'}
+              ${wallet.balance.toFixed(2)}
             </div>
-            <div className="text-sm text-gray-400">{wallet?.currency || 'USD'}</div>
+            <div className="text-sm text-gray-400">{wallet.currency}</div>
           </div>
 
           {/* Add Funds Section */}

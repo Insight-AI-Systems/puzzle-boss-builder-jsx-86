@@ -1,192 +1,336 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MessageSquare, Send, Search, Filter, Plus, Calendar, User, Phone, Mail } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
-import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, Mail, Phone, Calendar, Users, AlertCircle } from "lucide-react";
-import { format } from 'date-fns';
-import { usePartnerManagement, PartnerCommunication } from '@/hooks/admin/usePartnerManagement';
-import CommunicationDialog from './CommunicationDialog';
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useAuth } from '@/contexts/AuthContext';
-import EmailTemplates from './EmailTemplates';
-
-interface CommunicationsCenterProps {
-  partnerId: string;
+interface Communication {
+  id: string;
+  type: 'email' | 'sms' | 'push';
+  subject: string;
+  content: string;
+  status: 'draft' | 'scheduled' | 'sent' | 'failed';
+  createdAt: string;
+  scheduledAt?: string;
+  sentAt?: string;
 }
 
-const CommunicationsCenter: React.FC<CommunicationsCenterProps> = ({ partnerId }) => {
-  const { user } = useAuth();
-  const { communications, selectedPartner } = usePartnerManagement(partnerId);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [communicationType, setCommunicationType] = useState<'email' | 'call' | 'meeting' | 'note'>('email');
+const mockCommunications: Communication[] = [
+  {
+    id: '1',
+    type: 'email',
+    subject: 'Welcome to Our Partner Program',
+    content: 'Dear Partner, welcome aboard! We are excited to have you...',
+    status: 'sent',
+    createdAt: '2024-01-20',
+    sentAt: '2024-01-21'
+  },
+  {
+    id: '2',
+    type: 'sms',
+    subject: 'Reminder: Training Session',
+    content: 'Hi Partner, remember our training session tomorrow at 10 AM...',
+    status: 'scheduled',
+    createdAt: '2024-01-22',
+    scheduledAt: '2024-01-24'
+  },
+  {
+    id: '3',
+    type: 'push',
+    subject: 'New Resources Available',
+    content: 'Check out the new marketing resources available in the partner portal...',
+    status: 'draft',
+    createdAt: '2024-01-25'
+  }
+];
 
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), 'MMM d, yyyy h:mm a');
-    } catch (error) {
-      return 'Invalid date';
-    }
+export function CommunicationsCenter() {
+  const { user } = useClerkAuth();
+  const { toast } = useToast();
+  const [communications, setCommunications] = useState<Communication[]>(mockCommunications);
+  const [activeTab, setActiveTab] = useState<'all' | 'email' | 'sms' | 'push'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'draft' | 'scheduled' | 'sent' | 'failed'>('all');
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [newCommunication, setNewCommunication] = useState<Omit<Communication, 'id' | 'createdAt' | 'sentAt'>>({
+    type: 'email',
+    subject: '',
+    content: '',
+    status: 'draft'
+  });
+
+  useEffect(() => {
+    // Simulate fetching communications from an API
+    // In a real application, you would fetch data from your backend here
+    // and update the `communications` state with the fetched data.
+  }, []);
+
+  const handleComposeOpen = () => {
+    setIsComposeOpen(true);
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'email':
-        return <Mail className="h-4 w-4" />;
-      case 'call':
-        return <Phone className="h-4 w-4" />;
-      case 'meeting':
-        return <Users className="h-4 w-4" />;
-      default:
-        return <Calendar className="h-4 w-4" />;
-    }
+  const handleComposeClose = () => {
+    setIsComposeOpen(false);
+    setNewCommunication({
+      type: 'email',
+      subject: '',
+      content: '',
+      status: 'draft'
+    });
   };
 
-  const getNameInitials = (name?: string | null) => {
-    if (!name) return 'U';
-    const nameParts = name.split(' ');
-    if (nameParts.length > 1) {
-      return `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase();
-    }
-    return nameParts[0].substring(0, 2).toUpperCase();
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNewCommunication(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleAddCommunication = (type: 'email' | 'call' | 'meeting' | 'note') => {
-    setCommunicationType(type);
-    setIsDialogOpen(true);
+  const handleSelectChange = (e: string, name: string) => {
+    setNewCommunication(prev => ({
+      ...prev,
+      [name]: e
+    }));
   };
+
+  const handleSendCommunication = () => {
+    // Simulate sending a communication
+    const newId = Math.random().toString(36).substring(7);
+    const now = new Date().toISOString();
+    const communication: Communication = {
+      id: newId,
+      ...newCommunication,
+      createdAt: now,
+      sentAt: newCommunication.status === 'sent' ? now : undefined
+    };
+
+    setCommunications(prev => [...prev, communication]);
+    handleComposeClose();
+
+    toast({
+      title: 'Communication Sent',
+      description: `Your ${newCommunication.type} has been sent successfully.`,
+      duration: 3000
+    });
+  };
+
+  const filteredCommunications = communications.filter(communication => {
+    const matchesSearch = communication.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           communication.content.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTab = activeTab === 'all' || communication.type === activeTab;
+    const matchesStatus = selectedStatus === 'all' || communication.status === selectedStatus;
+    return matchesSearch && matchesTab && matchesStatus;
+  });
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Communications</h2>
-        <div className="space-x-2">
-          <Button 
-            variant="outline"
-            onClick={() => handleAddCommunication('email')}
-          >
-            <Mail className="h-4 w-4 mr-2" />
-            Email
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex items-center justify-between">
+          <CardTitle>Communications Center</CardTitle>
+          <Button onClick={handleComposeOpen} className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
+            <Plus className="w-4 h-4 mr-2" />
+            Compose
           </Button>
-          <Button 
-            variant="outline"
-            onClick={() => handleAddCommunication('call')}
-          >
-            <Phone className="h-4 w-4 mr-2" />
-            Call
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={() => handleAddCommunication('meeting')}
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Meeting
-          </Button>
-          <Button 
-            variant="default"
-            onClick={() => handleAddCommunication('note')}
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add Note
-          </Button>
-        </div>
-      </div>
+        </CardHeader>
+        <CardContent>
+          {/* Search and Filter Controls */}
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search communications..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={selectedStatus} onValueChange={(e) => setSelectedStatus(e as any)}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="scheduled">Scheduled</SelectItem>
+                <SelectItem value="sent">Sent</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-      <Tabs defaultValue="history" className="w-full">
-        <TabsList>
-          <TabsTrigger value="history">Communication History</TabsTrigger>
-          <TabsTrigger value="templates">Email Templates</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="history">
-          <Card>
-            <CardContent className="p-6">
-              {communications && communications.length > 0 ? (
-                <div className="space-y-4">
-                  {communications.map((comm) => (
-                    <div 
-                      key={comm.id} 
-                      className="flex gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback>
-                          {getNameInitials(user?.email)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{comm.subject}</span>
-                            <div className="flex items-center gap-1 text-sm text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                              {getTypeIcon(comm.type)}
-                              <span className="capitalize">{comm.type}</span>
-                            </div>
-                          </div>
-                          <span className="text-sm text-gray-500">{formatDate(comm.sent_at)}</span>
-                        </div>
-                        <div 
-                          className="mt-2 text-gray-700 whitespace-pre-wrap"
-                          style={{ maxHeight: '200px', overflow: 'auto' }}
-                        >
-                          {comm.content}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <AlertCircle className="h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900">No communications yet</h3>
-                  <p className="text-gray-500 mb-6">
-                    Start by sending an email, logging a call, or adding a note about this partner.
-                  </p>
-                  <div className="flex gap-3">
-                    <Button 
-                      variant="outline"
-                      onClick={() => handleAddCommunication('email')}
-                    >
-                      <Mail className="h-4 w-4 mr-2" />
-                      Email
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      onClick={() => handleAddCommunication('call')}
-                    >
-                      <Phone className="h-4 w-4 mr-2" />
-                      Call
-                    </Button>
-                    <Button 
-                      onClick={() => handleAddCommunication('note')}
-                    >
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Add Note
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="templates">
-          <EmailTemplates partnerId={partnerId} partnerName={selectedPartner?.company_name} />
-        </TabsContent>
-      </Tabs>
+          {/* Communications List */}
+          <Tabs value={activeTab} onValueChange={(e) => setActiveTab(e as any)} className="w-full">
+            <TabsList className="grid grid-cols-4 bg-gray-800 text-gray-400">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="email">Email</TabsTrigger>
+              <TabsTrigger value="sms">SMS</TabsTrigger>
+              <TabsTrigger value="push">Push</TabsTrigger>
+            </TabsList>
+            <TabsContent value="all">
+              {filteredCommunications.map(communication => (
+                <CommunicationItem key={communication.id} communication={communication} />
+              ))}
+            </TabsContent>
+            <TabsContent value="email">
+              {filteredCommunications.filter(c => c.type === 'email').map(communication => (
+                <CommunicationItem key={communication.id} communication={communication} />
+              ))}
+            </TabsContent>
+            <TabsContent value="sms">
+              {filteredCommunications.filter(c => c.type === 'sms').map(communication => (
+                <CommunicationItem key={communication.id} communication={communication} />
+              ))}
+            </TabsContent>
+            <TabsContent value="push">
+              {filteredCommunications.filter(c => c.type === 'push').map(communication => (
+                <CommunicationItem key={communication.id} communication={communication} />
+              ))}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
 
-      <CommunicationDialog 
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        partnerId={partnerId}
-        type={communicationType}
-        partnerEmail={selectedPartner?.email}
-        partnerName={selectedPartner?.company_name}
+      {/* Compose Communication Dialog */}
+      <ComposeCommunicationDialog
+        isOpen={isComposeOpen}
+        onClose={handleComposeClose}
+        communication={newCommunication}
+        onInputChange={handleInputChange}
+        onSelectChange={handleSelectChange}
+        onSend={handleSendCommunication}
       />
     </div>
   );
+}
+
+interface CommunicationItemProps {
+  communication: Communication;
+}
+
+const CommunicationItem: React.FC<CommunicationItemProps> = ({ communication }) => {
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'email': return <Mail className="w-4 h-4 mr-2" />;
+      case 'sms': return <Phone className="w-4 h-4 mr-2" />;
+      case 'push': return <MessageSquare className="w-4 h-4 mr-2" />;
+      default: return null;
+    }
+  };
+
+  return (
+    <Card className="mb-2 bg-gray-900 border-gray-700">
+      <CardHeader className="flex items-center justify-between">
+        <div className="flex items-center">
+          {getIcon(communication.type)}
+          <CardTitle className="text-sm">{communication.subject}</CardTitle>
+        </div>
+        <Badge variant="secondary">{communication.status}</Badge>
+      </CardHeader>
+      <CardContent className="text-sm text-gray-400">
+        {communication.content.substring(0, 100)}...
+      </CardContent>
+    </Card>
+  );
 };
 
-export default CommunicationsCenter;
+interface ComposeCommunicationDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  communication: Omit<Communication, 'id' | 'createdAt' | 'sentAt'>;
+  onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onSelectChange: (e: string, name: string) => void;
+  onSend: () => void;
+}
+
+const ComposeCommunicationDialog: React.FC<ComposeCommunicationDialogProps> = ({
+  isOpen,
+  onClose,
+  communication,
+  onInputChange,
+  onSelectChange,
+  onSend
+}) => {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="bg-gray-800 border-gray-700 text-white">
+        <DialogHeader>
+          <DialogTitle>Compose Communication</DialogTitle>
+          <DialogDescription>
+            Create and send a new communication to partners.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="type" className="text-right">
+              Type
+            </Label>
+            <Select value={communication.type} onValueChange={(e) => onSelectChange(e, 'type')}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select a type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="email">Email</SelectItem>
+                <SelectItem value="sms">SMS</SelectItem>
+                <SelectItem value="push">Push Notification</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="subject" className="text-right">
+              Subject
+            </Label>
+            <Input
+              type="text"
+              id="subject"
+              name="subject"
+              value={communication.subject}
+              onChange={onInputChange}
+              className="col-span-3 bg-gray-700 border-gray-600"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor="content" className="text-right">
+              Content
+            </Label>
+            <Textarea
+              id="content"
+              name="content"
+              value={communication.content}
+              onChange={onInputChange}
+              className="col-span-3 bg-gray-700 border-gray-600"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="status" className="text-right">
+              Status
+            </Label>
+            <Select value={communication.status} onValueChange={(e) => onSelectChange(e, 'status')}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select a status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="scheduled">Scheduled</SelectItem>
+                <SelectItem value="sent">Sent</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={onSend} className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">Send</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};

@@ -8,9 +8,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Coins, Wallet, Plus, Gift } from 'lucide-react';
 import { MemberDetailedProfile } from '@/types/memberTypes';
-import { UserWallet } from '@/hooks/useMemberProfile';
-import { useUserProfile } from '@/hooks/useUserProfile';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { UseMutationResult } from '@tanstack/react-query';
+
+interface UserWallet {
+  balance: number;
+  currency: string;
+}
 
 interface CreditBalanceCardProps {
   profile: MemberDetailedProfile & { wallet?: UserWallet };
@@ -18,7 +22,7 @@ interface CreditBalanceCardProps {
 }
 
 export function CreditBalanceCard({ profile, awardCredits }: CreditBalanceCardProps) {
-  const { isAdmin } = useUserProfile();
+  const { isAdmin } = useClerkAuth();
   const [creditAmount, setCreditAmount] = useState('');
   const [adminNote, setAdminNote] = useState('');
   const [isAwardDialogOpen, setIsAwardDialogOpen] = useState(false);
