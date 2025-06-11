@@ -32,5 +32,51 @@ export function useBetaNotes() {
     fetchNotes();
   }, [user]);
 
-  return { notes, isLoading };
+  const addNote = async (title: string, content: string) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('beta_notes')
+        .insert([{
+          user_id: user.id,
+          title: title,
+          content: content,
+          status: 'new'
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setNotes(prev => [data, ...prev]);
+      return data;
+    } catch (error) {
+      console.error('Error adding note:', error);
+      throw error;
+    }
+  };
+
+  const updateNoteStatus = async (noteId: string, status: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('beta_notes')
+        .update({ status })
+        .eq('id', noteId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setNotes(prev => prev.map(note => 
+        note.id === noteId ? { ...note, status } : note
+      ));
+      return data;
+    } catch (error) {
+      console.error('Error updating note status:', error);
+      throw error;
+    }
+  };
+
+  return { notes, isLoading, addNote, updateNoteStatus };
 }

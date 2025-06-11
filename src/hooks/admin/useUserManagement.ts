@@ -7,7 +7,7 @@ export const useUserManagement = (isAdmin: boolean, currentUserId: string | null
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [userType, setUserType] = useState('all');
-  const [bulkRole, setBulkRole] = useState<string>('player');
+  const [bulkRole, setBulkRole] = useState<UserRole>('player');
   const [isBulkRoleChanging, setIsBulkRoleChanging] = useState(false);
 
   // Mock data

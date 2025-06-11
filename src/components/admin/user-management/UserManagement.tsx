@@ -63,7 +63,7 @@ export const UserManagement = () => {
 
   const handleBulkRoleChange = async () => {
     const userIds = Array.from(selectedUsers);
-    await bulkUpdateRoles(userIds, bulkRole as UserRole);
+    await bulkUpdateRoles(userIds, bulkRole);
     setShowRoleDialog(false);
   };
 
