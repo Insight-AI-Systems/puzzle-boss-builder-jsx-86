@@ -19,9 +19,7 @@ export const MahjongGameWrapper: React.FC<MahjongGameWrapperProps> = ({
   };
 
   return (
-    <BaseGameWrapper
-      requiresPayment={difficulty !== 'rookie'}
-    >
+    <BaseGameWrapper>
       <MahjongGame
         difficulty={difficulty}
         onGameComplete={handleGameComplete}
