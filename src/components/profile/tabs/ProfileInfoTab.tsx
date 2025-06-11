@@ -1,90 +1,66 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Coins, CreditCard, User, Calendar, Award } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
-import type { MemberProfile } from '@/types/memberTypes';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MemberDetailedProfile } from '@/types/memberTypes';
+import { UseMutationResult } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { User, Shield, Calendar, Award, Coins } from 'lucide-react';
 
 interface ProfileInfoTabProps {
-  profile: MemberProfile;
-  updateProfile: any;
-  acceptTerms: any;
-  awardCredits?: (variables: { userId: string; amount: number; note: string }) => void;
+  profile: MemberDetailedProfile;
+  updateProfile: UseMutationResult<any, Error, Partial<MemberDetailedProfile>, unknown>;
+  acceptTerms: UseMutationResult<any, Error, void, unknown>;
+  awardCredits?: (variables: { targetUserId: string; credits: number; adminNote?: string }) => void;
 }
 
-export function ProfileInfoTab({ 
-  profile, 
-  updateProfile, 
-  acceptTerms,
-  awardCredits 
-}: ProfileInfoTabProps) {
-  const { toast } = useToast();
-  const [editingField, setEditingField] = useState<string | null>(null);
-  const [tempValues, setTempValues] = useState<Record<string, any>>({});
-  const [creditsAmount, setCreditsAmount] = useState('');
-  const [creditsNote, setCreditsNote] = useState('');
+export function ProfileInfoTab({ profile, updateProfile, acceptTerms, awardCredits }: ProfileInfoTabProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [adminCredits, setAdminCredits] = useState('');
+  const [adminNote, setAdminNote] = useState('');
 
-  const handleSave = async (field: string) => {
-    try {
-      await updateProfile.mutateAsync({
-        [field]: tempValues[field]
-      });
-      setEditingField(null);
-      setTempValues({});
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive",
-      });
+  const { register, handleSubmit, formState: { isDirty } } = useForm({
+    defaultValues: {
+      full_name: profile.full_name || '',
+      username: profile.username || '',
+      bio: profile.bio || '',
+      date_of_birth: profile.date_of_birth || '',
+      gender: profile.gender || '',
+      custom_gender: profile.custom_gender || '',
+      age_group: profile.age_group || ''
     }
-  };
+  });
 
-  const handleCancel = () => {
-    setEditingField(null);
-    setTempValues({});
-  };
-
-  const handleEdit = (field: string, currentValue: any) => {
-    setEditingField(field);
-    setTempValues({ [field]: currentValue || '' });
+  const onSubmit = (data: any) => {
+    updateProfile.mutate(data, {
+      onSuccess: () => {
+        setIsEditing(false);
+      }
+    });
   };
 
   const handleAwardCredits = () => {
     if (!awardCredits) return;
     
-    const amount = parseInt(creditsAmount);
-    if (!amount || amount <= 0) {
-      toast({
-        title: "Invalid amount",
-        description: "Please enter a valid positive number",
-        variant: "destructive",
-      });
-      return;
-    }
+    const credits = parseInt(adminCredits);
+    if (isNaN(credits) || credits <= 0) return;
     
     awardCredits({
-      userId: profile.id,
-      amount,
-      note: creditsNote || 'Credits awarded by admin'
+      targetUserId: profile.id,
+      credits: credits,
+      adminNote: adminNote || undefined
     });
     
-    setCreditsAmount('');
-    setCreditsNote('');
+    setAdminCredits('');
+    setAdminNote('');
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Not set';
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -92,333 +68,224 @@ export function ProfileInfoTab({
     });
   };
 
-  const isAdmin = awardCredits !== undefined;
-
   return (
     <div className="space-y-6">
-      {/* Account Balance Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Credits</CardTitle>
-            <CreditCard className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-700">{profile.credits || 0}</div>
-            <p className="text-xs text-blue-600 mt-1">Real money credits for purchases</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-950 dark:to-yellow-900 border-yellow-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tokens</CardTitle>
-            <Coins className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-700">{profile.tokens || 0}</div>
-            <p className="text-xs text-yellow-600 mt-1">Promotional tokens for free play</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Admin Credit Management */}
-      {isAdmin && (
-        <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950">
-          <CardHeader>
-            <CardTitle className="text-sm text-orange-800 dark:text-orange-200">
-              Admin: Award Credits
-            </CardTitle>
-            <CardDescription className="text-orange-600 dark:text-orange-300">
-              Award real money credits to this member
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="credits-amount">Amount</Label>
-                <Input
-                  id="credits-amount"
-                  type="number"
-                  placeholder="Enter amount"
-                  value={creditsAmount}
-                  onChange={(e) => setCreditsAmount(e.target.value)}
-                />
-              </div>
-              <div className="flex items-end">
-                <Button 
-                  onClick={handleAwardCredits}
-                  className="w-full bg-orange-600 hover:bg-orange-700"
-                  disabled={updateProfile.isPending}
-                >
-                  <Award className="h-4 w-4 mr-2" />
-                  Award Credits
-                </Button>
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="credits-note">Note (optional)</Label>
-              <Textarea
-                id="credits-note"
-                placeholder="Reason for awarding credits..."
-                value={creditsNote}
-                onChange={(e) => setCreditsNote(e.target.value)}
-                rows={2}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Personal Information */}
+      {/* Basic Information Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Personal Information
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              <CardTitle>Personal Information</CardTitle>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditing(!isEditing)}
+              disabled={updateProfile.isPending}
+            >
+              {isEditing ? 'Cancel' : 'Edit'}
+            </Button>
+          </div>
           <CardDescription>
             Manage your personal details and preferences
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Username */}
-          <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
-            {editingField === 'username' ? (
-              <div className="flex gap-2">
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="full_name">Full Name</Label>
+                <Input
+                  id="full_name"
+                  {...register('full_name')}
+                  disabled={!isEditing}
+                  className={!isEditing ? 'bg-muted' : ''}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
                 <Input
                   id="username"
-                  value={tempValues.username || ''}
-                  onChange={(e) => setTempValues({ ...tempValues, username: e.target.value })}
-                  placeholder="Enter username"
+                  {...register('username')}
+                  disabled={!isEditing}
+                  className={!isEditing ? 'bg-muted' : ''}
                 />
-                <Button onClick={() => handleSave('username')} size="sm">Save</Button>
-                <Button onClick={handleCancel} size="sm" variant="outline">Cancel</Button>
               </div>
-            ) : (
-              <div className="flex justify-between items-center">
-                <span className="text-sm">{profile.username || 'Not set'}</span>
-                <Button
-                  onClick={() => handleEdit('username', profile.username)}
-                  size="sm"
-                  variant="outline"
-                >
-                  Edit
-                </Button>
-              </div>
-            )}
-          </div>
+            </div>
 
-          {/* Display Name */}
-          <div className="space-y-2">
-            <Label htmlFor="display_name">Display Name</Label>
-            {editingField === 'display_name' ? (
-              <div className="flex gap-2">
-                <Input
-                  id="display_name"
-                  value={tempValues.display_name || ''}
-                  onChange={(e) => setTempValues({ ...tempValues, display_name: e.target.value })}
-                  placeholder="Enter display name"
-                />
-                <Button onClick={() => handleSave('display_name')} size="sm">Save</Button>
-                <Button onClick={handleCancel} size="sm" variant="outline">Cancel</Button>
-              </div>
-            ) : (
-              <div className="flex justify-between items-center">
-                <span className="text-sm">{profile.display_name || 'Not set'}</span>
-                <Button
-                  onClick={() => handleEdit('display_name', profile.display_name)}
-                  size="sm"
-                  variant="outline"
-                >
-                  Edit
-                </Button>
-              </div>
-            )}
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea
+                id="bio"
+                {...register('bio')}
+                disabled={!isEditing}
+                className={!isEditing ? 'bg-muted' : ''}
+                rows={3}
+              />
+            </div>
 
-          {/* Bio */}
-          <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
-            {editingField === 'bio' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Textarea
-                  id="bio"
-                  value={tempValues.bio || ''}
-                  onChange={(e) => setTempValues({ ...tempValues, bio: e.target.value })}
-                  placeholder="Tell us about yourself..."
-                  rows={3}
-                />
-                <div className="flex gap-2">
-                  <Button onClick={() => handleSave('bio')} size="sm">Save</Button>
-                  <Button onClick={handleCancel} size="sm" variant="outline">Cancel</Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p className="text-sm min-h-[3rem] p-2 bg-muted rounded">
-                  {profile.bio || 'No bio provided'}
-                </p>
-                <Button
-                  onClick={() => handleEdit('bio', profile.bio)}
-                  size="sm"
-                  variant="outline"
-                >
-                  Edit Bio
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Gender */}
-          <div className="space-y-2">
-            <Label htmlFor="gender">Gender</Label>
-            {editingField === 'gender' ? (
-              <div className="flex gap-2">
-                <Select
-                  value={tempValues.gender || ''}
-                  onValueChange={(value) => setTempValues({ ...tempValues, gender: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="non-binary">Non-binary</SelectItem>
-                    <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button onClick={() => handleSave('gender')} size="sm">Save</Button>
-                <Button onClick={handleCancel} size="sm" variant="outline">Cancel</Button>
-              </div>
-            ) : (
-              <div className="flex justify-between items-center">
-                <span className="text-sm">{profile.gender || 'Not specified'}</span>
-                <Button
-                  onClick={() => handleEdit('gender', profile.gender)}
-                  size="sm"
-                  variant="outline"
-                >
-                  Edit
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Age Group */}
-          <div className="space-y-2">
-            <Label htmlFor="age_group">Age Group</Label>
-            {editingField === 'age_group' ? (
-              <div className="flex gap-2">
-                <Select
-                  value={tempValues.age_group || ''}
-                  onValueChange={(value) => setTempValues({ ...tempValues, age_group: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select age group" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="13-17">13-17</SelectItem>
-                    <SelectItem value="18-24">18-24</SelectItem>
-                    <SelectItem value="25-34">25-34</SelectItem>
-                    <SelectItem value="35-44">35-44</SelectItem>
-                    <SelectItem value="45-60">45-60</SelectItem>
-                    <SelectItem value="60+">60+</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button onClick={() => handleSave('age_group')} size="sm">Save</Button>
-                <Button onClick={handleCancel} size="sm" variant="outline">Cancel</Button>
-              </div>
-            ) : (
-              <div className="flex justify-between items-center">
-                <span className="text-sm">{profile.age_group || 'Not specified'}</span>
-                <Button
-                  onClick={() => handleEdit('age_group', profile.age_group)}
-                  size="sm"
-                  variant="outline"
-                >
-                  Edit
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Country */}
-          <div className="space-y-2">
-            <Label htmlFor="country">Country</Label>
-            {editingField === 'country' ? (
-              <div className="flex gap-2">
+                <Label htmlFor="date_of_birth">Date of Birth</Label>
                 <Input
-                  id="country"
-                  value={tempValues.country || ''}
-                  onChange={(e) => setTempValues({ ...tempValues, country: e.target.value })}
-                  placeholder="Enter country"
+                  id="date_of_birth"
+                  type="date"
+                  {...register('date_of_birth')}
+                  disabled={!isEditing}
+                  className={!isEditing ? 'bg-muted' : ''}
                 />
-                <Button onClick={() => handleSave('country')} size="sm">Save</Button>
-                <Button onClick={handleCancel} size="sm" variant="outline">Cancel</Button>
               </div>
-            ) : (
-              <div className="flex justify-between items-center">
-                <span className="text-sm">{profile.country || 'Not specified'}</span>
+              <div className="space-y-2">
+                <Label htmlFor="age_group">Age Group</Label>
+                {isEditing ? (
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select age group" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="13-17">13-17</SelectItem>
+                      <SelectItem value="18-24">18-24</SelectItem>
+                      <SelectItem value="25-34">25-34</SelectItem>
+                      <SelectItem value="35-44">35-44</SelectItem>
+                      <SelectItem value="45-60">45-60</SelectItem>
+                      <SelectItem value="60+">60+</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    value={profile.age_group || 'Not specified'}
+                    disabled
+                    className="bg-muted"
+                  />
+                )}
+              </div>
+            </div>
+
+            {isEditing && (
+              <div className="flex gap-2 pt-4">
                 <Button
-                  onClick={() => handleEdit('country', profile.country)}
-                  size="sm"
-                  variant="outline"
+                  type="submit"
+                  disabled={!isDirty || updateProfile.isPending}
+                  className="flex-1"
                 >
-                  Edit
+                  {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
                 </Button>
               </div>
             )}
-          </div>
+          </form>
         </CardContent>
       </Card>
 
-      {/* Account Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Account Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-sm font-medium">Member Since</Label>
-              <p className="text-sm">{formatDate(profile.created_at)}</p>
+      {/* Account Status */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Account Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Role</span>
+              <Badge variant="outline">{profile.role}</Badge>
             </div>
-            <div>
-              <Label className="text-sm font-medium">Last Updated</Label>
-              <p className="text-sm">{formatDate(profile.updated_at)}</p>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Credits</span>
+              <Badge variant="secondary">{profile.credits}</Badge>
             </div>
-            <div>
-              <Label className="text-sm font-medium">Account Status</Label>
-              <Badge variant="outline" className="bg-green-50 text-green-700">
-                Active
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Tokens</span>
+              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                {profile.tokens || 0} tokens
               </Badge>
             </div>
-            <div>
-              <Label className="text-sm font-medium">Terms Accepted</Label>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="terms" 
-                  checked={profile.terms_accepted} 
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      acceptTerms.mutate();
-                    }
-                  }}
-                />
-                <Label htmlFor="terms" className="text-sm">
-                  I accept the terms and conditions
-                </Label>
-              </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Terms Accepted</span>
+              <Badge variant={profile.terms_accepted ? "default" : "destructive"}>
+                {profile.terms_accepted ? "Yes" : "No"}
+              </Badge>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            {!profile.terms_accepted && (
+              <Button
+                onClick={() => acceptTerms.mutate()}
+                disabled={acceptTerms.isPending}
+                className="w-full mt-2"
+              >
+                {acceptTerms.isPending ? 'Accepting...' : 'Accept Terms'}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Membership Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Member Since</span>
+              <span className="text-sm">{formatDate(profile.created_at)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Last Updated</span>
+              <span className="text-sm">{formatDate(profile.updated_at)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Marketing Opt-in</span>
+              <Badge variant={profile.marketing_opt_in ? "default" : "secondary"}>
+                {profile.marketing_opt_in ? "Yes" : "No"}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Admin Tools (if available) */}
+      {awardCredits && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5" />
+              Admin Tools
+            </CardTitle>
+            <CardDescription>
+              Administrative actions for this member
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <Label htmlFor="admin-credits">Award Credits</Label>
+              <Input
+                id="admin-credits"
+                type="number"
+                placeholder="Number of credits to award"
+                value={adminCredits}
+                onChange={(e) => setAdminCredits(e.target.value)}
+              />
+              <Label htmlFor="admin-note">Admin Note</Label>
+              <Textarea
+                id="admin-note"
+                placeholder="Reason for awarding credits..."
+                value={adminNote}
+                onChange={(e) => setAdminNote(e.target.value)}
+              />
+              <Button
+                onClick={handleAwardCredits}
+                disabled={!adminCredits || isNaN(parseInt(adminCredits))}
+                className="w-full"
+              >
+                <Coins className="h-4 w-4 mr-2" />
+                Award Credits
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

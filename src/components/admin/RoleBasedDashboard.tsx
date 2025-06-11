@@ -56,6 +56,7 @@ export const RoleBasedDashboard: React.FC = () => {
     country: profile.country || '',
     categories_played: profile.categories_played || [],
     credits: profile.credits || 0,
+    tokens: profile.tokens || 0, // Added tokens field
     achievements: profile.achievements || [],
     referral_code: profile.referral_code || null
   } : {
@@ -66,6 +67,7 @@ export const RoleBasedDashboard: React.FC = () => {
     country: '',
     categories_played: [],
     credits: 0,
+    tokens: 0, // Added tokens field
     achievements: [],
     referral_code: null,
     email: '',

@@ -1,122 +1,58 @@
-import { UserProfile } from './userTypes';
-import { XeroContact } from './integration';
 
-export type AddressType = 'billing' | 'shipping';
+import { UserRole, Gender, AgeGroup } from './userTypes';
 
-export interface MemberAddress {
-  id: string;
-  member_id: string;
-  address_type: AddressType;
-  is_default: boolean;
-  address_line1: string;
-  address_line2?: string;
-  city: string;
-  state?: string;
-  postal_code: string;
-  country: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface XeroMemberMapping {
-  id: string;
-  member_id: string;
-  xero_contact_id: string;
-  sync_status: 'active' | 'inactive' | 'error';
-  last_synced: string;
-  created_at: string;
-}
-
-export interface MembershipDetail {
-  id: string;
-  member_id: string;
-  membership_id: string;
-  start_date: string;
-  end_date?: string;
-  status: 'active' | 'expired' | 'canceled' | 'suspended';
-  auto_renew: boolean;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface FinancialTransaction {
-  id: string;
-  member_id: string;
-  transaction_type: 'membership' | 'puzzle' | 'prize' | 'refund' | 'other';
-  amount: number;
-  currency: string;
-  status: 'pending' | 'completed' | 'failed';
-  payment_method?: string;
-  xero_invoice_id?: string;
-  xero_transaction_id?: string;
-  category_id?: string;
-  transaction_date: string;
-  description?: string;
-  metadata?: Record<string, any>;
-  created_at: string;
-}
-
-// Extended member profile with financial and membership data
 export interface MemberDetailedProfile {
   id: string;
   email: string | null;
   display_name: string | null;
   bio: string | null;
   avatar_url?: string | null;
-  role: string;
-  country?: string | null;
-  categories_played?: string[];
+  role: UserRole;
+  country: string | null;
+  categories_played: string[];
   credits: number;
-  achievements?: string[];
-  referral_code?: string | null;
+  tokens: number; // Added tokens field
+  achievements: string[];
+  referral_code: string | null;
   created_at: string;
   updated_at: string;
-  // Additional member fields
-  full_name?: string;
-  username?: string; // Added username field for screen names
-  phone?: string;
-  address_line1?: string;
-  address_line2?: string;
-  city?: string;
-  state?: string;
-  postal_code?: string;
-  date_of_birth?: string;
-  tax_id?: string;
+  
+  // Extended profile fields
+  full_name: string | null;
+  username: string | null;
+  phone: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  postal_code: string | null;
+  date_of_birth: string | null;
+  tax_id: string | null;
   terms_accepted: boolean;
-  terms_accepted_at?: string;
+  terms_accepted_at: string | null;
   marketing_opt_in: boolean;
-  // Add missing gender and age fields with proper types
-  gender?: 'male' | 'female' | 'non-binary' | 'custom' | 'prefer-not-to-say' | 'other' | null;
-  custom_gender?: string | null;
-  age_group?: '13-17' | '18-24' | '25-34' | '35-44' | '45-60' | '60+' | null;
-  addresses?: MemberAddress[];
-  membership_details?: MembershipDetail;
-  xero_mapping?: XeroMemberMapping;
-  financial_summary?: MemberFinancialSummary;
+  gender: Gender | null;
+  custom_gender: string | null;
+  age_group: AgeGroup | null;
 }
 
-export interface MemberFinancialSummary {
-  total_spend: number;
-  total_prizes: number;
-  membership_revenue: number;
-  puzzle_revenue: number;
-  last_payment_date?: string;
-  membership_status: string;
-  xero_contact_id?: string;
-  membership_end_date?: string;
-  lifetime_value: number;
+export interface Address {
+  id: string;
+  user_id: string;
+  type: 'billing' | 'shipping';
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  is_default: boolean;
 }
 
-export interface MemberSyncData {
-  profile: MemberDetailedProfile;
-  xeroContact?: XeroContact;
+export interface MembershipDetails {
+  status: 'active' | 'inactive' | 'suspended';
+  tier: string;
+  start_date: string;
+  end_date: string | null;
+  auto_renew: boolean;
 }
-
-// Backward compatibility aliases
-export type UserAddress = MemberAddress;
-export type XeroUserMapping = XeroMemberMapping;
-export type UserMembershipDetail = MembershipDetail;
-export type UserFinancialSummary = MemberFinancialSummary;
-
-export type MemberProfile = MemberDetailedProfile;

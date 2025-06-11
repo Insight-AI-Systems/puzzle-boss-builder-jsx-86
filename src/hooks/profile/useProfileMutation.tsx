@@ -32,6 +32,7 @@ export function useProfileMutation(userId: string | null) {
         country: updatedUser.country,
         categories_played: [],
         credits: updatedUser.credits,
+        tokens: updatedUser.tokens || 0, // Added tokens field
         achievements: [],
         referral_code: null,
         created_at: updatedUser.created_at,

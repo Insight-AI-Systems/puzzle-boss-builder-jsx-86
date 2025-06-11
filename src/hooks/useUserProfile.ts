@@ -55,6 +55,7 @@ export function useUserProfile(): UserProfileReturn {
           country: data.country || null,
           categories_played: data.categories_played || [],
           credits: data.credits || 0,
+          tokens: data.tokens || 0, // Added tokens field
           achievements: [],
           referral_code: null,
           created_at: data.created_at,

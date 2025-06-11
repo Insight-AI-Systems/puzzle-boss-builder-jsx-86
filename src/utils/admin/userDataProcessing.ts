@@ -80,6 +80,7 @@ export function transformToUserProfile(userData: RpcUserData): UserProfile {
     country: userData.country,
     categories_played: userData.categories_played || [],
     credits: userData.credits || 0,
+    tokens: userData.tokens || 0, // Added tokens field
     achievements: [],
     referral_code: null,
     created_at: userData.created_at,

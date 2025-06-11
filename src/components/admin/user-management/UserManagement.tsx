@@ -37,19 +37,11 @@ export function UserManagement() {
     bulkUpdateRoles,
     sendBulkEmail,
     userStats,
-    pageSize,
-    currentPage,
-    setCurrentPage,
-    totalPages,
-    bulkRole,
-    setBulkRole,
-    isBulkRoleChanging,
     userType,
     setUserType,
-    role: roleFilter,
-    setRole: setRoleFilter,
-    country: countryFilter,
-    setCountry: setCountryFilter
+    bulkRole,
+    setBulkRole,
+    isBulkRoleChanging
   } = useUserManagement(isAdmin, currentUserId);
 
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
@@ -129,7 +121,7 @@ export function UserManagement() {
             <UserActionButtons
               selectedUsers={selectedUsers}
               onEmailClick={() => setIsEmailDialogOpen(true)}
-              onBulkRoleClick={() => setIsBulkRoleDialogOpen(true)}
+              onRoleClick={() => setIsBulkRoleDialogOpen(true)}
             />
           </div>
         </CardHeader>
@@ -146,12 +138,8 @@ export function UserManagement() {
               />
             </div>
             <UserFilters
-              userType={userType}
-              setUserType={setUserType}
-              role={roleFilter}
-              setRole={setRoleFilter}
-              country={countryFilter}
-              setCountry={setCountryFilter}
+              filterType={userType}
+              setFilterType={setUserType}
               availableCountries={allProfilesData?.countries || []}
             />
           </div>
@@ -166,7 +154,7 @@ export function UserManagement() {
                       <input
                         type="checkbox"
                         checked={selectedUsers.size === users.length && users.length > 0}
-                        onChange={handleSelectAllUsers}
+                        onChange={(e) => handleSelectAllUsers(e.target.checked, users)}
                         className="rounded"
                       />
                     </th>
@@ -186,14 +174,14 @@ export function UserManagement() {
                         <input
                           type="checkbox"
                           checked={selectedUsers.has(user.id)}
-                          onChange={() => handleUserSelection(user.id)}
+                          onChange={(e) => handleUserSelection(user.id, e.target.checked)}
                           className="rounded"
                         />
                       </td>
                       <td className="p-4">
                         <div>
                           <p className="font-medium">
-                            {user.display_name || user.username || 'Anonymous User'}
+                            {user.display_name || 'Anonymous User'}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             Member since {formatDate(user.created_at)}
@@ -204,7 +192,6 @@ export function UserManagement() {
                         <RoleSelector
                           currentRole={user.role}
                           onRoleChange={(newRole) => handleRoleChange(user.id, newRole)}
-                          userId={user.id}
                           currentUserRole={currentUserProfile?.role || 'player'}
                         />
                       </td>
@@ -250,19 +237,19 @@ export function UserManagement() {
 
       {/* Dialogs */}
       <EmailDialog
-        isOpen={isEmailDialogOpen}
+        open={isEmailDialogOpen}
         onClose={() => setIsEmailDialogOpen(false)}
         selectedUserIds={Array.from(selectedUsers)}
         onSendEmail={sendBulkEmail}
       />
 
       <BulkRoleDialog
-        isOpen={isBulkRoleDialogOpen}
+        open={isBulkRoleDialogOpen}
         onClose={() => setIsBulkRoleDialogOpen(false)}
         selectedUserIds={Array.from(selectedUsers)}
         currentRole={bulkRole}
         onRoleChange={setBulkRole}
-        onUpdateRoles={bulkUpdateRoles}
+        onUpdateRoles={(userIds, newRole) => bulkUpdateRoles(userIds, newRole)}
         isUpdating={isBulkRoleChanging}
         currentUserRole={currentUserProfile?.role || 'player'}
       />
