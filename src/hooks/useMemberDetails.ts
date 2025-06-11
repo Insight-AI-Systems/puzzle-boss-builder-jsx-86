@@ -114,7 +114,7 @@ export function useMemberDetails() {
         membership_details: membershipDetails ? {
           id: membershipDetails.id,
           status: membershipDetails.status as 'active' | 'inactive' | 'suspended' | 'expired' | 'canceled',
-          tier: membershipDetails.tier || 'basic',
+          tier: 'basic', // Provide default value since tier doesn't exist in database
           start_date: membershipDetails.start_date,
           end_date: membershipDetails.end_date,
           auto_renew: membershipDetails.auto_renew,
