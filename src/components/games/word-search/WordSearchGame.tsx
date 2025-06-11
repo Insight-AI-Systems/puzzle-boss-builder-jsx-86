@@ -185,17 +185,18 @@ export function WordSearchGame() {
     if (engine && gameState) {
       engine.makeMove({ type: 'HINT' });
       
-      // Clear hint after 3 seconds and ensure game state is properly updated
+      // Clear hint after 3 seconds
       setTimeout(() => {
         if (engine) {
-          // Force a clean state update by creating a new state without hint cells
+          // Use the public method to get current state and update it
           const currentState = engine.getGameState();
-          engine.gameState = {
+          // Create a new state object with hint cells cleared
+          const updatedState = {
             ...currentState,
             hintCells: []
           };
-          // Notify all listeners of the state change
-          engine['notifyListeners']();
+          // Use the restoreGameState method to update the state
+          engine.restoreGameState(updatedState);
         }
       }, 3000);
     }
