@@ -1,4 +1,3 @@
-
 import { UserProfile } from './userTypes';
 import { XeroContact } from './integration';
 
@@ -87,10 +86,10 @@ export interface MemberDetailedProfile {
   terms_accepted: boolean;
   terms_accepted_at?: string;
   marketing_opt_in: boolean;
-  // Add missing gender and age fields
-  gender?: string | null;
+  // Add missing gender and age fields with proper types
+  gender?: 'male' | 'female' | 'non-binary' | 'custom' | 'prefer-not-to-say' | 'other' | null;
   custom_gender?: string | null;
-  age_group?: string | null;
+  age_group?: '13-17' | '18-24' | '25-34' | '35-44' | '45-60' | '60+' | null;
   addresses?: MemberAddress[];
   membership_details?: MembershipDetail;
   xero_mapping?: XeroMemberMapping;
@@ -119,3 +118,5 @@ export type UserAddress = MemberAddress;
 export type XeroUserMapping = XeroMemberMapping;
 export type UserMembershipDetail = MembershipDetail;
 export type UserFinancialSummary = MemberFinancialSummary;
+
+export type MemberProfile = MemberDetailedProfile;
