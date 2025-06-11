@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useUser, useClerk } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,7 +17,7 @@ interface ClerkProfile {
   updated_at: string;
 }
 
-// Admin emails - centralized for consistency and security
+// Admin emails - only used for initial profile creation, not ongoing role enforcement
 const ADMIN_EMAILS = [
   'alan@insight-ai-systems.com',
   'alantbooth@xtra.co.nz',
@@ -34,15 +33,15 @@ export const useClerkAuth = () => {
   const [profile, setProfile] = React.useState<ClerkProfile | null>(null);
   const [profileLoading, setProfileLoading] = React.useState(true);
 
-  // Authoritative admin email detection - this takes precedence
+  // Only check admin email status for new profile creation, not role determination
   const userEmail = user?.primaryEmailAddress?.emailAddress;
-  const isAdminEmail = userEmail ? ADMIN_EMAILS.includes(userEmail) : false;
+  const isAdminEmailForNewProfiles = userEmail ? ADMIN_EMAILS.includes(userEmail) : false;
 
   console.log('🔐 useClerkAuth Hook State:', {
     isSignedIn,
     isLoaded,
     userEmail,
-    isAdminEmail,
+    isAdminEmailForNewProfiles,
     profileLoading,
     hasProfile: !!profile
   });
@@ -66,7 +65,7 @@ export const useClerkAuth = () => {
     }
   }, [isSignedIn, userEmail, user?.id]);
 
-  // Enhanced profile fetch with admin prioritization
+  // Enhanced profile fetch - respects manual role changes
   React.useEffect(() => {
     if (!user?.id || !isSignedIn) {
       setProfile(null);
@@ -76,7 +75,7 @@ export const useClerkAuth = () => {
 
     const fetchProfile = async () => {
       try {
-        console.log('🔍 Fetching profile for:', user.id, 'Email:', userEmail, 'IsAdmin:', isAdminEmail);
+        console.log('🔍 Fetching profile for:', user.id, 'Email:', userEmail);
         
         // Try to find profile by clerk_user_id first
         let { data, error } = await supabase
@@ -96,12 +95,11 @@ export const useClerkAuth = () => {
           
           if (emailProfile && !emailError) {
             console.log('📧 Found profile by email, updating with Clerk ID');
-            // Update profile with Clerk ID and ensure admin role if admin email
+            // Update profile with Clerk ID but DON'T change role for existing profiles
             const updateData = { 
               clerk_user_id: user.id,
               updated_at: new Date().toISOString(),
-              last_sign_in: new Date().toISOString(), // SINGLE update on profile sync
-              ...(isAdminEmail && { role: 'super_admin' }) // Force admin role for admin emails
+              last_sign_in: new Date().toISOString() // SINGLE update on profile sync
             };
             
             const { data: updatedProfile } = await supabase
@@ -115,7 +113,7 @@ export const useClerkAuth = () => {
           }
         }
         
-        // Create new profile if none exists
+        // Create new profile if none exists - only here we apply admin email logic
         if (!data) {
           console.log('📝 Creating new profile for user');
           const newProfile = {
@@ -123,7 +121,7 @@ export const useClerkAuth = () => {
             clerk_user_id: user.id,
             email: userEmail,
             username: user.username || user.firstName || userEmail?.split('@')[0] || '',
-            role: isAdminEmail ? 'super_admin' : 'player', // Admin emails always get super_admin
+            role: isAdminEmailForNewProfiles ? 'super_admin' : 'player', // Only for NEW profiles
             member_id: crypto.randomUUID(),
             last_sign_in: new Date().toISOString() // SINGLE update on profile creation
           };
@@ -135,23 +133,9 @@ export const useClerkAuth = () => {
             .single();
           
           data = createdProfile;
-        } else if (data && isAdminEmail && data.role !== 'super_admin') {
-          // Ensure existing admin profiles have the correct role and update last_sign_in ONCE
-          console.log('🔧 Fixing admin role for existing profile');
-          const { data: updatedProfile } = await supabase
-            .from('profiles')
-            .update({ 
-              role: 'super_admin', 
-              updated_at: new Date().toISOString(),
-              last_sign_in: new Date().toISOString() // SINGLE update for admin role fix
-            })
-            .eq('id', data.id)
-            .select()
-            .single();
-          
-          data = updatedProfile;
         } else if (data) {
-          // Update last_sign_in ONCE for existing profile
+          // For existing profiles, only update last_sign_in - RESPECT existing role
+          console.log('✅ Found existing profile, respecting current role:', data.role);
           const { data: updatedProfile } = await supabase
             .from('profiles')
             .update({ 
@@ -169,9 +153,9 @@ export const useClerkAuth = () => {
         setProfile(data);
       } catch (error) {
         console.error('❌ Profile fetch error:', error);
-        // For admin emails, create a fallback profile state
-        if (isAdminEmail) {
-          console.log('🆘 Creating fallback admin profile state');
+        // For admin emails, create a fallback profile state only for new users
+        if (isAdminEmailForNewProfiles) {
+          console.log('🆘 Creating fallback admin profile state for new user');
           setProfile({
             id: user.id,
             clerk_user_id: user.id,
@@ -193,27 +177,23 @@ export const useClerkAuth = () => {
 
     setProfileLoading(true);
     fetchProfile();
-  }, [user?.id, userEmail, isAdminEmail, isSignedIn]);
+  }, [user?.id, userEmail, isAdminEmailForNewProfiles, isSignedIn]);
 
-  // Role determination - admin emails always override database roles
-  const userRole: string = isAdminEmail ? 'super_admin' : (profile?.role || 'player');
+  // Role determination - use database role value, no more automatic elevation
+  const userRole: string = profile?.role || 'player';
   const userRoles: string[] = [userRole];
 
-  // Admin check - admin emails are ALWAYS admin regardless of database state
-  const isAdmin: boolean = isAdminEmail || userRole === 'super_admin' || userRole === 'admin';
+  // Admin check - based on actual database role, not email
+  const isAdmin: boolean = userRole === 'super_admin' || userRole === 'admin';
 
-  // Enhanced role checking with admin email prioritization
+  // Enhanced role checking - no more admin email override
   const hasRole = (role: string): boolean => {
     console.log('🔍 hasRole check:', { 
       role, 
-      isAdminEmail, 
       userRole, 
       userRoles,
-      hasRoleResult: isAdminEmail || userRoles.includes(role) || userRole === 'super_admin'
+      hasRoleResult: userRoles.includes(role) || userRole === 'super_admin'
     });
-    
-    // Admin emails have all roles
-    if (isAdminEmail) return true;
     
     // Super admins have all roles
     if (userRole === 'super_admin') return true;
@@ -228,15 +208,15 @@ export const useClerkAuth = () => {
       console.log('🔐 Auth Summary:', {
         isSignedIn,
         userEmail,
-        isAdminEmail,
         userRole,
         isAdmin,
         profileLoaded: !profileLoading,
         hasProfile: !!profile,
-        clerkUserId: user?.id
+        clerkUserId: user?.id,
+        roleSource: 'database' // Now always from database
       });
     }
-  }, [isLoaded, isSignedIn, userEmail, isAdminEmail, userRole, isAdmin, profileLoading, profile, user?.id]);
+  }, [isLoaded, isSignedIn, userEmail, userRole, isAdmin, profileLoading, profile, user?.id]);
 
   const signOut = async (): Promise<void> => {
     console.log('🚪 Starting sign out process');
@@ -264,7 +244,7 @@ export const useClerkAuth = () => {
     isAuthenticated: isSignedIn,
     isLoading: !isLoaded || profileLoading,
     
-    // Role checking - with admin email prioritization
+    // Role checking - respects manual changes
     userRole,
     userRoles,
     hasRole,
