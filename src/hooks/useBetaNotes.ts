@@ -5,8 +5,8 @@ export const useBetaNotes = () => {
   const [notes] = useState<any[]>([]);
   const [isLoading] = useState(false);
 
-  const addNote = async (note: any) => {
-    console.log('Adding note:', note);
+  const addNote = async (title: string, content: string) => {
+    console.log('Adding note:', { title, content });
     // TODO: Implement actual note creation
     return Promise.resolve();
   };

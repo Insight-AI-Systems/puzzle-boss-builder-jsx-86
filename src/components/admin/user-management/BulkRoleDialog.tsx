@@ -9,40 +9,35 @@ import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 interface BulkRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedUserIds: string[];
+  selectedCount: number;
   currentRole: UserRole;
-  onRoleChange: (role: string) => void;
-  onUpdateRoles: (userIds: string[], role: UserRole) => Promise<void>;
-  isUpdating: boolean;
-  currentUserRole: UserRole;
+  onRoleChange: (role: UserRole) => void;
+  onConfirm: () => Promise<void>;
+  isLoading: boolean;
 }
 
 export const BulkRoleDialog: React.FC<BulkRoleDialogProps> = ({
   open,
   onOpenChange,
-  selectedUserIds,
+  selectedCount,
   currentRole,
   onRoleChange,
-  onUpdateRoles,
-  isUpdating,
-  currentUserRole
+  onConfirm,
+  isLoading
 }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onUpdateRoles(selectedUserIds, currentRole);
+    await onConfirm();
     onOpenChange(false);
   };
 
-  const availableRoles = Object.keys(ROLE_DEFINITIONS).filter(role => {
-    if (currentUserRole === 'super_admin') return true;
-    return role !== 'super_admin';
-  }) as UserRole[];
+  const availableRoles = Object.keys(ROLE_DEFINITIONS) as UserRole[];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Change Role for {selectedUserIds.length} Users</DialogTitle>
+          <DialogTitle>Change Role for {selectedCount} Users</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -64,8 +59,8 @@ export const BulkRoleDialog: React.FC<BulkRoleDialogProps> = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isUpdating}>
-              {isUpdating ? 'Updating...' : 'Update Roles'}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Updating...' : 'Update Roles'}
             </Button>
           </div>
         </form>
