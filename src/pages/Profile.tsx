@@ -10,11 +10,10 @@ import { ProfilePaymentMethodsTab } from '@/components/profile/tabs/ProfilePayme
 import { ProfileTransactionHistoryTab } from '@/components/profile/tabs/ProfileTransactionHistoryTab';
 import { ProfileFinancialTab } from '@/components/profile/tabs/ProfileFinancialTab';
 import { ProfileGameHistoryTab } from '@/components/profile/tabs/ProfileGameHistoryTab';
-import { ProfileWinningsTab } from '@/components/profile/tabs/ProfileWinningsTab';
 import { SecuritySettings } from '@/components/profile/SecuritySettings';
 import { useMemberProfile } from '@/hooks/useMemberProfile';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { Loader2, User, Phone, MapPin, Settings, CreditCard, Receipt, DollarSign, Gamepad2, Trophy, Shield } from 'lucide-react';
+import { Loader2, User, Phone, MapPin, Settings, CreditCard, Receipt, DollarSign, Gamepad2, Shield, AlertCircle } from 'lucide-react';
 
 const Profile: React.FC = () => {
   const { profile, isLoading: isLoadingMemberProfile, updateProfile, upsertAddress, deleteAddress, acceptTerms, awardCredits } = useMemberProfile();
@@ -23,10 +22,15 @@ const Profile: React.FC = () => {
   
   const isLoading = isLoadingUserProfile || isLoadingMemberProfile;
 
+  console.log('Profile component render:', { profile, isLoading, isLoadingMemberProfile, isLoadingUserProfile });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+          <p className="text-puzzle-white">Loading your profile...</p>
+        </div>
       </div>
     );
   }
@@ -34,7 +38,13 @@ const Profile: React.FC = () => {
   if (!profile) {
     return (
       <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
-        <div className="text-puzzle-white">Failed to load profile</div>
+        <div className="flex flex-col items-center gap-4 text-center">
+          <AlertCircle className="h-12 w-12 text-red-400" />
+          <div className="text-puzzle-white">
+            <h2 className="text-xl font-semibold mb-2">Profile Not Found</h2>
+            <p className="text-puzzle-white/70">Unable to load your profile. Please try refreshing the page.</p>
+          </div>
+        </div>
       </div>
     );
   }
