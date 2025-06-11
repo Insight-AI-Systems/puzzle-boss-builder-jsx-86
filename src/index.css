@@ -30,7 +30,7 @@
     --destructive-foreground: 0 0% 98%;
     
     --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
+    --input: 0 0% 22%; /* Lightened from 14.9% for better contrast */
     --ring: 0 0% 83.1%;
     
     --radius: 0.5rem;
@@ -49,6 +49,17 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  
+  /* Ensure input fields have proper contrast */
+  input {
+    @apply text-foreground;
+    background-color: hsl(var(--input));
+    color: hsl(var(--foreground));
+  }
+  
+  input::placeholder {
+    color: hsl(var(--muted-foreground));
   }
 }
 
