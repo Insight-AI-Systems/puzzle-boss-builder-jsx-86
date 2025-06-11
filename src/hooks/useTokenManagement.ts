@@ -75,7 +75,22 @@ export function useTokenManagement() {
       throw new Error(`Failed to fetch token transactions: ${error.message}`);
     }
 
-    return data || [];
+    // Transform the data to match our TokenTransaction interface
+    const transformedData: TokenTransaction[] = (data || []).map(transaction => ({
+      id: transaction.id,
+      user_id: transaction.user_id,
+      amount: transaction.amount,
+      transaction_type: transaction.transaction_type,
+      description: transaction.description,
+      admin_user_id: transaction.admin_user_id,
+      puzzle_id: transaction.puzzle_id,
+      created_at: transaction.created_at,
+      metadata: typeof transaction.metadata === 'object' && transaction.metadata !== null 
+        ? transaction.metadata as Record<string, any>
+        : {}
+    }));
+
+    return transformedData;
   };
 
   // Query for token transactions
