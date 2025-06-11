@@ -73,14 +73,22 @@ export function WordSearchGame() {
         }
         
         setEngine(newEngine);
-        setGameState(newEngine.getGameState());
+        setGameState(newEngine.getState());
         
         // Subscribe to engine state changes
-        newEngine.subscribe((newState) => {
+        const unsubscribe = newEngine.subscribe((newState) => {
           setGameState(newState);
           // Auto-save when state changes
           saveGameState(newEngine.getGameStateForSave());
         });
+        
+        // Cleanup subscription on unmount
+        return () => {
+          unsubscribe();
+          if (newEngine) {
+            newEngine.destroy?.();
+          }
+        };
         
       } catch (error) {
         console.error('Failed to initialize Word Search engine:', error);
@@ -95,13 +103,6 @@ export function WordSearchGame() {
     };
 
     initializeEngine();
-
-    // Cleanup timer when component unmounts
-    return () => {
-      if (engine) {
-        engine.destroy?.();
-      }
-    };
   }, []);
 
   const handleSelectionStart = useCallback((cell: Cell) => {
