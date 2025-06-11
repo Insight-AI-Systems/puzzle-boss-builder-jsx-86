@@ -24,6 +24,7 @@ export interface MemberDetailedProfile {
   gender?: string;
   ageGroup?: string;
   phone?: string;
+  display_name?: string;
   // Add other profile fields as needed
 }
 
@@ -47,6 +48,7 @@ export const useMemberProfile = () => {
     gender: '',
     ageGroup: '',
     phone: '',
+    display_name: clerkProfile.display_name,
     addresses: [], // Mock for now
     membership_details: null // Mock for now
   } : null;

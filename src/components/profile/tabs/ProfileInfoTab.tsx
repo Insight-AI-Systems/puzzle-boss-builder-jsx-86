@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { UserProfileForm } from '../UserProfileForm';
+import UserProfileForm from '../UserProfileForm';
 
 interface ProfileInfoTabProps {
   profile: any;

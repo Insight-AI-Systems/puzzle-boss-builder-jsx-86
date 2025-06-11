@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { sessionTracker } from '@/utils/sessionTracker';
 import { setCurrentUserForCleanup, initializeSessionCleanup } from '@/utils/sessionCleanup';
 
-// Simplified profile interface
+// Enhanced profile interface to match expectations
 interface ClerkProfile {
   id: string;
   clerk_user_id: string | null;
@@ -14,6 +14,7 @@ interface ClerkProfile {
   email: string | null;
   avatar_url: string | null;
   bio: string | null;
+  display_name: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -154,8 +155,24 @@ export const useClerkAuth = () => {
           data = updatedProfile || data;
         }
         
-        console.log('📋 Final profile result:', data);
-        setProfile(data);
+        // Transform to ClerkProfile format with display_name
+        if (data) {
+          const transformedProfile: ClerkProfile = {
+            id: data.id,
+            clerk_user_id: data.clerk_user_id,
+            role: data.role,
+            username: data.username,
+            email: data.email,
+            avatar_url: data.avatar_url,
+            bio: data.bio,
+            display_name: data.username || data.full_name || userEmail?.split('@')[0] || 'Anonymous User',
+            created_at: data.created_at,
+            updated_at: data.updated_at
+          };
+          
+          console.log('📋 Final profile result:', transformedProfile);
+          setProfile(transformedProfile);
+        }
       } catch (error) {
         console.error('❌ Profile fetch error:', error);
         // For admin emails, create a fallback profile state only for new users
@@ -169,6 +186,7 @@ export const useClerkAuth = () => {
             email: userEmail || '',
             avatar_url: user.imageUrl || null,
             bio: null,
+            display_name: user.username || user.firstName || userEmail?.split('@')[0] || 'Anonymous User',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
@@ -261,5 +279,6 @@ export const useClerkAuth = () => {
     
     // Legacy compatibility
     error: null,
+    session: null, // Add session property for compatibility
   };
 };
