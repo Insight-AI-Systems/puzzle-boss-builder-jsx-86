@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileInfoTab } from '@/components/profile/tabs/ProfileInfoTab';
@@ -49,6 +48,11 @@ const Profile: React.FC = () => {
     );
   }
 
+  // Get display name with fallback chain: username -> display_name -> email -> "Anonymous User"
+  const getDisplayName = () => {
+    return profile.username || profile.display_name || profile.email || 'Anonymous User';
+  };
+
   return (
     <div className="min-h-screen bg-puzzle-black text-white">
       <div className="container mx-auto p-6">
@@ -62,8 +66,8 @@ const Profile: React.FC = () => {
               </p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-puzzle-white/60">Member ID</p>
-              <p className="text-puzzle-aqua font-mono text-sm">{profile.id.slice(0, 8)}...</p>
+              <p className="text-sm text-puzzle-white/60">Member</p>
+              <p className="text-puzzle-aqua font-medium text-lg">{getDisplayName()}</p>
               <p className="text-sm text-puzzle-white/60 mt-1">Credits: {profile.credits}</p>
             </div>
           </div>
