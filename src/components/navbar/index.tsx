@@ -58,10 +58,25 @@ export const Navbar: React.FC = () => {
               ))}
             </div>
 
-            {/* Auth Buttons */}
+            {/* Auth Buttons and Profile */}
             <div className="hidden md:flex items-center space-x-4">
               {isSignedIn ? (
-                <UserMenu profile={profile} />
+                <>
+                  {/* Profile Icon for logged-in users */}
+                  <Link
+                    to="/profile"
+                    className={`px-3 py-2 text-sm font-medium transition-colors flex items-center space-x-2 ${
+                      isActive('/profile')
+                        ? 'text-puzzle-aqua border-b-2 border-puzzle-aqua'
+                        : 'text-puzzle-white hover:text-puzzle-aqua'
+                    }`}
+                    title="Member Profile"
+                  >
+                    <User className="h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                  <UserMenu profile={profile} />
+                </>
               ) : (
                 <ClerkAuthButtons />
               )}
