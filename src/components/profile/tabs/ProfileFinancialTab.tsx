@@ -2,12 +2,13 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MemberDetailedProfile } from '@/types/memberTypes';
 import { UserWallet } from '@/hooks/useMemberProfile';
 import { UseMutationResult } from '@tanstack/react-query';
 import { CreditBalanceCard } from '../CreditBalanceCard';
 import { useFinancialTransactions } from '@/hooks/useFinancialTransactions';
-import { DollarSign, CreditCard, TrendingUp, Calendar, FileText } from 'lucide-react';
+import { DollarSign, CreditCard, TrendingUp, Calendar, FileText, Shield } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ProfileFinancialTabProps {
@@ -17,6 +18,21 @@ interface ProfileFinancialTabProps {
 }
 
 export function ProfileFinancialTab({ profile, awardCredits, isAdmin }: ProfileFinancialTabProps) {
+  // If not admin, show access denied message
+  if (!isAdmin) {
+    return (
+      <div className="space-y-6">
+        <Alert variant="destructive" className="border-red-500/50 bg-red-500/10">
+          <Shield className="h-4 w-4" />
+          <AlertDescription className="text-red-400">
+            Access Denied: You do not have permission to view financial information. 
+            This section is restricted to administrators only.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   const { transactions, totalCount, isLoading } = useFinancialTransactions(profile.id, { limit: 10, offset: 0 });
 
   const formatCurrency = (amount: number) => {
@@ -44,7 +60,7 @@ export function ProfileFinancialTab({ profile, awardCredits, isAdmin }: ProfileF
   return (
     <div className="space-y-6">
       {/* Admin Controls - Credits */}
-      {isAdmin && awardCredits && (
+      {awardCredits && (
         <CreditBalanceCard 
           profile={profile} 
           awardCredits={awardCredits}
@@ -220,11 +236,11 @@ export function ProfileFinancialTab({ profile, awardCredits, isAdmin }: ProfileF
           <div className="flex items-start gap-3">
             <FileText className="h-5 w-5 text-yellow-400 mt-0.5" />
             <div>
-              <p className="text-yellow-400 font-medium">Financial Information</p>
+              <p className="text-yellow-400 font-medium">Admin Financial Access</p>
               <p className="text-yellow-300/80 text-sm mt-1">
+                You are viewing this member's financial information with administrator privileges. 
                 Financial records are maintained for accounting and tax purposes. 
-                {!isAdmin && " Only administrators can modify credit balances and transaction records."}
-                Contact support if you believe there are any discrepancies.
+                Contact CFO for any discrepancies or financial policy questions.
               </p>
             </div>
           </div>

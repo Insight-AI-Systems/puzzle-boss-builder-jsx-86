@@ -54,6 +54,17 @@ const Profile: React.FC = () => {
     return profile.username || profile.display_name || profile.email || 'Anonymous User';
   };
 
+  // Calculate grid columns based on admin status
+  const getGridCols = () => {
+    const baseTabsCount = 7; // personal, contact, addresses, preferences, membership, payments, transactions, games, security
+    const adminTabsCount = isAdmin ? 2 : 0; // financial (admin only)
+    const totalTabs = baseTabsCount + adminTabsCount;
+    
+    if (totalTabs <= 5) return 'grid-cols-5';
+    if (totalTabs <= 8) return 'lg:grid-cols-8 grid-cols-4';
+    return 'lg:grid-cols-10 grid-cols-5';
+  };
+
   return (
     <div className="min-h-screen bg-puzzle-black text-white">
       <div className="container mx-auto p-6">
@@ -74,7 +85,7 @@ const Profile: React.FC = () => {
           </div>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="bg-puzzle-black/50 border border-puzzle-aqua/20 mb-6 grid grid-cols-5 lg:grid-cols-10 w-full">
+            <TabsList className={`bg-puzzle-black/50 border border-puzzle-aqua/20 mb-6 grid ${getGridCols()} w-full`}>
               <TabsTrigger 
                 value="personal" 
                 className="data-[state=active]:bg-puzzle-aqua/10 data-[state=active]:text-puzzle-aqua"
@@ -124,13 +135,16 @@ const Profile: React.FC = () => {
                 <Receipt className="h-4 w-4 mr-1" />
                 <span className="hidden sm:inline">Transactions</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="financial" 
-                className="data-[state=active]:bg-puzzle-gold/10 data-[state=active]:text-puzzle-gold"
-              >
-                <DollarSign className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Financial</span>
-              </TabsTrigger>
+              {/* Financial tab - only visible to admins */}
+              {isAdmin && (
+                <TabsTrigger 
+                  value="financial" 
+                  className="data-[state=active]:bg-puzzle-gold/10 data-[state=active]:text-puzzle-gold"
+                >
+                  <DollarSign className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">Financial</span>
+                </TabsTrigger>
+              )}
               <TabsTrigger 
                 value="games" 
                 className="data-[state=active]:bg-puzzle-aqua/10 data-[state=active]:text-puzzle-aqua"
@@ -198,13 +212,16 @@ const Profile: React.FC = () => {
               />
             </TabsContent>
             
-            <TabsContent value="financial" className="pt-4">
-              <ProfileFinancialTab 
-                profile={profile}
-                awardCredits={isAdmin ? awardCredits : undefined}
-                isAdmin={isAdmin}
-              />
-            </TabsContent>
+            {/* Financial tab content - only accessible by admins */}
+            {isAdmin && (
+              <TabsContent value="financial" className="pt-4">
+                <ProfileFinancialTab 
+                  profile={profile}
+                  awardCredits={awardCredits}
+                  isAdmin={isAdmin}
+                />
+              </TabsContent>
+            )}
             
             <TabsContent value="games" className="pt-4">
               <ProfileGameHistoryTab 
