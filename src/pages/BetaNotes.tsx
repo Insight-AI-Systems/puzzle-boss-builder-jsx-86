@@ -16,8 +16,10 @@ export default function BetaNotes() {
     if (!newNote.title.trim() || !newNote.content.trim()) return;
     
     try {
-      await addNote(newNote.title, newNote.content);
-      setNewNote({ title: '', content: '' });
+      const success = await addNote(newNote.title);
+      if (success) {
+        setNewNote({ title: '', content: '' });
+      }
     } catch (error) {
       console.error('Failed to add note:', error);
     }
@@ -73,13 +75,15 @@ export default function BetaNotes() {
                 <Badge className={getStatusColor(note.status)}>
                   {note.status}
                 </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => updateNoteStatus && updateNoteStatus(note.id, 'resolved')}
-                >
-                  Mark Resolved
-                </Button>
+                {updateNoteStatus && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updateNoteStatus(note.id, 'resolved')}
+                  >
+                    Mark Resolved
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent>

@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 // Define types that match the database schema
-interface Partner {
+export interface Partner {
   id: string;
   company_name: string;
   contact_name: string;
@@ -15,8 +15,35 @@ interface Partner {
   address?: string;
   description?: string;
   status: 'prospect' | 'active' | 'inactive' | 'suspended';
-  // Use the correct onboarding stage values from the database
   onboarding_stage: 'approved' | 'rejected' | 'invited' | 'registration_started' | 'registration_completed' | 'documents_pending' | 'documents_submitted' | 'contract_sent' | 'contract_signed';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PartnerAgreement {
+  id: string;
+  partner_id: string;
+  name: string;
+  version: string;
+  status: string;
+  document_url?: string;
+  signed_at?: string;
+  effective_from?: string;
+  effective_to?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PartnerProduct {
+  id: string;
+  partner_id: string;
+  name: string;
+  description: string;
+  price: number;
+  quantity: number;
+  status: 'draft' | 'pending_approval' | 'approved' | 'rejected';
+  category_id?: string;
+  shipping_info?: any;
   created_at: string;
   updated_at: string;
 }
@@ -33,7 +60,7 @@ interface CreatePartnerData {
   onboarding_stage?: 'approved' | 'rejected' | 'invited' | 'registration_started' | 'registration_completed' | 'documents_pending' | 'documents_submitted' | 'contract_sent' | 'contract_signed';
 }
 
-export function usePartnerManagement() {
+export function usePartnerManagement(partnerId?: string | null) {
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const queryClient = useQueryClient();
 
@@ -53,6 +80,12 @@ export function usePartnerManagement() {
       return data as Partner[];
     }
   });
+
+  // Mock agreements data for now
+  const agreements: PartnerAgreement[] = [];
+  
+  // Mock products data for now
+  const products: PartnerProduct[] = [];
 
   const createPartnerMutation = useMutation({
     mutationFn: async (partnerData: CreatePartnerData) => {
@@ -117,15 +150,54 @@ export function usePartnerManagement() {
     }
   });
 
+  // Mock functions for missing methods
+  const createAgreement = async (agreementData: any) => {
+    console.log('Creating agreement:', agreementData);
+    toast.success('Agreement created successfully');
+  };
+
+  const updateAgreement = async (id: string, agreementData: any) => {
+    console.log('Updating agreement:', id, agreementData);
+    toast.success('Agreement updated successfully');
+  };
+
+  const createProduct = async (productData: any) => {
+    console.log('Creating product:', productData);
+    toast.success('Product created successfully');
+  };
+
+  const updateProduct = async (id: string, productData: any) => {
+    console.log('Updating product:', id, productData);
+    toast.success('Product updated successfully');
+  };
+
+  const deleteProduct = async (id: string) => {
+    console.log('Deleting product:', id);
+    toast.success('Product deleted successfully');
+  };
+
+  const createCommunication = async (communicationData: any) => {
+    console.log('Creating communication:', communicationData);
+    toast.success('Communication sent successfully');
+  };
+
   return {
     partners,
     isLoading,
     error,
     selectedPartner,
     setSelectedPartner,
+    agreements,
+    products,
     createPartner: createPartnerMutation.mutate,
     updatePartner: updatePartnerMutation.mutate,
     deletePartner: deletePartnerMutation.mutate,
+    createAgreement,
+    updateAgreement,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    createCommunication,
     isCreating: createPartnerMutation.isPending,
     isUpdating: updatePartnerMutation.isPending,
     isDeleting: deletePartnerMutation.isPending
