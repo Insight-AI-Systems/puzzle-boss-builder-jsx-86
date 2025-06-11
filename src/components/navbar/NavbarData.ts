@@ -21,7 +21,5 @@ export const mainNavItems: MainNavItem[] = [
   { name: 'Categories', href: '/categories' }
 ];
 
-// Admin navigation items - consolidated to single dashboard entry
-export const adminNavItems: MainNavItem[] = [
-  { name: 'Admin Dashboard', href: '/admin-dashboard', roles: ["super_admin", "admin", "category_manager", "partner_manager", "cfo"] }
-];
+// Admin navigation items - now empty since admin links are in the user dropdown
+export const adminNavItems: MainNavItem[] = [];
