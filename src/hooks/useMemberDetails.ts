@@ -1,7 +1,7 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { MemberDetailedProfile, MemberFinancialSummary, AddressType } from '@/types/memberTypes';
+import { MemberDetailedProfile } from '@/types/memberTypes';
 import { UserRole, Gender } from '@/types/userTypes';
 import { useToast } from '@/hooks/use-toast';
 
@@ -10,18 +10,18 @@ export function useMemberDetails() {
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
 
-  const fetchMemberDetails = async (memberId: string): Promise<MemberDetailedProfile | null> => {
+  const fetchMemberDetails = useCallback(async (memberId: string): Promise<MemberDetailedProfile | null> => {
     setIsLoading(true);
     setError(null);
     
     try {
-      console.log('Fetching member details for:', memberId);
+      console.log('Fetching member details for ID:', memberId);
       
-      // Fetch member profile
+      // Fetch member profile using the correct ID field
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('member_id', memberId)
+        .eq('id', memberId) // Use id instead of member_id
         .single();
 
       if (profileError) {
@@ -29,39 +29,24 @@ export function useMemberDetails() {
         throw profileError;
       }
 
-      // Fetch financial summary using the new function
-      const { data: financialData, error: financialError } = await supabase
-        .rpc('get_member_financial_summary', { member_id_param: memberId });
-
-      if (financialError) {
-        console.error('Error fetching member financial summary:', financialError);
-        // Don't throw here, just log and continue without financial data
+      if (!profile) {
+        throw new Error('Profile not found');
       }
 
-      // Fetch membership details
-      const { data: membershipDetails, error: membershipError } = await supabase
-        .from('user_membership_details')
-        .select('*')
-        .eq('member_id', memberId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (membershipError) {
-        console.error('Error fetching membership details:', membershipError);
+      // Try to fetch financial summary, but don't fail if it doesn't exist
+      let financialData = null;
+      try {
+        const { data: finData, error: financialError } = await supabase
+          .rpc('get_member_financial_summary', { member_id_param: memberId });
+        
+        if (!financialError && finData && finData[0]) {
+          financialData = finData[0];
+        }
+      } catch (err) {
+        console.warn('Could not fetch financial data:', err);
       }
 
-      // Fetch addresses
-      const { data: addresses, error: addressError } = await supabase
-        .from('user_addresses')
-        .select('*')
-        .eq('member_id', memberId);
-
-      if (addressError) {
-        console.error('Error fetching member addresses:', addressError);
-      }
-
-      // Combine all data
+      // Create the member profile with available data
       const memberProfile: MemberDetailedProfile = {
         id: profile.id,
         email: profile.email,
@@ -93,48 +78,18 @@ export function useMemberDetails() {
         gender: profile.gender as Gender | null,
         custom_gender: profile.custom_gender,
         age_group: profile.age_group,
-        addresses: addresses ? addresses.map(addr => ({
-          id: addr.id,
-          user_id: addr.user_id,
-          type: (addr.address_type || 'billing') as AddressType,
-          address_type: (addr.address_type || 'billing') as AddressType,
-          line1: addr.address_line1,
-          address_line1: addr.address_line1,
-          line2: addr.address_line2,
-          address_line2: addr.address_line2,
-          city: addr.city,
-          state: addr.state,
-          postal_code: addr.postal_code,
-          country: addr.country,
-          is_default: addr.is_default,
-          member_id: addr.member_id,
-          created_at: addr.created_at,
-          updated_at: addr.updated_at
-        })) : [],
-        membership_details: membershipDetails ? {
-          id: membershipDetails.id,
-          status: membershipDetails.status as 'active' | 'inactive' | 'suspended' | 'expired' | 'canceled',
-          tier: 'basic', // Provide default value since tier doesn't exist in database
-          start_date: membershipDetails.start_date,
-          end_date: membershipDetails.end_date,
-          auto_renew: membershipDetails.auto_renew,
-          notes: membershipDetails.notes,
-          membership_id: membershipDetails.membership_id,
-          member_id: membershipDetails.member_id,
-          user_id: membershipDetails.user_id,
-          created_at: membershipDetails.created_at,
-          updated_at: membershipDetails.updated_at
-        } : undefined,
-        financial_summary: financialData && financialData[0] ? {
-          total_spend: financialData[0].total_spend || 0,
-          total_prizes: financialData[0].total_prizes || 0,
-          membership_revenue: financialData[0].membership_revenue || 0,
-          puzzle_revenue: financialData[0].puzzle_revenue || 0,
-          last_payment_date: financialData[0].last_payment_date,
-          membership_status: financialData[0].membership_status || 'none',
-          xero_contact_id: financialData[0].xero_contact_id,
-          membership_end_date: financialData[0].membership_end_date,
-          lifetime_value: financialData[0].lifetime_value || 0
+        addresses: [], // Initialize as empty array
+        membership_details: undefined, // Will be populated later if needed
+        financial_summary: financialData ? {
+          total_spend: financialData.total_spend || 0,
+          total_prizes: financialData.total_prizes || 0,
+          membership_revenue: financialData.membership_revenue || 0,
+          puzzle_revenue: financialData.puzzle_revenue || 0,
+          last_payment_date: financialData.last_payment_date,
+          membership_status: financialData.membership_status || 'none',
+          xero_contact_id: financialData.xero_contact_id,
+          membership_end_date: financialData.membership_end_date,
+          lifetime_value: financialData.lifetime_value || 0
         } : undefined
       };
 
@@ -156,7 +111,7 @@ export function useMemberDetails() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   return {
     isLoading,

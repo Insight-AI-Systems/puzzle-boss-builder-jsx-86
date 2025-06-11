@@ -14,6 +14,7 @@ import { RoleSelector } from './RoleSelector';
 import { EmailDialog } from './EmailDialog';
 import { BulkRoleDialog } from './BulkRoleDialog';
 import { MemberDetailView } from './MemberDetailView';
+import { MemberDetailErrorBoundary } from './MemberDetailErrorBoundary';
 
 export function UserManagement() {
   const { profile: currentUserProfile } = useUserProfile();
@@ -93,6 +94,11 @@ export function UserManagement() {
   const handleViewMember = (member: UserProfile) => {
     setSelectedMember(member);
     setIsDetailViewOpen(true);
+  };
+
+  const handleCloseDetailView = () => {
+    setIsDetailViewOpen(false);
+    setSelectedMember(null);
   };
 
   const formatDate = (dateString: string | null) => {
@@ -262,14 +268,13 @@ export function UserManagement() {
         currentUserRole={currentUserProfile?.role || 'player'}
       />
 
-      <MemberDetailView
-        member={selectedMember}
-        isOpen={isDetailViewOpen}
-        onClose={() => {
-          setIsDetailViewOpen(false);
-          setSelectedMember(null);
-        }}
-      />
+      <MemberDetailErrorBoundary>
+        <MemberDetailView
+          member={selectedMember}
+          isOpen={isDetailViewOpen}
+          onClose={handleCloseDetailView}
+        />
+      </MemberDetailErrorBoundary>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,19 +27,50 @@ export function MemberDetailView({ member, isOpen, onClose }: MemberDetailViewPr
   const { awardTokens } = useTokenManagement();
   const [memberDetails, setMemberDetails] = useState<any>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
+  
+  // Use ref to track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true);
 
-  // Fetch detailed member information when dialog opens
-  React.useEffect(() => {
-    if (isOpen && member?.id) {
-      setIsLoadingDetails(true);
-      fetchMemberDetails(member.id).then((details) => {
+  // Memoized function to load member details
+  const loadMemberDetails = useCallback(async (memberId: string) => {
+    if (!isMountedRef.current) return;
+    
+    setIsLoadingDetails(true);
+    setDetailsError(null);
+    
+    try {
+      const details = await fetchMemberDetails(memberId);
+      if (isMountedRef.current) {
         setMemberDetails(details);
+      }
+    } catch (error) {
+      console.error('Failed to load member details:', error);
+      if (isMountedRef.current) {
+        setDetailsError('Failed to load member details');
+      }
+    } finally {
+      if (isMountedRef.current) {
         setIsLoadingDetails(false);
-      }).catch(() => {
-        setIsLoadingDetails(false);
-      });
+      }
     }
-  }, [isOpen, member?.id, fetchMemberDetails]);
+  }, [fetchMemberDetails]);
+
+  // Load details when dialog opens and member is available
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    
+    if (isOpen && member?.id) {
+      loadMemberDetails(member.id);
+    } else {
+      setMemberDetails(null);
+      setDetailsError(null);
+    }
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [isOpen, member?.id, loadMemberDetails]);
 
   const handleAwardTokens = async () => {
     if (!member?.id || tokensToAward <= 0) return;
@@ -51,13 +82,14 @@ export function MemberDetailView({ member, isOpen, onClose }: MemberDetailViewPr
         adminNote: adminNote || undefined
       });
       
-      // Reset form and refresh member details
+      // Reset form
       setTokensToAward(10);
       setAdminNote('');
       
       // Refresh member details
-      const refreshedDetails = await fetchMemberDetails(member.id);
-      setMemberDetails(refreshedDetails);
+      if (member.id) {
+        loadMemberDetails(member.id);
+      }
       
     } catch (error) {
       console.error('Failed to award tokens:', error);
@@ -75,6 +107,9 @@ export function MemberDetailView({ member, isOpen, onClose }: MemberDetailViewPr
     });
   };
 
+  // Use member data as fallback if memberDetails are not loaded yet
+  const displayData = memberDetails || member;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -87,6 +122,12 @@ export function MemberDetailView({ member, isOpen, onClose }: MemberDetailViewPr
             Complete member profile and financial information
           </DialogDescription>
         </DialogHeader>
+
+        {detailsError && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-red-800 text-sm">{detailsError}</p>
+          </div>
+        )}
 
         {isLoadingDetails ? (
           <div className="flex justify-center p-8">
@@ -107,16 +148,16 @@ export function MemberDetailView({ member, isOpen, onClose }: MemberDetailViewPr
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">{member.email || 'No email'}</span>
                 </div>
-                {memberDetails?.full_name && (
+                {displayData.full_name && (
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{memberDetails.full_name}</span>
+                    <span className="text-sm">{displayData.full_name}</span>
                   </div>
                 )}
-                {memberDetails?.phone && (
+                {displayData.phone && (
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{memberDetails.phone}</span>
+                    <span className="text-sm">{displayData.phone}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2">
@@ -148,13 +189,13 @@ export function MemberDetailView({ member, isOpen, onClose }: MemberDetailViewPr
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Credits:</span>
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    {memberDetails?.credits || member.credits || 0} credits
+                    {displayData.credits || 0} credits
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Tokens:</span>
                   <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                    {memberDetails?.tokens || member.tokens || 0} tokens
+                    {displayData.tokens || 0} tokens
                   </Badge>
                 </div>
               </CardContent>
