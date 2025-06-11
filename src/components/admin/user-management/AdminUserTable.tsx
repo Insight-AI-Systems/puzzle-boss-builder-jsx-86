@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -90,7 +91,7 @@ export const AdminUserTable: React.FC<AdminUserTableProps> = ({
               <TableHead className="w-12">
                 <Checkbox
                   checked={allSelected}
-                  ref={ref => {
+                  ref={(ref: HTMLInputElement | null) => {
                     if (ref) ref.indeterminate = someSelected && !allSelected;
                   }}
                   onCheckedChange={onSelectAll}

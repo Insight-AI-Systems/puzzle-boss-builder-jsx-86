@@ -126,7 +126,6 @@ export const AdminUserActions: React.FC<AdminUserActionsProps> = ({
         onOpenChange={setShowEmailDialog}
         selectedCount={selectedUsers.size}
         onSend={handleBulkEmail}
-        isLoading={isLoading}
       />
     </div>
   );
