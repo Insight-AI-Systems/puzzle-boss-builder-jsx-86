@@ -181,36 +181,7 @@ export class GameEngineTests {
 
   // Word Search Engine Tests
   private async testWordSearchInitialization(): Promise<void> {
-    const initialState: WordSearchState = {
-      grid: [],
-      words: ['TEST'],
-      foundWords: new Set<string>(),
-      selectedCells: [],
-      currentSelection: [],
-      hintCells: [],
-      difficulty: 'rookie',
-      timeElapsed: 0,
-      hintsUsed: 0,
-      id: 'test',
-      status: 'idle',
-      score: 0,
-      moves: 0,
-      startTime: null,
-      endTime: null,
-      isComplete: false,
-      error: null
-    };
-
-    const gameConfig: GameConfig = { 
-      gameType: 'word-search',
-      hasTimer: true,
-      hasScore: true,
-      hasMoves: true,
-      difficulty: 'easy', 
-      enableHints: true 
-    };
-    
-    const engine = new WordSearchEngine(initialState, gameConfig);
+    const engine = new WordSearchEngine(12);
     if (!engine) {
       throw new Error('WordSearchEngine failed to initialize');
     }
