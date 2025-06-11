@@ -1,67 +1,84 @@
 
 import React from 'react';
-import { useUser } from '@clerk/clerk-react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { UserRole } from '@/types/userTypes';
-import { Loader2 } from 'lucide-react';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { Navigate, useLocation } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ClerkProtectedRouteProps {
   children: React.ReactNode;
-  requiredRoles?: UserRole[];
+  requiredRoles?: string[];
+  redirectTo?: string;
 }
 
-export const ClerkProtectedRoute: React.FC<ClerkProtectedRouteProps> = ({ 
-  children, 
-  requiredRoles = [] 
+export const ClerkProtectedRoute: React.FC<ClerkProtectedRouteProps> = ({
+  children,
+  requiredRoles = [],
+  redirectTo = '/auth'
 }) => {
-  const { isSignedIn, isLoaded, user } = useUser();
-  const { hasRole, isAdmin, isLoading } = useClerkAuth();
+  const { isAuthenticated, isLoading, hasRole, userRole, profile } = useClerkAuth();
   const location = useLocation();
 
-  console.log('🛡️ ClerkProtectedRoute:', {
-    isLoaded,
-    isSignedIn,
+  console.log('🛡️ ClerkProtectedRoute Check:', {
+    path: location.pathname,
+    isAuthenticated,
     isLoading,
-    isAdmin,
+    userRole,
     requiredRoles,
-    pathname: location.pathname,
-    userEmail: user?.primaryEmailAddress?.emailAddress
+    hasProfile: !!profile
   });
 
-  if (!isLoaded || isLoading) {
+  // Show loading spinner while authentication is being determined
+  if (isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="flex flex-col items-center">
-          <Loader2 className="h-8 w-8 animate-spin text-puzzle-aqua" />
-          <p className="mt-4 text-gray-400">Loading authentication...</p>
-        </div>
+      <div className="min-h-screen bg-puzzle-black flex items-center justify-center">
+        <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
       </div>
     );
   }
 
-  if (!isSignedIn) {
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+  // Redirect to auth if not authenticated
+  if (!isAuthenticated) {
+    console.log('🚫 Not authenticated, redirecting to:', redirectTo);
+    return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
-  // Enhanced role checking with admin prioritization
+  // Check role requirements if specified
   if (requiredRoles.length > 0) {
-    const hasRequiredRole = requiredRoles.some(role => 
-      hasRole(role) || isAdmin
-    );
-
-    console.log('🛡️ Role check:', {
+    const hasRequiredRole = requiredRoles.some(role => hasRole(role));
+    
+    console.log('🔐 Role Check:', {
+      userRole,
       requiredRoles,
       hasRequiredRole,
-      isAdmin,
-      userEmail: user?.primaryEmailAddress?.emailAddress
+      profileRole: profile?.role
     });
 
     if (!hasRequiredRole) {
-      console.log('🚫 Access denied - insufficient role');
-      return <Navigate to="/" replace />;
+      console.log('🚫 Insufficient permissions, current role:', userRole);
+      return (
+        <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
+          <Alert variant="destructive" className="max-w-md">
+            <AlertDescription>
+              <div className="space-y-2">
+                <p className="font-semibold">Access Denied</p>
+                <p>You don't have permission to access this page.</p>
+                <div className="text-sm">
+                  <p>Your current role: <span className="font-mono">{userRole}</span></p>
+                  <p>Required roles: <span className="font-mono">{requiredRoles.join(', ')}</span></p>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Contact an administrator if you believe this is an error.
+                </p>
+              </div>
+            </AlertDescription>
+          </Alert>
+        </div>
+      );
     }
   }
 
+  // All checks passed, render the protected content
+  console.log('✅ Access granted for route:', location.pathname);
   return <>{children}</>;
 };

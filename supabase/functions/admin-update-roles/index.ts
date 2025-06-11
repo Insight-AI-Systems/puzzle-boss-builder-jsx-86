@@ -7,16 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-user-email',
 };
 
-// Admin emails - centralized for consistency and security
-const ADMIN_EMAILS = [
-  'alan@insight-ai-systems.com',
-  'alantbooth@xtra.co.nz',
-  'rob.small.1234@gmail.com',
-  'benbooth@xtra.co.nz',
-  'tamara@insight-ai-systems.com',
-  '0sunnysideup0@gmail.com'
-];
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -44,18 +34,33 @@ serve(async (req) => {
 
     console.log('User email from header:', userEmail);
 
-    // Check if user is admin by email
-    const isAdminUser = ADMIN_EMAILS.includes(userEmail);
+    // Check if user is admin by querying database role
+    const { data: userProfile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('email', userEmail)
+      .single();
+
+    if (profileError || !userProfile) {
+      console.error("User profile not found:", userEmail);
+      return new Response(
+        JSON.stringify({ error: "User profile not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if user has admin role in database
+    const isAdminUser = ['super_admin', 'admin'].includes(userProfile.role);
     
     if (!isAdminUser) {
-      console.error("Access denied - not an admin user:", userEmail);
+      console.error("Access denied - not an admin user:", userEmail, "Role:", userProfile.role);
       return new Response(
         JSON.stringify({ error: "Unauthorized - admin access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log('Admin access granted for email:', userEmail);
+    console.log('Admin access granted for email:', userEmail, 'Role:', userProfile.role);
 
     // Parse request body
     const { userIds, newRole } = await req.json();

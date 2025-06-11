@@ -23,16 +23,31 @@ serve(async (req) => {
     );
 
     // Parse request body
-    const { email, role } = await req.json();
+    const { email, role, adminEmail } = await req.json();
     
-    if (!email || !role) {
+    if (!email || !role || !adminEmail) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: email and role" }),
+        JSON.stringify({ error: "Missing required fields: email, role, and adminEmail" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Setting role ${role} for user: ${email}`);
+    console.log(`Admin ${adminEmail} requesting to set role ${role} for user: ${email}`);
+
+    // Verify the requesting user is an admin
+    const { data: adminProfile, error: adminError } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('email', adminEmail)
+      .single();
+
+    if (adminError || !adminProfile || !['super_admin', 'admin'].includes(adminProfile.role)) {
+      console.error("Access denied - requesting user is not an admin:", adminEmail);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - admin access required" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Find the user by email in auth.users
     const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
@@ -64,7 +79,8 @@ serve(async (req) => {
         id: targetUser.id, 
         email: email,
         role: role,
-        username: targetUser.user_metadata?.username || email.split('@')[0]
+        username: targetUser.user_metadata?.username || email.split('@')[0],
+        updated_at: new Date().toISOString()
       })
       .select();
 
@@ -76,7 +92,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Successfully set role ${role} for user ${email}`);
+    console.log(`Successfully set role ${role} for user ${email} by admin ${adminEmail}`);
 
     return new Response(
       JSON.stringify({ 

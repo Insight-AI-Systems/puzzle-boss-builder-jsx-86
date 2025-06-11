@@ -34,11 +34,11 @@ interface UserMenuProps {
 const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
   const { hasRole, signOut } = useClerkAuth();
 
-  // Check admin privileges based on role, not hardcoded emails
+  // Check admin privileges based on database role only
   const isAdminUser = hasRole('super_admin') || hasRole('admin') || hasRole('category_manager') || 
                      hasRole('social_media_manager') || hasRole('partner_manager') || hasRole('cfo');
   
-  console.log('UserMenu - Admin Check:', {
+  console.log('UserMenu - Admin Check (Database Only):', {
     isAdminUser,
     profileRole: profile?.role
   });
@@ -83,7 +83,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
           </Link>
         </DropdownMenuItem>
         
-        {/* Admin Menu Section */}
+        {/* Admin Menu Section - Database Role Only */}
         {isAdminUser && (
           <>
             <DropdownMenuSeparator />

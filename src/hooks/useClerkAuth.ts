@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useUser, useClerk } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,13 +35,11 @@ export const useClerkAuth = () => {
   const [profileLoading, setProfileLoading] = React.useState(true);
 
   const userEmail = user?.primaryEmailAddress?.emailAddress;
-  const isAdminEmail = userEmail ? ADMIN_EMAILS.includes(userEmail) : false;
 
   console.log('🔐 useClerkAuth Hook State:', {
     isSignedIn,
     isLoaded,
     userEmail,
-    isAdminEmail,
     profileLoading,
     hasProfile: !!profile
   });
@@ -64,7 +61,7 @@ export const useClerkAuth = () => {
     }
   }, [isSignedIn, userEmail, user?.id]);
 
-  // Enhanced profile fetch with proper role assignment
+  // Profile fetch with database-only role assignment
   React.useEffect(() => {
     if (!user?.id || !isSignedIn) {
       setProfile(null);
@@ -93,12 +90,10 @@ export const useClerkAuth = () => {
             .maybeSingle();
           
           if (emailProfile && !emailError) {
-            console.log('📧 Found profile by email, updating with Clerk ID and role');
-            // Update profile with Clerk ID and ensure correct role for admins
-            const correctRole = isAdminEmail ? 'super_admin' : emailProfile.role;
+            console.log('📧 Found profile by email, updating with Clerk ID');
+            // Update profile with Clerk ID (keep existing role from database)
             const updateData = { 
               clerk_user_id: user.id,
-              role: correctRole,
               updated_at: new Date().toISOString(),
               last_sign_in: new Date().toISOString()
             };
@@ -116,7 +111,7 @@ export const useClerkAuth = () => {
           }
         }
         
-        // Create new profile if none exists
+        // Create new profile if none exists (default to 'player' role)
         if (!data) {
           console.log('📝 Creating new profile for user');
           const newProfile = {
@@ -124,7 +119,7 @@ export const useClerkAuth = () => {
             clerk_user_id: user.id,
             email: userEmail,
             username: user.username || user.firstName || userEmail?.split('@')[0] || '',
-            role: isAdminEmail ? 'super_admin' : 'player',
+            role: 'player', // Always default to player - no hardcoded admin access
             member_id: crypto.randomUUID(),
             last_sign_in: new Date().toISOString()
           };
@@ -139,14 +134,12 @@ export const useClerkAuth = () => {
             data = createdProfile;
           }
         } else if (data) {
-          // For existing profiles, update last_sign_in and ensure admin emails have correct role
-          const correctRole = isAdminEmail ? 'super_admin' : data.role;
-          console.log(`✅ Found existing profile, ensuring correct role: ${correctRole}`);
+          // For existing profiles, update last_sign_in only (keep existing role)
+          console.log(`✅ Found existing profile with role: ${data.role}`);
           
           const { data: updatedProfile } = await supabase
             .from('profiles')
             .update({ 
-              role: correctRole,
               last_sign_in: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
@@ -177,24 +170,7 @@ export const useClerkAuth = () => {
         }
       } catch (error) {
         console.error('❌ Profile fetch error:', error);
-        // For admin emails, create a fallback profile state
-        if (isAdminEmail) {
-          console.log('🆘 Creating fallback admin profile state');
-          setProfile({
-            id: user.id,
-            clerk_user_id: user.id,
-            role: 'super_admin',
-            username: user.username || user.firstName || userEmail?.split('@')[0] || '',
-            email: userEmail || '',
-            avatar_url: user.imageUrl || null,
-            bio: null,
-            display_name: user.username || user.firstName || userEmail?.split('@')[0] || 'Anonymous User',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-        } else {
-          setProfile(null);
-        }
+        setProfile(null);
       } finally {
         setProfileLoading(false);
       }
@@ -202,13 +178,13 @@ export const useClerkAuth = () => {
 
     setProfileLoading(true);
     fetchProfile();
-  }, [user?.id, userEmail, isAdminEmail, isSignedIn]);
+  }, [user?.id, userEmail, isSignedIn]);
 
-  // Role determination - use database role value with admin email override
-  const userRole: string = profile?.role || (isAdminEmail ? 'super_admin' : 'player');
+  // Role determination - use database role value ONLY
+  const userRole: string = profile?.role || 'player';
   const userRoles: string[] = [userRole];
 
-  // Admin check - based on actual role
+  // Admin check - based on actual database role only
   const isAdmin: boolean = userRole === 'super_admin' || userRole === 'admin';
 
   // Enhanced role checking with proper hierarchy
@@ -217,7 +193,6 @@ export const useClerkAuth = () => {
       role, 
       userRole, 
       userRoles,
-      isAdminEmail,
       hasRoleResult: userRoles.includes(role) || userRole === 'super_admin'
     });
     
@@ -226,7 +201,7 @@ export const useClerkAuth = () => {
     
     // Check specific role
     return userRoles.includes(role);
-  }, [userRole, userRoles, isAdminEmail]);
+  }, [userRole, userRoles]);
 
   // Enhanced debug logging
   React.useEffect(() => {
@@ -236,14 +211,13 @@ export const useClerkAuth = () => {
         userEmail,
         userRole,
         isAdmin,
-        isAdminEmail,
         profileLoaded: !profileLoading,
         hasProfile: !!profile,
         clerkUserId: user?.id,
-        roleSource: 'database_with_admin_override'
+        roleSource: 'database_only'
       });
     }
-  }, [isLoaded, isSignedIn, userEmail, userRole, isAdmin, isAdminEmail, profileLoading, profile, user?.id]);
+  }, [isLoaded, isSignedIn, userEmail, userRole, isAdmin, profileLoading, profile, user?.id]);
 
   const signOut = async (): Promise<void> => {
     console.log('🚪 Starting sign out process');
@@ -269,7 +243,7 @@ export const useClerkAuth = () => {
     isAuthenticated: isSignedIn,
     isLoading: !isLoaded || profileLoading,
     
-    // Role checking - with admin email override
+    // Role checking - database only
     userRole,
     userRoles,
     hasRole,
