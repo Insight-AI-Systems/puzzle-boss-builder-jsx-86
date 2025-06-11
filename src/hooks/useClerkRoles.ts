@@ -5,17 +5,44 @@ export const useClerkRoles = () => {
   const { userId, isSignedIn, isLoaded } = useAuth();
   const { organization, membership } = useOrganization();
 
-  // Get user's role from Clerk organization membership
+  console.log('🔍 useClerkRoles Debug:', {
+    isSignedIn,
+    isLoaded,
+    userId,
+    organization: organization?.name,
+    membership: membership?.role,
+    membershipObject: membership
+  });
+
+  // Get user's role from Clerk organization membership - fix the role extraction
   const userRole = membership?.role || 'player';
+  
+  console.log('🎭 Role Detection:', {
+    rawMembershipRole: membership?.role,
+    finalUserRole: userRole,
+    isString: typeof userRole === 'string'
+  });
   
   // Check if user has a specific role
   const hasRole = (role: string): boolean => {
-    if (!isSignedIn || !membership) return false;
+    if (!isSignedIn || !membership) {
+      console.log('🚫 hasRole check failed: not signed in or no membership');
+      return false;
+    }
+    
+    const currentRole = membership.role;
+    console.log('🔍 hasRole check:', { 
+      requestedRole: role, 
+      currentRole, 
+      match: currentRole === role,
+      superAdminOverride: currentRole === 'super_admin'
+    });
     
     // Super admins have all roles
-    if (membership.role === 'super_admin') return true;
+    if (currentRole === 'super_admin') return true;
     
-    return membership.role === role;
+    // Check specific role
+    return currentRole === role;
   };
 
   // Check if user has admin privileges
@@ -24,14 +51,25 @@ export const useClerkRoles = () => {
   // Check if user can access admin dashboard
   const canAccessAdminDashboard = (): boolean => {
     const adminRoles = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
-    return adminRoles.some(role => hasRole(role));
+    const hasAccess = adminRoles.some(role => hasRole(role));
+    
+    console.log('🏛️ canAccessAdminDashboard check:', {
+      userRole,
+      adminRoles,
+      hasAccess,
+      membershipRole: membership?.role
+    });
+    
+    return hasAccess;
   };
 
   // Check permissions based on role
   const hasPermission = (permission: string): boolean => {
     if (!isSignedIn || !membership) return false;
     
-    // Define role permissions (we'll move this to Clerk later)
+    const currentRole = membership.role;
+    
+    // Define role permissions
     const rolePermissions: Record<string, string[]> = {
       'super_admin': ['*'], // All permissions
       'admin': ['manage_users', 'manage_roles', 'manage_puzzles', 'view_analytics'],
@@ -42,9 +80,29 @@ export const useClerkRoles = () => {
       'player': []
     };
 
-    const userPermissions = rolePermissions[membership.role] || [];
-    return userPermissions.includes('*') || userPermissions.includes(permission);
+    const userPermissions = rolePermissions[currentRole] || [];
+    const hasPermissionResult = userPermissions.includes('*') || userPermissions.includes(permission);
+    
+    console.log('🔑 hasPermission check:', {
+      permission,
+      currentRole,
+      userPermissions,
+      hasPermissionResult
+    });
+    
+    return hasPermissionResult;
   };
+
+  console.log('📋 useClerkRoles Final State:', {
+    userId,
+    userRole,
+    isSignedIn,
+    isLoaded,
+    isAdmin,
+    canAccessDashboard: canAccessAdminDashboard(),
+    organization: organization?.name,
+    membership: membership?.role
+  });
 
   return {
     userId,
