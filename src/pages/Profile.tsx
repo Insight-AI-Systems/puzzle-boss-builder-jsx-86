@@ -200,7 +200,7 @@ const Profile: React.FC = () => {
             <TabsContent value="financial" className="pt-4">
               <ProfileFinancialTab 
                 profile={profile}
-                awardCredits={isAdmin ? awardCredits.mutate : undefined}
+                awardCredits={isAdmin ? awardCredits : undefined}
                 isAdmin={isAdmin}
               />
             </TabsContent>
