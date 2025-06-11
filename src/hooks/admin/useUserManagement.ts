@@ -82,6 +82,12 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     setBulkRoleState(role);
   };
 
+  // Refresh data function for external use (e.g., after token operations)
+  const refreshData = async () => {
+    console.log('Refreshing user management data...');
+    await refetch();
+  };
+
   // Calculate user statistics when data changes - use filtered data
   useEffect(() => {
     if (filteredData?.data) {
@@ -137,6 +143,8 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     // Bulk role props with proper typing
     bulkRole,
     setBulkRole,
-    isBulkRoleChanging
+    isBulkRoleChanging,
+    // New refresh function for external use
+    refreshData
   };
 }

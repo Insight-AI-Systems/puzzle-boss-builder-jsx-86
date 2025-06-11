@@ -1,16 +1,18 @@
 
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Calendar, Mail, MapPin, CreditCard, Coins, Gift, User, Building, Phone } from "lucide-react";
 import { UserProfile } from '@/types/userTypes';
-import { User, CreditCard, Trophy, Calendar, MapPin, Mail, Phone, Award } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useMemberDetails } from '@/hooks/useMemberDetails';
+import { useTokenManagement } from '@/hooks/useTokenManagement';
+import { TokenTransactionHistory } from './TokenTransactionHistory';
 
 interface MemberDetailViewProps {
   member: UserProfile | null;
@@ -19,41 +21,53 @@ interface MemberDetailViewProps {
 }
 
 export function MemberDetailView({ member, isOpen, onClose }: MemberDetailViewProps) {
-  const [awardTokens, setAwardTokens] = useState('');
-  const [awardNote, setAwardNote] = useState('');
-  const { toast } = useToast();
+  const [tokensToAward, setTokensToAward] = useState<number>(10);
+  const [adminNote, setAdminNote] = useState<string>('');
+  const { fetchMemberDetails } = useMemberDetails();
+  const { awardTokens } = useTokenManagement();
+  const [memberDetails, setMemberDetails] = useState<any>(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
-  if (!member) return null;
+  // Fetch detailed member information when dialog opens
+  React.useEffect(() => {
+    if (isOpen && member?.id) {
+      setIsLoadingDetails(true);
+      fetchMemberDetails(member.id).then((details) => {
+        setMemberDetails(details);
+        setIsLoadingDetails(false);
+      }).catch(() => {
+        setIsLoadingDetails(false);
+      });
+    }
+  }, [isOpen, member?.id, fetchMemberDetails]);
 
   const handleAwardTokens = async () => {
-    const tokens = parseInt(awardTokens);
-    if (isNaN(tokens) || tokens <= 0) {
-      toast({
-        title: "Invalid amount",
-        description: "Please enter a valid number of tokens",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!member?.id || tokensToAward <= 0) return;
 
     try {
-      // This would call the award_tokens function via edge function
-      toast({
-        title: "Tokens awarded",
-        description: `${tokens} tokens awarded to ${member.display_name || 'user'}`,
+      await awardTokens.mutateAsync({
+        targetUserId: member.id,
+        tokens: tokensToAward,
+        adminNote: adminNote || undefined
       });
-      setAwardTokens('');
-      setAwardNote('');
+      
+      // Reset form and refresh member details
+      setTokensToAward(10);
+      setAdminNote('');
+      
+      // Refresh member details
+      const refreshedDetails = await fetchMemberDetails(member.id);
+      setMemberDetails(refreshedDetails);
+      
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to award tokens",
-        variant: "destructive",
-      });
+      console.error('Failed to award tokens:', error);
     }
   };
 
-  const formatDate = (dateString: string) => {
+  if (!member) return null;
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Not specified';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -67,279 +81,167 @@ export function MemberDetailView({ member, isOpen, onClose }: MemberDetailViewPr
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            Member Details: {member.display_name || 'Anonymous User'}
+            Member Details - {member.display_name || 'Anonymous User'}
           </DialogTitle>
           <DialogDescription>
-            Comprehensive member profile and management
+            Complete member profile and financial information
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="financial">Financial</TabsTrigger>
-            <TabsTrigger value="gaming">Gaming</TabsTrigger>
-            <TabsTrigger value="tokens">Tokens</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-          </TabsList>
+        {isLoadingDetails ? (
+          <div className="flex justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Basic Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Basic Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">{member.email || 'No email'}</span>
+                </div>
+                {memberDetails?.full_name && (
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{memberDetails.full_name}</span>
+                  </div>
+                )}
+                {memberDetails?.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{memberDetails.phone}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">Joined {formatDate(member.created_at)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Building className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="outline">{member.role}</Badge>
+                </div>
+                {member.country && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{member.country}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-          <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Account Balance */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  Account Balance
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Credits:</span>
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    {memberDetails?.credits || member.credits || 0} credits
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Tokens:</span>
+                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                    {memberDetails?.tokens || member.tokens || 0} tokens
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Award Tokens */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gift className="h-4 w-4" />
+                  Award Tokens
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="tokens">Number of Tokens</Label>
+                  <Input
+                    id="tokens"
+                    type="number"
+                    min="1"
+                    value={tokensToAward}
+                    onChange={(e) => setTokensToAward(Number(e.target.value))}
+                    placeholder="Enter tokens to award"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="note">Admin Note (Optional)</Label>
+                  <Textarea
+                    id="note"
+                    value={adminNote}
+                    onChange={(e) => setAdminNote(e.target.value)}
+                    placeholder="Reason for awarding tokens..."
+                    rows={2}
+                  />
+                </div>
+                <Button
+                  onClick={handleAwardTokens}
+                  disabled={tokensToAward <= 0 || awardTokens.isPending}
+                  className="w-full"
+                >
+                  <Coins className="h-4 w-4 mr-2" />
+                  {awardTokens.isPending ? 'Awarding...' : `Award ${tokensToAward} Tokens`}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Financial Summary */}
+            {memberDetails?.financial_summary && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Personal Information</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    Financial Summary
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="font-medium">Display Name:</span>
-                    <span>{member.display_name || 'Not set'}</span>
+                    <span className="text-sm">Total Spend:</span>
+                    <span className="font-medium">${memberDetails.financial_summary.total_spend}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="font-medium">Role:</span>
-                    <Badge variant="outline">{member.role}</Badge>
+                    <span className="text-sm">Total Prizes:</span>
+                    <span className="font-medium">${memberDetails.financial_summary.total_prizes}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="font-medium">Country:</span>
-                    <span>{member.country || 'Not specified'}</span>
+                    <span className="text-sm">Lifetime Value:</span>
+                    <span className="font-medium">${memberDetails.financial_summary.lifetime_value}</span>
                   </div>
+                  <Separator />
                   <div className="flex justify-between">
-                    <span className="font-medium">Member Since:</span>
-                    <span>{formatDate(member.created_at)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Last Updated:</span>
-                    <span>{formatDate(member.updated_at)}</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Account Status</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="font-medium">Credits:</span>
-                    <Badge variant="secondary">{member.credits}</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Tokens:</span>
-                    <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                      {member.tokens} tokens
+                    <span className="text-sm">Membership Status:</span>
+                    <Badge variant="outline">
+                      {memberDetails.financial_summary.membership_status}
                     </Badge>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Categories Played:</span>
-                    <span>{member.categories_played?.length || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Achievements:</span>
-                    <span>{member.achievements?.length || 0}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {member.bio && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Bio</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">{member.bio}</p>
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent value="financial" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  Financial Summary
-                </CardTitle>
-                <CardDescription>
-                  Member's financial activity and transactions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">${member.credits * 1.99}</div>
-                    <div className="text-sm text-muted-foreground">Total Spent</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">0</div>
-                    <div className="text-sm text-muted-foreground">Prizes Won</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">{member.credits}</div>
-                    <div className="text-sm text-muted-foreground">Credits</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-yellow-600">{member.tokens}</div>
-                    <div className="text-sm text-muted-foreground">Tokens</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Transactions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-4 text-muted-foreground">
-                  No transaction history available
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="gaming" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5" />
-                  Gaming Statistics
-                </CardTitle>
-                <CardDescription>
-                  Member's puzzle-solving performance and achievements
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">0</div>
-                    <div className="text-sm text-muted-foreground">Puzzles Completed</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">0</div>
-                    <div className="text-sm text-muted-foreground">Best Time</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">{member.categories_played?.length || 0}</div>
-                    <div className="text-sm text-muted-foreground">Categories</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-600">{member.achievements?.length || 0}</div>
-                    <div className="text-sm text-muted-foreground">Achievements</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Games</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-4 text-muted-foreground">
-                  No game history available
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="tokens" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5" />
-                  Token Management
-                </CardTitle>
-                <CardDescription>
-                  Award promotional tokens to this member
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg">
-                  <div>
-                    <div className="font-medium">Current Token Balance</div>
-                    <div className="text-sm text-muted-foreground">Promotional currency for free plays</div>
-                  </div>
-                  <div className="text-2xl font-bold text-yellow-600">
-                    {member.tokens} tokens
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label htmlFor="award-tokens">Award Tokens</Label>
-                  <Input
-                    id="award-tokens"
-                    type="number"
-                    placeholder="Number of tokens to award"
-                    value={awardTokens}
-                    onChange={(e) => setAwardTokens(e.target.value)}
-                  />
-                  <Label htmlFor="award-note">Admin Note (Optional)</Label>
-                  <Textarea
-                    id="award-note"
-                    placeholder="Reason for awarding tokens..."
-                    value={awardNote}
-                    onChange={(e) => setAwardNote(e.target.value)}
-                  />
-                  <Button onClick={handleAwardTokens} className="w-full">
-                    Award Tokens
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Token Transaction History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-4 text-muted-foreground">
-                  No token transactions available
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="activity" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Recent Activity
-                </CardTitle>
-                <CardDescription>
-                  Member's recent actions and system interactions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-4 text-muted-foreground">
-                  No recent activity available
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>System Logs</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Profile Created:</span>
-                    <span>{formatDate(member.created_at)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Last Updated:</span>
-                    <span>{formatDate(member.updated_at)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Current Role:</span>
-                    <Badge variant="outline">{member.role}</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        {/* Token Transaction History - Full width at bottom */}
+        {member?.id && (
+          <div className="mt-6">
+            <TokenTransactionHistory userId={member.id} />
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
