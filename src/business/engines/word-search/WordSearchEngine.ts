@@ -15,6 +15,8 @@ export interface WordSearchState extends BaseGameState {
   difficulty: 'rookie' | 'expert' | 'master';
   timeElapsed: number;
   hintsUsed: number;
+  // Add placedWords to the state so it persists across saves/loads
+  placedWords?: PlacedWord[];
 }
 
 export interface WordSearchMove {
@@ -41,25 +43,35 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     return this.getState();
   }
 
-  // Add getGameStateForSave method for persistence
+  // Add getGameStateForSave method for persistence - fix state access
   getGameStateForSave(): any {
+    const currentState = this.getState();
     return {
-      ...this.gameState,
-      foundWords: Array.from(this.gameState.foundWords)
+      ...currentState,
+      foundWords: Array.from(currentState.foundWords),
+      placedWords: this.placedWords // Include placed words for hint functionality
     };
   }
 
   // Add restoreGameState method for loading saved state
   restoreGameState(savedState: any): void {
-    this.gameState = {
+    const restoredState = {
       ...savedState,
       foundWords: new Set(savedState.foundWords || [])
     };
+    
+    // Restore placed words if available
+    if (savedState.placedWords) {
+      this.placedWords = savedState.placedWords;
+    }
+    
+    // Use the protected setState method to update state
+    this.setState(restoredState);
     this.notifyListeners();
   }
 
   public notifyListeners(): void {
-    this.listeners.forEach(listener => listener(this.gameState));
+    this.listeners.forEach(listener => listener(this.getState()));
   }
 
   async initialize(): Promise<void> {
@@ -72,22 +84,25 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     const { grid, placedWords } = placementEngine.placeWords(words);
     
     this.placedWords = placedWords;
-    this.gameState = {
-      ...this.gameState,
+    const currentState = this.getState();
+    this.setState({
+      ...currentState,
       grid,
       words,
-      status: 'idle'
-    };
+      status: 'idle',
+      placedWords // Store in state as well
+    });
     
     this.notifyListeners();
   }
 
   start(): void {
-    this.gameState = {
-      ...this.gameState,
+    const currentState = this.getState();
+    this.setState({
+      ...currentState,
       status: 'playing',
       startTime: Date.now()
-    };
+    });
     this.emitEvent({
       type: 'GAME_STARTED',
       timestamp: Date.now()
@@ -112,7 +127,8 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
   }
 
   makeMove(move: WordSearchMove): void {
-    if (this.gameState.status !== 'playing' && move.type !== 'SELECT_CELLS') return;
+    const currentState = this.getState();
+    if (currentState.status !== 'playing' && move.type !== 'SELECT_CELLS') return;
 
     switch (move.type) {
       case 'SELECT_CELLS':
@@ -121,12 +137,12 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
             ? cellsToStrings(move.cells as Cell[])
             : move.cells as string[];
           
-          this.gameState = {
-            ...this.gameState,
+          this.setState({
+            ...currentState,
             currentSelection: cellStrings,
             // Clear hint cells when user starts selecting to avoid confusion
             hintCells: []
-          };
+          });
         }
         break;
 
@@ -138,15 +154,15 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
 
           const validation = this.validateWordSelection(cellStrings);
           if (validation.isValid && validation.word) {
-            this.gameState = {
-              ...this.gameState,
-              foundWords: new Set([...this.gameState.foundWords, validation.word]),
-              selectedCells: [...this.gameState.selectedCells, ...cellStrings],
-              moves: this.gameState.moves + 1,
-              score: this.gameState.score + validation.word.length * 10,
+            this.setState({
+              ...currentState,
+              foundWords: new Set([...currentState.foundWords, validation.word]),
+              selectedCells: [...currentState.selectedCells, ...cellStrings],
+              moves: currentState.moves + 1,
+              score: currentState.score + validation.word.length * 10,
               currentSelection: [],
               hintCells: [] // Clear hints when word is found
-            };
+            });
 
             this.emitEvent({
               type: 'MOVE_MADE',
@@ -155,16 +171,17 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
             });
 
             // Check for completion
-            if (this.gameState.foundWords.size === this.gameState.words.length) {
-              this.gameState = {
-                ...this.gameState,
+            const updatedState = this.getState();
+            if (updatedState.foundWords.size === updatedState.words.length) {
+              this.setState({
+                ...updatedState,
                 status: 'completed',
                 isComplete: true,
                 endTime: Date.now()
-              };
+              });
               this.emitEvent({
                 type: 'GAME_COMPLETED',
-                finalScore: this.gameState.score,
+                finalScore: updatedState.score,
                 timestamp: Date.now()
               });
             }
@@ -173,16 +190,22 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
         break;
 
       case 'HINT':
-        this.gameState = {
-          ...this.gameState,
-          hintsUsed: this.gameState.hintsUsed + 1
+        console.log('Processing hint request...');
+        const newState = {
+          ...currentState,
+          hintsUsed: currentState.hintsUsed + 1
         };
         
         // Find a word that hasn't been found yet
-        const unfoundWords = this.gameState.words.filter(word => !this.gameState.foundWords.has(word));
-        if (unfoundWords.length > 0) {
+        const unfoundWords = currentState.words.filter(word => !currentState.foundWords.has(word));
+        console.log('Unfound words:', unfoundWords);
+        console.log('Available placed words:', this.placedWords);
+        
+        if (unfoundWords.length > 0 && this.placedWords.length > 0) {
           const hintWord = unfoundWords[0];
           const placedWord = this.placedWords.find(pw => pw.word === hintWord);
+          
+          console.log('Hint word:', hintWord, 'Placed word found:', !!placedWord);
           
           if (placedWord) {
             const hintCells: string[] = [];
@@ -196,13 +219,18 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
               }
             }
             
-            this.gameState = {
-              ...this.gameState,
-              hintCells,
-              currentSelection: [] // Clear any current selection when showing hint
-            };
+            console.log('Generated hint cells:', hintCells);
+            
+            newState.hintCells = hintCells;
+            newState.currentSelection = []; // Clear any current selection when showing hint
+          } else {
+            console.warn('No placed word found for hint word:', hintWord);
           }
+        } else {
+          console.warn('No unfound words or no placed words available for hints');
         }
+        
+        this.setState(newState);
         
         this.emitEvent({
           type: 'HINT_USED',
@@ -211,6 +239,16 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
         break;
     }
 
+    this.notifyListeners();
+  }
+
+  // Add a method to clear hints that can be called externally
+  clearHints(): void {
+    const currentState = this.getState();
+    this.setState({
+      ...currentState,
+      hintCells: []
+    });
     this.notifyListeners();
   }
 
@@ -224,10 +262,11 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     if (!this.isLinearSelection(cellCoords)) return { isValid: false };
 
     // Get the word from the grid
-    const word = cellCoords.map(cell => this.gameState.grid[cell.row]?.[cell.col] || '').join('');
+    const currentState = this.getState();
+    const word = cellCoords.map(cell => currentState.grid[cell.row]?.[cell.col] || '').join('');
     
     // Check if it's one of our target words
-    if (this.gameState.words.includes(word) && !this.gameState.foundWords.has(word)) {
+    if (currentState.words.includes(word) && !currentState.foundWords.has(word)) {
       return { isValid: true, word };
     }
 
@@ -257,25 +296,27 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
   }
 
   calculateScore(): number {
-    return this.gameState.score;
+    return this.getState().score;
   }
 
   checkWinCondition(): WinConditionResult {
-    const isWin = this.gameState.foundWords.size === this.gameState.words.length;
-    const completionPercentage = (this.gameState.foundWords.size / this.gameState.words.length) * 100;
+    const currentState = this.getState();
+    const isWin = currentState.foundWords.size === currentState.words.length;
+    const completionPercentage = (currentState.foundWords.size / currentState.words.length) * 100;
     
     return {
       isWin,
       completionPercentage,
-      finalScore: this.gameState.score
+      finalScore: currentState.score
     };
   }
 
   pause(): void {
-    this.gameState = {
-      ...this.gameState,
+    const currentState = this.getState();
+    this.setState({
+      ...currentState,
       status: 'paused'
-    };
+    });
     this.emitEvent({
       type: 'GAME_PAUSED',
       timestamp: Date.now()
@@ -284,10 +325,11 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
   }
 
   resume(): void {
-    this.gameState = {
-      ...this.gameState,
+    const currentState = this.getState();
+    this.setState({
+      ...currentState,
       status: 'playing'
-    };
+    });
     this.emitEvent({
       type: 'GAME_RESUMED',
       timestamp: Date.now()
@@ -296,8 +338,9 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
   }
 
   reset(): void {
-    this.gameState = {
-      ...this.gameState,
+    const currentState = this.getState();
+    this.setState({
+      ...currentState,
       status: 'idle',
       score: 0,
       moves: 0,
@@ -310,7 +353,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       hintCells: [],
       timeElapsed: 0,
       hintsUsed: 0
-    };
+    });
     this.notifyListeners();
   }
 }

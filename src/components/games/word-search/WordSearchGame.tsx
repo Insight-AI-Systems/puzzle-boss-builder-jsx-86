@@ -183,20 +183,13 @@ export function WordSearchGame() {
 
   const handleHint = useCallback(() => {
     if (engine && gameState) {
+      console.log('Hint requested from component');
       engine.makeMove({ type: 'HINT' });
       
-      // Clear hint after 3 seconds
+      // Clear hint after 3 seconds using the engine's method
       setTimeout(() => {
         if (engine) {
-          // Use the public method to get current state and update it
-          const currentState = engine.getGameState();
-          // Create a new state object with hint cells cleared
-          const updatedState = {
-            ...currentState,
-            hintCells: []
-          };
-          // Use the restoreGameState method to update the state
-          engine.restoreGameState(updatedState);
+          engine.clearHints();
         }
       }, 3000);
     }
