@@ -33,10 +33,16 @@ interface CommunicationsCenterProps {
   partnerId?: string;
 }
 
+interface NewCommunication {
+  type: 'email' | 'phone' | 'meeting' | 'note';
+  subject: string;
+  content: string;
+}
+
 export function CommunicationsCenter({ partnerId }: CommunicationsCenterProps) {
   const [communications, setCommunications] = useState<Communication[]>([]);
   const [showNewDialog, setShowNewDialog] = useState(false);
-  const [newCommunication, setNewCommunication] = useState({
+  const [newCommunication, setNewCommunication] = useState<NewCommunication>({
     type: 'email' as const,
     subject: '',
     content: ''

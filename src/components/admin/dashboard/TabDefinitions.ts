@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 import { CategoryManagement } from "./CategoryManagement";
-import { PartnersDashboard } from "./partners/PartnersDashboard";
+import PartnersDashboard from "./partners/PartnersDashboard";
 import { NotificationsDashboard } from "./NotificationsDashboard";
 import { MonitoringDashboard } from "./MonitoringDashboard";
 import { MarketingDashboard } from "./MarketingDashboard";

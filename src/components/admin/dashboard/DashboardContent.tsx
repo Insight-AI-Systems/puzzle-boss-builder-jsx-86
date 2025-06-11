@@ -14,7 +14,7 @@ import { NotificationsDashboard } from "./NotificationsDashboard";
 import { MonitoringDashboard } from "./MonitoringDashboard";
 import { FinancialDashboard } from "./financial-dashboard/FinancialDashboard";
 import { CategoryManagement } from "./CategoryManagement";
-import { PartnersDashboard } from "./partners/PartnersDashboard";
+import PartnersDashboard from "./partners/PartnersDashboard";
 import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
 import { ContentManagement } from "@/components/admin/ContentManagement";
 import { EmailManagement } from "@/components/admin/EmailManagement";
