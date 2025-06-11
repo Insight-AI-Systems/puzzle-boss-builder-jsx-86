@@ -7,6 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip";
+import { sessionTracker } from '@/utils/sessionTracker';
 
 interface MemberLoginStatusProps {
   lastSignIn: string | null;
@@ -23,9 +24,37 @@ export const UserLoginStatus: React.FC<MemberLoginStatusProps> = ({
   currentUserEmail,
   userEmail
 }) => {
+  const [activeUsers, setActiveUsers] = React.useState<string[]>([]);
+
+  // Listen for session changes across tabs
+  React.useEffect(() => {
+    const updateActiveUsers = () => {
+      setActiveUsers(sessionTracker.getActiveUsers());
+    };
+
+    // Initial load
+    updateActiveUsers();
+
+    // Listen for changes
+    const cleanup = sessionTracker.onSessionChange(updateActiveUsers);
+
+    return cleanup;
+  }, []);
+
   const getLoginStatus = (date: string | null) => {
     // Check if this is the currently logged-in user
     const isCurrentUser = currentUserEmail && userEmail && currentUserEmail === userEmail;
+    
+    // NEW: Check client-side session tracking first
+    const isActiveInSession = userEmail && activeUsers.includes(userEmail);
+    
+    if (isCurrentUser || isActiveInSession) {
+      return { 
+        indicator: '🟢', 
+        text: 'Now', 
+        color: 'text-green-600'
+      };
+    }
     
     if (!date) return { 
       indicator: '⚫', 
@@ -48,29 +77,8 @@ export const UserLoginStatus: React.FC<MemberLoginStatusProps> = ({
       const diffInMinutes = Math.floor((now.getTime() - loginDate.getTime()) / (1000 * 60));
       const diffInDays = Math.floor(diffInMinutes / (60 * 24));
       
-      // If this is the current user, show as "Now" regardless of last sign in time
-      if (isCurrentUser) {
-        return { 
-          indicator: '🟢', 
-          text: 'Now', 
-          color: 'text-green-600'
-        };
-      }
-      
-      // Enhanced thresholds for better real-time detection
-      if (diffInMinutes < 10) {
-        return { 
-          indicator: '🟢', 
-          text: 'Now', 
-          color: 'text-green-600'
-        };
-      } else if (diffInMinutes < 30) {
-        return { 
-          indicator: '🟢', 
-          text: 'Active', 
-          color: 'text-green-600'
-        };
-      } else if (isToday(loginDate)) {
+      // Since user is not in active session, show historical status
+      if (isToday(loginDate)) {
         return { 
           indicator: '🟡', 
           text: 'Today', 
@@ -108,6 +116,7 @@ export const UserLoginStatus: React.FC<MemberLoginStatusProps> = ({
   const formatTooltipContent = () => {
     const joinedDate = createdAt ? format(new Date(createdAt), 'PPpp') : 'Unknown';
     const isCurrentUser = currentUserEmail && userEmail && currentUserEmail === userEmail;
+    const isActiveInSession = userEmail && activeUsers.includes(userEmail);
     
     if (!lastSignIn) {
       return (
@@ -135,11 +144,16 @@ export const UserLoginStatus: React.FC<MemberLoginStatusProps> = ({
       
       return (
         <div className="space-y-1">
-          {isCurrentUser && <div><strong>Status:</strong> Currently logged in (You)</div>}
+          {(isCurrentUser || isActiveInSession) && (
+            <div><strong>Status:</strong> Currently active {isCurrentUser ? '(You)' : ''}</div>
+          )}
           <div><strong>Last Login:</strong> {formattedLogin}</div>
           <div><strong>Relative:</strong> {relativeTime}</div>
           <div><strong>Joined:</strong> {joinedDate}</div>
           {displayName && <div><strong>User:</strong> {displayName}</div>}
+          {isActiveInSession && !isCurrentUser && (
+            <div className="text-green-600"><strong>Live Session:</strong> Active now</div>
+          )}
         </div>
       );
     } catch (error) {

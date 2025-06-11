@@ -1,7 +1,8 @@
-
 import React from 'react';
 import { useUser, useClerk } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
+import { sessionTracker } from '@/utils/sessionTracker';
+import { setCurrentUserForCleanup, initializeSessionCleanup } from '@/utils/sessionCleanup';
 
 // Simplified profile interface
 interface ClerkProfile {
@@ -44,6 +45,25 @@ export const useClerkAuth = () => {
     profileLoading,
     hasProfile: !!profile
   });
+
+  // Initialize session cleanup on mount
+  React.useEffect(() => {
+    const cleanup = initializeSessionCleanup();
+    return cleanup;
+  }, []);
+
+  // Session tracking - start/end sessions based on auth state
+  React.useEffect(() => {
+    if (isSignedIn && userEmail && user?.id) {
+      // Start session tracking
+      sessionTracker.startSession(userEmail, user.id);
+      setCurrentUserForCleanup(userEmail);
+    } else if (userEmail) {
+      // End session tracking on logout
+      sessionTracker.endSession(userEmail);
+      setCurrentUserForCleanup(null);
+    }
+  }, [isSignedIn, userEmail, user?.id]);
 
   // Update last_sign_in when user becomes active
   React.useEffect(() => {
@@ -256,6 +276,12 @@ export const useClerkAuth = () => {
   const signOut = async (): Promise<void> => {
     console.log('🚪 Starting sign out process');
     try {
+      // End session tracking immediately
+      if (userEmail) {
+        sessionTracker.endSession(userEmail);
+        setCurrentUserForCleanup(null);
+      }
+      
       await clerkSignOut();
       console.log('✅ Sign out completed successfully');
       // Clear local state
