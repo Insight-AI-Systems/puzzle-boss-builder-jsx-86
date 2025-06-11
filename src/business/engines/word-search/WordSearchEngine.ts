@@ -104,7 +104,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
     });
     
     this.startTimer();
-    this.emitEvent({ type: 'gameStarted', data: {} });
+    this.emitEvent({ type: 'GAME_STARTED', data: {} });
     this.notifyStateChange();
   }
 
@@ -113,7 +113,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       status: 'paused'
     });
     this.stopTimer();
-    this.emitEvent({ type: 'gamePaused', data: {} });
+    this.emitEvent({ type: 'GAME_PAUSED', data: {} });
     this.notifyStateChange();
   }
 
@@ -122,7 +122,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       status: 'playing'
     });
     this.startTimer();
-    this.emitEvent({ type: 'gameResumed', data: {} });
+    this.emitEvent({ type: 'GAME_RESUMED', data: {} });
     this.notifyStateChange();
   }
 
@@ -142,7 +142,8 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       timeElapsed: 0,
       hintsUsed: 0
     });
-    this.emitEvent({ type: 'gameReset', data: {} });
+    // Note: There's no GAME_RESET in the allowed event types, so we'll use GAME_STARTED instead
+    this.emitEvent({ type: 'GAME_STARTED', data: {} });
     this.notifyStateChange();
   }
 
@@ -185,7 +186,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       this.handleGameComplete();
     }
 
-    this.emitEvent({ type: 'moveMade', data: move });
+    this.emitEvent({ type: 'MOVE_MADE', data: move });
     this.notifyStateChange();
   }
 
@@ -196,7 +197,7 @@ export class WordSearchEngine extends GameEngine<WordSearchState, WordSearchMove
       isComplete: true,
       endTime: Date.now()
     });
-    this.emitEvent({ type: 'gameCompleted', data: {} });
+    this.emitEvent({ type: 'GAME_COMPLETED', data: {} });
     this.notifyStateChange();
   }
 
