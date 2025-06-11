@@ -2,45 +2,34 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useBetaNotes } from '@/hooks/useBetaNotes';
-import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export default function BetaNotes() {
   const { notes, isLoading, addNote, updateNoteStatus } = useBetaNotes();
-  const { user } = useAuth();
-  const [newNote, setNewNote] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newNote, setNewNote] = useState({ title: '', content: '' });
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newNote.trim()) return;
-
-    setIsSubmitting(true);
+  const handleAddNote = async () => {
+    if (!newNote.title.trim() || !newNote.content.trim()) return;
+    
     try {
-      const result = await addNote({ content: newNote.trim() });
-      if (result) {
-        setNewNote('');
-      }
+      await addNote(newNote.title, newNote.content);
+      setNewNote({ title: '', content: '' });
     } catch (error) {
-      console.error('Error adding note:', error);
-    } finally {
-      setIsSubmitting(false);
+      console.error('Failed to add note:', error);
     }
   };
 
-  const handleStatusUpdate = async (id: string, status: string) => {
-    try {
-      await updateNoteStatus(id, status);
-    } catch (error) {
-      console.error('Error updating note status:', error);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'new': return 'bg-blue-500';
+      case 'in_progress': return 'bg-yellow-500';
+      case 'resolved': return 'bg-green-500';
+      case 'closed': return 'bg-gray-500';
+      default: return 'bg-gray-500';
     }
   };
 
@@ -52,83 +41,56 @@ export default function BetaNotes() {
     );
   }
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'completed': return 'default';
-      case 'in_progress': return 'secondary';
-      case 'wip': return 'outline';
-      default: return 'outline';
-    }
-  };
-
   return (
     <div className="container mx-auto py-8">
-      <Card>
+      <h1 className="text-3xl font-bold mb-6">Beta Notes</h1>
+      
+      <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Beta Notes & Feedback</CardTitle>
+          <CardTitle>Add New Note</CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="mb-6">
-            <Textarea
-              placeholder="Share your feedback, suggestions, or report issues..."
-              value={newNote}
-              onChange={(e) => setNewNote(e.target.value)}
-              className="mb-4"
-              rows={4}
-            />
-            <Button type="submit" disabled={isSubmitting || !newNote.trim()}>
-              {isSubmitting ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Plus className="w-4 h-4 mr-2" />
-              )}
-              Add Note
-            </Button>
-          </form>
-
-          <div className="space-y-4">
-            {notes.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                No notes yet. Share your first feedback!
-              </p>
-            ) : (
-              notes.map((note) => (
-                <Card key={note.id} className="border-l-4 border-l-blue-500">
-                  <CardContent className="pt-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <Badge variant={getStatusBadgeVariant(note.status)}>
-                        {note.status}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(note.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <p className="text-sm">{note.content}</p>
-                    <div className="flex gap-2 mt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusUpdate(note.id, 'in_progress')}
-                        disabled={note.status === 'in_progress'}
-                      >
-                        In Progress
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusUpdate(note.id, 'completed')}
-                        disabled={note.status === 'completed'}
-                      >
-                        Completed
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+        <CardContent className="space-y-4">
+          <Input
+            placeholder="Note title..."
+            value={newNote.title}
+            onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+          />
+          <Textarea
+            placeholder="Note content..."
+            value={newNote.content}
+            onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+          />
+          <Button onClick={handleAddNote}>Add Note</Button>
         </CardContent>
       </Card>
+
+      <div className="space-y-4">
+        {notes.map((note) => (
+          <Card key={note.id}>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>{note.title}</CardTitle>
+              <div className="flex gap-2">
+                <Badge className={getStatusColor(note.status)}>
+                  {note.status}
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updateNoteStatus && updateNoteStatus(note.id, 'resolved')}
+                >
+                  Mark Resolved
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">{note.content}</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Created: {new Date(note.created_at).toLocaleDateString()}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
