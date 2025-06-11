@@ -55,7 +55,7 @@ export const ResetPasswordConfirmForm: React.FC<ResetPasswordConfirmFormProps> =
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="new-password">New Password</Label>
+        <Label htmlFor="new-password" className="text-foreground">New Password</Label>
         <Input
           id="new-password"
           type="password"
@@ -64,6 +64,7 @@ export const ResetPasswordConfirmForm: React.FC<ResetPasswordConfirmFormProps> =
           onChange={(e) => setPassword(e.target.value)}
           disabled={isLoading || !!successMessage}
           autoComplete="new-password"
+          className="text-foreground bg-background border-border"
         />
         <PasswordStrengthIndicator score={passwordStrength.score} label={passwordStrength.label} />
         <p className="text-xs text-muted-foreground">
@@ -73,7 +74,7 @@ export const ResetPasswordConfirmForm: React.FC<ResetPasswordConfirmFormProps> =
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="confirm-password">Confirm Password</Label>
+        <Label htmlFor="confirm-password" className="text-foreground">Confirm Password</Label>
         <Input
           id="confirm-password"
           type="password"
@@ -82,6 +83,7 @@ export const ResetPasswordConfirmForm: React.FC<ResetPasswordConfirmFormProps> =
           onChange={(e) => setConfirmPassword(e.target.value)}
           disabled={isLoading || !!successMessage}
           autoComplete="new-password"
+          className="text-foreground bg-background border-border"
         />
       </div>
       
