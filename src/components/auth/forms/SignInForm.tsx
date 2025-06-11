@@ -56,8 +56,9 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={isLoading}
-          required={!email} // Only required if there's no email value
+          required={!email}
           autoComplete="email"
+          className="!bg-puzzle-gold !text-black placeholder:!text-black/70"
         />
       </div>
       
@@ -82,6 +83,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           disabled={isLoading}
           required
           autoComplete="current-password"
+          className="!bg-puzzle-gold !text-black placeholder:!text-black/70"
         />
       </div>
       
