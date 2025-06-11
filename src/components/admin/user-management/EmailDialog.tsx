@@ -9,15 +9,15 @@ import { Label } from '@/components/ui/label';
 interface EmailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedUserIds: string[];
-  onSendEmail: (userIds: string[], subject: string, message: string) => Promise<void>;
+  selectedCount: number;
+  onSend: (subject: string, message: string) => Promise<void>;
 }
 
 export const EmailDialog: React.FC<EmailDialogProps> = ({
   open,
   onOpenChange,
-  selectedUserIds,
-  onSendEmail
+  selectedCount,
+  onSend
 }) => {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -29,7 +29,7 @@ export const EmailDialog: React.FC<EmailDialogProps> = ({
 
     setIsSending(true);
     try {
-      await onSendEmail(selectedUserIds, subject.trim(), message.trim());
+      await onSend(subject.trim(), message.trim());
       setSubject('');
       setMessage('');
       onOpenChange(false);
@@ -44,7 +44,7 @@ export const EmailDialog: React.FC<EmailDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Send Email to {selectedUserIds.length} Users</DialogTitle>
+          <DialogTitle>Send Email to {selectedCount} Users</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

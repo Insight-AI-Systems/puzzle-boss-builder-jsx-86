@@ -16,10 +16,8 @@ export default function BetaNotes() {
     if (!newNote.title.trim() || !newNote.content.trim()) return;
     
     try {
-      const success = await addNote(newNote.title);
-      if (success) {
-        setNewNote({ title: '', content: '' });
-      }
+      await addNote(newNote.title, newNote.content);
+      setNewNote({ title: '', content: '' });
     } catch (error) {
       console.error('Failed to add note:', error);
     }
