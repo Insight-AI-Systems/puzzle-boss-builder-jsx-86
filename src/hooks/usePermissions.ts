@@ -1,21 +1,11 @@
 
-import { useClerkAuth } from '@/hooks/useClerkAuth';
-import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
+import { useClerkRoles } from '@/hooks/useClerkRoles';
 
 export function usePermissions() {
-  const { hasRole, isAdmin, userRole } = useClerkAuth();
+  const { hasRole, isAdmin, userRole, hasPermission: clerkHasPermission, canAccessAdminDashboard } = useClerkRoles();
 
   const hasPermission = (permission: string): boolean => {
-    const currentRole = userRole as UserRole;
-    
-    // Super admins have all permissions
-    if (currentRole === 'super_admin') return true;
-    
-    // Check if current role has the permission
-    const roleDefinition = ROLE_DEFINITIONS[currentRole];
-    if (!roleDefinition) return false;
-    
-    return roleDefinition.permissions.includes(permission);
+    return clerkHasPermission(permission);
   };
 
   const hasAllPermissions = (permissions: string[]): boolean => {
@@ -34,19 +24,14 @@ export function usePermissions() {
     return hasPermission('manage_roles');
   };
 
-  const canAccessAdminDashboard = (): boolean => {
-    const currentRole = userRole as UserRole;
-    return ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'].includes(currentRole);
-  };
-
-  const canAssignRole = (targetRole: UserRole): boolean => {
-    const currentRole = userRole as UserRole;
-    const currentRoleDefinition = ROLE_DEFINITIONS[currentRole];
-    const targetRoleDefinition = ROLE_DEFINITIONS[targetRole];
+  const canAssignRole = (targetRole: string): boolean => {
+    // Super admins can assign any role
+    if (hasRole('super_admin')) return true;
     
-    if (!currentRoleDefinition || !targetRoleDefinition) return false;
+    // Admins can assign non-admin roles
+    if (hasRole('admin') && !['super_admin', 'admin'].includes(targetRole)) return true;
     
-    return targetRoleDefinition.canBeAssignedBy.includes(currentRole);
+    return false;
   };
 
   return {
@@ -58,6 +43,6 @@ export function usePermissions() {
     canAccessAdminDashboard,
     canAssignRole,
     isAdmin,
-    userRole: userRole as UserRole
+    userRole
   };
 }

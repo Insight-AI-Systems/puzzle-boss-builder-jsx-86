@@ -3,79 +3,62 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { RoleBasedDashboard } from '@/components/admin/RoleBasedDashboard';
-import { useUserProfile } from '@/hooks/useUserProfile';
 import { useToast } from '@/hooks/use-toast';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
-import { useAuth } from '@/contexts/AuthContext';
-import { usePermissions } from '@/hooks/usePermissions';
+import { useClerkRoles } from '@/hooks/useClerkRoles';
 import { AdminAccessCheck } from '@/components/admin/dashboard/AdminAccessCheck';
 import { AdminToolbar } from '@/components/admin/dashboard/AdminToolbar';
 import { AdminErrorBoundary } from '@/components/admin/ErrorBoundary';
 import { AdminDebugInfo } from '@/components/admin/AdminDebugInfo';
-import { AdminRoleDebug } from '@/components/admin/AdminRoleDebug';
+import { ClerkRoleDebug } from '@/components/admin/ClerkRoleDebug';
 import { adminLog, DebugLevel } from '@/utils/debug';
 
 const AdminDashboard = () => {
-  const { profile, isLoading: profileLoading } = useUserProfile();
-  const clerkAuth = useClerkAuth();
-  const contextAuth = useAuth();
-  const { canAccessAdminDashboard, userRole } = usePermissions();
+  const { isSignedIn, isLoaded, userRole, canAccessAdminDashboard, userId } = useClerkRoles();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showDebug, setShowDebug] = useState(false);
   const [showRoleDebug, setShowRoleDebug] = useState(false);
 
-  const isLoading = clerkAuth.isLoading || profileLoading;
-  const userEmail = clerkAuth.user?.primaryEmailAddress?.emailAddress;
   const hasAdminAccess = canAccessAdminDashboard();
 
-  // Show role debug panel for key users or when there are role issues
-  const shouldShowRoleDebug = userEmail === 'alan@insight-ai-systems.com' || 
-                              userEmail === 'alantbooth@xtra.co.nz' ||
-                              (userEmail === 'alan@insight-ai-systems.com' && userRole !== 'super_admin');
-
-  console.log('🏛️ AdminDashboard Comprehensive State:', {
-    isAuthenticated: clerkAuth.isAuthenticated,
-    userEmail,
+  console.log('🏛️ AdminDashboard Clerk RBAC State:', {
+    isSignedIn,
+    userId,
     userRole,
     hasAdminAccess,
-    canAccessAdminDashboard: canAccessAdminDashboard(),
-    isLoading,
-    shouldShowRoleDebug,
-    profileRole: profile?.role,
-    clerkRole: clerkAuth.userRole
+    isLoaded
   });
   
   // Debug logging
   useEffect(() => {
-    if (!isLoading) {
-      console.log('🏛️ AdminDashboard Final State:', {
-        isAuthenticated: clerkAuth.isAuthenticated,
-        userEmail,
+    if (isLoaded) {
+      console.log('🏛️ AdminDashboard Final State (Clerk RBAC):', {
+        isSignedIn,
+        userId,
         userRole,
         hasAdminAccess,
-        roleSource: 'database_only'
+        roleSource: 'clerk_rbac'
       });
       
-      adminLog('AdminDashboard', 'Access Check Complete', DebugLevel.INFO, { 
-        isAuthenticated: clerkAuth.isAuthenticated,
+      adminLog('AdminDashboard', 'Access Check Complete (Clerk RBAC)', DebugLevel.INFO, { 
+        isSignedIn,
         hasAdminAccess,
         userRole,
-        roleSource: 'database_only'
+        roleSource: 'clerk_rbac'
       });
     }
-  }, [isLoading, clerkAuth.isAuthenticated, hasAdminAccess, userRole, userEmail]);
+  }, [isLoaded, isSignedIn, hasAdminAccess, userRole, userId]);
 
-  // Handle access control with enhanced logging
+  // Handle access control
   useEffect(() => {
-    if (!isLoading) {
-      console.log('🚦 Access Control Check (Database Role Only):', {
-        isAuthenticated: clerkAuth.isAuthenticated,
+    if (isLoaded) {
+      console.log('🚦 Access Control Check (Clerk RBAC):', {
+        isSignedIn,
         hasAdminAccess,
-        shouldRedirect: clerkAuth.isAuthenticated && !hasAdminAccess
+        shouldRedirect: isSignedIn && !hasAdminAccess
       });
 
-      if (clerkAuth.isAuthenticated && !hasAdminAccess) {
+      if (isSignedIn && !hasAdminAccess) {
         console.log('🚫 Access denied, redirecting to homepage');
         toast({
           title: "Access Denied",
@@ -85,7 +68,7 @@ const AdminDashboard = () => {
         navigate('/', { replace: true });
       }
     }
-  }, [isLoading, clerkAuth.isAuthenticated, hasAdminAccess, navigate, toast, userRole]);
+  }, [isLoaded, isSignedIn, hasAdminAccess, navigate, toast, userRole]);
 
   const showDebugInfo = () => {
     setShowDebug(!showDebug);
@@ -95,7 +78,7 @@ const AdminDashboard = () => {
     setShowRoleDebug(!showRoleDebug);
   };
 
-  if (isLoading) {
+  if (!isLoaded) {
     console.log('🔄 AdminDashboard Loading...');
     return (
       <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
@@ -105,19 +88,18 @@ const AdminDashboard = () => {
   }
 
   // Show access denied if not authenticated or no admin access
-  if (!clerkAuth.isAuthenticated || !hasAdminAccess) {
+  if (!isSignedIn || !hasAdminAccess) {
     console.log('🚫 Showing access denied screen');
     return (
       <AdminAccessCheck 
-        user={clerkAuth.user}
+        userId={userId}
         userRole={userRole}
-        hasRole={clerkAuth.hasRole}
-        profile={profile}
+        hasAdminAccess={hasAdminAccess}
       />
     );
   }
 
-  console.log('✅ Showing admin dashboard for user:', userEmail, 'with role:', userRole);
+  console.log('✅ Showing admin dashboard for user:', userId, 'with role:', userRole);
   
   // Show admin dashboard
   return (
@@ -126,12 +108,10 @@ const AdminDashboard = () => {
         <div className="max-w-6xl mx-auto space-y-8">
           <AdminToolbar showDebugInfo={showDebugInfo} />
           
-          {/* Role Debug Panel - Always show for key users */}
-          {shouldShowRoleDebug && (
-            <div className="space-y-4">
-              <AdminRoleDebug />
-            </div>
-          )}
+          {/* Clerk Role Debug Panel */}
+          <div className="space-y-4">
+            <ClerkRoleDebug />
+          </div>
 
           {showDebug && <AdminDebugInfo />}
 

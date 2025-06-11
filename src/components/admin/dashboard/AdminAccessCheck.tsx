@@ -1,47 +1,30 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, Bug } from 'lucide-react';
+import { ShieldAlert, Bug, ExternalLink } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';
 
 interface AdminAccessCheckProps {
-  user: any;
-  userRole: string | undefined;
-  hasRole: (role: string) => boolean;
-  profile?: { 
-    role?: string;
-    id?: string;
-    email?: string;
-  };
+  userId: string | null;
+  userRole: string;
+  hasAdminAccess: boolean;
 }
 
 export const AdminAccessCheck: React.FC<AdminAccessCheckProps> = ({ 
-  user, 
+  userId, 
   userRole, 
-  hasRole, 
-  profile 
+  hasAdminAccess 
 }) => {
   const [debugInfo, setDebugInfo] = React.useState<string | null>(null);
 
   const showDebugInfo = () => {
     const info = {
-      user: user ? {
-        id: user.id,
-        email: user.email,
-        role: userRole
-      } : null,
-      profile: profile ? {
-        id: profile.id || '',
-        role: profile.role || '',
-        email: profile.email || profile.id || ''
-      } : null,
-      hasRoles: {
-        superAdmin: hasRole('super_admin'),
-        admin: hasRole('admin'),
-        player: hasRole('player')
-      }
+      userId,
+      userRole,
+      hasAdminAccess,
+      authSystem: 'clerk_rbac'
     };
     
     setDebugInfo(JSON.stringify(info, null, 2));
@@ -57,11 +40,19 @@ export const AdminAccessCheck: React.FC<AdminAccessCheckProps> = ({
           <p>You do not have permission to access the admin dashboard.</p>
           <p className="mt-2">Current user info:</p>
           <ul className="list-disc pl-6 mt-1">
-            <li>Email: {user.email}</li>
-            <li>Role: {userRole || profile?.role || 'Unknown'}</li>
-            <li>Has Super Admin Role: {hasRole('super_admin') ? 'Yes' : 'No'}</li>
-            <li>Has Admin Role: {hasRole('admin') ? 'Yes' : 'No'}</li>
+            <li>User ID: {userId || 'Not authenticated'}</li>
+            <li>Role: {userRole}</li>
+            <li>Has Admin Access: {hasAdminAccess ? 'Yes' : 'No'}</li>
+            <li>Auth System: Clerk RBAC</li>
           </ul>
+          <div className="mt-4">
+            <p className="font-semibold">To get admin access:</p>
+            <ol className="list-decimal list-inside mt-2 space-y-1">
+              <li>Set up organization in Clerk Dashboard</li>
+              <li>Create admin roles (super_admin, admin, etc.)</li>
+              <li>Assign yourself the appropriate role</li>
+            </ol>
+          </div>
         </AlertDescription>
       </Alert>
       
@@ -69,6 +60,14 @@ export const AdminAccessCheck: React.FC<AdminAccessCheckProps> = ({
         <Button onClick={showDebugInfo} variant="outline" size="sm">
           <Bug className="h-4 w-4 mr-1" />
           Show Debug Info
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => window.open('https://dashboard.clerk.com', '_blank')}
+        >
+          <ExternalLink className="h-4 w-4 mr-1" />
+          Clerk Dashboard
         </Button>
         <Button asChild variant="default" size="sm">
           <Link to="/">Return Home</Link>
