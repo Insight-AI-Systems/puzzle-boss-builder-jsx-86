@@ -30,15 +30,15 @@ export function useUserManagement(isAdmin: boolean, currentUserId: string | null
     refetch 
   } = useAdminProfiles(isAdmin, currentUserId);
 
-  // Filter users based on the selected user type (regular/admin)
+  // Filter users based on the selected user type (regular/admin) - default to admin
   const filteredData = useMemo(() => {
     if (!allProfilesData?.data) return null;
 
     const filteredUsers = allProfilesData.data.filter(user => {
-      if (filters.userType === 'regular') {
-        return user.role === 'player';
-      } else {
+      if (filters.userType === 'admin') {
         return isAdminRole(user.role);
+      } else {
+        return user.role === 'player';
       }
     });
 

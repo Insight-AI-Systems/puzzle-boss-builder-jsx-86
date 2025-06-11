@@ -1,99 +1,83 @@
 
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 import { Label } from "@/components/ui/label";
-import { UserRole } from '@/types/userTypes';
-import { Loader2 } from 'lucide-react';
-import { validateUserRole } from '@/utils/typeValidation/roleValidators';
 
 interface BulkRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedCount: number;
-  bulkRole: UserRole | null;
-  setBulkRole: (role: UserRole | null) => void;
-  onUpdateRoles: () => void;
+  selectedUserIds: string[];
+  currentRole: UserRole | null;
+  onRoleChange: (role: UserRole) => void;
+  onUpdateRoles: (userIds: string[], newRole: UserRole) => Promise<void>;
   isUpdating: boolean;
+  currentUserRole: UserRole;
 }
 
 export function BulkRoleDialog({
   open,
   onOpenChange,
-  selectedCount,
-  bulkRole,
-  setBulkRole,
+  selectedUserIds,
+  currentRole,
+  onRoleChange,
   onUpdateRoles,
-  isUpdating
+  isUpdating,
+  currentUserRole
 }: BulkRoleDialogProps) {
-  const roles: {value: UserRole, label: string}[] = [
-    { value: 'player', label: 'Player' },
-    { value: 'admin', label: 'Admin' },
-    { value: 'super_admin', label: 'Super Admin' },
-    { value: 'category_manager', label: 'Category Manager' },
-    { value: 'partner_manager', label: 'Partner Manager' },
-    { value: 'social_media_manager', label: 'Social Media Manager' },
-    { value: 'cfo', label: 'CFO' }
-  ];
-
-  // Type-safe role change handler with validation
-  const handleRoleChange = (value: string) => {
-    const validatedRole = validateUserRole(value);
-    setBulkRole(validatedRole);
+  const handleUpdate = async () => {
+    if (!currentRole) return;
+    await onUpdateRoles(selectedUserIds, currentRole);
+    onOpenChange(false);
   };
+
+  const availableRoles = Object.keys(ROLE_DEFINITIONS).filter(role => {
+    if (currentUserRole === 'super_admin') return true;
+    return role !== 'super_admin';
+  }) as UserRole[];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>Update User Roles</DialogTitle>
-          <DialogDescription>
-            You are about to change the role for {selectedCount} selected user{selectedCount !== 1 ? 's' : ''}.
-          </DialogDescription>
         </DialogHeader>
-
-        <div className="py-4">
-          <RadioGroup value={bulkRole || undefined} onValueChange={handleRoleChange}>
-            {roles.map((role) => (
-              <div className="flex items-center space-x-2" key={role.value}>
-                <RadioGroupItem value={role.value} id={`role-${role.value}`} />
-                <Label htmlFor={`role-${role.value}`}>{role.label}</Label>
-              </div>
-            ))}
-          </RadioGroup>
+        
+        <div className="space-y-4">
+          <div className="text-sm text-muted-foreground">
+            Updating roles for {selectedUserIds.length} selected users
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="role">New Role</Label>
+            <Select value={currentRole || ''} onValueChange={onRoleChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a role" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableRoles.map((role) => (
+                  <SelectItem key={role} value={role}>
+                    {ROLE_DEFINITIONS[role]?.label || role}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleUpdate} 
+              disabled={!currentRole || isUpdating}
+            >
+              {isUpdating ? 'Updating...' : 'Update Roles'}
+            </Button>
+          </div>
         </div>
-
-        <DialogFooter>
-          <Button 
-            variant="secondary" 
-            onClick={() => onOpenChange(false)}
-            disabled={isUpdating}
-          >
-            Cancel
-          </Button>
-          <Button 
-            variant="default" 
-            onClick={onUpdateRoles}
-            disabled={!bulkRole || isUpdating}
-          >
-            {isUpdating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              `Update ${selectedCount} user${selectedCount !== 1 ? 's' : ''}`
-            )}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

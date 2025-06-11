@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Users, Search, Filter } from "lucide-react";
+import { Eye, Users, Search } from "lucide-react";
 import { UserProfile } from '@/types/userTypes';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -104,6 +104,14 @@ export function UserManagement() {
     });
   };
 
+  const handleSelectAllChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    handleSelectAllUsers(event.target.checked, users);
+  };
+
+  const handleUserSelectionChange = (userId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    handleUserSelection(userId, event.target.checked);
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -154,7 +162,7 @@ export function UserManagement() {
                       <input
                         type="checkbox"
                         checked={selectedUsers.size === users.length && users.length > 0}
-                        onChange={(e) => handleSelectAllUsers(e.target.checked, users)}
+                        onChange={handleSelectAllChange}
                         className="rounded"
                       />
                     </th>
@@ -174,7 +182,7 @@ export function UserManagement() {
                         <input
                           type="checkbox"
                           checked={selectedUsers.has(user.id)}
-                          onChange={(e) => handleUserSelection(user.id, e.target.checked)}
+                          onChange={(e) => handleUserSelectionChange(user.id, e)}
                           className="rounded"
                         />
                       </td>
@@ -238,18 +246,18 @@ export function UserManagement() {
       {/* Dialogs */}
       <EmailDialog
         open={isEmailDialogOpen}
-        onClose={() => setIsEmailDialogOpen(false)}
+        onOpenChange={setIsEmailDialogOpen}
         selectedUserIds={Array.from(selectedUsers)}
         onSendEmail={sendBulkEmail}
       />
 
       <BulkRoleDialog
         open={isBulkRoleDialogOpen}
-        onClose={() => setIsBulkRoleDialogOpen(false)}
+        onOpenChange={setIsBulkRoleDialogOpen}
         selectedUserIds={Array.from(selectedUsers)}
         currentRole={bulkRole}
         onRoleChange={setBulkRole}
-        onUpdateRoles={(userIds, newRole) => bulkUpdateRoles(userIds, newRole)}
+        onUpdateRoles={bulkUpdateRoles}
         isUpdating={isBulkRoleChanging}
         currentUserRole={currentUserProfile?.role || 'player'}
       />

@@ -23,7 +23,7 @@ export function useProfileData(userId: string | null) {
         country: user.country,
         categories_played: [],
         credits: user.credits,
-        tokens: user.tokens || 0, // Added tokens field
+        tokens: user.tokens || 0,
         achievements: [],
         referral_code: null,
         created_at: user.created_at,

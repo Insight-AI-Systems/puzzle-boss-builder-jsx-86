@@ -1,112 +1,82 @@
 
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2, Mail } from "lucide-react";
 
 interface EmailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedCount: number;
-  onSend: (subject: string, body: string) => void;
+  selectedUserIds: string[];
+  onSendEmail: (subject: string, message: string) => Promise<void>;
 }
 
-export function EmailDialog({
-  open,
-  onOpenChange,
-  selectedCount,
-  onSend
-}: EmailDialogProps) {
+export function EmailDialog({ open, onOpenChange, selectedUserIds, onSendEmail }: EmailDialogProps) {
   const [subject, setSubject] = useState('');
-  const [body, setBody] = useState('');
+  const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
 
-  const handleSend = () => {
-    if (!subject.trim() || !body.trim()) {
-      alert('Please enter both subject and body');
-      return;
-    }
-
-    setIsSending(true);
+  const handleSend = async () => {
+    if (!subject.trim() || !message.trim()) return;
     
-    // Simulate sending delay
-    setTimeout(() => {
-      onSend(subject, body);
-      setIsSending(false);
+    setIsSending(true);
+    try {
+      await onSendEmail(subject, message);
       setSubject('');
-      setBody('');
-    }, 1000);
+      setMessage('');
+      onOpenChange(false);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Send Email</DialogTitle>
-          <DialogDescription>
-            You are about to send an email to {selectedCount} selected user{selectedCount !== 1 ? 's' : ''}.
-          </DialogDescription>
+          <DialogTitle>Send Bulk Email</DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-4 py-4">
+        
+        <div className="space-y-4">
+          <div className="text-sm text-muted-foreground">
+            Sending to {selectedUserIds.length} selected users
+          </div>
+          
           <div className="space-y-2">
             <Label htmlFor="subject">Subject</Label>
             <Input
               id="subject"
-              placeholder="Email subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
+              placeholder="Email subject..."
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="body">Message</Label>
+            <Label htmlFor="message">Message</Label>
             <Textarea
-              id="body"
-              placeholder="Type your message here"
-              rows={8}
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
+              id="message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Email message..."
+              rows={6}
             />
           </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSend} 
+              disabled={!subject.trim() || !message.trim() || isSending}
+            >
+              {isSending ? 'Sending...' : 'Send Email'}
+            </Button>
+          </div>
         </div>
-
-        <DialogFooter>
-          <Button 
-            variant="secondary" 
-            onClick={() => onOpenChange(false)}
-            disabled={isSending}
-          >
-            Cancel
-          </Button>
-          <Button 
-            variant="default"
-            onClick={handleSend}
-            disabled={isSending || !subject.trim() || !body.trim()}
-          >
-            {isSending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sending...
-              </>
-            ) : (
-              <>
-                <Mail className="mr-2 h-4 w-4" />
-                Send Email
-              </>
-            )}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -1,50 +1,48 @@
 
 import React from 'react';
-import { Label } from "@/components/ui/label";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import { ROLE_DEFINITIONS, UserRole } from '@/types/userTypes';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
+import { Badge } from "@/components/ui/badge";
 
 interface RoleSelectorProps {
   currentRole: UserRole;
-  onRoleChange: (role: UserRole) => void;
-  label?: string;
-  disabled?: boolean;
+  onRoleChange: (newRole: UserRole) => void;
+  currentUserRole: UserRole;
 }
 
-export function RoleSelector({
-  currentRole,
-  onRoleChange,
-  label = "Role",
-  disabled = false
-}: RoleSelectorProps) {
+export function RoleSelector({ currentRole, onRoleChange, currentUserRole }: RoleSelectorProps) {
+  const canEditRole = currentUserRole === 'super_admin' || 
+    (currentUserRole === 'admin' && currentRole !== 'super_admin');
+
+  if (!canEditRole) {
+    return (
+      <Badge variant="outline" className="bg-muted">
+        {ROLE_DEFINITIONS[currentRole]?.label || currentRole}
+      </Badge>
+    );
+  }
+
+  const availableRoles = Object.keys(ROLE_DEFINITIONS).filter(role => {
+    if (currentUserRole === 'super_admin') return true;
+    return role !== 'super_admin';
+  }) as UserRole[];
+
   return (
-    <div className="space-y-2">
-      {label && <Label htmlFor="role-select">{label}</Label>}
-      <Select
-        value={currentRole}
-        onValueChange={(value) => onRoleChange(value as UserRole)}
-        disabled={disabled}
-      >
-        <SelectTrigger id="role-select" className="w-full">
-          <SelectValue placeholder="Select a role" />
-        </SelectTrigger>
-        <SelectContent>
-          {Object.values(ROLE_DEFINITIONS).map((role) => (
-            <SelectItem 
-              key={role.role} 
-              value={role.role}
-            >
-              {role.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select value={currentRole} onValueChange={onRoleChange}>
+      <SelectTrigger className="w-[140px]">
+        <SelectValue>
+          <Badge variant="outline">
+            {ROLE_DEFINITIONS[currentRole]?.label || currentRole}
+          </Badge>
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {availableRoles.map((role) => (
+          <SelectItem key={role} value={role}>
+            {ROLE_DEFINITIONS[role]?.label || role}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

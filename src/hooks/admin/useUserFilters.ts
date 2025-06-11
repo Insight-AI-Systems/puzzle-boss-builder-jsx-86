@@ -13,12 +13,12 @@ export function useUserFilters(initialPageSize: number = 10) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [roleSortDirection, setRoleSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [userType, setUserType] = useState<'regular' | 'admin'>('regular');
+  const [userType, setUserType] = useState<'regular' | 'admin'>('admin'); // Default to admin
 
   const filterOptions: AdminProfilesOptions = {
     page,
     pageSize,
-    searchTerm: searchTerm.trim(), // Trim whitespace to avoid unnecessary queries
+    searchTerm: searchTerm.trim(),
     dateRange,
     role: selectedRole,
     roleSortDirection,

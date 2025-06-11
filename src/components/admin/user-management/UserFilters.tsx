@@ -1,31 +1,32 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Filter, ChevronDown } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Filter } from "lucide-react";
 
 interface UserFiltersProps {
-  filtersOpen: boolean;
-  setFiltersOpen: (open: boolean) => void;
+  filterType: 'regular' | 'admin';
+  setFilterType: (type: 'regular' | 'admin') => void;
+  availableCountries: string[];
 }
 
-export function UserFilters({ filtersOpen, setFiltersOpen }: UserFiltersProps) {
+export function UserFilters({ filterType, setFilterType, availableCountries }: UserFiltersProps) {
   return (
-    <div>
-      <Button 
-        variant="outline" 
-        onClick={() => setFiltersOpen(!filtersOpen)}
-        className="flex gap-1 items-center mb-4"
-      >
+    <div className="flex gap-4 items-center">
+      <div className="flex items-center gap-2">
         <Filter className="h-4 w-4" />
-        Filters
-        <ChevronDown className="h-4 w-4" />
-      </Button>
+        <span className="text-sm font-medium">View:</span>
+      </div>
       
-      {filtersOpen && (
-        <div className="bg-muted/50 p-4 rounded-md mb-4">
-          <p>Advanced filters will appear here</p>
-        </div>
-      )}
+      <Select value={filterType} onValueChange={setFilterType}>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Select user type" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="regular">Regular Users</SelectItem>
+          <SelectItem value="admin">Admin Users</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
   );
 }
