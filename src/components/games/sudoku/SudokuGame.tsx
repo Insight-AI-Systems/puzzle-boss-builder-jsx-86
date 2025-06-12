@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { SudokuGrid } from './components/SudokuGrid';
 import { SudokuNumberPad } from './components/SudokuNumberPad';
@@ -135,9 +136,57 @@ export function SudokuGame({
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        {/* Mobile Layout - Stack vertically */}
+        <div className="block lg:hidden space-y-6 max-w-4xl mx-auto">
+          {/* Game Grid */}
+          <div className="w-full">
+            <SudokuGrid
+              grid={grid}
+              initialGrid={initialGrid}
+              selectedCell={selectedCell}
+              conflicts={conflicts}
+              size={size}
+              onCellClick={handleCellClick}
+              isActive={localIsActive}
+            />
+          </div>
+
+          {/* Number Pad */}
+          <div className="w-full">
+            <SudokuNumberPad
+              size={size}
+              selectedNumber={selectedNumber}
+              onNumberSelect={handleNumberSelect}
+              onClear={handleClear}
+              isActive={localIsActive}
+            />
+          </div>
+
+          {/* Controls */}
+          <div className="w-full">
+            <SudokuControls
+              difficulty={difficulty}
+              size={size}
+              isActive={localIsActive}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              hintsUsed={hintsUsed}
+              maxHints={maxHints}
+              moves={moves}
+              timeElapsed={timeElapsed}
+              onUndo={undo}
+              onRedo={redo}
+              onHint={getHint}
+              onReset={resetGame}
+              onNewGame={newGame}
+            />
+          </div>
+        </div>
+
+        {/* Desktop Layout - Side by side */}
+        <div className="hidden lg:grid lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
           {/* Left Panel - Controls */}
-          <div className="order-2 lg:order-1">
+          <div className="lg:col-span-1">
             <SudokuControls
               difficulty={difficulty}
               size={size}
@@ -157,7 +206,7 @@ export function SudokuGame({
           </div>
 
           {/* Center Panel - Game Grid */}
-          <div className="order-1 lg:order-2">
+          <div className="lg:col-span-2 flex justify-center">
             <SudokuGrid
               grid={grid}
               initialGrid={initialGrid}
@@ -170,7 +219,7 @@ export function SudokuGame({
           </div>
 
           {/* Right Panel - Number Pad */}
-          <div className="order-3">
+          <div className="lg:col-span-1">
             <SudokuNumberPad
               size={size}
               selectedNumber={selectedNumber}
@@ -184,3 +233,4 @@ export function SudokuGame({
     </div>
   );
 }
+
