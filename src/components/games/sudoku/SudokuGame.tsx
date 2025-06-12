@@ -135,7 +135,7 @@ export function SudokuGame({
         </div>
 
         {/* Mobile Layout - Stack vertically with proper spacing */}
-        <div className="block xl:hidden space-y-8 max-w-4xl mx-auto">
+        <div className="block lg:hidden space-y-8 max-w-4xl mx-auto">
           {/* Game Grid */}
           <div className="w-full flex justify-center">
             <SudokuGrid
@@ -181,10 +181,10 @@ export function SudokuGame({
           </div>
         </div>
 
-        {/* Desktop Layout - Side by side with increased spacing */}
-        <div className="hidden xl:grid xl:grid-cols-5 gap-12 max-w-8xl mx-auto items-start">
+        {/* Desktop Layout - Side by side with balanced spacing */}
+        <div className="hidden lg:grid lg:grid-cols-4 gap-8 max-w-6xl mx-auto items-start">
           {/* Left Panel - Controls */}
-          <div className="xl:col-span-1 w-full max-w-xs">
+          <div className="lg:col-span-1 w-full max-w-sm">
             <SudokuControls
               difficulty={difficulty}
               size={size}
@@ -204,7 +204,7 @@ export function SudokuGame({
           </div>
 
           {/* Center Panel - Game Grid */}
-          <div className="xl:col-span-3 flex justify-center px-4">
+          <div className="lg:col-span-2 flex justify-center px-4">
             <div className="w-full max-w-2xl">
               <SudokuGrid
                 grid={grid}
@@ -219,7 +219,7 @@ export function SudokuGame({
           </div>
 
           {/* Right Panel - Number Pad */}
-          <div className="xl:col-span-1 w-full max-w-xs">
+          <div className="lg:col-span-1 w-full max-w-sm">
             <SudokuNumberPad
               size={size}
               selectedNumber={selectedNumber}
