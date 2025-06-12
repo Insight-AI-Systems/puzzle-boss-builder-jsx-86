@@ -42,8 +42,12 @@ import {
   UnityJigsawPuzzle 
 } from '@/pages/games';
 
-// Get Clerk publishable key - make it optional
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+// PASTE YOUR CLERK PUBLISHABLE KEY HERE (replace the placeholder)
+const PUBLISHABLE_KEY = "pk_test_YOUR_KEY_HERE"; // Replace with your actual Clerk publishable key
+
+if (!PUBLISHABLE_KEY) {
+  throw new Error("Missing Clerk Publishable Key - please add your key to src/App.tsx");
+}
 
 // Create single query client instance
 const queryClient = new QueryClient({
@@ -84,38 +88,30 @@ function AppRoutes() {
             <Route path="games/mahjong" element={<MahjongGamePage />} />
             <Route path="games/unity-jigsaw-puzzle" element={<UnityJigsawPuzzle />} />
             
-            {/* Protected user routes - only show if Clerk is configured */}
-            {PUBLISHABLE_KEY && (
-              <>
-                <Route path="account" element={
-                  <ClerkProtectedRoute>
-                    <Profile />
-                  </ClerkProtectedRoute>
-                } />
-                <Route path="settings" element={
-                  <ClerkProtectedRoute>
-                    <Settings />
-                  </ClerkProtectedRoute>
-                } />
-              </>
-            )}
+            {/* Protected user routes */}
+            <Route path="account" element={
+              <ClerkProtectedRoute>
+                <Profile />
+              </ClerkProtectedRoute>
+            } />
+            <Route path="settings" element={
+              <ClerkProtectedRoute>
+                <Settings />
+              </ClerkProtectedRoute>
+            } />
           </Route>
 
-          {/* Protected admin routes - only show if Clerk is configured */}
-          {PUBLISHABLE_KEY && (
-            <>
-              <Route path="admin" element={
-                <ClerkProtectedRoute requiredRoles={['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo']}>
-                  <AdminDashboard />
-                </ClerkProtectedRoute>
-              } />
-              <Route path="game-testing" element={
-                <ClerkProtectedRoute requiredRoles={['super_admin', 'admin']}>
-                  <GameTesting />
-                </ClerkProtectedRoute>
-              } />
-            </>
-          )}
+          {/* Protected admin routes */}
+          <Route path="admin" element={
+            <ClerkProtectedRoute requiredRoles={['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo']}>
+              <AdminDashboard />
+            </ClerkProtectedRoute>
+          } />
+          <Route path="game-testing" element={
+            <ClerkProtectedRoute requiredRoles={['super_admin', 'admin']}>
+              <GameTesting />
+            </ClerkProtectedRoute>
+          } />
 
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -141,10 +137,10 @@ function AppContent() {
   );
 }
 
-function AppWithClerk() {
+function App() {
   return (
     <ClerkProvider 
-      publishableKey={PUBLISHABLE_KEY!}
+      publishableKey={PUBLISHABLE_KEY}
       appearance={{
         elements: {
           formButtonPrimary: 'bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black',
@@ -166,16 +162,6 @@ function AppWithClerk() {
       </AuthProvider>
     </ClerkProvider>
   );
-}
-
-function App() {
-  // If Clerk publishable key is available, wrap with ClerkProvider and AuthProvider
-  if (PUBLISHABLE_KEY) {
-    return <AppWithClerk />;
-  }
-
-  // If no Clerk key, run without Clerk authentication (no AuthProvider needed)
-  return <AppContent />;
 }
 
 export default App;
