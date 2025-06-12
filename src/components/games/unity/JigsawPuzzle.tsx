@@ -31,6 +31,8 @@ const JigsawPuzzle: React.FC<JigsawPuzzleProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [gameLoaded, setGameLoaded] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingStatus, setLoadingStatus] = useState('Initializing...');
   
   // Your Netlify-hosted Unity game
   const UNITY_BASE = 'https://glittering-chimera-b6db41.netlify.app';
@@ -50,6 +52,8 @@ const JigsawPuzzle: React.FC<JigsawPuzzleProps> = ({
       console.log('🔄 Loading Unity game...');
       setIsLoading(true);
       setError(null);
+      setLoadingProgress(0);
+      setLoadingStatus('Preparing game files...');
       
       // Clean up any existing Unity instances
       if (window.unityInstance) {
@@ -60,42 +64,65 @@ const JigsawPuzzle: React.FC<JigsawPuzzleProps> = ({
         }
       }
       
-      // Load Unity loader script
+      setLoadingProgress(10);
+      setLoadingStatus('Loading Unity loader...');
+      
+      // Load Unity loader script with timeout
       const script = document.createElement('script');
       script.src = `${UNITY_BASE}/Build/build.loader.js`;
       script.id = 'unity-loader-script';
       
+      // Set up a timeout for the script loading
+      const scriptTimeout = setTimeout(() => {
+        console.error('❌ Unity loader script timeout');
+        setError('Game loading timed out. The Unity files might be too large or the server might be slow. Please try again.');
+        setIsLoading(false);
+      }, 30000); // 30 second timeout
+      
       script.onload = () => {
+        clearTimeout(scriptTimeout);
         console.log('📦 Unity loader script loaded');
+        setLoadingProgress(30);
+        setLoadingStatus('Unity loader ready, initializing game...');
         
         if (canvasRef.current && window.createUnityInstance) {
-          window.createUnityInstance(canvasRef.current, {
+          setLoadingProgress(50);
+          setLoadingStatus('Creating Unity instance...');
+          
+          const unityConfig = {
             dataUrl: `${UNITY_BASE}/Build/build.data`,
             frameworkUrl: `${UNITY_BASE}/Build/build.framework.js`,
             codeUrl: `${UNITY_BASE}/Build/build.wasm`,
-          }).then(unityInstance => {
+          };
+          
+          console.log('🎮 Creating Unity instance with config:', unityConfig);
+          
+          window.createUnityInstance(canvasRef.current, unityConfig).then(unityInstance => {
             console.log('🎮 Unity jigsaw puzzle loaded successfully!');
             
             window.unityInstance = unityInstance;
             setGameLoaded(true);
             setIsLoading(false);
+            setLoadingProgress(100);
+            setLoadingStatus('Game ready!');
             
             setupUnityCallbacks();
             
           }).catch(err => {
             console.error('❌ Unity instance creation error:', err);
-            setError('Failed to load puzzle game. Please try refreshing the page.');
+            setError(`Failed to load puzzle game: ${err.message || 'Unknown error'}. The Unity build files might be corrupted or incompatible.`);
             setIsLoading(false);
           });
         } else {
-          setError('Game initialization failed. Canvas not ready.');
+          setError('Game initialization failed. Canvas not ready or Unity loader not available.');
           setIsLoading(false);
         }
       };
       
-      script.onerror = () => {
-        console.error('❌ Failed to load Unity script');
-        setError('Failed to load game files. Please check your internet connection.');
+      script.onerror = (e) => {
+        clearTimeout(scriptTimeout);
+        console.error('❌ Failed to load Unity script', e);
+        setError('Failed to load game files from Netlify. Please check if the Unity build is properly deployed.');
         setIsLoading(false);
       };
       
@@ -150,7 +177,6 @@ const JigsawPuzzle: React.FC<JigsawPuzzleProps> = ({
 
   const handleRestartPuzzle = () => {
     if (window.unityInstance) {
-      // Restart the current puzzle
       try {
         // Unity restart functionality would go here
         window.location.reload(); // Simple restart for now
@@ -242,14 +268,25 @@ const JigsawPuzzle: React.FC<JigsawPuzzleProps> = ({
         )}
       </div>
       
-      {/* Loading state */}
+      {/* Loading state with better feedback */}
       {isLoading && (
         <div className="flex flex-col items-center justify-center min-h-[600px] bg-gray-900 rounded-lg border border-puzzle-border">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-puzzle-aqua border-t-transparent mb-4"></div>
           <h3 className="text-xl font-bold text-puzzle-white mb-2">Loading Your Puzzle...</h3>
-          <p className="text-gray-400 mb-6">Please wait while we prepare your jigsaw puzzle experience...</p>
-          <div className="w-64 bg-gray-800 rounded-full h-2">
-            <div className="bg-puzzle-aqua h-2 rounded-full animate-pulse"></div>
+          <p className="text-gray-400 mb-6">{loadingStatus}</p>
+          
+          {/* Progress bar */}
+          <div className="w-64 bg-gray-800 rounded-full h-3 mb-4">
+            <div 
+              className="bg-puzzle-aqua h-3 rounded-full transition-all duration-300" 
+              style={{ width: `${loadingProgress}%` }}
+            ></div>
+          </div>
+          
+          <div className="text-sm text-gray-500 text-center max-w-md">
+            <p className="mb-2">Progress: {loadingProgress}%</p>
+            <p>Unity WebGL games can take 30-60 seconds to load on first visit.</p>
+            <p>The game files are being downloaded from Netlify...</p>
           </div>
         </div>
       )}
