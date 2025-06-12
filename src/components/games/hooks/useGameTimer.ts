@@ -10,7 +10,7 @@ export interface GameTimerState {
 }
 
 export function useGameTimer(timeLimit?: number) {
-  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [timeElapsed, setTimeElapsed] = useState(0); // in milliseconds
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [startTime, setStartTime] = useState<number | null>(null);
@@ -21,8 +21,7 @@ export function useGameTimer(timeLimit?: number) {
     const totalSeconds = Math.floor(milliseconds / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
-    const ms = Math.floor((milliseconds % 1000) / 10);
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, []);
 
   const start = useCallback(() => {

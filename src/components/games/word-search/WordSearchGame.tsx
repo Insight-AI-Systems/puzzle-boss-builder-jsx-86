@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,25 +13,22 @@ import { Cell } from '@/business/engines/word-search/types';
 import { useGameTimer } from '../hooks/useGameTimer';
 
 export function WordSearchGame() {
-  const [engine] = useState(() => new WordSearchEngine(15)); // Increased grid size to 15x15
+  const [engine] = useState(() => new WordSearchEngine(15));
   const [gameState, setGameState] = useState<WordSearchState | null>(null);
   const [selectedCells, setSelectedCells] = useState<Cell[]>([]);
   const [currentSelection, setCurrentSelection] = useState<Cell[]>([]);
   const [showInstructions, setShowInstructions] = useState(true);
   const [isGameStarted, setIsGameStarted] = useState(false);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [hintCells, setHintCells] = useState<Cell[]>([]);
 
+  // Fixed timer - using seconds instead of milliseconds
   const { timeElapsed, isRunning, start, stop, reset } = useGameTimer();
+  const timeElapsedInSeconds = Math.floor(timeElapsed / 1000);
 
   useEffect(() => {
     const unsubscribe = engine.subscribe((state) => {
       console.log('WordSearchGame: Received state update:', state);
-      console.log('WordSearchGame: Grid data:', state.grid);
-      console.log('WordSearchGame: Grid sample letters:', {
-        '0,0': state.grid[0]?.[0],
-        '0,5': state.grid[0]?.[5],
-        '5,0': state.grid[5]?.[0],
-        '5,5': state.grid[5]?.[5]
-      });
       setGameState(state);
     });
 
@@ -40,17 +38,21 @@ export function WordSearchGame() {
   const startNewGame = () => {
     console.log('WordSearchGame: Starting new game');
     
-    // Get 20 words from the animals category with 'pro' difficulty
     const words = getRandomWordsFromCategory('animals', 20, 'pro');
     console.log('WordSearchGame: Selected words:', words);
     
     const initialState = engine.initializeGame(words);
     console.log('WordSearchGame: Initial state received:', initialState);
     
+    // Reset all game state
     setSelectedCells([]);
     setCurrentSelection([]);
+    setHintsUsed(0);
+    setHintCells([]);
     setShowInstructions(false);
     setIsGameStarted(true);
+    
+    // Reset and start timer
     reset();
     start();
   };
@@ -64,14 +66,40 @@ export function WordSearchGame() {
     if (!gameState || gameState.gameCompleted) return;
     
     setCurrentSelection(prev => {
-      const cellId = `${cell.row}-${cell.col}`;
-      const existingCellIds = prev.map(c => `${c.row}-${c.col}`);
+      if (prev.length === 0) return [cell];
       
-      if (!existingCellIds.includes(cellId)) {
-        return [...prev, cell];
-      }
-      return prev;
+      const start = prev[0];
+      const cellsBetween = generateLineBetweenCells(start, cell);
+      return cellsBetween;
     });
+  };
+
+  const generateLineBetweenCells = (start: Cell, end: Cell): Cell[] => {
+    const cells: Cell[] = [];
+    const deltaRow = end.row - start.row;
+    const deltaCol = end.col - start.col;
+    
+    // Only allow straight lines (horizontal, vertical, diagonal)
+    const isHorizontal = deltaRow === 0 && deltaCol !== 0;
+    const isVertical = deltaCol === 0 && deltaRow !== 0;
+    const isDiagonal = Math.abs(deltaRow) === Math.abs(deltaCol) && deltaRow !== 0 && deltaCol !== 0;
+    
+    if (!isHorizontal && !isVertical && !isDiagonal) {
+      return [start]; // Return just the start cell if not a valid line
+    }
+    
+    const steps = Math.max(Math.abs(deltaRow), Math.abs(deltaCol));
+    const stepRow = steps === 0 ? 0 : deltaRow / steps;
+    const stepCol = steps === 0 ? 0 : deltaCol / steps;
+    
+    for (let i = 0; i <= steps; i++) {
+      cells.push({
+        row: start.row + Math.round(stepRow * i),
+        col: start.col + Math.round(stepCol * i)
+      });
+    }
+    
+    return cells;
   };
 
   const handleSelectionEnd = () => {
@@ -89,6 +117,9 @@ export function WordSearchGame() {
         type: 'submit_word',
         cellIds
       });
+      
+      // Clear hint cells if word was found
+      setHintCells([]);
     }
     
     setCurrentSelection([]);
@@ -98,17 +129,47 @@ export function WordSearchGame() {
     startNewGame();
   };
 
+  const handlePause = () => {
+    stop();
+  };
+
+  const handleResume = () => {
+    start();
+  };
+
+  const handleHint = () => {
+    if (!gameState || gameState.gameCompleted || hintsUsed >= 3) return;
+    
+    // Find an unfound word
+    const unfoundWords = gameState.placedWords.filter(
+      placedWord => !gameState.foundWords.includes(placedWord.word)
+    );
+    
+    if (unfoundWords.length > 0) {
+      const randomWord = unfoundWords[Math.floor(Math.random() * unfoundWords.length)];
+      setHintCells(randomWord.cells);
+      setHintsUsed(prev => prev + 1);
+      
+      // Clear hint after 3 seconds
+      setTimeout(() => {
+        setHintCells([]);
+      }, 3000);
+    }
+  };
+
   const onGameComplete = () => {
     stop();
   };
 
+  // Auto-complete game when all words found
+  useEffect(() => {
+    if (gameState && gameState.foundWords.length === gameState.targetWords.length && !gameState.gameCompleted) {
+      onGameComplete();
+    }
+  }, [gameState]);
+
   const renderGrid = () => {
     if (!gameState || !gameState.grid || gameState.grid.length === 0) {
-      console.log('WordSearchGame: No grid data to render:', { 
-        hasGameState: !!gameState, 
-        hasGrid: gameState?.grid ? true : false,
-        gridLength: gameState?.grid?.length 
-      });
       return (
         <div className="flex items-center justify-center h-64 bg-gray-100 rounded-lg">
           <p className="text-gray-600">Loading puzzle...</p>
@@ -116,22 +177,12 @@ export function WordSearchGame() {
       );
     }
 
-    console.log('WordSearchGame: Rendering grid with data:', {
-      gridSize: gameState.grid.length,
-      firstRowLength: gameState.grid[0]?.length,
-      sampleLetters: {
-        '0,0': gameState.grid[0]?.[0],
-        '0,1': gameState.grid[0]?.[1],
-        '1,0': gameState.grid[1]?.[0],
-        '1,1': gameState.grid[1]?.[1]
-      }
-    });
-
     return (
       <WordSearchGrid
         grid={gameState.grid}
         selectedCells={selectedCells}
         currentSelection={currentSelection}
+        hintCells={hintCells}
         onSelectionStart={handleSelectionStart}
         onSelectionMove={handleSelectionMove}
         onSelectionEnd={handleSelectionEnd}
@@ -163,7 +214,7 @@ export function WordSearchGame() {
       <WordSearchCongratulations
         isOpen={true}
         onClose={() => setShowInstructions(true)}
-        timeElapsed={timeElapsed}
+        timeElapsed={timeElapsedInSeconds}
         wordsFound={gameState.foundWords.length}
         totalWords={gameState.targetWords.length}
         score={gameState.score}
@@ -184,7 +235,7 @@ export function WordSearchGame() {
               <CardTitle className="flex items-center justify-between">
                 <span>Word Search Puzzle</span>
                 <div className="text-sm font-normal">
-                  Time: {Math.floor(timeElapsed / 60)}:{(timeElapsed % 60).toString().padStart(2, '0')}
+                  Time: {Math.floor(timeElapsedInSeconds / 60)}:{(timeElapsedInSeconds % 60).toString().padStart(2, '0')}
                 </div>
               </CardTitle>
             </CardHeader>
@@ -198,13 +249,13 @@ export function WordSearchGame() {
         <div className="space-y-6">
           {/* Controls */}
           <WordSearchControls
-            timeElapsed={Math.floor(timeElapsed / 1000)}
+            timeElapsed={timeElapsedInSeconds}
             isPaused={!isRunning}
-            onPause={stop}
-            onResume={start}
+            onPause={handlePause}
+            onResume={handleResume}
             onReset={handleNewGame}
-            onHint={() => {}}
-            hintsUsed={0}
+            onHint={handleHint}
+            hintsUsed={hintsUsed}
             isGameComplete={gameState?.gameCompleted || false}
           />
 

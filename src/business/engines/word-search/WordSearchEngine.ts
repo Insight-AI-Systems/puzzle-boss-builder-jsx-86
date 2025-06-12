@@ -1,3 +1,4 @@
+
 import { PlacedWord, Cell } from './types';
 import { cellToString, stringToCell, cellsToStrings, stringsToCells } from './utils';
 import { WordPlacementEngine } from '../../../components/games/word-search/WordPlacementEngine';
@@ -45,17 +46,9 @@ export class WordSearchEngine {
   public initializeGame(words: string[]): WordSearchState {
     console.log('WordSearchEngine: Initializing game with words:', words);
     
-    // Use the WordPlacementEngine to place words in all 8 directions
     const { grid, placedWords } = this.placementEngine.placeWords(words);
     
     console.log('WordSearchEngine: Grid after placement:', grid);
-    console.log('WordSearchEngine: Grid dimensions:', grid.length, 'x', grid[0]?.length);
-    console.log('WordSearchEngine: Sample grid cells:', {
-      topLeft: grid[0]?.[0],
-      topRight: grid[0]?.[grid[0]?.length - 1],
-      bottomLeft: grid[grid.length - 1]?.[0],
-      bottomRight: grid[grid.length - 1]?.[grid[0]?.length - 1]
-    });
     console.log('WordSearchEngine: Placed words count:', placedWords.length);
 
     this.state = {
@@ -69,7 +62,7 @@ export class WordSearchEngine {
       timeElapsed: 0
     };
 
-    console.log('WordSearchEngine: Final state grid:', this.state.grid);
+    console.log('WordSearchEngine: Final state initialized');
     this.notifyListeners();
     return this.state;
   }
@@ -89,7 +82,7 @@ export class WordSearchEngine {
       case 'submit_word':
         if (move.cellIds) {
           const result = this.validateWordSelection(move.cellIds);
-          if (result.isValid && result.word) {
+          if (result.isValid && result.word && !this.state.foundWords.includes(result.word)) {
             this.state.foundWords.push(result.word);
             this.state.currentSelection = [];
             this.state.score = this.calculateScore();
@@ -117,7 +110,7 @@ export class WordSearchEngine {
     // Convert cell IDs to cells
     const cells = stringsToCells(cellIds);
     
-    // Check if selection forms a valid line (horizontal, vertical, or diagonal)
+    // Check if selection forms a valid line
     if (!this.isValidLine(cells)) {
       return { isValid: false };
     }
@@ -126,11 +119,16 @@ export class WordSearchEngine {
     const forwardWord = this.getWordFromCells(cells);
     const reverseWord = forwardWord.split('').reverse().join('');
     
-    // Check if it's a target word
+    console.log('Validating word:', forwardWord, 'reverse:', reverseWord);
+    console.log('Target words:', this.state.targetWords);
+    console.log('Found words:', this.state.foundWords);
+    
+    // Check if it's a target word and not already found
     const isTargetWord = this.state.targetWords.includes(forwardWord) && 
                         !this.state.foundWords.includes(forwardWord);
     
     if (isTargetWord) {
+      console.log('Valid word found:', forwardWord);
       return { isValid: true, word: forwardWord };
     }
 
@@ -139,9 +137,11 @@ export class WordSearchEngine {
                                !this.state.foundWords.includes(reverseWord);
     
     if (isReverseTargetWord) {
+      console.log('Valid reverse word found:', reverseWord);
       return { isValid: true, word: reverseWord };
     }
 
+    console.log('No valid word found');
     return { isValid: false };
   }
 
@@ -159,42 +159,7 @@ export class WordSearchEngine {
     const isVertical = deltaCol === 0 && deltaRow !== 0;
     const isDiagonal = Math.abs(deltaRow) === Math.abs(deltaCol) && deltaRow !== 0 && deltaCol !== 0;
     
-    if (!isHorizontal && !isVertical && !isDiagonal) {
-      return false;
-    }
-    
-    // Verify all cells are in a straight line
-    const expectedCells = this.generateLineCells(first, last);
-    
-    if (expectedCells.length !== cells.length) {
-      return false;
-    }
-    
-    // Check if all selected cells match the expected line
-    const selectedCellIds = new Set(cells.map(cell => `${cell.row}-${cell.col}`));
-    const expectedCellIds = new Set(expectedCells.map(cell => `${cell.row}-${cell.col}`));
-    
-    return selectedCellIds.size === expectedCellIds.size && 
-           [...selectedCellIds].every(id => expectedCellIds.has(id));
-  }
-
-  private generateLineCells(start: Cell, end: Cell): Cell[] {
-    const cells: Cell[] = [];
-    const deltaRow = end.row - start.row;
-    const deltaCol = end.col - start.col;
-    
-    const steps = Math.max(Math.abs(deltaRow), Math.abs(deltaCol));
-    const stepRow = steps === 0 ? 0 : deltaRow / steps;
-    const stepCol = steps === 0 ? 0 : deltaCol / steps;
-    
-    for (let i = 0; i <= steps; i++) {
-      cells.push({
-        row: start.row + Math.round(stepRow * i),
-        col: start.col + Math.round(stepCol * i)
-      });
-    }
-    
-    return cells;
+    return isHorizontal || isVertical || isDiagonal;
   }
 
   private getWordFromCells(cells: Cell[]): string {
@@ -246,24 +211,11 @@ export class WordSearchEngine {
     return { ...this.state };
   }
 
-  public getGameStateForSave(): WordSearchState {
-    return this.getGameState();
-  }
-
-  public restoreGameState(savedState: WordSearchState): void {
-    this.state = { ...savedState };
-    this.notifyListeners();
-  }
-
   public subscribe(listener: GameStateListener): () => void {
     this.listeners.push(listener);
     return () => {
       this.listeners = this.listeners.filter(l => l !== listener);
     };
-  }
-
-  public clearHints(): void {
-    // No hints system implemented yet
   }
 
   private notifyListeners(): void {
