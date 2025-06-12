@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -205,7 +204,7 @@ export function WordSearchGame() {
           {/* Words List */}
           {gameState && (
             <WordsList
-              targetWords={gameState.targetWords}
+              words={gameState.targetWords}
               foundWords={new Set(gameState.foundWords)}
               score={gameState.score}
             />
