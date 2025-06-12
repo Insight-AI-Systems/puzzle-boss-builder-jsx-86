@@ -2,8 +2,9 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from '@/hooks/use-toast';
-import { Lightbulb, Undo, Redo, RotateCcw, CheckCircle } from 'lucide-react';
+import { Lightbulb, Undo, Redo, RotateCcw, CheckCircle, Info } from 'lucide-react';
 import { SudokuGrid } from './components/SudokuGrid';
 import { SudokuNumberPad } from './components/SudokuNumberPad';
 import { useSudokuGame } from './hooks/useSudokuGame';
@@ -140,6 +141,42 @@ export function SudokuGame({
     expert: 'bg-purple-500'
   };
 
+  const getInstructions = () => {
+    return (
+      <div className="space-y-3 max-w-sm">
+        <div>
+          <h4 className="font-semibold mb-1">Objective:</h4>
+          <p className="text-sm">Fill the {size}×{size} grid so each row, column, and box contains all numbers from 1 to {size}.</p>
+        </div>
+        
+        <div>
+          <h4 className="font-semibold mb-1">How to Play:</h4>
+          <ul className="text-sm space-y-1">
+            <li>• Click a cell to select it</li>
+            <li>• Use the number pad to enter numbers</li>
+            <li>• Numbers in gray cannot be changed</li>
+            <li>• Red highlighting shows conflicts</li>
+          </ul>
+        </div>
+        
+        <div>
+          <h4 className="font-semibold mb-1">Controls:</h4>
+          <ul className="text-sm space-y-1">
+            <li>• <strong>Hint:</strong> Get help for selected cell</li>
+            <li>• <strong>Undo/Redo:</strong> Navigate your moves</li>
+            <li>• <strong>Reset:</strong> Start puzzle over</li>
+            <li>• <strong>Clear:</strong> Remove number from cell</li>
+          </ul>
+        </div>
+        
+        <div>
+          <h4 className="font-semibold mb-1">Scoring:</h4>
+          <p className="text-sm">Higher scores for fewer hints used and faster completion!</p>
+        </div>
+      </div>
+    );
+  };
+
   if (!grid) {
     return (
       <Card className="bg-gray-900 border-gray-700">
@@ -151,114 +188,132 @@ export function SudokuGame({
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6">
-      {/* Game Header */}
-      <Card className="bg-gray-900 border-gray-700">
-        <CardContent className="p-3 sm:p-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center gap-3">
-              <Badge className={`${difficultyColors[difficulty]} text-white text-sm sm:text-base`}>
-                {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} {size}×{size}
-              </Badge>
-              {isComplete && (
-                <Badge className="bg-puzzle-gold text-puzzle-black">
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                  Complete!
+    <TooltipProvider>
+      <div className="max-w-7xl mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6">
+        {/* Game Header */}
+        <Card className="bg-gray-900 border-gray-700">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex items-center gap-3">
+                <Badge className={`${difficultyColors[difficulty]} text-white text-sm sm:text-base`}>
+                  {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} {size}×{size}
                 </Badge>
-              )}
+                {isComplete && (
+                  <Badge className="bg-puzzle-gold text-puzzle-black">
+                    <CheckCircle className="w-4 h-4 mr-1" />
+                    Complete!
+                  </Badge>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-4 text-sm sm:text-base text-puzzle-white">
+                <span>Moves: {moves}</span>
+                <span>Hints: {hintsUsed}/{maxHints}</span>
+              </div>
             </div>
-            
-            <div className="flex items-center gap-4 text-sm sm:text-base text-puzzle-white">
-              <span>Moves: {moves}</span>
-              <span>Hints: {hintsUsed}/{maxHints}</span>
+          </CardContent>
+        </Card>
+
+        {/* Game Controls */}
+        <Card className="bg-gray-900 border-gray-700">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex flex-wrap gap-2 justify-center">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="border-gray-600 text-gray-300 text-xs sm:text-sm"
+                    size="sm"
+                  >
+                    <Info className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                    How to Play
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-none">
+                  {getInstructions()}
+                </TooltipContent>
+              </Tooltip>
+              
+              <Button
+                onClick={handleHint}
+                disabled={!isActive || hintsUsed >= maxHints || isComplete}
+                className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black text-xs sm:text-sm"
+                size="sm"
+              >
+                <Lightbulb className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                Hint ({maxHints - hintsUsed})
+              </Button>
+              
+              <Button
+                onClick={undo}
+                disabled={!isActive || undoStack.length === 0}
+                variant="outline"
+                className="border-gray-600 text-gray-300 text-xs sm:text-sm"
+                size="sm"
+              >
+                <Undo className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                Undo
+              </Button>
+              
+              <Button
+                onClick={redo}
+                disabled={!isActive || redoStack.length === 0}
+                variant="outline"
+                className="border-gray-600 text-gray-300 text-xs sm:text-sm"
+                size="sm"
+              >
+                <Redo className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                Redo
+              </Button>
+              
+              <Button
+                onClick={resetPuzzle}
+                disabled={!isActive}
+                variant="outline"
+                className="border-gray-600 text-gray-300 text-xs sm:text-sm"
+                size="sm"
+              >
+                <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                Reset
+              </Button>
+              
+              <Button
+                onClick={generateNewPuzzle}
+                disabled={!isActive}
+                className="bg-puzzle-gold hover:bg-puzzle-gold/80 text-puzzle-black text-xs sm:text-sm"
+                size="sm"
+              >
+                New Puzzle
+              </Button>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Game Controls */}
-      <Card className="bg-gray-900 border-gray-700">
-        <CardContent className="p-3 sm:p-4">
-          <div className="flex flex-wrap gap-2 justify-center">
-            <Button
-              onClick={handleHint}
-              disabled={!isActive || hintsUsed >= maxHints || isComplete}
-              className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black text-xs sm:text-sm"
-              size="sm"
-            >
-              <Lightbulb className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-              Hint ({maxHints - hintsUsed})
-            </Button>
-            
-            <Button
-              onClick={undo}
-              disabled={!isActive || undoStack.length === 0}
-              variant="outline"
-              className="border-gray-600 text-gray-300 text-xs sm:text-sm"
-              size="sm"
-            >
-              <Undo className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-              Undo
-            </Button>
-            
-            <Button
-              onClick={redo}
-              disabled={!isActive || redoStack.length === 0}
-              variant="outline"
-              className="border-gray-600 text-gray-300 text-xs sm:text-sm"
-              size="sm"
-            >
-              <Redo className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-              Redo
-            </Button>
-            
-            <Button
-              onClick={resetPuzzle}
-              disabled={!isActive}
-              variant="outline"
-              className="border-gray-600 text-gray-300 text-xs sm:text-sm"
-              size="sm"
-            >
-              <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-              Reset
-            </Button>
-            
-            <Button
-              onClick={generateNewPuzzle}
-              disabled={!isActive}
-              className="bg-puzzle-gold hover:bg-puzzle-gold/80 text-puzzle-black text-xs sm:text-sm"
-              size="sm"
-            >
-              New Puzzle
-            </Button>
+        {/* Game Board - Improved layout */}
+        <div className="flex flex-col xl:flex-row gap-4 sm:gap-6 items-start justify-center">
+          <div className="flex-1 max-w-full">
+            <SudokuGrid
+              grid={grid}
+              initialGrid={initialGrid}
+              selectedCell={selectedCell}
+              conflicts={conflicts}
+              size={size}
+              onCellClick={handleCellClick}
+              isActive={isActive && !isComplete}
+            />
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Game Board - Improved layout */}
-      <div className="flex flex-col xl:flex-row gap-4 sm:gap-6 items-start justify-center">
-        <div className="flex-1 max-w-full">
-          <SudokuGrid
-            grid={grid}
-            initialGrid={initialGrid}
-            selectedCell={selectedCell}
-            conflicts={conflicts}
-            size={size}
-            onCellClick={handleCellClick}
-            isActive={isActive && !isComplete}
-          />
-        </div>
-        
-        <div className="w-full xl:w-auto xl:min-w-[280px]">
-          <SudokuNumberPad
-            size={size}
-            selectedNumber={selectedNumber}
-            onNumberSelect={handleNumberInput}
-            onClear={handleClearCell}
-            isActive={isActive && !isComplete}
-          />
+          
+          <div className="w-full xl:w-auto xl:min-w-[280px]">
+            <SudokuNumberPad
+              size={size}
+              selectedNumber={selectedNumber}
+              onNumberSelect={handleNumberInput}
+              onClear={handleClearCell}
+              isActive={isActive && !isComplete}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
