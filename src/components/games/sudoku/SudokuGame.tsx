@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { SudokuGrid } from './components/SudokuGrid';
 import { SudokuNumberPad } from './components/SudokuNumberPad';
 import { SudokuControls } from './components/SudokuControls';
+import { SudokuCelebration } from './components/SudokuCelebration';
 import { useSudokuGame } from './hooks/useSudokuGame';
 import { SudokuDifficulty, SudokuSize } from './types/sudokuTypes';
 import { toast } from 'sonner';
@@ -49,6 +51,8 @@ export function SudokuGame({
   } = useSudokuGame(difficulty, size);
 
   const [localIsActive, setLocalIsActive] = useState(isActive);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLocalIsActive(isActive);
@@ -65,6 +69,7 @@ export function SudokuGame({
       };
       onComplete(stats);
       setLocalIsActive(false);
+      setShowCelebration(true);
       toast.success(`Puzzle completed in ${moves} moves!`);
     }
   }, [isComplete, moves, hintsUsed, timeElapsed, difficulty, size, onComplete]);
@@ -103,6 +108,20 @@ export function SudokuGame({
     setSelectedNumber(null);
     makeMove(selectedCell[0], selectedCell[1], 0);
   }, [localIsActive, selectedCell, setSelectedNumber, makeMove]);
+
+  const handlePlayAgain = () => {
+    setShowCelebration(false);
+    newGame();
+    setLocalIsActive(true);
+  };
+
+  const handleMorePuzzles = () => {
+    navigate('/puzzles');
+  };
+
+  const handleExit = () => {
+    navigate('/');
+  };
 
   // Don't render until grid is loaded
   if (!grid || !initialGrid) {
@@ -230,6 +249,20 @@ export function SudokuGame({
           </div>
         </div>
       </div>
+
+      {/* Celebration Modal */}
+      {showCelebration && (
+        <SudokuCelebration
+          moves={moves}
+          hintsUsed={hintsUsed}
+          timeElapsed={timeElapsed}
+          difficulty={difficulty}
+          size={size}
+          onPlayAgain={handlePlayAgain}
+          onMorePuzzles={handleMorePuzzles}
+          onExit={handleExit}
+        />
+      )}
     </div>
   );
 }
