@@ -129,48 +129,52 @@ function AppContent() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="puzzleboss-ui-theme">
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <GameProvider>
-            <AppRoutes />
-            <Toaster />
-            {process.env.NODE_ENV === 'development' && (
-              <ReactQueryDevtools initialIsOpen={false} />
-            )}
-          </GameProvider>
-        </AuthProvider>
+        <GameProvider>
+          <AppRoutes />
+          <Toaster />
+          {process.env.NODE_ENV === 'development' && (
+            <ReactQueryDevtools initialIsOpen={false} />
+          )}
+        </GameProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );
 }
 
-function App() {
-  // If Clerk publishable key is available, wrap with ClerkProvider
-  if (PUBLISHABLE_KEY) {
-    return (
-      <ClerkProvider 
-        publishableKey={PUBLISHABLE_KEY}
-        appearance={{
-          elements: {
-            formButtonPrimary: 'bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black',
-            card: 'bg-puzzle-gray border border-puzzle-border',
-            headerTitle: 'text-puzzle-white',
-            headerSubtitle: 'text-puzzle-white/70',
-            socialButtonsBlockButton: 'border-puzzle-border hover:bg-puzzle-gray/50',
-            formFieldInput: 'bg-puzzle-black border-puzzle-border text-puzzle-white',
-            footerActionLink: 'text-puzzle-aqua hover:text-puzzle-aqua/80',
-          },
-          layout: {
-            socialButtonsPlacement: 'top',
-            showOptionalFields: false,
-          },
-        }}
-      >
+function AppWithClerk() {
+  return (
+    <ClerkProvider 
+      publishableKey={PUBLISHABLE_KEY!}
+      appearance={{
+        elements: {
+          formButtonPrimary: 'bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black',
+          card: 'bg-puzzle-gray border border-puzzle-border',
+          headerTitle: 'text-puzzle-white',
+          headerSubtitle: 'text-puzzle-white/70',
+          socialButtonsBlockButton: 'border-puzzle-border hover:bg-puzzle-gray/50',
+          formFieldInput: 'bg-puzzle-black border-puzzle-border text-puzzle-white',
+          footerActionLink: 'text-puzzle-aqua hover:text-puzzle-aqua/80',
+        },
+        layout: {
+          socialButtonsPlacement: 'top',
+          showOptionalFields: false,
+        },
+      }}
+    >
+      <AuthProvider>
         <AppContent />
-      </ClerkProvider>
-    );
+      </AuthProvider>
+    </ClerkProvider>
+  );
+}
+
+function App() {
+  // If Clerk publishable key is available, wrap with ClerkProvider and AuthProvider
+  if (PUBLISHABLE_KEY) {
+    return <AppWithClerk />;
   }
 
-  // If no Clerk key, run without Clerk authentication
+  // If no Clerk key, run without Clerk authentication (no AuthProvider needed)
   return <AppContent />;
 }
 
