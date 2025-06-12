@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { SudokuGrid } from './components/SudokuGrid';
 import { SudokuNumberPad } from './components/SudokuNumberPad';
@@ -103,6 +104,24 @@ export function SudokuGame({
     setSelectedNumber(null);
     makeMove(selectedCell[0], selectedCell[1], 0);
   }, [localIsActive, selectedCell, setSelectedNumber, makeMove]);
+
+  // Don't render until grid is loaded
+  if (!grid || !initialGrid) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black p-4">
+        <div className="container mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-6xl font-bold text-puzzle-white mb-4">
+              🧩 Sudoku Master 🧩
+            </h1>
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+              Loading puzzle...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black p-4">
