@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 interface WordsListProps {
   words: string[];
@@ -30,6 +30,9 @@ export function WordsList({ words, foundWords }: WordsListProps) {
               </div>
             ))}
           </div>
+          <ScrollBar className="w-3">
+            <div className="relative flex-1 rounded-full bg-orange-500 hover:bg-orange-400" />
+          </ScrollBar>
         </ScrollArea>
       </CardContent>
     </Card>
