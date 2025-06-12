@@ -2846,6 +2846,51 @@ export type Database = {
         }
         Relationships: []
       }
+      word_search_leaderboard: {
+        Row: {
+          category: string
+          completion_time_seconds: number
+          created_at: string
+          difficulty: string
+          hints_used: number
+          id: string
+          incorrect_selections: number
+          player_id: string
+          player_name: string
+          score: number
+          total_words: number
+          words_found: number
+        }
+        Insert: {
+          category?: string
+          completion_time_seconds: number
+          created_at?: string
+          difficulty?: string
+          hints_used?: number
+          id?: string
+          incorrect_selections?: number
+          player_id: string
+          player_name: string
+          score?: number
+          total_words: number
+          words_found: number
+        }
+        Update: {
+          category?: string
+          completion_time_seconds?: number
+          created_at?: string
+          difficulty?: string
+          hints_used?: number
+          id?: string
+          incorrect_selections?: number
+          player_id?: string
+          player_name?: string
+          score?: number
+          total_words?: number
+          words_found?: number
+        }
+        Relationships: []
+      }
       xero_account_link: {
         Row: {
           created_at: string

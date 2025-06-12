@@ -11,6 +11,8 @@ import { WordSearchInstructions } from './WordSearchInstructions';
 import { getRandomWordsFromCategory } from './WordListManager';
 import { Cell } from '@/business/engines/word-search/types';
 import { useGameTimer } from '../hooks/useGameTimer';
+import { useWordSearchLeaderboard } from './hooks/useWordSearchLeaderboard';
+import { useNavigate } from 'react-router-dom';
 
 export function WordSearchGame() {
   const [engine] = useState(() => new WordSearchEngine(15));
@@ -21,10 +23,15 @@ export function WordSearchGame() {
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [hintsUsed, setHintsUsed] = useState(0);
   const [hintCells, setHintCells] = useState<Cell[]>([]);
+  const [incorrectSelections, setIncorrectSelections] = useState(0);
 
   // Fixed timer - using seconds instead of milliseconds
   const { timeElapsed, isRunning, start, stop, reset } = useGameTimer();
   const timeElapsedInSeconds = Math.floor(timeElapsed / 1000);
+
+  // Leaderboard functionality
+  const { submitScore } = useWordSearchLeaderboard();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const unsubscribe = engine.subscribe((state) => {
@@ -49,6 +56,7 @@ export function WordSearchGame() {
     setCurrentSelection([]);
     setHintsUsed(0);
     setHintCells([]);
+    setIncorrectSelections(0);
     setShowInstructions(false);
     setIsGameStarted(true);
     
@@ -120,6 +128,9 @@ export function WordSearchGame() {
       
       // Clear hint cells if word was found
       setHintCells([]);
+    } else {
+      // Increment incorrect selections for scoring
+      setIncorrectSelections(prev => prev + 1);
     }
     
     setCurrentSelection([]);
@@ -187,8 +198,31 @@ export function WordSearchGame() {
     setGameState(updatedState);
   };
 
-  const onGameComplete = () => {
+  const onGameComplete = async () => {
     stop();
+    
+    // Submit score to leaderboard
+    if (gameState) {
+      await submitScore({
+        score: gameState.score,
+        completionTimeSeconds: timeElapsedInSeconds,
+        wordsFound: gameState.foundWords.length,
+        totalWords: gameState.targetWords.length,
+        difficulty: 'pro',
+        category: 'animals',
+        incorrectSelections: incorrectSelections,
+        hintsUsed: hintsUsed
+      });
+    }
+  };
+
+  const handleViewLeaderboard = () => {
+    navigate('/leaderboard');
+  };
+
+  const handleCloseCongratulations = () => {
+    setShowInstructions(true);
+    setIsGameStarted(false);
   };
 
   // Auto-complete game when all words found
@@ -243,14 +277,14 @@ export function WordSearchGame() {
     return (
       <WordSearchCongratulations
         isOpen={true}
-        onClose={() => setShowInstructions(true)}
+        onClose={handleCloseCongratulations}
         timeElapsed={timeElapsedInSeconds}
         wordsFound={gameState.foundWords.length}
         totalWords={gameState.targetWords.length}
         score={gameState.score}
-        incorrectSelections={0}
+        incorrectSelections={incorrectSelections}
         onPlayAgain={handleNewGame}
-        onViewLeaderboard={() => {}}
+        onViewLeaderboard={handleViewLeaderboard}
       />
     );
   }
