@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -152,13 +151,13 @@ export function SudokuGame({
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-6">
+    <div className="max-w-7xl mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6">
       {/* Game Header */}
       <Card className="bg-gray-900 border-gray-700">
-        <CardContent className="p-4">
+        <CardContent className="p-3 sm:p-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-3">
-              <Badge className={`${difficultyColors[difficulty]} text-white`}>
+              <Badge className={`${difficultyColors[difficulty]} text-white text-sm sm:text-base`}>
                 {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} {size}×{size}
               </Badge>
               {isComplete && (
@@ -169,7 +168,7 @@ export function SudokuGame({
               )}
             </div>
             
-            <div className="flex items-center gap-4 text-sm text-puzzle-white">
+            <div className="flex items-center gap-4 text-sm sm:text-base text-puzzle-white">
               <span>Moves: {moves}</span>
               <span>Hints: {hintsUsed}/{maxHints}</span>
             </div>
@@ -179,15 +178,15 @@ export function SudokuGame({
 
       {/* Game Controls */}
       <Card className="bg-gray-900 border-gray-700">
-        <CardContent className="p-4">
+        <CardContent className="p-3 sm:p-4">
           <div className="flex flex-wrap gap-2 justify-center">
             <Button
               onClick={handleHint}
               disabled={!isActive || hintsUsed >= maxHints || isComplete}
-              className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black"
+              className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black text-xs sm:text-sm"
               size="sm"
             >
-              <Lightbulb className="w-4 h-4 mr-1" />
+              <Lightbulb className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
               Hint ({maxHints - hintsUsed})
             </Button>
             
@@ -195,10 +194,10 @@ export function SudokuGame({
               onClick={undo}
               disabled={!isActive || undoStack.length === 0}
               variant="outline"
-              className="border-gray-600 text-gray-300"
+              className="border-gray-600 text-gray-300 text-xs sm:text-sm"
               size="sm"
             >
-              <Undo className="w-4 h-4 mr-1" />
+              <Undo className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
               Undo
             </Button>
             
@@ -206,10 +205,10 @@ export function SudokuGame({
               onClick={redo}
               disabled={!isActive || redoStack.length === 0}
               variant="outline"
-              className="border-gray-600 text-gray-300"
+              className="border-gray-600 text-gray-300 text-xs sm:text-sm"
               size="sm"
             >
-              <Redo className="w-4 h-4 mr-1" />
+              <Redo className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
               Redo
             </Button>
             
@@ -217,17 +216,17 @@ export function SudokuGame({
               onClick={resetPuzzle}
               disabled={!isActive}
               variant="outline"
-              className="border-gray-600 text-gray-300"
+              className="border-gray-600 text-gray-300 text-xs sm:text-sm"
               size="sm"
             >
-              <RotateCcw className="w-4 h-4 mr-1" />
+              <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
               Reset
             </Button>
             
             <Button
               onClick={generateNewPuzzle}
               disabled={!isActive}
-              className="bg-puzzle-gold hover:bg-puzzle-gold/80 text-puzzle-black"
+              className="bg-puzzle-gold hover:bg-puzzle-gold/80 text-puzzle-black text-xs sm:text-sm"
               size="sm"
             >
               New Puzzle
@@ -236,25 +235,29 @@ export function SudokuGame({
         </CardContent>
       </Card>
 
-      {/* Game Board */}
-      <div className="flex flex-col lg:flex-row gap-6 items-start justify-center">
-        <SudokuGrid
-          grid={grid}
-          initialGrid={initialGrid}
-          selectedCell={selectedCell}
-          conflicts={conflicts}
-          size={size}
-          onCellClick={handleCellClick}
-          isActive={isActive && !isComplete}
-        />
+      {/* Game Board - Improved layout */}
+      <div className="flex flex-col xl:flex-row gap-4 sm:gap-6 items-start justify-center">
+        <div className="flex-1 max-w-full">
+          <SudokuGrid
+            grid={grid}
+            initialGrid={initialGrid}
+            selectedCell={selectedCell}
+            conflicts={conflicts}
+            size={size}
+            onCellClick={handleCellClick}
+            isActive={isActive && !isComplete}
+          />
+        </div>
         
-        <SudokuNumberPad
-          size={size}
-          selectedNumber={selectedNumber}
-          onNumberSelect={handleNumberInput}
-          onClear={handleClearCell}
-          isActive={isActive && !isComplete}
-        />
+        <div className="w-full xl:w-auto xl:min-w-[280px]">
+          <SudokuNumberPad
+            size={size}
+            selectedNumber={selectedNumber}
+            onNumberSelect={handleNumberInput}
+            onClear={handleClearCell}
+            isActive={isActive && !isComplete}
+          />
+        </div>
       </div>
     </div>
   );

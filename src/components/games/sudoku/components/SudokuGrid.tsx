@@ -43,7 +43,7 @@ export function SudokuGrid({
        Math.floor(selectedCell[1] / boxSize.width) === Math.floor(col / boxSize.width))
     );
     
-    let classes = 'w-full h-full flex items-center justify-center text-lg font-bold border transition-all duration-150 ';
+    let classes = 'w-full h-full flex items-center justify-center font-bold border transition-all duration-150 ';
     
     // Base styling
     classes += isInitial 
@@ -76,15 +76,46 @@ export function SudokuGrid({
     return classes;
   };
 
-  const cellSize = size === 4 ? 'h-14 w-14' : size === 6 ? 'h-12 w-12' : 'h-10 w-10';
+  // Responsive cell sizes - much larger than before
+  const getCellSize = () => {
+    switch (size) {
+      case 4: return 'h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24'; // 64px -> 96px
+      case 6: return 'h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20'; // 56px -> 80px
+      case 9: return 'h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16'; // 48px -> 64px
+      default: return 'h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16';
+    }
+  };
+
+  // Responsive text sizes
+  const getTextSize = () => {
+    switch (size) {
+      case 4: return 'text-xl sm:text-2xl md:text-3xl';
+      case 6: return 'text-lg sm:text-xl md:text-2xl';
+      case 9: return 'text-base sm:text-lg md:text-xl';
+      default: return 'text-base sm:text-lg md:text-xl';
+    }
+  };
+
+  // Responsive container max widths - much larger
+  const getContainerMaxWidth = () => {
+    switch (size) {
+      case 4: return 'max-w-md sm:max-w-lg md:max-w-xl'; // 448px -> 576px
+      case 6: return 'max-w-lg sm:max-w-xl md:max-w-2xl'; // 512px -> 672px
+      case 9: return 'max-w-xl sm:max-w-2xl md:max-w-3xl'; // 576px -> 768px
+      default: return 'max-w-xl sm:max-w-2xl md:max-w-3xl';
+    }
+  };
+
+  const cellSize = getCellSize();
+  const textSize = getTextSize();
+  const containerMaxWidth = getContainerMaxWidth();
 
   return (
     <div className="flex items-center justify-center p-4">
       <div 
-        className={`grid gap-0 bg-gray-900 p-2 rounded-lg shadow-2xl`}
+        className={`grid gap-0 bg-gray-900 p-3 sm:p-4 md:p-6 rounded-lg shadow-2xl ${containerMaxWidth} w-full`}
         style={{ 
-          gridTemplateColumns: `repeat(${size}, 1fr)`,
-          maxWidth: size === 4 ? '280px' : size === 6 ? '360px' : '440px'
+          gridTemplateColumns: `repeat(${size}, 1fr)`
         }}
       >
         {grid.map((row, rowIndex) =>
@@ -95,7 +126,7 @@ export function SudokuGrid({
               onClick={() => onCellClick(rowIndex, colIndex)}
             >
               {cell !== 0 && (
-                <span className="select-none">
+                <span className={`select-none ${textSize}`}>
                   {cell}
                 </span>
               )}
