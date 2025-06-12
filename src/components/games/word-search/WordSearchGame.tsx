@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Trophy, RotateCw } from 'lucide-react';
+import { Clock, Trophy, RotateCw, Lightbulb } from 'lucide-react';
 import { WordSearchEngine, WordSearchState } from '@/business/engines/word-search';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,6 +15,9 @@ export const WordSearchGame: React.FC = () => {
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
   const [isSelecting, setIsSelecting] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [hintedCells, setHintedCells] = useState<Set<string>>(new Set());
+  const [maxHints] = useState(3);
   const { toast } = useToast();
 
   const handleGameStateChange = useCallback((state: WordSearchState) => {
@@ -38,6 +41,8 @@ export const WordSearchGame: React.FC = () => {
       engine.initializeGame(SAMPLE_WORDS);
       setSelectedCells(new Set());
       setGameStarted(true);
+      setHintsUsed(0);
+      setHintedCells(new Set());
     } catch (error) {
       console.error('Error starting game:', error);
       toast({
@@ -45,6 +50,35 @@ export const WordSearchGame: React.FC = () => {
         description: "Failed to start game. Please try again.",
         variant: "destructive"
       });
+    }
+  };
+
+  const useHint = () => {
+    if (!gameState || hintsUsed >= maxHints || gameState.gameCompleted) return;
+
+    // Find a word that hasn't been found yet
+    const remainingWords = gameState.targetWords.filter(word => !gameState.foundWords.includes(word));
+    
+    if (remainingWords.length > 0) {
+      // Get the first remaining word and highlight its cells
+      const wordToHint = remainingWords[0];
+      const placedWord = gameState.placedWords.find(pw => pw.word === wordToHint);
+      
+      if (placedWord && placedWord.cells) {
+        const hintCells = new Set(placedWord.cells.map(cell => `${cell.row}-${cell.col}`));
+        setHintedCells(hintCells);
+        setHintsUsed(prev => prev + 1);
+        
+        toast({
+          title: "Hint!",
+          description: `Look for the word: ${wordToHint}`,
+        });
+
+        // Clear hint after 3 seconds
+        setTimeout(() => {
+          setHintedCells(new Set());
+        }, 3000);
+      }
     }
   };
 
@@ -105,6 +139,7 @@ export const WordSearchGame: React.FC = () => {
   const getCellClasses = (row: number, col: number) => {
     const cellId = `${row}-${col}`;
     const isSelected = selectedCells.has(cellId);
+    const isHinted = hintedCells.has(cellId);
     const isFoundWord = gameState?.foundWords.some(word => {
       // Check if this cell is part of any found word
       return gameState.placedWords.some(placedWord => 
@@ -118,7 +153,8 @@ export const WordSearchGame: React.FC = () => {
       transition-colors duration-200
       ${isSelected ? 'bg-blue-200 border-blue-400' : ''}
       ${isFoundWord ? 'bg-green-200 border-green-400' : ''}
-      ${!isSelected && !isFoundWord ? 'hover:bg-gray-100' : ''}
+      ${isHinted ? 'bg-yellow-200 border-yellow-400 animate-pulse' : ''}
+      ${!isSelected && !isFoundWord && !isHinted ? 'hover:bg-gray-100' : ''}
     `.trim();
   };
 
@@ -152,10 +188,22 @@ export const WordSearchGame: React.FC = () => {
                 <Trophy className="h-4 w-4 text-yellow-500" />
                 <span className="font-semibold">Score: {gameState.score}</span>
               </div>
-              <Button onClick={startNewGame} variant="outline" size="sm">
-                <RotateCw className="h-4 w-4 mr-2" />
-                New Game
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={useHint}
+                  disabled={hintsUsed >= maxHints || gameState.gameCompleted}
+                  variant="outline" 
+                  size="sm"
+                  className="flex items-center gap-1"
+                >
+                  <Lightbulb className="h-4 w-4" />
+                  Hint ({maxHints - hintsUsed})
+                </Button>
+                <Button onClick={startNewGame} variant="outline" size="sm">
+                  <RotateCw className="h-4 w-4 mr-2" />
+                  New Game
+                </Button>
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -233,6 +281,7 @@ export const WordSearchGame: React.FC = () => {
                   <h3 className="font-bold text-green-800 mb-2">Congratulations!</h3>
                   <p className="text-green-700">You found all the words!</p>
                   <p className="text-sm text-green-600 mt-1">Final Score: {gameState.score}</p>
+                  <p className="text-sm text-green-600">Hints used: {hintsUsed}</p>
                 </div>
               )}
             </CardContent>
