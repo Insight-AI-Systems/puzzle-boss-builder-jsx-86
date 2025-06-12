@@ -9,7 +9,6 @@ import { AdminAccessCheck } from '@/components/admin/dashboard/AdminAccessCheck'
 import { AdminToolbar } from '@/components/admin/dashboard/AdminToolbar';
 import { AdminErrorBoundary } from '@/components/admin/ErrorBoundary';
 import { AdminDebugInfo } from '@/components/admin/AdminDebugInfo';
-import { ClerkRoleDebug } from '@/components/admin/ClerkRoleDebug';
 import { adminLog, DebugLevel } from '@/utils/debug';
 import Navbar from '@/components/Navbar';
 
@@ -18,7 +17,6 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showDebug, setShowDebug] = useState(false);
-  const [showRoleDebug, setShowRoleDebug] = useState(false);
 
   const hasAdminAccess = canAccessAdminDashboard();
 
@@ -68,10 +66,6 @@ const AdminDashboard = () => {
     setShowDebug(!showDebug);
   };
 
-  const showRoleDebugPanel = () => {
-    setShowRoleDebug(!showRoleDebug);
-  };
-
   if (!isLoaded) {
     console.log('🔄 AdminDashboard Loading...');
     return (
@@ -109,11 +103,6 @@ const AdminDashboard = () => {
         <div className="p-6">
           <div className="max-w-6xl mx-auto space-y-8">
             <AdminToolbar showDebugInfo={showDebugInfo} />
-            
-            {/* Clerk Role Debug Panel */}
-            <div className="space-y-4">
-              <ClerkRoleDebug />
-            </div>
 
             {showDebug && <AdminDebugInfo />}
 
