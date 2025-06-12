@@ -1,12 +1,10 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, Search, Grid3X3, Brain, Zap, Square, BookOpen, Puzzle, User } from 'lucide-react';
 import { MainNavItem } from './NavbarData';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
-
-// Check if Clerk is available
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -18,20 +16,7 @@ interface MobileMenuProps {
 const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, navItems, isLoggedIn, onClose }) => {
   const [expandedPuzzles, setExpandedPuzzles] = useState(false);
   const { profile } = useUserProfile();
-  
-  // Only use Clerk auth hooks if Clerk is configured
-  let hasRole = (role: string): boolean => false;
-  let isAdmin = false;
-  
-  if (PUBLISHABLE_KEY) {
-    try {
-      const clerkAuth = useClerkAuth();
-      hasRole = clerkAuth.hasRole;
-      isAdmin = clerkAuth.isAdmin;
-    } catch (error) {
-      console.warn('Clerk not available in MobileMenu, running without authentication');
-    }
-  }
+  const { hasRole, isAdmin } = useClerkAuth();
 
   if (!isOpen) return null;
 
@@ -60,10 +45,10 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, navItems, isLoggedIn, o
   return (
     <div className="md:hidden">
       <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-puzzle-aqua/20">
-        {/* Profile Link for logged-in users - only show if Clerk is configured */}
-        {PUBLISHABLE_KEY && isLoggedIn && (
+        {/* Profile Link for logged-in users */}
+        {isLoggedIn && (
           <Link
-            to="/profile"
+            to="/account"
             className="flex items-center gap-3 px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-puzzle-white hover:bg-white/10"
             onClick={onClose}
           >
@@ -131,8 +116,8 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, navItems, isLoggedIn, o
           </div>
         ))}
         
-        {/* Sign up button - only show if Clerk is configured and user is not logged in */}
-        {PUBLISHABLE_KEY && !isLoggedIn && (
+        {/* Sign up button for non-logged in users */}
+        {!isLoggedIn && (
           <Link
             to="/auth?signup=true"
             className="block px-3 py-2 rounded-md text-base font-medium text-puzzle-white bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-center mt-4"

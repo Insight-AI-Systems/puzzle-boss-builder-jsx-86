@@ -11,28 +11,11 @@ import PuzzleDropdown from './PuzzleDropdown';
 import MobileMenu from './MobileMenu';
 import { AdminErrorBoundary } from '@/components/admin/ErrorBoundary';
 
-// Check if Clerk is available
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   
-  // Only use Clerk hooks if Clerk is configured
-  let isSignedIn = false;
-  let user = null;
-  let profile = null;
-  
-  if (PUBLISHABLE_KEY) {
-    try {
-      const clerkAuth = useClerkAuth();
-      isSignedIn = clerkAuth.isAuthenticated;
-      user = clerkAuth.user;
-      profile = clerkAuth.profile;
-    } catch (error) {
-      console.warn('Clerk not available, running without authentication');
-    }
-  }
+  const { isAuthenticated, user, profile } = useClerkAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -72,34 +55,27 @@ export const Navbar: React.FC = () => {
               ))}
             </div>
 
-            {/* Auth Buttons and Profile - only show if Clerk is configured */}
+            {/* Auth Buttons and Profile */}
             <div className="hidden md:flex items-center space-x-4">
-              {PUBLISHABLE_KEY ? (
-                isSignedIn ? (
-                  <>
-                    {/* Profile Icon for logged-in users */}
-                    <Link
-                      to="/profile"
-                      className={`px-3 py-2 text-sm font-medium transition-colors flex items-center space-x-2 ${
-                        isActive('/profile')
-                          ? 'text-puzzle-aqua border-b-2 border-puzzle-aqua'
-                          : 'text-puzzle-white hover:text-puzzle-aqua'
-                      }`}
-                      title="Member Profile"
-                    >
-                      <User className="h-4 w-4" />
-                      <span>Profile</span>
-                    </Link>
-                    <UserMenu profile={profile} />
-                  </>
-                ) : (
-                  <ClerkAuthButtons />
-                )
+              {isAuthenticated ? (
+                <>
+                  {/* Profile Icon for logged-in users */}
+                  <Link
+                    to="/account"
+                    className={`px-3 py-2 text-sm font-medium transition-colors flex items-center space-x-2 ${
+                      isActive('/account')
+                        ? 'text-puzzle-aqua border-b-2 border-puzzle-aqua'
+                        : 'text-puzzle-white hover:text-puzzle-aqua'
+                    }`}
+                    title="Member Profile"
+                  >
+                    <User className="h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                  <UserMenu profile={profile} />
+                </>
               ) : (
-                /* Show basic navigation when Clerk is not configured */
-                <div className="text-puzzle-white/70 text-sm">
-                  Guest Mode
-                </div>
+                <ClerkAuthButtons />
               )}
             </div>
 
@@ -120,7 +96,7 @@ export const Navbar: React.FC = () => {
           <MobileMenu 
             isOpen={isOpen} 
             navItems={mainNavItems} 
-            isLoggedIn={isSignedIn} 
+            isLoggedIn={isAuthenticated} 
             onClose={() => setIsOpen(false)} 
           />
         </div>

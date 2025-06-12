@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -28,6 +29,7 @@ import Terms from '@/pages/legal/Terms';
 import Privacy from '@/pages/legal/Privacy';
 import AdminDashboard from '@/pages/AdminDashboard';
 import GameTesting from '@/pages/GameTesting';
+import Auth from '@/pages/Auth';
 
 // Import game pages
 import { 
@@ -99,6 +101,9 @@ function AppRoutes() {
               </ClerkProtectedRoute>
             } />
           </Route>
+
+          {/* Auth route - outside MainLayout for full screen */}
+          <Route path="auth" element={<Auth />} />
 
           {/* Protected admin routes */}
           <Route path="admin" element={

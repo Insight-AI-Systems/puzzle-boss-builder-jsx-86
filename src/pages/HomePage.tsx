@@ -13,30 +13,13 @@ import { Link } from 'react-router-dom';
 import { PageDebugger } from '@/components/debug/PageDebugger';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
 
-// Check if Clerk is available
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
 function HomePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [showingConfirmation, setShowingConfirmation] = useState<boolean>(false);
   const confirmedAdmin = useRef<boolean | null>(null);
   
-  // Only use Clerk hooks if Clerk is configured
-  let isAuthenticated = false;
-  let isLoading = false;
-  let userRole = 'player';
-  
-  if (PUBLISHABLE_KEY) {
-    try {
-      const clerkAuth = useClerkAuth();
-      isAuthenticated = clerkAuth.isAuthenticated;
-      isLoading = clerkAuth.isLoading;
-      userRole = clerkAuth.userRole;
-    } catch (error) {
-      console.warn('Clerk not available in HomePage, running without authentication');
-    }
-  }
+  const { isAuthenticated, isLoading, userRole } = useClerkAuth();
   
   console.log("HomePage rendering", { 
     userRole,
@@ -44,14 +27,13 @@ function HomePage() {
     isAuthenticated,
     showingConfirmation,
     navigatedFrom: location.state?.from,
-    skipRedirect: location.state?.skipAdminRedirect,
-    clerkConfigured: !!PUBLISHABLE_KEY
+    skipRedirect: location.state?.skipAdminRedirect
   });
   
-  // Admin redirect logic - only run after auth is loaded and if Clerk is configured
+  // Admin redirect logic - only run after auth is loaded
   useEffect(() => {
-    // Skip redirect logic if Clerk is not configured, still loading, or showing confirmation
-    if (!PUBLISHABLE_KEY || isLoading || showingConfirmation) return;
+    // Skip redirect logic if still loading or showing confirmation
+    if (isLoading || showingConfirmation) return;
     
     // Check if we're coming directly from an admin page - if so, don't redirect
     const comingFromAdmin = location.state?.from?.startsWith('/admin');
@@ -116,7 +98,7 @@ function HomePage() {
         }, 0);
       }
     }
-  }, [PUBLISHABLE_KEY, isLoading, userRole, navigate, showingConfirmation, location.state]);
+  }, [isLoading, userRole, navigate, showingConfirmation, location.state]);
 
   useEffect(() => {
     // Debug message to verify component mounting
@@ -124,8 +106,7 @@ function HomePage() {
       pathname: window.location.pathname,
       localStorage: window.localStorage.getItem('redirect_to_admin'),
       state: location.state,
-      sessionStorage: sessionStorage.getItem('temp_disable_admin_redirect'),
-      clerkConfigured: !!PUBLISHABLE_KEY
+      sessionStorage: sessionStorage.getItem('temp_disable_admin_redirect')
     });
     
     // Allow testing by clearing localStorage when adding a query parameter
@@ -136,8 +117,8 @@ function HomePage() {
     }
   }, [location]);
 
-  // Show loading only while auth is initializing (and only if Clerk is configured)
-  if (PUBLISHABLE_KEY && isLoading) {
+  // Show loading while auth is initializing
+  if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
@@ -165,8 +146,8 @@ function HomePage() {
     <main className="min-h-screen">
       <h1 className="sr-only">The Puzzle Boss - Home</h1>
       
-      {/* Show a notification if user came from admin and can return - only if Clerk is configured */}
-      {PUBLISHABLE_KEY && location.state?.skipAdminRedirect && userRole === 'super_admin' && (
+      {/* Show a notification if user came from admin and can return */}
+      {location.state?.skipAdminRedirect && userRole === 'super_admin' && (
         <div className="bg-puzzle-aqua/10 border-l-4 border-puzzle-aqua p-4 m-4 rounded">
           <div className="flex items-center justify-between">
             <p className="text-sm">
