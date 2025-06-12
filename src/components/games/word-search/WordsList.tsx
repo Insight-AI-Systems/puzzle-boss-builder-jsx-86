@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface WordsListProps {
   words: string[];
@@ -14,20 +15,22 @@ export function WordsList({ words, foundWords }: WordsListProps) {
         <CardTitle className="text-lg">Words to Find</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-1 max-h-64 overflow-y-auto">
-          {words.map((word, index) => (
-            <div
-              key={index}
-              className={`p-2 rounded text-sm font-medium ${
-                foundWords.has(word)
-                  ? 'bg-puzzle-aqua/20 text-puzzle-aqua line-through border border-puzzle-aqua/30'
-                  : 'bg-puzzle-black/80 text-puzzle-white border border-puzzle-aqua/20 hover:bg-puzzle-aqua/10'
-              }`}
-            >
-              {word.toUpperCase()}
-            </div>
-          ))}
-        </div>
+        <ScrollArea className="h-64">
+          <div className="space-y-1 pr-4">
+            {words.map((word, index) => (
+              <div
+                key={index}
+                className={`p-2 rounded text-sm font-medium ${
+                  foundWords.has(word)
+                    ? 'bg-puzzle-aqua/20 text-puzzle-aqua line-through border border-puzzle-aqua/30'
+                    : 'bg-puzzle-black/80 text-puzzle-white border border-puzzle-aqua/20 hover:bg-puzzle-aqua/10'
+                }`}
+              >
+                {word.toUpperCase()}
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );
