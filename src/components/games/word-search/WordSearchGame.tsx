@@ -147,6 +147,7 @@ export function WordSearchGame() {
         category="animals"
         totalWords={20}
         competitive={false}
+        onStartGame={startNewGame}
       />
     );
   }
@@ -163,6 +164,7 @@ export function WordSearchGame() {
         incorrectSelections={0}
         onPlayAgain={handleNewGame}
         onViewLeaderboard={() => {}}
+        foundWords={gameState.foundWords}
       />
     );
   }
@@ -199,6 +201,7 @@ export function WordSearchGame() {
             onHint={() => {}}
             hintsUsed={0}
             isGameComplete={gameState?.gameCompleted || false}
+            onNewGame={handleNewGame}
           />
 
           {/* Words List */}
@@ -206,7 +209,6 @@ export function WordSearchGame() {
             <WordsList
               words={gameState.targetWords}
               foundWords={new Set(gameState.foundWords)}
-              score={gameState.score}
             />
           )}
         </div>
