@@ -24,8 +24,8 @@ import HowItWorks from '@/pages/HowItWorks';
 import Categories from '@/pages/Categories';
 import Profile from '@/pages/Profile';
 import Settings from '@/pages/Settings';
-import { Terms } from '@/pages/legal/Terms';
-import { Privacy } from '@/pages/legal/Privacy';
+import Terms from '@/pages/legal/Terms';
+import Privacy from '@/pages/legal/Privacy';
 import AdminDashboard from '@/pages/AdminDashboard';
 import GameTesting from '@/pages/GameTesting';
 
