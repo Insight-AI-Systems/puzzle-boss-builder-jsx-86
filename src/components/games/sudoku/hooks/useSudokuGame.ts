@@ -8,11 +8,22 @@ export function useSudokuGame(difficulty: SudokuDifficulty, size: SudokuSize) {
   const [initialGrid, setInitialGrid] = useState<SudokuGrid | null>(null);
   const [solution, setSolution] = useState<SudokuGrid | null>(null);
   const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null);
+  const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
   const [conflicts, setConflicts] = useState<Set<string>>(new Set());
   const [moves, setMoves] = useState(0);
   const [hintsUsed, setHintsUsed] = useState(0);
+  const [timeElapsed, setTimeElapsed] = useState(0);
   const [undoStack, setUndoStack] = useState<SudokuMove[]>([]);
   const [redoStack, setRedoStack] = useState<SudokuMove[]>([]);
+
+  // Timer effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeElapsed(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Difficulty settings
   const difficultyConfig = {
@@ -30,9 +41,11 @@ export function useSudokuGame(difficulty: SudokuDifficulty, size: SudokuSize) {
     setInitialGrid([...puzzle.map(row => [...row])]);
     setSolution([...puzzleSolution.map(row => [...row])]);
     setSelectedCell(null);
+    setSelectedNumber(null);
     setConflicts(new Set());
     setMoves(0);
     setHintsUsed(0);
+    setTimeElapsed(0);
     setUndoStack([]);
     setRedoStack([]);
   }, [size, difficulty]);
@@ -41,10 +54,6 @@ export function useSudokuGame(difficulty: SudokuDifficulty, size: SudokuSize) {
   useEffect(() => {
     generateNewPuzzle();
   }, [generateNewPuzzle]);
-
-  const selectCell = useCallback((row: number, col: number) => {
-    setSelectedCell([row, col]);
-  }, []);
 
   const updateConflicts = useCallback((newGrid: SudokuGrid) => {
     const newConflicts = new Set<string>();
@@ -60,7 +69,7 @@ export function useSudokuGame(difficulty: SudokuDifficulty, size: SudokuSize) {
     setConflicts(newConflicts);
   }, [size]);
 
-  const setNumber = useCallback((row: number, col: number, number: number) => {
+  const makeMove = useCallback((row: number, col: number, number: number) => {
     if (!grid || !initialGrid) return;
     
     const oldValue = grid[row][col];
@@ -88,10 +97,6 @@ export function useSudokuGame(difficulty: SudokuDifficulty, size: SudokuSize) {
     updateConflicts(newGrid);
   }, [grid, initialGrid, updateConflicts]);
 
-  const clearCell = useCallback((row: number, col: number) => {
-    setNumber(row, col, 0);
-  }, [setNumber]);
-
   const getHint = useCallback(() => {
     if (!grid || !solution || hintsUsed >= maxHints) return;
     
@@ -112,9 +117,9 @@ export function useSudokuGame(difficulty: SudokuDifficulty, size: SudokuSize) {
     const [row, col] = emptyCells[randomIndex];
     const correctNumber = solution[row][col];
     
-    setNumber(row, col, correctNumber);
+    makeMove(row, col, correctNumber);
     setHintsUsed(prev => prev + 1);
-  }, [grid, solution, hintsUsed, maxHints, size, setNumber]);
+  }, [grid, solution, hintsUsed, maxHints, size, makeMove]);
 
   const undo = useCallback(() => {
     if (undoStack.length === 0 || !grid) return;
@@ -150,17 +155,23 @@ export function useSudokuGame(difficulty: SudokuDifficulty, size: SudokuSize) {
     updateConflicts(newGrid);
   }, [redoStack, grid, updateConflicts]);
 
-  const resetPuzzle = useCallback(() => {
+  const resetGame = useCallback(() => {
     if (!initialGrid) return;
     
     setGrid([...initialGrid.map(row => [...row])]);
     setSelectedCell(null);
+    setSelectedNumber(null);
     setConflicts(new Set());
     setMoves(0);
     setHintsUsed(0);
+    setTimeElapsed(0);
     setUndoStack([]);
     setRedoStack([]);
   }, [initialGrid]);
+
+  const newGame = useCallback(() => {
+    generateNewPuzzle();
+  }, [generateNewPuzzle]);
 
   const checkSolution = useCallback(() => {
     if (!grid || !solution) return false;
@@ -177,25 +188,30 @@ export function useSudokuGame(difficulty: SudokuDifficulty, size: SudokuSize) {
 
   const isComplete = grid && checkSolution() && conflicts.size === 0;
 
+  // Computed properties
+  const canUndo = undoStack.length > 0;
+  const canRedo = redoStack.length > 0;
+
   return {
     grid,
     initialGrid,
     selectedCell,
+    selectedNumber,
     conflicts,
     moves,
     hintsUsed,
-    maxHints,
-    undoStack,
-    redoStack,
+    timeElapsed,
     isComplete: Boolean(isComplete),
-    generateNewPuzzle,
-    selectCell,
-    setNumber,
-    clearCell,
-    getHint,
+    canUndo,
+    canRedo,
+    maxHints,
+    setSelectedCell,
+    setSelectedNumber,
+    makeMove,
     undo,
     redo,
-    resetPuzzle,
-    checkSolution
+    getHint,
+    resetGame,
+    newGame
   };
 }
