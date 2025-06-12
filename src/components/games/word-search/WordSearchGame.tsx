@@ -157,6 +157,36 @@ export function WordSearchGame() {
     }
   };
 
+  const handleAutoComplete = () => {
+    if (!gameState || gameState.gameCompleted) return;
+    
+    console.log('Admin auto-completing game...');
+    
+    // Mark all target words as found
+    const allWords = [...gameState.targetWords];
+    const allPlacedWordsCells: Cell[] = [];
+    
+    // Collect all cells from all placed words
+    gameState.placedWords.forEach(placedWord => {
+      allPlacedWordsCells.push(...placedWord.cells);
+    });
+    
+    // Add all placed word cells to selected cells
+    setSelectedCells(prev => [...prev, ...allPlacedWordsCells]);
+    
+    // Update the engine state to mark all words as found
+    const updatedState = { ...gameState };
+    updatedState.foundWords = [...allWords];
+    updatedState.gameCompleted = true;
+    updatedState.score = engine.calculateScore();
+    
+    // Stop the timer
+    stop();
+    
+    // Manually trigger the state update
+    setGameState(updatedState);
+  };
+
   const onGameComplete = () => {
     stop();
   };
@@ -255,6 +285,7 @@ export function WordSearchGame() {
             onResume={handleResume}
             onReset={handleNewGame}
             onHint={handleHint}
+            onAutoComplete={handleAutoComplete}
             hintsUsed={hintsUsed}
             isGameComplete={gameState?.gameCompleted || false}
           />

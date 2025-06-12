@@ -2,7 +2,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Timer, Play, Pause, RotateCcw, Eye } from 'lucide-react';
+import { Timer, Play, Pause, RotateCcw, Eye, Zap } from 'lucide-react';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 interface WordSearchControlsProps {
   timeElapsed: number;
@@ -11,6 +12,7 @@ interface WordSearchControlsProps {
   onResume: () => void;
   onReset: () => void;
   onHint: () => void;
+  onAutoComplete?: () => void;
   hintsUsed: number;
   isGameComplete: boolean;
 }
@@ -22,9 +24,13 @@ export function WordSearchControls({
   onResume,
   onReset,
   onHint,
+  onAutoComplete,
   hintsUsed,
   isGameComplete
 }: WordSearchControlsProps) {
+  const { hasRole } = useClerkAuth();
+  const isAdmin = hasRole('admin') || hasRole('super_admin');
+
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -77,6 +83,18 @@ export function WordSearchControls({
           <Eye className="w-4 h-4 mr-2" />
           Hint ({hintsUsed} used)
         </Button>
+
+        {isAdmin && onAutoComplete && (
+          <Button
+            onClick={onAutoComplete}
+            variant="destructive"
+            className="w-full bg-red-600 hover:bg-red-700"
+            disabled={isGameComplete}
+          >
+            <Zap className="w-4 h-4 mr-2" />
+            AUTO-COMPLETE (ADMIN)
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
