@@ -1,4 +1,3 @@
-
 import { PlacedWord, Cell } from './types';
 import { cellToString, stringToCell, cellsToStrings, stringsToCells } from './utils';
 import { WordPlacementEngine } from '../../../components/games/word-search/WordPlacementEngine';
@@ -44,8 +43,20 @@ export class WordSearchEngine {
   }
 
   public initializeGame(words: string[]): WordSearchState {
+    console.log('WordSearchEngine: Initializing game with words:', words);
+    
     // Use the WordPlacementEngine to place words in all 8 directions
     const { grid, placedWords } = this.placementEngine.placeWords(words);
+    
+    console.log('WordSearchEngine: Grid after placement:', grid);
+    console.log('WordSearchEngine: Grid dimensions:', grid.length, 'x', grid[0]?.length);
+    console.log('WordSearchEngine: Sample grid cells:', {
+      topLeft: grid[0]?.[0],
+      topRight: grid[0]?.[grid[0]?.length - 1],
+      bottomLeft: grid[grid.length - 1]?.[0],
+      bottomRight: grid[grid.length - 1]?.[grid[0]?.length - 1]
+    });
+    console.log('WordSearchEngine: Placed words count:', placedWords.length);
 
     this.state = {
       grid,
@@ -58,6 +69,7 @@ export class WordSearchEngine {
       timeElapsed: 0
     };
 
+    console.log('WordSearchEngine: Final state grid:', this.state.grid);
     this.notifyListeners();
     return this.state;
   }

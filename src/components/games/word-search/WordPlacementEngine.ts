@@ -1,4 +1,3 @@
-
 import type { PlacedWord, Cell } from '@/business/engines/word-search/types';
 
 export class WordPlacementEngine {
@@ -11,6 +10,9 @@ export class WordPlacementEngine {
   }
 
   placeWords(words: string[]): { grid: string[][], placedWords: PlacedWord[] } {
+    console.log('WordPlacementEngine: Starting placement with words:', words);
+    console.log('WordPlacementEngine: Grid size:', this.gridSize);
+    
     const placedWords: PlacedWord[] = [];
     
     // Try to place up to 20 words
@@ -19,10 +21,24 @@ export class WordPlacementEngine {
       if (placement) {
         this.placeWord(placement);
         placedWords.push(placement);
+        console.log('WordPlacementEngine: Placed word:', word, 'at direction:', placement.direction);
+      } else {
+        console.log('WordPlacementEngine: Could not place word:', word);
       }
     }
     
+    console.log('WordPlacementEngine: Total words placed:', placedWords.length);
+    console.log('WordPlacementEngine: Grid before filling empty cells:', this.grid.map(row => row.slice(0, 5)).slice(0, 5));
+    
     this.fillEmptyCells();
+    
+    console.log('WordPlacementEngine: Grid after filling empty cells:', this.grid.map(row => row.slice(0, 5)).slice(0, 5));
+    console.log('WordPlacementEngine: Final grid sample letters:', {
+      '0,0': this.grid[0][0],
+      '0,5': this.grid[0][5],
+      '5,0': this.grid[5][0],
+      '5,5': this.grid[5][5]
+    });
     
     return { grid: this.grid, placedWords };
   }
