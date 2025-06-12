@@ -20,15 +20,16 @@ export class WordSelectionValidator {
         return { isValid: false };
       }
 
-      // Get the word formed by selection
-      const selectedWord = this.getWordFromCells(selectedCells);
-      if (!selectedWord) {
+      // Check if selection forms a valid line (horizontal, vertical, or diagonal)
+      if (!this.isValidLine(selectedCells)) {
         return { isValid: false };
       }
 
-      const reverseWord = selectedWord.split('').reverse().join('');
+      // Get the word formed by selection (both forward and reverse)
+      const forwardWord = this.getWordFromCells(selectedCells);
+      const reverseWord = forwardWord.split('').reverse().join('');
 
-      console.log('Validating selection:', { selectedCells, selectedWord, reverseWord });
+      console.log('Validating selection:', { selectedCells, forwardWord, reverseWord });
 
       // Check against all placed words
       for (const placedWord of this.placedWords) {
@@ -47,6 +48,58 @@ export class WordSelectionValidator {
       console.error('Error validating selection:', error);
       return { isValid: false };
     }
+  }
+
+  private isValidLine(cells: Cell[]): boolean {
+    if (cells.length < 2) return false;
+
+    const first = cells[0];
+    const last = cells[cells.length - 1];
+    
+    const deltaRow = last.row - first.row;
+    const deltaCol = last.col - first.col;
+    
+    // Check if it's a straight line
+    const isHorizontal = deltaRow === 0 && deltaCol !== 0;
+    const isVertical = deltaCol === 0 && deltaRow !== 0;
+    const isDiagonal = Math.abs(deltaRow) === Math.abs(deltaCol) && deltaRow !== 0 && deltaCol !== 0;
+    
+    if (!isHorizontal && !isVertical && !isDiagonal) {
+      return false;
+    }
+    
+    // Verify all cells are in a straight line
+    const expectedCells = this.generateLineCells(first, last);
+    
+    if (expectedCells.length !== cells.length) {
+      return false;
+    }
+    
+    // Check if all selected cells match the expected line
+    const selectedCellIds = new Set(cells.map(cell => `${cell.row}-${cell.col}`));
+    const expectedCellIds = new Set(expectedCells.map(cell => `${cell.row}-${cell.col}`));
+    
+    return selectedCellIds.size === expectedCellIds.size && 
+           [...selectedCellIds].every(id => expectedCellIds.has(id));
+  }
+
+  private generateLineCells(start: Cell, end: Cell): Cell[] {
+    const cells: Cell[] = [];
+    const deltaRow = end.row - start.row;
+    const deltaCol = end.col - start.col;
+    
+    const steps = Math.max(Math.abs(deltaRow), Math.abs(deltaCol));
+    const stepRow = steps === 0 ? 0 : deltaRow / steps;
+    const stepCol = steps === 0 ? 0 : deltaCol / steps;
+    
+    for (let i = 0; i <= steps; i++) {
+      cells.push({
+        row: start.row + Math.round(stepRow * i),
+        col: start.col + Math.round(stepCol * i)
+      });
+    }
+    
+    return cells;
   }
 
   private getWordFromCells(selectedCells: Cell[]): string {
@@ -81,29 +134,30 @@ export class WordSelectionValidator {
       const deltaRow = last.row - first.row;
       const deltaCol = last.col - first.col;
 
-      // Sort based on direction
+      // Create a copy to sort
+      const sortedCells = [...cells];
+
       if (deltaRow === 0) {
-        // Horizontal
-        cells.sort((a, b) => a.col - b.col);
+        // Horizontal line
+        sortedCells.sort((a, b) => a.col - b.col);
       } else if (deltaCol === 0) {
-        // Vertical
-        cells.sort((a, b) => a.row - b.row);
-      } else if (deltaRow === deltaCol) {
-        // Diagonal down-right
-        cells.sort((a, b) => a.row - b.row);
-      } else if (deltaRow === -deltaCol) {
-        // Diagonal up-right
-        cells.sort((a, b) => a.row - b.row);
+        // Vertical line
+        sortedCells.sort((a, b) => a.row - b.row);
       } else {
-        // Try to sort by primary direction
-        if (Math.abs(deltaRow) > Math.abs(deltaCol)) {
-          cells.sort((a, b) => a.row - b.row);
-        } else {
-          cells.sort((a, b) => a.col - b.col);
+        // Diagonal line - sort by primary direction
+        if (Math.abs(deltaRow) === Math.abs(deltaCol)) {
+          // True diagonal
+          if (deltaRow > 0) {
+            // Going down
+            sortedCells.sort((a, b) => a.row - b.row);
+          } else {
+            // Going up
+            sortedCells.sort((a, b) => b.row - a.row);
+          }
         }
       }
 
-      return cells;
+      return sortedCells;
     } catch (error) {
       console.error('Error sorting cells in sequence:', error);
       return cells || [];
@@ -118,7 +172,7 @@ export class WordSelectionValidator {
 
       const { cells: wordCells, word } = placedWord;
 
-      // Check if selection matches word cells exactly
+      // Check if selection matches word cells exactly (forward or backward)
       if (selectedCells.length === wordCells.length) {
         const selectedCellIds = selectedCells.map(cell => `${cell.row}-${cell.col}`).sort();
         const wordCellIds = wordCells.map(cell => `${cell.row}-${cell.col}`).sort();
@@ -128,7 +182,7 @@ export class WordSelectionValidator {
         }
       }
 
-      // Check if selection forms the word
+      // Also check if selection forms the word (forward or reverse)
       const selectedWord = this.getWordFromCells(selectedCells);
       const reverseWord = selectedWord.split('').reverse().join('');
 

@@ -1,15 +1,15 @@
 
+export interface Cell {
+  row: number;
+  col: number;
+}
+
 export interface PlacedWord {
   word: string;
   startRow: number;
   startCol: number;
   endRow: number;
   endCol: number;
-  direction: 'horizontal' | 'vertical' | 'diagonal';
-  cells?: Cell[];
-}
-
-export interface Cell {
-  row: number;
-  col: number;
+  direction: 'horizontal' | 'vertical' | 'diagonal-dr' | 'diagonal-dl';
+  cells: Cell[];
 }
