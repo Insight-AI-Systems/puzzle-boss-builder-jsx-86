@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { SudokuGrid } from './components/SudokuGrid';
 import { SudokuNumberPad } from './components/SudokuNumberPad';
@@ -136,10 +134,10 @@ export function SudokuGame({
           </p>
         </div>
 
-        {/* Mobile Layout - Stack vertically */}
-        <div className="block lg:hidden space-y-6 max-w-4xl mx-auto">
+        {/* Mobile Layout - Stack vertically with proper spacing */}
+        <div className="block xl:hidden space-y-8 max-w-4xl mx-auto">
           {/* Game Grid */}
-          <div className="w-full">
+          <div className="w-full flex justify-center">
             <SudokuGrid
               grid={grid}
               initialGrid={initialGrid}
@@ -152,7 +150,7 @@ export function SudokuGame({
           </div>
 
           {/* Number Pad */}
-          <div className="w-full">
+          <div className="w-full max-w-md mx-auto">
             <SudokuNumberPad
               size={size}
               selectedNumber={selectedNumber}
@@ -163,7 +161,7 @@ export function SudokuGame({
           </div>
 
           {/* Controls */}
-          <div className="w-full">
+          <div className="w-full max-w-md mx-auto">
             <SudokuControls
               difficulty={difficulty}
               size={size}
@@ -183,10 +181,10 @@ export function SudokuGame({
           </div>
         </div>
 
-        {/* Desktop Layout - Side by side */}
-        <div className="hidden lg:grid lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+        {/* Desktop Layout - Side by side with increased spacing */}
+        <div className="hidden xl:grid xl:grid-cols-5 gap-12 max-w-8xl mx-auto items-start">
           {/* Left Panel - Controls */}
-          <div className="lg:col-span-1">
+          <div className="xl:col-span-1 w-full max-w-xs">
             <SudokuControls
               difficulty={difficulty}
               size={size}
@@ -206,20 +204,22 @@ export function SudokuGame({
           </div>
 
           {/* Center Panel - Game Grid */}
-          <div className="lg:col-span-2 flex justify-center">
-            <SudokuGrid
-              grid={grid}
-              initialGrid={initialGrid}
-              selectedCell={selectedCell}
-              conflicts={conflicts}
-              size={size}
-              onCellClick={handleCellClick}
-              isActive={localIsActive}
-            />
+          <div className="xl:col-span-3 flex justify-center px-4">
+            <div className="w-full max-w-2xl">
+              <SudokuGrid
+                grid={grid}
+                initialGrid={initialGrid}
+                selectedCell={selectedCell}
+                conflicts={conflicts}
+                size={size}
+                onCellClick={handleCellClick}
+                isActive={localIsActive}
+              />
+            </div>
           </div>
 
           {/* Right Panel - Number Pad */}
-          <div className="lg:col-span-1">
+          <div className="xl:col-span-1 w-full max-w-xs">
             <SudokuNumberPad
               size={size}
               selectedNumber={selectedNumber}
@@ -233,4 +233,3 @@ export function SudokuGame({
     </div>
   );
 }
-
