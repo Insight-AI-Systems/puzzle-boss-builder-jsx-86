@@ -1,13 +1,10 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { PuzzleBoard } from './components/PuzzleBoard';
-import { PuzzleControls } from './components/PuzzleControls';
+import React, { useState, useEffect, useCallback } from 'react';
 import { usePuzzleState } from './hooks/usePuzzleState';
-import { usePuzzleTimer } from '../hooks/usePuzzleTimer';
-import { usePuzzleImagePreload } from '../hooks/usePuzzleImagePreload';
-import './styles/puzzle.css';
+import { PuzzleControls } from './components/PuzzleControls';
+import { PuzzleBoard } from './components/PuzzleBoard';
 
-export interface CustomPuzzleEngineProps {
+interface CustomPuzzleEngineProps {
   imageUrl: string;
   rows: number;
   columns: number;
@@ -20,73 +17,70 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
   imageUrl,
   rows,
   columns,
-  showNumbers = true,
+  showNumbers = false,
   onComplete,
   onReset
 }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [draggedPiece, setDraggedPiece] = useState<number | null>(null);
-  const [isComplete, setIsComplete] = useState(false);
+  const [startTime, setStartTime] = useState<number>(Date.now());
+  const [elapsed, setElapsed] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   const {
     puzzlePieces,
-    setPuzzlePieces,
-    isComplete: puzzleIsComplete,
+    isComplete,
     showGuideImage,
     toggleGuideImage,
     resetPuzzle,
     placePiece,
     isPieceCorrect,
-    shufflePieces
+    shufflePieces,
+    useHint,
+    hintsUsed,
+    maxHints
   } = usePuzzleState(rows, columns, imageUrl, false);
 
-  const {
-    elapsed,
-    start: startTimer,
-    stop: stopTimer,
-    reset: resetTimer
-  } = usePuzzleTimer();
-
-  // When puzzle is completed
+  // Timer effect
   useEffect(() => {
-    if (puzzleIsComplete && !isComplete) {
-      stopTimer();
-      setIsComplete(true);
-      if (onComplete) {
-        onComplete(elapsed);
-      }
+    if (!isComplete) {
+      const timer = setInterval(() => {
+        setElapsed(Math.floor((Date.now() - startTime) / 1000));
+      }, 1000);
+      return () => clearInterval(timer);
     }
-  }, [puzzleIsComplete, stopTimer, isComplete, onComplete, elapsed]);
+  }, [startTime, isComplete]);
 
-  // Handle first move
-  const handleDragStart = useCallback(() => {
-    startTimer();
-  }, [startTimer]);
-
-  // Handle image loading
-  const { isLoaded } = usePuzzleImagePreload({
-    imageUrl,
-    onLoad: () => {
-      setIsLoading(false);
-    },
-    onError: (error) => {
-      console.error('Error loading puzzle image:', error);
-      setIsLoading(false);
-    }
-  });
-
-  // Handle reset
+  // Reset timer when puzzle resets
   const handleReset = useCallback(() => {
     resetPuzzle();
-    resetTimer();
-    setIsComplete(false);
-    if (onReset) {
-      onReset();
+    setStartTime(Date.now());
+    setElapsed(0);
+    onReset?.();
+  }, [resetPuzzle, onReset]);
+
+  // Handle completion
+  useEffect(() => {
+    if (isComplete) {
+      onComplete?.(elapsed);
     }
-  }, [resetPuzzle, resetTimer, onReset]);
+  }, [isComplete, elapsed, onComplete]);
+
+  // Handle piece drop
+  const handlePieceDrop = useCallback((id: number, position: number) => {
+    placePiece(id, position);
+  }, [placePiece]);
+
+  // Handle piece pickup
+  const handlePiecePickup = useCallback((id: number) => {
+    console.log('Piece picked up:', id);
+  }, []);
+
+  // Handle drag start
+  const handleDragStart = useCallback(() => {
+    setIsDragging(true);
+  }, []);
 
   return (
-    <div className="custom-puzzle-engine w-full max-w-3xl mx-auto">
+    <div className="flex flex-col gap-4 w-full">
       <PuzzleControls
         elapsed={elapsed}
         isComplete={isComplete}
@@ -94,34 +88,35 @@ const CustomPuzzleEngine: React.FC<CustomPuzzleEngineProps> = ({
         showGuideImage={showGuideImage}
         onToggleGuideImage={toggleGuideImage}
         onShuffle={shufflePieces}
+        onHint={useHint}
+        hintsRemaining={maxHints}
       />
-
-      <div className="mt-4 mb-4 text-center">
-        {isLoading ? (
-          <div className="p-8 flex items-center justify-center">
-            <p>Loading puzzle...</p>
-          </div>
-        ) : (
-          <PuzzleBoard
-            imageUrl={imageUrl}
-            pieces={puzzlePieces}
-            rows={rows}
-            columns={columns}
-            onPieceDrop={placePiece}
-            isPieceCorrect={isPieceCorrect}
-            showGuideImage={showGuideImage}
-            showNumbers={showNumbers}
-            onDragStart={handleDragStart}
-            draggedPiece={draggedPiece}
-            setDraggedPiece={setDraggedPiece}
-          />
-        )}
+      
+      <div className="relative w-full aspect-square bg-muted/10 rounded-lg border border-border overflow-hidden">
+        <PuzzleBoard
+          imageUrl={imageUrl}
+          pieces={puzzlePieces}
+          rows={rows}
+          columns={columns}
+          onPieceDrop={handlePieceDrop}
+          onPiecePickup={handlePiecePickup}
+          isPieceCorrect={isPieceCorrect}
+          showGuideImage={showGuideImage}
+          onDragStart={handleDragStart}
+        />
       </div>
 
       {isComplete && (
-        <div className="mt-4 p-4 bg-puzzle-gold/10 border border-puzzle-gold rounded-lg text-center">
-          <h3 className="text-puzzle-gold font-bold text-xl">Puzzle Completed!</h3>
-          <p className="text-puzzle-gold/80">Time: {Math.floor(elapsed / 60)}:{(elapsed % 60).toString().padStart(2, '0')}</p>
+        <div className="text-center p-4 bg-green-100 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+          <h2 className="text-xl font-bold text-green-800 dark:text-green-200 mb-2">
+            🎉 Puzzle Complete!
+          </h2>
+          <p className="text-green-700 dark:text-green-300">
+            Completed in {Math.floor(elapsed / 60)}:{(elapsed % 60).toString().padStart(2, '0')}
+          </p>
+          <p className="text-sm text-green-600 dark:text-green-400">
+            Hints used: {hintsUsed}
+          </p>
         </div>
       )}
     </div>

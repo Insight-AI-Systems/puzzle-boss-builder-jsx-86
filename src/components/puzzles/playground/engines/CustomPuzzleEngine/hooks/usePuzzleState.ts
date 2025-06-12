@@ -6,12 +6,15 @@ export interface PuzzlePiece {
   position: number;
   originalPosition: number;
   isDragging: boolean;
+  isHinted?: boolean;
 }
 
 export const usePuzzleState = (rows: number, columns: number, imageUrl: string, initialShowGuideImage: boolean) => {
   const [puzzlePieces, setPuzzlePieces] = useState<PuzzlePiece[]>([]);
   const [isComplete, setIsComplete] = useState(false);
   const [showGuideImage, setShowGuideImage] = useState<boolean>(initialShowGuideImage);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [maxHints] = useState(5);
 
   // Initialize puzzle pieces
   const initPuzzle = useCallback(() => {
@@ -24,7 +27,8 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
         id: i,
         position: i, // Start with a piece in the correct position
         originalPosition: i,
-        isDragging: false
+        isDragging: false,
+        isHinted: false
       });
     }
 
@@ -41,6 +45,7 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
     console.log('Initialized pieces:', shuffledPieces.length);
     setPuzzlePieces(shuffledPieces);
     setIsComplete(false);
+    setHintsUsed(0);
   }, [rows, columns]);
 
   // Initialize on mount and when dimensions change
@@ -54,6 +59,7 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
     console.log('Resetting puzzle');
     initPuzzle();
     setIsComplete(false);
+    setHintsUsed(0);
   }, [initPuzzle]);
 
   // Shuffle pieces
@@ -66,7 +72,8 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
       return prev.map((piece, index) => ({
         ...piece,
         position: shuffledPositions[index],
-        isDragging: false
+        isDragging: false,
+        isHinted: false
       }));
     });
     
@@ -78,6 +85,37 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
     console.log('Toggling guide image, current value:', showGuideImage);
     setShowGuideImage(prev => !prev);
   }, [showGuideImage]);
+
+  // Use hint functionality
+  const useHint = useCallback(() => {
+    if (hintsUsed >= maxHints || isComplete) return;
+
+    // Clear previous hints
+    setPuzzlePieces(prev => prev.map(piece => ({ ...piece, isHinted: false })));
+
+    // Find a piece that's not in the correct position
+    const incorrectPieces = puzzlePieces.filter(piece => piece.position !== piece.originalPosition);
+    
+    if (incorrectPieces.length > 0) {
+      // Pick a random incorrect piece to hint
+      const randomPiece = incorrectPieces[Math.floor(Math.random() * incorrectPieces.length)];
+      
+      setPuzzlePieces(prev => 
+        prev.map(piece => 
+          piece.id === randomPiece.id 
+            ? { ...piece, isHinted: true }
+            : { ...piece, isHinted: false }
+        )
+      );
+      
+      setHintsUsed(prev => prev + 1);
+      
+      // Clear hint after 3 seconds
+      setTimeout(() => {
+        setPuzzlePieces(prev => prev.map(piece => ({ ...piece, isHinted: false })));
+      }, 3000);
+    }
+  }, [puzzlePieces, hintsUsed, maxHints, isComplete]);
 
   // Shuffle array utility function
   const shuffleArray = <T,>(array: T[]): T[] => {
@@ -105,12 +143,12 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
       const updatedPieces = prev.map(piece => {
         if (piece.id === id) {
           // Move the dragged piece to the new position
-          return { ...piece, position, isDragging: false };
+          return { ...piece, position, isDragging: false, isHinted: false };
         } 
         else if (pieceAtPosition && piece.id === pieceAtPosition.id) {
           // Swap positions - move the piece that was at the target to the dragged piece's old position
           const draggedPiece = prev.find(p => p.id === id);
-          return { ...piece, position: draggedPiece?.position || -1 };
+          return { ...piece, position: draggedPiece?.position || -1, isHinted: false };
         }
         return piece;
       });
@@ -135,6 +173,9 @@ export const usePuzzleState = (rows: number, columns: number, imageUrl: string, 
     resetPuzzle,
     placePiece,
     isPieceCorrect,
-    shufflePieces
+    shufflePieces,
+    useHint,
+    hintsUsed,
+    maxHints: maxHints - hintsUsed
   };
 };

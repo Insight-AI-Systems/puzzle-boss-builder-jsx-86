@@ -1,6 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
-import { PuzzlePiece } from '../hooks/usePuzzleState';
+import React, { useState, useRef } from 'react';
+
+interface PuzzlePiece {
+  id: number;
+  position: number;
+  originalPosition: number;
+  isDragging: boolean;
+  isHinted?: boolean;
+}
 
 interface PuzzleBoardProps {
   imageUrl: string;
@@ -8,12 +15,10 @@ interface PuzzleBoardProps {
   rows: number;
   columns: number;
   onPieceDrop: (id: number, position: number) => void;
+  onPiecePickup: (id: number) => void;
   isPieceCorrect: (id: number) => boolean;
   showGuideImage: boolean;
-  showNumbers: boolean;
   onDragStart: () => void;
-  draggedPiece: number | null;
-  setDraggedPiece: (id: number | null) => void;
 }
 
 export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
@@ -22,132 +27,147 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   rows,
   columns,
   onPieceDrop,
+  onPiecePickup,
   isPieceCorrect,
   showGuideImage,
-  showNumbers,
-  onDragStart,
-  draggedPiece,
-  setDraggedPiece
+  onDragStart
 }) => {
-  const [selectedPiece, setSelectedPiece] = useState<number | null>(null);
-
-  useEffect(() => {
-    console.log("PuzzleBoard rendered with:", {
-      piecesCount: pieces.length,
-      rows,
-      columns,
-      showNumbers
-    });
-  }, [pieces, rows, columns, showNumbers]);
-
+  const [draggedPieceId, setDraggedPieceId] = useState<number | null>(null);
+  const [highlightedPosition, setHighlightedPosition] = useState<number | null>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
+  
+  // Set up board styles
+  const boardStyle: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: `repeat(${columns}, 1fr)`,
+    gridTemplateRows: `repeat(${rows}, 1fr)`,
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+    overflow: 'hidden'
+  };
+  
   // Handle drag start
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, id: number) => {
+  const handlePieceDragStart = (e: React.DragEvent<HTMLDivElement>, id: number) => {
     onDragStart();
-    e.dataTransfer.setData('text/plain', id.toString());
-    setDraggedPiece(id);
+    e.dataTransfer.setData('puzzle-piece-id', id.toString());
+    setDraggedPieceId(id);
+    onPiecePickup(id);
   };
-
-  // Handle drag over (to allow drop)
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  
+  // Handle drag end
+  const handlePieceDragEnd = () => {
+    setDraggedPieceId(null);
+    setHighlightedPosition(null);
+  };
+  
+  // Handle drag over cell
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, position: number) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    setHighlightedPosition(position);
   };
-
-  // Handle drop
+  
+  // Handle drop on cell
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, position: number) => {
     e.preventDefault();
-    const id = parseInt(e.dataTransfer.getData('text/plain'));
-    if (!isNaN(id)) {
-      console.log(`Dropping piece ${id} at position ${position}`);
-      onPieceDrop(id, position);
-      setDraggedPiece(null);
+    const pieceId = Number(e.dataTransfer.getData('puzzle-piece-id'));
+    if (!isNaN(pieceId)) {
+      onPieceDrop(pieceId, position);
     }
+    setHighlightedPosition(null);
+    setDraggedPieceId(null);
   };
-
-  // Handle click for mobile devices
-  const handlePieceClick = (id: number) => {
-    if (selectedPiece === id) {
-      setSelectedPiece(null);
-    } else if (selectedPiece === null) {
-      setSelectedPiece(id);
-      onDragStart();
-    } else {
-      // Find the position of the clicked piece
-      const clickedPiece = pieces.find(p => p.id === id);
-      if (clickedPiece) {
-        console.log(`Moving piece ${selectedPiece} to position ${clickedPiece.position}`);
-        onPieceDrop(selectedPiece, clickedPiece.position);
-        setSelectedPiece(null);
-      }
+  
+  // Create board cells
+  const renderCells = () => {
+    const cells = [];
+    for (let i = 0; i < rows * columns; i++) {
+      cells.push(
+        <div
+          key={`cell-${i}`}
+          className={`puzzle-cell ${highlightedPosition === i ? 'highlight' : ''}`}
+          style={{
+            border: '1px dashed rgba(255,255,255,0.1)',
+            position: 'relative',
+            backgroundColor: highlightedPosition === i ? 'rgba(255,255,255,0.05)' : 'transparent'
+          }}
+          onDragOver={(e) => handleDragOver(e, i)}
+          onDrop={(e) => handleDrop(e, i)}
+        />
+      );
     }
+    return cells;
   };
-
-  // Create an array to represent all grid positions
-  const gridPositions = Array.from({ length: rows * columns }, (_, index) => index);
-
+  
+  // Render pieces
+  const renderPieces = () => {
+    return pieces.map(piece => {
+      const isCorrect = isPieceCorrect(piece.id);
+      const isDragging = draggedPieceId === piece.id;
+      const isHinted = piece.isHinted;
+      
+      // Calculate position on the board
+      const row = Math.floor(piece.position / columns);
+      const col = piece.position % columns;
+      
+      // Calculate background position based on original position
+      const bgRow = Math.floor(piece.originalPosition / columns);
+      const bgCol = piece.originalPosition % columns;
+      
+      // Calculate using percentages for better scaling
+      const xPercent = (bgCol * 100) / (columns - 1);
+      const yPercent = (bgRow * 100) / (rows - 1);
+      
+      const pieceStyle: React.CSSProperties = {
+        width: `calc(100% / ${columns})`,
+        height: `calc(100% / ${rows})`,
+        position: 'absolute',
+        top: `calc(${row} * 100% / ${rows})`,
+        left: `calc(${col} * 100% / ${columns})`,
+        backgroundImage: `url(${imageUrl})`,
+        backgroundSize: `${columns * 100}% ${rows * 100}%`,
+        backgroundPosition: `${xPercent}% ${yPercent}%`,
+        transform: isDragging ? 'scale(1.05)' : 'scale(1)',
+        boxShadow: isDragging ? '0 5px 15px rgba(0,0,0,0.3)' : isHinted ? '0 0 10px 3px rgba(255, 215, 0, 0.8)' : 'none',
+        zIndex: isDragging ? 10 : 1,
+        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+        border: isCorrect ? '2px solid rgba(0, 255, 0, 0.6)' : isHinted ? '2px solid rgba(255, 215, 0, 0.8)' : '1px solid rgba(255, 255, 255, 0.1)',
+        animation: isHinted ? 'pulse 1s infinite' : 'none'
+      };
+      
+      return (
+        <div
+          key={`piece-${piece.id}`}
+          className={`puzzle-piece ${isCorrect ? 'correct' : ''} ${isDragging ? 'dragging' : ''} ${isHinted ? 'hinted' : ''}`}
+          style={pieceStyle}
+          draggable={true}
+          onDragStart={(e) => handlePieceDragStart(e, piece.id)}
+          onDragEnd={handlePieceDragEnd}
+        />
+      );
+    });
+  };
+  
   return (
-    <div className="puzzle-board relative bg-black/20 border border-puzzle-aqua/30 rounded-lg overflow-hidden"
-         style={{ aspectRatio: '1/1', width: '100%', maxWidth: '500px', margin: '0 auto' }}>
-      {/* Guide image */}
+    <div className="puzzle-board" style={boardStyle} ref={boardRef}>
       {showGuideImage && (
         <img 
           src={imageUrl} 
           alt="Puzzle guide" 
-          className="absolute inset-0 w-full h-full object-cover opacity-30 pointer-events-none z-0"
+          className="puzzle-guide-image"
+          style={{
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            opacity: 0.3,
+            pointerEvents: 'none',
+            zIndex: 0
+          }}
         />
       )}
-      
-      {/* Grid for puzzle */}
-      <div className="grid relative z-10"
-           style={{ 
-             gridTemplateColumns: `repeat(${columns}, 1fr)`,
-             gridTemplateRows: `repeat(${rows}, 1fr)`,
-             width: '100%',
-             height: '100%',
-           }}>
-        {/* Generate grid cells for ALL positions */}
-        {gridPositions.map((position) => {
-          const piece = pieces.find(p => p.position === position);
-          const isCorrect = piece ? isPieceCorrect(piece.id) : false;
-          
-          return (
-            <div 
-              key={`cell-${position}`}
-              className={`puzzle-cell relative ${piece ? 'has-piece' : 'empty-cell'}`}
-              style={{ 
-                border: '1px dashed rgba(255,255,255,0.2)',
-              }}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, position)}
-            >
-              {piece && (
-                <div
-                  draggable={true}
-                  onDragStart={(e) => handleDragStart(e, piece.id)}
-                  onClick={() => handlePieceClick(piece.id)}
-                  className={`puzzle-piece absolute inset-0 cursor-pointer transition-all
-                              ${isCorrect ? 'border-2 border-green-500/50' : 'border-2 border-white/20'} 
-                              ${draggedPiece === piece.id ? 'opacity-50' : 'opacity-100'}
-                              ${selectedPiece === piece.id ? 'ring-2 ring-puzzle-gold scale-95' : ''}
-                              ${selectedPiece !== null && selectedPiece !== piece.id ? 'hover:ring-2 hover:ring-blue-500' : ''}
-                              hover:brightness-110`}
-                  style={{
-                    backgroundImage: `url(${imageUrl})`,
-                    backgroundSize: `${columns * 100}% ${rows * 100}%`,
-                    backgroundPosition: `${((piece.originalPosition % columns) / (columns - 1)) * 100}% ${(Math.floor(piece.originalPosition / columns) / (rows - 1)) * 100}%`,
-                  }}
-                >
-                  {showNumbers && (
-                    <span className="absolute top-1 left-1 text-xs bg-black/70 px-1 py-0.5 rounded-full min-w-5 h-5 flex items-center justify-center text-white font-medium">
-                      {piece.id + 1}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {renderCells()}
+      {renderPieces()}
     </div>
   );
 };

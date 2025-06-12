@@ -1,16 +1,21 @@
 
 import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Lightbulb, RefreshCw } from 'lucide-react';
 
 interface PuzzlePiece {
   id: number;
   position: number;
+  isHinted?: boolean;
 }
 
 const InteractivePuzzle: React.FC = () => {
   const [pieces, setPieces] = useState<PuzzlePiece[]>([]);
-  const [emptyPosition, setEmptyPosition] = useState(8); // Bottom right is empty initially
+  const [emptyPosition, setEmptyPosition] = useState(8);
   const [isSolved, setIsSolved] = useState(false);
   const [selectedPiece, setSelectedPiece] = useState<number | null>(null);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [maxHints] = useState(3);
   
   // Initialize puzzle
   useEffect(() => {
@@ -18,23 +23,22 @@ const InteractivePuzzle: React.FC = () => {
   }, []);
   
   const resetPuzzle = () => {
-    // Create ordered pieces (1-8 in positions 0-7, empty at position 8)
     const initialPieces: PuzzlePiece[] = Array.from({ length: 8 }, (_, i) => ({
       id: i + 1,
-      position: i
+      position: i,
+      isHinted: false
     }));
     
-    // Shuffle the pieces (make sure it's solvable)
     const shuffledPieces = shufflePieces([...initialPieces]);
     setPieces(shuffledPieces);
     setEmptyPosition(8);
     setIsSolved(false);
     setSelectedPiece(null);
+    setHintsUsed(0);
     
     console.log("Puzzle reset and shuffled");
   };
   
-  // Fisher-Yates shuffle algorithm
   const shufflePieces = (piecesToShuffle: PuzzlePiece[]): PuzzlePiece[] => {
     for (let i = piecesToShuffle.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -44,7 +48,6 @@ const InteractivePuzzle: React.FC = () => {
   };
   
   const isAdjacent = (position: number): boolean => {
-    // Check if the piece is adjacent to the empty position
     const row = Math.floor(position / 3);
     const col = position % 3;
     const emptyRow = Math.floor(emptyPosition / 3);
@@ -55,6 +58,40 @@ const InteractivePuzzle: React.FC = () => {
       (col === emptyCol && Math.abs(row - emptyRow) === 1)
     );
   };
+
+  const useHint = () => {
+    if (hintsUsed >= maxHints || isSolved) return;
+
+    // Clear previous hints
+    setPieces(prev => prev.map(piece => ({ ...piece, isHinted: false })));
+
+    // Find pieces that are not in correct position and can be moved
+    const incorrectMovablePieces = pieces.filter(piece => {
+      const isIncorrect = piece.id !== piece.position + 1;
+      const canMove = isAdjacent(piece.position);
+      return isIncorrect && canMove;
+    });
+
+    if (incorrectMovablePieces.length > 0) {
+      // Pick the piece that would make the most progress
+      const bestPiece = incorrectMovablePieces[0];
+      
+      setPieces(prev => 
+        prev.map(piece => 
+          piece.id === bestPiece.id 
+            ? { ...piece, isHinted: true }
+            : { ...piece, isHinted: false }
+        )
+      );
+      
+      setHintsUsed(prev => prev + 1);
+      
+      // Clear hint after 3 seconds
+      setTimeout(() => {
+        setPieces(prev => prev.map(piece => ({ ...piece, isHinted: false })));
+      }, 3000);
+    }
+  };
   
   const handlePieceClick = (position: number) => {
     console.log(`Piece at position ${position} clicked`);
@@ -62,16 +99,13 @@ const InteractivePuzzle: React.FC = () => {
     if (isAdjacent(position)) {
       movePiece(position);
     } else if (selectedPiece === null) {
-      // First selection
       console.log(`Selected piece at position ${position}`);
       setSelectedPiece(position);
     } else if (position !== selectedPiece) {
-      // Second selection - swap pieces
       console.log(`Swapping pieces at positions ${selectedPiece} and ${position}`);
       swapPieces(selectedPiece, position);
       setSelectedPiece(null);
     } else {
-      // Clicked the same piece twice
       console.log(`Deselected piece at position ${position}`);
       setSelectedPiece(null);
     }
@@ -85,20 +119,17 @@ const InteractivePuzzle: React.FC = () => {
     const piece2Index = updatedPieces.findIndex(p => p.position === position2);
     
     if (piece1Index !== -1 && piece2Index !== -1) {
-      // Swap positions
       updatedPieces[piece1Index].position = position2;
       updatedPieces[piece2Index].position = position1;
       
       setPieces(updatedPieces);
       
-      // Check if either position is the empty position
       if (position1 === emptyPosition) {
         setEmptyPosition(position2);
       } else if (position2 === emptyPosition) {
         setEmptyPosition(position1);
       }
       
-      // Check if puzzle is solved
       checkIfSolved(updatedPieces);
     }
   };
@@ -106,15 +137,13 @@ const InteractivePuzzle: React.FC = () => {
   const movePiece = (position: number) => {
     console.log(`Moving piece from position ${position} to empty position ${emptyPosition}`);
     
-    // Move the piece to the empty position
     const updatedPieces = pieces.map(piece => 
-      piece.position === position ? { ...piece, position: emptyPosition } : piece
+      piece.position === position ? { ...piece, position: emptyPosition, isHinted: false } : piece
     );
     
     setPieces(updatedPieces);
     setEmptyPosition(position);
     
-    // Check if the puzzle is solved
     checkIfSolved(updatedPieces);
   };
   
@@ -127,11 +156,9 @@ const InteractivePuzzle: React.FC = () => {
     }
   };
   
-  // Render the puzzle grid
   const renderPuzzleGrid = () => {
     const grid = Array(9).fill(null);
     
-    // Place pieces in the grid
     pieces.forEach(piece => {
       grid[piece.position] = (
         <div 
@@ -140,6 +167,7 @@ const InteractivePuzzle: React.FC = () => {
             ${selectedPiece === piece.position 
               ? 'bg-puzzle-aqua/70 border-puzzle-gold' 
               : 'bg-puzzle-black border-puzzle-aqua/40'} 
+            ${piece.isHinted ? 'ring-2 ring-yellow-400 animate-pulse' : ''}
             border rounded-md h-16 w-16 transition-all cursor-pointer hover:bg-puzzle-black/80 hover:border-puzzle-aqua`}
           onClick={() => handlePieceClick(piece.position)}
         >
@@ -148,11 +176,10 @@ const InteractivePuzzle: React.FC = () => {
       );
     });
     
-    // Add empty piece
     grid[emptyPosition] = (
       <div 
         key="empty" 
-        className="empty h-16 w-16 bg-transparent cursor-pointer"
+        className="empty h-16 w-16 bg-transparent cursor-pointer border border-dashed border-puzzle-aqua/20 rounded-md"
         onClick={() => handlePieceClick(emptyPosition)}
       ></div>
     );
@@ -166,15 +193,36 @@ const InteractivePuzzle: React.FC = () => {
         ${isSolved ? 'ring-2 ring-puzzle-gold animate-pulse' : ''}`}>
         {renderPuzzleGrid()}
       </div>
-      <button 
-        onClick={resetPuzzle}
-        className="px-4 py-2 bg-puzzle-black border border-puzzle-aqua/40 text-puzzle-aqua rounded-md hover:bg-puzzle-black/80 hover:border-puzzle-aqua transition-colors duration-300"
-      >
-        Shuffle
-      </button>
+      
+      <div className="flex gap-2 mb-4">
+        <Button 
+          onClick={resetPuzzle}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Shuffle
+        </Button>
+        
+        <Button 
+          onClick={useHint}
+          disabled={hintsUsed >= maxHints || isSolved}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <Lightbulb className="h-4 w-4" />
+          Hint ({maxHints - hintsUsed})
+        </Button>
+      </div>
+      
       {isSolved && (
         <div className="mt-4 text-puzzle-gold font-bold animate-pulse">
-          Puzzle Solved! 🏆
+          🏆 Puzzle Solved!
+          {hintsUsed > 0 && (
+            <div className="text-sm text-puzzle-aqua mt-1">
+              Hints used: {hintsUsed}
+            </div>
+          )}
         </div>
       )}
     </div>

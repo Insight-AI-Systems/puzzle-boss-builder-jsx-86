@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Eye, EyeOff, Shuffle } from 'lucide-react';
+import { RefreshCw, Eye, EyeOff, Shuffle, Lightbulb } from 'lucide-react';
 
 interface PuzzleControlsProps {
   elapsed: number;
@@ -10,6 +10,8 @@ interface PuzzleControlsProps {
   showGuideImage: boolean;
   onToggleGuideImage: () => void;
   onShuffle: () => void;
+  onHint: () => void;
+  hintsRemaining: number;
 }
 
 export const PuzzleControls: React.FC<PuzzleControlsProps> = ({
@@ -18,7 +20,9 @@ export const PuzzleControls: React.FC<PuzzleControlsProps> = ({
   onReset,
   showGuideImage,
   onToggleGuideImage,
-  onShuffle
+  onShuffle,
+  onHint,
+  hintsRemaining
 }) => {
   // Format time as MM:SS
   const minutes = Math.floor(elapsed / 60);
@@ -65,6 +69,17 @@ export const PuzzleControls: React.FC<PuzzleControlsProps> = ({
         >
           <Shuffle className="h-4 w-4" />
           Shuffle
+        </Button>
+
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onHint}
+          disabled={hintsRemaining <= 0 || isComplete}
+          className="flex items-center gap-1"
+        >
+          <Lightbulb className="h-4 w-4" />
+          Hint ({hintsRemaining})
         </Button>
       </div>
       
