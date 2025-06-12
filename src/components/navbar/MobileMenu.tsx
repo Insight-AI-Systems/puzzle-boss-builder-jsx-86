@@ -20,7 +20,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, navItems, isLoggedIn, o
   const { profile } = useUserProfile();
   
   // Only use Clerk auth hooks if Clerk is configured
-  let hasRole = () => false;
+  let hasRole = (role: string): boolean => false;
   let isAdmin = false;
   
   if (PUBLISHABLE_KEY) {
