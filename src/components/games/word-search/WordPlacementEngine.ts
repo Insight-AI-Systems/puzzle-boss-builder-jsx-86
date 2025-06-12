@@ -13,7 +13,8 @@ export class WordPlacementEngine {
   placeWords(words: string[]): { grid: string[][], placedWords: PlacedWord[] } {
     const placedWords: PlacedWord[] = [];
     
-    for (const word of words.slice(0, 8)) {
+    // Try to place up to 20 words
+    for (const word of words.slice(0, 20)) {
       const placement = this.findPlacement(word);
       if (placement) {
         this.placeWord(placement);
@@ -27,10 +28,12 @@ export class WordPlacementEngine {
   }
 
   private findPlacement(word: string): PlacedWord | null {
-    const maxAttempts = 200; // Increased attempts for more complex placement
+    const maxAttempts = 500; // Increased attempts for better placement
+    const directions = this.getAllDirections();
     
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const direction = this.getRandomDirection();
+      // Randomly select direction to ensure good distribution
+      const direction = directions[Math.floor(Math.random() * directions.length)];
       const startRow = Math.floor(Math.random() * this.gridSize);
       const startCol = Math.floor(Math.random() * this.gridSize);
       
@@ -52,7 +55,20 @@ export class WordPlacementEngine {
     return null;
   }
 
-  private canPlaceWord(word: string, row: number, col: number, direction: 'horizontal' | 'vertical' | 'diagonal-dr' | 'diagonal-dl'): boolean {
+  private getAllDirections(): ('horizontal' | 'vertical' | 'diagonal-dr' | 'diagonal-dl' | 'horizontal-reverse' | 'vertical-reverse' | 'diagonal-ur' | 'diagonal-ul')[] {
+    return [
+      'horizontal',           // Left to right
+      'horizontal-reverse',   // Right to left
+      'vertical',            // Top to bottom
+      'vertical-reverse',    // Bottom to top
+      'diagonal-dr',         // Top-left to bottom-right
+      'diagonal-dl',         // Top-right to bottom-left
+      'diagonal-ur',         // Bottom-left to top-right
+      'diagonal-ul'          // Bottom-right to top-left
+    ];
+  }
+
+  private canPlaceWord(word: string, row: number, col: number, direction: 'horizontal' | 'vertical' | 'diagonal-dr' | 'diagonal-dl' | 'horizontal-reverse' | 'vertical-reverse' | 'diagonal-ur' | 'diagonal-ul'): boolean {
     const { deltaRow, deltaCol } = this.getDirectionDeltas(direction);
     
     // Check if word fits within grid bounds
@@ -77,7 +93,7 @@ export class WordPlacementEngine {
     return true;
   }
 
-  private calculateWordPlacement(word: string, startRow: number, startCol: number, direction: 'horizontal' | 'vertical' | 'diagonal-dr' | 'diagonal-dl') {
+  private calculateWordPlacement(word: string, startRow: number, startCol: number, direction: 'horizontal' | 'vertical' | 'diagonal-dr' | 'diagonal-dl' | 'horizontal-reverse' | 'vertical-reverse' | 'diagonal-ur' | 'diagonal-ul') {
     const { deltaRow, deltaCol } = this.getDirectionDeltas(direction);
     
     const endRow = startRow + (deltaRow * (word.length - 1));
@@ -93,16 +109,24 @@ export class WordPlacementEngine {
     return { endRow, endCol, cells };
   }
 
-  private getDirectionDeltas(direction: 'horizontal' | 'vertical' | 'diagonal-dr' | 'diagonal-dl') {
+  private getDirectionDeltas(direction: 'horizontal' | 'vertical' | 'diagonal-dr' | 'diagonal-dl' | 'horizontal-reverse' | 'vertical-reverse' | 'diagonal-ur' | 'diagonal-ul') {
     switch (direction) {
       case 'horizontal':
         return { deltaRow: 0, deltaCol: 1 }; // Left to right
+      case 'horizontal-reverse':
+        return { deltaRow: 0, deltaCol: -1 }; // Right to left
       case 'vertical':
         return { deltaRow: 1, deltaCol: 0 }; // Top to bottom
+      case 'vertical-reverse':
+        return { deltaRow: -1, deltaCol: 0 }; // Bottom to top
       case 'diagonal-dr':
         return { deltaRow: 1, deltaCol: 1 }; // Top-left to bottom-right
       case 'diagonal-dl':
         return { deltaRow: 1, deltaCol: -1 }; // Top-right to bottom-left
+      case 'diagonal-ur':
+        return { deltaRow: -1, deltaCol: 1 }; // Bottom-left to top-right
+      case 'diagonal-ul':
+        return { deltaRow: -1, deltaCol: -1 }; // Bottom-right to top-left
       default:
         return { deltaRow: 0, deltaCol: 1 };
     }
@@ -119,13 +143,8 @@ export class WordPlacementEngine {
     }
   }
 
-  private getRandomDirection(): 'horizontal' | 'vertical' | 'diagonal-dr' | 'diagonal-dl' {
-    const directions: ('horizontal' | 'vertical' | 'diagonal-dr' | 'diagonal-dl')[] = [
-      'horizontal', 
-      'vertical', 
-      'diagonal-dr', 
-      'diagonal-dl'
-    ];
+  private getRandomDirection(): 'horizontal' | 'vertical' | 'diagonal-dr' | 'diagonal-dl' | 'horizontal-reverse' | 'vertical-reverse' | 'diagonal-ur' | 'diagonal-ul' {
+    const directions = this.getAllDirections();
     return directions[Math.floor(Math.random() * directions.length)];
   }
 

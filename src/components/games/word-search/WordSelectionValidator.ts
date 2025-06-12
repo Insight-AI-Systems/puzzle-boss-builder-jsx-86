@@ -59,7 +59,7 @@ export class WordSelectionValidator {
     const deltaRow = last.row - first.row;
     const deltaCol = last.col - first.col;
     
-    // Check if it's a straight line
+    // Check if it's a straight line (8 directions)
     const isHorizontal = deltaRow === 0 && deltaCol !== 0;
     const isVertical = deltaCol === 0 && deltaRow !== 0;
     const isDiagonal = Math.abs(deltaRow) === Math.abs(deltaCol) && deltaRow !== 0 && deltaCol !== 0;
@@ -138,22 +138,19 @@ export class WordSelectionValidator {
       const sortedCells = [...cells];
 
       if (deltaRow === 0) {
-        // Horizontal line
-        sortedCells.sort((a, b) => a.col - b.col);
+        // Horizontal line - sort by column
+        sortedCells.sort((a, b) => deltaCol > 0 ? a.col - b.col : b.col - a.col);
       } else if (deltaCol === 0) {
-        // Vertical line
-        sortedCells.sort((a, b) => a.row - b.row);
+        // Vertical line - sort by row
+        sortedCells.sort((a, b) => deltaRow > 0 ? a.row - b.row : b.row - a.row);
       } else {
         // Diagonal line - sort by primary direction
-        if (Math.abs(deltaRow) === Math.abs(deltaCol)) {
-          // True diagonal
-          if (deltaRow > 0) {
-            // Going down
-            sortedCells.sort((a, b) => a.row - b.row);
-          } else {
-            // Going up
-            sortedCells.sort((a, b) => b.row - a.row);
-          }
+        if (deltaRow > 0) {
+          // Going down
+          sortedCells.sort((a, b) => a.row - b.row);
+        } else {
+          // Going up
+          sortedCells.sort((a, b) => b.row - a.row);
         }
       }
 

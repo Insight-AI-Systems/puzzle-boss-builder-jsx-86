@@ -14,7 +14,9 @@ export const wordCategories: WordCategory[] = [
     words: [
       'ELEPHANT', 'GIRAFFE', 'PENGUIN', 'KANGAROO', 'BUTTERFLY',
       'DOLPHIN', 'OCTOPUS', 'CHEETAH', 'RHINOCEROS', 'FLAMINGO',
-      'PEACOCK', 'HAMSTER', 'RACCOON', 'PORCUPINE', 'LEOPARD'
+      'PEACOCK', 'HAMSTER', 'RACCOON', 'PORCUPINE', 'LEOPARD',
+      'TIGER', 'ZEBRA', 'MONKEY', 'RABBIT', 'SQUIRREL',
+      'BEAR', 'WOLF', 'FOX', 'DEER', 'EAGLE'
     ]
   },
   {
@@ -24,7 +26,9 @@ export const wordCategories: WordCategory[] = [
     words: [
       'PIZZA', 'HAMBURGER', 'CHOCOLATE', 'STRAWBERRY', 'BANANA',
       'SANDWICH', 'PANCAKE', 'COOKIE', 'SMOOTHIE', 'MUFFIN',
-      'PRETZEL', 'POPCORN', 'WAFFLE', 'CUPCAKE', 'MILKSHAKE'
+      'PRETZEL', 'POPCORN', 'WAFFLE', 'CUPCAKE', 'MILKSHAKE',
+      'APPLE', 'ORANGE', 'GRAPE', 'CHERRY', 'LEMON',
+      'BREAD', 'CHEESE', 'PASTA', 'SALAD', 'SOUP'
     ]
   },
   {
@@ -34,7 +38,9 @@ export const wordCategories: WordCategory[] = [
     words: [
       'FOOTBALL', 'BASKETBALL', 'BASEBALL', 'TENNIS', 'VOLLEYBALL',
       'SWIMMING', 'CYCLING', 'RUNNING', 'GOLF', 'HOCKEY',
-      'BOWLING', 'BOXING', 'WRESTLING', 'SKIING', 'SURFING'
+      'BOWLING', 'BOXING', 'WRESTLING', 'SKIING', 'SURFING',
+      'SOCCER', 'CRICKET', 'RUGBY', 'TRACK', 'FIELD',
+      'RACING', 'JUMPING', 'THROWING', 'MARATHON', 'SPRINT'
     ]
   },
   {
@@ -44,7 +50,9 @@ export const wordCategories: WordCategory[] = [
     words: [
       'MOUNTAIN', 'RAINBOW', 'THUNDER', 'LIGHTNING', 'WATERFALL',
       'FOREST', 'DESERT', 'OCEAN', 'RIVER', 'VALLEY',
-      'MEADOW', 'GLACIER', 'VOLCANO', 'ISLAND', 'CANYON'
+      'MEADOW', 'GLACIER', 'VOLCANO', 'ISLAND', 'CANYON',
+      'TREE', 'FLOWER', 'GRASS', 'LAKE', 'STREAM',
+      'CLOUD', 'WIND', 'RAIN', 'SNOW', 'SUN'
     ]
   },
   {
@@ -54,7 +62,9 @@ export const wordCategories: WordCategory[] = [
     words: [
       'COMPUTER', 'SMARTPHONE', 'INTERNET', 'WEBSITE', 'SOFTWARE',
       'KEYBOARD', 'MONITOR', 'PRINTER', 'SCANNER', 'CAMERA',
-      'TABLET', 'LAPTOP', 'ROUTER', 'BLUETOOTH', 'WIRELESS'
+      'TABLET', 'LAPTOP', 'ROUTER', 'BLUETOOTH', 'WIRELESS',
+      'PHONE', 'EMAIL', 'GAME', 'APP', 'CODE',
+      'ROBOT', 'DRONE', 'VIRTUAL', 'DIGITAL', 'CYBER'
     ]
   },
   {
@@ -64,7 +74,9 @@ export const wordCategories: WordCategory[] = [
     words: [
       'GALAXY', 'PLANET', 'ASTEROID', 'COMET', 'NEBULA',
       'SATELLITE', 'TELESCOPE', 'ASTRONAUT', 'ROCKET', 'SPACECRAFT',
-      'METEOR', 'UNIVERSE', 'CONSTELLATION', 'SUPERNOVA', 'BLACKHOLE'
+      'METEOR', 'UNIVERSE', 'CONSTELLATION', 'SUPERNOVA', 'BLACKHOLE',
+      'STAR', 'MOON', 'EARTH', 'MARS', 'VENUS',
+      'JUPITER', 'SATURN', 'URANUS', 'NEPTUNE', 'PLUTO'
     ]
   }
 ];
@@ -99,12 +111,12 @@ export const getRandomWordsFromCategory = (categoryId: string, count: number, di
 export const getDifficultyWordCount = (difficulty: 'rookie' | 'pro' | 'master'): number => {
   switch (difficulty) {
     case 'rookie':
-      return 8;
-    case 'pro':
-      return 12;
-    case 'master':
       return 15;
+    case 'pro':
+      return 20;
+    case 'master':
+      return 25;
     default:
-      return 8;
+      return 15;
   }
 };
