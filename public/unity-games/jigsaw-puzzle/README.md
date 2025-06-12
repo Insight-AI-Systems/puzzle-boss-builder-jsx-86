@@ -1,5 +1,5 @@
 
-# Unity Jigsaw Puzzle Game Files
+# Jigsaw Puzzle Game Files
 
 Please upload your Unity WebGL build files here with the following structure:
 
