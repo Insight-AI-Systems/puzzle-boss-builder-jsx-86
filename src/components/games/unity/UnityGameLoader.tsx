@@ -42,22 +42,15 @@ export const UnityGameLoader: React.FC<UnityGameLoaderProps> = ({
         setIsLoading(true);
         setError(null);
 
-        // Load Unity loader script
+        // Load Unity build loader script
         const loaderScript = document.createElement('script');
-        loaderScript.src = `${gamePath}/Build/UnityLoader.js`;
-        loaderScript.onerror = () => {
-          // Try alternative loader path
-          const newLoaderScript = document.createElement('script');
-          newLoaderScript.src = `${gamePath}/Build/unity.loader.js`;
-          newLoaderScript.onerror = () => setError('Failed to load Unity loader script');
-          newLoaderScript.onload = () => initializeUnity();
-          document.head.appendChild(newLoaderScript);
-        };
+        loaderScript.src = `${gamePath}/Build/build.loader.js`;
+        loaderScript.onerror = () => setError('Failed to load Unity loader script');
         loaderScript.onload = () => initializeUnity();
         document.head.appendChild(loaderScript);
 
         const initializeUnity = async () => {
-          if (!canvasRef.current) return;
+          if (!canvasRef.current || !window.createUnityInstance) return;
 
           try {
             // Unity WebGL configuration
@@ -71,16 +64,8 @@ export const UnityGameLoader: React.FC<UnityGameLoaderProps> = ({
               productVersion: "1.0",
             };
 
-            let instance;
-            
-            // Try different Unity initialization methods
-            if (window.createUnityInstance) {
-              instance = await window.createUnityInstance(canvasRef.current, buildConfig);
-            } else if ((window as any).UnityLoader) {
-              instance = (window as any).UnityLoader.instantiate(canvasRef.current, buildConfig);
-            } else {
-              throw new Error('Unity loader not available');
-            }
+            // Initialize Unity instance using the build loader
+            const instance = await window.createUnityInstance(canvasRef.current, buildConfig);
 
             setUnityInstance(instance);
             window.unityInstance = instance;
