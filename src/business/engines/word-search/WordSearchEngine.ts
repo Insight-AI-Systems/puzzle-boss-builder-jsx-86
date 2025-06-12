@@ -1,6 +1,7 @@
 
 import { PlacedWord, Cell } from './types';
 import { cellToString, stringToCell, cellsToStrings, stringsToCells } from './utils';
+import { WordPlacementEngine } from '../../../components/games/word-search/WordPlacementEngine';
 
 export interface WordSearchState {
   grid: string[][];
@@ -25,9 +26,11 @@ export class WordSearchEngine {
   private state: WordSearchState;
   private listeners: GameStateListener[] = [];
   private gridSize: number;
+  private placementEngine: WordPlacementEngine;
 
   constructor(gridSize: number = 15) {
     this.gridSize = gridSize;
+    this.placementEngine = new WordPlacementEngine(gridSize);
     this.state = {
       grid: [],
       placedWords: [],
@@ -41,47 +44,8 @@ export class WordSearchEngine {
   }
 
   public initializeGame(words: string[]): WordSearchState {
-    // Create empty grid
-    const grid: string[][] = Array(this.gridSize).fill(null).map(() => 
-      Array(this.gridSize).fill('')
-    );
-
-    // Simple word placement - horizontal only for now
-    const placedWords: PlacedWord[] = [];
-    
-    words.forEach((word, index) => {
-      if (index < this.gridSize) {
-        const row = index;
-        const startCol = Math.max(0, Math.floor((this.gridSize - word.length) / 2));
-        
-        // Place word horizontally
-        for (let i = 0; i < word.length; i++) {
-          grid[row][startCol + i] = word[i].toUpperCase();
-        }
-        
-        placedWords.push({
-          word: word.toUpperCase(),
-          startRow: row,
-          startCol: startCol,
-          endRow: row,
-          endCol: startCol + word.length - 1,
-          direction: 'horizontal',
-          cells: Array.from({ length: word.length }, (_, i) => ({
-            row,
-            col: startCol + i
-          }))
-        });
-      }
-    });
-
-    // Fill empty cells with random letters
-    for (let row = 0; row < this.gridSize; row++) {
-      for (let col = 0; col < this.gridSize; col++) {
-        if (grid[row][col] === '') {
-          grid[row][col] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
-        }
-      }
-    }
+    // Use the WordPlacementEngine to place words in all 8 directions
+    const { grid, placedWords } = this.placementEngine.placeWords(words);
 
     this.state = {
       grid,
@@ -141,19 +105,24 @@ export class WordSearchEngine {
     // Convert cell IDs to cells
     const cells = stringsToCells(cellIds);
     
-    // Get the word from the grid
-    const word = cells.map(cell => this.state.grid[cell.row]?.[cell.col] || '').join('');
+    // Check if selection forms a valid line (horizontal, vertical, or diagonal)
+    if (!this.isValidLine(cells)) {
+      return { isValid: false };
+    }
+    
+    // Get the word from the grid (both forward and reverse)
+    const forwardWord = this.getWordFromCells(cells);
+    const reverseWord = forwardWord.split('').reverse().join('');
     
     // Check if it's a target word
-    const isTargetWord = this.state.targetWords.includes(word) && 
-                        !this.state.foundWords.includes(word);
+    const isTargetWord = this.state.targetWords.includes(forwardWord) && 
+                        !this.state.foundWords.includes(forwardWord);
     
     if (isTargetWord) {
-      return { isValid: true, word };
+      return { isValid: true, word: forwardWord };
     }
 
     // Also check reverse
-    const reverseWord = word.split('').reverse().join('');
     const isReverseTargetWord = this.state.targetWords.includes(reverseWord) && 
                                !this.state.foundWords.includes(reverseWord);
     
@@ -162,6 +131,103 @@ export class WordSearchEngine {
     }
 
     return { isValid: false };
+  }
+
+  private isValidLine(cells: Cell[]): boolean {
+    if (cells.length < 2) return false;
+
+    const first = cells[0];
+    const last = cells[cells.length - 1];
+    
+    const deltaRow = last.row - first.row;
+    const deltaCol = last.col - first.col;
+    
+    // Check if it's a straight line (8 directions)
+    const isHorizontal = deltaRow === 0 && deltaCol !== 0;
+    const isVertical = deltaCol === 0 && deltaRow !== 0;
+    const isDiagonal = Math.abs(deltaRow) === Math.abs(deltaCol) && deltaRow !== 0 && deltaCol !== 0;
+    
+    if (!isHorizontal && !isVertical && !isDiagonal) {
+      return false;
+    }
+    
+    // Verify all cells are in a straight line
+    const expectedCells = this.generateLineCells(first, last);
+    
+    if (expectedCells.length !== cells.length) {
+      return false;
+    }
+    
+    // Check if all selected cells match the expected line
+    const selectedCellIds = new Set(cells.map(cell => `${cell.row}-${cell.col}`));
+    const expectedCellIds = new Set(expectedCells.map(cell => `${cell.row}-${cell.col}`));
+    
+    return selectedCellIds.size === expectedCellIds.size && 
+           [...selectedCellIds].every(id => expectedCellIds.has(id));
+  }
+
+  private generateLineCells(start: Cell, end: Cell): Cell[] {
+    const cells: Cell[] = [];
+    const deltaRow = end.row - start.row;
+    const deltaCol = end.col - start.col;
+    
+    const steps = Math.max(Math.abs(deltaRow), Math.abs(deltaCol));
+    const stepRow = steps === 0 ? 0 : deltaRow / steps;
+    const stepCol = steps === 0 ? 0 : deltaCol / steps;
+    
+    for (let i = 0; i <= steps; i++) {
+      cells.push({
+        row: start.row + Math.round(stepRow * i),
+        col: start.col + Math.round(stepCol * i)
+      });
+    }
+    
+    return cells;
+  }
+
+  private getWordFromCells(cells: Cell[]): string {
+    // Sort cells to form a proper word sequence
+    const sortedCells = this.sortCellsInSequence(cells);
+    
+    return sortedCells.map(cell => {
+      if (cell.row < 0 || cell.row >= this.gridSize || cell.col < 0 || cell.col >= this.gridSize) {
+        return '';
+      }
+      return this.state.grid[cell.row]?.[cell.col] || '';
+    }).join('');
+  }
+
+  private sortCellsInSequence(cells: Cell[]): Cell[] {
+    if (!cells || cells.length <= 1) return cells || [];
+
+    // Determine direction and sort accordingly
+    const first = cells[0];
+    const last = cells[cells.length - 1];
+    
+    const deltaRow = last.row - first.row;
+    const deltaCol = last.col - first.col;
+
+    // Create a copy to sort
+    const sortedCells = [...cells];
+
+    if (deltaRow === 0) {
+      // Horizontal line - sort by column
+      sortedCells.sort((a, b) => deltaCol > 0 ? a.col - b.col : b.col - a.col);
+    } else if (deltaCol === 0) {
+      // Vertical line - sort by row
+      sortedCells.sort((a, b) => deltaRow > 0 ? a.row - b.row : b.row - a.row);
+    } else {
+      // Diagonal line - sort by primary direction
+      if (deltaRow > 0) {
+        // Going down
+        sortedCells.sort((a, b) => a.row - b.row);
+      } else {
+        // Going up
+        sortedCells.sort((a, b) => b.row - a.row);
+      }
+    }
+
+    return sortedCells;
   }
 
   public getGameState(): WordSearchState {
