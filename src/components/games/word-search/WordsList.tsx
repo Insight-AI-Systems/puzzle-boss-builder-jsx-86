@@ -30,9 +30,11 @@ export function WordsList({ words, foundWords }: WordsListProps) {
               </div>
             ))}
           </div>
-          <ScrollBar orientation="vertical" className="w-3">
-            <div className="relative flex-1 rounded-full bg-orange-500 hover:bg-orange-400 transition-colors" />
-          </ScrollBar>
+          <ScrollBar 
+            orientation="vertical" 
+            className="w-3"
+            thumbClassName="bg-orange-500 hover:bg-orange-400 transition-colors"
+          />
         </ScrollArea>
       </CardContent>
     </Card>
