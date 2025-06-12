@@ -142,13 +142,19 @@ export function WordSearchGame() {
 
   if (showInstructions && !isGameStarted) {
     return (
-      <WordSearchInstructions
-        difficulty="pro"
-        category="animals"
-        totalWords={20}
-        competitive={false}
-        onStartGame={startNewGame}
-      />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <WordSearchInstructions
+          difficulty="pro"
+          category="animals"
+          totalWords={20}
+          competitive={false}
+        />
+        <div className="mt-6 text-center">
+          <Button onClick={startNewGame} size="lg" className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black font-semibold">
+            Start Game
+          </Button>
+        </div>
+      </div>
     );
   }
 
@@ -164,7 +170,6 @@ export function WordSearchGame() {
         incorrectSelections={0}
         onPlayAgain={handleNewGame}
         onViewLeaderboard={() => {}}
-        foundWords={gameState.foundWords}
       />
     );
   }
@@ -201,7 +206,6 @@ export function WordSearchGame() {
             onHint={() => {}}
             hintsUsed={0}
             isGameComplete={gameState?.gameCompleted || false}
-            onNewGame={handleNewGame}
           />
 
           {/* Words List */}
