@@ -1,16 +1,35 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
-const JigsawPuzzle = ({ 
+// Extend Window interface for Unity callbacks
+declare global {
+  interface Window {
+    unityInstance?: any;
+    createUnityInstance?: (canvas: HTMLCanvasElement, config: any) => Promise<any>;
+    onPuzzleComplete?: (score: number, timeSeconds: number) => void;
+    onPuzzleProgress?: (percentage: number) => void;
+    onHintUsed?: (hintCost: number) => void;
+  }
+}
+
+interface JigsawPuzzleProps {
+  puzzleId?: string;
+  puzzlePrice?: number;
+  isPaid?: boolean;
+  onComplete?: (data: any) => void;
+  onPaymentRequired?: (data: any) => void;
+}
+
+const JigsawPuzzle: React.FC<JigsawPuzzleProps> = ({ 
   puzzleId = 'default-puzzle',
   puzzlePrice = 2.99,
   isPaid = false, 
   onComplete, 
   onPaymentRequired 
 }) => {
-  const canvasRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [gameLoaded, setGameLoaded] = useState(false);
   
   // Your Netlify-hosted Unity game
@@ -97,7 +116,7 @@ const JigsawPuzzle = ({
 
   const setupUnityCallbacks = () => {
     // Set up communication between Unity and your web app
-    window.onPuzzleComplete = (score, timeSeconds) => {
+    window.onPuzzleComplete = (score: number, timeSeconds: number) => {
       console.log('🎉 Puzzle completed!', { score, timeSeconds });
       
       const completionData = {
@@ -111,11 +130,11 @@ const JigsawPuzzle = ({
       onComplete && onComplete(completionData);
     };
 
-    window.onPuzzleProgress = (percentage) => {
+    window.onPuzzleProgress = (percentage: number) => {
       console.log('📊 Puzzle progress:', percentage + '%');
     };
 
-    window.onHintUsed = (hintCost) => {
+    window.onHintUsed = (hintCost: number) => {
       console.log('💡 Hint used, cost:', hintCost);
     };
   };
