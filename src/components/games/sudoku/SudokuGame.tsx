@@ -1,297 +1,144 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { toast } from '@/hooks/use-toast';
-import { Lightbulb, Undo, Redo, RotateCcw, CheckCircle, Info } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SudokuGrid } from './components/SudokuGrid';
 import { SudokuNumberPad } from './components/SudokuNumberPad';
+import { SudokuControls } from './components/SudokuControls';
 import { useSudokuGame } from './hooks/useSudokuGame';
 import { SudokuDifficulty, SudokuSize } from './types/sudokuTypes';
+import { toast } from 'sonner';
 
 interface SudokuGameProps {
   difficulty?: SudokuDifficulty;
   size?: SudokuSize;
-  onComplete?: (stats: { moves: number; time: number; hintsUsed: number }) => void;
+  gameState?: any;
+  isActive?: boolean;
+  onComplete?: (stats: any) => void;
   onScoreUpdate?: (score: number) => void;
   onMoveUpdate?: (moves: number) => void;
-  isActive?: boolean;
-  gameState?: string;
 }
 
 export function SudokuGame({
   difficulty = 'medium',
   size = 6,
+  gameState,
+  isActive = true,
   onComplete,
   onScoreUpdate,
-  onMoveUpdate,
-  isActive = true,
-  gameState = 'playing'
+  onMoveUpdate
 }: SudokuGameProps) {
   const {
     grid,
     initialGrid,
     selectedCell,
+    selectedNumber,
     conflicts,
     moves,
     hintsUsed,
-    maxHints,
-    undoStack,
-    redoStack,
+    timeElapsed,
     isComplete,
-    generateNewPuzzle,
-    selectCell,
-    setNumber,
-    clearCell,
-    getHint,
+    canUndo,
+    canRedo,
+    maxHints,
+    setSelectedCell,
+    setSelectedNumber,
+    makeMove,
     undo,
     redo,
-    resetPuzzle,
-    checkSolution
+    getHint,
+    resetGame,
+    newGame
   } = useSudokuGame(difficulty, size);
 
-  const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
+  const [localIsActive, setLocalIsActive] = useState(isActive);
 
-  // Handle game completion
+  useEffect(() => {
+    setLocalIsActive(isActive);
+  }, [isActive]);
+
   useEffect(() => {
     if (isComplete && onComplete) {
-      const timeElapsed = Math.floor(Date.now() / 1000); // Simplified time tracking
-      onComplete({
+      const stats = {
         moves,
-        time: timeElapsed,
-        hintsUsed
-      });
-      
-      toast({
-        title: "🎉 Sudoku Completed!",
-        description: `Solved in ${moves} moves with ${hintsUsed} hints!`
-      });
+        hintsUsed,
+        timeElapsed,
+        difficulty,
+        size
+      };
+      onComplete(stats);
+      setLocalIsActive(false);
+      toast.success(`Puzzle completed in ${moves} moves!`);
     }
-  }, [isComplete, moves, hintsUsed, onComplete]);
+  }, [isComplete, moves, hintsUsed, timeElapsed, difficulty, size, onComplete]);
 
-  // Update parent components with moves
   useEffect(() => {
-    onMoveUpdate?.(moves);
+    if (onMoveUpdate) {
+      onMoveUpdate(moves);
+    }
   }, [moves, onMoveUpdate]);
 
-  // Update score based on performance
   useEffect(() => {
-    const baseScore = size * size * 10;
-    const hintPenalty = hintsUsed * 50;
-    const score = Math.max(0, baseScore - hintPenalty + (isComplete ? 500 : 0));
-    onScoreUpdate?.(score);
-  }, [moves, hintsUsed, isComplete, size, onScoreUpdate]);
+    if (onScoreUpdate) {
+      const baseScore = 1000;
+      const movesPenalty = Math.max(0, moves - 50) * 2;
+      const hintsPenalty = hintsUsed * 50;
+      const score = Math.max(0, baseScore - movesPenalty - hintsPenalty);
+      onScoreUpdate(score);
+    }
+  }, [moves, hintsUsed, onScoreUpdate]);
 
   const handleCellClick = useCallback((row: number, col: number) => {
-    if (!isActive || gameState !== 'playing') return;
-    selectCell(row, col);
-  }, [isActive, gameState, selectCell]);
+    if (!localIsActive) return;
+    setSelectedCell([row, col]);
+  }, [localIsActive, setSelectedCell]);
 
-  const handleNumberInput = useCallback((number: number) => {
-    if (!isActive || gameState !== 'playing' || !selectedCell) return;
+  const handleNumberSelect = useCallback((number: number) => {
+    if (!localIsActive || !selectedCell) return;
     
     setSelectedNumber(number);
-    const [row, col] = selectedCell;
-    
-    // Don't allow modifying initial puzzle cells
-    if (initialGrid[row][col] !== 0) {
-      toast({
-        title: "Invalid Move",
-        description: "Cannot modify initial puzzle numbers",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setNumber(row, col, number);
-  }, [isActive, gameState, selectedCell, initialGrid, setNumber]);
+    makeMove(selectedCell[0], selectedCell[1], number);
+  }, [localIsActive, selectedCell, setSelectedNumber, makeMove]);
 
-  const handleClearCell = useCallback(() => {
-    if (!isActive || gameState !== 'playing' || !selectedCell) return;
+  const handleClear = useCallback(() => {
+    if (!localIsActive || !selectedCell) return;
     
-    const [row, col] = selectedCell;
-    if (initialGrid[row][col] !== 0) return;
-    
-    clearCell(row, col);
     setSelectedNumber(null);
-  }, [isActive, gameState, selectedCell, initialGrid, clearCell]);
-
-  const handleHint = useCallback(() => {
-    if (!isActive || gameState !== 'playing' || hintsUsed >= maxHints) {
-      toast({
-        title: "No Hints Available",
-        description: `You've used all ${maxHints} hints for this difficulty`,
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    getHint();
-    toast({
-      title: "Hint Used",
-      description: `${maxHints - hintsUsed - 1} hints remaining`
-    });
-  }, [isActive, gameState, hintsUsed, maxHints, getHint]);
-
-  const difficultyColors = {
-    easy: 'bg-green-500',
-    medium: 'bg-orange-500',
-    hard: 'bg-red-500',
-    expert: 'bg-purple-500'
-  };
-
-  const getInstructions = () => {
-    return (
-      <div className="space-y-3 max-w-sm">
-        <div>
-          <h4 className="font-semibold mb-1">Objective:</h4>
-          <p className="text-sm">Fill the {size}×{size} grid so each row, column, and box contains all numbers from 1 to {size}.</p>
-        </div>
-        
-        <div>
-          <h4 className="font-semibold mb-1">How to Play:</h4>
-          <ul className="text-sm space-y-1">
-            <li>• Click a cell to select it</li>
-            <li>• Use the number pad to enter numbers</li>
-            <li>• Numbers in gray cannot be changed</li>
-            <li>• Red highlighting shows conflicts</li>
-          </ul>
-        </div>
-        
-        <div>
-          <h4 className="font-semibold mb-1">Controls:</h4>
-          <ul className="text-sm space-y-1">
-            <li>• <strong>Hint:</strong> Get help for selected cell</li>
-            <li>• <strong>Undo/Redo:</strong> Navigate your moves</li>
-            <li>• <strong>Reset:</strong> Start puzzle over</li>
-            <li>• <strong>Clear:</strong> Remove number from cell</li>
-          </ul>
-        </div>
-        
-        <div>
-          <h4 className="font-semibold mb-1">Scoring:</h4>
-          <p className="text-sm">Higher scores for fewer hints used and faster completion!</p>
-        </div>
-      </div>
-    );
-  };
-
-  if (!grid) {
-    return (
-      <Card className="bg-gray-900 border-gray-700">
-        <CardContent className="p-6 text-center">
-          <div className="text-puzzle-white">Generating Sudoku puzzle...</div>
-        </CardContent>
-      </Card>
-    );
-  }
+    makeMove(selectedCell[0], selectedCell[1], 0);
+  }, [localIsActive, selectedCell, setSelectedNumber, makeMove]);
 
   return (
-    <TooltipProvider>
-      <div className="max-w-7xl mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6">
-        {/* Game Header */}
-        <Card className="bg-gray-900 border-gray-700">
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="flex items-center gap-3">
-                <Badge className={`${difficultyColors[difficulty]} text-white text-sm sm:text-base`}>
-                  {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} {size}×{size}
-                </Badge>
-                {isComplete && (
-                  <Badge className="bg-puzzle-gold text-puzzle-black">
-                    <CheckCircle className="w-4 h-4 mr-1" />
-                    Complete!
-                  </Badge>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-4 text-sm sm:text-base text-puzzle-white">
-                <span>Moves: {moves}</span>
-                <span>Hints: {hintsUsed}/{maxHints}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black p-4">
+      <div className="container mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-6xl font-bold text-puzzle-white mb-4">
+            🧩 Sudoku Master 🧩
+          </h1>
+          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+            Challenge your mind with classic number puzzles
+          </p>
+        </div>
 
-        {/* Game Controls */}
-        <Card className="bg-gray-900 border-gray-700">
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex flex-wrap gap-2 justify-center">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="border-gray-600 text-gray-300 text-xs sm:text-sm"
-                    size="sm"
-                  >
-                    <Info className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                    How to Play
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-none">
-                  {getInstructions()}
-                </TooltipContent>
-              </Tooltip>
-              
-              <Button
-                onClick={handleHint}
-                disabled={!isActive || hintsUsed >= maxHints || isComplete}
-                className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black text-xs sm:text-sm"
-                size="sm"
-              >
-                <Lightbulb className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                Hint ({maxHints - hintsUsed})
-              </Button>
-              
-              <Button
-                onClick={undo}
-                disabled={!isActive || undoStack.length === 0}
-                variant="outline"
-                className="border-gray-600 text-gray-300 text-xs sm:text-sm"
-                size="sm"
-              >
-                <Undo className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                Undo
-              </Button>
-              
-              <Button
-                onClick={redo}
-                disabled={!isActive || redoStack.length === 0}
-                variant="outline"
-                className="border-gray-600 text-gray-300 text-xs sm:text-sm"
-                size="sm"
-              >
-                <Redo className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                Redo
-              </Button>
-              
-              <Button
-                onClick={resetPuzzle}
-                disabled={!isActive}
-                variant="outline"
-                className="border-gray-600 text-gray-300 text-xs sm:text-sm"
-                size="sm"
-              >
-                <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                Reset
-              </Button>
-              
-              <Button
-                onClick={generateNewPuzzle}
-                disabled={!isActive}
-                className="bg-puzzle-gold hover:bg-puzzle-gold/80 text-puzzle-black text-xs sm:text-sm"
-                size="sm"
-              >
-                New Puzzle
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {/* Left Panel - Controls */}
+          <div className="order-2 lg:order-1">
+            <SudokuControls
+              difficulty={difficulty}
+              size={size}
+              isActive={localIsActive}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              hintsUsed={hintsUsed}
+              maxHints={maxHints}
+              moves={moves}
+              timeElapsed={timeElapsed}
+              onUndo={undo}
+              onRedo={redo}
+              onHint={getHint}
+              onReset={resetGame}
+              onNewGame={newGame}
+            />
+          </div>
 
-        {/* Game Board - Improved layout */}
-        <div className="flex flex-col xl:flex-row gap-4 sm:gap-6 items-start justify-center">
-          <div className="flex-1 max-w-full">
+          {/* Center Panel - Game Grid */}
+          <div className="order-1 lg:order-2">
             <SudokuGrid
               grid={grid}
               initialGrid={initialGrid}
@@ -299,21 +146,22 @@ export function SudokuGame({
               conflicts={conflicts}
               size={size}
               onCellClick={handleCellClick}
-              isActive={isActive && !isComplete}
+              isActive={localIsActive}
             />
           </div>
-          
-          <div className="w-full xl:w-auto xl:min-w-[280px]">
+
+          {/* Right Panel - Number Pad */}
+          <div className="order-3">
             <SudokuNumberPad
               size={size}
               selectedNumber={selectedNumber}
-              onNumberSelect={handleNumberInput}
-              onClear={handleClearCell}
-              isActive={isActive && !isComplete}
+              onNumberSelect={handleNumberSelect}
+              onClear={handleClear}
+              isActive={localIsActive}
             />
           </div>
         </div>
       </div>
-    </TooltipProvider>
+    </div>
   );
 }
