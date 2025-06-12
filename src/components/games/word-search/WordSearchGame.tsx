@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ export function WordSearchGame() {
   const [showInstructions, setShowInstructions] = useState(true);
   const [isGameStarted, setIsGameStarted] = useState(false);
 
-  const { timeElapsed, isRunning, startTimer, stopTimer, resetTimer } = useGameTimer();
+  const { timeElapsed, isRunning, start, stop, reset } = useGameTimer();
 
   useEffect(() => {
     const unsubscribe = engine.subscribe((state) => {
@@ -51,8 +52,8 @@ export function WordSearchGame() {
     setCurrentSelection([]);
     setShowInstructions(false);
     setIsGameStarted(true);
-    resetTimer();
-    startTimer();
+    reset();
+    start();
   };
 
   const handleSelectionStart = (cell: Cell) => {
@@ -99,7 +100,7 @@ export function WordSearchGame() {
   };
 
   const onGameComplete = () => {
-    stopTimer();
+    stop();
   };
 
   const renderGrid = () => {
@@ -141,16 +142,28 @@ export function WordSearchGame() {
   };
 
   if (showInstructions && !isGameStarted) {
-    return <WordSearchInstructions onStartGame={startNewGame} />;
+    return (
+      <WordSearchInstructions
+        difficulty="pro"
+        category="animals"
+        totalWords={20}
+        competitive={false}
+      />
+    );
   }
 
   if (gameState?.gameCompleted) {
     return (
       <WordSearchCongratulations
-        score={gameState.score}
+        isOpen={true}
+        onClose={() => setShowInstructions(true)}
         timeElapsed={timeElapsed}
-        foundWords={gameState.foundWords}
+        wordsFound={gameState.foundWords.length}
+        totalWords={gameState.targetWords.length}
+        score={gameState.score}
+        incorrectSelections={0}
         onPlayAgain={handleNewGame}
+        onViewLeaderboard={() => {}}
       />
     );
   }
@@ -178,13 +191,22 @@ export function WordSearchGame() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Controls */}
-          <WordSearchControls onNewGame={handleNewGame} />
+          <WordSearchControls
+            timeElapsed={Math.floor(timeElapsed / 1000)}
+            isPaused={!isRunning}
+            onPause={stop}
+            onResume={start}
+            onReset={handleNewGame}
+            onHint={() => {}}
+            hintsUsed={0}
+            isGameComplete={gameState?.gameCompleted || false}
+          />
 
           {/* Words List */}
           {gameState && (
             <WordsList
               targetWords={gameState.targetWords}
-              foundWords={gameState.foundWords}
+              foundWords={new Set(gameState.foundWords)}
               score={gameState.score}
             />
           )}
