@@ -5,18 +5,34 @@ import { Menu, X, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ClerkAuthButtons } from '@/components/auth/ClerkAuthButtons';
 import UserMenu from './UserMenu';
-import { useUser } from '@clerk/clerk-react';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { mainNavItems } from './NavbarData';
 import PuzzleDropdown from './PuzzleDropdown';
 import MobileMenu from './MobileMenu';
 import { AdminErrorBoundary } from '@/components/admin/ErrorBoundary';
 
+// Check if Clerk is available
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const { isSignedIn, user } = useUser();
-  const { hasRole, isAdmin, isLoading, profile } = useClerkAuth();
+  
+  // Only use Clerk hooks if Clerk is configured
+  let isSignedIn = false;
+  let user = null;
+  let profile = null;
+  
+  if (PUBLISHABLE_KEY) {
+    try {
+      const clerkAuth = useClerkAuth();
+      isSignedIn = clerkAuth.isAuthenticated;
+      user = clerkAuth.user;
+      profile = clerkAuth.profile;
+    } catch (error) {
+      console.warn('Clerk not available, running without authentication');
+    }
+  }
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -56,27 +72,34 @@ export const Navbar: React.FC = () => {
               ))}
             </div>
 
-            {/* Auth Buttons and Profile */}
+            {/* Auth Buttons and Profile - only show if Clerk is configured */}
             <div className="hidden md:flex items-center space-x-4">
-              {isSignedIn ? (
-                <>
-                  {/* Profile Icon for logged-in users */}
-                  <Link
-                    to="/profile"
-                    className={`px-3 py-2 text-sm font-medium transition-colors flex items-center space-x-2 ${
-                      isActive('/profile')
-                        ? 'text-puzzle-aqua border-b-2 border-puzzle-aqua'
-                        : 'text-puzzle-white hover:text-puzzle-aqua'
-                    }`}
-                    title="Member Profile"
-                  >
-                    <User className="h-4 w-4" />
-                    <span>Profile</span>
-                  </Link>
-                  <UserMenu profile={profile} />
-                </>
+              {PUBLISHABLE_KEY ? (
+                isSignedIn ? (
+                  <>
+                    {/* Profile Icon for logged-in users */}
+                    <Link
+                      to="/profile"
+                      className={`px-3 py-2 text-sm font-medium transition-colors flex items-center space-x-2 ${
+                        isActive('/profile')
+                          ? 'text-puzzle-aqua border-b-2 border-puzzle-aqua'
+                          : 'text-puzzle-white hover:text-puzzle-aqua'
+                      }`}
+                      title="Member Profile"
+                    >
+                      <User className="h-4 w-4" />
+                      <span>Profile</span>
+                    </Link>
+                    <UserMenu profile={profile} />
+                  </>
+                ) : (
+                  <ClerkAuthButtons />
+                )
               ) : (
-                <ClerkAuthButtons />
+                /* Show basic navigation when Clerk is not configured */
+                <div className="text-puzzle-white/70 text-sm">
+                  Guest Mode
+                </div>
               )}
             </div>
 
