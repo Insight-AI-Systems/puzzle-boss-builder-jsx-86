@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -42,8 +41,8 @@ import {
   UnityJigsawPuzzle 
 } from '@/pages/games';
 
-// PASTE YOUR CLERK PUBLISHABLE KEY HERE (replace the placeholder)
-const PUBLISHABLE_KEY = "pk_test_YOUR_KEY_HERE"; // Replace with your actual Clerk publishable key
+// Your Clerk publishable key
+const PUBLISHABLE_KEY = "pk_test_ZmFjdHVhbC1kYW5lLTQ5LmNsZXJrLmFjY291bnRzLmRldiQ";
 
 if (!PUBLISHABLE_KEY) {
   throw new Error("Missing Clerk Publishable Key - please add your key to src/App.tsx");
