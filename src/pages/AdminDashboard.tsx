@@ -11,6 +11,7 @@ import { AdminErrorBoundary } from '@/components/admin/ErrorBoundary';
 import { AdminDebugInfo } from '@/components/admin/AdminDebugInfo';
 import { ClerkRoleDebug } from '@/components/admin/ClerkRoleDebug';
 import { adminLog, DebugLevel } from '@/utils/debug';
+import Navbar from '@/components/Navbar';
 
 const AdminDashboard = () => {
   const { isSignedIn, isLoaded, userRole, canAccessAdminDashboard, userId } = useClerkRoles();
@@ -74,8 +75,11 @@ const AdminDashboard = () => {
   if (!isLoaded) {
     console.log('🔄 AdminDashboard Loading...');
     return (
-      <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+      <div className="min-h-screen bg-puzzle-black">
+        <Navbar />
+        <div className="p-6 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
+        </div>
       </div>
     );
   }
@@ -84,31 +88,37 @@ const AdminDashboard = () => {
   if (!isSignedIn || !hasAdminAccess) {
     console.log('🚫 Showing access denied screen for role:', userRole);
     return (
-      <AdminAccessCheck 
-        userId={userId}
-        userRole={userRole}
-        hasAdminAccess={hasAdminAccess}
-      />
+      <div className="min-h-screen bg-puzzle-black">
+        <Navbar />
+        <AdminAccessCheck 
+          userId={userId}
+          userRole={userRole}
+          hasAdminAccess={hasAdminAccess}
+        />
+      </div>
     );
   }
 
   console.log('✅ Showing admin dashboard for user:', userId, 'with role:', userRole);
   
-  // Show admin dashboard
+  // Show admin dashboard with navbar
   return (
     <AdminErrorBoundary>
-      <div className="min-h-screen bg-puzzle-black p-6">
-        <div className="max-w-6xl mx-auto space-y-8">
-          <AdminToolbar showDebugInfo={showDebugInfo} />
-          
-          {/* Clerk Role Debug Panel */}
-          <div className="space-y-4">
-            <ClerkRoleDebug />
+      <div className="min-h-screen bg-puzzle-black">
+        <Navbar />
+        <div className="p-6">
+          <div className="max-w-6xl mx-auto space-y-8">
+            <AdminToolbar showDebugInfo={showDebugInfo} />
+            
+            {/* Clerk Role Debug Panel */}
+            <div className="space-y-4">
+              <ClerkRoleDebug />
+            </div>
+
+            {showDebug && <AdminDebugInfo />}
+
+            <RoleBasedDashboard />
           </div>
-
-          {showDebug && <AdminDebugInfo />}
-
-          <RoleBasedDashboard />
         </div>
       </div>
     </AdminErrorBoundary>
