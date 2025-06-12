@@ -11,15 +11,15 @@ const PuzzleDropdown: React.FC = () => {
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { puzzles = [], isLoading: puzzlesLoading } = usePuzzles();
 
-  // Static game links for main game types
+  // Static game links for main game types - updated to use correct routes
   const mainGameTypes = [
-    { name: 'Word Search Arena', href: '/puzzles/word-search', icon: Search },
-    { name: 'Speed Sudoku', href: '/puzzles/sudoku', icon: Grid3X3 },
-    { name: 'Memory Master', href: '/puzzles/memory', icon: Brain },
-    { name: 'Trivia Lightning', href: '/puzzles/trivia', icon: Zap },
-    { name: 'Block Puzzle Pro', href: '/puzzles/blocks', icon: Square },
-    { name: 'Daily Crossword', href: '/puzzles/crossword', icon: BookOpen },
-    { name: 'Mahjong Solitaire', href: '/puzzles/mahjong', icon: Puzzle }
+    { name: 'Word Search Arena', href: '/games/word-search', icon: Search },
+    { name: 'Speed Sudoku', href: '/games/sudoku', icon: Grid3X3 },
+    { name: 'Memory Master', href: '/games/memory', icon: Brain },
+    { name: 'Trivia Lightning', href: '/games/trivia', icon: Zap },
+    { name: 'Block Puzzle Pro', href: '/games/blocks', icon: Square },
+    { name: 'Daily Crossword', href: '/games/crossword', icon: BookOpen },
+    { name: 'Mahjong Solitaire', href: '/games/mahjong', icon: Puzzle }
   ];
 
   // Filter active categories and get puzzle counts
