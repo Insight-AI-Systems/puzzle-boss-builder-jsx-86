@@ -50,7 +50,7 @@ export function UnityJigsawPuzzleWrapper({
   };
 
   return (
-    <ResponsiveGameContainer maxWidth="6xl" aspectRatio="16/9">
+    <ResponsiveGameContainer maxWidth="full" aspectRatio="16:9">
       <BaseGameWrapper config={gameConfig} hooks={gameHooks}>
         {(gameProps) => (
           <div className="w-full h-full min-h-[600px]">

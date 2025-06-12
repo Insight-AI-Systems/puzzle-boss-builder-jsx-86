@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from '@/components/ui/toaster';
-import { ThemeProvider } from '@/components/ThemeProvider';
+import { ThemeProvider } from '@/components/theme-provider';
 import { ClerkProvider } from '@clerk/clerk-react';
 import { GameProvider } from '@/shared/contexts/GameContext';
 
@@ -13,7 +13,7 @@ import MainLayout from '@/components/MainLayout';
 import { ClerkProtectedRoute } from '@/components/auth/ClerkProtectedRoute';
 
 // Import pages
-import Home from '@/pages/Home';
+import HomePage from '@/pages/HomePage';
 import About from '@/pages/About';
 import Contact from '@/pages/Contact';
 import Puzzles from '@/pages/Puzzles';
@@ -22,12 +22,11 @@ import Leaderboard from '@/pages/Leaderboard';
 import PrizesWon from '@/pages/PrizesWon';
 import HowItWorks from '@/pages/HowItWorks';
 import Categories from '@/pages/Categories';
-import Account from '@/pages/Account';
+import Profile from '@/pages/Profile';
 import Settings from '@/pages/Settings';
-import TermsOfService from '@/pages/TermsOfService';
-import PrivacyPolicy from '@/pages/PrivacyPolicy';
+import { Terms } from '@/pages/legal/Terms';
+import { Privacy } from '@/pages/legal/Privacy';
 import AdminDashboard from '@/pages/AdminDashboard';
-import Analytics from '@/pages/Analytics';
 import GameTesting from '@/pages/GameTesting';
 
 // Import game pages
@@ -70,7 +69,7 @@ function App() {
                 <Routes>
                   {/* Public routes with MainLayout */}
                   <Route path="/" element={<MainLayout />}>
-                    <Route index element={<Home />} />
+                    <Route index element={<HomePage />} />
                     <Route path="about" element={<About />} />
                     <Route path="contact" element={<Contact />} />
                     <Route path="puzzles" element={<Puzzles />} />
@@ -79,8 +78,8 @@ function App() {
                     <Route path="prizes-won" element={<PrizesWon />} />
                     <Route path="how-it-works" element={<HowItWorks />} />
                     <Route path="categories" element={<Categories />} />
-                    <Route path="terms" element={<TermsOfService />} />
-                    <Route path="privacy" element={<PrivacyPolicy />} />
+                    <Route path="terms" element={<Terms />} />
+                    <Route path="privacy" element={<Privacy />} />
                     
                     {/* Game routes */}
                     <Route path="games/memory" element={<MemoryGame />} />
@@ -95,7 +94,7 @@ function App() {
                     {/* Protected user routes */}
                     <Route path="account" element={
                       <ClerkProtectedRoute>
-                        <Account />
+                        <Profile />
                       </ClerkProtectedRoute>
                     } />
                     <Route path="settings" element={
@@ -109,11 +108,6 @@ function App() {
                   <Route path="admin" element={
                     <ClerkProtectedRoute requiredRoles={['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo']}>
                       <AdminDashboard />
-                    </ClerkProtectedRoute>
-                  } />
-                  <Route path="analytics" element={
-                    <ClerkProtectedRoute requiredRoles={['super_admin', 'admin']}>
-                      <Analytics />
                     </ClerkProtectedRoute>
                   } />
                   <Route path="game-testing" element={
