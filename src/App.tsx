@@ -1,103 +1,138 @@
 
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
-import { MainLayout } from '@/components/MainLayout';
-import HomePage from '@/pages/HomePage';
-import AccountDashboard from '@/pages/AccountDashboard';
-import Profile from '@/pages/Profile';
-import AdminDashboard from '@/pages/AdminDashboard';
-import Auth from '@/pages/Auth';
-import Categories from '@/pages/Categories';
-import CategoryPuzzles from '@/pages/CategoryPuzzles';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from '@/components/ThemeProvider';
+import { ClerkProvider } from '@clerk/clerk-react';
+import { GameProvider } from '@/shared/contexts/GameContext';
+
+// Import layouts and components
+import MainLayout from '@/components/MainLayout';
+import { ClerkProtectedRoute } from '@/components/auth/ClerkProtectedRoute';
+
+// Import pages
+import Home from '@/pages/Home';
+import About from '@/pages/About';
+import Contact from '@/pages/Contact';
 import Puzzles from '@/pages/Puzzles';
+import PuzzlePlay from '@/pages/PuzzlePlay';
 import Leaderboard from '@/pages/Leaderboard';
 import PrizesWon from '@/pages/PrizesWon';
 import HowItWorks from '@/pages/HowItWorks';
-import WordSearchGamePage from '@/pages/games/WordSearchGamePage';
-import SudokuGamePage from '@/pages/games/SudokuGamePage';
-import MemoryGamePage from '@/pages/games/MemoryGamePage';
-import TriviaGamePage from '@/pages/games/TriviaGamePage';
-import BlocksGamePage from '@/pages/games/BlocksGamePage';
-import CrosswordGamePage from '@/pages/games/CrosswordGamePage';
-import MahjongGamePage from '@/pages/games/MahjongGamePage';
-import SupportPage from '@/pages/SupportPage';
-import { ClerkProtectedRoute } from '@/components/auth/ClerkProtectedRoute';
-import './App.css';
+import Categories from '@/pages/Categories';
+import Account from '@/pages/Account';
+import Settings from '@/pages/Settings';
+import TermsOfService from '@/pages/TermsOfService';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
+import AdminDashboard from '@/pages/AdminDashboard';
+import Analytics from '@/pages/Analytics';
+import GameTesting from '@/pages/GameTesting';
+
+// Import game pages
+import { 
+  MemoryGame, 
+  WordSearchGamePage, 
+  SudokuGamePage, 
+  TriviaGamePage, 
+  BlockPuzzlePro, 
+  DailyCrossword, 
+  MahjongGamePage,
+  UnityJigsawPuzzle 
+} from '@/pages/games';
+
+// Get Clerk publishable key
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!PUBLISHABLE_KEY) {
+  throw new Error('Missing Publishable Key');
+}
+
+// Create query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
 function App() {
-  const { isLoading } = useClerkAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
-
   return (
-    <MainLayout>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/categories" element={<Categories />} />
-        <Route path="/category/:categoryId" element={<CategoryPuzzles />} />
-        <Route path="/puzzles" element={<Puzzles />} />
-        <Route path="/puzzle/:puzzleId" element={<div>Individual Puzzle Page - Coming Soon</div>} />
-        <Route path="/leaderboard" element={<Leaderboard />} />
-        <Route path="/prizes-won" element={<PrizesWon />} />
-        <Route path="/how-it-works" element={<HowItWorks />} />
-        <Route path="/puzzles/word-search" element={<WordSearchGamePage />} />
-        <Route path="/puzzles/sudoku" element={<SudokuGamePage />} />
-        <Route path="/puzzles/memory" element={<MemoryGamePage />} />
-        <Route path="/puzzles/trivia" element={<TriviaGamePage />} />
-        <Route path="/puzzles/blocks" element={<BlocksGamePage />} />
-        <Route path="/puzzles/crossword" element={<CrosswordGamePage />} />
-        <Route path="/puzzles/mahjong" element={<MahjongGamePage />} />
-        <Route path="/support" element={<SupportPage />} />
-        <Route 
-          path="/account" 
-          element={
-            <ClerkProtectedRoute>
-              <AccountDashboard />
-            </ClerkProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/profile" 
-          element={
-            <ClerkProtectedRoute>
-              <Profile />
-            </ClerkProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin" 
-          element={
-            <ClerkProtectedRoute requiredRoles={['admin', 'super_admin']}>
-              <AdminDashboard />
-            </ClerkProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin-dashboard" 
-          element={
-            <ClerkProtectedRoute requiredRoles={['admin', 'super_admin', 'category_manager', 'partner_manager', 'cfo']}>
-              <AdminDashboard />
-            </ClerkProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin-dashboard/finance" 
-          element={
-            <ClerkProtectedRoute requiredRoles={['admin', 'super_admin', 'cfo']}>
-              <AdminDashboard />
-            </ClerkProtectedRoute>
-          } 
-        />
-      </Routes>
-    </MainLayout>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme="dark" storageKey="puzzleboss-ui-theme">
+          <GameProvider>
+            <Router>
+              <div className="min-h-screen bg-puzzle-black">
+                <Routes>
+                  {/* Public routes with MainLayout */}
+                  <Route path="/" element={<MainLayout />}>
+                    <Route index element={<Home />} />
+                    <Route path="about" element={<About />} />
+                    <Route path="contact" element={<Contact />} />
+                    <Route path="puzzles" element={<Puzzles />} />
+                    <Route path="puzzle/:puzzleId" element={<PuzzlePlay />} />
+                    <Route path="leaderboard" element={<Leaderboard />} />
+                    <Route path="prizes-won" element={<PrizesWon />} />
+                    <Route path="how-it-works" element={<HowItWorks />} />
+                    <Route path="categories" element={<Categories />} />
+                    <Route path="terms" element={<TermsOfService />} />
+                    <Route path="privacy" element={<PrivacyPolicy />} />
+                    
+                    {/* Game routes */}
+                    <Route path="games/memory" element={<MemoryGame />} />
+                    <Route path="games/word-search" element={<WordSearchGamePage />} />
+                    <Route path="games/sudoku" element={<SudokuGamePage />} />
+                    <Route path="games/trivia" element={<TriviaGamePage />} />
+                    <Route path="games/block-puzzle" element={<BlockPuzzlePro />} />
+                    <Route path="games/crossword" element={<DailyCrossword />} />
+                    <Route path="games/mahjong" element={<MahjongGamePage />} />
+                    <Route path="games/unity-jigsaw-puzzle" element={<UnityJigsawPuzzle />} />
+                    
+                    {/* Protected user routes */}
+                    <Route path="account" element={
+                      <ClerkProtectedRoute>
+                        <Account />
+                      </ClerkProtectedRoute>
+                    } />
+                    <Route path="settings" element={
+                      <ClerkProtectedRoute>
+                        <Settings />
+                      </ClerkProtectedRoute>
+                    } />
+                  </Route>
+
+                  {/* Protected admin routes */}
+                  <Route path="admin" element={
+                    <ClerkProtectedRoute requiredRoles={['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo']}>
+                      <AdminDashboard />
+                    </ClerkProtectedRoute>
+                  } />
+                  <Route path="analytics" element={
+                    <ClerkProtectedRoute requiredRoles={['super_admin', 'admin']}>
+                      <Analytics />
+                    </ClerkProtectedRoute>
+                  } />
+                  <Route path="game-testing" element={
+                    <ClerkProtectedRoute requiredRoles={['super_admin', 'admin']}>
+                      <GameTesting />
+                    </ClerkProtectedRoute>
+                  } />
+
+                  {/* Catch all route */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </div>
+            </Router>
+            <Toaster />
+            <ReactQueryDevtools initialIsOpen={false} />
+          </GameProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ClerkProvider>
   );
 }
 

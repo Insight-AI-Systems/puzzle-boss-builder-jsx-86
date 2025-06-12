@@ -15,6 +15,7 @@ export interface MainNavItem extends NavItem {
 export const mainNavItems: MainNavItem[] = [
   { name: 'Home', href: '/' },
   { name: 'Puzzles', href: '/puzzles' },
+  { name: 'Games', href: '/games/unity-jigsaw-puzzle' }, // Added Unity game
   { name: 'Leaderboard', href: '/leaderboard' },
   { name: 'Prizes Won', href: '/prizes-won' },
   { name: 'How It Works', href: '/how-it-works' },
