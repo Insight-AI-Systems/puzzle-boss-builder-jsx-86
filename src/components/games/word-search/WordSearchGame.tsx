@@ -1,293 +1,303 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Trophy, RotateCw, Lightbulb } from 'lucide-react';
-import { WordSearchEngine, WordSearchState } from '@/business/engines/word-search';
+import { Timer, RotateCcw, Trophy, Lightbulb } from 'lucide-react';
+import { WordSearchEngine } from '@/business/engines/word-search/WordSearchEngine';
+import { getRandomWordsFromCategory } from './WordListManager';
+import { useGameTimer } from '../hooks/useGameTimer';
 import { useToast } from '@/hooks/use-toast';
 
-const SAMPLE_WORDS = ['PUZZLE', 'GAME', 'WORD', 'SEARCH', 'FUN', 'PLAY', 'SOLVE', 'BRAIN'];
-
 export const WordSearchGame: React.FC = () => {
-  const [engine] = useState(() => new WordSearchEngine(12));
-  const [gameState, setGameState] = useState<WordSearchState | null>(null);
-  const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
-  const [isSelecting, setIsSelecting] = useState(false);
-  const [gameStarted, setGameStarted] = useState(false);
+  const [engine, setEngine] = useState<WordSearchEngine | null>(null);
+  const [gameState, setGameState] = useState<any>(null);
+  const [isGameStarted, setIsGameStarted] = useState(false);
+  const [foundWords, setFoundWords] = useState<string[]>([]);
+  const [selectedCells, setSelectedCells] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startCell, setStartCell] = useState<string | null>(null);
   const [hintsUsed, setHintsUsed] = useState(0);
-  const [hintedCells, setHintedCells] = useState<Set<string>>(new Set());
-  const [maxHints] = useState(3);
+  
+  const { timeElapsed, isRunning, start, pause, resume, reset } = useGameTimer();
   const { toast } = useToast();
 
-  const handleGameStateChange = useCallback((state: WordSearchState) => {
-    setGameState(state);
+  const startNewGame = useCallback(() => {
+    // Get 20 words from the animals category using 'pro' difficulty
+    const words = getRandomWordsFromCategory('animals', 20, 'pro');
     
-    if (state.gameCompleted && gameStarted) {
-      toast({
-        title: "Congratulations!",
-        description: `You found all words! Score: ${state.score}`,
-      });
-    }
-  }, [gameStarted, toast]);
+    // Create new engine with 15x15 grid to accommodate more words
+    const newEngine = new WordSearchEngine(15);
+    const initialState = newEngine.initializeGame(words);
+    
+    setEngine(newEngine);
+    setGameState(initialState);
+    setIsGameStarted(true);
+    setFoundWords([]);
+    setSelectedCells([]);
+    setHintsUsed(0);
+    reset();
+    start();
+  }, [reset, start]);
 
   useEffect(() => {
-    const unsubscribe = engine.subscribe(handleGameStateChange);
-    return unsubscribe;
-  }, [engine, handleGameStateChange]);
+    if (engine && isGameStarted) {
+      // Engine is available and game is started
+    }
+  }, [engine, isGameStarted]);
 
-  const startNewGame = () => {
-    try {
-      engine.initializeGame(SAMPLE_WORDS);
-      setSelectedCells(new Set());
-      setGameStarted(true);
-      setHintsUsed(0);
-      setHintedCells(new Set());
-    } catch (error) {
-      console.error('Error starting game:', error);
-      toast({
-        title: "Error",
-        description: "Failed to start game. Please try again.",
-        variant: "destructive"
-      });
+  const handleMouseDown = (cellId: string) => {
+    if (!isGameStarted || !engine) return;
+    
+    setIsDragging(true);
+    setStartCell(cellId);
+    setSelectedCells([cellId]);
+  };
+
+  const handleMouseEnter = (cellId: string) => {
+    if (!isDragging || !startCell || !engine) return;
+    
+    // Calculate if the selection forms a valid line
+    const [startRow, startCol] = startCell.split('-').map(Number);
+    const [currentRow, currentCol] = cellId.split('-').map(Number);
+    
+    const deltaRow = currentRow - startRow;
+    const deltaCol = currentCol - startCol;
+    
+    // Check if it's a valid line (horizontal, vertical, or diagonal)
+    const isHorizontal = deltaRow === 0;
+    const isVertical = deltaCol === 0;
+    const isDiagonal = Math.abs(deltaRow) === Math.abs(deltaCol);
+    
+    if (isHorizontal || isVertical || isDiagonal) {
+      const cells = generateLineCells(startCell, cellId);
+      setSelectedCells(cells);
     }
   };
 
-  const useHint = () => {
-    if (!gameState || hintsUsed >= maxHints || gameState.gameCompleted) return;
-
-    // Find a word that hasn't been found yet
-    const remainingWords = gameState.targetWords.filter(word => !gameState.foundWords.includes(word));
-    
-    if (remainingWords.length > 0) {
-      // Get the first remaining word and highlight its cells
-      const wordToHint = remainingWords[0];
-      const placedWord = gameState.placedWords.find(pw => pw.word === wordToHint);
-      
-      if (placedWord && placedWord.cells) {
-        const hintCells = new Set(placedWord.cells.map(cell => `${cell.row}-${cell.col}`));
-        setHintedCells(hintCells);
-        setHintsUsed(prev => prev + 1);
-        
-        toast({
-          title: "Hint!",
-          description: `Look for the word: ${wordToHint}`,
-        });
-
-        // Clear hint after 3 seconds
-        setTimeout(() => {
-          setHintedCells(new Set());
-        }, 3000);
-      }
+  const handleMouseUp = () => {
+    if (!isDragging || !engine || selectedCells.length < 2) {
+      setIsDragging(false);
+      setSelectedCells([]);
+      return;
     }
-  };
-
-  const handleCellClick = (row: number, col: number) => {
-    if (!gameState || gameState.gameCompleted) return;
-
-    const cellId = `${row}-${col}`;
     
-    if (!isSelecting) {
-      // Start new selection
-      setSelectedCells(new Set([cellId]));
-      setIsSelecting(true);
-      engine.makeMove({ type: 'select_cells', cellIds: [cellId] });
-    } else {
-      // Continue selection
-      const newSelection = new Set(selectedCells);
-      if (newSelection.has(cellId)) {
-        newSelection.delete(cellId);
-      } else {
-        newSelection.add(cellId);
-      }
-      setSelectedCells(newSelection);
-      engine.makeMove({ type: 'select_cells', cellIds: Array.from(newSelection) });
-    }
-  };
-
-  const handleSubmitSelection = () => {
-    if (!gameState || selectedCells.size === 0) return;
-
-    const cellIds = Array.from(selectedCells);
-    const result = engine.validateWordSelection(cellIds);
-    
+    const result = engine.validateWordSelection(selectedCells);
     if (result.isValid && result.word) {
-      engine.makeMove({ type: 'submit_word', cellIds });
+      const newState = engine.makeMove({
+        type: 'submit_word',
+        cellIds: selectedCells
+      });
+      
+      setGameState(newState);
+      setFoundWords(newState.foundWords);
+      
       toast({
         title: "Word Found!",
         description: `You found: ${result.word}`,
       });
-    } else {
-      toast({
-        title: "Not a word",
-        description: "Try selecting a different combination of letters.",
-        variant: "destructive"
-      });
+      
+      if (newState.gameCompleted) {
+        pause();
+        toast({
+          title: "Congratulations!",
+          description: `You completed the puzzle in ${Math.floor(timeElapsed / 60000)}:${((timeElapsed % 60000) / 1000).toFixed(0).padStart(2, '0')}!`,
+        });
+      }
     }
     
-    setSelectedCells(new Set());
-    setIsSelecting(false);
-    engine.makeMove({ type: 'clear_selection' });
+    setIsDragging(false);
+    setSelectedCells([]);
+    setStartCell(null);
   };
 
-  const clearSelection = () => {
-    setSelectedCells(new Set());
-    setIsSelecting(false);
-    engine.makeMove({ type: 'clear_selection' });
+  const generateLineCells = (start: string, end: string): string[] => {
+    const [startRow, startCol] = start.split('-').map(Number);
+    const [endRow, endCol] = end.split('-').map(Number);
+    
+    const deltaRow = endRow - startRow;
+    const deltaCol = endCol - startCol;
+    const steps = Math.max(Math.abs(deltaRow), Math.abs(deltaCol));
+    
+    const cells: string[] = [];
+    for (let i = 0; i <= steps; i++) {
+      const row = startRow + Math.round((deltaRow * i) / steps);
+      const col = startCol + Math.round((deltaCol * i) / steps);
+      cells.push(`${row}-${col}`);
+    }
+    
+    return cells;
   };
 
-  const getCellClasses = (row: number, col: number) => {
-    const cellId = `${row}-${col}`;
-    const isSelected = selectedCells.has(cellId);
-    const isHinted = hintedCells.has(cellId);
-    const isFoundWord = gameState?.foundWords.some(word => {
-      // Check if this cell is part of any found word
-      return gameState.placedWords.some(placedWord => 
-        placedWord.word === word && 
-        placedWord.cells?.some(cell => cell.row === row && cell.col === col)
-      );
-    });
-
-    return `
-      w-8 h-8 border border-gray-300 flex items-center justify-center cursor-pointer text-sm font-bold
-      transition-colors duration-200
-      ${isSelected ? 'bg-blue-200 border-blue-400' : ''}
-      ${isFoundWord ? 'bg-green-200 border-green-400' : ''}
-      ${isHinted ? 'bg-yellow-200 border-yellow-400 animate-pulse' : ''}
-      ${!isSelected && !isFoundWord && !isHinted ? 'hover:bg-gray-100' : ''}
-    `.trim();
+  const showHint = () => {
+    if (!gameState || hintsUsed >= 3) return;
+    
+    const remainingWords = gameState.targetWords.filter(
+      (word: string) => !foundWords.includes(word)
+    );
+    
+    if (remainingWords.length > 0) {
+      const randomWord = remainingWords[Math.floor(Math.random() * remainingWords.length)];
+      setHintsUsed(prev => prev + 1);
+      
+      toast({
+        title: "Hint",
+        description: `Look for: ${randomWord}`,
+      });
+    }
   };
 
-  if (!gameStarted || !gameState) {
+  const formatTime = (milliseconds: number) => {
+    const minutes = Math.floor(milliseconds / 60000);
+    const seconds = Math.floor((milliseconds % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const renderGrid = () => {
+    if (!gameState) return null;
+    
+    const { grid } = gameState;
+    const gridSize = grid.length;
+    
     return (
-      <div className="max-w-4xl mx-auto p-4">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Word Search Game</CardTitle>
-            <p className="text-muted-foreground">Find all the hidden words in the grid!</p>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Button onClick={startNewGame} size="lg">
-              Start New Game
-            </Button>
-          </CardContent>
-        </Card>
+      <div 
+        className="grid gap-1 mx-auto select-none"
+        style={{ 
+          gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
+          maxWidth: '600px'
+        }}
+        onMouseLeave={() => {
+          if (isDragging) {
+            setIsDragging(false);
+            setSelectedCells([]);
+            setStartCell(null);
+          }
+        }}
+      >
+        {grid.map((row: string[], rowIndex: number) =>
+          row.map((letter: string, colIndex: number) => {
+            const cellId = `${rowIndex}-${colIndex}`;
+            const isSelected = selectedCells.includes(cellId);
+            const isFound = foundWords.some(word => {
+              const placedWord = gameState.placedWords.find((pw: any) => pw.word === word);
+              return placedWord?.cells.some((cell: any) => `${cell.row}-${cell.col}` === cellId);
+            });
+            
+            return (
+              <div
+                key={cellId}
+                className={`
+                  w-8 h-8 flex items-center justify-center text-sm font-bold
+                  border border-gray-300 cursor-pointer transition-all duration-150
+                  ${isSelected ? 'bg-blue-300 border-blue-500' : ''}
+                  ${isFound ? 'bg-green-200 border-green-400' : 'bg-white hover:bg-gray-100'}
+                `}
+                onMouseDown={() => handleMouseDown(cellId)}
+                onMouseEnter={() => handleMouseEnter(cellId)}
+                onMouseUp={handleMouseUp}
+              >
+                {letter}
+              </div>
+            );
+          })
+        )}
       </div>
     );
-  }
+  };
 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-6">
-      {/* Game Header */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-xl">Word Search</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Word Search Puzzle</span>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Trophy className="h-4 w-4 text-yellow-500" />
-                <span className="font-semibold">Score: {gameState.score}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button 
-                  onClick={useHint}
-                  disabled={hintsUsed >= maxHints || gameState.gameCompleted}
-                  variant="outline" 
-                  size="sm"
-                  className="flex items-center gap-1"
-                >
-                  <Lightbulb className="h-4 w-4" />
-                  Hint ({maxHints - hintsUsed})
-                </Button>
-                <Button onClick={startNewGame} variant="outline" size="sm">
-                  <RotateCw className="h-4 w-4 mr-2" />
-                  New Game
-                </Button>
-              </div>
+              {isGameStarted && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Timer className="h-4 w-4" />
+                  {formatTime(timeElapsed)}
+                </div>
+              )}
+              <Button onClick={startNewGame} variant="outline" size="sm">
+                <RotateCcw className="h-4 w-4 mr-2" />
+                New Game
+              </Button>
             </div>
-          </div>
+          </CardTitle>
         </CardHeader>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Game Grid */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardContent className="p-6">
-              <div className="grid gap-1 justify-center" style={{ 
-                gridTemplateColumns: `repeat(${gameState.grid.length}, 1fr)`,
-                maxWidth: 'fit-content',
-                margin: '0 auto'
-              }}>
-                {gameState.grid.map((row, rowIndex) =>
-                  row.map((letter, colIndex) => (
-                    <div
-                      key={`${rowIndex}-${colIndex}`}
-                      className={getCellClasses(rowIndex, colIndex)}
-                      onClick={() => handleCellClick(rowIndex, colIndex)}
-                    >
-                      {letter}
-                    </div>
-                  ))
-                )}
-              </div>
-              
-              {/* Selection Controls */}
-              {selectedCells.size > 0 && (
-                <div className="mt-4 flex justify-center gap-2">
-                  <Button onClick={handleSubmitSelection} variant="default">
-                    Submit Word ({selectedCells.size} letters)
-                  </Button>
-                  <Button onClick={clearSelection} variant="outline">
-                    Clear Selection
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Words List */}
-        <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Words to Find</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {gameState.foundWords.length} of {gameState.targetWords.length} found
+        
+        <CardContent className="space-y-6">
+          {!isGameStarted ? (
+            <div className="text-center py-12">
+              <h3 className="text-xl font-semibold mb-4">Ready to Start?</h3>
+              <p className="text-gray-600 mb-6">
+                Find all the hidden words in the puzzle. Words can be horizontal, vertical, or diagonal!
               </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {gameState.targetWords.map(word => (
-                  <div key={word} className="flex items-center justify-between">
-                    <span className={`font-medium ${
-                      gameState.foundWords.includes(word) 
-                        ? 'line-through text-muted-foreground' 
-                        : ''
-                    }`}>
-                      {word}
-                    </span>
-                    {gameState.foundWords.includes(word) && (
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        Found
-                      </Badge>
-                    )}
-                  </div>
-                ))}
+              <Button onClick={startNewGame} size="lg">
+                Start New Game
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-between items-center">
+                <div className="flex gap-4 text-sm">
+                  <span>Found: {foundWords.length}/{gameState?.targetWords.length || 0}</span>
+                  <span>Score: {gameState?.score || 0}</span>
+                </div>
+                <Button
+                  onClick={showHint}
+                  disabled={hintsUsed >= 3}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Lightbulb className="h-4 w-4 mr-2" />
+                  Hint ({3 - hintsUsed} left)
+                </Button>
               </div>
               
-              {gameState.gameCompleted && (
-                <div className="mt-4 p-4 bg-green-50 rounded-lg text-center">
-                  <h3 className="font-bold text-green-800 mb-2">Congratulations!</h3>
-                  <p className="text-green-700">You found all the words!</p>
-                  <p className="text-sm text-green-600 mt-1">Final Score: {gameState.score}</p>
-                  <p className="text-sm text-green-600">Hints used: {hintsUsed}</p>
+              <div className="flex flex-col lg:flex-row gap-6">
+                <div className="flex-1">
+                  {renderGrid()}
+                </div>
+                
+                <div className="lg:w-80">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Words to Find</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-2 max-h-96 overflow-y-auto">
+                        {gameState?.targetWords.map((word: string) => (
+                          <Badge
+                            key={word}
+                            variant={foundWords.includes(word) ? "default" : "outline"}
+                            className={`justify-center ${
+                              foundWords.includes(word) 
+                                ? 'bg-green-100 text-green-800 line-through' 
+                                : ''
+                            }`}
+                          >
+                            {word}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+              
+              {gameState?.gameCompleted && (
+                <div className="text-center py-6 bg-green-50 rounded-lg border border-green-200">
+                  <Trophy className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-green-800 mb-2">Congratulations!</h3>
+                  <p className="text-green-700">
+                    You found all words in {formatTime(timeElapsed)}!
+                  </p>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
