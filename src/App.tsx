@@ -6,6 +6,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ClerkProvider } from '@clerk/clerk-react';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { GameProvider } from '@/shared/contexts/GameContext';
 
 // Import layouts and components
@@ -41,10 +42,10 @@ import {
   UnityJigsawPuzzle 
 } from '@/pages/games';
 
-// Get Clerk publishable key
+// Get Clerk publishable key - make it optional
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
-// Create query client
+// Create single query client instance
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -54,78 +55,90 @@ const queryClient = new QueryClient({
   },
 });
 
+function AppRoutes() {
+  return (
+    <Router>
+      <div className="min-h-screen bg-puzzle-black">
+        <Routes>
+          {/* Public routes with MainLayout */}
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<HomePage />} />
+            <Route path="about" element={<About />} />
+            <Route path="contact" element={<Contact />} />
+            <Route path="puzzles" element={<Puzzles />} />
+            <Route path="puzzle/:puzzleId" element={<PuzzlePlay />} />
+            <Route path="leaderboard" element={<Leaderboard />} />
+            <Route path="prizes-won" element={<PrizesWon />} />
+            <Route path="how-it-works" element={<HowItWorks />} />
+            <Route path="categories" element={<Categories />} />
+            <Route path="terms" element={<Terms />} />
+            <Route path="privacy" element={<Privacy />} />
+            
+            {/* Game routes */}
+            <Route path="games/memory" element={<MemoryGame />} />
+            <Route path="games/word-search" element={<WordSearchGamePage />} />
+            <Route path="games/sudoku" element={<SudokuGamePage />} />
+            <Route path="games/trivia" element={<TriviaGamePage />} />
+            <Route path="games/block-puzzle" element={<BlockPuzzlePro />} />
+            <Route path="games/crossword" element={<DailyCrossword />} />
+            <Route path="games/mahjong" element={<MahjongGamePage />} />
+            <Route path="games/unity-jigsaw-puzzle" element={<UnityJigsawPuzzle />} />
+            
+            {/* Protected user routes - only show if Clerk is configured */}
+            {PUBLISHABLE_KEY && (
+              <>
+                <Route path="account" element={
+                  <ClerkProtectedRoute>
+                    <Profile />
+                  </ClerkProtectedRoute>
+                } />
+                <Route path="settings" element={
+                  <ClerkProtectedRoute>
+                    <Settings />
+                  </ClerkProtectedRoute>
+                } />
+              </>
+            )}
+          </Route>
+
+          {/* Protected admin routes - only show if Clerk is configured */}
+          {PUBLISHABLE_KEY && (
+            <>
+              <Route path="admin" element={
+                <ClerkProtectedRoute requiredRoles={['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo']}>
+                  <AdminDashboard />
+                </ClerkProtectedRoute>
+              } />
+              <Route path="game-testing" element={
+                <ClerkProtectedRoute requiredRoles={['super_admin', 'admin']}>
+                  <GameTesting />
+                </ClerkProtectedRoute>
+              } />
+            </>
+          )}
+
+          {/* Catch all route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
+
 function AppContent() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="puzzleboss-ui-theme">
-      <GameProvider>
-        <Router>
-          <div className="min-h-screen bg-puzzle-black">
-            <Routes>
-              {/* Public routes with MainLayout */}
-              <Route path="/" element={<MainLayout />}>
-                <Route index element={<HomePage />} />
-                <Route path="about" element={<About />} />
-                <Route path="contact" element={<Contact />} />
-                <Route path="puzzles" element={<Puzzles />} />
-                <Route path="puzzle/:puzzleId" element={<PuzzlePlay />} />
-                <Route path="leaderboard" element={<Leaderboard />} />
-                <Route path="prizes-won" element={<PrizesWon />} />
-                <Route path="how-it-works" element={<HowItWorks />} />
-                <Route path="categories" element={<Categories />} />
-                <Route path="terms" element={<Terms />} />
-                <Route path="privacy" element={<Privacy />} />
-                
-                {/* Game routes */}
-                <Route path="games/memory" element={<MemoryGame />} />
-                <Route path="games/word-search" element={<WordSearchGamePage />} />
-                <Route path="games/sudoku" element={<SudokuGamePage />} />
-                <Route path="games/trivia" element={<TriviaGamePage />} />
-                <Route path="games/block-puzzle" element={<BlockPuzzlePro />} />
-                <Route path="games/crossword" element={<DailyCrossword />} />
-                <Route path="games/mahjong" element={<MahjongGamePage />} />
-                <Route path="games/unity-jigsaw-puzzle" element={<UnityJigsawPuzzle />} />
-                
-                {/* Protected user routes - only show if Clerk is configured */}
-                {PUBLISHABLE_KEY && (
-                  <>
-                    <Route path="account" element={
-                      <ClerkProtectedRoute>
-                        <Profile />
-                      </ClerkProtectedRoute>
-                    } />
-                    <Route path="settings" element={
-                      <ClerkProtectedRoute>
-                        <Settings />
-                      </ClerkProtectedRoute>
-                    } />
-                  </>
-                )}
-              </Route>
-
-              {/* Protected admin routes - only show if Clerk is configured */}
-              {PUBLISHABLE_KEY && (
-                <>
-                  <Route path="admin" element={
-                    <ClerkProtectedRoute requiredRoles={['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo']}>
-                      <AdminDashboard />
-                    </ClerkProtectedRoute>
-                  } />
-                  <Route path="game-testing" element={
-                    <ClerkProtectedRoute requiredRoles={['super_admin', 'admin']}>
-                      <GameTesting />
-                    </ClerkProtectedRoute>
-                  } />
-                </>
-              )}
-
-              {/* Catch all route */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </div>
-        </Router>
-        <Toaster />
-        <ReactQueryDevtools initialIsOpen={false} />
-      </GameProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <GameProvider>
+            <AppRoutes />
+            <Toaster />
+            {process.env.NODE_ENV === 'development' && (
+              <ReactQueryDevtools initialIsOpen={false} />
+            )}
+          </GameProvider>
+        </AuthProvider>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }
@@ -134,20 +147,31 @@ function App() {
   // If Clerk publishable key is available, wrap with ClerkProvider
   if (PUBLISHABLE_KEY) {
     return (
-      <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
-        <QueryClientProvider client={queryClient}>
-          <AppContent />
-        </QueryClientProvider>
+      <ClerkProvider 
+        publishableKey={PUBLISHABLE_KEY}
+        appearance={{
+          elements: {
+            formButtonPrimary: 'bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black',
+            card: 'bg-puzzle-gray border border-puzzle-border',
+            headerTitle: 'text-puzzle-white',
+            headerSubtitle: 'text-puzzle-white/70',
+            socialButtonsBlockButton: 'border-puzzle-border hover:bg-puzzle-gray/50',
+            formFieldInput: 'bg-puzzle-black border-puzzle-border text-puzzle-white',
+            footerActionLink: 'text-puzzle-aqua hover:text-puzzle-aqua/80',
+          },
+          layout: {
+            socialButtonsPlacement: 'top',
+            showOptionalFields: false,
+          },
+        }}
+      >
+        <AppContent />
       </ClerkProvider>
     );
   }
 
   // If no Clerk key, run without Clerk authentication
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AppContent />
-    </QueryClientProvider>
-  );
+  return <AppContent />;
 }
 
 export default App;
