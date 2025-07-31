@@ -22,7 +22,16 @@ const Profile: React.FC = () => {
   
   const isLoading = isLoadingUserProfile || isLoadingMemberProfile;
 
-  console.log('Profile component render:', { profile, isLoading, isLoadingMemberProfile, isLoadingUserProfile, isAdmin });
+  console.log('Profile component render:', { 
+    profile, 
+    isLoading, 
+    isLoadingMemberProfile, 
+    isLoadingUserProfile, 
+    isAdmin,
+    profileExists: !!profile,
+    profileId: profile?.id,
+    profileRole: profile?.role
+  });
 
   if (isLoading) {
     return (

@@ -29,8 +29,20 @@ export const ClerkProtectedRoute: React.FC<ClerkProtectedRouteProps> = ({
     userRole,
     requiredRoles,
     hasProfile: !!profile,
-    shouldShowLoading
+    shouldShowLoading,
+    user: !!user,
+    profileLoadingError: profile === null && isAuthenticated && !isLoading
   });
+
+  // Add additional debugging for profile loading issues
+  if (isAuthenticated && !isLoading && !profile) {
+    console.error('🚨 Profile failed to load after authentication:', {
+      user: user?.id,
+      userEmail: user?.primaryEmailAddress?.emailAddress,
+      isAuthenticated,
+      isLoading
+    });
+  }
 
   // Show loading spinner while authentication is being determined
   if (shouldShowLoading) {

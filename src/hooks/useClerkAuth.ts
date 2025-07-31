@@ -41,8 +41,22 @@ export const useClerkAuth = () => {
     isLoaded,
     userEmail,
     profileLoading,
-    hasProfile: !!profile
+    hasProfile: !!profile,
+    userId: user?.id
   });
+
+  // Debug profile loading issues
+  React.useEffect(() => {
+    if (isSignedIn && isLoaded && !profileLoading && !profile) {
+      console.error('🚨 Profile fetch completed but no profile found:', {
+        isSignedIn,
+        isLoaded,
+        profileLoading,
+        userEmail,
+        userId: user?.id
+      });
+    }
+  }, [isSignedIn, isLoaded, profileLoading, profile, userEmail, user?.id]);
 
   // Initialize session cleanup on mount
   React.useEffect(() => {
