@@ -75,7 +75,7 @@ export const useClerkAuth = () => {
     }
   }, [isSignedIn, userEmail, user?.id]);
 
-  // Profile fetch with database-only role assignment
+  // Profile fetch with simplified lookup logic
   React.useEffect(() => {
     if (!user?.id || !isSignedIn) {
       setProfile(null);
@@ -85,7 +85,7 @@ export const useClerkAuth = () => {
 
     const fetchProfile = async () => {
       try {
-        console.log('🔍 Fetching profile for:', user.id, 'Email:', userEmail);
+        console.log('🔍 Fetching profile for Clerk ID:', user.id, 'Email:', userEmail);
         
         // Try to find profile by clerk_user_id first
         let { data, error } = await supabase
@@ -105,55 +105,33 @@ export const useClerkAuth = () => {
             .eq('email', userEmail)
             .maybeSingle();
           
+          console.log('🔍 Profile lookup by email result:', { data: emailProfile, error: emailError });
+          
           if (emailProfile && !emailError) {
             console.log('📧 Found profile by email, updating with Clerk ID');
             // Update profile with Clerk ID (keep existing role from database)
-            const updateData = { 
-              clerk_user_id: user.id,
-              updated_at: new Date().toISOString(),
-              last_sign_in: new Date().toISOString()
-            };
-            
             const { data: updatedProfile, error: updateError } = await supabase
               .from('profiles')
-              .update(updateData)
+              .update({ 
+                clerk_user_id: user.id,
+                updated_at: new Date().toISOString(),
+                last_sign_in: new Date().toISOString()
+              })
               .eq('id', emailProfile.id)
               .select()
               .single();
             
-            if (!updateError) {
+            console.log('📧 Profile update result:', { data: updatedProfile, error: updateError });
+            
+            if (!updateError && updatedProfile) {
               data = updatedProfile;
             }
           }
         }
         
-        // Create new profile if none exists (default to 'player' role)
-        if (!data) {
-          console.log('📝 Creating new profile for user');
-          const newProfile = {
-            id: user.id, // Use Clerk user ID as the profile ID
-            clerk_user_id: user.id,
-            email: userEmail,
-            username: user.username || user.firstName || userEmail?.split('@')[0] || '',
-            role: 'player', // Always default to player - no hardcoded admin access
-            member_id: crypto.randomUUID(),
-            last_sign_in: new Date().toISOString()
-          };
-          
-          const { data: createdProfile, error: createError } = await supabase
-            .from('profiles')
-            .insert(newProfile)
-            .select()
-            .single();
-          
-          if (!createError) {
-            data = createdProfile;
-          } else {
-            console.error('❌ Profile creation failed:', createError);
-          }
-        } else if (data) {
-          // For existing profiles, update last_sign_in only (keep existing role from database)
-          console.log(`✅ Found existing profile with database role: ${data.role}`);
+        // If we have a profile, update last_sign_in
+        if (data) {
+          console.log(`✅ Found profile with role: ${data.role}`);
           
           const { data: updatedProfile } = await supabase
             .from('profiles')
@@ -173,7 +151,7 @@ export const useClerkAuth = () => {
           const transformedProfile: ClerkProfile = {
             id: data.id,
             clerk_user_id: data.clerk_user_id,
-            role: data.role, // Use database role ONLY
+            role: data.role,
             username: data.username,
             email: data.email,
             avatar_url: data.avatar_url,
@@ -183,12 +161,15 @@ export const useClerkAuth = () => {
             updated_at: data.updated_at
           };
           
-          console.log('📋 Final profile result (Database Role Only):', {
+          console.log('📋 Final profile result:', {
             email: transformedProfile.email,
             role: transformedProfile.role,
-            source: 'database_only'
+            profileId: transformedProfile.id
           });
           setProfile(transformedProfile);
+        } else {
+          console.error('❌ No profile found after all lookup attempts');
+          setProfile(null);
         }
       } catch (error) {
         console.error('❌ Profile fetch error:', error);
