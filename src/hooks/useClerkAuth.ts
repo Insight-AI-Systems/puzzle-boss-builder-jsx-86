@@ -129,7 +129,7 @@ export const useClerkAuth = () => {
         if (!data) {
           console.log('📝 Creating new profile for user');
           const newProfile = {
-            id: crypto.randomUUID(),
+            id: user.id, // Use Clerk user ID as the profile ID
             clerk_user_id: user.id,
             email: userEmail,
             username: user.username || user.firstName || userEmail?.split('@')[0] || '',
@@ -146,6 +146,8 @@ export const useClerkAuth = () => {
           
           if (!createError) {
             data = createdProfile;
+          } else {
+            console.error('❌ Profile creation failed:', createError);
           }
         } else if (data) {
           // For existing profiles, update last_sign_in only (keep existing role from database)
