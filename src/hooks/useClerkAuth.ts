@@ -94,7 +94,9 @@ export const useClerkAuth = () => {
           .eq('clerk_user_id', user.id)
           .maybeSingle();
         
-        // If no profile found by clerk_user_id, try by email
+        console.log('🔍 Profile lookup by clerk_user_id result:', { data, error, clerkUserId: user.id });
+        
+        // If no profile found by clerk_user_id, try by email to find existing profiles
         if (!data && !error && userEmail) {
           console.log('🔍 No profile found by clerk_user_id, trying email:', userEmail);
           const { data: emailProfile, error: emailError } = await supabase
