@@ -1,11 +1,25 @@
-
-import { useClerkRoles } from '@/hooks/useClerkRoles';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 export function usePermissions() {
-  const { hasRole, isAdmin, userRole, hasPermission: clerkHasPermission, canAccessAdminDashboard } = useClerkRoles();
+  const { hasRole, isAdmin, userRole } = useClerkAuth();
 
   const hasPermission = (permission: string): boolean => {
-    return clerkHasPermission(permission);
+    // Super admins have all permissions
+    if (userRole === 'super_admin') return true;
+    
+    // Define basic permissions based on roles
+    const rolePermissions: Record<string, string[]> = {
+      'super_admin': ['*'], // All permissions
+      'admin': ['manage_users', 'manage_roles', 'manage_puzzles', 'view_analytics'],
+      'category_manager': ['manage_categories', 'manage_puzzles'],
+      'social_media_manager': ['manage_content', 'manage_marketing'],
+      'partner_manager': ['manage_partners'],
+      'cfo': ['view_financials', 'manage_finances'],
+      'player': []
+    };
+
+    const userPermissions = rolePermissions[userRole] || [];
+    return userPermissions.includes('*') || userPermissions.includes(permission);
   };
 
   const hasAllPermissions = (permissions: string[]): boolean => {
@@ -22,6 +36,11 @@ export function usePermissions() {
 
   const canManageRoles = (): boolean => {
     return hasPermission('manage_roles');
+  };
+
+  const canAccessAdminDashboard = (): boolean => {
+    const adminRoles = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
+    return adminRoles.includes(userRole);
   };
 
   const canAssignRole = (targetRole: string): boolean => {
