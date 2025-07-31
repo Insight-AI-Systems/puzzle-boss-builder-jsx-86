@@ -203,7 +203,7 @@ const AccountManagement = () => {
                 <li>Click "Update Password"</li>
               </ol>
               <p className="text-muted-foreground mt-2">
-                <span className="text-puzzle-white font-medium">Password Requirements:</span> Passwords must be at least 8 characters long and include a mix of uppercase letters, lowercase letters, numbers, and special characters.
+                <span className="text-puzzle-white font-medium">Enhanced Password Requirements:</span> Passwords must be at least 12 characters long and include a mix of uppercase letters, lowercase letters, numbers, and special characters. Avoid common sequences and repeated characters.
               </p>
             </div>
           </div>

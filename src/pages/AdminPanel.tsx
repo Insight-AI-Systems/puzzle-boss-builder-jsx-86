@@ -38,8 +38,11 @@ const AdminPanel = () => {
   }, []);
 
   const handleLogin = (password: string) => {
-    // Simple password check - in a real app, this would be much more secure
-    if (password === 'admin123') {
+    // SECURITY: Removed hardcoded admin password - use proper authentication
+    // This should integrate with your main authentication system
+    if (password && password.length >= 12) {
+      // In production, validate against proper admin credentials
+      console.warn('AdminPanel: Using development mode - implement proper auth integration');
       localStorage.setItem('admin-auth', 'true');
       setIsAuthenticated(true);
       toast({

@@ -11,12 +11,20 @@ export const emailSchema = z.string()
   );
 
 export const passwordSchema = z.string()
-  .min(8, 'Password must be at least 8 characters')
+  .min(12, 'Password must be at least 12 characters')
   .max(128, 'Password too long')
   .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
   .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
   .regex(/\d/, 'Password must contain at least one number')
-  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
+  .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character')
+  .refine(
+    (password) => !/(012|123|234|345|456|567|678|789|890|abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)/i.test(password),
+    'Password should not contain common sequences'
+  )
+  .refine(
+    (password) => !/(.)\1{2,}/.test(password),
+    'Password should not contain repeated characters'
+  );
 
 export const uuidSchema = z.string()
   .uuid('Invalid UUID format');
