@@ -3390,6 +3390,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: string
       }
+      get_user_role_secure: {
+        Args: { user_id: string }
+        Returns: string
+      }
       handle_password_reset_attempt: {
         Args: { _email: string; _ip_address?: string }
         Returns: string
