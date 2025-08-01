@@ -69,6 +69,9 @@ export default {
 				"puzzle-burgundy": "#800020",
 				"puzzle-black": "#121212",
 				"puzzle-white": "#f8f8f8",
+				"puzzle-gray": "#2a2a2a",
+				"puzzle-border": "#404040",
+				"puzzle-red": "#dc2626",
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
