@@ -14,6 +14,7 @@ serve(async (req) => {
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     const url = new URL(req.url)
+    const body = req.method !== 'GET' ? await req.json() : null
 
     if (req.method === 'GET') {
       // List all puzzle engine files
@@ -39,9 +40,7 @@ serve(async (req) => {
     }
 
     if (req.method === 'POST') {
-      const body = await req.json()
-      
-      if (url.pathname.endsWith('/bulk')) {
+      if (body.bulk || body.files) {
         // Bulk upload
         const { files } = body
         if (!files || !Array.isArray(files)) {
@@ -89,7 +88,7 @@ serve(async (req) => {
     }
 
     if (req.method === 'DELETE') {
-      const fileId = url.pathname.split('/').pop()
+      const { fileId } = body
       if (!fileId) {
         throw new Error('File ID is required')
       }

@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, FileText, Upload, Trash2, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PuzzleFile {
   id: string;
@@ -32,18 +33,14 @@ export const PuzzleEngineFileManager: React.FC = () => {
 
   const loadFiles = async () => {
     try {
-      const response = await fetch('/api/admin/puzzle-files', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const { data, error } = await supabase.functions.invoke('admin-puzzle-files', {
+        method: 'GET'
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to load files');
+      if (error) {
+        throw new Error(error.message || 'Failed to load files');
       }
 
-      const data = await response.json();
       setFiles(data.files || []);
     } catch (error) {
       console.error('Error loading files:', error);
@@ -69,19 +66,16 @@ export const PuzzleEngineFileManager: React.FC = () => {
 
     setUploading(true);
     try {
-      const response = await fetch('/api/admin/puzzle-files', {
+      const { data, error } = await supabase.functions.invoke('admin-puzzle-files', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+        body: {
           filename: newFileName,
           content: newFileContent
-        }),
+        }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to upload file');
+      if (error) {
+        throw new Error(error.message || 'Failed to upload file');
       }
 
       toast({
@@ -144,18 +138,16 @@ export const PuzzleEngineFileManager: React.FC = () => {
         return;
       }
 
-      const response = await fetch('/api/admin/puzzle-files/bulk', {
+      const { data, error } = await supabase.functions.invoke('admin-puzzle-files', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          files: filesToUpload
-        }),
+        body: {
+          files: filesToUpload,
+          bulk: true
+        }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to upload bulk files');
+      if (error) {
+        throw new Error(error.message || 'Failed to upload bulk files');
       }
 
       toast({
@@ -181,12 +173,13 @@ export const PuzzleEngineFileManager: React.FC = () => {
     if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
 
     try {
-      const response = await fetch(`/api/admin/puzzle-files/${fileId}`, {
+      const { data, error } = await supabase.functions.invoke('admin-puzzle-files', {
         method: 'DELETE',
+        body: { fileId }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete file');
+      if (error) {
+        throw new Error(error.message || 'Failed to delete file');
       }
 
       toast({
