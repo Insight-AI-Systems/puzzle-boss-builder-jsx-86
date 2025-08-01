@@ -27,8 +27,9 @@ const ADMIN_EMAILS = [
 ];
 
 export const useClerkAuth = () => {
-  const { user, isSignedIn, isLoaded } = useUser();
-  const { signOut: clerkSignOut } = useClerk();
+  try {
+    const { user, isSignedIn, isLoaded } = useUser();
+    const { signOut: clerkSignOut } = useClerk();
 
   const userEmail = user?.primaryEmailAddress?.emailAddress;
 
@@ -143,4 +144,22 @@ export const useClerkAuth = () => {
     error: null,
     session: null,
   };
+  } catch (error) {
+    console.error('❌ useClerkAuth error:', error);
+    // Return safe fallback values if Clerk context is not available
+    return {
+      user: null,
+      profile: null,
+      isAuthenticated: false,
+      isLoading: true,
+      userRole: 'player',
+      userRoles: ['player'],
+      hasRole: () => false,
+      isAdmin: false,
+      rolesLoaded: false,
+      signOut: async () => {},
+      error: error,
+      session: null,
+    };
+  }
 };
