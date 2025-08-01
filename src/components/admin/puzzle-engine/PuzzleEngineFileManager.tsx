@@ -98,6 +98,39 @@ export const PuzzleEngineFileManager: React.FC = () => {
     }
   };
 
+  const parseBulkFiles = (content: string): { filename: string; content: string }[] => {
+    const files: { filename: string; content: string }[] = [];
+    const sections = content.split('---').map(s => s.trim()).filter(s => s);
+    
+    if (sections.length === 0) {
+      throw new Error('No files found. Please use the format: filename.js\\ncontent\\n---\\nnext-file.js\\ncontent');
+    }
+    
+    sections.forEach((section, index) => {
+      const lines = section.split('\n');
+      if (lines.length < 2) {
+        throw new Error(`Section ${index + 1}: Each file must have a filename on the first line followed by content. Use format: filename.js\\ncontent`);
+      }
+      
+      const filename = lines[0].trim();
+      const fileContent = lines.slice(1).join('\n').trim();
+      
+      // Validate filename
+      if (!filename || filename.startsWith('/*') || filename.startsWith('//') || filename.includes('{') || filename.includes('}')) {
+        throw new Error(`Section ${index + 1}: Invalid filename "${filename}". First line must be a valid filename (e.g., "myfile.js"), not code content.`);
+      }
+      
+      // Validate content
+      if (!fileContent) {
+        throw new Error(`Section ${index + 1}: File "${filename}" has no content.`);
+      }
+      
+      files.push({ filename, content: fileContent });
+    });
+    
+    return files;
+  };
+
   const uploadBulkFiles = async () => {
     if (!bulkFiles.trim()) {
       toast({
@@ -110,33 +143,7 @@ export const PuzzleEngineFileManager: React.FC = () => {
 
     setUploading(true);
     try {
-      // Parse bulk files - expected format: filename.js|content\n---\n
-      const fileSections = bulkFiles.split('\n---\n').filter(section => section.trim());
-      const filesToUpload = [];
-
-      for (const section of fileSections) {
-        const lines = section.trim().split('\n');
-        if (lines.length < 2) continue;
-
-        const filename = lines[0].trim();
-        const content = lines.slice(1).join('\n');
-
-        if (filename && content) {
-          filesToUpload.push({
-            filename,
-            content
-          });
-        }
-      }
-
-      if (filesToUpload.length === 0) {
-        toast({
-          title: "Validation Error",
-          description: "No valid files found in bulk data",
-          variant: "destructive"
-        });
-        return;
-      }
+      const filesToUpload = parseBulkFiles(bulkFiles);
 
       const { data, error } = await supabase.functions.invoke('admin-puzzle-files', {
         method: 'POST',
@@ -161,7 +168,7 @@ export const PuzzleEngineFileManager: React.FC = () => {
       console.error('Error uploading bulk files:', error);
       toast({
         title: "Error",
-        description: "Failed to upload bulk files",
+        description: error.message || "Failed to upload bulk files",
         variant: "destructive"
       });
     } finally {
@@ -234,23 +241,30 @@ export const PuzzleEngineFileManager: React.FC = () => {
                 <Textarea
                   value={bulkFiles}
                   onChange={(e) => setBulkFiles(e.target.value)}
-                  placeholder={`puzzle-core.js
-class PuzzleCore {
+                  placeholder={`createjs-tweenjs.js
+/*!
+* TweenJS
+* Visit http://createjs.com/ for documentation, updates and examples.
+*/
+
+// Your JavaScript content here...
+
+---
+
+puzzle-engine.js
+class PuzzleEngine {
   constructor() {
-    // puzzle logic
+    // Engine code here
   }
 }
 
 ---
 
 piece-detection.js
-class PieceDetection {
-  constructor() {
-    // piece detection logic
-  }
-}
-
----`}
+// Piece detection algorithms
+function detectPieces() {
+  // detection logic
+}`}
                   className="bg-puzzle-black border-puzzle-border text-puzzle-white min-h-[300px] font-mono text-sm"
                 />
               </div>
