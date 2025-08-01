@@ -35,15 +35,13 @@ export const PuzzleEngineFileManager: React.FC = () => {
 
   const loadFiles = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('admin-puzzle-files', {
-        method: 'GET'
-      });
+      const { data, error } = await supabase.functions.invoke('admin-puzzle-files');
 
       if (error) {
         throw new Error(error.message || 'Failed to load files');
       }
 
-      setFiles(data.files || []);
+      setFiles(data || []);
     } catch (error) {
       console.error('Error loading files:', error);
       toast({
@@ -69,10 +67,11 @@ export const PuzzleEngineFileManager: React.FC = () => {
     setUploading(true);
     try {
       const { data, error } = await supabase.functions.invoke('admin-puzzle-files', {
-        method: 'POST',
         body: {
-          filename: newFileName,
-          content: newFileContent
+          files: [{
+            filename: newFileName,
+            content: newFileContent
+          }]
         }
       });
 
@@ -191,10 +190,8 @@ export const PuzzleEngineFileManager: React.FC = () => {
     setUploading(true);
     try {
       const { data, error } = await supabase.functions.invoke('admin-puzzle-files', {
-        method: 'POST',
         body: {
-          files: droppedFiles,
-          bulk: true
+          files: droppedFiles
         }
       });
 
@@ -225,9 +222,9 @@ export const PuzzleEngineFileManager: React.FC = () => {
     if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
 
     try {
-      const { data, error } = await supabase.functions.invoke('admin-puzzle-files', {
-        method: 'DELETE',
-        body: { fileId }
+      const { error } = await supabase.functions.invoke('admin-puzzle-files', {
+        body: { id: fileId },
+        method: 'DELETE'
       });
 
       if (error) {
@@ -409,7 +406,7 @@ function detectPieces() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open(`/api/puzzle-engine/files/${file.filename}`, '_blank')}
+                      onClick={() => window.open(`https://vcacfysfjgoahledqdwa.supabase.co/functions/v1/admin-puzzle-files/file/${file.filename}`, '_blank')}
                       className="border-puzzle-border text-puzzle-white hover:bg-puzzle-gray"
                     >
                       <Eye className="h-4 w-4" />

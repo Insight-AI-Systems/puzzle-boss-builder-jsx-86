@@ -19,6 +19,7 @@ import { ContentManagement } from "@/components/admin/ContentManagement";
 import { EmailManagement } from "@/components/admin/EmailManagement";
 import { AnalyticsDashboard } from "@/components/admin/analytics/AnalyticsDashboard";
 import { FinancialDashboard } from "./financial-dashboard/FinancialDashboard";
+import { PuzzleEngineFileManager } from "../puzzle-engine/PuzzleEngineFileManager";
 
 export interface TabDefinition {
   id: string;
@@ -48,9 +49,7 @@ export function getTabDefinitions(): TabDefinition[] {
       id: "puzzles",
       name: "Puzzles",
       icon: Puzzle,
-      component: () => React.createElement('div', { className: 'p-8 text-center' }, 
-        React.createElement('p', { className: 'text-muted-foreground' }, 'Puzzle management will be available with the CodeCanyon system')
-      ),
+      component: PuzzleEngineFileManager,
       roles: ["super_admin", "admin", "category_manager"]
     },
     {

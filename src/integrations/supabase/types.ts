@@ -1482,6 +1482,30 @@ export type Database = {
         }
         Relationships: []
       }
+      puzzle_js_files: {
+        Row: {
+          content: string
+          created_at: string
+          filename: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          filename: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          filename?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       role_hierarchy: {
         Row: {
           child_role: Database["public"]["Enums"]["user_role"]
