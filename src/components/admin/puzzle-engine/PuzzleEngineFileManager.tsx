@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, FileText, Upload, Trash2, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
+import FileDropzone from './FileDropzone';
 
 interface PuzzleFile {
   id: string;
@@ -24,6 +25,7 @@ export const PuzzleEngineFileManager: React.FC = () => {
   const [newFileName, setNewFileName] = useState('');
   const [newFileContent, setNewFileContent] = useState('');
   const [bulkFiles, setBulkFiles] = useState('');
+  const [droppedFiles, setDroppedFiles] = useState<{ filename: string; content: string }[]>([]);
   const { toast } = useToast();
 
   // Load existing files
@@ -176,6 +178,49 @@ export const PuzzleEngineFileManager: React.FC = () => {
     }
   };
 
+  const uploadDroppedFiles = async () => {
+    if (droppedFiles.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please drop some files first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-puzzle-files', {
+        method: 'POST',
+        body: {
+          files: droppedFiles,
+          bulk: true
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to upload files');
+      }
+
+      toast({
+        title: "Success",
+        description: `${droppedFiles.length} files uploaded successfully`
+      });
+
+      setDroppedFiles([]);
+      loadFiles();
+    } catch (error) {
+      console.error('Error uploading dropped files:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload files",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const deleteFile = async (fileId: string, filename: string) => {
     if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
 
@@ -227,11 +272,34 @@ export const PuzzleEngineFileManager: React.FC = () => {
           </p>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="bulk" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-puzzle-black">
+          <Tabs defaultValue="drop" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 bg-puzzle-black">
+              <TabsTrigger value="drop" className="text-puzzle-white">Drag & Drop</TabsTrigger>
               <TabsTrigger value="bulk" className="text-puzzle-white">Bulk Upload</TabsTrigger>
               <TabsTrigger value="single" className="text-puzzle-white">Single File</TabsTrigger>
             </TabsList>
+            
+            <TabsContent value="drop" className="space-y-4">
+              <div className="space-y-4">
+                <Label className="text-puzzle-white">
+                  Drag & Drop JavaScript Files
+                </Label>
+                <FileDropzone 
+                  onFilesReady={setDroppedFiles}
+                  disabled={uploading}
+                />
+                {droppedFiles.length > 0 && (
+                  <Button 
+                    onClick={uploadDroppedFiles} 
+                    disabled={uploading}
+                    className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black"
+                  >
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                    Upload {droppedFiles.length} Files
+                  </Button>
+                )}
+              </div>
+            </TabsContent>
             
             <TabsContent value="bulk" className="space-y-4">
               <div className="space-y-2">
