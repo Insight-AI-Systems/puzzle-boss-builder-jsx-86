@@ -30,10 +30,10 @@ function HomePage() {
     skipRedirect: location.state?.skipAdminRedirect
   });
   
-  // Admin redirect logic - only run after auth is loaded
+  // Admin redirect logic - only run after auth is loaded and not during navigation
   useEffect(() => {
-    // Skip redirect logic if still loading or showing confirmation
-    if (isLoading || showingConfirmation) return;
+    // Skip redirect logic if still loading, showing confirmation, or no authentication
+    if (isLoading || showingConfirmation || !isAuthenticated) return;
     
     // Check if we're coming directly from an admin page - if so, don't redirect
     const comingFromAdmin = location.state?.from?.startsWith('/admin');
@@ -43,6 +43,7 @@ function HomePage() {
     
     console.log('HomePage admin redirect check', {
       userRole,
+      isAuthenticated,
       hasConfirmedAdmin: confirmedAdmin.current !== null,
       confirmedAdminValue: confirmedAdmin.current,
       comingFromAdmin,
@@ -67,7 +68,7 @@ function HomePage() {
     }
     
     // Only proceed if user is super_admin and not coming from admin pages
-    if (userRole === 'super_admin' && !comingFromAdmin) {
+    if (userRole === 'super_admin' && !comingFromAdmin && isAuthenticated) {
       // Check localStorage for user preference
       const userWantsAdmin = window.localStorage.getItem('redirect_to_admin');
       
@@ -80,25 +81,21 @@ function HomePage() {
       
       if (userWantsAdmin === 'true') {
         console.log('Auto-redirecting super_admin to dashboard based on localStorage preference');
-        navigate('/admin');
-      } else if (userWantsAdmin === null) {
+        navigate('/admin', { replace: true });
+      } else if (userWantsAdmin === null && !confirmedAdmin.current) {
         console.log('Showing confirmation dialog for super_admin');
-        setShowingConfirmation(true);
+        confirmedAdmin.current = false; // Prevent multiple confirmations
         
-        // Use setTimeout to ensure this runs after state update
-        setTimeout(() => {
-          const shouldRedirect = window.confirm('As a Super Admin, would you like to go directly to the Admin Dashboard?');
-          confirmedAdmin.current = shouldRedirect;
-          window.localStorage.setItem('redirect_to_admin', shouldRedirect ? 'true' : 'false');
-          
-          if (shouldRedirect) {
-            navigate('/admin');
-          }
-          setShowingConfirmation(false);
-        }, 0);
+        // Use a more reliable confirmation method
+        const shouldRedirect = window.confirm('As a Super Admin, would you like to go directly to the Admin Dashboard?');
+        window.localStorage.setItem('redirect_to_admin', shouldRedirect ? 'true' : 'false');
+        
+        if (shouldRedirect) {
+          navigate('/admin', { replace: true });
+        }
       }
     }
-  }, [isLoading, userRole, navigate, showingConfirmation, location.state]);
+  }, [isLoading, userRole, navigate, isAuthenticated, location.state]);
 
   useEffect(() => {
     // Debug message to verify component mounting
