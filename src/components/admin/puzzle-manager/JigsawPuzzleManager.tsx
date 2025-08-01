@@ -79,7 +79,8 @@ export const JigsawPuzzleManager: React.FC = () => {
     status: 'draft',
     tags: [] as string[],
     image_url: '',
-    image_name: ''
+    image_name: '',
+    selected_image_data: null as any
   });
 
   useEffect(() => {
@@ -135,7 +136,12 @@ export const JigsawPuzzleManager: React.FC = () => {
 
   const handleImageSelect = (image: any) => {
     setSelectedImageId(image.id);
-    setFormData({...formData, image_url: image.url, image_name: image.name});
+    setFormData({
+      ...formData, 
+      image_url: image.url, 
+      image_name: image.name,
+      selected_image_data: image
+    });
     toast({
       title: "Image Selected",
       description: `Selected: ${image.name}. You can now complete the form and create your puzzle.`,
@@ -295,7 +301,8 @@ export const JigsawPuzzleManager: React.FC = () => {
       status: 'draft',
       tags: [],
       image_url: '',
-      image_name: ''
+      image_name: '',
+      selected_image_data: null
     });
   };
 
@@ -313,7 +320,8 @@ export const JigsawPuzzleManager: React.FC = () => {
       status: puzzle.status,
       tags: puzzle.tags || [],
       image_url: '',
-      image_name: ''
+      image_name: '',
+      selected_image_data: null
     });
     setShowCreateForm(true);
   };
@@ -505,7 +513,7 @@ export const JigsawPuzzleManager: React.FC = () => {
                           variant="outline" 
                           onClick={() => {
                             setSelectedImageId('');
-                            setFormData({...formData, image_url: '', image_name: ''});
+                            setFormData({...formData, image_url: '', image_name: '', selected_image_data: null});
                           }}
                           type="button"
                         >
@@ -513,7 +521,33 @@ export const JigsawPuzzleManager: React.FC = () => {
                         </Button>
                       )}
                     </div>
-                    {selectedImageId ? (
+                    
+                    {/* Image Preview */}
+                    {selectedImageId && formData.selected_image_data ? (
+                      <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded">
+                        <div className="flex items-start gap-4">
+                          <div className="flex-shrink-0">
+                            <img 
+                              src={`https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/Original Product Images/${formData.selected_image_data.image_files?.[0]?.original_path || formData.image_url}`}
+                              alt={formData.image_name}
+                              className="w-24 h-24 object-cover rounded border shadow-sm"
+                              onError={(e) => {
+                                // Fallback to a placeholder if image fails to load
+                                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMiA0MEg2NFY1Nkg0OEw0MCA0OEgzMlY0MFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm text-green-800 font-medium">
+                              ✓ Image selected: {formData.image_name}
+                            </div>
+                            <div className="text-xs text-green-600 mt-1">
+                              Ready to create puzzle
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : selectedImageId ? (
                       <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
                         <div className="text-sm text-green-800 font-medium">
                           ✓ Image selected: {formData.image_name}
