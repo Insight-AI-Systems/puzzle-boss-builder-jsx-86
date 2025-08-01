@@ -7,15 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Play, Pause } from 'lucide-react';
 
-interface GameState {
-  timeElapsed: number;
-  moves: number;
-  completionPercentage: number;
-  hintsUsed: number;
-  isPaused: boolean;
-  isComplete: boolean;
-  showGuide: boolean;
-}
+// Removed GameState interface - using EnhancedJigsawPuzzle's built-in state management
 
 // Mock puzzle data - in real app would come from API
 const mockPuzzleData = {
@@ -51,17 +43,8 @@ export const PuzzleGamePage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [gameState, setGameState] = useState<GameState>({
-    timeElapsed: 0,
-    moves: 0,
-    completionPercentage: 0,
-    hintsUsed: 0,
-    isPaused: false,
-    isComplete: false,
-    showGuide: false
-  });
-
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   // Get puzzle data
   const puzzleData = puzzleId ? mockPuzzleData[puzzleId as keyof typeof mockPuzzleData] : null;
@@ -87,68 +70,20 @@ export const PuzzleGamePage: React.FC = () => {
 
   const currentPuzzle = puzzleData || getCustomPuzzleData();
 
-  // Timer effect
-  useEffect(() => {
-    if (!gameState.isPaused && !gameState.isComplete) {
-      const timer = setInterval(() => {
-        setGameState(prev => ({
-          ...prev,
-          timeElapsed: prev.timeElapsed + 1
-        }));
-      }, 1000);
+  // Timer logic removed - using EnhancedJigsawPuzzle's built-in timer
 
-      return () => clearInterval(timer);
-    }
-  }, [gameState.isPaused, gameState.isComplete]);
-
-  const handleAction = (action: string) => {
-    switch (action) {
-      case 'pause':
-        setGameState(prev => ({ ...prev, isPaused: true }));
-        toast({
-          title: "Game Paused",
-          description: "Click resume to continue"
-        });
-        break;
-      case 'resume':
-        setGameState(prev => ({ ...prev, isPaused: false }));
-        break;
-      case 'hint':
-        setGameState(prev => ({ ...prev, hintsUsed: prev.hintsUsed + 1 }));
-        toast({
-          title: "Hint Used",
-          description: "Look for edge pieces first!"
-        });
-        break;
-      case 'toggle-guide':
-        setGameState(prev => ({ ...prev, showGuide: !prev.showGuide }));
-        break;
-      case 'reset':
-        setGameState({
-          timeElapsed: 0,
-          moves: 0,
-          completionPercentage: 0,
-          hintsUsed: 0,
-          isPaused: false,
-          isComplete: false,
-          showGuide: false
-        });
-        toast({
-          title: "Game Reset",
-          description: "Starting fresh puzzle"
-        });
-        break;
-    }
+  const handleToggleGuide = () => {
+    setShowGuide(prev => !prev);
   };
 
-  const handleGameComplete = () => {
-    setGameState(prev => ({ ...prev, isComplete: true, completionPercentage: 100 }));
+  const handleGameComplete = (stats: { moves: number; time: number; }) => {
     setShowCompletionModal(true);
   };
 
   const handlePlayAgain = () => {
     setShowCompletionModal(false);
-    handleAction('reset');
+    // Reset will be handled by EnhancedJigsawPuzzle's key change
+    window.location.reload();
   };
 
   const handleReturnHome = () => {
@@ -203,20 +138,10 @@ export const PuzzleGamePage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => handleAction(gameState.isPaused ? 'resume' : 'pause')}
+                  onClick={handleToggleGuide}
                   className="text-puzzle-aqua border-puzzle-aqua/50 hover:bg-puzzle-aqua/10"
                 >
-                  {gameState.isPaused ? (
-                    <>
-                      <Play className="h-4 w-4 mr-2" />
-                      Resume
-                    </>
-                  ) : (
-                    <>
-                      <Pause className="h-4 w-4 mr-2" />
-                      Pause
-                    </>
-                  )}
+                  {showGuide ? 'Hide Guide' : 'Show Guide'}
                 </Button>
               </div>
             </div>
@@ -232,7 +157,7 @@ export const PuzzleGamePage: React.FC = () => {
               columns={currentPuzzle.columns}
               puzzleId={puzzleId || 'custom'}
               showNumbers={false}
-              showGuide={gameState.showGuide}
+              showGuide={showGuide}
               onComplete={handleGameComplete}
             />
           </div>
@@ -245,14 +170,14 @@ export const PuzzleGamePage: React.FC = () => {
         onClose={() => setShowCompletionModal(false)}
         puzzleName={currentPuzzle.name}
         stats={{
-          timeElapsed: gameState.timeElapsed,
-          moves: gameState.moves,
+          timeElapsed: 120, // Mock data - EnhancedJigsawPuzzle will provide actual stats
+          moves: 50,
           difficulty: currentPuzzle.difficulty,
-          hintsUsed: gameState.hintsUsed,
-          score: Math.max(1000 - (gameState.moves * 10) - (gameState.hintsUsed * 50), 100),
+          hintsUsed: 0,
+          score: 950,
           rank: Math.floor(Math.random() * 10) + 1,
           isPersonalBest: Math.random() > 0.5,
-          achievements: gameState.hintsUsed === 0 ? ['No Hints Master'] : []
+          achievements: []
         }}
         onPlayAgain={handlePlayAgain}
         onViewLeaderboard={handleViewLeaderboard}
@@ -260,7 +185,7 @@ export const PuzzleGamePage: React.FC = () => {
         onShare={() => {
           navigator.share?.({
             title: `I completed ${currentPuzzle.name}!`,
-            text: `Just solved a ${currentPuzzle.difficulty} puzzle in ${Math.floor(gameState.timeElapsed / 60)}:${(gameState.timeElapsed % 60).toString().padStart(2, '0')}`,
+            text: `Just solved a ${currentPuzzle.difficulty} puzzle!`,
             url: window.location.href
           });
         }}

@@ -6,4 +6,4 @@ export { default as TriviaGamePage } from './TriviaGamePage';
 export { default as BlockPuzzlePro } from './BlockPuzzlePro';
 export { default as DailyCrossword } from './DailyCrossword';
 export { default as MahjongGamePage } from './MahjongGamePage';
-export { default as PuzzleSessionPage } from './PuzzleSessionPage';
+// PuzzleSessionPage removed - using new puzzle system

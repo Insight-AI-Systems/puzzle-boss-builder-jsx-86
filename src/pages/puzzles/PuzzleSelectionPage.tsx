@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageLayout from '@/components/layouts/PageLayout';
-import { PuzzleGameSelector } from '@/components/puzzles/game-selection/PuzzleGameSelector';
+// PuzzleGameSelector removed - creating inline puzzle grid
 import { DifficultySelector } from '@/components/puzzles/difficulty/DifficultySelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -161,7 +161,39 @@ export const PuzzleSelectionPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            <PuzzleGameSelector puzzles={filteredPuzzles} />
+            {/* Puzzle Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredPuzzles.map((puzzle) => (
+                <Link key={puzzle.id} to={`/puzzles/jigsaw/${puzzle.id}`}>
+                  <Card className="bg-puzzle-black/50 border-puzzle-aqua/30 hover:border-puzzle-aqua/60 transition-all duration-300 cursor-pointer">
+                    <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                      <img 
+                        src={puzzle.imageUrl} 
+                        alt={puzzle.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                      <div className="absolute bottom-2 right-2 bg-puzzle-aqua text-puzzle-black px-2 py-1 rounded text-sm font-semibold">
+                        ${puzzle.cost}
+                      </div>
+                    </div>
+                    <CardContent className="p-4">
+                      <h3 className="font-bold text-puzzle-white mb-1">{puzzle.name}</h3>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <div className="flex justify-between">
+                          <span>{puzzle.pieces} pieces</span>
+                          <span>{puzzle.difficulty}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>{puzzle.completions} plays</span>
+                          <span>${puzzle.prizeValue} prize</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
           </TabsContent>
 
           <TabsContent value="difficulty" className="space-y-6">

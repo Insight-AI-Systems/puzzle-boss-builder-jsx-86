@@ -13,4 +13,4 @@ export type {
   GameHooks, 
   LeaderboardEntry 
 } from './types/GameTypes';
-export { ExampleGameWithWrapper } from './examples/ExamplePuzzleGame';
+// ExamplePuzzleGame removed - using EnhancedJigsawPuzzle only

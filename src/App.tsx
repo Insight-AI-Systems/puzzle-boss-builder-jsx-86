@@ -41,7 +41,7 @@ import {
   BlockPuzzlePro, 
   DailyCrossword, 
   MahjongGamePage,
-  PuzzleSessionPage 
+  // PuzzleSessionPage removed
 } from '@/pages/games';
 
 // Import new puzzle pages
@@ -94,7 +94,7 @@ function AppRoutes() {
             <Route path="games/unity-jigsaw-puzzle" element={<PuzzleSelectionPage />} />
             <Route path="puzzles/jigsaw/:puzzleId" element={<PuzzleGamePage />} />
             <Route path="puzzles/jigsaw/custom" element={<PuzzleGamePage />} />
-            <Route path="puzzle/:sessionId" element={<PuzzleSessionPage />} />
+            {/* Old puzzle session route removed - using new puzzle system */}
             
             {/* Protected user routes */}
             <Route path="account" element={
