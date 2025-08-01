@@ -161,15 +161,6 @@ export const JigsawPuzzleManager: React.FC = () => {
         return;
       }
 
-      if (!formData.difficulty_level) {
-        toast({
-          title: "Validation Error", 
-          description: "Difficulty level is required",
-          variant: "destructive"
-        });
-        return;
-      }
-
       if (!selectedImageId) {
         toast({
           title: "Validation Error",
@@ -198,12 +189,20 @@ export const JigsawPuzzleManager: React.FC = () => {
 
       console.log('Profile data:', profileData);
 
+      // Auto-determine difficulty based on piece count
+      const getDifficultyFromPieceCount = (pieces: number): string => {
+        if (pieces <= 50) return 'easy';
+        if (pieces <= 200) return 'medium';
+        if (pieces <= 500) return 'hard';
+        return 'expert';
+      };
+
       // Prepare the data with required fields
       const puzzleData = {
         title: formData.title.trim(),
         description: formData.description?.trim() || null,
         category_id: formData.category_id || null,
-        difficulty_level: formData.difficulty_level,
+        difficulty_level: getDifficultyFromPieceCount(formData.piece_count),
         piece_count: formData.piece_count,
         estimated_time_minutes: formData.estimated_time_minutes,
         price: formData.price || 0,
@@ -442,21 +441,7 @@ export const JigsawPuzzleManager: React.FC = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="difficulty">Difficulty</Label>
-                    <Select value={formData.difficulty_level} onValueChange={(value: any) => setFormData({...formData, difficulty_level: value})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="easy">Easy</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="hard">Hard</SelectItem>
-                        <SelectItem value="expert">Expert</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="pieces">Piece Count</Label>
                     <Input
