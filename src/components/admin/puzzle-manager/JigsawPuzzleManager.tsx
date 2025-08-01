@@ -571,18 +571,14 @@ export const JigsawPuzzleManager: React.FC = () => {
             ))}
           </div>
 
-          {puzzles.length === 0 && (
+          {puzzles.length === 0 && !showCreateForm && (
             <Card>
-              <CardContent className="text-center py-8">
-                <Grid className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No puzzles yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Create your first jigsaw puzzle to get started
+              <CardContent className="text-center py-12">
+                <Grid className="h-16 w-16 mx-auto text-muted-foreground mb-6" />
+                <h3 className="text-xl font-semibold mb-2">No puzzles yet</h3>
+                <p className="text-muted-foreground mb-6">
+                  Use the "Create Puzzle" button above to create your first jigsaw puzzle
                 </p>
-                <Button onClick={() => setShowCreateForm(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create First Puzzle
-                </Button>
               </CardContent>
             </Card>
           )}
