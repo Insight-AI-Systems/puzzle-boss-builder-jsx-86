@@ -6,12 +6,12 @@ export interface ProductImage {
   category_id: string | null;
   tags: string[] | null;
   imageUrl: string;
-  url: string; // For compatibility
+  url?: string; // For compatibility
   status: string;
   created_at: string;
   updated_at: string;
   created_by: string | null;
   metadata: any;
-  image_files: any[];
+  image_files?: any[];
   dimensions?: { width: number; height: number };
 }

@@ -53,12 +53,13 @@ export const useImageLibrary = () => {
         const width = imageFile?.original_width || metadataObj?.width || 0;
         const height = imageFile?.original_height || metadataObj?.height || 0;
         
-        // Choose the best available image URL
+        // Choose the best available image URL - use original if processing failed
         let imageUrl = '';
-        if (hasValidFile && imageFile.thumbnail_path) {
-          imageUrl = `https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/thumbnails/${imageFile.thumbnail_path}`;
-        } else if (imageFile?.original_path) {
-          imageUrl = `https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/original_images/${imageFile.original_path}`;
+        if (imageFile?.original_path) {
+          // Use the correct bucket name from storage configuration
+          const bucketName = 'original_images'; // This should match the actual bucket name
+          const imagePath = imageFile.original_path;
+          imageUrl = `https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/${bucketName}/${imagePath}`;
         }
         
         return {

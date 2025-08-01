@@ -38,7 +38,9 @@ export const ImageSelector: React.FC<ImageSelectorProps> = ({ isOpen, onClose, o
       
       const transformedImages: ProductImage[] = (productImages || []).map(item => ({
         ...item,
-        imageUrl: '', 
+        imageUrl: '',
+        url: '',
+        image_files: []
       }));
       
       setImages(transformedImages);
