@@ -35,17 +35,30 @@ export const useClerkAuth = () => {
 
   // Get role from Clerk metadata (secure - no hardcoded emails)
   const getUserRole = React.useCallback((): string => {
-    if (!user) return 'player';
+    if (!user) {
+      console.log('🔍 getUserRole: No user found');
+      return 'player';
+    }
+
+    console.log('🔍 getUserRole Debug:', {
+      userId: user.id,
+      userEmail,
+      fullMetadata: user.publicMetadata,
+      roleFromMetadata: user.publicMetadata?.role,
+      unsafeMetadata: user.unsafeMetadata
+    });
 
     // SECURITY: Get role from Clerk user metadata only
     const roleFromMetadata = user.publicMetadata?.role as string;
     if (roleFromMetadata) {
+      console.log('🔍 Role found in metadata:', roleFromMetadata);
       return roleFromMetadata;
     }
 
+    console.log('🔍 No role in metadata, defaulting to player');
     // Default to player (secure default)
     return 'player';
-  }, [user]);
+  }, [user, userEmail]);
 
   // Create simplified profile from Clerk data
   const profile = React.useMemo((): ClerkProfile | null => {
@@ -74,6 +87,14 @@ export const useClerkAuth = () => {
   const userRole = getUserRole();
   const userRoles = [userRole];
   const isAdmin = userRole === 'super_admin' || userRole === 'super-admin' || userRole === 'admin';
+
+  console.log('🔍 Role calculation debug:', {
+    userRole,
+    isAdmin,
+    roleCheck1: userRole === 'super_admin',
+    roleCheck2: userRole === 'super-admin', 
+    roleCheck3: userRole === 'admin'
+  });
 
   const hasRole = React.useCallback((role: string): boolean => {
     console.log('🔍 hasRole check (Clerk-first):', { 
