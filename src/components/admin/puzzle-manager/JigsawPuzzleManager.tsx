@@ -141,13 +141,24 @@ export const JigsawPuzzleManager: React.FC = () => {
 
   const handleCreatePuzzle = async () => {
     try {
+      // Prepare the data with required fields
+      const puzzleData = {
+        ...formData,
+        created_by: user?.id, // Add the required created_by field
+      };
+
+      console.log('Creating puzzle with data:', puzzleData);
+
       const { data, error } = await supabase
         .from('jigsaw_puzzles')
-        .insert([formData])
+        .insert([puzzleData])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
 
       // Just add the new puzzle to the existing list instead of reloading everything
       setPuzzles([data as JigsawPuzzle, ...puzzles]);
