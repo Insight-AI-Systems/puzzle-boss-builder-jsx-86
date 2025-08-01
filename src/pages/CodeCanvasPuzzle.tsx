@@ -67,7 +67,20 @@ const CodeCanvasPuzzle: React.FC = () => {
   }, [scriptsLoaded, selectedImage]);
 
   const initializePuzzle = () => {
-    if (!canvasContainerRef.current || !window.CGame || !selectedImage) return;
+    if (!canvasContainerRef.current || !window.CGame || !selectedImage) {
+      console.log('❌ Cannot initialize puzzle:', {
+        hasContainer: !!canvasContainerRef.current,
+        hasCGame: !!window.CGame,
+        hasImage: !!selectedImage
+      });
+      return;
+    }
+
+    console.log('🎮 Initializing puzzle with:', {
+      difficulty,
+      selectedImage,
+      settings: window.PuzzleSettings?.getDifficulty(difficulty)
+    });
 
     // Clear container
     canvasContainerRef.current.innerHTML = '';
@@ -78,23 +91,28 @@ const CodeCanvasPuzzle: React.FC = () => {
     container.id = containerId;
     canvasContainerRef.current.appendChild(container);
 
-    // Get difficulty settings
-    const difficultySettings = window.PuzzleSettings.getDifficulty(difficulty);
+    try {
+      // Get difficulty settings
+      const difficultySettings = window.PuzzleSettings.getDifficulty(difficulty);
 
-    // Initialize game
-    const newGame = new window.CGame({
-      containerId,
-      imageUrl: selectedImage,
-      rows: difficultySettings.rows,
-      columns: difficultySettings.columns,
-      onComplete: () => {
-        setIsComplete(true);
-        console.log('Puzzle completed!');
-      }
-    });
+      // Initialize game
+      const newGame = new window.CGame({
+        containerId,
+        imageUrl: selectedImage,
+        rows: difficultySettings.rows,
+        columns: difficultySettings.columns,
+        onComplete: () => {
+          setIsComplete(true);
+          console.log('🎉 Puzzle completed!');
+        }
+      });
 
-    setGame(newGame);
-    setIsComplete(false);
+      setGame(newGame);
+      setIsComplete(false);
+      console.log('✅ Puzzle initialized successfully');
+    } catch (error) {
+      console.error('❌ Failed to initialize puzzle:', error);
+    }
   };
 
   const handleNewGame = () => {
