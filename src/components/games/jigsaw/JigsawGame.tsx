@@ -72,8 +72,7 @@ export function JigsawGame({
       for (const scriptName of scriptOrder) {
         const file = files.find(f => f.filename === scriptName);
         if (file) {
-          const scriptUrl = `${window.location.origin}/functions/v1/admin-puzzle-files/file/${file.filename}`;
-          await loadScript(scriptUrl, scriptName);
+          await injectScript(file.content, scriptName);
         } else {
           console.warn(`🧩 Script not found: ${scriptName}`);
         }
@@ -82,8 +81,7 @@ export function JigsawGame({
       // Load any remaining scripts
       for (const file of files) {
         if (!scriptOrder.includes(file.filename) && file.filename.endsWith('.js')) {
-          const scriptUrl = `${window.location.origin}/functions/v1/admin-puzzle-files/file/${file.filename}`;
-          await loadScript(scriptUrl, file.filename);
+          await injectScript(file.content, file.filename);
         }
       }
 
@@ -100,8 +98,8 @@ export function JigsawGame({
     }
   };
 
-  // Helper function to load individual scripts
-  const loadScript = (url: string, name: string): Promise<void> => {
+  // Helper function to inject script content directly
+  const injectScript = (content: string, name: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       // Check if script is already loaded
       if (document.querySelector(`script[data-name="${name}"]`)) {
@@ -109,23 +107,20 @@ export function JigsawGame({
         return;
       }
 
-      const script = document.createElement('script');
-      script.src = url;
-      script.async = false; // Ensure scripts load in order
-      script.setAttribute('data-name', name);
-      
-      script.onload = () => {
-        console.log(`🧩 Loaded script: ${name}`);
+      try {
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.text = content; // Inject content directly
+        script.setAttribute('data-name', name);
+        
+        document.head.appendChild(script);
+        console.log(`🧩 Injected script: ${name}`);
         resolve();
-      };
-      
-      script.onerror = () => {
-        const error = `Failed to load script: ${name}`;
-        console.error(`🧩 ${error}`);
-        reject(new Error(error));
-      };
-      
-      document.head.appendChild(script);
+      } catch (error) {
+        const errorMessage = `Failed to inject script: ${name}`;
+        console.error(`🧩 ${errorMessage}`, error);
+        reject(new Error(errorMessage));
+      }
     });
   };
 
