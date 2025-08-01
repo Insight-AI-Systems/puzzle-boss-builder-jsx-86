@@ -33,7 +33,7 @@ export const fixStuckImages = async () => {
       try {
         // Download the original image
         const { data: originalBlob, error: downloadError } = await supabase.storage
-          .from('original-product-images')
+          .from('original_images')
           .download(imageFile.original_path);
 
         if (downloadError || !originalBlob) {
@@ -53,7 +53,7 @@ export const fixStuckImages = async () => {
         if (!thumbnailPath) {
           thumbnailPath = `thumb_${Date.now()}_${image.name}`;
           const { error: thumbnailUploadError } = await supabase.storage
-            .from('image-thumbnails')
+            .from('thumbnails')
             .upload(thumbnailPath, processedData.thumbnailBlob, {
               upsert: false,
               cacheControl: '3600'
@@ -70,7 +70,7 @@ export const fixStuckImages = async () => {
         if (!processedPath) {
           processedPath = `processed_${Date.now()}_${image.name}`;
           const { error: processedUploadError } = await supabase.storage
-            .from('processed-puzzle-images')
+            .from('processed_images')
             .upload(processedPath, processedData.resizedBlob, {
               upsert: false,
               cacheControl: '3600'

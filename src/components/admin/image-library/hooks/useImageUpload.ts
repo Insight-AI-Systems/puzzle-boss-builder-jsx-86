@@ -42,7 +42,7 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
         
         // Upload original image
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('original-product-images')
+          .from('original_images')
           .upload(filePath, file, {
             upsert: false,
             cacheControl: '3600'
@@ -56,7 +56,7 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
         // Upload thumbnail
         const thumbnailPath = `thumb_${Date.now()}_${file.name}`;
         const { error: thumbnailUploadError } = await supabase.storage
-          .from('image-thumbnails')
+          .from('thumbnails')
           .upload(thumbnailPath, processedData.thumbnailBlob, {
             upsert: false,
             cacheControl: '3600'
@@ -70,7 +70,7 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
         // Upload processed puzzle image
         const processedPath = `processed_${Date.now()}_${file.name}`;
         const { error: processedUploadError } = await supabase.storage
-          .from('processed-puzzle-images')
+          .from('processed_images')
           .upload(processedPath, processedData.resizedBlob, {
             upsert: false,
             cacheControl: '3600'
