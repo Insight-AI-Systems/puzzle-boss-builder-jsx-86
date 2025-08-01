@@ -40,7 +40,8 @@ import {
   BlockPuzzlePro, 
   DailyCrossword, 
   MahjongGamePage,
-  UnityJigsawPuzzle 
+  UnityJigsawPuzzle,
+  PuzzleSessionPage 
 } from '@/pages/games';
 
 // Your Clerk publishable key
@@ -88,6 +89,7 @@ function AppRoutes() {
             <Route path="games/crossword" element={<DailyCrossword />} />
             <Route path="games/mahjong" element={<MahjongGamePage />} />
             <Route path="games/unity-jigsaw-puzzle" element={<UnityJigsawPuzzle />} />
+            <Route path="puzzle/:sessionId" element={<PuzzleSessionPage />} />
             
             {/* Protected user routes */}
             <Route path="account" element={
