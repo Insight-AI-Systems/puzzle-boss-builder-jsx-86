@@ -41,6 +41,9 @@ import {
   MahjongGamePage,
 } from '@/pages/games';
 
+// Import jigsaw game
+import JigsawGamePage from '@/pages/JigsawGamePage';
+
 // Your Clerk publishable key
 const PUBLISHABLE_KEY = "pk_test_ZmFjdHVhbC1kYW5lLTQ5LmNsZXJrLmFjY291bnRzLmRldiQ";
 
@@ -85,6 +88,7 @@ function AppRoutes() {
             <Route path="games/block-puzzle" element={<BlockPuzzlePro />} />
             <Route path="games/crossword" element={<DailyCrossword />} />
             <Route path="games/mahjong" element={<MahjongGamePage />} />
+            <Route path="games/jigsaw" element={<JigsawGamePage />} />
             
             {/* Old puzzle session route removed - using new puzzle system */}
             
