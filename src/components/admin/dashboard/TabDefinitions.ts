@@ -19,7 +19,7 @@ import { ContentManagement } from "@/components/admin/ContentManagement";
 import { EmailManagement } from "@/components/admin/EmailManagement";
 import { AnalyticsDashboard } from "@/components/admin/analytics/AnalyticsDashboard";
 import { FinancialDashboard } from "./financial-dashboard/FinancialDashboard";
-import { PuzzleEngineFileManager } from "../puzzle-engine/PuzzleEngineFileManager";
+import { JigsawPuzzleManager } from "../puzzle-manager/JigsawPuzzleManager";
 
 export interface TabDefinition {
   id: string;
@@ -50,8 +50,8 @@ export function getTabDefinitions(): TabDefinition[] {
       name: "Puzzles",
       icon: Puzzle,
       component: () => {
-        console.log('🧩 Puzzles tab component rendering...');
-        return React.createElement(PuzzleEngineFileManager);
+        console.log('🧩 Jigsaw Puzzle Manager rendering...');
+        return React.createElement(JigsawPuzzleManager);
       },
       roles: ["super_admin", "admin", "category_manager"]
     },
