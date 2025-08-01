@@ -124,16 +124,23 @@ export const JigsawPuzzleManager: React.FC = () => {
   };
 
   const handleImageUpload = async (files: File[]) => {
+    console.log('handleImageUpload called with files:', files.length);
+    console.log('User:', user);
+    console.log('Is uploading:', isUploading);
+    
     try {
+      console.log('About to call uploadImage...');
       await uploadImage(files);
+      console.log('Upload completed successfully');
       toast({
         title: "Success",
         description: `${files.length} image(s) uploaded successfully`,
       });
     } catch (error) {
+      console.error('Upload error in handleImageUpload:', error);
       toast({
         title: "Upload Failed",
-        description: "Failed to upload images. Please try again.",
+        description: `Failed to upload images: ${error.message || 'Unknown error'}`,
         variant: "destructive"
       });
     }
