@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 declare global {
   interface Window {
     CGame: any;
+    CPiece: any;
     PuzzleSettings: any;
   }
 }
@@ -18,10 +19,17 @@ const CodeCanvasPuzzle: React.FC = () => {
   const [isComplete, setIsComplete] = useState(false);
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
 
-  // Load CodeCanyon scripts
+  // Load CodeCanyon scripts only once
   useEffect(() => {
     const loadScript = (src: string) => {
       return new Promise((resolve, reject) => {
+        // Check if script already exists
+        const existingScript = document.querySelector(`script[src="${src}"]`);
+        if (existingScript) {
+          resolve(true);
+          return;
+        }
+
         const script = document.createElement('script');
         script.src = src;
         script.onload = resolve;
@@ -32,12 +40,19 @@ const CodeCanvasPuzzle: React.FC = () => {
 
     const loadScripts = async () => {
       try {
+        // Check if globals are already available
+        if (window.PuzzleSettings && window.CPiece && window.CGame) {
+          setScriptsLoaded(true);
+          return;
+        }
+
         await loadScript('/js/settings.js');
         await loadScript('/js/CPiece.js');
         await loadScript('/js/CGame.js');
         setScriptsLoaded(true);
+        console.log('✅ CodeCanyon scripts loaded successfully');
       } catch (error) {
-        console.error('Failed to load CodeCanyon scripts:', error);
+        console.error('❌ Failed to load CodeCanyon scripts:', error);
       }
     };
 
