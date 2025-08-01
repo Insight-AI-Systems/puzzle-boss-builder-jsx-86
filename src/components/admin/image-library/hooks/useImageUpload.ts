@@ -80,23 +80,12 @@ export const useImageUpload = (user: ClerkUser | null, onUploadComplete: () => v
 
         console.log('✅ Thumbnail upload successful:', thumbnailUpload);
 
-        // Get public URLs  
-        const { data: { publicUrl: originalUrl } } = supabase.storage
-          .from('original_images')
-          .getPublicUrl(originalFileName);
-
-        const { data: { publicUrl: processedUrl } } = supabase.storage
-          .from('processed_images')
-          .getPublicUrl(processedFileName);
-
-        const { data: { publicUrl: thumbnailUrl } } = supabase.storage
-          .from('thumbnails')
-          .getPublicUrl(thumbnailFileName);
-
-        const filePaths = [originalUrl, processedUrl, thumbnailUrl];
-        console.log('🔗 Generated URLs:', filePaths);
+        // Store file paths for database
+        const originalPath = originalFileName;
+        const processedPath = processedFileName; 
+        const thumbnailPath = thumbnailFileName;
         
-        console.log('All files uploaded successfully');
+        console.log('📁 File paths:', { originalPath, processedPath, thumbnailPath });
 
         // Create product image record using Clerk user ID
         console.log('💾 Creating database record...');
@@ -130,9 +119,9 @@ export const useImageUpload = (user: ClerkUser | null, onUploadComplete: () => v
           .from('image_files')
           .insert({
             product_image_id: productImageData.id,
-            original_path: originalUrl,
-            processed_path: processedUrl,
-            thumbnail_path: thumbnailUrl,
+            original_path: originalPath,
+            processed_path: processedPath,
+            thumbnail_path: thumbnailPath,
             original_width: processedData.dimensions.width,
             original_height: processedData.dimensions.height,
             processed_width: processedData.dimensions.width,
