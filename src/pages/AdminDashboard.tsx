@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { RoleBasedDashboard } from '@/components/admin/RoleBasedDashboard';
 import { useToast } from '@/hooks/use-toast';
-import { useClerkRoles } from '@/hooks/useClerkRoles';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { AdminAccessCheck } from '@/components/admin/dashboard/AdminAccessCheck';
 import { AdminToolbar } from '@/components/admin/dashboard/AdminToolbar';
 import { AdminErrorBoundary } from '@/components/admin/ErrorBoundary';
@@ -13,60 +14,61 @@ import { adminLog, DebugLevel } from '@/utils/debug';
 import Navbar from '@/components/Navbar';
 
 const AdminDashboard = () => {
-  const { isSignedIn, isLoaded, userRole, canAccessAdminDashboard, userId } = useClerkRoles();
+  const { isAuthenticated, isLoading, userRole, user } = useAuth();
+  const { canAccessAdminDashboard } = usePermissions();
+  const userId = user?.id;
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showDebug, setShowDebug] = useState(false);
 
   const hasAdminAccess = canAccessAdminDashboard();
 
-  console.log('🏛️ AdminDashboard Clerk RBAC State:', {
-    isSignedIn,
+  console.log('🏛️ AdminDashboard Supabase State:', {
+    isAuthenticated,
     userId,
     userRole,
     hasAdminAccess,
-    isLoaded,
-    cleanedRole: userRole // This should now be just "super_admin" not "org:super_admin"
+    isLoading,
+    cleanedRole: userRole
   });
   
   // Debug logging
   useEffect(() => {
-    if (isLoaded) {
-      console.log('🏛️ AdminDashboard Final State (Clerk RBAC):', {
-        isSignedIn,
+    if (!isLoading) {
+      console.log('🏛️ AdminDashboard Final State (Supabase):', {
+        isAuthenticated,
         userId,
         userRole,
         hasAdminAccess,
-        roleSource: 'clerk_rbac'
+        roleSource: 'supabase'
       });
       
-      adminLog('AdminDashboard', 'Access Check Complete (Clerk RBAC)', DebugLevel.INFO, { 
-        isSignedIn,
+      adminLog('AdminDashboard', 'Access Check Complete (Supabase)', DebugLevel.INFO, { 
+        isAuthenticated,
         hasAdminAccess,
         userRole,
-        roleSource: 'clerk_rbac'
+        roleSource: 'supabase'
       });
     }
-  }, [isLoaded, isSignedIn, hasAdminAccess, userRole, userId]);
+  }, [isLoading, isAuthenticated, hasAdminAccess, userRole, userId]);
 
-  // Handle access control - remove the redirect that's causing the reload loop
+  // Handle access control
   useEffect(() => {
-    if (isLoaded && isSignedIn && !hasAdminAccess) {
+    if (!isLoading && isAuthenticated && !hasAdminAccess) {
       console.log('🚫 Access denied - showing access check component instead of redirecting');
       toast({
         title: "Access Denied",
         description: `You don't have admin privileges. Current role: ${userRole}`,
         variant: "destructive",
       });
-      // Don't navigate away - just show the access denied component
     }
-  }, [isLoaded, isSignedIn, hasAdminAccess, toast, userRole]);
+  }, [isLoading, isAuthenticated, hasAdminAccess, toast, userRole]);
 
   const showDebugInfo = () => {
     setShowDebug(!showDebug);
   };
 
-  if (!isLoaded) {
+  if (isLoading) {
     console.log('🔄 AdminDashboard Loading...');
     return (
       <div className="min-h-screen bg-puzzle-black">
@@ -79,7 +81,7 @@ const AdminDashboard = () => {
   }
 
   // Show access denied if not authenticated or no admin access
-  if (!isSignedIn || !hasAdminAccess) {
+  if (!isAuthenticated || !hasAdminAccess) {
     console.log('🚫 Showing access denied screen for role:', userRole);
     return (
       <div className="min-h-screen bg-puzzle-black">

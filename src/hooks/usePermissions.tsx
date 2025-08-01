@@ -1,9 +1,9 @@
 
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { UserRole, ROLE_DEFINITIONS } from '@/types/userTypes';
 
 export function usePermissions() {
-  const { hasRole, isAdmin, userRole } = useClerkAuth();
+  const { hasRole, isAdmin, userRole } = useAuth();
 
   const hasPermission = (permission: string): boolean => {
     const currentRole = userRole as UserRole;

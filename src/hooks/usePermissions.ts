@@ -1,7 +1,7 @@
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function usePermissions() {
-  const { hasRole, isAdmin, userRole } = useClerkAuth();
+  const { hasRole, isAdmin, userRole } = useAuth();
 
   const hasPermission = (permission: string): boolean => {
     // Super admins have all permissions - handle both formats

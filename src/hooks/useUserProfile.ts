@@ -1,8 +1,8 @@
 
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useUserProfile = () => {
-  const { profile, isLoading, isAdmin } = useClerkAuth();
+  const { profile, isLoading, isAdmin } = useAuth();
   
   return {
     profile,

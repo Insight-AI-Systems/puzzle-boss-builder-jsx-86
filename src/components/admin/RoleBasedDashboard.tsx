@@ -6,11 +6,13 @@ import { DashboardTabSelector } from './dashboard/DashboardTabSelector';
 import { getTabDefinitions } from './dashboard/TabDefinitions';
 import { useSearchParams } from 'react-router-dom';
 import { UserRole } from '@/types/userTypes';
-import { useClerkRoles } from '@/hooks/useClerkRoles';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { AdminErrorBoundary } from './ErrorBoundary';
 
 export const RoleBasedDashboard: React.FC = () => {
-  const { userRole, canAccessAdminDashboard } = useClerkRoles();
+  const { userRole } = useAuth();
+  const { canAccessAdminDashboard } = usePermissions();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   

@@ -1,2 +1,6 @@
-// Legacy compatibility - redirect to new Clerk auth hook
-export { useClerkAuth as useAuth } from './useClerkAuth';
+// Legacy compatibility wrapper - now uses AuthContext
+import { useAuth as useAuthContext } from '@/contexts/AuthContext';
+
+export const useAuth = () => {
+  return useAuthContext();
+};

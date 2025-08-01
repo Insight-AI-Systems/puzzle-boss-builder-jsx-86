@@ -1626,7 +1626,6 @@ export type Database = {
           bio: string | null
           categories_played: string[] | null
           city: string | null
-          clerk_user_id: string | null
           country: string | null
           created_at: string | null
           credits: number | null
@@ -1667,7 +1666,6 @@ export type Database = {
           bio?: string | null
           categories_played?: string[] | null
           city?: string | null
-          clerk_user_id?: string | null
           country?: string | null
           created_at?: string | null
           credits?: number | null
@@ -1708,7 +1706,6 @@ export type Database = {
           bio?: string | null
           categories_played?: string[] | null
           city?: string | null
-          clerk_user_id?: string | null
           country?: string | null
           created_at?: string | null
           credits?: number | null
@@ -3296,10 +3293,6 @@ export type Database = {
           total_revenue: number
         }[]
       }
-      get_current_clerk_user_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["user_role"]
@@ -3456,10 +3449,6 @@ export type Database = {
           spend_description?: string
         }
         Returns: boolean
-      }
-      sync_clerk_users: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
       }
       terminate_other_sessions: {
         Args: { current_session_id: string }

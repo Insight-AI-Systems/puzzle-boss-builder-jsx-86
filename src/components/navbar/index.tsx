@@ -3,9 +3,9 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ClerkAuthButtons } from '@/components/auth/ClerkAuthButtons';
+import { SupabaseAuthButtons } from '@/components/auth/SupabaseAuthButtons';
 import UserMenu from './UserMenu';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { mainNavItems } from './NavbarData';
 import MobileMenu from './MobileMenu';
 import GamesDropdown from './GamesDropdown';
@@ -15,7 +15,7 @@ export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   
-  const { isAuthenticated, user, profile } = useClerkAuth();
+  const { isAuthenticated, user, profile } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -72,7 +72,7 @@ export const Navbar: React.FC = () => {
                   <UserMenu profile={profile} />
                 </>
               ) : (
-                <ClerkAuthButtons />
+                <SupabaseAuthButtons />
               )}
             </div>
 

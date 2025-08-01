@@ -9,8 +9,7 @@ export const SECURITY_CONFIG = {
   SUPABASE_URL: "https://vcacfysfjgoahledqdwa.supabase.co",
   SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjYWNmeXNmamdvYWhsZWRxZHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0MDI3MDgsImV4cCI6MjA1OTk3ODcwOH0.sSWBAAsoofM3b-aLNseRtXhNulg6kaGqXTcXRVd_IWo",
   
-  // Clerk Configuration
-  CLERK_PUBLISHABLE_KEY: "pk_test_ZmFjdHVhbC1kYW5lLTQ5LmNsZXJrLmFjY291bnRzLmRldiQ",
+  // No Clerk configuration needed - using Supabase only
   
   // Security Headers
   CONTENT_SECURITY_POLICY: {
@@ -64,9 +63,7 @@ export const validateEnvironment = (): string[] => {
     errors.push('SUPABASE_ANON_KEY is required in security configuration');
   }
   
-  if (!SECURITY_CONFIG.CLERK_PUBLISHABLE_KEY) {
-    errors.push('CLERK_PUBLISHABLE_KEY is required in security configuration');
-  }
+  // Clerk no longer required - using Supabase only
   
   if (errors.length > 0) {
     console.error('❌ Security Configuration Errors:', errors);

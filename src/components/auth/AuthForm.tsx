@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ClerkAuthButtons } from './ClerkAuthButtons';
+import { SupabaseAuthButtons } from './SupabaseAuthButtons';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const AuthForm: React.FC = () => {
@@ -16,7 +16,7 @@ export const AuthForm: React.FC = () => {
           <p className="text-puzzle-white/70 mb-6">
             Sign in or create an account to start playing puzzles and track your progress.
           </p>
-          <ClerkAuthButtons />
+          <SupabaseAuthButtons />
         </div>
       </CardContent>
     </Card>

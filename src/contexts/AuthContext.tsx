@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext } from 'react';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuthProvider } from '@/hooks/auth/useAuthProvider';
 
 interface AuthContextType {
   user: any;
@@ -19,19 +19,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   let authData;
   
   try {
-    authData = useClerkAuth();
+    authData = useAuthProvider();
   } catch (error) {
-    console.error('❌ AuthProvider: Failed to initialize Clerk auth:', error);
+    console.error('❌ AuthProvider: Failed to initialize Supabase auth:', error);
     // Provide safe fallback values
     authData = {
       user: null,
+      session: null,
       profile: null,
       isLoading: true,
       isAdmin: false,
       isAuthenticated: false,
       userRole: 'player',
+      userRoles: [],
       hasRole: () => false,
-      signOut: async () => {}
+      clearAuthError: () => {},
+      fetchUserRoles: async () => {},
+      setError: () => {},
+      setLastAuthAttempt: () => {},
+      MIN_TIME_BETWEEN_AUTH_ATTEMPTS: 0,
+      toast: () => {},
+      roleCache: new Map(),
+      error: null
     };
   }
   
@@ -43,7 +52,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAuthenticated: authData.isAuthenticated,
     userRole: authData.userRole,
     hasRole: authData.hasRole,
-    signOut: authData.signOut
+    signOut: async () => {
+      // Supabase sign out will be handled by the auth provider
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        await supabase.auth.signOut();
+      } catch (error) {
+        console.error('Sign out error:', error);
+      }
+    }
   };
   
   return (

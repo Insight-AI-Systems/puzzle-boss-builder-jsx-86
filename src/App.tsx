@@ -5,13 +5,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
-import { ClerkProvider } from '@clerk/clerk-react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { GameProvider } from '@/shared/contexts/GameContext';
 
 // Import layouts and components
 import MainLayout from '@/components/MainLayout';
-import { ClerkProtectedRoute } from '@/components/auth/ClerkProtectedRoute';
+import { SupabaseProtectedRoute } from '@/components/auth/SupabaseProtectedRoute';
 
 // Import pages
 import HomePage from '@/pages/HomePage';
@@ -44,14 +43,7 @@ import {
 // Import jigsaw game
 import JigsawGamePage from '@/pages/JigsawGamePage';
 
-import { SECURITY_CONFIG } from '@/config/security';
-
-// Use centralized security configuration
-const PUBLISHABLE_KEY = SECURITY_CONFIG.CLERK_PUBLISHABLE_KEY;
-
-if (!PUBLISHABLE_KEY) {
-  throw new Error("Missing Clerk Publishable Key - check security configuration");
-}
+// No Clerk configuration needed - using Supabase only
 
 // Create single query client instance
 const queryClient = new QueryClient({
@@ -96,14 +88,14 @@ function AppRoutes() {
             
             {/* Protected user routes */}
             <Route path="account" element={
-              <ClerkProtectedRoute>
+              <SupabaseProtectedRoute>
                 <Profile />
-              </ClerkProtectedRoute>
+              </SupabaseProtectedRoute>
             } />
             <Route path="settings" element={
-              <ClerkProtectedRoute>
+              <SupabaseProtectedRoute>
                 <Settings />
-              </ClerkProtectedRoute>
+              </SupabaseProtectedRoute>
             } />
           </Route>
 
@@ -112,9 +104,9 @@ function AppRoutes() {
 
           {/* Protected admin routes */}
           <Route path="admin" element={
-            <ClerkProtectedRoute requiredRoles={['super-admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo']}>
+            <SupabaseProtectedRoute requiredRoles={['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo']}>
               <AdminDashboard />
-            </ClerkProtectedRoute>
+            </SupabaseProtectedRoute>
           } />
           {/* Game testing route removed - using CodeCanyon Jigsaw Deluxe system only */}
 
@@ -144,28 +136,9 @@ function AppContent() {
 
 function App() {
   return (
-    <ClerkProvider 
-      publishableKey={PUBLISHABLE_KEY}
-      appearance={{
-        elements: {
-          formButtonPrimary: 'bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black',
-          card: 'bg-puzzle-gray border border-puzzle-border',
-          headerTitle: 'text-puzzle-white',
-          headerSubtitle: 'text-puzzle-white/70',
-          socialButtonsBlockButton: 'border-puzzle-border hover:bg-puzzle-gray/50',
-          formFieldInput: 'bg-puzzle-black border-puzzle-border text-puzzle-white',
-          footerActionLink: 'text-puzzle-aqua hover:text-puzzle-aqua/80',
-        },
-        layout: {
-          socialButtonsPlacement: 'top',
-          showOptionalFields: false,
-        },
-      }}
-    >
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </ClerkProvider>
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
