@@ -28,6 +28,7 @@ import Settings from '@/pages/Settings';
 import Terms from '@/pages/legal/Terms';
 import Privacy from '@/pages/legal/Privacy';
 import AdminDashboard from '@/pages/AdminDashboard';
+import PuzzleFileManager from '@/pages/PuzzleFileManager';
 import GameTesting from '@/pages/GameTesting';
 import Auth from '@/pages/Auth';
 
@@ -111,6 +112,11 @@ function AppRoutes() {
           <Route path="admin" element={
             <ClerkProtectedRoute requiredRoles={['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo']}>
               <AdminDashboard />
+            </ClerkProtectedRoute>
+          } />
+          <Route path="admin/puzzle-files" element={
+            <ClerkProtectedRoute requiredRoles={['super_admin', 'admin']}>
+              <PuzzleFileManager />
             </ClerkProtectedRoute>
           } />
           <Route path="game-testing" element={

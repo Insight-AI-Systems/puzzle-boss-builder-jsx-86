@@ -1,0 +1,359 @@
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, FileText, Upload, Trash2, Eye } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+interface PuzzleFile {
+  id: string;
+  filename: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const PuzzleEngineFileManager: React.FC = () => {
+  const [files, setFiles] = useState<PuzzleFile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [newFileName, setNewFileName] = useState('');
+  const [newFileContent, setNewFileContent] = useState('');
+  const [bulkFiles, setBulkFiles] = useState('');
+  const { toast } = useToast();
+
+  // Load existing files
+  useEffect(() => {
+    loadFiles();
+  }, []);
+
+  const loadFiles = async () => {
+    try {
+      const response = await fetch('/api/admin/puzzle-files', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load files');
+      }
+
+      const data = await response.json();
+      setFiles(data.files || []);
+    } catch (error) {
+      console.error('Error loading files:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load puzzle engine files",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const uploadSingleFile = async () => {
+    if (!newFileName.trim() || !newFileContent.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please provide both filename and content",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const response = await fetch('/api/admin/puzzle-files', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          filename: newFileName,
+          content: newFileContent
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload file');
+      }
+
+      toast({
+        title: "Success",
+        description: `File ${newFileName} uploaded successfully`
+      });
+
+      setNewFileName('');
+      setNewFileContent('');
+      loadFiles();
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload file",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const uploadBulkFiles = async () => {
+    if (!bulkFiles.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please provide bulk file data",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Parse bulk files - expected format: filename.js|content\n---\n
+      const fileSections = bulkFiles.split('\n---\n').filter(section => section.trim());
+      const filesToUpload = [];
+
+      for (const section of fileSections) {
+        const lines = section.trim().split('\n');
+        if (lines.length < 2) continue;
+
+        const filename = lines[0].trim();
+        const content = lines.slice(1).join('\n');
+
+        if (filename && content) {
+          filesToUpload.push({
+            filename,
+            content
+          });
+        }
+      }
+
+      if (filesToUpload.length === 0) {
+        toast({
+          title: "Validation Error",
+          description: "No valid files found in bulk data",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const response = await fetch('/api/admin/puzzle-files/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          files: filesToUpload
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload bulk files');
+      }
+
+      toast({
+        title: "Success",
+        description: `${filesToUpload.length} files uploaded successfully`
+      });
+
+      setBulkFiles('');
+      loadFiles();
+    } catch (error) {
+      console.error('Error uploading bulk files:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload bulk files",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const deleteFile = async (fileId: string, filename: string) => {
+    if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
+
+    try {
+      const response = await fetch(`/api/admin/puzzle-files/${fileId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete file');
+      }
+
+      toast({
+        title: "Success",
+        description: `File ${filename} deleted successfully`
+      });
+
+      loadFiles();
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete file",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-puzzle-aqua" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card className="bg-puzzle-gray border-puzzle-border">
+        <CardHeader>
+          <CardTitle className="text-puzzle-white flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Puzzle Engine File Manager
+          </CardTitle>
+          <p className="text-puzzle-white/70">
+            Upload and manage JavaScript files for the puzzle engine. Files will be served at 
+            <code className="text-puzzle-aqua"> /api/puzzle-engine/files/:filename</code>
+          </p>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="bulk" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-puzzle-black">
+              <TabsTrigger value="bulk" className="text-puzzle-white">Bulk Upload</TabsTrigger>
+              <TabsTrigger value="single" className="text-puzzle-white">Single File</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="bulk" className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-puzzle-white">
+                  Bulk File Upload (Format: filename.js on first line, then content, separate files with "---")
+                </Label>
+                <Textarea
+                  value={bulkFiles}
+                  onChange={(e) => setBulkFiles(e.target.value)}
+                  placeholder={`puzzle-core.js
+class PuzzleCore {
+  constructor() {
+    // puzzle logic
+  }
+}
+
+---
+
+piece-detection.js
+class PieceDetection {
+  constructor() {
+    // piece detection logic
+  }
+}
+
+---`}
+                  className="bg-puzzle-black border-puzzle-border text-puzzle-white min-h-[300px] font-mono text-sm"
+                />
+              </div>
+              <Button 
+                onClick={uploadBulkFiles} 
+                disabled={uploading}
+                className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black"
+              >
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                Upload Bulk Files
+              </Button>
+            </TabsContent>
+            
+            <TabsContent value="single" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="filename" className="text-puzzle-white">Filename</Label>
+                  <Input
+                    id="filename"
+                    value={newFileName}
+                    onChange={(e) => setNewFileName(e.target.value)}
+                    placeholder="puzzle-core.js"
+                    className="bg-puzzle-black border-puzzle-border text-puzzle-white"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="content" className="text-puzzle-white">File Content</Label>
+                <Textarea
+                  id="content"
+                  value={newFileContent}
+                  onChange={(e) => setNewFileContent(e.target.value)}
+                  placeholder="// JavaScript content here..."
+                  className="bg-puzzle-black border-puzzle-border text-puzzle-white min-h-[200px] font-mono text-sm"
+                />
+              </div>
+              
+              <Button 
+                onClick={uploadSingleFile} 
+                disabled={uploading}
+                className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 text-puzzle-black"
+              >
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                Upload File
+              </Button>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* File List */}
+      <Card className="bg-puzzle-gray border-puzzle-border">
+        <CardHeader>
+          <CardTitle className="text-puzzle-white">Uploaded Files ({files.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {files.length === 0 ? (
+              <p className="text-puzzle-white/70 text-center py-8">No files uploaded yet</p>
+            ) : (
+              files.map((file) => (
+                <div key={file.id} className="flex items-center justify-between p-3 bg-puzzle-black rounded border border-puzzle-border">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-4 w-4 text-puzzle-aqua" />
+                    <div>
+                      <p className="text-puzzle-white font-medium">{file.filename}</p>
+                      <p className="text-puzzle-white/50 text-sm">
+                        Updated: {new Date(file.updated_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/api/puzzle-engine/files/${file.filename}`, '_blank')}
+                      className="border-puzzle-border text-puzzle-white hover:bg-puzzle-gray"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteFile(file.id, file.filename)}
+                      className="border-red-500 text-red-500 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
