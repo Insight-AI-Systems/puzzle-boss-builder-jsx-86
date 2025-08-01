@@ -84,7 +84,9 @@ export const JigsawPuzzleManager: React.FC = () => {
     tags: [] as string[],
     image_url: '',
     image_name: '',
-    selected_image_data: null as any
+    selected_image_data: null as any,
+    product_value: 0,
+    release_threshold: 0
   });
 
   useEffect(() => {
@@ -210,11 +212,11 @@ export const JigsawPuzzleManager: React.FC = () => {
         return;
       }
 
-      // Get current user's profile to get the UUID that matches the profiles table
+      // Get current user's profile using Clerk user ID
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('email', user.emailAddresses?.[0]?.emailAddress)
+        .eq('clerk_user_id', user.id)
         .maybeSingle();
 
       if (profileError) {
@@ -228,7 +230,7 @@ export const JigsawPuzzleManager: React.FC = () => {
       }
 
       if (!profileData) {
-        console.error('No profile found for email:', user.emailAddresses?.[0]?.emailAddress);
+        console.error('No profile found for Clerk user ID:', user.id);
         toast({
           title: "Error", 
           description: "Could not find user profile. Please contact admin.",
@@ -260,6 +262,10 @@ export const JigsawPuzzleManager: React.FC = () => {
         status: formData.status,
         tags: formData.tags || [],
         created_by: profileData.id, // Use profile UUID
+        metadata: {
+          product_value: formData.product_value,
+          release_threshold: formData.release_threshold
+        }
       };
 
       console.log('Creating puzzle with data:', puzzleData);
@@ -393,7 +399,9 @@ export const JigsawPuzzleManager: React.FC = () => {
       tags: [],
       image_url: '',
       image_name: '',
-      selected_image_data: null
+      selected_image_data: null,
+      product_value: 0,
+      release_threshold: 0
     });
   };
 
@@ -412,7 +420,9 @@ export const JigsawPuzzleManager: React.FC = () => {
       tags: puzzle.tags || [],
       image_url: '',
       image_name: '',
-      selected_image_data: null
+      selected_image_data: null,
+      product_value: (puzzle as any).metadata?.product_value || 0,
+      release_threshold: (puzzle as any).metadata?.release_threshold || 0
     });
     setShowCreateForm(true);
   };
@@ -545,41 +555,76 @@ export const JigsawPuzzleManager: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="is-free"
-                      checked={formData.is_free}
-                      onCheckedChange={(checked) => setFormData({...formData, is_free: checked})}
-                    />
-                    <Label htmlFor="is-free">Free Puzzle</Label>
+                 <div className="grid grid-cols-3 gap-4">
+                   <div className="flex items-center space-x-2">
+                     <Switch
+                       id="is-free"
+                       checked={formData.is_free}
+                       onCheckedChange={(checked) => setFormData({...formData, is_free: checked})}
+                     />
+                     <Label htmlFor="is-free">Free Puzzle</Label>
+                   </div>
+                   {!formData.is_free && (
+                     <div>
+                       <Label htmlFor="price">Price ($)</Label>
+                       <Input
+                         id="price"
+                         type="number"
+                         step="0.01"
+                         value={formData.price}
+                         onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value)})}
+                       />
+                     </div>
+                   )}
+                   <div>
+                     <Label htmlFor="status">Status</Label>
+                     <Select value={formData.status} onValueChange={(value: any) => setFormData({...formData, status: value})}>
+                       <SelectTrigger>
+                         <SelectValue />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="draft">Draft</SelectItem>
+                         <SelectItem value="published">Published</SelectItem>
+                         <SelectItem value="archived">Archived</SelectItem>
+                       </SelectContent>
+                     </Select>
+                   </div>
                   </div>
-                  {!formData.is_free && (
+
+                  {/* Product Value and Release Threshold */}
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="price">Price ($)</Label>
+                      <Label htmlFor="product-value">Product Value ($)</Label>
                       <Input
-                        id="price"
+                        id="product-value"
                         type="number"
                         step="0.01"
-                        value={formData.price}
-                        onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value)})}
+                        min="0"
+                        value={formData.product_value}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value) || 0;
+                          setFormData({
+                            ...formData, 
+                            product_value: value,
+                            release_threshold: value * 2 // Auto-calculate 200%
+                          });
+                        }}
+                        placeholder="Enter puzzle value"
                       />
                     </div>
-                  )}
-                  <div>
-                    <Label htmlFor="status">Status</Label>
-                    <Select value={formData.status} onValueChange={(value: any) => setFormData({...formData, status: value})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="published">Published</SelectItem>
-                        <SelectItem value="archived">Archived</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div>
+                      <Label htmlFor="release-threshold">Release Threshold ($) <span className="text-sm text-muted-foreground">(Auto: 200% of value)</span></Label>
+                      <Input
+                        id="release-threshold"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.release_threshold}
+                        onChange={(e) => setFormData({...formData, release_threshold: parseFloat(e.target.value) || 0})}
+                        placeholder="Calculated automatically"
+                      />
+                    </div>
                   </div>
-                 </div>
 
                   {/* Image Selection */}
                   <div>
