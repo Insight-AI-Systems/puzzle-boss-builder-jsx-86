@@ -141,13 +141,42 @@ export const JigsawPuzzleManager: React.FC = () => {
 
   const handleCreatePuzzle = async () => {
     try {
+      // Validate required fields
+      if (!formData.title.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Title is required",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!formData.difficulty_level) {
+        toast({
+          title: "Validation Error", 
+          description: "Difficulty level is required",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Prepare the data with required fields
       const puzzleData = {
-        ...formData,
-        created_by: user?.id, // Add the required created_by field
+        title: formData.title.trim(),
+        description: formData.description?.trim() || null,
+        category_id: formData.category_id || null,
+        difficulty_level: formData.difficulty_level,
+        piece_count: formData.piece_count,
+        estimated_time_minutes: formData.estimated_time_minutes,
+        price: formData.price || 0,
+        is_free: formData.is_free,
+        status: formData.status,
+        tags: formData.tags || [],
+        created_by: user?.id,
       };
 
       console.log('Creating puzzle with data:', puzzleData);
+      console.log('Current user:', user);
 
       const { data, error } = await supabase
         .from('jigsaw_puzzles')
@@ -159,6 +188,8 @@ export const JigsawPuzzleManager: React.FC = () => {
         console.error('Database error:', error);
         throw error;
       }
+
+      console.log('Puzzle created successfully:', data);
 
       // Just add the new puzzle to the existing list instead of reloading everything
       setPuzzles([data as JigsawPuzzle, ...puzzles]);
