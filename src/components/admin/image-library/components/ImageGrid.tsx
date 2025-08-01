@@ -42,11 +42,13 @@ export const ImageGrid: React.FC<ImageGridProps> = ({ images, onImageDelete, onI
           <CardContent className="p-4">
             <div className="flex items-start justify-between mb-2">
               <h3 className="font-medium truncate flex-1" title={image.name}>{image.name}</h3>
-              <ImageActions 
-                image={image}
-                onDelete={onImageDelete}
-                onStatusToggle={onImageStatusToggle}
-              />
+              <div className="flex-shrink-0 ml-2">
+                <ImageActions 
+                  image={image}
+                  onDelete={onImageDelete}
+                  onStatusToggle={onImageStatusToggle}
+                />
+              </div>
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className={`text-xs px-2 py-1 rounded-full ${
