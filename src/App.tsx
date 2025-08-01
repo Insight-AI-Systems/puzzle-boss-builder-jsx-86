@@ -17,7 +17,7 @@ import { ClerkProtectedRoute } from '@/components/auth/ClerkProtectedRoute';
 import HomePage from '@/pages/HomePage';
 import About from '@/pages/About';
 import Contact from '@/pages/Contact';
-import Puzzles from '@/pages/Puzzles';
+// Puzzles page removed - CodeCanyon system will be added
 // PuzzlePlay removed - using new puzzle system
 import Leaderboard from '@/pages/Leaderboard';
 import PrizesWon from '@/pages/PrizesWon';
@@ -44,8 +44,7 @@ import {
   // PuzzleSessionPage removed
 } from '@/pages/games';
 
-// Import new puzzle pages
-import { PuzzleSelectionPage, PuzzleGamePage } from '@/pages/puzzles';
+import CodeCanvasPuzzle from '@/pages/CodeCanvasPuzzle';
 
 // Your Clerk publishable key
 const PUBLISHABLE_KEY = "pk_test_ZmFjdHVhbC1kYW5lLTQ5LmNsZXJrLmFjY291bnRzLmRldiQ";
@@ -74,7 +73,7 @@ function AppRoutes() {
             <Route index element={<HomePage />} />
             <Route path="about" element={<About />} />
             <Route path="contact" element={<Contact />} />
-            <Route path="puzzles" element={<Puzzles />} />
+            {/* Puzzles route removed - CodeCanyon system will be added */}
             {/* Old puzzle route removed - using new puzzle system */}
             <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="prizes-won" element={<PrizesWon />} />
@@ -91,9 +90,7 @@ function AppRoutes() {
             <Route path="games/block-puzzle" element={<BlockPuzzlePro />} />
             <Route path="games/crossword" element={<DailyCrossword />} />
             <Route path="games/mahjong" element={<MahjongGamePage />} />
-            <Route path="games/unity-jigsaw-puzzle" element={<PuzzleSelectionPage />} />
-            <Route path="puzzles/jigsaw/:puzzleId" element={<PuzzleGamePage />} />
-            <Route path="puzzles/jigsaw/custom" element={<PuzzleGamePage />} />
+            <Route path="games/unity-jigsaw-puzzle" element={<CodeCanvasPuzzle />} />
             {/* Old puzzle session route removed - using new puzzle system */}
             
             {/* Protected user routes */}

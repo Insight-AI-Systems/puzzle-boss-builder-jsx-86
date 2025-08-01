@@ -4,7 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronRight, Zap, Clock, Brain, Award, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import EnhancedJigsawPuzzle from '@/components/puzzles/engines/EnhancedJigsawPuzzle';
+// EnhancedJigsawPuzzle removed - CodeCanyon system will be added
 
 const PuzzleTechniques = () => {
   return (
@@ -40,12 +40,10 @@ const PuzzleTechniques = () => {
           <p className="text-muted-foreground mb-6">
             Practice with this simple sliding puzzle. Try to arrange the numbers in order by moving pieces into the empty space.
           </p>
-          <EnhancedJigsawPuzzle 
-            imageUrl="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop"
-            rows={3}
-            columns={3}
-            showNumbers={true}
-          />
+          {/* EnhancedJigsawPuzzle demo removed - CodeCanyon system will be added */}
+          <div className="bg-puzzle-black/30 border border-puzzle-aqua/20 p-8 rounded-lg text-center">
+            <p className="text-muted-foreground">Puzzle demo will be available with the CodeCanyon system</p>
+          </div>
         </div>
 
         <h2 className="text-puzzle-white text-2xl font-bold mb-4">Fundamental Techniques</h2>

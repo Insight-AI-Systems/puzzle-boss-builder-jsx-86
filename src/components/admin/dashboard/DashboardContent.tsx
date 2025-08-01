@@ -8,7 +8,7 @@ import { GameManagement } from "@/components/admin/GameManagement";
 
 // Import the components needed for each tab
 import { UserManagement } from "@/components/admin/UserManagement";
-import { PuzzleManagement } from "@/components/admin/PuzzleManagement";
+// PuzzleManagement removed - CodeCanyon system will be added
 import { MarketingDashboard } from "./MarketingDashboard";
 import { NotificationsDashboard } from "./NotificationsDashboard";
 import { MonitoringDashboard } from "./MonitoringDashboard";
@@ -61,7 +61,9 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
       {/* Puzzles Tab */}
       <TabsContent value="puzzles" className="space-y-4">
         {isTabAccessible('puzzles') ? (
-          <PuzzleManagement />
+          <div className="p-8 text-center">
+            <p className="text-muted-foreground">Puzzle management will be available with the CodeCanyon system</p>
+          </div>
         ) : (
           <NoAccessMessage resourceName="Puzzle Management" />
         )}

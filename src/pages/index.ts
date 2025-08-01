@@ -1,9 +1,9 @@
 
 export { default as HomePage } from './HomePage';
 export { default as Index } from './Index';
-export { default as Puzzles } from './Puzzles';
+// Puzzles page removed - CodeCanyon system will be added
 export { default as Categories } from './Categories';
-export { default as CategoryPuzzles } from './CategoryPuzzles';
+// CategoryPuzzles removed - CodeCanyon system will be added
 export { default as Prizes } from './Prizes';
 export { default as HowItWorks } from './HowItWorks';
 // PuzzleDemo removed - using new puzzle system

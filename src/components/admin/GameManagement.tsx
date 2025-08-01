@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PuzzleManagement } from './PuzzleManagement';
+// PuzzleManagement removed - CodeCanyon system will be added
 import HeroPuzzleManager from './hero-puzzle/HeroPuzzleManager';
 import { GameManagementAdmin } from './GameManagementAdmin';
 
@@ -23,7 +23,9 @@ export function GameManagement() {
         </TabsContent>
 
         <TabsContent value="puzzles">
-          <PuzzleManagement />
+          <div className="p-8 text-center">
+            <p className="text-muted-foreground">Puzzle management will be available with the CodeCanyon system</p>
+          </div>
         </TabsContent>
 
         <TabsContent value="hero">

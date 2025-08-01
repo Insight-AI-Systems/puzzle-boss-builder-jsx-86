@@ -7,7 +7,7 @@ import { ClerkAuthButtons } from '@/components/auth/ClerkAuthButtons';
 import UserMenu from './UserMenu';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { mainNavItems } from './NavbarData';
-import PuzzleDropdown from './PuzzleDropdown';
+// PuzzleDropdown removed - CodeCanyon system will be added
 import MobileMenu from './MobileMenu';
 import { AdminErrorBoundary } from '@/components/admin/ErrorBoundary';
 
@@ -36,22 +36,18 @@ export const Navbar: React.FC = () => {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6">
-              {mainNavItems.map((item) => (
-                item.name === 'Puzzles' ? (
-                  <PuzzleDropdown key={item.name} />
-                ) : (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    className={`px-3 py-2 text-sm font-medium transition-colors ${
-                      isActive(item.href)
-                        ? 'text-puzzle-aqua border-b-2 border-puzzle-aqua'
-                        : 'text-puzzle-white hover:text-puzzle-aqua'
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                )
+              {mainNavItems.filter(item => item.name !== 'Puzzles').map((item) => (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className={`px-3 py-2 text-sm font-medium transition-colors ${
+                    isActive(item.href)
+                      ? 'text-puzzle-aqua border-b-2 border-puzzle-aqua'
+                      : 'text-puzzle-white hover:text-puzzle-aqua'
+                  }`}
+                >
+                  {item.name}
+                </Link>
               ))}
             </div>
 

@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Hero } from '@/components/Hero';
 import HowItWorks from '@/components/HowItWorks';
-import FeaturedPuzzles from '@/components/FeaturedPuzzles';
+// FeaturedPuzzles removed - CodeCanyon system will be added
 import Categories from '@/components/Categories';
 import Benefits from '@/components/Benefits';
 import Testimonials from '@/components/Testimonials';
@@ -172,7 +172,7 @@ function HomePage() {
       <Hero />
       <ConceptSection />
       <HowItWorks />
-      <FeaturedPuzzles />
+      {/* FeaturedPuzzles removed - CodeCanyon system will be added */}
       <Categories />
       <Benefits />
       <Testimonials />

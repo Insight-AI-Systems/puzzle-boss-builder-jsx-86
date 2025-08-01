@@ -12,7 +12,7 @@ import { NotificationsDashboard } from "./NotificationsDashboard";
 import { MonitoringDashboard } from "./MonitoringDashboard";
 import { MarketingDashboard } from "./MarketingDashboard";
 import TicketManagement from "./TicketManagement";
-import { PuzzleManagement } from "@/components/admin/PuzzleManagement"; 
+// PuzzleManagement removed - CodeCanyon system will be added 
 import { UserManagement } from "@/components/admin/UserManagement"; 
 import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
 import { ContentManagement } from "@/components/admin/ContentManagement";
@@ -48,7 +48,9 @@ export function getTabDefinitions(): TabDefinition[] {
       id: "puzzles",
       name: "Puzzles",
       icon: Puzzle,
-      component: PuzzleManagement,
+      component: () => React.createElement('div', { className: 'p-8 text-center' }, 
+        React.createElement('p', { className: 'text-muted-foreground' }, 'Puzzle management will be available with the CodeCanyon system')
+      ),
       roles: ["super_admin", "admin", "category_manager"]
     },
     {

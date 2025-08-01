@@ -5,7 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle, ChevronRight, Settings, User, CreditCard, Shield, Bell, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import EnhancedJigsawPuzzle from '@/components/puzzles/engines/EnhancedJigsawPuzzle';
+// EnhancedJigsawPuzzle removed - CodeCanyon system will be added
 
 const AccountManagement = () => {
   return (
@@ -394,12 +394,9 @@ const AccountManagement = () => {
             In this example, rearrange the tiles to create the correct navigation path to change your password:
           </p>
           <div className="max-w-sm mx-auto">
-          <EnhancedJigsawPuzzle 
-            imageUrl="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop"
-            rows={3}
-            columns={3}
-            showNumbers={true}
-          />
+            <div className="bg-puzzle-black/30 border border-puzzle-aqua/20 p-8 rounded-lg text-center">
+              <p className="text-muted-foreground">Interactive demo will be available with the CodeCanyon system</p>
+            </div>
           </div>
           <p className="text-muted-foreground mt-4 text-center">
             The correct path is: Settings {">"} Security {">"} Change Password {">"} Save
