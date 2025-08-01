@@ -1,11 +1,15 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
 import { processImageComplete } from '@/utils/imageProcessor';
 
-export const useImageUpload = (user: User | null, onUploadComplete: () => void) => {
+interface ClerkUser {
+  id: string;
+  primaryEmailAddress?: { emailAddress: string };
+}
+
+export const useImageUpload = (user: ClerkUser | null, onUploadComplete: () => void) => {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,12 +30,8 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
       console.log('Starting upload process for', files.length, 'files');
       console.log('User object:', user);
       
-      // Get Supabase user for database operations
-      const { data: { user: supabaseUser } } = await supabase.auth.getUser();
-      console.log('Supabase user:', supabaseUser);
-      
-      if (!supabaseUser) {
-        throw new Error('No Supabase user found');
+      if (!user) {
+        throw new Error('No authenticated user found');
       }
       
       for (const file of files) {
@@ -94,19 +94,19 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
         
         console.log('All files uploaded successfully');
 
-        // Create product image record using Supabase user ID
+        // Create product image record using Clerk user ID
         const { data: productImageData, error: productImageError } = await supabase
           .from('product_images')
           .insert({
             name: file.name,
-            metadata: { 
-              size: file.size, 
-              type: file.type,
+            description: `Uploaded image: ${file.name}`,
+            file_urls: [filePath, processedPath, thumbnailPath],
+            dimensions: {
               width: processedData.dimensions.width,
               height: processedData.dimensions.height
             },
             status: 'active',
-            created_by: supabaseUser.id
+            created_by: user.id
           })
           .select()
           .single();
