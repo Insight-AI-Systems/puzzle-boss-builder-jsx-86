@@ -63,7 +63,7 @@ export const JigsawPuzzleManager: React.FC = () => {
   const { toast } = useToast();
   
   // Image library integration
-  const { images, loadImages } = useImageLibrary(user);
+  const { images, loadImages } = useImageLibrary();
   const { handleUpload: uploadImage, isUploading } = useImageUpload(user, loadImages);
 
   // Form state

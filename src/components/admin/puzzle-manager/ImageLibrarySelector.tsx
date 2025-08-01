@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Search, Image as ImageIcon, Check } from 'lucide-react';
 import { useImageLibrary } from '../image-library/hooks/useImageLibrary';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 interface ImageLibrarySelectorProps {
   onImageSelect: (image: any) => void;
@@ -19,8 +18,7 @@ export const ImageLibrarySelector: React.FC<ImageLibrarySelectorProps> = ({
   selectedImageId,
   children
 }) => {
-  const { user } = useClerkAuth();
-  const { images, isLoading } = useImageLibrary(user);
+  const { images, isLoading } = useImageLibrary();
   const [searchTerm, setSearchTerm] = useState('');
   const [open, setOpen] = useState(false);
 

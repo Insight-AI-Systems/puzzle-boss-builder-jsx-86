@@ -1,27 +1,21 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@supabase/supabase-js';
 import { ProductImage } from '../types';
 import { toast } from '@/components/ui/use-toast';
 
-export const useImageLibrary = (user: User | null) => {
+// Updated to work with Clerk auth - no user dependency needed for public image access
+export const useImageLibrary = () => {
   const [images, setImages] = useState<ProductImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   const loadImages = async () => {
-    if (!user) {
-      setImages([]);
-      setIsLoading(false);
-      return;
-    }
-    
     setIsLoading(true);
     setError(null);
     
     try {
-      console.log('Loading images for user:', user.id);
+      console.log('Loading images...');
       
       const { data: productImages, error: productImagesError } = await supabase
         .from('product_images')
@@ -59,20 +53,26 @@ export const useImageLibrary = (user: User | null) => {
           // Get the appropriate path
           const path = fileData.processed_path || fileData.original_path;
           if (path) {
-            const bucketName = 'original_images'; // Default to original images
+            const bucketName = 'original_images';
             
             console.log(`Getting public URL for image ${image.id} from path: ${path}`);
             const { data: urlData } = supabase.storage
               .from(bucketName)
               .getPublicUrl(path);
             
-            console.log('Public URL:', urlData.publicUrl);  
+            console.log('Public URL generated:', urlData.publicUrl);  
+            
+            // Update the specific image with its URL
             setImages(prevImages => 
               prevImages.map(img => 
                 img.id === image.id ? { ...img, imageUrl: urlData.publicUrl } : img
               )
             );
+          } else {
+            console.warn(`No valid path found for image ${image.id}`);
           }
+        } else {
+          console.warn(`No file data found for image ${image.id}`);
         }
       }
     } catch (error: any) {
@@ -90,7 +90,7 @@ export const useImageLibrary = (user: User | null) => {
 
   useEffect(() => {
     loadImages();
-  }, [user]);
+  }, []); // Remove user dependency
 
   return {
     images,
