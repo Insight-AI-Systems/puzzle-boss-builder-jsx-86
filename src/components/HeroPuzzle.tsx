@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { RefreshCw } from "lucide-react";
 import { DEFAULT_IMAGES } from './puzzles/types/puzzle-types';
-import CustomPuzzleEngine from './puzzles/playground/engines/CustomPuzzleEngine';
+import EnhancedJigsawPuzzle from './puzzles/engines/EnhancedJigsawPuzzle';
 
 interface Puzzle {
   imageUrl: string;
@@ -47,8 +47,8 @@ const HeroPuzzle = () => {
     setShowNumbers(prev => !prev);
   };
 
-  const handleComplete = (timeElapsedSeconds: number) => {
-    setCompletionTime(timeElapsedSeconds);
+  const handleComplete = (stats: { moves: number; time: number; }) => {
+    setCompletionTime(stats.time);
   };
 
   const handleReset = () => {
@@ -71,14 +71,13 @@ const HeroPuzzle = () => {
           <div className="relative z-10">
             {/* A time key is used to fully reset the puzzle when imageUrl changes */}
             {activePuzzle && (
-              <CustomPuzzleEngine
+              <EnhancedJigsawPuzzle
                 key={`${activePuzzle.imageUrl}-${puzzleKey}`}
                 imageUrl={activePuzzle.imageUrl}
                 rows={activePuzzle.rows || 3}
                 columns={activePuzzle.columns || 3}
                 showNumbers={showNumbers}
                 onComplete={handleComplete}
-                onReset={handleReset}
               />
             )}
           </div>

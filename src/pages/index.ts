@@ -20,7 +20,7 @@ export { default as AdminDashboard } from './AdminDashboard';
 export { default as AdminCFOPage } from './AdminCFOPage';
 export { default as DevDashboard } from './DevDashboard';
 export { default as PuzzleTests } from './PuzzleTests';
-export { default as PuzzleTestPlayground } from './PuzzleTestPlayground';
+
 export { default as GettingStartedGuide } from './guides/GettingStartedGuide';
 export { default as AccountManagement } from './guides/AccountManagement';
 export { default as PuzzleTechniques } from './guides/PuzzleTechniques';
