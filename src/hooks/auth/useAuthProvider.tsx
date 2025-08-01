@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { UserRole } from '@/types/userTypes';
@@ -127,8 +127,40 @@ export function useAuthProvider() {
     }
   }, [session, userRoles, rolesLoaded]);
 
+  // Fetch user roles when user logs in
+  useEffect(() => {
+    if (currentUserId && !rolesLoaded) {
+      console.log('useAuthProvider - User authenticated, fetching roles for:', currentUserId);
+      fetchUserRoles(currentUserId);
+    }
+  }, [currentUserId, rolesLoaded, fetchUserRoles]);
+
+  // Reset roles when user logs out
+  useEffect(() => {
+    if (!currentUserId && rolesLoaded) {
+      console.log('useAuthProvider - User logged out, resetting roles');
+      setUserRoles([]);
+      setUserRole(null);
+      setRolesLoaded(false);
+      roleCache.current = {};
+    }
+  }, [currentUserId, rolesLoaded]);
+
+  // hasRole function with caching
+  const hasRole = useCallback((role: string): boolean => {
+    // Use cache if available
+    if (roleCache.current[role] !== undefined) {
+      return roleCache.current[role];
+    }
+    
+    const result = userRoles.includes(role) || userRole === role;
+    roleCache.current[role] = result;
+    return result;
+  }, [userRoles, userRole]);
+
   return {
     user: session?.user ?? null,
+    profile: null, // Add this for compatibility
     session,
     isLoading: authStateLoading || (!rolesLoaded && isAuthenticated),
     error,
@@ -137,6 +169,7 @@ export function useAuthProvider() {
     userRole,
     userRoles,
     rolesLoaded,
+    hasRole,
     clearAuthError,
     fetchUserRoles,
     setError,
