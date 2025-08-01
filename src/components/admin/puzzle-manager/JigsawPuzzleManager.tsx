@@ -569,12 +569,22 @@ export const JigsawPuzzleManager: React.FC = () => {
                         <div className="flex items-start gap-4">
                           <div className="flex-shrink-0">
                             <img 
-                              src={`https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/Original Product Images/${formData.selected_image_data.image_files?.[0]?.original_path || 'placeholder.jpg'}`}
+                              src={formData.selected_image_data.image_files?.[0]?.thumbnail_path 
+                                ? `https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/Image Thumbnails/${formData.selected_image_data.image_files[0].thumbnail_path}`
+                                : formData.selected_image_data.image_files?.[0]?.original_path
+                                ? `https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/Original Product Images/${formData.selected_image_data.image_files[0].original_path}`
+                                : formData.selected_image_data.url || ''
+                              }
                               alt={formData.image_name}
-                              className="w-24 h-24 object-cover rounded border shadow-sm"
+                              className="w-32 h-32 object-cover rounded border shadow-sm"
                               onError={(e) => {
                                 console.log('Image failed to load:', formData.selected_image_data);
-                                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMiA0MEg2NFY1Nkg0OEw0MCA0OEgzMlY0MFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
+                                // Try fallback to original image if thumbnail fails
+                                if (formData.selected_image_data.image_files?.[0]?.original_path) {
+                                  e.currentTarget.src = `https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/Original Product Images/${formData.selected_image_data.image_files[0].original_path}`;
+                                } else {
+                                  e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik00MCA1Nkg4OFY3Mkg2NEw1NiA2NEg0MFY1NloiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
+                                }
                               }}
                             />
                           </div>
@@ -584,6 +594,12 @@ export const JigsawPuzzleManager: React.FC = () => {
                             </div>
                             <div className="text-xs text-green-600 mt-1">
                               Ready to create puzzle
+                            </div>
+                            <div className="text-xs text-gray-600 mt-1">
+                              {formData.selected_image_data.image_files?.[0]?.original_width && formData.selected_image_data.image_files?.[0]?.original_height 
+                                ? `${formData.selected_image_data.image_files[0].original_width} × ${formData.selected_image_data.image_files[0].original_height}` 
+                                : 'Image dimensions unknown'
+                              }
                             </div>
                           </div>
                         </div>
