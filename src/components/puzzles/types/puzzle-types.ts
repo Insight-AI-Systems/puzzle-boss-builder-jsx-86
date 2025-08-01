@@ -51,7 +51,7 @@ export interface PuzzlePiece extends BasePuzzlePiece {
   originalPosition: number;
   isDragging: boolean;
   rotation?: number; // Add rotation property to this interface too for consistency
-  color?: string;    // Add color property to allow flexibility between PuzzlePiece and SimplePuzzlePiece
+  color?: string;    // Add color property for piece styling
 }
 
 // Default sample images for puzzle games

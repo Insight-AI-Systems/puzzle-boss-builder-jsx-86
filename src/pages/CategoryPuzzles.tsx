@@ -186,7 +186,7 @@ const CategoryPuzzles = () => {
                   size="sm"
                   className="bg-puzzle-aqua hover:bg-puzzle-aqua/80"
                 >
-                  <Link to={`/puzzle/${puzzle.id}`}>Play</Link>
+                  <Link to={`/puzzles/jigsaw/${puzzle.id}`}>Play</Link>
                 </Button>
               </CardFooter>
             </Card>
