@@ -434,7 +434,7 @@ export const JigsawPuzzleManager: React.FC = () => {
                     <Input
                       id="pieces"
                       type="number"
-                      min="6"
+                      min="4"
                       max="2000"
                       value={formData.piece_count}
                       onChange={(e) => setFormData({...formData, piece_count: parseInt(e.target.value)})}
