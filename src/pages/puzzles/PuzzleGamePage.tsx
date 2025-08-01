@@ -271,3 +271,5 @@ export const PuzzleGamePage: React.FC = () => {
     </>
   );
 };
+
+export default PuzzleGamePage;

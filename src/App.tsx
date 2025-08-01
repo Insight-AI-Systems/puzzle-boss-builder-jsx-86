@@ -41,9 +41,11 @@ import {
   BlockPuzzlePro, 
   DailyCrossword, 
   MahjongGamePage,
-  UnityJigsawPuzzle,
   PuzzleSessionPage 
 } from '@/pages/games';
+
+// Import new puzzle pages
+import { PuzzleSelectionPage, PuzzleGamePage } from '@/pages/puzzles';
 
 // Your Clerk publishable key
 const PUBLISHABLE_KEY = "pk_test_ZmFjdHVhbC1kYW5lLTQ5LmNsZXJrLmFjY291bnRzLmRldiQ";
@@ -89,7 +91,9 @@ function AppRoutes() {
             <Route path="games/block-puzzle" element={<BlockPuzzlePro />} />
             <Route path="games/crossword" element={<DailyCrossword />} />
             <Route path="games/mahjong" element={<MahjongGamePage />} />
-            <Route path="games/unity-jigsaw-puzzle" element={<UnityJigsawPuzzle />} />
+            <Route path="games/unity-jigsaw-puzzle" element={<PuzzleSelectionPage />} />
+            <Route path="puzzles/jigsaw/:puzzleId" element={<PuzzleGamePage />} />
+            <Route path="puzzles/jigsaw/custom" element={<PuzzleGamePage />} />
             <Route path="puzzle/:sessionId" element={<PuzzleSessionPage />} />
             
             {/* Protected user routes */}

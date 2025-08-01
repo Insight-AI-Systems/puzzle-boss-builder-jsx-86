@@ -184,3 +184,5 @@ export const PuzzleSelectionPage: React.FC = () => {
     </PageLayout>
   );
 };
+
+export default PuzzleSelectionPage;
