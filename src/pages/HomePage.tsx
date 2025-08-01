@@ -31,68 +31,8 @@ function HomePage() {
     skipRedirect: location.state?.skipAdminRedirect
   });
   
-  // Admin redirect logic - only run once after auth is loaded
-  useEffect(() => {
-    // Skip if already processed, loading, or not authenticated
-    if (hasProcessedRedirect || isLoading || !isAuthenticated) return;
-    
-    // Check if we're coming directly from an admin page - if so, don't redirect
-    const comingFromAdmin = location.state?.from?.startsWith('/admin');
-    
-    // Check for skipAdminRedirect flag - this is set when clicking Home from admin pages
-    const skipRedirect = location.state?.skipAdminRedirect === true;
-    
-    console.log('HomePage admin redirect check', {
-      userRole,
-      isAuthenticated,
-      hasProcessedRedirect,
-      comingFromAdmin,
-      skipRedirect
-    });
-    
-    // Mark as processed to prevent re-running
-    setHasProcessedRedirect(true);
-    
-    // IMPORTANT: If user explicitly navigated home (skipRedirect), respect their choice
-    if (skipRedirect) {
-      console.log('User explicitly navigated home - skipping admin redirect');
-      // Temporarily disable auto-redirect preference for this session
-      sessionStorage.setItem('temp_disable_admin_redirect', 'true');
-      // Clear the navigation state to prevent it from affecting future navigations
-      window.history.replaceState(null, '', window.location.pathname);
-      return;
-    }
-    
-    // Check if we have a temporary disable flag from this session
-    const tempDisabled = sessionStorage.getItem('temp_disable_admin_redirect');
-    if (tempDisabled) {
-      console.log('Auto-redirect temporarily disabled for this session');
-      return;
-    }
-    
-    // Only proceed if user is super_admin and not coming from admin pages
-    if (userRole === 'super_admin' && !comingFromAdmin && isAuthenticated) {
-      // Check localStorage for user preference
-      const userWantsAdmin = window.localStorage.getItem('redirect_to_admin');
-      
-      if (userWantsAdmin === 'true') {
-        console.log('Auto-redirecting super_admin to dashboard based on localStorage preference');
-        navigate('/admin', { replace: true });
-      } else if (userWantsAdmin === null) {
-        console.log('Showing confirmation dialog for super_admin');
-        
-        // Use a more reliable confirmation method
-        setTimeout(() => {
-          const shouldRedirect = window.confirm('As a Super Admin, would you like to go directly to the Admin Dashboard?');
-          window.localStorage.setItem('redirect_to_admin', shouldRedirect ? 'true' : 'false');
-          
-          if (shouldRedirect) {
-            navigate('/admin', { replace: true });
-          }
-        }, 100);
-      }
-    }
-  }, [isLoading, userRole, navigate, isAuthenticated, hasProcessedRedirect, location.state]);
+  // Admin redirect logic - DISABLED for home button navigation
+  // Home button should always take users to home page regardless of role
 
   useEffect(() => {
     // Debug message to verify component mounting

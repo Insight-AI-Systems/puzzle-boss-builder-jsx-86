@@ -7,8 +7,8 @@ import { ClerkAuthButtons } from '@/components/auth/ClerkAuthButtons';
 import UserMenu from './UserMenu';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { mainNavItems } from './NavbarData';
-// PuzzleDropdown removed - CodeCanyon system will be added
 import MobileMenu from './MobileMenu';
+import GamesDropdown from './GamesDropdown';
 import { AdminErrorBoundary } from '@/components/admin/ErrorBoundary';
 
 export const Navbar: React.FC = () => {
@@ -49,6 +49,7 @@ export const Navbar: React.FC = () => {
                   {item.name}
                 </Link>
               ))}
+              <GamesDropdown />
             </div>
 
             {/* Auth Buttons and Profile */}
