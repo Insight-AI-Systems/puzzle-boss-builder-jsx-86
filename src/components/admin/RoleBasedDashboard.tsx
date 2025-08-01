@@ -22,6 +22,8 @@ export const RoleBasedDashboard: React.FC = () => {
   
   // Get tab definitions and filter by permissions
   const allTabs = getTabDefinitions();
+  console.log('📊 All tabs from definitions:', allTabs.map(t => ({ id: t.id, name: t.name, roles: t.roles })));
+  
   const accessibleTabs = allTabs.filter(tab => {
     // Super admins see all tabs
     if (userRole === 'super_admin') return true;
@@ -31,6 +33,7 @@ export const RoleBasedDashboard: React.FC = () => {
   });
   
   console.log('📊 RoleBasedDashboard - Accessible tabs:', accessibleTabs.map(t => t.id));
+  console.log('📊 User role:', userRole, 'Puzzle tab accessible:', accessibleTabs.find(t => t.id === 'puzzles'));
   
   // Set active tab
   const [activeTab, setActiveTab] = React.useState(() => {
