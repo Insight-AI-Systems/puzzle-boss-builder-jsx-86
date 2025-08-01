@@ -20,7 +20,7 @@ export const supabaseWithClerk = createClient<Database>(
 });
 
 // Function to create a Supabase client with Clerk JWT token
-export const getSupabaseWithClerkToken = (token: string) => {
+export const getSupabaseWithClerkToken = async (clerkToken: string) => {
   return createClient<Database>(
     SECURITY_CONFIG.SUPABASE_URL, 
     SECURITY_CONFIG.SUPABASE_ANON_KEY, 
@@ -31,9 +31,16 @@ export const getSupabaseWithClerkToken = (token: string) => {
       },
       global: {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${clerkToken}`
         }
       }
     }
   );
+};
+
+// Create Supabase profiles entry for Clerk users - simplified approach
+export const ensureClerkProfile = async (clerkUser: any, clerkToken: string) => {
+  // For now, we'll handle this in the regular Supabase client
+  // The profile sync will happen through the existing auth system
+  return null;
 };
