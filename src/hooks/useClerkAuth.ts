@@ -73,7 +73,7 @@ export const useClerkAuth = () => {
   // Role checking functions
   const userRole = getUserRole();
   const userRoles = [userRole];
-  const isAdmin = userRole === 'super_admin' || userRole === 'admin';
+  const isAdmin = userRole === 'super_admin' || userRole === 'super-admin' || userRole === 'admin';
 
   const hasRole = React.useCallback((role: string): boolean => {
     console.log('🔍 hasRole check (Clerk-first):', { 
