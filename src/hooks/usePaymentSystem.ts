@@ -1,10 +1,10 @@
 
 import { useState } from 'react';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 export function usePaymentSystem() {
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
 

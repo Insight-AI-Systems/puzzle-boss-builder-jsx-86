@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ClerkProfile {
   id: string;
@@ -32,7 +32,7 @@ interface UserMenuProps {
 }
 
 const UserMenu: React.FC<UserMenuProps> = ({ profile, isMobile = false }) => {
-  const { hasRole, signOut } = useClerkAuth();
+  const { hasRole, signOut } = useAuth();
 
   // Check admin privileges based on database role only
   const isAdminUser = hasRole('super_admin') || hasRole('admin') || hasRole('category_manager') || 

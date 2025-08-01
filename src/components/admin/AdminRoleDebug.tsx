@@ -5,16 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle, XCircle, AlertTriangle, Shield } from "lucide-react";
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { ensureAlanHasSuperAdminRole, removeAlanBoothAdminAccess } from '@/utils/admin/updateUserRole';
 import { useToast } from '@/hooks/use-toast';
 
 export const AdminRoleDebug: React.FC = () => {
-  const { user, profile, userRole, hasRole, isAdmin } = useClerkAuth();
+  const { user, profile, userRole, hasRole, isAdmin } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
 
-  const userEmail = user?.primaryEmailAddress?.emailAddress;
+  const userEmail = user?.email;
 
   const handleEnsureAlanAdmin = async () => {
     setIsUpdating(true);

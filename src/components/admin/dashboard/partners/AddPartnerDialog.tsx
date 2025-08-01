@@ -31,7 +31,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from '@/hooks/use-toast';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AddPartnerDialogProps {
   open: boolean;
@@ -51,7 +51,7 @@ export function AddPartnerDialog({ open, setOpen, onAddPartner }: AddPartnerDial
   const [status, setStatus] = useState('pending');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const categories = [

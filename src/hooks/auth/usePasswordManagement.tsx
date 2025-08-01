@@ -2,10 +2,10 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function usePasswordManagement() {
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +19,7 @@ export function usePasswordManagement() {
       setError(null);
       
       const { error: verifyError } = await supabase.auth.signInWithPassword({
-        email: user.primaryEmailAddress?.emailAddress!,
+        email: user.email!,
         password: currentPassword
       });
       

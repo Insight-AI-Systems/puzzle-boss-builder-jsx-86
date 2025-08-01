@@ -1,6 +1,6 @@
 
 import { useMutation } from '@tanstack/react-query';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface UserWallet {
   id: string;
@@ -29,26 +29,25 @@ export interface MemberDetailedProfile {
 }
 
 export const useMemberProfile = () => {
-  const { user, profile: clerkProfile, isLoading: clerkLoading, userRole, isAdmin } = useClerkAuth();
+  const { user, profile, isLoading, userRole, isAdmin } = useAuth();
 
-  // Convert Clerk profile to the expected format
-  const profile = clerkProfile ? {
-    id: clerkProfile.id,
-    username: clerkProfile.username || '',
-    email: clerkProfile.email || '',
-    role: clerkProfile.role || 'player',
+  // Convert profile to the expected format
+  const memberProfile = profile ? {
+    id: profile.id,
+    username: profile.username || '',
+    email: profile.email || '',
+    role: profile.role || 'player',
     credits: 0, // Default value, can be updated from database
-    bio: clerkProfile.bio,
-    avatar_url: clerkProfile.avatar_url,
-    created_at: clerkProfile.created_at,
-    updated_at: clerkProfile.updated_at,
-    clerk_user_id: clerkProfile.clerk_user_id,
+    bio: profile.bio,
+    avatar_url: profile.avatar_url,
+    created_at: profile.created_at,
+    updated_at: profile.updated_at,
     location: '', // Default values for missing fields
     dateOfBirth: '',
     gender: '',
     ageGroup: '',
     phone: '',
-    display_name: clerkProfile.display_name,
+    display_name: profile.display_name,
     addresses: [], // Mock for now
     membership_details: null // Mock for now
   } : null;
@@ -70,8 +69,8 @@ export const useMemberProfile = () => {
   });
 
   return {
-    profile,
-    isLoading: clerkLoading,
+    profile: memberProfile,
+    isLoading,
     isAdmin,
     error: null,
     updateProfile: updateProfileMutation.mutateAsync,

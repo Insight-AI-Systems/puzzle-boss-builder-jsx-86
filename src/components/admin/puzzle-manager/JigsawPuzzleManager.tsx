@@ -15,7 +15,7 @@ import ImageUpload from '../ImageUpload';
 import { useImageLibrary } from '../image-library/hooks/useImageLibrary';
 import { useImageUpload } from '../image-library/hooks/useImageUpload';
 import { useImageManagement } from '../image-library/hooks/useImageManagement';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { ImageLibrarySelector } from './ImageLibrarySelector';
 import { fixStuckImages } from '@/utils/fixStuckImages';
 import { AuthDebugPanel } from '@/components/debug/AuthDebugPanel';
@@ -56,7 +56,7 @@ interface Category {
 }
 
 export const JigsawPuzzleManager: React.FC = () => {
-  const { user, profile: userProfile } = useClerkAuth();
+  const { user, profile: userProfile } = useAuth();
   const [puzzles, setPuzzles] = useState<JigsawPuzzle[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -239,38 +239,19 @@ export const JigsawPuzzleManager: React.FC = () => {
           // First, let's see what's actually in the database
           const { data: allProfiles, error: debugError } = await supabase
             .from('profiles')
-            .select('id, clerk_user_id, email, role')
+            .select('id, email, role')
             .limit(10);
           
           console.log('🔍 Database debug - All profiles (first 10):', allProfiles);
-          console.log('🔍 Looking for Clerk user ID:', userProfile.id);
+          console.log('🔍 Looking for user ID:', userProfile.id);
           
           let { data, error } = await supabase
             .from('profiles')
-            .select('id, role, username, email, clerk_user_id')
-            .eq('clerk_user_id', userProfile.id)
+            .select('id, role, username, email')
+            .eq('id', userProfile.id)
             .maybeSingle();
 
           console.log('🔍 Query result:', { data, error });
-          
-          // Also try without user_ prefix in case that's the issue
-          if (!data && userProfile.id.startsWith('user_')) {
-            const clerkIdWithoutPrefix = userProfile.id.replace('user_', '');
-            console.log('🔍 Trying without user_ prefix:', clerkIdWithoutPrefix);
-            
-            const { data: dataWithoutPrefix, error: errorWithoutPrefix } = await supabase
-              .from('profiles')
-              .select('id, role, username, email, clerk_user_id')
-              .eq('clerk_user_id', clerkIdWithoutPrefix)
-              .maybeSingle();
-              
-            console.log('🔍 Query result without prefix:', { data: dataWithoutPrefix, error: errorWithoutPrefix });
-            
-            if (dataWithoutPrefix) {
-              data = dataWithoutPrefix;
-              error = errorWithoutPrefix;
-            }
-          }
 
           if (error) {
             console.error(`❌ Profile query error (attempt ${attempts}):`, error);
@@ -291,7 +272,7 @@ export const JigsawPuzzleManager: React.FC = () => {
             profileData = data;
             console.log('✅ Profile found successfully:', {
               profileUUID: data.id,
-              clerkUserId: userProfile.id,
+              userId: userProfile.id,
               role: data.role,
               attempt: attempts
             });
@@ -301,7 +282,7 @@ export const JigsawPuzzleManager: React.FC = () => {
           console.warn(`⚠️ No profile data returned (attempt ${attempts})`);
           
           if (attempts === maxAttempts) {
-            console.error('❌ No profile found after all attempts for Clerk user:', userProfile.id);
+            console.error('❌ No profile found after all attempts for user:', userProfile.id);
             toast({
               title: "Profile Not Found", 
               description: "Could not find your profile in the database. Please contact support.",

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface SessionInfo {
   id: string;
@@ -13,7 +13,7 @@ export interface SessionInfo {
 }
 
 export function useSessionManagement() {
-  const { user, session } = useClerkAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -71,7 +71,7 @@ export function useSessionManagement() {
         location: getLocationInfo(s.ip_address),
         ip_address: s.ip_address,
         last_active: new Date(s.last_active).toLocaleString(),
-        is_current: session?.user?.id === user.id && s.is_active
+        is_current: s.is_active
       }));
       
       setSessions(sessionInfoList);
@@ -138,7 +138,7 @@ export function useSessionManagement() {
 
   // Terminate all other sessions
   const terminateAllOtherSessions = async () => {
-    if (!user || !session) return;
+    if (!user) return;
     
     try {
       setIsLoading(true);
@@ -147,7 +147,7 @@ export function useSessionManagement() {
       // Call the database function to terminate other sessions
       const { error: rpcError } = await supabase.rpc(
         'terminate_other_sessions',
-        { current_session_id: session.access_token }
+        { user_id: user.id }
       );
       
       if (rpcError) {

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useImageLibrary } from './image-library/hooks/useImageLibrary';
 import { useImageUpload } from './image-library/hooks/useImageUpload';
 import { useImageManagement } from './image-library/hooks/useImageManagement';
@@ -16,7 +16,7 @@ import { ImageGrid } from './image-library/components/ImageGrid';
 import { useDropzone } from 'react-dropzone';
 
 const ImageLibrary: React.FC = () => {
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
