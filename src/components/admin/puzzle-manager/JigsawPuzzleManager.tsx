@@ -135,6 +135,7 @@ export const JigsawPuzzleManager: React.FC = () => {
   };
 
   const handleImageSelect = (image: any) => {
+    console.log('Selected image data:', image);
     setSelectedImageId(image.id);
     setFormData({
       ...formData, 
@@ -178,17 +179,24 @@ export const JigsawPuzzleManager: React.FC = () => {
         return;
       }
 
-      // Get current user's profile to get the UUID
+      // Get current user's profile to get the UUID that matches the profiles table
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('id', user?.id)
+        .limit(1)
         .single();
 
       if (profileError) {
         console.error('Profile error:', profileError);
-        // Fall back to null if profile not found
+        toast({
+          title: "Error",
+          description: "Could not find user profile. Please ensure you're logged in properly.",
+          variant: "destructive"
+        });
+        return;
       }
+
+      console.log('Profile data:', profileData);
 
       // Prepare the data with required fields
       const puzzleData = {
@@ -202,7 +210,7 @@ export const JigsawPuzzleManager: React.FC = () => {
         is_free: formData.is_free,
         status: formData.status,
         tags: formData.tags || [],
-        created_by: profileData?.id || null, // Use profile UUID instead of Clerk ID
+        created_by: profileData.id, // Use profile UUID
       };
 
       console.log('Creating puzzle with data:', puzzleData);
