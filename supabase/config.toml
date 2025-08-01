@@ -43,3 +43,6 @@ verify_jwt = false
 
 [functions.count-segmented-users]
 verify_jwt = false
+
+[functions.admin-puzzle-files]
+verify_jwt = false

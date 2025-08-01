@@ -20,6 +20,8 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log('🧩 admin-puzzle-files function called:', req.method, req.url);
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -27,6 +29,8 @@ Deno.serve(async (req) => {
 
     const url = new URL(req.url);
     const segments = url.pathname.split('/');
+    
+    console.log('🧩 URL segments:', segments);
     
     // Handle file serving: GET /admin-puzzle-files/file/{filename}
     if (req.method === 'GET' && segments.includes('file')) {
@@ -85,7 +89,17 @@ Deno.serve(async (req) => {
 
       case 'POST': {
         // Upload new file(s)
-        const body = await req.json();
+        let body;
+        try {
+          body = await req.json();
+        } catch (e) {
+          console.error('Error parsing request body:', e);
+          return new Response(
+            JSON.stringify({ error: 'Invalid JSON body' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
         const { files } = body;
 
         if (!files || !Array.isArray(files)) {
@@ -144,7 +158,17 @@ Deno.serve(async (req) => {
 
       case 'DELETE': {
         // Delete file by ID
-        const body = await req.json();
+        let body;
+        try {
+          body = await req.json();
+        } catch (e) {
+          console.error('Error parsing delete request body:', e);
+          return new Response(
+            JSON.stringify({ error: 'Invalid JSON body' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
         const { id } = body;
 
         if (!id) {
