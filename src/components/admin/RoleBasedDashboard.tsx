@@ -6,20 +6,18 @@ import { DashboardTabSelector } from './dashboard/DashboardTabSelector';
 import { getTabDefinitions } from './dashboard/TabDefinitions';
 import { useSearchParams } from 'react-router-dom';
 import { UserRole } from '@/types/userTypes';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
-import { usePermissions } from '@/hooks/usePermissions';
+import { useClerkRoles } from '@/hooks/useClerkRoles';
 import { AdminErrorBoundary } from './ErrorBoundary';
 
 export const RoleBasedDashboard: React.FC = () => {
-  const { profile } = useClerkAuth();
-  const { canAccessAdminDashboard, userRole } = usePermissions();
+  const { userRole, canAccessAdminDashboard } = useClerkRoles();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   
   console.log('📊 RoleBasedDashboard - Access check:', {
     userRole,
     canAccessAdminDashboard: canAccessAdminDashboard(),
-    profile: !!profile
+    authSource: 'clerk_roles'
   });
   
   // Get tab definitions and filter by permissions
@@ -56,26 +54,12 @@ export const RoleBasedDashboard: React.FC = () => {
     }
   }, [tabParam, accessibleTabs]);
 
-  // Create mapped profile for compatibility
-  const mappedProfile = profile ? {
-    ...profile,
-    display_name: profile.username || profile.email || 'Unknown User',
-    bio: profile.bio || '',
-    role: profile.role as UserRole,
-    country: '',
-    categories_played: [],
-    credits: 0,
-    tokens: 0,
-    achievements: [],
-    referral_code: null,
-    avatar_url: profile.avatar_url,
-    created_at: profile.created_at,
-    updated_at: profile.updated_at
-  } : {
-    id: 'temp-admin',
+  // Create a default profile for admin access
+  const mappedProfile = {
+    id: 'admin-user',
     display_name: 'Admin User',
     bio: '',
-    role: 'super_admin' as UserRole,
+    role: userRole as UserRole,
     country: '',
     categories_played: [],
     credits: 0,
