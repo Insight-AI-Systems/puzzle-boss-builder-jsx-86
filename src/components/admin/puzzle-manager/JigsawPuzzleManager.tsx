@@ -77,7 +77,9 @@ export const JigsawPuzzleManager: React.FC = () => {
     price: 0,
     is_free: true,
     status: 'draft',
-    tags: [] as string[]
+    tags: [] as string[],
+    image_url: '',
+    image_name: ''
   });
 
   useEffect(() => {
@@ -133,9 +135,10 @@ export const JigsawPuzzleManager: React.FC = () => {
 
   const handleImageSelect = (image: any) => {
     setSelectedImageId(image.id);
+    setFormData({...formData, image_url: image.url, image_name: image.name});
     toast({
       title: "Image Selected",
-      description: `Selected image: ${image.name}`,
+      description: `Selected: ${image.name}. You can now complete the form and create your puzzle.`,
     });
   };
 
@@ -160,6 +163,15 @@ export const JigsawPuzzleManager: React.FC = () => {
         return;
       }
 
+      if (!selectedImageId) {
+        toast({
+          title: "Validation Error",
+          description: "Please select an image from the library",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Prepare the data with required fields
       const puzzleData = {
         title: formData.title.trim(),
@@ -172,6 +184,7 @@ export const JigsawPuzzleManager: React.FC = () => {
         is_free: formData.is_free,
         status: formData.status,
         tags: formData.tags || [],
+        image_url: formData.image_url,
         created_by: user?.id,
       };
 
@@ -280,7 +293,9 @@ export const JigsawPuzzleManager: React.FC = () => {
       price: 0,
       is_free: true,
       status: 'draft',
-      tags: []
+      tags: [],
+      image_url: '',
+      image_name: ''
     });
   };
 
@@ -296,7 +311,9 @@ export const JigsawPuzzleManager: React.FC = () => {
       price: puzzle.price,
       is_free: puzzle.is_free,
       status: puzzle.status,
-      tags: puzzle.tags || []
+      tags: puzzle.tags || [],
+      image_url: '',
+      image_name: ''
     });
     setShowCreateForm(true);
   };
@@ -470,35 +487,49 @@ export const JigsawPuzzleManager: React.FC = () => {
                   </div>
                  </div>
 
-                 {/* Image Selection */}
-                 <div>
-                   <Label>Puzzle Image</Label>
-                   <div className="flex gap-2 mt-2">
-                     <ImageLibrarySelector
-                       onImageSelect={handleImageSelect}
-                       selectedImageId={selectedImageId}
-                     >
-                       <Button variant="outline" type="button">
-                         <ImageIcon className="h-4 w-4 mr-2" />
-                         Select from Library
-                       </Button>
-                     </ImageLibrarySelector>
-                     {selectedImageId && (
-                       <Button 
-                         variant="outline" 
-                         onClick={() => setSelectedImageId('')}
-                         type="button"
-                       >
-                         Clear Selection
-                       </Button>
-                     )}
-                   </div>
-                   {selectedImageId && (
-                     <div className="mt-2 text-sm text-muted-foreground">
-                       Image selected from library
-                     </div>
-                   )}
-                 </div>
+                  {/* Image Selection */}
+                  <div>
+                    <Label>Puzzle Image *</Label>
+                    <div className="flex gap-2 mt-2">
+                      <ImageLibrarySelector
+                        onImageSelect={handleImageSelect}
+                        selectedImageId={selectedImageId}
+                      >
+                        <Button variant="outline" type="button">
+                          <ImageIcon className="h-4 w-4 mr-2" />
+                          {selectedImageId ? 'Change Image' : 'Select from Library'}
+                        </Button>
+                      </ImageLibrarySelector>
+                      {selectedImageId && (
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            setSelectedImageId('');
+                            setFormData({...formData, image_url: '', image_name: ''});
+                          }}
+                          type="button"
+                        >
+                          Clear Selection
+                        </Button>
+                      )}
+                    </div>
+                    {selectedImageId ? (
+                      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
+                        <div className="text-sm text-green-800 font-medium">
+                          ✓ Image selected: {formData.image_name}
+                        </div>
+                        <div className="text-xs text-green-600">
+                          Ready to create puzzle
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded">
+                        <div className="text-sm text-orange-800">
+                          Please select an image from the library to continue
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="flex gap-2">
                     <Button type="submit">
