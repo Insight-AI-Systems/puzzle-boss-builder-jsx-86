@@ -491,15 +491,15 @@ export const JigsawPuzzleManager: React.FC = () => {
                   <div>
                     <Label htmlFor="category">Category</Label>
                     <Select value={formData.category_id} onValueChange={(value) => setFormData({...formData, category_id: value})}>
-                      <SelectTrigger className="bg-white">
+                      <SelectTrigger className="bg-input text-foreground">
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white z-50 border shadow-lg">
+                      <SelectContent className="bg-popover border-border shadow-lg z-50">
                         {categories.length === 0 ? (
                           <SelectItem value="no-categories" disabled>No categories available</SelectItem>
                         ) : (
                           categories.map(cat => (
-                            <SelectItem key={cat.id} value={cat.id} className="hover:bg-gray-100">
+                            <SelectItem key={cat.id} value={cat.id} className="text-popover-foreground hover:bg-muted/80">
                               {cat.name}
                             </SelectItem>
                           ))
