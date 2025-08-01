@@ -105,13 +105,14 @@ export const useImageUpload = (user: ClerkUser | null, onUploadComplete: () => v
           .insert({
             name: file.name,
             description: `Uploaded image: ${file.name}`,
-            file_urls: filePaths,
-            dimensions: {
-              width: processedData.dimensions.width,
-              height: processedData.dimensions.height
-            },
             status: 'active',
-            created_by: user.id // This is now a Clerk user ID (TEXT)
+            created_by: user.id, // Clerk user ID as text
+            metadata: {
+              width: processedData.dimensions.width,
+              height: processedData.dimensions.height,
+              size: file.size,
+              type: file.type
+            }
           })
           .select()
           .single();
