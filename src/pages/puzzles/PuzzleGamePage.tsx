@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 // Removed PuzzleGameLayout and PuzzleGameCanvas - using direct EnhancedJigsawPuzzle
 import { PuzzleCompletionModal } from '@/components/puzzles/completion/PuzzleCompletionModal';
-import EnhancedJigsawPuzzle from '@/components/puzzles/engines/EnhancedJigsawPuzzle';
+import ModernPuzzleEngine from '@/components/puzzles/engines/ModernPuzzleEngine';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Play, Pause } from 'lucide-react';
 
 // DEBUG: Add diagnostic logging
-console.log('🔍 PuzzleGamePage loading - should only use EnhancedJigsawPuzzle');
-console.log('📦 Components imported:', { EnhancedJigsawPuzzle });
+console.log('🔍 PuzzleGamePage loading - using NEW ModernPuzzleEngine');
+console.log('📦 Components imported:', { ModernPuzzleEngine });
 
 // Removed GameState interface - using EnhancedJigsawPuzzle's built-in state management
 
@@ -121,8 +121,8 @@ export const PuzzleGamePage: React.FC = () => {
 
   return (
     <>
-      {/* FORCE CACHE CLEAR: This ensures only EnhancedJigsawPuzzle is loaded */}
-      <div data-puzzle-engine="enhanced-jigsaw-only" className="min-h-screen bg-background">
+      {/* MODERN ENGINE: Clean rectangular pieces instead of jigsaw tabs */}
+      <div data-puzzle-engine="modern-clean-design" className="min-h-screen bg-background">
         {/* Header */}
         <div className="border-b border-puzzle-aqua/20 bg-puzzle-black/50">
           <div className="container mx-auto px-4 py-4">
@@ -161,8 +161,8 @@ export const PuzzleGamePage: React.FC = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
             {/* CACHE BUSTER: Force complete refresh */}
-            <div key={`puzzle-${puzzleId}-${Date.now()}`} data-component="enhanced-jigsaw-puzzle-only">
-              <EnhancedJigsawPuzzle
+            <div key={`puzzle-${puzzleId}-${Date.now()}`} data-component="modern-puzzle-engine-only">
+              <ModernPuzzleEngine
                 imageUrl={currentPuzzle.imageUrl}
                 rows={currentPuzzle.rows}
                 columns={currentPuzzle.columns}
