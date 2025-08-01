@@ -12,6 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Upload, Settings, Grid, Eye, Trash2, Edit, Image as ImageIcon } from 'lucide-react';
 import ImageUpload from '../ImageUpload';
+import { useImageLibrary } from '../image-library/hooks/useImageLibrary';
+import { useImageUpload } from '../image-library/hooks/useImageUpload';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { ImageLibrarySelector } from './ImageLibrarySelector';
 
 interface JigsawPuzzle {
   id: string;
@@ -48,13 +52,19 @@ interface Category {
 }
 
 export const JigsawPuzzleManager: React.FC = () => {
+  const { user } = useClerkAuth();
   const [puzzles, setPuzzles] = useState<JigsawPuzzle[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingPuzzle, setEditingPuzzle] = useState<JigsawPuzzle | null>(null);
   const [jsUploadEnabled, setJsUploadEnabled] = useState(false);
+  const [selectedImageId, setSelectedImageId] = useState<string>('');
   const { toast } = useToast();
+  
+  // Image library integration
+  const { images, loadImages } = useImageLibrary(user);
+  const { handleUpload: uploadImage, isUploading } = useImageUpload(user, loadImages);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -106,10 +116,26 @@ export const JigsawPuzzleManager: React.FC = () => {
   };
 
   const handleImageUpload = async (files: File[]) => {
-    // This will be implemented in Phase 3 - Image Processing System
+    try {
+      await uploadImage(files);
+      toast({
+        title: "Success",
+        description: `${files.length} image(s) uploaded successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload images. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleImageSelect = (image: any) => {
+    setSelectedImageId(image.id);
     toast({
-      title: "Coming Soon",
-      description: "Image upload functionality will be implemented in the next phase",
+      title: "Image Selected",
+      description: `Selected image: ${image.name}`,
     });
   };
 
@@ -394,12 +420,42 @@ export const JigsawPuzzleManager: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
+                 </div>
 
-                <div className="flex gap-2">
-                  <Button onClick={editingPuzzle ? handleUpdatePuzzle : handleCreatePuzzle}>
-                    {editingPuzzle ? 'Update' : 'Create'} Puzzle
-                  </Button>
+                 {/* Image Selection */}
+                 <div>
+                   <Label>Puzzle Image</Label>
+                   <div className="flex gap-2 mt-2">
+                     <ImageLibrarySelector
+                       onImageSelect={handleImageSelect}
+                       selectedImageId={selectedImageId}
+                     >
+                       <Button variant="outline" type="button">
+                         <ImageIcon className="h-4 w-4 mr-2" />
+                         Select from Library
+                       </Button>
+                     </ImageLibrarySelector>
+                     {selectedImageId && (
+                       <Button 
+                         variant="outline" 
+                         onClick={() => setSelectedImageId('')}
+                         type="button"
+                       >
+                         Clear Selection
+                       </Button>
+                     )}
+                   </div>
+                   {selectedImageId && (
+                     <div className="mt-2 text-sm text-muted-foreground">
+                       Image selected from library
+                     </div>
+                   )}
+                 </div>
+
+                 <div className="flex gap-2">
+                   <Button onClick={editingPuzzle ? handleUpdatePuzzle : handleCreatePuzzle}>
+                     {editingPuzzle ? 'Update' : 'Create'} Puzzle
+                   </Button>
                   <Button variant="outline" onClick={() => {
                     setShowCreateForm(false);
                     setEditingPuzzle(null);
@@ -486,18 +542,69 @@ export const JigsawPuzzleManager: React.FC = () => {
         <TabsContent value="upload">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Image Upload
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Upload className="h-5 w-5" />
+                  Image Management
+                </span>
+                <Badge variant="outline">
+                  {images.length} images in library
+                </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <ImageUpload onUpload={handleImageUpload} />
-              <div className="mt-4 p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  Image processing and automatic thumbnail generation will be implemented in Phase 3.
-                  Currently supports drag & drop upload interface.
-                </p>
+            <CardContent className="space-y-6">
+              {/* Upload Section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Upload New Images</h3>
+                <ImageUpload onUpload={handleImageUpload} disabled={isUploading} />
+                {isUploading && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    Uploading images...
+                  </div>
+                )}
+              </div>
+
+              {/* Image Library Section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Image Library</h3>
+                {images.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <ImageIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No images uploaded yet</p>
+                    <p className="text-sm">Upload images above to get started</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {images.slice(0, 12).map((image) => (
+                      <Card key={image.id} className="overflow-hidden">
+                        <div className="aspect-video bg-muted flex items-center justify-center">
+                          {image.imageUrl ? (
+                            <img
+                              src={image.imageUrl}
+                              alt={image.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                          )}
+                        </div>
+                        <CardContent className="p-3">
+                          <p className="text-sm font-medium truncate">{image.name}</p>
+                          <Badge variant="outline" className="text-xs mt-1">
+                            {image.status}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+                {images.length > 12 && (
+                  <div className="text-center mt-4">
+                    <p className="text-sm text-muted-foreground">
+                      Showing 12 of {images.length} images
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
