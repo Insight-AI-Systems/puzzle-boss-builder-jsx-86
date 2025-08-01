@@ -3,31 +3,20 @@ import { useState } from 'react';
 import { useEmailAuth } from './useEmailAuth';
 import { useSocialAuth } from './useSocialAuth';
 import { usePasswordReset } from './usePasswordReset';
-import { useSearchParams } from 'react-router-dom';
+import { validateAuthForm } from '@/utils/auth/authValidation';
 
 export function useAuth() {
-  const [searchParams] = useSearchParams();
-  
-  const { 
-    email,
-    password,
-    confirmPassword,
-    username,
-    rememberMe,
-    acceptTerms,
-    errorMessage,
-    isLoading: emailLoading,
-    setEmail,
-    setPassword,
-    setConfirmPassword,
-    setUsername,
-    setRememberMe,
-    setAcceptTerms,
-    setErrorMessage, // Make sure this is included here
-    resetForm,
-    handleEmailAuth,
-    validateForm
-  } = useEmailAuth();
+  // Form state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Get auth functions
+  const { signUp, signIn, signOut, isLoading: emailLoading } = useEmailAuth();
   
   const {
     isLoading: socialLoading,
@@ -49,6 +38,57 @@ export function useAuth() {
   
   // Derive loading state from all sources
   const isLoading = emailLoading || socialLoading || passwordResetLoading;
+
+  // Form validation
+  const validateForm = (isSignUp: boolean): boolean => {
+    return validateAuthForm(
+      email,
+      password,
+      confirmPassword,
+      acceptTerms,
+      isSignUp,
+      setErrorMessage
+    );
+  };
+
+  // Reset form
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setUsername('');
+    setRememberMe(false);
+    setAcceptTerms(false);
+    setErrorMessage('');
+  };
+
+  // Handle authentication
+  const handleEmailAuth = async (isSignUp: boolean) => {
+    if (!validateForm(isSignUp)) {
+      return;
+    }
+
+    try {
+      if (isSignUp) {
+        const result = await signUp(email, password, username);
+        if (result.error) {
+          setErrorMessage(result.error.message);
+        } else {
+          resetForm();
+        }
+      } else {
+        const result = await signIn(email, password);
+        if (result.error) {
+          setErrorMessage(result.error.message);
+        } else {
+          resetForm();
+        }
+      }
+    } catch (error) {
+      console.error('Auth error:', error);
+      setErrorMessage('An unexpected error occurred');
+    }
+  };
 
   return {
     // Email auth
@@ -76,7 +116,7 @@ export function useAuth() {
     setUsername,
     setRememberMe,
     setAcceptTerms,
-    setErrorMessage, // Make sure this is included here
+    setErrorMessage,
     resetForm,
     handleEmailAuth,
     validateForm,
