@@ -625,7 +625,9 @@ export const JigsawPuzzleManager: React.FC = () => {
                             <div className="text-xs text-gray-600 mt-1">
                               {formData.selected_image_data.image_files?.[0]?.original_width && formData.selected_image_data.image_files?.[0]?.original_height 
                                 ? `${formData.selected_image_data.image_files[0].original_width} × ${formData.selected_image_data.image_files[0].original_height}` 
-                                : 'Image dimensions unknown'
+                                : formData.selected_image_data.dimensions
+                                ? `${formData.selected_image_data.dimensions.width} × ${formData.selected_image_data.dimensions.height}`
+                                : 'Processing dimensions...'
                               }
                             </div>
                           </div>

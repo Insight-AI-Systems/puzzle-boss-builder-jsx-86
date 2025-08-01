@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
+import { processImageComplete } from '@/utils/imageProcessor';
 
 export const useImageUpload = (user: User | null, onUploadComplete: () => void) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -23,11 +24,21 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
     
     try {
       for (const file of files) {
-        console.log('Starting upload for file:', file.name);
+        console.log('Starting complete processing for file:', file.name);
+        
+        // Process image on client side first
+        toast({
+          title: "Processing Image",
+          description: `Processing ${file.name}...`,
+        });
+        
+        const processedData = await processImageComplete(file);
+        console.log('Client-side processing completed:', processedData.dimensions);
         
         const filePath = `${user.id}/${Date.now()}-${file.name}`;
         console.log('File path:', filePath);
         
+        // Upload original image
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('Original Product Images')
           .upload(filePath, file, {
@@ -40,21 +51,48 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
           throw uploadError;
         }
         
-        console.log('File uploaded successfully, getting URL');
+        // Upload thumbnail
+        const thumbnailPath = `thumb_${Date.now()}_${file.name}`;
+        const { error: thumbnailUploadError } = await supabase.storage
+          .from('Image Thumbnails')
+          .upload(thumbnailPath, processedData.thumbnailBlob, {
+            upsert: false,
+            cacheControl: '3600'
+          });
 
-        const { data: urlData } = supabase.storage
-          .from('Original Product Images')
-          .getPublicUrl(filePath);
-          
-        console.log('Public URL obtained:', urlData.publicUrl);
+        if (thumbnailUploadError) {
+          console.error('Thumbnail upload error:', thumbnailUploadError);
+          throw thumbnailUploadError;
+        }
 
-        console.log('Creating product image record with user ID:', user.id);
+        // Upload processed puzzle image
+        const processedPath = `processed_${Date.now()}_${file.name}`;
+        const { error: processedUploadError } = await supabase.storage
+          .from('Processed Puzzle Images')
+          .upload(processedPath, processedData.resizedBlob, {
+            upsert: false,
+            cacheControl: '3600'
+          });
+
+        if (processedUploadError) {
+          console.error('Processed image upload error:', processedUploadError);
+          throw processedUploadError;
+        }
+        
+        console.log('All files uploaded successfully');
+
+        // Create product image record
         const { data: productImageData, error: productImageError } = await supabase
           .from('product_images')
           .insert({
             name: file.name,
-            metadata: { size: file.size, type: file.type },
-            status: 'pending',
+            metadata: { 
+              size: file.size, 
+              type: file.type,
+              width: processedData.dimensions.width,
+              height: processedData.dimensions.height
+            },
+            status: 'active',
             created_by: user.id
           })
           .select()
@@ -67,40 +105,28 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
         
         console.log('Product image record created:', productImageData.id);
 
-        console.log('Creating image file record');
-        const { data: fileRecordData, error: fileRecordError } = await supabase
+        // Create image file record with all processed data
+        const { error: fileRecordError } = await supabase
           .from('image_files')
           .insert({
             product_image_id: productImageData.id,
             original_path: filePath,
-            original_width: null, 
-            original_height: null,
+            processed_path: processedPath,
+            thumbnail_path: thumbnailPath,
+            original_width: processedData.dimensions.width,
+            original_height: processedData.dimensions.height,
+            processed_width: 800,
+            processed_height: 800,
             original_size: file.size,
-            processing_status: 'pending'
-          })
-          .select()
-          .single();
+            processing_status: 'completed'
+          });
 
         if (fileRecordError) {
           console.error('Image file record error:', fileRecordError);
           throw fileRecordError;
         }
         
-        console.log('Image file record created successfully:', fileRecordData.id);
-
-        // Trigger image processing
-        console.log('Triggering image processing...');
-        const { data: processResult, error: processError } = await supabase.functions
-          .invoke('process-puzzle-image', {
-            body: { imageFileId: fileRecordData.id }
-          });
-
-        if (processError) {
-          console.error('Image processing error:', processError);
-          // Don't throw here - the image is uploaded, processing can be retried
-        } else {
-          console.log('Image processing completed:', processResult);
-        }
+        console.log('Image file record created successfully - processing complete!');
       }
 
       toast({

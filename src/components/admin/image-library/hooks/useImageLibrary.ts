@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ProductImage } from '../types';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 // Updated to work with Clerk auth - no user dependency needed for public image access
 export const useImageLibrary = () => {
@@ -15,66 +15,73 @@ export const useImageLibrary = () => {
     setError(null);
     
     try {
-      console.log('Loading images...');
+      console.log('Loading product images with enhanced data...');
       
-      const { data: productImages, error: productImagesError } = await supabase
+      // Load product images with associated file data
+      const { data: imagesData, error: imagesError } = await supabase
         .from('product_images')
-        .select('*')
+        .select(`
+          *,
+          image_files (
+            id,
+            original_path,
+            processed_path,
+            thumbnail_path,
+            original_width,
+            original_height,
+            processed_width,
+            processed_height,
+            processing_status
+          )
+        `)
         .order('created_at', { ascending: false });
 
-      if (productImagesError) {
-        console.error('Error fetching product images:', productImagesError);
-        throw productImagesError;
+      if (imagesError) {
+        console.error('Error loading images:', imagesError);
+        throw imagesError;
       }
-      
-      console.log('Product images fetched:', productImages?.length || 0);
 
-      const transformedData: ProductImage[] = (productImages || []).map(item => ({
-        ...item,
-        imageUrl: '', 
-      }));
-      
-      setImages(transformedData);
-      
-      // Fetch image URLs for each image
-      for (const image of transformedData) {
-        const { data: fileData, error: fileError } = await supabase
-          .from('image_files')
-          .select('*')
-          .eq('product_image_id', image.id)
-          .maybeSingle();
-          
-        if (fileError) {
-          console.error('Error fetching image file for ID:', image.id, fileError);
-          continue;
+      console.log('Raw images data:', imagesData);
+
+      // Transform the data to match expected format
+      const transformedImages: ProductImage[] = (imagesData || []).map(img => {
+        const imageFile = Array.isArray(img.image_files) ? img.image_files[0] : img.image_files;
+        const hasValidFile = imageFile && imageFile.processing_status === 'completed';
+        
+        // Get dimensions from metadata or image_files
+        const metadataObj = img.metadata as any;
+        const width = imageFile?.original_width || metadataObj?.width || 0;
+        const height = imageFile?.original_height || metadataObj?.height || 0;
+        
+        // Choose the best available image URL
+        let imageUrl = '';
+        if (hasValidFile && imageFile.thumbnail_path) {
+          imageUrl = `https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/Image Thumbnails/${imageFile.thumbnail_path}`;
+        } else if (imageFile?.original_path) {
+          imageUrl = `https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/Original Product Images/${imageFile.original_path}`;
         }
         
-        if (fileData) {
-          // Get the appropriate path
-          const path = fileData.processed_path || fileData.original_path;
-          if (path) {
-            const bucketName = 'original_images';
-            
-            console.log(`Getting public URL for image ${image.id} from path: ${path}`);
-            const { data: urlData } = supabase.storage
-              .from(bucketName)
-              .getPublicUrl(path);
-            
-            console.log('Public URL generated:', urlData.publicUrl);  
-            
-            // Update the specific image with its URL
-            setImages(prevImages => 
-              prevImages.map(img => 
-                img.id === image.id ? { ...img, imageUrl: urlData.publicUrl } : img
-              )
-            );
-          } else {
-            console.warn(`No valid path found for image ${image.id}`);
-          }
-        } else {
-          console.warn(`No file data found for image ${image.id}`);
-        }
-      }
+        return {
+          id: img.id,
+          name: img.name,
+          description: img.description,
+          category_id: img.category_id,
+          tags: img.tags || [],
+          imageUrl: imageUrl,
+          url: imageUrl, // For compatibility
+          status: img.status,
+          created_at: img.created_at,
+          updated_at: img.updated_at,
+          created_by: img.created_by,
+          metadata: img.metadata,
+          image_files: imageFile ? [imageFile] : [],
+          dimensions: width && height ? { width, height } : undefined
+        };
+      });
+
+      console.log('Transformed images:', transformedImages);
+      setImages(transformedImages);
+      
     } catch (error: any) {
       console.error('Error loading images:', error);
       setError(`Failed to load images: ${error.message || 'Unknown error'}`);
