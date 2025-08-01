@@ -64,7 +64,7 @@ const Footer: React.FC = () => {
         </div>
         
         <div className="border-t border-puzzle-aqua/10 pt-6 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} The Puzzle Boss. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} CodeCanyon Jigsaw Deluxe. All rights reserved.</p>
         </div>
       </div>
     </footer>

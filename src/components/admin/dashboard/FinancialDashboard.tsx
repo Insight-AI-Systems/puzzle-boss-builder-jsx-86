@@ -11,7 +11,7 @@ import { FinancialSummaryCards } from './financial-dashboard/FinancialSummaryCar
 import { FinancialTabContent } from './financial-dashboard/FinancialTabContent';
 import { Button } from "@/components/ui/button";
 import { exportFinancialData } from '@/utils/exportUtils';
-import { ErrorDisplay } from '@/components/dashboard/ErrorDisplay';
+import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
 import { MonthlyFinancialSummary } from '@/types/financeTypes';
 
 export const FinancialDashboard: React.FC = () => {

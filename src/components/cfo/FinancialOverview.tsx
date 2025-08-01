@@ -11,7 +11,7 @@ import { format } from 'date-fns';
 import { BatchExportDialog } from './BatchExportDialog';
 import { useFinancialData } from '@/contexts/FinancialDataContext';
 import { Loader2 } from 'lucide-react';
-import { ErrorDisplay } from '@/components/dashboard/ErrorDisplay';
+import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
 
 interface FinancialOverviewProps {
   timeframe: TimeFrame;

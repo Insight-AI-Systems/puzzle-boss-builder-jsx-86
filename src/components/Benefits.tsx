@@ -61,7 +61,7 @@ const Benefits: React.FC = () => {
           Membership <span className="text-puzzle-gold">Benefits</span>
         </h2>
         <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-12">
-          Join The Puzzle Boss community and enjoy these exclusive benefits.
+          Join the CodeCanyon Jigsaw Deluxe community and enjoy these exclusive benefits.
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

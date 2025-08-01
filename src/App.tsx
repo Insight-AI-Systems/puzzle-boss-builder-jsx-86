@@ -29,7 +29,7 @@ import Terms from '@/pages/legal/Terms';
 import Privacy from '@/pages/legal/Privacy';
 import AdminDashboard from '@/pages/AdminDashboard';
 import PuzzleFileManager from '@/pages/PuzzleFileManager';
-import GameTesting from '@/pages/GameTesting';
+// GameTesting removed - using CodeCanyon Jigsaw Deluxe system only
 import Auth from '@/pages/Auth';
 
 // Import game pages
@@ -123,11 +123,7 @@ function AppRoutes() {
               <PuzzleFileManager />
             </ClerkProtectedRoute>
           } />
-          <Route path="game-testing" element={
-            <ClerkProtectedRoute requiredRoles={['super_admin', 'admin']}>
-              <GameTesting />
-            </ClerkProtectedRoute>
-          } />
+          {/* Game testing route removed - using CodeCanyon Jigsaw Deluxe system only */}
 
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -139,7 +135,7 @@ function AppRoutes() {
 
 function AppContent() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="puzzleboss-ui-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="codecanyon-ui-theme">
       <QueryClientProvider client={queryClient}>
         <GameProvider>
           <AppRoutes />

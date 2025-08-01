@@ -13,7 +13,7 @@ const RegistrationCTA: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold mb-6 text-puzzle-white">
-                Join <span className="text-puzzle-gold">The Puzzle Boss</span> <br/>
+                Join <span className="text-puzzle-gold">CodeCanyon Jigsaw Deluxe</span> <br/>
                 Community Today
               </h2>
               

@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 // Removed PuzzleGameLayout and PuzzleGameCanvas - using direct EnhancedJigsawPuzzle
 import { PuzzleCompletionModal } from '@/components/puzzles/completion/PuzzleCompletionModal';
-import ModernPuzzleEngine from '@/components/puzzles/engines/ModernPuzzleEngine';
+import EnhancedJigsawPuzzle from '@/components/puzzles/engines/EnhancedJigsawPuzzle';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Play, Pause } from 'lucide-react';
 
 // DEBUG: Add diagnostic logging
-console.log('🔍 PuzzleGamePage loading - using NEW ModernPuzzleEngine');
-console.log('📦 Components imported:', { ModernPuzzleEngine });
+console.log('🔍 PuzzleGamePage loading - using CodeCanyon Jigsaw Deluxe System');
+console.log('📦 Components imported:', { EnhancedJigsawPuzzle });
 
 // Removed GameState interface - using EnhancedJigsawPuzzle's built-in state management
 
@@ -121,8 +121,8 @@ export const PuzzleGamePage: React.FC = () => {
 
   return (
     <>
-      {/* MODERN ENGINE: Clean rectangular pieces instead of jigsaw tabs */}
-      <div data-puzzle-engine="modern-clean-design" className="min-h-screen bg-background">
+      {/* CODECANYON JIGSAW DELUXE: Advanced JavaScript puzzle engine */}
+      <div data-puzzle-engine="codecanyon-jigsaw-deluxe" className="min-h-screen bg-background">
         {/* Header */}
         <div className="border-b border-puzzle-aqua/20 bg-puzzle-black/50">
           <div className="container mx-auto px-4 py-4">
@@ -157,12 +157,12 @@ export const PuzzleGamePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Game Area - ONLY EnhancedJigsawPuzzle */}
+        {/* Game Area - CodeCanyon Jigsaw Deluxe System */}
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
             {/* CACHE BUSTER: Force complete refresh */}
-            <div key={`puzzle-${puzzleId}-${Date.now()}`} data-component="modern-puzzle-engine-only">
-              <ModernPuzzleEngine
+            <div key={`puzzle-${puzzleId}-${Date.now()}`} data-component="codecanyon-jigsaw-deluxe">
+              <EnhancedJigsawPuzzle
                 imageUrl={currentPuzzle.imageUrl}
                 rows={currentPuzzle.rows}
                 columns={currentPuzzle.columns}

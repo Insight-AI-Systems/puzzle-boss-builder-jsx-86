@@ -29,7 +29,7 @@ const ConceptSection: React.FC = () => {
             The <span className="text-puzzle-gold">Concept</span>
           </h2>
           <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            The Puzzle Boss platform introduces a revolutionary way to turn your puzzle-solving skills into amazing prize opportunities.
+            The CodeCanyon Jigsaw Deluxe platform introduces a revolutionary way to turn your puzzle-solving skills into amazing prize opportunities.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">

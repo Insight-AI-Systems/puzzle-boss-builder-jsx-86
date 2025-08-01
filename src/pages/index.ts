@@ -15,11 +15,10 @@ export { default as Support } from './Support';
 export { default as Profile } from './Profile';
 export { default as Settings } from './Settings';
 export { default as AccountDashboard } from './AccountDashboard';
-export { default as Progress } from './Progress';
+// Progress page removed - using CodeCanyon Jigsaw Deluxe system only
 export { default as AdminDashboard } from './AdminDashboard';
 export { default as AdminCFOPage } from './AdminCFOPage';
-export { default as DevDashboard } from './DevDashboard';
-export { default as PuzzleTests } from './PuzzleTests';
+// DevDashboard and PuzzleTests removed - using CodeCanyon Jigsaw Deluxe system only
 
 export { default as GettingStartedGuide } from './guides/GettingStartedGuide';
 export { default as AccountManagement } from './guides/AccountManagement';

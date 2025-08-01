@@ -37,7 +37,7 @@ const HowItWorks: React.FC = () => {
     {
       number: 1,
       title: "Create an Account",
-      description: "Sign up for free and create your Puzzle Boss profile to start your puzzle-solving journey.",
+      description: "Sign up for free and create your CodeCanyon Jigsaw Deluxe profile to start your puzzle-solving journey.",
       icon: <UserPlus size={24} />
     },
     {
@@ -67,7 +67,7 @@ const HowItWorks: React.FC = () => {
           How It <span className="text-puzzle-burgundy">Works</span>
         </h2>
         <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-12">
-          The Puzzle Boss platform makes it easy to compete and win. Here's how to get started.
+          The CodeCanyon Jigsaw Deluxe platform makes it easy to compete and win. Here's how to get started.
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
