@@ -56,9 +56,9 @@ export const useImageLibrary = () => {
         // Choose the best available image URL
         let imageUrl = '';
         if (hasValidFile && imageFile.thumbnail_path) {
-          imageUrl = `https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/Image Thumbnails/${imageFile.thumbnail_path}`;
+          imageUrl = `https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/image-thumbnails/${imageFile.thumbnail_path}`;
         } else if (imageFile?.original_path) {
-          imageUrl = `https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/Original Product Images/${imageFile.original_path}`;
+          imageUrl = `https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/original-product-images/${imageFile.original_path}`;
         }
         
         return {
