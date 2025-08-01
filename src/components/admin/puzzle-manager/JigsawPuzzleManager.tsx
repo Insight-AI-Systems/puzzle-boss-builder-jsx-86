@@ -327,6 +327,10 @@ export const JigsawPuzzleManager: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  editingPuzzle ? handleUpdatePuzzle() : handleCreatePuzzle();
+                }} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="title">Title</Label>
@@ -465,18 +469,19 @@ export const JigsawPuzzleManager: React.FC = () => {
                    )}
                  </div>
 
-                 <div className="flex gap-2">
-                   <Button onClick={editingPuzzle ? handleUpdatePuzzle : handleCreatePuzzle}>
-                     {editingPuzzle ? 'Update' : 'Create'} Puzzle
-                   </Button>
-                  <Button variant="outline" onClick={() => {
+                  <div className="flex gap-2">
+                    <Button type="submit">
+                      {editingPuzzle ? 'Update' : 'Create'} Puzzle
+                    </Button>
+                   <Button type="button" variant="outline" onClick={() => {
                     setShowCreateForm(false);
                     setEditingPuzzle(null);
                     resetForm();
                   }}>
                     Cancel
                   </Button>
-                </div>
+                 </div>
+                </form>
               </CardContent>
             </Card>
           )}
