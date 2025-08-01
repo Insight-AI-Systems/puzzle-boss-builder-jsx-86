@@ -528,11 +528,11 @@ export const JigsawPuzzleManager: React.FC = () => {
                         <div className="flex items-start gap-4">
                           <div className="flex-shrink-0">
                             <img 
-                              src={`https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/Original Product Images/${formData.selected_image_data.image_files?.[0]?.original_path || formData.image_url}`}
+                              src={formData.selected_image_data.url || formData.image_url}
                               alt={formData.image_name}
                               className="w-24 h-24 object-cover rounded border shadow-sm"
                               onError={(e) => {
-                                // Fallback to a placeholder if image fails to load
+                                console.log('Image failed to load:', formData.selected_image_data);
                                 e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMiA0MEg2NFY1Nkg0OEw0MCA0OEgzMlY0MFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
                               }}
                             />
