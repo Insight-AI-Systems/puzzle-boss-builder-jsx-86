@@ -13,6 +13,7 @@ export function useAuthProvider() {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [error, setError] = useState<AuthError | Error | null>(authStateError);
   const [rolesLoaded, setRolesLoaded] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
   
   // Use ref to cache hasRole results
   const roleCache = useRef<Record<string, boolean>>({});
@@ -42,16 +43,21 @@ export function useAuthProvider() {
         userExists: !!session?.user
       });
       
-      const { data: profile, error: profileError } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
+        .select('*')
         .eq('id', userId)
         .single();
 
       console.log('fetchUserRoles - Profile Query Result:', {
-        profile,
+        profile: profileData,
         error: profileError ? { code: profileError.code, message: profileError.message } : null
       });
+
+      // Set the profile data
+      if (profileData) {
+        setProfile(profileData);
+      }
 
       if (profileError && profileError.code !== 'PGRST116') {
         console.error('Error fetching user profile:', profileError);
@@ -72,13 +78,13 @@ export function useAuthProvider() {
       // Log the test email for debugging
       if (session?.user?.email === 'rob.small.1234@gmail.com') {
         console.log('fetchUserRoles - Test email detected:', session.user.email);
-        console.log('fetchUserRoles - Current profile data:', profile);
+        console.log('fetchUserRoles - Current profile data:', profileData);
       }
 
-      if (profile && profile.role) {
-        console.log('fetchUserRoles - Role found in profile:', profile.role);
-        setUserRoles([profile.role]);
-        setUserRole(profile.role as UserRole);
+      if (profileData && profileData.role) {
+        console.log('fetchUserRoles - Role found in profile:', profileData.role);
+        setUserRoles([profileData.role]);
+        setUserRole(profileData.role as UserRole);
         setRolesLoaded(true);
         // Clear role cache when roles change
         roleCache.current = {};
@@ -141,6 +147,7 @@ export function useAuthProvider() {
       console.log('useAuthProvider - User logged out, resetting roles');
       setUserRoles([]);
       setUserRole(null);
+      setProfile(null);
       setRolesLoaded(false);
       roleCache.current = {};
     }
@@ -160,7 +167,7 @@ export function useAuthProvider() {
 
   return {
     user: session?.user ?? null,
-    profile: null, // Add this for compatibility
+    profile,
     session,
     isLoading: authStateLoading || (!rolesLoaded && isAuthenticated),
     error,
