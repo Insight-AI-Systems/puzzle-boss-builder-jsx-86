@@ -236,11 +236,41 @@ export const JigsawPuzzleManager: React.FC = () => {
         console.log(`📡 Profile lookup attempt ${attempts}/${maxAttempts}`);
 
         try {
-          const { data, error } = await supabase
+          // First, let's see what's actually in the database
+          const { data: allProfiles, error: debugError } = await supabase
             .from('profiles')
-            .select('id, role, username, email')
+            .select('id, clerk_user_id, email, role')
+            .limit(10);
+          
+          console.log('🔍 Database debug - All profiles (first 10):', allProfiles);
+          console.log('🔍 Looking for Clerk user ID:', userProfile.id);
+          
+          let { data, error } = await supabase
+            .from('profiles')
+            .select('id, role, username, email, clerk_user_id')
             .eq('clerk_user_id', userProfile.id)
             .maybeSingle();
+
+          console.log('🔍 Query result:', { data, error });
+          
+          // Also try without user_ prefix in case that's the issue
+          if (!data && userProfile.id.startsWith('user_')) {
+            const clerkIdWithoutPrefix = userProfile.id.replace('user_', '');
+            console.log('🔍 Trying without user_ prefix:', clerkIdWithoutPrefix);
+            
+            const { data: dataWithoutPrefix, error: errorWithoutPrefix } = await supabase
+              .from('profiles')
+              .select('id, role, username, email, clerk_user_id')
+              .eq('clerk_user_id', clerkIdWithoutPrefix)
+              .maybeSingle();
+              
+            console.log('🔍 Query result without prefix:', { data: dataWithoutPrefix, error: errorWithoutPrefix });
+            
+            if (dataWithoutPrefix) {
+              data = dataWithoutPrefix;
+              error = errorWithoutPrefix;
+            }
+          }
 
           if (error) {
             console.error(`❌ Profile query error (attempt ${attempts}):`, error);
