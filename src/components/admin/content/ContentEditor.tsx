@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { sanitizeHtml } from '@/utils/security/sanitization-enhanced';
 
 interface ContentEditorProps {
   initialValue: string;
@@ -13,8 +14,10 @@ export const ContentEditor: React.FC<ContentEditorProps> = ({ initialValue, onCh
   const [htmlContent, setHtmlContent] = useState(initialValue);
 
   const handleContentChange = (newContent: string) => {
-    setHtmlContent(newContent);
-    onChange(newContent);
+    // Sanitize content to prevent XSS attacks
+    const sanitizedContent = sanitizeHtml(newContent, true);
+    setHtmlContent(sanitizedContent);
+    onChange(sanitizedContent);
   };
 
   return (
@@ -30,7 +33,7 @@ export const ContentEditor: React.FC<ContentEditorProps> = ({ initialValue, onCh
             <div 
               className="min-h-[200px] p-4 border rounded-md" 
               contentEditable
-              dangerouslySetInnerHTML={{ __html: htmlContent }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(htmlContent, true) }}
               onInput={(e) => handleContentChange(e.currentTarget.innerHTML)}
             />
           </div>

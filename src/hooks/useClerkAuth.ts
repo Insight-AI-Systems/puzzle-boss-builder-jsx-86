@@ -16,15 +16,8 @@ interface ClerkProfile {
   updated_at: string;
 }
 
-// Admin emails - these users ALWAYS get super_admin role via Clerk metadata
-const ADMIN_EMAILS = [
-  'alan@insight-ai-systems.com',
-  'alantbooth@xtra.co.nz',
-  'rob.small.1234@gmail.com',
-  'benbooth@xtra.co.nz',
-  'tamara@insight-ai-systems.com',
-  '0sunnysideup0@gmail.com'
-];
+// SECURITY FIX: Removed hardcoded admin emails
+// Roles should be managed through database only for security
 
 export const useClerkAuth = () => {
   try {
@@ -40,24 +33,17 @@ export const useClerkAuth = () => {
     userEmail
   });
 
-  // Get role from Clerk metadata or default assignment
+  // Get role from Clerk metadata (secure - no hardcoded emails)
   const getUserRole = React.useCallback((): string => {
     if (!user) return 'player';
 
-    const userEmail = user.primaryEmailAddress?.emailAddress;
-    
-    // Check if user is a hardcoded admin
-    if (userEmail && ADMIN_EMAILS.includes(userEmail)) {
-      return 'super_admin';
-    }
-
-    // Get role from Clerk user metadata
+    // SECURITY: Get role from Clerk user metadata only
     const roleFromMetadata = user.publicMetadata?.role as string;
     if (roleFromMetadata) {
       return roleFromMetadata;
     }
 
-    // Default to player
+    // Default to player (secure default)
     return 'player';
   }, [user]);
 

@@ -10,10 +10,13 @@ export class SupabaseClient {
   private retryDelay = 1000; // 1 second
 
   constructor() {
-    const SUPABASE_URL = "https://vcacfysfjgoahledqdwa.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjYWNmeXNmamdvYWhsZWRxZHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0MDI3MDgsImV4cCI6MjA1OTk3ODcwOH0.sSWBAAsoofM3b-aLNseRtXhNulg6kaGqXTcXRVd_IWo";
+    // Import security config to avoid hardcoded credentials
+    const { SECURITY_CONFIG } = require('@/config/security');
     
-    this.client = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
+    this.client = createClient<Database>(
+      SECURITY_CONFIG.SUPABASE_URL, 
+      SECURITY_CONFIG.SUPABASE_ANON_KEY
+    );
   }
 
   // Get the underlying Supabase client
