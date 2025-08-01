@@ -24,7 +24,9 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
     
     try {
       console.log('Starting upload process for', files.length, 'files');
+      console.log('User object:', user);
       for (const file of files) {
+        console.error('=== UPLOAD DEBUG START ===');
         console.log('Starting complete processing for file:', file.name, 'Size:', file.size, 'Type:', file.type);
         
         // Process image on client side first
