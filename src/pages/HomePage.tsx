@@ -18,6 +18,7 @@ function HomePage() {
   const location = useLocation();
   const [showingConfirmation, setShowingConfirmation] = useState<boolean>(false);
   const confirmedAdmin = useRef<boolean | null>(null);
+  const [hasProcessedRedirect, setHasProcessedRedirect] = useState<boolean>(false);
   
   const { isAuthenticated, isLoading, userRole } = useClerkAuth();
   
@@ -30,10 +31,10 @@ function HomePage() {
     skipRedirect: location.state?.skipAdminRedirect
   });
   
-  // Admin redirect logic - only run after auth is loaded and not during navigation
+  // Admin redirect logic - only run once after auth is loaded
   useEffect(() => {
-    // Skip redirect logic if still loading, showing confirmation, or no authentication
-    if (isLoading || showingConfirmation || !isAuthenticated) return;
+    // Skip if already processed, loading, or not authenticated
+    if (hasProcessedRedirect || isLoading || !isAuthenticated) return;
     
     // Check if we're coming directly from an admin page - if so, don't redirect
     const comingFromAdmin = location.state?.from?.startsWith('/admin');
@@ -44,11 +45,13 @@ function HomePage() {
     console.log('HomePage admin redirect check', {
       userRole,
       isAuthenticated,
-      hasConfirmedAdmin: confirmedAdmin.current !== null,
-      confirmedAdminValue: confirmedAdmin.current,
+      hasProcessedRedirect,
       comingFromAdmin,
       skipRedirect
     });
+    
+    // Mark as processed to prevent re-running
+    setHasProcessedRedirect(true);
     
     // IMPORTANT: If user explicitly navigated home (skipRedirect), respect their choice
     if (skipRedirect) {
@@ -72,30 +75,24 @@ function HomePage() {
       // Check localStorage for user preference
       const userWantsAdmin = window.localStorage.getItem('redirect_to_admin');
       
-      console.log('Admin redirect check', {
-        userWantsAdmin,
-        isNull: userWantsAdmin === null,
-        comingFromAdmin,
-        skipRedirect
-      });
-      
       if (userWantsAdmin === 'true') {
         console.log('Auto-redirecting super_admin to dashboard based on localStorage preference');
         navigate('/admin', { replace: true });
-      } else if (userWantsAdmin === null && !confirmedAdmin.current) {
+      } else if (userWantsAdmin === null) {
         console.log('Showing confirmation dialog for super_admin');
-        confirmedAdmin.current = false; // Prevent multiple confirmations
         
         // Use a more reliable confirmation method
-        const shouldRedirect = window.confirm('As a Super Admin, would you like to go directly to the Admin Dashboard?');
-        window.localStorage.setItem('redirect_to_admin', shouldRedirect ? 'true' : 'false');
-        
-        if (shouldRedirect) {
-          navigate('/admin', { replace: true });
-        }
+        setTimeout(() => {
+          const shouldRedirect = window.confirm('As a Super Admin, would you like to go directly to the Admin Dashboard?');
+          window.localStorage.setItem('redirect_to_admin', shouldRedirect ? 'true' : 'false');
+          
+          if (shouldRedirect) {
+            navigate('/admin', { replace: true });
+          }
+        }, 100);
       }
     }
-  }, [isLoading, userRole, navigate, isAuthenticated, location.state]);
+  }, [isLoading, userRole, navigate, isAuthenticated, hasProcessedRedirect, location.state]);
 
   useEffect(() => {
     // Debug message to verify component mounting
