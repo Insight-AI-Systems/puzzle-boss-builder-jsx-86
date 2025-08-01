@@ -13,10 +13,10 @@ console.log('📦 Components imported:', { EnhancedJigsawPuzzle });
 
 // Removed GameState interface - using EnhancedJigsawPuzzle's built-in state management
 
-// Mock puzzle data - in real app would come from API
-const mockPuzzleData = {
+// Enhanced puzzle data - using generic naming for new JavaScript engine
+const enhancedPuzzleData = {
   'puzzle-1': {
-    name: 'Mountain Landscape',
+    name: 'Nature Scene',
     imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop',
     difficulty: 'Easy',
     pieces: 20,
@@ -24,7 +24,7 @@ const mockPuzzleData = {
     columns: 5
   },
   'puzzle-2': {
-    name: 'City Skyline',
+    name: 'Urban View',
     imageUrl: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop',
     difficulty: 'Medium',
     pieces: 100,
@@ -32,7 +32,7 @@ const mockPuzzleData = {
     columns: 10
   },
   'puzzle-3': {
-    name: 'Ocean Waves',
+    name: 'Water Scene',
     imageUrl: 'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=800&h=600&fit=crop',
     difficulty: 'Hard',
     pieces: 500,
@@ -51,7 +51,7 @@ export const PuzzleGamePage: React.FC = () => {
   const [showGuide, setShowGuide] = useState(false);
 
   // Get puzzle data
-  const puzzleData = puzzleId ? mockPuzzleData[puzzleId as keyof typeof mockPuzzleData] : null;
+  const puzzleData = puzzleId ? enhancedPuzzleData[puzzleId as keyof typeof enhancedPuzzleData] : null;
   const difficulty = searchParams.get('difficulty');
 
   // Handle custom puzzle based on difficulty
