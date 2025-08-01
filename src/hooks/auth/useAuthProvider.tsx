@@ -64,7 +64,7 @@ export function useAuthProvider() {
         return;
       }
 
-      // Special case for super admin email
+      // Special case for super admin email - normalize to TypeScript format
       if (session?.user?.email === 'alan@insight-ai-systems.com') {
         console.log('fetchUserRoles - Special super admin email detected');
         setUserRoles(['super-admin']);
@@ -83,8 +83,10 @@ export function useAuthProvider() {
 
       if (profileData && profileData.role) {
         console.log('fetchUserRoles - Role found in profile:', profileData.role);
-        setUserRoles([profileData.role]);
-        setUserRole(profileData.role as UserRole);
+        // Normalize database role format to TypeScript format
+        const normalizedRole = profileData.role === 'super_admin' ? 'super-admin' : profileData.role;
+        setUserRoles([normalizedRole]);
+        setUserRole(normalizedRole as UserRole);
         setRolesLoaded(true);
         // Clear role cache when roles change
         roleCache.current = {};
@@ -153,14 +155,19 @@ export function useAuthProvider() {
     }
   }, [currentUserId, rolesLoaded]);
 
-  // hasRole function with caching
+  // hasRole function with caching - handles both database and TypeScript formats
   const hasRole = useCallback((role: string): boolean => {
     // Use cache if available
     if (roleCache.current[role] !== undefined) {
       return roleCache.current[role];
     }
     
-    const result = userRoles.includes(role) || userRole === role;
+    // Handle both formats: 'super_admin' (database) and 'super-admin' (TypeScript)
+    const normalizedRole = role === 'super_admin' ? 'super-admin' : role;
+    const normalizedUserRole = userRole === 'super-admin' ? 'super-admin' : userRole;
+    
+    const result = userRoles.includes(role) || userRoles.includes(normalizedRole) || 
+                   userRole === role || normalizedUserRole === role;
     roleCache.current[role] = result;
     return result;
   }, [userRoles, userRole]);
