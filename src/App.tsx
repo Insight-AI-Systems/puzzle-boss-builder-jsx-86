@@ -110,7 +110,7 @@ function AppRoutes() {
 
           {/* Protected admin routes */}
           <Route path="admin" element={
-            <ClerkProtectedRoute requiredRoles={['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo']}>
+            <ClerkProtectedRoute requiredRoles={['super-admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo']}>
               <AdminDashboard />
             </ClerkProtectedRoute>
           } />

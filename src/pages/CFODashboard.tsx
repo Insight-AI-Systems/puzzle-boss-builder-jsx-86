@@ -9,7 +9,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 const CFODashboard: React.FC = () => {
   // Simple redirect without useEffect to prevent unnecessary rendering cycles
   return (
-    <ProtectedRoute requiredRoles={['super_admin', 'cfo', 'admin']}>
+    <ProtectedRoute requiredRoles={['super-admin', 'cfo', 'admin']}>
       <Navigate to="/admin-dashboard?tab=finance" replace />
     </ProtectedRoute>
   );

@@ -19,7 +19,7 @@ interface RpcUserData {
 
 // Helper function to categorize user roles
 const isAdminRole = (role: UserRole): boolean => {
-  const adminRoles: UserRole[] = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
+  const adminRoles: UserRole[] = ['super-admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
   return adminRoles.includes(role);
 };
 

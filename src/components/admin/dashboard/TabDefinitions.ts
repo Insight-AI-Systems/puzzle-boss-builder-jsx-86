@@ -36,91 +36,91 @@ export function getTabDefinitions(): TabDefinition[] {
       name: "Analytics",
       icon: BarChart,
       component: AnalyticsDashboard,
-      roles: ["super_admin", "admin", "cfo", "category_manager"]
+      roles: ["super-admin", "admin", "cfo", "category_manager"]
     },
     {
       id: "users",
       name: "Users",
       icon: Users,
       component: UserManagement,
-      roles: ["super_admin", "admin"]
+      roles: ["super-admin", "admin"]
     },
     {
       id: "puzzles",
       name: "Puzzles", 
       icon: Puzzle,
       component: JigsawPuzzleManager,
-      roles: ["super_admin", "admin", "category_manager"]
+      roles: ["super-admin", "admin", "category_manager"]
     },
     {
       id: "categories",
       name: "Categories",
       icon: FolderKanban,
       component: CategoryManagement,
-      roles: ["super_admin", "admin", "category_manager"]
+      roles: ["super-admin", "admin", "category_manager"]
     },
     {
       id: "content",
       name: "Content",
       icon: FileText,
       component: ContentManagement,
-      roles: ["super_admin", "social_media_manager"]
+      roles: ["super-admin", "social_media_manager"]
     },
     {
       id: "marketing",
       name: "Marketing",
       icon: Megaphone,
       component: MarketingDashboard,
-      roles: ["super_admin", "admin", "social_media_manager"]
+      roles: ["super-admin", "admin", "social_media_manager"]
     },
     {
       id: "partners",
       name: "Partners",
       icon: Handshake,
       component: PartnersDashboard,
-      roles: ["super_admin", "admin", "partner_manager"]
+      roles: ["super-admin", "admin", "partner_manager"]
     },
     {
       id: "security",
       name: "Security",
       icon: Shield,
       component: SecurityDashboard,
-      roles: ["super_admin", "admin"]
+      roles: ["super-admin", "admin"]
     },
     {
       id: "email",
       name: "Email",
       icon: Mail,
       component: EmailManagement,
-      roles: ["super_admin"]
+      roles: ["super-admin"]
     },
     {
       id: "notifications",
       name: "Notifications",
       icon: Bell,
       component: NotificationsDashboard,
-      roles: ["super_admin", "admin"]
+      roles: ["super-admin", "admin"]
     },
     {
       id: "tickets",
       name: "Support Tickets",
       icon: TicketCheck,
       component: TicketManagement,
-      roles: ["super_admin", "admin"]
+      roles: ["super-admin", "admin"]
     },
     {
       id: "monitoring",
       name: "Monitoring",
       icon: Activity,
       component: MonitoringDashboard,
-      roles: ["super_admin", "admin"]
+      roles: ["super-admin", "admin"]
     },
     {
       id: "finance",
       name: "Finance",
       icon: DollarSign,
       component: FinancialDashboard,
-      roles: ["super_admin", "admin", "cfo"]
+      roles: ["super-admin", "admin", "cfo"]
     }
   ];
 }

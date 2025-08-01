@@ -58,7 +58,7 @@ export function RoleUserTable({
               <TableCell>
                 <Badge
                   className={
-                    user.role === 'super_admin'
+                    user.role === 'super-admin'
                       ? 'bg-red-600'
                       : user.role === 'category_manager'
                       ? 'bg-blue-600'

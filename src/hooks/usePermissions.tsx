@@ -9,7 +9,7 @@ export function usePermissions() {
     const currentRole = userRole as UserRole;
     
     // Super admins have all permissions
-    if (currentRole === 'super_admin') return true;
+    if (currentRole === 'super-admin') return true;
     
     // Check if current role has the permission
     const roleDefinition = ROLE_DEFINITIONS[currentRole];
@@ -36,7 +36,7 @@ export function usePermissions() {
 
   const canAccessAdminDashboard = (): boolean => {
     const currentRole = userRole as UserRole;
-    return ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'].includes(currentRole);
+    return ['super-admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'].includes(currentRole);
   };
 
   const canAssignRole = (targetRole: UserRole): boolean => {

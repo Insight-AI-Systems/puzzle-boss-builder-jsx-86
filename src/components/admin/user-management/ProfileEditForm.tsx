@@ -19,7 +19,7 @@ const profileEditSchema = z.object({
   gender: z.enum(['male', 'female', 'non-binary', 'custom', 'prefer-not-to-say', 'other']).optional(),
   custom_gender: z.string().max(50, 'Custom gender must be less than 50 characters').optional(),
   age_group: z.enum(['13-17', '18-24', '25-34', '35-44', '45-60', '60+']).optional(),
-  role: z.enum(['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo', 'player'])
+  role: z.enum(['super-admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo', 'player'])
 }).refine(
   (data) => {
     if (data.gender === 'custom') {
@@ -77,8 +77,8 @@ export function ProfileEditForm({ user, currentUserRole, onSave, onCancel, isLoa
   };
 
   // Check if current user can edit roles
-  const canEditRole = currentUserRole === 'super_admin' || 
-    (currentUserRole === 'admin' && user.role !== 'super_admin');
+  const canEditRole = currentUserRole === 'super-admin' || 
+    (currentUserRole === 'admin' && user.role !== 'super-admin');
 
   return (
     <Form {...form}>
@@ -209,7 +209,7 @@ export function ProfileEditForm({ user, currentUserRole, onSave, onCancel, isLoa
                   <SelectContent>
                     {Object.entries(ROLE_DEFINITIONS).map(([roleKey, roleDef]) => {
                       // Only show roles that the current user can assign
-                      if (currentUserRole === 'super_admin' || roleKey !== 'super_admin') {
+                      if (currentUserRole === 'super-admin' || roleKey !== 'super-admin') {
                         return (
                           <SelectItem key={roleKey} value={roleKey}>
                             {roleDef.label}

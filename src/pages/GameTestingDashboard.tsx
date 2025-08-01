@@ -6,7 +6,7 @@ import GameTestingDashboard from '@/components/admin/testing/GameTestingDashboar
 const GameTestingDashboardPage: React.FC = () => {
   return (
     <RoleBasedAccess
-      allowedRoles={['admin', 'super_admin']}
+      allowedRoles={['admin', 'super-admin']}
       fallback={
         <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">
           <div className="text-center">

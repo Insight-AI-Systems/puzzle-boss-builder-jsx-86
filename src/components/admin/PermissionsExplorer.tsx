@@ -82,7 +82,7 @@ export function PermissionsExplorer() {
                       <TableCell>
                         <Badge 
                           className={
-                            role.role === 'super_admin' ? 'bg-red-600' :
+                            role.role === 'super-admin' ? 'bg-red-600' :
                             role.role === 'category_manager' ? 'bg-blue-600' :
                             role.role === 'social_media_manager' ? 'bg-green-600' :
                             role.role === 'partner_manager' ? 'bg-amber-600' :
@@ -145,7 +145,7 @@ export function PermissionsExplorer() {
                                 <Badge 
                                   key={role} 
                                   className={
-                                    role === 'super_admin' ? 'bg-red-600' :
+                                    role === 'super-admin' ? 'bg-red-600' :
                                     role === 'admin' ? 'bg-purple-600' :
                                     role === 'category_manager' ? 'bg-blue-600' :
                                     role === 'social_media_manager' ? 'bg-green-600' :

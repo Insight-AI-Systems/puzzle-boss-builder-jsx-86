@@ -38,7 +38,7 @@ export class RoleManager {
     const userRole = await this.getUserRole(userId);
     
     // Super admin has all permissions
-    if (userRole === 'super_admin') {
+    if (userRole === 'super-admin') {
       return true;
     }
     
@@ -52,7 +52,7 @@ export class RoleManager {
     const userRole = await this.getUserRole(userId);
     
     // Super admin has all permissions
-    if (userRole === 'super_admin') {
+    if (userRole === 'super-admin') {
       return true;
     }
     
@@ -63,7 +63,7 @@ export class RoleManager {
    * Check if user is admin (admin or super_admin)
    */
   static async isAdmin(userId: string): Promise<boolean> {
-    return this.hasAnyRole(userId, ['admin', 'super_admin']);
+    return this.hasAnyRole(userId, ['admin', 'super-admin']);
   }
 
   /**
@@ -75,9 +75,9 @@ export class RoleManager {
   ): Promise<{ canAssign: boolean; reason?: string }> {
     const assignerRole = await this.getUserRole(assignerId);
     
-    // Only super_admin can assign super_admin role
-    if (targetRole === 'super_admin') {
-      if (assignerRole !== 'super_admin') {
+    // Only super-admin can assign super-admin role
+    if (targetRole === 'super-admin') {
+      if (assignerRole !== 'super-admin') {
         return { 
           canAssign: false, 
           reason: 'Only super administrators can assign super admin role' 
@@ -87,7 +87,7 @@ export class RoleManager {
     
     // Admins can assign non-admin roles
     if (assignerRole === 'admin') {
-      const restrictedRoles: UserRole[] = ['super_admin', 'admin'];
+      const restrictedRoles: UserRole[] = ['super-admin', 'admin'];
       if (restrictedRoles.includes(targetRole)) {
         return { 
           canAssign: false, 
@@ -97,7 +97,7 @@ export class RoleManager {
     }
     
     // Super admin can assign any role
-    if (assignerRole === 'super_admin') {
+    if (assignerRole === 'super-admin') {
       return { canAssign: true };
     }
     

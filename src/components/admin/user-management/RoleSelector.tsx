@@ -11,8 +11,8 @@ interface RoleSelectorProps {
 }
 
 export function RoleSelector({ currentRole, onRoleChange, currentUserRole }: RoleSelectorProps) {
-  const canEditRole = currentUserRole === 'super_admin' || 
-    (currentUserRole === 'admin' && currentRole !== 'super_admin');
+  const canEditRole = currentUserRole === 'super-admin' || 
+    (currentUserRole === 'admin' && currentRole !== 'super-admin');
 
   if (!canEditRole) {
     return (
@@ -23,8 +23,8 @@ export function RoleSelector({ currentRole, onRoleChange, currentUserRole }: Rol
   }
 
   const availableRoles = Object.keys(ROLE_DEFINITIONS).filter(role => {
-    if (currentUserRole === 'super_admin') return true;
-    return role !== 'super_admin';
+    if (currentUserRole === 'super-admin') return true;
+    return role !== 'super-admin';
   }) as UserRole[];
 
   return (

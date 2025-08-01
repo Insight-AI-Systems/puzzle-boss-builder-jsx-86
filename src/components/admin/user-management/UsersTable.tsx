@@ -37,7 +37,7 @@ export function UsersTable({
 
   const getRoleBadgeColor = (role: UserRole) => {
     switch (role) {
-      case 'super_admin':
+      case 'super-admin':
         return 'bg-red-600 text-white';
       case 'admin':
         return 'bg-purple-600 text-white';

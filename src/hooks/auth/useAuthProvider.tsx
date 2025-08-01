@@ -22,7 +22,7 @@ export function useAuthProvider() {
   const MIN_TIME_BETWEEN_AUTH_ATTEMPTS = 2000;
   
   const isAuthenticated = useMemo(() => !!currentUserId && !!session, [currentUserId, session]);
-  const isAdmin = useMemo(() => userRole === 'super_admin', [userRole]);
+  const isAdmin = useMemo(() => userRole === 'super-admin', [userRole]);
 
   const clearAuthError = () => setError(null);
 
@@ -61,8 +61,8 @@ export function useAuthProvider() {
       // Special case for super admin email
       if (session?.user?.email === 'alan@insight-ai-systems.com') {
         console.log('fetchUserRoles - Special super admin email detected');
-        setUserRoles(['super_admin']);
-        setUserRole('super_admin');
+        setUserRoles(['super-admin']);
+        setUserRole('super-admin');
         setRolesLoaded(true);
         // Clear role cache when roles change
         roleCache.current = {};

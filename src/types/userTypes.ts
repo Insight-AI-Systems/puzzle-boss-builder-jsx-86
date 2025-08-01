@@ -1,6 +1,6 @@
 
 export type UserRole = 
-  | 'super_admin' 
+  | 'super-admin' 
   | 'admin' 
   | 'category_manager' 
   | 'social_media_manager' 
@@ -71,8 +71,8 @@ interface RoleDefinition {
 
 // Export the ROLE_DEFINITIONS object with roles and their permissions
 export const ROLE_DEFINITIONS: Record<UserRole, RoleDefinition> = {
-  super_admin: {
-    role: 'super_admin',
+  'super-admin': {
+    role: 'super-admin',
     label: 'Super Admin',
     description: 'Complete administrative access to all site features and functions.',
     permissions: [
@@ -88,7 +88,7 @@ export const ROLE_DEFINITIONS: Record<UserRole, RoleDefinition> = {
       'manage_security',
       'manage_tokens'
     ],
-    canBeAssignedBy: ['super_admin']
+    canBeAssignedBy: ['super-admin']
   },
   admin: {
     role: 'admin',
@@ -103,7 +103,7 @@ export const ROLE_DEFINITIONS: Record<UserRole, RoleDefinition> = {
       'manage_emails',
       'manage_tokens'
     ],
-    canBeAssignedBy: ['super_admin']
+    canBeAssignedBy: ['super-admin']
   },
   category_manager: {
     role: 'category_manager',
@@ -115,7 +115,7 @@ export const ROLE_DEFINITIONS: Record<UserRole, RoleDefinition> = {
       'edit_puzzles',
       'view_analytics'
     ],
-    canBeAssignedBy: ['super_admin', 'admin']
+    canBeAssignedBy: ['super-admin', 'admin']
   },
   social_media_manager: {
     role: 'social_media_manager',
@@ -127,7 +127,7 @@ export const ROLE_DEFINITIONS: Record<UserRole, RoleDefinition> = {
       'view_analytics',
       'manage_winners'
     ],
-    canBeAssignedBy: ['super_admin', 'admin']
+    canBeAssignedBy: ['super-admin', 'admin']
   },
   partner_manager: {
     role: 'partner_manager',
@@ -138,7 +138,7 @@ export const ROLE_DEFINITIONS: Record<UserRole, RoleDefinition> = {
       'manage_prizes',
       'view_analytics'
     ],
-    canBeAssignedBy: ['super_admin', 'admin']
+    canBeAssignedBy: ['super-admin', 'admin']
   },
   cfo: {
     role: 'cfo',
@@ -150,7 +150,7 @@ export const ROLE_DEFINITIONS: Record<UserRole, RoleDefinition> = {
       'approve_payments',
       'export_financial_data'
     ],
-    canBeAssignedBy: ['super_admin']
+    canBeAssignedBy: ['super-admin']
   },
   player: {
     role: 'player',
@@ -161,6 +161,6 @@ export const ROLE_DEFINITIONS: Record<UserRole, RoleDefinition> = {
       'manage_profile',
       'view_leaderboards'
     ],
-    canBeAssignedBy: ['super_admin', 'admin']
+    canBeAssignedBy: ['super-admin', 'admin']
   }
 };

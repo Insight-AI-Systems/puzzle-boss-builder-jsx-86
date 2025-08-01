@@ -51,7 +51,7 @@ export const AdminUserTable: React.FC<AdminUserTableProps> = ({
 
   const getRoleBadgeColor = (role: UserRole) => {
     switch (role) {
-      case 'super_admin':
+      case 'super-admin':
         return 'bg-red-600 text-white';
       case 'admin':
         return 'bg-purple-600 text-white';
@@ -161,9 +161,9 @@ export const AdminUserTable: React.FC<AdminUserTableProps> = ({
                       user={user}
                       canAssignRole={(role) => {
                         // Super admins can assign any role
-                        if (currentUserRole === 'super_admin') return true;
-                        // Admins can assign most roles except super_admin
-                        if (currentUserRole === 'admin') return role !== 'super_admin';
+                        if (currentUserRole === 'super-admin') return true;
+                        // Admins can assign most roles except super-admin
+                        if (currentUserRole === 'admin') return role !== 'super-admin';
                         // Others can't assign roles
                         return false;
                       }}

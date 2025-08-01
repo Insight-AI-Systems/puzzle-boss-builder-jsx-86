@@ -3,7 +3,7 @@ import { UserRole } from '@/types/userTypes';
 
 export function validateUserRole(roleString: string): UserRole | null {
   const validRoles: UserRole[] = [
-    'super_admin',
+    'super-admin',
     'admin', 
     'category_manager',
     'social_media_manager',

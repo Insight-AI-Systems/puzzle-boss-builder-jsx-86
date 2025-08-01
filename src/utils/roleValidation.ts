@@ -43,7 +43,7 @@ export const getRolePermissions = (role: UserRole): string[] => {
 
 export const hasRolePermission = (role: UserRole, permission: string): boolean => {
   // Super admins have all permissions
-  if (role === 'super_admin') return true;
+  if (role === 'super-admin') return true;
   
   const permissions = getRolePermissions(role);
   return permissions.includes(permission);
@@ -63,7 +63,7 @@ export const isValidRoleTransition = (fromRole: UserRole, toRole: UserRole, assi
 
 export const getHighestRole = (roles: UserRole[]): UserRole => {
   const roleHierarchy: Record<UserRole, number> = {
-    'super_admin': 7,
+    'super-admin': 7,
     'admin': 6,
     'cfo': 5,
     'partner_manager': 4,

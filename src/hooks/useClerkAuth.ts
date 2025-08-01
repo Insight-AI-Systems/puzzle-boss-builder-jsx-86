@@ -86,25 +86,24 @@ export const useClerkAuth = () => {
   // Role checking functions
   const userRole = getUserRole();
   const userRoles = [userRole];
-  const isAdmin = userRole === 'super_admin' || userRole === 'super-admin' || userRole === 'admin';
+  const isAdmin = userRole === 'super-admin' || userRole === 'admin';
 
   console.log('🔍 Role calculation debug:', {
     userRole,
     isAdmin,
-    roleCheck1: userRole === 'super_admin',
-    roleCheck2: userRole === 'super-admin', 
-    roleCheck3: userRole === 'admin'
+    roleCheck1: userRole === 'super-admin',
+    roleCheck2: userRole === 'admin'
   });
 
   const hasRole = React.useCallback((role: string): boolean => {
     console.log('🔍 hasRole check (Clerk-first):', { 
       role, 
       userRole, 
-      hasRoleResult: userRoles.includes(role) || userRole === 'super_admin'
+      hasRoleResult: userRoles.includes(role) || userRole === 'super-admin'
     });
     
     // Super admins have all roles
-    if (userRole === 'super_admin') return true;
+    if (userRole === 'super-admin') return true;
     
     // Check specific role
     return userRoles.includes(role);
