@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { useImageLibrary } from './image-library/hooks/useImageLibrary';
 import { useImageUpload } from './image-library/hooks/useImageUpload';
+import { useImageManagement } from './image-library/hooks/useImageManagement';
 import { ImageGrid } from './image-library/components/ImageGrid';
 import { useDropzone } from 'react-dropzone';
 
@@ -23,6 +24,7 @@ const ImageLibrary: React.FC = () => {
   
   const { images, isLoading, error, loadImages } = useImageLibrary();
   const { handleUpload: uploadImages, isUploading } = useImageUpload(user, loadImages);
+  const { deleteImage, updateImageStatus, isDeleting, isUpdatingStatus } = useImageManagement();
 
   const categories = [
     { value: 'all', label: 'All Categories' },
@@ -40,19 +42,18 @@ const ImageLibrary: React.FC = () => {
     disabled: isUploading
   });
 
-  const handleEdit = (imageId: string) => {
-    toast({
-      title: "Edit Image",
-      description: `Editing image ${imageId}`,
-    });
+  const handleImageDelete = async (imageId: string) => {
+    const success = await deleteImage(imageId);
+    if (success) {
+      loadImages(); // Refresh the images list
+    }
   };
 
-  const handleDelete = (imageId: string) => {
-    toast({
-      title: "Delete Image",
-      description: `Image ${imageId} would be deleted`,
-      variant: "destructive"
-    });
+  const handleImageStatusToggle = async (imageId: string, newStatus: string) => {
+    const success = await updateImageStatus(imageId, newStatus);
+    if (success) {
+      loadImages(); // Refresh the images list
+    }
   };
 
   const filteredImages = images.filter(image => {
@@ -139,7 +140,11 @@ const ImageLibrary: React.FC = () => {
           ) : (
             <Tabs value={viewMode} className="w-full">
               <TabsContent value="grid">
-                <ImageGrid images={filteredImages} />
+                <ImageGrid 
+                  images={filteredImages} 
+                  onImageDelete={handleImageDelete}
+                  onImageStatusToggle={handleImageStatusToggle}
+                />
               </TabsContent>
               
               <TabsContent value="list">
@@ -170,10 +175,20 @@ const ImageLibrary: React.FC = () => {
                           {image.status}
                         </Badge>
                         <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={() => handleEdit(image.id)}>
-                            <Edit className="w-4 h-4" />
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleImageStatusToggle(image.id, image.status === 'active' ? 'held' : 'active')}
+                            disabled={isUpdatingStatus}
+                          >
+                            {image.status === 'active' ? <Trash2 className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </Button>
-                          <Button size="sm" variant="destructive" onClick={() => handleDelete(image.id)}>
+                          <Button 
+                            size="sm" 
+                            variant="destructive" 
+                            onClick={() => handleImageDelete(image.id)}
+                            disabled={isDeleting}
+                          >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>

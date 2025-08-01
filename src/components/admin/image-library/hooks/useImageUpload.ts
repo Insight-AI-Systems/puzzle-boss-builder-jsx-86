@@ -30,12 +30,13 @@ export const useImageUpload = (user: ClerkUser | null, onUploadComplete: () => v
       for (const file of files) {
         console.log('🚀 Starting simplified upload for:', file.name);
 
-        // Compress and resize image using browser-image-compression
+        // Compress and resize image for puzzle engine (optimal for jigsaw puzzles)
         const compressionOptions = {
-          maxSizeMB: 2,
-          maxWidthOrHeight: 1200,
+          maxSizeMB: 1.5, // Smaller for better performance
+          maxWidthOrHeight: 1024, // Optimal size for puzzle engine (jigsaw game uses max 400px display)
           useWebWorker: true,
-          fileType: 'image/jpeg'
+          fileType: 'image/jpeg',
+          quality: 0.9 // Higher quality for puzzle details
         };
         
         const compressedFile = await imageCompression(file, compressionOptions);
@@ -45,12 +46,13 @@ export const useImageUpload = (user: ClerkUser | null, onUploadComplete: () => v
           reduction: `${((1 - compressedFile.size / file.size) * 100).toFixed(1)}%`
         });
 
-        // Create thumbnail
+        // Create thumbnail optimized for grid display  
         const thumbnailOptions = {
-          maxSizeMB: 0.2,
-          maxWidthOrHeight: 300,
+          maxSizeMB: 0.1,
+          maxWidthOrHeight: 400, // Matches ImageGrid display size
           useWebWorker: true,
-          fileType: 'image/jpeg'
+          fileType: 'image/jpeg',
+          quality: 0.75
         };
         
         const thumbnailFile = await imageCompression(file, thumbnailOptions);

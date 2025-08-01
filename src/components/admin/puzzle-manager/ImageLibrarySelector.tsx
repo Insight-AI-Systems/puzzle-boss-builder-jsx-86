@@ -23,7 +23,8 @@ export const ImageLibrarySelector: React.FC<ImageLibrarySelectorProps> = ({
   const [open, setOpen] = useState(false);
 
   const filteredImages = images.filter(image =>
-    image.name.toLowerCase().includes(searchTerm.toLowerCase())
+    image.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    image.status === 'active' // Only show active images for puzzles
   );
 
   const handleImageSelect = (image: any) => {
