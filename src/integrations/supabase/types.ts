@@ -1573,6 +1573,42 @@ export type Database = {
           },
         ]
       }
+      puzzle_game_pricing: {
+        Row: {
+          base_price: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          difficulty_level: string
+          id: string
+          is_active: boolean
+          piece_count: number
+          updated_at: string
+        }
+        Insert: {
+          base_price?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          difficulty_level: string
+          id?: string
+          is_active?: boolean
+          piece_count: number
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          difficulty_level?: string
+          id?: string
+          is_active?: boolean
+          piece_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       puzzle_images: {
         Row: {
           created_at: string | null

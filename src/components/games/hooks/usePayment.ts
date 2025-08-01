@@ -9,6 +9,13 @@ export interface PaymentStatus {
   transactionId?: string;
 }
 
+export interface PuzzlePaymentStatus {
+  hasAccess: boolean;
+  isPaid: boolean;
+  sessionId?: string;
+  puzzleImageId?: string;
+}
+
 export function usePayment(entryFee: number) {
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>({
     hasAccess: entryFee === 0, // Free games have immediate access
@@ -75,10 +82,56 @@ export function usePayment(entryFee: number) {
     }
   };
 
+  const processPuzzlePayment = async (
+    puzzleImageId: string,
+    difficulty: string,
+    pieceCount: number
+  ): Promise<boolean> => {
+    try {
+      setIsProcessing(true);
+      setError(null);
+
+      const result = await mockPaymentService.verifyPayment({
+        gameId: `puzzle_${puzzleImageId}`,
+        entryFee: getBasePriceForDifficulty(difficulty, pieceCount),
+        userId: 'mock-user',
+        testMode: true
+      });
+
+      if (result.success) {
+        return true;
+      } else {
+        throw new PaymentError(
+          result.error || 'Puzzle payment failed',
+          'PAYMENT_FAILED',
+          'medium',
+          true
+        );
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Puzzle payment processing failed';
+      setError(message);
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const getBasePriceForDifficulty = (difficulty: string, pieceCount: number): number => {
+    // Mock pricing logic - in real implementation, this would come from the database
+    switch (difficulty.toLowerCase()) {
+      case 'easy': return 2.00;
+      case 'medium': return 3.50;
+      case 'hard': return 5.00;
+      default: return 2.00;
+    }
+  };
+
   return {
     paymentStatus,
     isProcessing,
     error,
-    processPayment
+    processPayment,
+    processPuzzlePayment
   };
 }

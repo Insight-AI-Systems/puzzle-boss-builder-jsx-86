@@ -8,6 +8,13 @@ export interface PaymentRequest {
   useCredits?: boolean;
 }
 
+export interface PuzzlePaymentRequest {
+  puzzleImageId: string;
+  difficulty: string;
+  pieceCount: number;
+  userId: string;
+}
+
 export interface PaymentResult {
   success: boolean;
   transactionId?: string;
@@ -44,15 +51,18 @@ export class PaymentService {
   private paymentSystem: any;
   private profile: any;
   private wallet: any;
+  private supabaseClient: any;
 
   constructor(dependencies: {
     paymentSystem: any;
     profile: any;
     wallet: any;
+    supabaseClient?: any;
   }) {
     this.paymentSystem = dependencies.paymentSystem;
     this.profile = dependencies.profile;
     this.wallet = dependencies.wallet;
+    this.supabaseClient = dependencies.supabaseClient;
   }
 
   async verifyPayment(request: PaymentRequest): Promise<PaymentResult> {
@@ -172,5 +182,39 @@ export class PaymentService {
 
   getCurrentCredits(): number {
     return this.profile?.credits || 0;
+  }
+
+  async processPuzzlePayment(request: PuzzlePaymentRequest): Promise<{ success: boolean; sessionUrl?: string; error?: string }> {
+    try {
+      console.log('Processing puzzle payment:', request);
+      
+      if (!this.supabaseClient) {
+        throw new Error('Supabase client not configured for puzzle payments');
+      }
+      
+      // Create Stripe checkout session for puzzle game
+      const { data, error } = await this.supabaseClient.functions.invoke('create-puzzle-payment', {
+        body: {
+          puzzleImageId: request.puzzleImageId,
+          difficulty: request.difficulty,
+          pieceCount: request.pieceCount
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to create payment session');
+      }
+
+      return {
+        success: true,
+        sessionUrl: data.url
+      };
+    } catch (error) {
+      console.error('Puzzle payment error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Payment processing failed'
+      };
+    }
   }
 }
