@@ -13,6 +13,8 @@ interface ImageActionsProps {
 
 export const ImageActions: React.FC<ImageActionsProps> = ({ image, onDelete, onStatusToggle }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  
+  console.log('🎬 ImageActions rendering for image:', image.name);
 
   const handleStatusToggle = () => {
     const newStatus = image.status === 'active' ? 'held' : 'active';

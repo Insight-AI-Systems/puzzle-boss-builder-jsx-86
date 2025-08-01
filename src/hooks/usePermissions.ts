@@ -5,7 +5,11 @@ export function usePermissions() {
 
   const hasPermission = (permission: string): boolean => {
     // Super admins have all permissions
-    if (userRole === 'super_admin') return true;
+    console.log(`🔍 hasPermission check: ${permission}, userRole: ${userRole}`);
+    if (userRole === 'super_admin') {
+      console.log(`✅ Super admin granted permission: ${permission}`);
+      return true;
+    }
     
     // Define basic permissions based on roles
     const rolePermissions: Record<string, string[]> = {
