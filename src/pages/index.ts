@@ -6,7 +6,7 @@ export { default as Categories } from './Categories';
 export { default as CategoryPuzzles } from './CategoryPuzzles';
 export { default as Prizes } from './Prizes';
 export { default as HowItWorks } from './HowItWorks';
-export { default as PuzzleDemo } from './PuzzleDemo';
+// PuzzleDemo removed - using new puzzle system
 export { default as Membership } from './Membership';
 export { default as About } from './About';
 export { default as FAQ } from './FAQ';

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import PuzzleBoard from './PuzzleBoard';
+import EnhancedJigsawPuzzle from './puzzles/engines/EnhancedJigsawPuzzle';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -92,10 +92,13 @@ const JigsawPuzzleGame: React.FC = () => {
         </CardContent>
       </Card>
 
-      <PuzzleBoard 
+      <EnhancedJigsawPuzzle 
         imageUrl={selectedImage}
         rows={difficulty.rows}
         columns={difficulty.columns}
+        puzzleId="demo-jigsaw"
+        showNumbers={false}
+        showGuide={true}
       />
     </div>
   );

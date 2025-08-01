@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { PuzzleGameLayout } from '@/components/puzzles/game-layout/PuzzleGameLayout';
-import { PuzzleGameCanvas } from '@/components/puzzles/game-canvas/PuzzleGameCanvas';
+// Removed PuzzleGameLayout and PuzzleGameCanvas - using direct EnhancedJigsawPuzzle
 import { PuzzleCompletionModal } from '@/components/puzzles/completion/PuzzleCompletionModal';
-import PuzzleBossEngine from '@/components/puzzles/playground/engines/PuzzleBossEngine';
+import EnhancedJigsawPuzzle from '@/components/puzzles/engines/EnhancedJigsawPuzzle';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Play, Pause } from 'lucide-react';
@@ -108,8 +107,7 @@ export const PuzzleGamePage: React.FC = () => {
         setGameState(prev => ({ ...prev, isPaused: true }));
         toast({
           title: "Game Paused",
-          description: "Click resume to continue",
-          icon: "info"
+          description: "Click resume to continue"
         });
         break;
       case 'resume':
@@ -119,8 +117,7 @@ export const PuzzleGamePage: React.FC = () => {
         setGameState(prev => ({ ...prev, hintsUsed: prev.hintsUsed + 1 }));
         toast({
           title: "Hint Used",
-          description: "Look for edge pieces first!",
-          icon: "lightbulb"
+          description: "Look for edge pieces first!"
         });
         break;
       case 'toggle-guide':
@@ -138,8 +135,7 @@ export const PuzzleGamePage: React.FC = () => {
         });
         toast({
           title: "Game Reset",
-          description: "Starting fresh puzzle",
-          icon: "refresh"
+          description: "Starting fresh puzzle"
         });
         break;
     }
@@ -227,19 +223,20 @@ export const PuzzleGamePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Game Layout */}
-        <PuzzleGameLayout
-          gameStats={gameState}
-          onAction={handleAction}
-        >
-          <PuzzleGameCanvas aspectRatio="landscape">
-            <PuzzleBossEngine
+        {/* Game Area */}
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto">
+            <EnhancedJigsawPuzzle
               imageUrl={currentPuzzle.imageUrl}
               rows={currentPuzzle.rows}
               columns={currentPuzzle.columns}
+              puzzleId={puzzleId || 'custom'}
+              showNumbers={false}
+              showGuide={gameState.showGuide}
+              onComplete={handleGameComplete}
             />
-          </PuzzleGameCanvas>
-        </PuzzleGameLayout>
+          </div>
+        </div>
       </div>
 
       {/* Completion Modal */}

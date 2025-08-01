@@ -1,6 +1,6 @@
 
 import React from 'react';
-import PuzzleGame from '@/components/puzzles/PuzzleGame';
+import EnhancedJigsawPuzzle from '@/components/puzzles/engines/EnhancedJigsawPuzzle';
 
 interface PuzzlePreviewProps {
   imageUrl: string;
@@ -14,11 +14,13 @@ export const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({ imageUrl, difficul
   return (
     <div className="relative border rounded-lg p-2 bg-background aspect-square w-[256px] h-[256px] overflow-hidden">
       <div className="absolute inset-0 w-full h-full">
-        <PuzzleGame
+        <EnhancedJigsawPuzzle
           imageUrl={imageUrl}
           rows={rows}
           columns={columns}
           puzzleId={`preview-${imageUrl}`}
+          showNumbers={false}
+          showGuide={false}
         />
       </div>
       <span className="absolute left-1 top-1 text-xs rounded px-2 py-0.5 bg-black/60 text-puzzle-aqua z-10">Preview</span>

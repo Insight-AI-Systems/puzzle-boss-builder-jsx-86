@@ -18,7 +18,7 @@ import HomePage from '@/pages/HomePage';
 import About from '@/pages/About';
 import Contact from '@/pages/Contact';
 import Puzzles from '@/pages/Puzzles';
-import PuzzlePlay from '@/pages/PuzzlePlay';
+// PuzzlePlay removed - using new puzzle system
 import Leaderboard from '@/pages/Leaderboard';
 import PrizesWon from '@/pages/PrizesWon';
 import HowItWorks from '@/pages/HowItWorks';
@@ -75,7 +75,7 @@ function AppRoutes() {
             <Route path="about" element={<About />} />
             <Route path="contact" element={<Contact />} />
             <Route path="puzzles" element={<Puzzles />} />
-            <Route path="puzzle/:puzzleId" element={<PuzzlePlay />} />
+            {/* Old puzzle route removed - using new puzzle system */}
             <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="prizes-won" element={<PrizesWon />} />
             <Route path="how-it-works" element={<HowItWorks />} />
