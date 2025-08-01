@@ -23,8 +23,9 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
     setError(null);
     
     try {
+      console.log('Starting upload process for', files.length, 'files');
       for (const file of files) {
-        console.log('Starting complete processing for file:', file.name);
+        console.log('Starting complete processing for file:', file.name, 'Size:', file.size, 'Type:', file.type);
         
         // Process image on client side first
         toast({
@@ -32,8 +33,9 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
           description: `Processing ${file.name}...`,
         });
         
+        console.log('Calling processImageComplete...');
         const processedData = await processImageComplete(file);
-        console.log('Client-side processing completed:', processedData.dimensions);
+        console.log('Client-side processing completed:', processedData.dimensions, 'Thumbnail size:', processedData.thumbnailBlob.size);
         
         const filePath = `${user.id}/${Date.now()}-${file.name}`;
         console.log('File path:', filePath);
