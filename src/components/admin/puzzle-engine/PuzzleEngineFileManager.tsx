@@ -38,7 +38,9 @@ export const PuzzleEngineFileManager: React.FC = () => {
   const loadFiles = async () => {
     console.log('🧩 Loading puzzle files...');
     try {
-      const { data, error } = await supabase.functions.invoke('admin-puzzle-files');
+      const { data, error } = await supabase.functions.invoke('admin-puzzle-files', {
+        method: 'GET'
+      });
 
       if (error) {
         throw new Error(error.message || 'Failed to load files');
