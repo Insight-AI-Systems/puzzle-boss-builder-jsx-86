@@ -3,11 +3,11 @@
  * Centralized security settings and environment variables
  */
 
-// Environment variables with fallback for development
+// Environment variables - NO HARDCODED VALUES FOR SECURITY
 export const SECURITY_CONFIG = {
-  // Supabase Configuration
-  SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || "https://vcacfysfjgoahledqdwa.supabase.co",
-  SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjYWNmeXNmamdvYWhsZWRxZHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0MDI3MDgsImV4cCI6MjA1OTk3ODcwOH0.sSWBAAsoofM3b-aLNseRtXhNulg6kaGqXTcXRVd_IWo",
+  // Supabase Configuration - MUST be set in environment
+  SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || "",
+  SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY || "",
   
   // Clerk Configuration
   CLERK_PUBLISHABLE_KEY: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "",
@@ -57,16 +57,20 @@ export const validateEnvironment = (): string[] => {
   const errors: string[] = [];
   
   if (!SECURITY_CONFIG.SUPABASE_URL) {
-    errors.push('VITE_SUPABASE_URL is required');
+    errors.push('VITE_SUPABASE_URL is required - set in environment variables');
   }
   
   if (!SECURITY_CONFIG.SUPABASE_ANON_KEY) {
-    errors.push('VITE_SUPABASE_ANON_KEY is required');
+    errors.push('VITE_SUPABASE_ANON_KEY is required - set in environment variables');
   }
   
-  // Clerk is optional for now since we're migrating
   if (!SECURITY_CONFIG.CLERK_PUBLISHABLE_KEY) {
-    console.warn('VITE_CLERK_PUBLISHABLE_KEY not set - Clerk features may not work');
+    errors.push('VITE_CLERK_PUBLISHABLE_KEY is required - set in environment variables');
+  }
+  
+  if (errors.length > 0) {
+    console.error('❌ Security Configuration Errors:', errors);
+    throw new Error('Missing required environment variables. Check console for details.');
   }
   
   return errors;
