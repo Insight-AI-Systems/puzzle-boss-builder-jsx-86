@@ -31,6 +31,7 @@ interface JigsawPuzzle {
   tags?: string[] | null;
   created_at: string;
   updated_at: string;
+  images?: JigsawPuzzleImage[];
 }
 
 interface JigsawPuzzleImage {
@@ -89,10 +90,13 @@ export const JigsawPuzzleManager: React.FC = () => {
 
   const loadData = async () => {
     try {
-      // Load puzzles
+      // Load puzzles with their images
       const { data: puzzlesData, error: puzzlesError } = await supabase
         .from('jigsaw_puzzles')
-        .select('*')
+        .select(`
+          *,
+          images:jigsaw_puzzle_images(*)
+        `)
         .order('created_at', { ascending: false });
 
       if (puzzlesError) throw puzzlesError;
@@ -174,14 +178,24 @@ export const JigsawPuzzleManager: React.FC = () => {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('id', user.id)
-        .single();
+        .eq('email', user.emailAddresses?.[0]?.emailAddress)
+        .maybeSingle();
 
       if (profileError) {
-        console.error('Profile error:', profileError);
+        console.error('Profile query error:', profileError);
         toast({
           title: "Error",
-          description: "Could not find user profile. Please ensure you're logged in properly.",
+          description: "Could not query user profile. Please ensure you're logged in properly.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!profileData) {
+        console.error('No profile found for email:', user.emailAddresses?.[0]?.emailAddress);
+        toast({
+          title: "Error", 
+          description: "Could not find user profile. Please contact admin.",
           variant: "destructive"
         });
         return;
@@ -227,6 +241,28 @@ export const JigsawPuzzleManager: React.FC = () => {
       }
 
       console.log('Puzzle created successfully:', data);
+
+      // Create puzzle image record to link the selected image
+      if (formData.selected_image_data) {
+        const imageData = {
+          puzzle_id: data.id,
+          original_image_url: formData.selected_image_data.image_files?.[0]?.original_path || '',
+          thumbnail_url: formData.selected_image_data.image_files?.[0]?.thumbnail_path || null,
+          medium_image_url: formData.selected_image_data.image_files?.[0]?.processed_path || null,
+          image_width: formData.selected_image_data.image_files?.[0]?.original_width || null,
+          image_height: formData.selected_image_data.image_files?.[0]?.original_height || null,
+          is_primary: true,
+          processing_status: 'completed'
+        };
+
+        const { error: imageError } = await supabase
+          .from('jigsaw_puzzle_images')
+          .insert([imageData]);
+
+        if (imageError) {
+          console.error('Error creating puzzle image:', imageError);
+        }
+      }
 
       // Just add the new puzzle to the existing list instead of reloading everything
       setPuzzles([data as JigsawPuzzle, ...puzzles]);
@@ -592,7 +628,18 @@ export const JigsawPuzzleManager: React.FC = () => {
             {puzzles.map((puzzle) => (
               <Card key={puzzle.id} className="overflow-hidden">
                 <div className="aspect-video bg-muted flex items-center justify-center">
-                  <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                  {puzzle.images && puzzle.images.length > 0 && puzzle.images[0].original_image_url ? (
+                    <img
+                      src={`https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/Original Product Images/${puzzle.images[0].original_image_url}`}
+                      alt={puzzle.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjE0NCIgdmlld0JveD0iMCAwIDI1NiAxNDQiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyNTYiIGhlaWdodD0iMTQ0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMDQgNjRIMTUyVjgwSDEzNkwxMjggNzJIMTA0VjY0WiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K';
+                      }}
+                    />
+                  ) : (
+                    <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                  )}
                 </div>
                 <CardContent className="p-4">
                   <div className="space-y-2">
