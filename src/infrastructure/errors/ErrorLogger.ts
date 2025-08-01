@@ -49,7 +49,7 @@ class ErrorLoggerService {
 
     // Store in localStorage for debugging
     try {
-      localStorage.setItem('puzzleboss-error-logs', JSON.stringify(this.logs.slice(0, 10)));
+      localStorage.setItem('gaming-platform-error-logs', JSON.stringify(this.logs.slice(0, 10)));
     } catch (e) {
       console.warn('Unable to store error logs in localStorage');
     }
@@ -86,7 +86,7 @@ class ErrorLoggerService {
 
   clearLogs(): void {
     this.logs = [];
-    localStorage.removeItem('puzzleboss-error-logs');
+    localStorage.removeItem('gaming-platform-error-logs');
   }
 }
 

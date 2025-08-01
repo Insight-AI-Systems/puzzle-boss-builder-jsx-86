@@ -3033,15 +3033,6 @@ export type Database = {
           revenue: number
         }[]
       }
-      get_puzzle_stats: {
-        Args: { puzzle_id: string }
-        Returns: {
-          total_plays: number
-          avg_completion_time: number
-          fastest_time: number
-          completion_rate: number
-        }[]
-      }
       get_role_inherits_from: {
         Args: {
           user_role: Database["public"]["Enums"]["user_role"]
@@ -3117,10 +3108,6 @@ export type Database = {
       }
       terminate_other_sessions: {
         Args: { current_session_id: string }
-        Returns: undefined
-      }
-      update_puzzle_active_players: {
-        Args: { puzzle_id: string; user_id: string; action: string }
         Returns: undefined
       }
     }

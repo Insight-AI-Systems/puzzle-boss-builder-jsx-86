@@ -19,7 +19,7 @@ export abstract class BaseGameService<TGameState extends BaseGameState> implemen
     // Default implementation - can be overridden
     const savedGames = this.getSavedGames();
     savedGames[gameId] = state;
-    localStorage.setItem('codecanyon_savedGames', JSON.stringify(savedGames));
+    localStorage.setItem('gaming_platform_savedGames', JSON.stringify(savedGames));
   }
 
   async loadGameState(gameId: string): Promise<TGameState | null> {
@@ -40,7 +40,7 @@ export abstract class BaseGameService<TGameState extends BaseGameState> implemen
   }
 
   private getSavedGames(): Record<string, TGameState> {
-    const saved = localStorage.getItem('codecanyon_savedGames');
+    const saved = localStorage.getItem('gaming_platform_savedGames');
     return saved ? JSON.parse(saved) : {};
   }
 }

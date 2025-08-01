@@ -8,10 +8,10 @@ export interface PaymentRequest {
   useCredits?: boolean;
 }
 
-export interface PuzzlePaymentRequest {
-  puzzleImageId: string;
+export interface GamePaymentRequest {
+  gameId: string;
   difficulty: string;
-  pieceCount: number;
+  entryFee: number;
   userId: string;
 }
 
@@ -184,20 +184,20 @@ export class PaymentService {
     return this.profile?.credits || 0;
   }
 
-  async processPuzzlePayment(request: PuzzlePaymentRequest): Promise<{ success: boolean; sessionUrl?: string; error?: string }> {
+  async processGamePayment(request: GamePaymentRequest): Promise<{ success: boolean; sessionUrl?: string; error?: string }> {
     try {
-      console.log('Processing puzzle payment:', request);
+      console.log('Processing game payment:', request);
       
       if (!this.supabaseClient) {
         throw new Error('Supabase client not configured for puzzle payments');
       }
       
-      // Create Stripe checkout session for puzzle game
-      const { data, error } = await this.supabaseClient.functions.invoke('create-puzzle-payment', {
+      // Create Stripe checkout session for game
+      const { data, error } = await this.supabaseClient.functions.invoke('create-game-payment', {
         body: {
-          puzzleImageId: request.puzzleImageId,
+          gameId: request.gameId,
           difficulty: request.difficulty,
-          pieceCount: request.pieceCount
+          entryFee: request.entryFee
         }
       });
 
