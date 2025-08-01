@@ -2,9 +2,7 @@
 import React from 'react';
 import { Table, TableBody } from "@/components/ui/table";
 import { AdminCategory } from '@/types/categoryTypes';
-import { usePuzzlesByCategoryId } from '@/hooks/admin/usePuzzlesByCategory';
 import { CategoryRow } from './table/CategoryRow';
-import { AssignedPuzzlesRow } from './table/AssignedPuzzlesRow';
 import { DeleteConfirmDialog } from './table/DeleteConfirmDialog';
 import { CategoryTableHeader } from './table/CategoryTableHeader';
 
@@ -19,7 +17,7 @@ interface CategoryTableProps {
   confirmDeleteCategory: () => void;
   cancelDeleteCategory: () => void;
   categoryToDelete: string | null;
-  handleDeletePuzzle?: (puzzleId: string) => void;
+  
 }
 
 export const CategoryTable: React.FC<CategoryTableProps> = ({
@@ -33,17 +31,11 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
   confirmDeleteCategory,
   cancelDeleteCategory,
   categoryToDelete,
-  handleDeletePuzzle
 }) => {
   // Find the category being deleted (for showing puzzle count in warning)
   const categoryBeingDeleted = categoryToDelete 
     ? categories.find(cat => cat.id === categoryToDelete) 
     : null;
-    
-  // Use custom hook to fetch puzzles for the editing category
-  const { puzzles, isLoading } = usePuzzlesByCategoryId(
-    editingCategory?.id || null
-  );
 
   return (
     <>
@@ -60,13 +52,6 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                   handleEditCategory={handleEditCategory}
                   handleDeleteCategory={handleDeleteCategory}
                   handleSaveCategory={handleSaveCategory}
-                />
-                <AssignedPuzzlesRow
-                  categoryId={category.id}
-                  isEditing={editingCategory?.id === category.id}
-                  puzzles={puzzles}
-                  isLoading={isLoading}
-                  handleDeletePuzzle={handleDeletePuzzle}
                 />
               </React.Fragment>
             ))}

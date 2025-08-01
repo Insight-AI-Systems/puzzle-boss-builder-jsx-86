@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { AdminCategory } from '@/types/categoryTypes';
 import { CategoryImageUpload } from "../CategoryImageUpload";
-import { PlayablePuzzleCountCell } from "../PlayablePuzzleCountCell";
+
 
 interface CategoryRowProps {
   category: AdminCategory;
@@ -73,7 +73,7 @@ export const CategoryRow: React.FC<CategoryRowProps> = ({
         )}
       </TableCell>
       <TableCell>
-        <PlayablePuzzleCountCell categoryId={category.id} />
+        <span className="text-muted-foreground">-</span>
       </TableCell>
       <TableCell>
         {isEditing ? (

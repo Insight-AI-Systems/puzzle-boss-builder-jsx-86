@@ -93,11 +93,9 @@ export function useAdminCategoryMutations() {
       console.log('Starting category deletion process for ID:', categoryId);
       
       try {
-        // Check if there are any puzzles (of any status) using this category
-        const { data, error: checkError } = await supabase
-          .from('puzzles')
-          .select('id, title, status')
-          .eq('category_id', categoryId);
+        // Skip puzzle check since puzzle tables have been removed
+        const data = null;
+        const checkError = null;
 
         if (checkError) {
           console.error('Error checking for puzzles:', checkError);

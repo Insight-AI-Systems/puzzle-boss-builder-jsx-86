@@ -110,52 +110,6 @@ export const useCategoryOperations = () => {
     setIsAddDialogOpen(true);
   };
 
-  const handleDeletePuzzle = async (puzzleId: string) => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "You must be logged in to delete puzzles.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      console.log('Deleting puzzle with ID:', puzzleId);
-      
-      // Delete the puzzle from the puzzles table
-      const { error } = await supabase
-        .from('puzzles')
-        .delete()
-        .eq('id', puzzleId);
-
-      if (error) {
-        console.error('Error deleting puzzle:', error);
-        toast({
-          title: "Error",
-          description: `Failed to delete puzzle: ${error.message}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Success
-      toast({
-        title: "Success",
-        description: "Puzzle removed successfully",
-      });
-
-      // Invalidate relevant queries to refresh data
-      refetch();
-    } catch (error: any) {
-      console.error('Failed to delete puzzle:', error);
-      toast({
-        title: "Error",
-        description: `An unexpected error occurred: ${error.message}`,
-        variant: "destructive",
-      });
-    }
-  };
 
   return {
     isAddDialogOpen,
@@ -176,6 +130,6 @@ export const useCategoryOperations = () => {
     confirmDeleteCategory,
     cancelDeleteCategory,
     categoryToDelete,
-    handleDeletePuzzle
+    
   };
 };

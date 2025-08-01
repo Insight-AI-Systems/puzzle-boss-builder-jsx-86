@@ -27,7 +27,6 @@ export const CategoryManagement: React.FC = () => {
     confirmDeleteCategory,
     cancelDeleteCategory,
     categoryToDelete,
-    handleDeletePuzzle
   } = useCategoryOperations();
 
   // Create wrapper functions for the refetch calls to fix TypeScript errors
@@ -111,7 +110,7 @@ export const CategoryManagement: React.FC = () => {
               confirmDeleteCategory={confirmDeleteCategory}
               cancelDeleteCategory={cancelDeleteCategory}
               categoryToDelete={categoryToDelete}
-              handleDeletePuzzle={handleDeletePuzzle}
+              
             />
           )}
         </CardContent>

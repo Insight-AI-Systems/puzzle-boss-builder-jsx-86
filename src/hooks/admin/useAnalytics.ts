@@ -4,9 +4,14 @@ import { useDailyMetrics } from './analytics/useDailyMetrics';
 import { useMemberDemographics } from './analytics/useMemberDemographics';
 import { useMonthlyTrends } from './analytics/useMonthlyTrends';
 import { useCategoryRevenue } from './analytics/useCategoryRevenue';
-import { usePuzzleMetrics } from './analytics/usePuzzleMetrics';
+
 import { useRevenueMetrics } from './analytics/useRevenueMetrics';
-import { formatTime as formatTimeUtil } from '@/utils/puzzleUtils';
+// formatTime utility function inline since puzzleUtils was removed
+const formatTimeUtil = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
 
 // Define the ActivityBreakdown type
 export interface ActivityBreakdown {
@@ -42,8 +47,9 @@ export const useAnalytics = () => {
   // Get category revenue data
   const { data: categoryRevenue, isLoading: isLoadingCategoryRevenue } = useCategoryRevenue(selectedDate);
   
-  // Get puzzle metrics
-  const { data: puzzleMetrics, isLoading: isLoadingPuzzleMetrics } = usePuzzleMetrics();
+  // Get puzzle metrics - removed, will be available with new puzzle system
+  const puzzleMetrics = null;
+  const isLoadingPuzzleMetrics = false;
   
   // Get revenue metrics
   const { data: revenueMetrics, isLoading: isLoadingRevenueMetrics, error } = useRevenueMetrics();

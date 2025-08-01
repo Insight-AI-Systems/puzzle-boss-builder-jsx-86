@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FinanceTabContent } from './FinanceTabContent';
 import { XeroTabContent } from './XeroTabContent';
 import { WebhookTabContent } from './WebhookTabContent';
-import { PuzzlePricingManager } from '@/components/admin/PuzzlePricingManager';
+
 
 interface DashboardTabsProps {
   activeTab: string;
@@ -25,7 +25,7 @@ export const DashboardTabs: React.FC<DashboardTabsProps> = ({
         <TabsTrigger value="expenses">Expenses</TabsTrigger>
         <TabsTrigger value="commissions">Commissions</TabsTrigger>
         <TabsTrigger value="membership">Membership</TabsTrigger>
-        <TabsTrigger value="puzzle-pricing">Puzzle Pricing</TabsTrigger>
+        
         <TabsTrigger value="xero">Xero Integration</TabsTrigger>
         <TabsTrigger value="webhooks">Xero Webhooks</TabsTrigger>
       </TabsList>
@@ -35,9 +35,6 @@ export const DashboardTabs: React.FC<DashboardTabsProps> = ({
         selectedMonth={selectedMonth} 
       />
       
-      <TabsContent value="puzzle-pricing">
-        <PuzzlePricingManager />
-      </TabsContent>
       
       <TabsContent value="xero">
         <XeroTabContent />

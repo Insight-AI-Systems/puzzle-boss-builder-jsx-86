@@ -28,8 +28,6 @@ import Settings from '@/pages/Settings';
 import Terms from '@/pages/legal/Terms';
 import Privacy from '@/pages/legal/Privacy';
 import AdminDashboard from '@/pages/AdminDashboard';
-import PuzzleFileManager from '@/pages/PuzzleFileManager';
-// GameTesting removed - using CodeCanyon Jigsaw Deluxe system only
 import Auth from '@/pages/Auth';
 
 // Import game pages
@@ -41,10 +39,7 @@ import {
   BlockPuzzlePro, 
   DailyCrossword, 
   MahjongGamePage,
-  // PuzzleSessionPage removed
 } from '@/pages/games';
-
-import CodeCanvasPuzzle from '@/pages/CodeCanvasPuzzle';
 
 // Your Clerk publishable key
 const PUBLISHABLE_KEY = "pk_test_ZmFjdHVhbC1kYW5lLTQ5LmNsZXJrLmFjY291bnRzLmRldiQ";
@@ -90,7 +85,7 @@ function AppRoutes() {
             <Route path="games/block-puzzle" element={<BlockPuzzlePro />} />
             <Route path="games/crossword" element={<DailyCrossword />} />
             <Route path="games/mahjong" element={<MahjongGamePage />} />
-            <Route path="games/unity-jigsaw-puzzle" element={<CodeCanvasPuzzle />} />
+            
             {/* Old puzzle session route removed - using new puzzle system */}
             
             {/* Protected user routes */}
@@ -113,11 +108,6 @@ function AppRoutes() {
           <Route path="admin" element={
             <ClerkProtectedRoute requiredRoles={['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo']}>
               <AdminDashboard />
-            </ClerkProtectedRoute>
-          } />
-          <Route path="admin/puzzle-files" element={
-            <ClerkProtectedRoute requiredRoles={['super_admin', 'admin']}>
-              <PuzzleFileManager />
             </ClerkProtectedRoute>
           } />
           {/* Game testing route removed - using CodeCanyon Jigsaw Deluxe system only */}

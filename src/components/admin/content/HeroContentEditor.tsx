@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useContentManagement } from '@/hooks/admin/useContentManagement';
-import HeroPuzzleManager from '../hero-puzzle/HeroPuzzleManager';
+
 
 export const HeroContentEditor: React.FC = () => {
   const { content, updateContent, isLoading } = useContentManagement();
@@ -106,21 +106,6 @@ export const HeroContentEditor: React.FC = () => {
         </CardContent>
       </Card>
 
-      <div className="flex items-center space-x-2">
-        <Switch
-          id="puzzle-manager"
-          checked={showPuzzleManager}
-          onCheckedChange={setShowPuzzleManager}
-        />
-        <Label htmlFor="puzzle-manager">Show Hero Puzzle Manager</Label>
-      </div>
-
-      {showPuzzleManager && (
-        <div className="mt-6">
-          <h3 className="text-lg font-medium mb-4">Hero Puzzle Configuration</h3>
-          <HeroPuzzleManager />
-        </div>
-      )}
     </div>
   );
 };
