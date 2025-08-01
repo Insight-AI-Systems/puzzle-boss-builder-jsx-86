@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Play, Pause } from 'lucide-react';
 
+// DEBUG: Add diagnostic logging
+console.log('🔍 PuzzleGamePage loading - should only use EnhancedJigsawPuzzle');
+console.log('📦 Components imported:', { EnhancedJigsawPuzzle });
+
 // Removed GameState interface - using EnhancedJigsawPuzzle's built-in state management
 
 // Mock puzzle data - in real app would come from API
@@ -94,6 +98,10 @@ export const PuzzleGamePage: React.FC = () => {
     navigate('/leaderboard');
   };
 
+  // DEBUG: Log component rendering
+  console.log('🎯 Rendering PuzzleGamePage with puzzle:', currentPuzzle);
+  console.log('🔍 Current puzzle ID from URL:', puzzleId);
+
   if (!currentPuzzle) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -113,7 +121,8 @@ export const PuzzleGamePage: React.FC = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-background">
+      {/* FORCE CACHE CLEAR: This ensures only EnhancedJigsawPuzzle is loaded */}
+      <div data-puzzle-engine="enhanced-jigsaw-only" className="min-h-screen bg-background">
         {/* Header */}
         <div className="border-b border-puzzle-aqua/20 bg-puzzle-black/50">
           <div className="container mx-auto px-4 py-4">
@@ -148,18 +157,21 @@ export const PuzzleGamePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Game Area */}
+        {/* Game Area - ONLY EnhancedJigsawPuzzle */}
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
-            <EnhancedJigsawPuzzle
-              imageUrl={currentPuzzle.imageUrl}
-              rows={currentPuzzle.rows}
-              columns={currentPuzzle.columns}
-              puzzleId={puzzleId || 'custom'}
-              showNumbers={false}
-              showGuide={showGuide}
-              onComplete={handleGameComplete}
-            />
+            {/* CACHE BUSTER: Force complete refresh */}
+            <div key={`puzzle-${puzzleId}-${Date.now()}`} data-component="enhanced-jigsaw-puzzle-only">
+              <EnhancedJigsawPuzzle
+                imageUrl={currentPuzzle.imageUrl}
+                rows={currentPuzzle.rows}
+                columns={currentPuzzle.columns}
+                puzzleId={puzzleId || 'custom'}
+                showNumbers={false}
+                showGuide={showGuide}
+                onComplete={handleGameComplete}
+              />
+            </div>
           </div>
         </div>
       </div>
