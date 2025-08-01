@@ -45,22 +45,22 @@ export const useImageLibrary = () => {
 
       // Transform the data to match expected format
       const transformedImages: ProductImage[] = (imagesData || []).map(img => {
-        const imageFile = Array.isArray(img.image_files) ? img.image_files[0] : img.image_files;
-        const hasValidFile = imageFile && imageFile.processing_status === 'completed';
+        const metadataObj = img.metadata as any;
+        
+        // Use the imageUrl from metadata if available (new simplified approach)
+        let imageUrl = metadataObj?.imageUrl || '';
+        
+        // Fallback to old file-based approach for existing records
+        if (!imageUrl) {
+          const imageFile = Array.isArray(img.image_files) ? img.image_files[0] : img.image_files;
+          if (imageFile?.processed_path) {
+            imageUrl = supabase.storage.from('processed_images').getPublicUrl(imageFile.processed_path).data.publicUrl;
+          }
+        }
         
         // Get dimensions from metadata or image_files
-        const metadataObj = img.metadata as any;
-        const width = imageFile?.original_width || metadataObj?.width || 0;
-        const height = imageFile?.original_height || metadataObj?.height || 0;
-        
-        // Choose the best available image URL - use original if processing failed
-        let imageUrl = '';
-        if (imageFile?.original_path) {
-          // Use the actual bucket name from Supabase configuration
-          const bucketName = 'original_images'; // This should match the bucket ID, not display name
-          const imagePath = imageFile.original_path;
-          imageUrl = `https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/${bucketName}/${imagePath}`;
-        }
+        const width = metadataObj?.width || 0;
+        const height = metadataObj?.height || 0;
         
         return {
           id: img.id,
@@ -75,7 +75,7 @@ export const useImageLibrary = () => {
           updated_at: img.updated_at,
           created_by: img.created_by,
           metadata: img.metadata,
-          image_files: imageFile ? [imageFile] : [],
+          image_files: img.image_files || [],
           dimensions: width && height ? { width, height } : undefined
         };
       });

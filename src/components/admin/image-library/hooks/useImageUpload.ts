@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { processImageComplete } from '@/utils/imageProcessor';
+import imageCompression from 'browser-image-compression';
 
 interface ClerkUser {
   id: string;
@@ -28,66 +28,77 @@ export const useImageUpload = (user: ClerkUser | null, onUploadComplete: () => v
       }
 
       for (const file of files) {
-        console.error('=== UPLOAD DEBUG START ===');
-        console.log('Starting complete processing for file:', file.name, 'Size:', file.size, 'Type:', file.type);
+        console.log('🚀 Starting simplified upload for:', file.name);
 
-        // Process the image
-        const processedData = await processImageComplete(file);
-        console.log('✅ Image processing complete:', processedData);
-
-        // Upload original to storage
-        console.log('⬆️ Uploading original to storage...');
-        const originalFileName = `${Date.now()}-${file.name}`;
+        // Compress and resize image using browser-image-compression
+        const compressionOptions = {
+          maxSizeMB: 2,
+          maxWidthOrHeight: 1200,
+          useWebWorker: true,
+          fileType: 'image/jpeg'
+        };
         
-        const { data: originalUpload, error: originalError } = await supabase.storage
-          .from('original_images')  // Use the correct bucket ID
-          .upload(originalFileName, file);
+        const compressedFile = await imageCompression(file, compressionOptions);
+        console.log('✅ Image compressed:', {
+          original: file.size,
+          compressed: compressedFile.size,
+          reduction: `${((1 - compressedFile.size / file.size) * 100).toFixed(1)}%`
+        });
 
-        if (originalError) {
-          console.error('❌ Original upload error:', originalError);
-          throw originalError;
-        }
-
-        console.log('✅ Original upload successful:', originalUpload);
-
-        // Upload processed image
-        console.log('⬆️ Uploading processed image...');
-        const processedFileName = `${Date.now()}-processed-${file.name}`;
+        // Create thumbnail
+        const thumbnailOptions = {
+          maxSizeMB: 0.2,
+          maxWidthOrHeight: 300,
+          useWebWorker: true,
+          fileType: 'image/jpeg'
+        };
         
-        const { data: processedUpload, error: processedError } = await supabase.storage
-          .from('processed_images')  // Use correct bucket ID
-          .upload(processedFileName, processedData.resizedBlob);
+        const thumbnailFile = await imageCompression(file, thumbnailOptions);
+        console.log('✅ Thumbnail created');
 
-        if (processedError) {
-          console.error('❌ Processed upload error:', processedError);
-          throw processedError;
+        // Upload main image
+        const fileName = `${Date.now()}-${file.name.replace(/\.[^/.]+$/, '.jpg')}`;
+        const { data: imageUpload, error: imageError } = await supabase.storage
+          .from('processed_images')
+          .upload(fileName, compressedFile);
+
+        if (imageError) {
+          console.error('❌ Image upload error:', imageError);
+          throw imageError;
         }
-
-        console.log('✅ Processed upload successful:', processedUpload);
 
         // Upload thumbnail
-        console.log('⬆️ Uploading thumbnail...');
-        const thumbnailFileName = `${Date.now()}-thumb-${file.name}`;
-        
+        const thumbnailFileName = `thumb-${fileName}`;
         const { data: thumbnailUpload, error: thumbnailError } = await supabase.storage
-          .from('thumbnails')  // Use correct bucket ID
-          .upload(thumbnailFileName, processedData.thumbnailBlob);
+          .from('processed_images')
+          .upload(thumbnailFileName, thumbnailFile);
 
         if (thumbnailError) {
           console.error('❌ Thumbnail upload error:', thumbnailError);
           throw thumbnailError;
         }
 
-        console.log('✅ Thumbnail upload successful:', thumbnailUpload);
+        console.log('✅ Both files uploaded successfully');
 
-        // Store file paths for database
-        const originalPath = originalFileName;
-        const processedPath = processedFileName; 
-        const thumbnailPath = thumbnailFileName;
-        
-        console.log('📁 File paths:', { originalPath, processedPath, thumbnailPath });
+        // Get public URLs
+        const { data: { publicUrl: imageUrl } } = supabase.storage
+          .from('processed_images')
+          .getPublicUrl(fileName);
 
-        // Create product image record using Clerk user ID
+        const { data: { publicUrl: thumbnailUrl } } = supabase.storage
+          .from('processed_images')
+          .getPublicUrl(thumbnailFileName);
+
+        console.log('🔗 Generated URLs:', { imageUrl, thumbnailUrl });
+
+        // Get image dimensions for metadata
+        const img = new Image();
+        const dimensions = await new Promise<{width: number, height: number}>((resolve) => {
+          img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+          img.src = URL.createObjectURL(compressedFile);
+        });
+
+        // Create simplified product image record
         console.log('💾 Creating database record...');
         const { data: productImageData, error: productImageError } = await supabase
           .from('product_images')
@@ -95,12 +106,14 @@ export const useImageUpload = (user: ClerkUser | null, onUploadComplete: () => v
             name: file.name,
             description: `Uploaded image: ${file.name}`,
             status: 'active',
-            created_by: user.id, // Clerk user ID as text
+            created_by: user.id,
             metadata: {
-              width: processedData.dimensions.width,
-              height: processedData.dimensions.height,
-              size: file.size,
-              type: file.type
+              width: dimensions.width,
+              height: dimensions.height,
+              size: compressedFile.size,
+              type: compressedFile.type,
+              imageUrl: imageUrl,
+              thumbnailUrl: thumbnailUrl
             }
           })
           .select()
@@ -111,34 +124,7 @@ export const useImageUpload = (user: ClerkUser | null, onUploadComplete: () => v
           throw productImageError;
         }
 
-        console.log('✅ Database record created:', productImageData);
-
-        // Create image_files record
-        console.log('💾 Creating image_files record...');
-        const { data: imageFileData, error: imageFileError } = await supabase
-          .from('image_files')
-          .insert({
-            product_image_id: productImageData.id,
-            original_path: originalPath,
-            processed_path: processedPath,
-            thumbnail_path: thumbnailPath,
-            original_width: processedData.dimensions.width,
-            original_height: processedData.dimensions.height,
-            processed_width: processedData.dimensions.width,
-            processed_height: processedData.dimensions.height,
-            original_size: file.size,
-            processing_status: 'completed'
-          })
-          .select()
-          .single();
-
-        if (imageFileError) {
-          console.error('❌ Image files error:', imageFileError);
-          throw imageFileError;
-        }
-
-        console.log('✅ Image files record created:', imageFileData);
-        console.error('=== UPLOAD DEBUG END ===');
+        console.log('✅ Product record created with URLs:', productImageData);
       }
 
       toast({
