@@ -40,7 +40,7 @@ export const useImageUpload = (user: ClerkUser | null, onUploadComplete: () => v
         const originalFileName = `${Date.now()}-${file.name}`;
         
         const { data: originalUpload, error: originalError } = await supabase.storage
-          .from('Original Product Images')
+          .from('original_images')  // Use the correct bucket ID
           .upload(originalFileName, file);
 
         if (originalError) {
@@ -55,7 +55,7 @@ export const useImageUpload = (user: ClerkUser | null, onUploadComplete: () => v
         const processedFileName = `${Date.now()}-processed-${file.name}`;
         
         const { data: processedUpload, error: processedError } = await supabase.storage
-          .from('Processed Puzzle Images')
+          .from('processed_images')  // Use correct bucket ID
           .upload(processedFileName, processedData.resizedBlob);
 
         if (processedError) {
@@ -70,7 +70,7 @@ export const useImageUpload = (user: ClerkUser | null, onUploadComplete: () => v
         const thumbnailFileName = `${Date.now()}-thumb-${file.name}`;
         
         const { data: thumbnailUpload, error: thumbnailError } = await supabase.storage
-          .from('Image Thumbnails')
+          .from('thumbnails')  // Use correct bucket ID
           .upload(thumbnailFileName, processedData.thumbnailBlob);
 
         if (thumbnailError) {
@@ -82,15 +82,15 @@ export const useImageUpload = (user: ClerkUser | null, onUploadComplete: () => v
 
         // Get public URLs
         const { data: { publicUrl: originalUrl } } = supabase.storage
-          .from('Original Product Images')
+          .from('original_images')  // Use correct bucket ID
           .getPublicUrl(originalFileName);
 
         const { data: { publicUrl: processedUrl } } = supabase.storage
-          .from('Processed Puzzle Images')
+          .from('processed_images')  // Use correct bucket ID
           .getPublicUrl(processedFileName);
 
         const { data: { publicUrl: thumbnailUrl } } = supabase.storage
-          .from('Image Thumbnails')
+          .from('thumbnails')  // Use correct bucket ID
           .getPublicUrl(thumbnailFileName);
 
         const filePaths = [originalUrl, processedUrl, thumbnailUrl];

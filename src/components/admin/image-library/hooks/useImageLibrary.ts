@@ -17,12 +17,12 @@ export const useImageLibrary = () => {
     try {
       console.log('Loading product images with enhanced data...');
       
-      // Load product images with associated file data
+      // Load product images with associated file data - fixed query
       const { data: imagesData, error: imagesError } = await supabase
         .from('product_images')
         .select(`
           *,
-          image_files (
+          image_files!product_image_id (
             id,
             original_path,
             processed_path,

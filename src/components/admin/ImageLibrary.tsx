@@ -19,7 +19,7 @@ const ImageLibrary: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
-  const { images, isLoading, error } = useImageLibrary();
+  const { images, isLoading, error, loadImages } = useImageLibrary();
 
   const categories = [
     { value: 'all', label: 'All Categories' },
@@ -30,9 +30,11 @@ const ImageLibrary: React.FC = () => {
   ];
 
   const handleUpload = () => {
+    // For now, show a simple message that upload functionality 
+    // should be implemented via the puzzle creation/editing flow
     toast({
-      title: "Upload Feature",
-      description: "Image upload functionality will be implemented here.",
+      title: "Upload Images", 
+      description: "To upload images, use the puzzle creation or editing forms where you can select and upload images.",
     });
   };
 
