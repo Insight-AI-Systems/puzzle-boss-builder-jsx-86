@@ -10,10 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Upload, Settings, Grid, Eye, Trash2, Edit, Image as ImageIcon } from 'lucide-react';
+import { Plus, Upload, Settings, Grid, Eye, Trash2, Edit, Pause, Play, Image as ImageIcon } from 'lucide-react';
 import ImageUpload from '../ImageUpload';
 import { useImageLibrary } from '../image-library/hooks/useImageLibrary';
 import { useImageUpload } from '../image-library/hooks/useImageUpload';
+import { useImageManagement } from '../image-library/hooks/useImageManagement';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { ImageLibrarySelector } from './ImageLibrarySelector';
 import { fixStuckImages } from '@/utils/fixStuckImages';
@@ -67,6 +68,7 @@ export const JigsawPuzzleManager: React.FC = () => {
   // Image library integration
   const { images, loadImages } = useImageLibrary();
   const { handleUpload: uploadImage, isUploading } = useImageUpload(user, loadImages);
+  const { deleteImage, updateImageStatus } = useImageManagement();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -814,9 +816,48 @@ export const JigsawPuzzleManager: React.FC = () => {
                         </div>
                         <CardContent className="p-3">
                           <p className="text-sm font-medium truncate">{image.name}</p>
-                          <Badge variant="outline" className="text-xs mt-1">
-                            {image.status}
-                          </Badge>
+                          <div className="flex items-center justify-between mt-2">
+                            <Badge variant="outline" className="text-xs">
+                              {image.status}
+                            </Badge>
+                          </div>
+                          
+                          {/* Management Actions */}
+                          <div className="flex gap-1 mt-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => window.open(image.imageUrl, '_blank')}
+                              className="flex-1 text-xs"
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                const newStatus = image.status === 'active' ? 'held' : 'active';
+                                const success = await updateImageStatus(image.id, newStatus);
+                                if (success) loadImages();
+                              }}
+                              className="flex-1 text-xs"
+                            >
+                              {image.status === 'active' ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={async () => {
+                                if (confirm(`Delete ${image.name}?`)) {
+                                  const success = await deleteImage(image.id);
+                                  if (success) loadImages();
+                                }
+                              }}
+                              className="flex-1 text-xs"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </CardContent>
                       </Card>
                     ))}
