@@ -850,6 +850,333 @@ export type Database = {
         }
         Relationships: []
       }
+      jigsaw_completions: {
+        Row: {
+          achievement_unlocked: string[] | null
+          completed_at: string | null
+          completion_percentage: number | null
+          completion_time_seconds: number
+          created_at: string | null
+          final_score: number | null
+          hints_used: number | null
+          id: string
+          is_personal_best: boolean | null
+          puzzle_id: string
+          ranking_position: number | null
+          session_id: string
+          total_moves: number
+          user_id: string
+        }
+        Insert: {
+          achievement_unlocked?: string[] | null
+          completed_at?: string | null
+          completion_percentage?: number | null
+          completion_time_seconds: number
+          created_at?: string | null
+          final_score?: number | null
+          hints_used?: number | null
+          id?: string
+          is_personal_best?: boolean | null
+          puzzle_id: string
+          ranking_position?: number | null
+          session_id: string
+          total_moves: number
+          user_id: string
+        }
+        Update: {
+          achievement_unlocked?: string[] | null
+          completed_at?: string | null
+          completion_percentage?: number | null
+          completion_time_seconds?: number
+          created_at?: string | null
+          final_score?: number | null
+          hints_used?: number | null
+          id?: string
+          is_personal_best?: boolean | null
+          puzzle_id?: string
+          ranking_position?: number | null
+          session_id?: string
+          total_moves?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jigsaw_completions_puzzle_id_fkey"
+            columns: ["puzzle_id"]
+            isOneToOne: false
+            referencedRelation: "jigsaw_puzzles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jigsaw_completions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "jigsaw_game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jigsaw_game_sessions: {
+        Row: {
+          completion_time: string | null
+          created_at: string | null
+          final_score: number | null
+          hints_used: number | null
+          id: string
+          last_activity: string | null
+          moves_count: number | null
+          pieces_placed: number | null
+          puzzle_id: string
+          save_data: Json | null
+          session_status: string | null
+          start_time: string | null
+          total_time_seconds: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completion_time?: string | null
+          created_at?: string | null
+          final_score?: number | null
+          hints_used?: number | null
+          id?: string
+          last_activity?: string | null
+          moves_count?: number | null
+          pieces_placed?: number | null
+          puzzle_id: string
+          save_data?: Json | null
+          session_status?: string | null
+          start_time?: string | null
+          total_time_seconds?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completion_time?: string | null
+          created_at?: string | null
+          final_score?: number | null
+          hints_used?: number | null
+          id?: string
+          last_activity?: string | null
+          moves_count?: number | null
+          pieces_placed?: number | null
+          puzzle_id?: string
+          save_data?: Json | null
+          session_status?: string | null
+          start_time?: string | null
+          total_time_seconds?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jigsaw_game_sessions_puzzle_id_fkey"
+            columns: ["puzzle_id"]
+            isOneToOne: false
+            referencedRelation: "jigsaw_puzzles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jigsaw_puzzle_configs: {
+        Row: {
+          auto_save: boolean | null
+          background_color: string | null
+          border_style: string | null
+          created_at: string | null
+          ghost_preview: boolean | null
+          grid_columns: number
+          grid_rows: number
+          hint_system_enabled: boolean | null
+          id: string
+          piece_shapes: Json | null
+          puzzle_id: string
+          rotation_enabled: boolean | null
+          shuffle_enabled: boolean | null
+          snap_tolerance: number | null
+          sound_effects: boolean | null
+          time_limit_minutes: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          auto_save?: boolean | null
+          background_color?: string | null
+          border_style?: string | null
+          created_at?: string | null
+          ghost_preview?: boolean | null
+          grid_columns: number
+          grid_rows: number
+          hint_system_enabled?: boolean | null
+          id?: string
+          piece_shapes?: Json | null
+          puzzle_id: string
+          rotation_enabled?: boolean | null
+          shuffle_enabled?: boolean | null
+          snap_tolerance?: number | null
+          sound_effects?: boolean | null
+          time_limit_minutes?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          auto_save?: boolean | null
+          background_color?: string | null
+          border_style?: string | null
+          created_at?: string | null
+          ghost_preview?: boolean | null
+          grid_columns?: number
+          grid_rows?: number
+          hint_system_enabled?: boolean | null
+          id?: string
+          piece_shapes?: Json | null
+          puzzle_id?: string
+          rotation_enabled?: boolean | null
+          shuffle_enabled?: boolean | null
+          snap_tolerance?: number | null
+          sound_effects?: boolean | null
+          time_limit_minutes?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jigsaw_puzzle_configs_puzzle_id_fkey"
+            columns: ["puzzle_id"]
+            isOneToOne: false
+            referencedRelation: "jigsaw_puzzles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jigsaw_puzzle_images: {
+        Row: {
+          alt_text: string | null
+          created_at: string | null
+          file_format: string | null
+          file_size_bytes: number | null
+          id: string
+          image_height: number | null
+          image_width: number | null
+          is_primary: boolean | null
+          large_image_url: string | null
+          medium_image_url: string | null
+          original_image_url: string
+          processing_status: string | null
+          puzzle_id: string
+          thumbnail_url: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string | null
+          file_format?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          image_height?: number | null
+          image_width?: number | null
+          is_primary?: boolean | null
+          large_image_url?: string | null
+          medium_image_url?: string | null
+          original_image_url: string
+          processing_status?: string | null
+          puzzle_id: string
+          thumbnail_url?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string | null
+          file_format?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          image_height?: number | null
+          image_width?: number | null
+          is_primary?: boolean | null
+          large_image_url?: string | null
+          medium_image_url?: string | null
+          original_image_url?: string
+          processing_status?: string | null
+          puzzle_id?: string
+          thumbnail_url?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jigsaw_puzzle_images_puzzle_id_fkey"
+            columns: ["puzzle_id"]
+            isOneToOne: false
+            referencedRelation: "jigsaw_puzzles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jigsaw_puzzles: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          difficulty_level: string
+          estimated_time_minutes: number | null
+          id: string
+          is_free: boolean | null
+          metadata: Json | null
+          piece_count: number
+          price: number | null
+          status: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          difficulty_level: string
+          estimated_time_minutes?: number | null
+          id?: string
+          is_free?: boolean | null
+          metadata?: Json | null
+          piece_count: number
+          price?: number | null
+          status?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          difficulty_level?: string
+          estimated_time_minutes?: number | null
+          id?: string
+          is_free?: boolean | null
+          metadata?: Json | null
+          piece_count?: number
+          price?: number | null
+          status?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jigsaw_puzzles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jigsaw_puzzles_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memberships: {
         Row: {
           amount: number
