@@ -10,7 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { useImageLibrary } from './image-library/hooks/useImageLibrary';
+import { useImageUpload } from './image-library/hooks/useImageUpload';
 import { ImageGrid } from './image-library/components/ImageGrid';
+import { useDropzone } from 'react-dropzone';
 
 const ImageLibrary: React.FC = () => {
   const { user } = useClerkAuth();
@@ -20,6 +22,7 @@ const ImageLibrary: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
   const { images, isLoading, error, loadImages } = useImageLibrary();
+  const { handleUpload: uploadImages, isUploading } = useImageUpload(user, loadImages);
 
   const categories = [
     { value: 'all', label: 'All Categories' },
@@ -29,14 +32,13 @@ const ImageLibrary: React.FC = () => {
     { value: 'portraits', label: 'Portraits' }
   ];
 
-  const handleUpload = () => {
-    // For now, show a simple message that upload functionality 
-    // should be implemented via the puzzle creation/editing flow
-    toast({
-      title: "Upload Images", 
-      description: "To upload images, use the puzzle creation or editing forms where you can select and upload images.",
-    });
-  };
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp']
+    },
+    onDrop: uploadImages,
+    disabled: isUploading
+  });
 
   const handleEdit = (imageId: string) => {
     toast({
@@ -66,10 +68,20 @@ const ImageLibrary: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Image Library</span>
-            <Button onClick={handleUpload} className="bg-puzzle-aqua hover:bg-puzzle-aqua/80">
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Images
-            </Button>
+            <div {...getRootProps()}>
+              <input {...getInputProps()} />
+              <Button 
+                disabled={isUploading} 
+                className="bg-puzzle-aqua hover:bg-puzzle-aqua/80 disabled:opacity-50"
+              >
+                {isUploading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4 mr-2" />
+                )}
+                {isUploading ? 'Uploading...' : 'Upload Images'}
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>

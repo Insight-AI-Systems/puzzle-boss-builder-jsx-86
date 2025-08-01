@@ -80,17 +80,17 @@ export const useImageUpload = (user: ClerkUser | null, onUploadComplete: () => v
 
         console.log('✅ Thumbnail upload successful:', thumbnailUpload);
 
-        // Get public URLs
+        // Get public URLs  
         const { data: { publicUrl: originalUrl } } = supabase.storage
-          .from('original_images')  // Use correct bucket ID
+          .from('original_images')
           .getPublicUrl(originalFileName);
 
         const { data: { publicUrl: processedUrl } } = supabase.storage
-          .from('processed_images')  // Use correct bucket ID
+          .from('processed_images')
           .getPublicUrl(processedFileName);
 
         const { data: { publicUrl: thumbnailUrl } } = supabase.storage
-          .from('thumbnails')  // Use correct bucket ID
+          .from('thumbnails')
           .getPublicUrl(thumbnailFileName);
 
         const filePaths = [originalUrl, processedUrl, thumbnailUrl];
