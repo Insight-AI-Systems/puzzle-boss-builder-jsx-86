@@ -55,7 +55,7 @@ interface Category {
 }
 
 export const JigsawPuzzleManager: React.FC = () => {
-  const { user } = useClerkAuth();
+  const { user, profile: userProfile } = useClerkAuth();
   const [puzzles, setPuzzles] = useState<JigsawPuzzle[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -212,34 +212,18 @@ export const JigsawPuzzleManager: React.FC = () => {
         return;
       }
 
-      // Get current user's profile using Clerk user ID
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('clerk_user_id', user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error('Profile query error:', profileError);
-        toast({
-          title: "Error",
-          description: "Could not query user profile. Please ensure you're logged in properly.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (!profileData) {
-        console.error('No profile found for Clerk user ID:', user.id);
+      // Use the profile from Clerk auth hook (it has the correct ID)
+      if (!userProfile?.id) {
+        console.error('No user profile available from Clerk auth');
         toast({
           title: "Error", 
-          description: "Could not find user profile. Please contact admin.",
+          description: "User profile not available. Please refresh the page and try again.",
           variant: "destructive"
         });
         return;
       }
 
-      console.log('Profile data:', profileData);
+      console.log('Using profile from Clerk auth:', userProfile.id);
 
       // Auto-determine difficulty based on piece count
       const getDifficultyFromPieceCount = (pieces: number): string => {
@@ -261,7 +245,7 @@ export const JigsawPuzzleManager: React.FC = () => {
         is_free: formData.is_free,
         status: formData.status,
         tags: formData.tags || [],
-        created_by: profileData.id, // Use profile UUID
+        created_by: userProfile.id, // Use profile UUID from Clerk auth
         metadata: {
           product_value: formData.product_value,
           release_threshold: formData.release_threshold
