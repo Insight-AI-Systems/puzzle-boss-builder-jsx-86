@@ -36,10 +36,7 @@ export default defineConfig(({ mode }) => ({
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-ui': ['@radix-ui/react-tabs', '@radix-ui/react-toast'],
           'vendor-utils': ['@tanstack/react-query', 'next-themes', 'tailwind-merge'],
-          'puzzle-core': [
-            '@/components/puzzles/hooks/useImagePreloader',
-            '@/components/puzzles/hooks/useAudioPreloader'
-          ]
+          // Puzzle core chunks removed - CodeCanyon system doesn't need chunking
         }
       }
     },
