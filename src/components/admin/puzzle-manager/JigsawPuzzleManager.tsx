@@ -18,6 +18,7 @@ import { useImageManagement } from '../image-library/hooks/useImageManagement';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { ImageLibrarySelector } from './ImageLibrarySelector';
 import { fixStuckImages } from '@/utils/fixStuckImages';
+import { AuthDebugPanel } from '@/components/debug/AuthDebugPanel';
 
 interface JigsawPuzzle {
   id: string;
@@ -212,44 +213,88 @@ export const JigsawPuzzleManager: React.FC = () => {
         return;
       }
 
-      // Get the Supabase profile UUID using Clerk user ID
+      // Enhanced profile lookup with comprehensive error handling and retries
       if (!userProfile?.id) {
-        console.error('No user profile available from Clerk auth');
+        console.error('❌ No user profile available from Clerk auth hook');
         toast({
-          title: "Error", 
-          description: "User profile not available. Please refresh the page and try again.",
+          title: "Authentication Error",
+          description: "User profile not found in Clerk auth. Please refresh and try again.",
           variant: "destructive"
         });
         return;
       }
 
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('clerk_user_id', userProfile.id)
-        .maybeSingle();
+      console.log('🔍 Starting enhanced profile lookup for Clerk user:', userProfile.id);
 
-      if (profileError) {
-        console.error('Profile query error:', profileError);
-        toast({
-          title: "Error",
-          description: "Could not query user profile. Please ensure you're logged in properly.",
-          variant: "destructive"
-        });
-        return;
+      // Retry logic for profile lookup
+      let profileData = null;
+      let attempts = 0;
+      const maxAttempts = 3;
+
+      while (attempts < maxAttempts && !profileData) {
+        attempts++;
+        console.log(`📡 Profile lookup attempt ${attempts}/${maxAttempts}`);
+
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('id, role, username, email')
+            .eq('clerk_user_id', userProfile.id)
+            .maybeSingle();
+
+          if (error) {
+            console.error(`❌ Profile query error (attempt ${attempts}):`, error);
+            if (attempts === maxAttempts) {
+              toast({
+                title: "Database Error",
+                description: `Could not query user profile: ${error.message}`,
+                variant: "destructive"
+              });
+              return;
+            }
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            continue;
+          }
+
+          if (data) {
+            profileData = data;
+            console.log('✅ Profile found successfully:', {
+              profileUUID: data.id,
+              clerkUserId: userProfile.id,
+              role: data.role,
+              attempt: attempts
+            });
+            break;
+          }
+
+          console.warn(`⚠️ No profile data returned (attempt ${attempts})`);
+          
+          if (attempts === maxAttempts) {
+            console.error('❌ No profile found after all attempts for Clerk user:', userProfile.id);
+            toast({
+              title: "Profile Not Found", 
+              description: "Could not find your profile in the database. Please contact support.",
+              variant: "destructive"
+            });
+            return;
+          }
+
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (err) {
+          console.error(`❌ Profile lookup exception (attempt ${attempts}):`, err);
+          if (attempts === maxAttempts) {
+            toast({
+              title: "System Error",
+              description: "An unexpected error occurred. Please try again.",
+              variant: "destructive"
+            });
+            return;
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
-
-      if (!profileData) {
-        console.error('No profile found for Clerk user ID:', userProfile.id);
-        toast({
-          title: "Error", 
-          description: "Could not find user profile. Please contact admin.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      console.log('Found Supabase profile UUID:', profileData.id);
 
       // Auto-determine difficulty based on piece count
       const getDifficultyFromPieceCount = (pieces: number): string => {
@@ -271,7 +316,7 @@ export const JigsawPuzzleManager: React.FC = () => {
         is_free: formData.is_free,
         status: formData.status,
         tags: formData.tags || [],
-        created_by: profileData.id, // Use Supabase profile UUID
+        created_by: profileData!.id, // Use Supabase profile UUID (guaranteed to exist at this point)
         metadata: {
           product_value: formData.product_value,
           release_threshold: formData.release_threshold
@@ -960,6 +1005,9 @@ export const JigsawPuzzleManager: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Debug Panel - Only visible in development */}
+      {process.env.NODE_ENV === 'development' && <AuthDebugPanel />}
     </div>
   );
 };

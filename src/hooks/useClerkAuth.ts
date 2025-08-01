@@ -30,7 +30,8 @@ export const useClerkAuth = () => {
     isSignedIn,
     isLoaded,
     userId: user?.id,
-    userEmail
+    userEmail,
+    timestamp: new Date().toISOString()
   });
 
   // Get role from Clerk metadata (secure - no hardcoded emails)
@@ -126,7 +127,11 @@ export const useClerkAuth = () => {
     userRole,
     isAdmin,
     hasProfile: !!profile,
-    authSource: 'clerk_only'
+    profileId: profile?.id,
+    clerkUserId: user?.id,
+    authSource: 'clerk_only',
+    timestamp: new Date().toISOString(),
+    metadataRole: user?.publicMetadata?.role
   });
 
   return {
