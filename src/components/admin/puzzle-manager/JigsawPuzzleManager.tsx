@@ -212,7 +212,7 @@ export const JigsawPuzzleManager: React.FC = () => {
         return;
       }
 
-      // Use the profile from Clerk auth hook (it has the correct ID)
+      // Get the Supabase profile UUID using Clerk user ID
       if (!userProfile?.id) {
         console.error('No user profile available from Clerk auth');
         toast({
@@ -223,7 +223,33 @@ export const JigsawPuzzleManager: React.FC = () => {
         return;
       }
 
-      console.log('Using profile from Clerk auth:', userProfile.id);
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('clerk_user_id', userProfile.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Profile query error:', profileError);
+        toast({
+          title: "Error",
+          description: "Could not query user profile. Please ensure you're logged in properly.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!profileData) {
+        console.error('No profile found for Clerk user ID:', userProfile.id);
+        toast({
+          title: "Error", 
+          description: "Could not find user profile. Please contact admin.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('Found Supabase profile UUID:', profileData.id);
 
       // Auto-determine difficulty based on piece count
       const getDifficultyFromPieceCount = (pieces: number): string => {
@@ -245,7 +271,7 @@ export const JigsawPuzzleManager: React.FC = () => {
         is_free: formData.is_free,
         status: formData.status,
         tags: formData.tags || [],
-        created_by: userProfile.id, // Use profile UUID from Clerk auth
+        created_by: profileData.id, // Use Supabase profile UUID
         metadata: {
           product_value: formData.product_value,
           release_threshold: formData.release_threshold
