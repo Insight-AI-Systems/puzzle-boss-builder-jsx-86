@@ -64,7 +64,7 @@ export const Navbar: React.FC = () => {
                         ? 'text-puzzle-aqua border-b-2 border-puzzle-aqua'
                         : 'text-puzzle-white hover:text-puzzle-aqua'
                     }`}
-                    title="Member Profile"
+                    title="Profile"
                   >
                     <User className="h-4 w-4" />
                     <span>Profile</span>

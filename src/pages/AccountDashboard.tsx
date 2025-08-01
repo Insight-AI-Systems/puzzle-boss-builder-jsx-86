@@ -12,6 +12,14 @@ const AccountDashboard: React.FC = () => {
   const { profile, isLoading, currentUserId } = useUserProfile();
   const { userRole, isAdmin } = useClerkAuth();
 
+  // Debug logging
+  console.log('🏠 AccountDashboard Debug:', {
+    userRole,
+    isAdmin,
+    profileRole: profile?.role,
+    profile
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-puzzle-black p-6 flex items-center justify-center">

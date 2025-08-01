@@ -12,11 +12,14 @@ import ProfileFinancialTab from '@/components/profile/tabs/ProfileFinancialTab';
 import { ProfileGameHistoryTab } from '@/components/profile/tabs/ProfileGameHistoryTab';
 import { SecuritySettings } from '@/components/profile/SecuritySettings';
 import { useMemberProfile } from '@/hooks/useMemberProfile';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { Badge } from '@/components/ui/badge';
 import { Loader2, User, Phone, MapPin, Settings, CreditCard, Receipt, DollarSign, Gamepad2, Shield, AlertCircle } from 'lucide-react';
 
 const Profile: React.FC = () => {
   const { profile, isLoading: isLoadingMemberProfile, isAdmin, updateProfile, upsertAddress, deleteAddress, acceptTerms } = useMemberProfile();
+  const { userRole, isAdmin: isClerkAdmin } = useClerkAuth();
   const { isLoading: isLoadingUserProfile } = useUserProfile();
   const [activeTab, setActiveTab] = useState('personal');
   
@@ -81,13 +84,24 @@ const Profile: React.FC = () => {
           {/* Header */}
           <div className="flex justify-between items-center border-b border-puzzle-aqua/20 pb-6">
             <div>
-              <h1 className="text-3xl font-game text-puzzle-aqua">Member Profile</h1>
+              <div className="flex items-center gap-4">
+                <h1 className="text-3xl font-game text-puzzle-aqua">
+                  {isClerkAdmin ? 'Admin Profile' : 'Member Profile'}
+                </h1>
+                {isClerkAdmin && (
+                  <Badge className="bg-puzzle-gold text-puzzle-black font-semibold">
+                    {userRole === 'super_admin' || userRole === 'super-admin' ? 'Super Admin' : 'Admin'}
+                  </Badge>
+                )}
+              </div>
               <p className="text-puzzle-white/70 mt-2">
-                Comprehensive member relationship management
+                Comprehensive {isClerkAdmin ? 'admin' : 'member'} relationship management
               </p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-puzzle-white/60">Member</p>
+              <p className="text-sm text-puzzle-white/60">
+                {isClerkAdmin ? (userRole === 'super_admin' || userRole === 'super-admin' ? 'Super Admin' : 'Admin') : 'Member'}
+              </p>
               <p className="text-puzzle-aqua font-medium text-lg">{getDisplayName()}</p>
               <p className="text-sm text-puzzle-white/60 mt-1">Credits: {profile.credits || 0}</p>
             </div>
