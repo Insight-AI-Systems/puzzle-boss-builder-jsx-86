@@ -46,3 +46,6 @@ verify_jwt = false
 
 [functions.admin-puzzle-files]
 verify_jwt = false
+
+[functions.process-puzzle-image]
+verify_jwt = false

@@ -29,7 +29,7 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
         console.log('File path:', filePath);
         
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('original_images')
+          .from('Original Product Images')
           .upload(filePath, file, {
             upsert: false,
             cacheControl: '3600'
@@ -43,7 +43,7 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
         console.log('File uploaded successfully, getting URL');
 
         const { data: urlData } = supabase.storage
-          .from('original_images')
+          .from('Original Product Images')
           .getPublicUrl(filePath);
           
         console.log('Public URL obtained:', urlData.publicUrl);
@@ -68,7 +68,7 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
         console.log('Product image record created:', productImageData.id);
 
         console.log('Creating image file record');
-        const { error: fileRecordError } = await supabase
+        const { data: fileRecordData, error: fileRecordError } = await supabase
           .from('image_files')
           .insert({
             product_image_id: productImageData.id,
@@ -77,14 +77,30 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
             original_height: null,
             original_size: file.size,
             processing_status: 'pending'
-          });
+          })
+          .select()
+          .single();
 
         if (fileRecordError) {
           console.error('Image file record error:', fileRecordError);
           throw fileRecordError;
         }
         
-        console.log('Image file record created successfully');
+        console.log('Image file record created successfully:', fileRecordData.id);
+
+        // Trigger image processing
+        console.log('Triggering image processing...');
+        const { data: processResult, error: processError } = await supabase.functions
+          .invoke('process-puzzle-image', {
+            body: { imageFileId: fileRecordData.id }
+          });
+
+        if (processError) {
+          console.error('Image processing error:', processError);
+          // Don't throw here - the image is uploaded, processing can be retried
+        } else {
+          console.log('Image processing completed:', processResult);
+        }
       }
 
       toast({
