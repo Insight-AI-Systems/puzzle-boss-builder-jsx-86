@@ -3,14 +3,14 @@
  * Centralized security settings and environment variables
  */
 
-// Environment variables - NO HARDCODED VALUES FOR SECURITY
+// Lovable project configuration - hardcoded for deployment
 export const SECURITY_CONFIG = {
-  // Supabase Configuration - MUST be set in environment
-  SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || "",
-  SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY || "",
+  // Supabase Configuration - Lovable project values
+  SUPABASE_URL: "https://vcacfysfjgoahledqdwa.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjYWNmeXNmamdvYWhsZWRxZHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0MDI3MDgsImV4cCI6MjA1OTk3ODcwOH0.sSWBAAsoofM3b-aLNseRtXhNulg6kaGqXTcXRVd_IWo",
   
   // Clerk Configuration
-  CLERK_PUBLISHABLE_KEY: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "",
+  CLERK_PUBLISHABLE_KEY: "pk_test_ZmFjdHVhbC1kYW5lLTQ5LmNsZXJrLmFjY291bnRzLmRldiQ",
   
   // Security Headers
   CONTENT_SECURITY_POLICY: {
@@ -52,25 +52,25 @@ export const SECURITY_CONFIG = {
   }
 };
 
-// Validate required environment variables
+// Validate required configuration values
 export const validateEnvironment = (): string[] => {
   const errors: string[] = [];
   
   if (!SECURITY_CONFIG.SUPABASE_URL) {
-    errors.push('VITE_SUPABASE_URL is required - set in environment variables');
+    errors.push('SUPABASE_URL is required in security configuration');
   }
   
   if (!SECURITY_CONFIG.SUPABASE_ANON_KEY) {
-    errors.push('VITE_SUPABASE_ANON_KEY is required - set in environment variables');
+    errors.push('SUPABASE_ANON_KEY is required in security configuration');
   }
   
   if (!SECURITY_CONFIG.CLERK_PUBLISHABLE_KEY) {
-    errors.push('VITE_CLERK_PUBLISHABLE_KEY is required - set in environment variables');
+    errors.push('CLERK_PUBLISHABLE_KEY is required in security configuration');
   }
   
   if (errors.length > 0) {
     console.error('❌ Security Configuration Errors:', errors);
-    throw new Error('Missing required environment variables. Check console for details.');
+    throw new Error('Missing required configuration values. Check console for details.');
   }
   
   return errors;

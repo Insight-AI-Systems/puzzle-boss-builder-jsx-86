@@ -44,11 +44,13 @@ import {
 // Import jigsaw game
 import JigsawGamePage from '@/pages/JigsawGamePage';
 
-// Your Clerk publishable key
-const PUBLISHABLE_KEY = "pk_test_ZmFjdHVhbC1kYW5lLTQ5LmNsZXJrLmFjY291bnRzLmRldiQ";
+import { SECURITY_CONFIG } from '@/config/security';
+
+// Use centralized security configuration
+const PUBLISHABLE_KEY = SECURITY_CONFIG.CLERK_PUBLISHABLE_KEY;
 
 if (!PUBLISHABLE_KEY) {
-  throw new Error("Missing Clerk Publishable Key - please add your key to src/App.tsx");
+  throw new Error("Missing Clerk Publishable Key - check security configuration");
 }
 
 // Create single query client instance
