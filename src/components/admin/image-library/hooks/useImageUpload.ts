@@ -25,6 +25,15 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
     try {
       console.log('Starting upload process for', files.length, 'files');
       console.log('User object:', user);
+      
+      // Get Supabase user for database operations
+      const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+      console.log('Supabase user:', supabaseUser);
+      
+      if (!supabaseUser) {
+        throw new Error('No Supabase user found');
+      }
+      
       for (const file of files) {
         console.error('=== UPLOAD DEBUG START ===');
         console.log('Starting complete processing for file:', file.name, 'Size:', file.size, 'Type:', file.type);
@@ -85,7 +94,7 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
         
         console.log('All files uploaded successfully');
 
-        // Create product image record
+        // Create product image record using Supabase user ID
         const { data: productImageData, error: productImageError } = await supabase
           .from('product_images')
           .insert({
@@ -97,7 +106,7 @@ export const useImageUpload = (user: User | null, onUploadComplete: () => void) 
               height: processedData.dimensions.height
             },
             status: 'active',
-            created_by: user.id
+            created_by: supabaseUser.id
           })
           .select()
           .single();
