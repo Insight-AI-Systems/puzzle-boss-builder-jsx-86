@@ -184,7 +184,6 @@ export const JigsawPuzzleManager: React.FC = () => {
         is_free: formData.is_free,
         status: formData.status,
         tags: formData.tags || [],
-        image_url: formData.image_url,
         created_by: user?.id,
       };
 
@@ -216,9 +215,10 @@ export const JigsawPuzzleManager: React.FC = () => {
       });
     } catch (error) {
       console.error('Error creating puzzle:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: "Error",
-        description: "Failed to create puzzle",
+        description: `Failed to create puzzle: ${errorMessage}`,
         variant: "destructive"
       });
     }
