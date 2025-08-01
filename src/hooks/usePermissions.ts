@@ -4,9 +4,9 @@ export function usePermissions() {
   const { hasRole, isAdmin, userRole } = useClerkAuth();
 
   const hasPermission = (permission: string): boolean => {
-    // Super admins have all permissions
+    // Super admins have all permissions - handle both formats
     console.log(`🔍 hasPermission check: ${permission}, userRole: ${userRole}`);
-    if (userRole === 'super_admin') {
+    if (userRole === 'super_admin' || userRole === 'super-admin') {
       console.log(`✅ Super admin granted permission: ${permission}`);
       return true;
     }
@@ -14,6 +14,7 @@ export function usePermissions() {
     // Define basic permissions based on roles
     const rolePermissions: Record<string, string[]> = {
       'super_admin': ['*'], // All permissions
+      'super-admin': ['*'], // All permissions (hyphen format)
       'admin': ['manage_users', 'manage_roles', 'manage_puzzles', 'view_analytics'],
       'category_manager': ['manage_categories', 'manage_puzzles'],
       'social_media_manager': ['manage_content', 'manage_marketing'],
@@ -43,13 +44,13 @@ export function usePermissions() {
   };
 
   const canAccessAdminDashboard = (): boolean => {
-    const adminRoles = ['super_admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
+    const adminRoles = ['super_admin', 'super-admin', 'admin', 'category_manager', 'social_media_manager', 'partner_manager', 'cfo'];
     return adminRoles.includes(userRole);
   };
 
   const canAssignRole = (targetRole: string): boolean => {
-    // Super admins can assign any role
-    if (hasRole('super_admin')) return true;
+    // Super admins can assign any role - handle both formats
+    if (hasRole('super_admin') || hasRole('super-admin')) return true;
     
     // Admins can assign non-admin roles
     if (hasRole('admin') && !['super_admin', 'admin'].includes(targetRole)) return true;

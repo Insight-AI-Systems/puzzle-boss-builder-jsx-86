@@ -12,9 +12,13 @@ interface ImageGridProps {
 }
 
 export const ImageGrid: React.FC<ImageGridProps> = ({ images, onImageDelete, onImageStatusToggle }) => {
+  console.log('🖼️ ImageGrid rendering with', images.length, 'images');
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {images.map((image) => (
+      {images.map((image) => {
+        console.log('🎴 Rendering image card:', image.name);
+        return (
         <Card key={image.id} className="overflow-hidden">
           <div className="relative h-48 bg-muted">
             {image.imageUrl ? (
@@ -63,7 +67,8 @@ export const ImageGrid: React.FC<ImageGridProps> = ({ images, onImageDelete, onI
             )}
           </CardContent>
         </Card>
-      ))}
+        );
+      })}
     </div>
   );
 };
