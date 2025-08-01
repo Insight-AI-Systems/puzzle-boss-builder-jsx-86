@@ -16,7 +16,7 @@ import {
   Search,
   Filter
 } from 'lucide-react';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Communication {
   id: string;
@@ -49,7 +49,7 @@ export function CommunicationsCenter({ partnerId }: CommunicationsCenterProps) {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
 
   const handleSendCommunication = async () => {
     if (!newCommunication.subject || !newCommunication.content) return;

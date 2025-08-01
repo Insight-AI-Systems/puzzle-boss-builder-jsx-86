@@ -3,10 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Settings as SettingsIcon, User, Shield, Bell } from 'lucide-react';
 import { SecuritySettings } from '@/components/profile/SecuritySettings';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Settings = () => {
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
 
   if (!user) {
     return (

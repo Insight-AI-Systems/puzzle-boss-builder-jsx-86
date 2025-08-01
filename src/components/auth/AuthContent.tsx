@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
-import { useSignIn, useSignUp } from '@clerk/clerk-react';
+import { useAuth } from '@/contexts/AuthContext';
+// Removed Clerk imports
 import { useNavigate } from 'react-router-dom';
 
 export const AuthContent = () => {
@@ -17,9 +17,8 @@ export const AuthContent = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const { isLoading: authLoading } = useClerkAuth();
-  const { signIn } = useSignIn();
-  const { signUp } = useSignUp();
+  const { isLoading: authLoading } = useAuth();
+  // These would come from Supabase auth hooks
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,31 +32,13 @@ export const AuthContent = () => {
           throw new Error('Passwords do not match');
         }
         
-        if (!signUp) {
-          throw new Error('Sign up not available');
-        }
-
-        const result = await signUp.create({
-          emailAddress: email,
-          password,
-        });
-
-        if (result.status === 'complete') {
-          navigate('/');
-        }
+        // TODO: Implement Supabase sign up
+        console.log('Sign up functionality needs to be implemented with Supabase');
+        navigate('/');
       } else {
-        if (!signIn) {
-          throw new Error('Sign in not available');
-        }
-
-        const result = await signIn.create({
-          identifier: email,
-          password,
-        });
-
-        if (result.status === 'complete') {
-          navigate('/');
-        }
+        // TODO: Implement Supabase sign in  
+        console.log('Sign in functionality needs to be implemented with Supabase');
+        navigate('/');
       }
     } catch (err: any) {
       setError(err.message || 'Authentication failed');

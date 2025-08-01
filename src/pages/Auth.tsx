@@ -1,13 +1,13 @@
 
 import React, { useEffect } from 'react';
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
-import { useUser } from '@clerk/clerk-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 const Auth = () => {
-  const { isSignedIn, isLoaded } = useUser();
+  const { isAuthenticated, isLoading } = useAuth();
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const { toast } = useToast();
@@ -16,7 +16,7 @@ const Auth = () => {
   const from = location.state?.from?.pathname || '/';
   
   // Show loading state
-  if (!isLoaded) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-puzzle-black flex items-center justify-center p-4">
         <Loader2 className="h-8 w-8 text-puzzle-aqua animate-spin" />
@@ -25,7 +25,7 @@ const Auth = () => {
   }
 
   // Redirect if already authenticated
-  if (isSignedIn) {
+  if (isAuthenticated) {
     return <Navigate to={from} replace />;
   }
 

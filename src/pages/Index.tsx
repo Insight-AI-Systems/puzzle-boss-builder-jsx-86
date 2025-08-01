@@ -10,10 +10,10 @@ import { FeaturedPuzzles } from '@/components/home/FeaturedPuzzles';
 import { CompetitionHighlights } from '@/components/home/CompetitionHighlights';
 import { Testimonials } from '@/components/home/Testimonials';
 import { NewsletterSignup } from '@/components/home/NewsletterSignup';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
-  const { isAuthenticated } = useClerkAuth();
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="bg-puzzle-black min-h-screen">

@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Timer, Play, Pause, RotateCcw, Eye, Zap } from 'lucide-react';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface WordSearchControlsProps {
   timeElapsed: number;
@@ -28,7 +28,7 @@ export function WordSearchControls({
   hintsUsed,
   isGameComplete
 }: WordSearchControlsProps) {
-  const { hasRole } = useClerkAuth();
+  const { hasRole } = useAuth();
   const isAdmin = hasRole('admin') || hasRole('super_admin');
 
   const formatTime = (seconds: number) => {

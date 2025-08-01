@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MessageSquare, HelpCircle, Ticket } from 'lucide-react';
 import { SupportHome } from '@/components/support/SupportHome';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Support = () => {
-  const { isAuthenticated } = useClerkAuth();
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="container mx-auto px-4 py-8">

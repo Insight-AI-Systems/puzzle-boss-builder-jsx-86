@@ -13,7 +13,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { usePaymentSystem } from '@/hooks/usePaymentSystem';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { GameTransaction } from '@/types/payments';
 
@@ -40,7 +40,7 @@ export function WalletManager() {
   const [transactions, setTransactions] = useState<GameTransaction[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [wallet, setWallet] = useState({ balance: 0, currency: 'USD' });
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
   const { processPayment, isProcessing } = usePaymentSystem();
 
   useEffect(() => {

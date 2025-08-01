@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Puzzle, ArrowRight, Home } from 'lucide-react';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,7 +20,7 @@ interface PaymentSession {
 export default function PuzzlePaymentSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [paymentSession, setPaymentSession] = useState<PaymentSession | null>(null);
   const [loading, setLoading] = useState(true);

@@ -4,13 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, User, Star, Trophy, Clock, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const AccountDashboard: React.FC = () => {
   const { profile, isLoading, currentUserId } = useUserProfile();
-  const { userRole, isAdmin } = useClerkAuth();
+  const { userRole, isAdmin } = useAuth();
 
   // Debug logging
   console.log('🏠 AccountDashboard Debug:', {

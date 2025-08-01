@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types/userTypes';
 import { Loader2 } from 'lucide-react';
 
@@ -14,19 +14,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requiredRoles = [] 
 }) => {
-  const { isAuthenticated, isLoading, hasRole, rolesLoaded } = useClerkAuth();
+  const { isAuthenticated, isLoading, hasRole } = useAuth();
   
   // Enhanced debugging to see why routes aren't rendering
   useEffect(() => {
     console.log('ProtectedRoute mounted - Debug:', {
       isAuthenticated,
       isLoading,
-      rolesLoaded,
       requiredRoles
     });
-  }, [isAuthenticated, isLoading, rolesLoaded, requiredRoles]);
+  }, [isAuthenticated, isLoading, requiredRoles]);
 
-  if (isLoading || !rolesLoaded) {
+  if (isLoading) {
     console.log('ProtectedRoute - Still loading auth state');
     return (
       <div className="flex h-screen w-full items-center justify-center">

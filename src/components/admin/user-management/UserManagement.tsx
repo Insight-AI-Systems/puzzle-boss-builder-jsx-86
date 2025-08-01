@@ -3,7 +3,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminProfiles } from '@/hooks/useAdminProfiles';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useRealTimeUserUpdates } from '@/hooks/admin/useRealTimeUserUpdates';
 import { UserRole } from '@/types/userTypes';
@@ -14,7 +14,7 @@ import { AdminUserStats } from './AdminUserStats';
 import { useAdminUserManagement } from '@/hooks/admin/useAdminUserManagement';
 
 export const UserManagement: React.FC = () => {
-  const { profile, userRole, isAdmin } = useClerkAuth();
+  const { profile, userRole, isAdmin } = useAuth();
   const { canManageUsers } = usePermissions();
   
   // Enable real-time updates

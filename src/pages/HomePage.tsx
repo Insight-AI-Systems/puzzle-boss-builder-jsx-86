@@ -11,7 +11,7 @@ import ConceptSection from '@/components/ConceptSection';
 import RegistrationCTA from '@/components/RegistrationCTA';
 import { Link } from 'react-router-dom';
 import { PageDebugger } from '@/components/debug/PageDebugger';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 function HomePage() {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ function HomePage() {
   const confirmedAdmin = useRef<boolean | null>(null);
   const [hasProcessedRedirect, setHasProcessedRedirect] = useState<boolean>(false);
   
-  const { isAuthenticated, isLoading, userRole } = useClerkAuth();
+  const { isAuthenticated, isLoading, userRole } = useAuth();
   
   console.log("HomePage rendering", { 
     userRole,

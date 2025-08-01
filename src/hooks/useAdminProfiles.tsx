@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types/userTypes';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@clerk/clerk-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Define the return type for the hook
 interface AdminProfilesData {
@@ -17,7 +17,7 @@ interface AdminProfilesData {
 export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user } = useUser();
+  const { user } = useAuth();
 
   const query = useQuery({
     queryKey: ['admin-all-users'],

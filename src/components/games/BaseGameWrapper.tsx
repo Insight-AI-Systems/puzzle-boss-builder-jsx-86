@@ -12,7 +12,7 @@ import { useGameSounds } from './hooks/useGameSounds';
 import { GameConfig, GameHooks, GameResult } from './types/GameTypes';
 import { GameCongratulationsScreen } from './components/GameCongratulationsScreen';
 import { useToast } from '@/hooks/use-toast';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface GameStateProps {
   gameState: string;
@@ -35,7 +35,7 @@ interface BaseGameWrapperProps {
 }
 
 export function BaseGameWrapper({ config, hooks, children, className = '' }: BaseGameWrapperProps) {
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);

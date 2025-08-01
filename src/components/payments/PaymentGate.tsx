@@ -14,7 +14,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { usePaymentSystem } from '@/hooks/usePaymentSystem';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useMemberProfile } from '@/hooks/useMemberProfile';
 import { CreditBalanceDisplay } from '@/components/games/CreditBalanceDisplay';
 
@@ -37,7 +37,7 @@ export function PaymentGate({
 }: PaymentGateProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
   const { profile } = useMemberProfile();
   const { processPayment, isProcessing: paymentProcessing } = usePaymentSystem();
 

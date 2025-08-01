@@ -147,7 +147,7 @@ export function useSessionManagement() {
       // Call the database function to terminate other sessions
       const { error: rpcError } = await supabase.rpc(
         'terminate_other_sessions',
-        { user_id: user.id }
+        { current_session_id: user.id }
       );
       
       if (rpcError) {

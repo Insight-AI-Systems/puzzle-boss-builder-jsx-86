@@ -14,7 +14,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import { usePaymentSystem } from '@/hooks/usePaymentSystem';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function PaymentTestHelper() {
   const [testGameId, setTestGameId] = useState('test-game-123');
@@ -22,7 +22,7 @@ export function PaymentTestHelper() {
   const [testResults, setTestResults] = useState<any[]>([]);
   const [isRunningTests, setIsRunningTests] = useState(false);
   
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
   const { processPayment, isProcessing } = usePaymentSystem();
 
   const addTestResult = (test: string, success: boolean, message: string, data?: any) => {

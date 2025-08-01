@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, RefreshCw, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
@@ -15,7 +15,7 @@ interface ProfileLookupResult {
 }
 
 export const AuthDebugPanel: React.FC = () => {
-  const { user, profile, isLoading, isAdmin, userRole } = useClerkAuth();
+  const { user, profile, isLoading, isAdmin, userRole } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [profileTest, setProfileTest] = useState<ProfileLookupResult | null>(null);
   const [isTestingProfile, setIsTestingProfile] = useState(false);
@@ -28,7 +28,7 @@ export const AuthDebugPanel: React.FC = () => {
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('clerk_user_id', user.id)
+        .eq('id', user.id)
         .maybeSingle();
 
       setProfileTest({

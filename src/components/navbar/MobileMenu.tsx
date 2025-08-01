@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronDown, Search, Grid3X3, Brain, Zap, Square, BookOpen, Puzzle, User } from 'lucide-react';
 import { MainNavItem, gameItems } from './NavbarData';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import GamesDropdown from './GamesDropdown';
 
 interface MobileMenuProps {
@@ -15,7 +15,7 @@ interface MobileMenuProps {
 
 const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, navItems, isLoggedIn, onClose }) => {
   const { profile } = useUserProfile();
-  const { hasRole, isAdmin } = useClerkAuth();
+  const { hasRole, isAdmin } = useAuth();
 
   if (!isOpen) return null;
 

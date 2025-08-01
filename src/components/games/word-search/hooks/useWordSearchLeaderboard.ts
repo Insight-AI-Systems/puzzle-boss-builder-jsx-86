@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 export interface WordSearchLeaderboardEntry {
@@ -34,7 +34,7 @@ export function useWordSearchLeaderboard() {
   const [leaderboard, setLeaderboard] = useState<WordSearchLeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [userRank, setUserRank] = useState<number | null>(null);
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const fetchLeaderboard = useCallback(async (limit: number = 10) => {

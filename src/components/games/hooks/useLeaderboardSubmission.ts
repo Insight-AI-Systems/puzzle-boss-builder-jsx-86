@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 interface GameResult {
@@ -13,7 +13,7 @@ interface GameResult {
 }
 
 export function useLeaderboardSubmission() {
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 

@@ -2,12 +2,12 @@
 import { useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useClerkAuth } from "@/hooks/useClerkAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { mapFrontendStatusToDb, DbStatus } from "@/utils/support/mappings";
 
 export const useTicketStatus = (onStatusUpdated: () => void) => {
   const { toast } = useToast();
-  const { user, hasRole } = useClerkAuth();
+  const { user, hasRole } = useAuth();
   const isAdmin = hasRole('super_admin') || hasRole('admin');
 
   const updateTicketStatus = useCallback(async (ticketId: string, newStatus: string): Promise<boolean> => {

@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 interface PaymentVerificationResult {
@@ -10,7 +10,7 @@ interface PaymentVerificationResult {
 }
 
 export function usePaymentVerification() {
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isVerifying, setIsVerifying] = useState(false);
 

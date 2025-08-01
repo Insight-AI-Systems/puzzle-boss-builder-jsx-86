@@ -1,6 +1,6 @@
 
 import React, { ReactNode, useEffect } from 'react';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { UserRole } from '@/types/userTypes';
 
@@ -22,7 +22,7 @@ export const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
   requireAllPermissions = false,
   fallback = null,
 }) => {
-  const { user, hasRole, isAdmin } = useClerkAuth();
+  const { user, hasRole, isAdmin } = useAuth();
   const { hasAllPermissions, hasAnyPermission } = usePermissions();
 
   // Add enhanced debugging

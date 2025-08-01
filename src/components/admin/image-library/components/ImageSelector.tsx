@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Image } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useClerkAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { ProductImage } from '../types';
 
 interface ImageSelectorProps {
@@ -17,7 +17,7 @@ export const ImageSelector: React.FC<ImageSelectorProps> = ({ isOpen, onClose, o
   const [images, setImages] = useState<ProductImage[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
 
   const loadImages = async () => {
     if (!user) return;
