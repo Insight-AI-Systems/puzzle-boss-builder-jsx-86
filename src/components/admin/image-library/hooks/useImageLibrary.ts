@@ -56,8 +56,8 @@ export const useImageLibrary = () => {
         // Choose the best available image URL - use original if processing failed
         let imageUrl = '';
         if (imageFile?.original_path) {
-          // Use the correct bucket name from storage configuration
-          const bucketName = 'original_images'; // This should match the actual bucket name
+          // Use the actual bucket name from Supabase configuration
+          const bucketName = 'original_images'; // This should match the bucket ID, not display name
           const imagePath = imageFile.original_path;
           imageUrl = `https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/${bucketName}/${imagePath}`;
         }
