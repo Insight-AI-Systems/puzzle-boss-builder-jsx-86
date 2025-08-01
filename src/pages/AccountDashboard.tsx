@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { Loader2, User, Star, Trophy, Clock, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const AccountDashboard: React.FC = () => {
   const { profile, isLoading, currentUserId } = useUserProfile();
+  const { userRole, isAdmin } = useClerkAuth();
 
   if (isLoading) {
     return (
@@ -36,7 +38,7 @@ const AccountDashboard: React.FC = () => {
   const displayProfile = {
     display_name: profile.display_name || profile.username || 'Anonymous User',
     email: profile.email || '',
-    role: profile.role || 'player',
+    role: userRole || 'player', // Use actual role from Clerk
     country: '',
     categories_played: [],
     credits: 0,
@@ -52,10 +54,16 @@ const AccountDashboard: React.FC = () => {
     <div className="min-h-screen bg-puzzle-black text-white">
       <div className="container mx-auto p-6">
         <div className="max-w-6xl mx-auto space-y-8">
-          {/* Header */}
           <div className="flex justify-between items-center border-b border-puzzle-aqua/20 pb-6">
             <div>
-              <h1 className="text-3xl font-game text-puzzle-aqua">Account Dashboard</h1>
+              <div className="flex items-center gap-4">
+                <h1 className="text-3xl font-game text-puzzle-aqua">Account Dashboard</h1>
+                {isAdmin && (
+                  <Badge className="bg-puzzle-gold text-puzzle-black font-semibold">
+                    {userRole === 'super_admin' || userRole === 'super-admin' ? 'Super Admin' : 'Admin'}
+                  </Badge>
+                )}
+              </div>
               <p className="text-puzzle-white/70 mt-2">
                 Welcome back, {displayProfile.display_name}
               </p>
