@@ -49,7 +49,10 @@ export function getTabDefinitions(): TabDefinition[] {
       id: "puzzles",
       name: "Puzzles",
       icon: Puzzle,
-      component: PuzzleEngineFileManager,
+      component: () => {
+        console.log('🧩 Puzzles tab component rendering...');
+        return React.createElement(PuzzleEngineFileManager);
+      },
       roles: ["super_admin", "admin", "category_manager"]
     },
     {

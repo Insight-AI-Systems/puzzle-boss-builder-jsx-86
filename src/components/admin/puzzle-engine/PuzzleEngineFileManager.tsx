@@ -19,6 +19,7 @@ interface PuzzleFile {
 }
 
 export const PuzzleEngineFileManager: React.FC = () => {
+  console.log('🧩 PuzzleEngineFileManager component rendering...');
   const [files, setFiles] = useState<PuzzleFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -30,10 +31,12 @@ export const PuzzleEngineFileManager: React.FC = () => {
 
   // Load existing files
   useEffect(() => {
+    console.log('🧩 PuzzleEngineFileManager useEffect - loading files...');
     loadFiles();
   }, []);
 
   const loadFiles = async () => {
+    console.log('🧩 Loading puzzle files...');
     try {
       const { data, error } = await supabase.functions.invoke('admin-puzzle-files');
 
@@ -248,12 +251,15 @@ export const PuzzleEngineFileManager: React.FC = () => {
   };
 
   if (loading) {
+    console.log('🧩 PuzzleEngineFileManager showing loading state...');
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-puzzle-aqua" />
       </div>
     );
   }
+
+  console.log('🧩 PuzzleEngineFileManager rendering main content...', { filesCount: files.length });
 
   return (
     <div className="space-y-6">

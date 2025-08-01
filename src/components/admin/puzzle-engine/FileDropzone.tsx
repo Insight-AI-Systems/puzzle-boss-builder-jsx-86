@@ -73,6 +73,8 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ onFilesReady, disabled }) =
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  console.log('🧩 FileDropzone rendering...');
+
   return (
     <div className="space-y-4">
       <div
