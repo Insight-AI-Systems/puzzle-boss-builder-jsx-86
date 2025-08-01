@@ -178,6 +178,18 @@ export const JigsawPuzzleManager: React.FC = () => {
         return;
       }
 
+      // Get current user's profile to get the UUID
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user?.id)
+        .single();
+
+      if (profileError) {
+        console.error('Profile error:', profileError);
+        // Fall back to null if profile not found
+      }
+
       // Prepare the data with required fields
       const puzzleData = {
         title: formData.title.trim(),
@@ -190,7 +202,7 @@ export const JigsawPuzzleManager: React.FC = () => {
         is_free: formData.is_free,
         status: formData.status,
         tags: formData.tags || [],
-        created_by: user?.id,
+        created_by: profileData?.id || null, // Use profile UUID instead of Clerk ID
       };
 
       console.log('Creating puzzle with data:', puzzleData);
@@ -528,7 +540,7 @@ export const JigsawPuzzleManager: React.FC = () => {
                         <div className="flex items-start gap-4">
                           <div className="flex-shrink-0">
                             <img 
-                              src={formData.selected_image_data.url || formData.image_url}
+                              src={`https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/Original Product Images/${formData.selected_image_data.image_files?.[0]?.original_path || 'placeholder.jpg'}`}
                               alt={formData.image_name}
                               className="w-24 h-24 object-cover rounded border shadow-sm"
                               onError={(e) => {
