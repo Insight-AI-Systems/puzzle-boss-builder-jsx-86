@@ -149,8 +149,10 @@ export const JigsawPuzzleManager: React.FC = () => {
 
       if (error) throw error;
 
+      // Just add the new puzzle to the existing list instead of reloading everything
       setPuzzles([data as JigsawPuzzle, ...puzzles]);
       setShowCreateForm(false);
+      setSelectedImageId('');
       resetForm();
       
       toast({
