@@ -31,9 +31,9 @@ serve(async (req) => {
     const { data, error } = await supabase
       .from('site_content')
       .select('content')
-      .eq('content_type', 'puzzle_engine_js')
+      .eq('section_id', 'puzzle_engine')
       .eq('page_id', filename)
-      .eq('is_active', true)
+      .eq('status', 'published')
       .single()
 
     if (error || !data) {

@@ -20,7 +20,7 @@ serve(async (req) => {
       const { data, error } = await supabase
         .from('site_content')
         .select('id, page_id, content, created_at, updated_at')
-        .eq('content_type', 'puzzle_engine_js')
+        .eq('section_id', 'puzzle_engine')
         .order('page_id')
 
       if (error) throw error
@@ -51,9 +51,8 @@ serve(async (req) => {
         const filesToUpload = files.map((file: any) => ({
           page_id: file.filename,
           section_id: 'puzzle_engine',
-          content_type: 'puzzle_engine_js',
           content: file.content,
-          is_active: true
+          status: 'published'
         }))
 
         const { error } = await supabase
@@ -77,9 +76,8 @@ serve(async (req) => {
           .upsert({
             page_id: filename,
             section_id: 'puzzle_engine',
-            content_type: 'puzzle_engine_js',
             content: content,
-            is_active: true
+            status: 'published'
           })
 
         if (error) throw error
