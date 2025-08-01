@@ -47,12 +47,9 @@ export function getTabDefinitions(): TabDefinition[] {
     },
     {
       id: "puzzles",
-      name: "Puzzles",
+      name: "Puzzles", 
       icon: Puzzle,
-      component: () => {
-        console.log('🧩 Jigsaw Puzzle Manager rendering...');
-        return React.createElement(JigsawPuzzleManager);
-      },
+      component: JigsawPuzzleManager,
       roles: ["super_admin", "admin", "category_manager"]
     },
     {
