@@ -1,10 +1,7 @@
-
 import React from 'react';
 import RegistrationForm from './RegistrationForm';
-
 const RegistrationCTA: React.FC = () => {
-  return (
-    <section className="py-20 relative">
+  return <section className="py-20 relative">
       <div className="absolute inset-0 bg-puzzle-aqua/5 z-0"></div>
       <div className="absolute inset-0 z-0 opacity-30 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-puzzle-aqua/20 via-transparent to-transparent"></div>
       
@@ -13,7 +10,7 @@ const RegistrationCTA: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold mb-6 text-puzzle-white">
-                Join <span className="text-puzzle-gold">CodeCanyon Jigsaw Deluxe</span> <br/>
+                Join <span className="text-puzzle-gold">The Puzzle Boss Jigsaw Deluxe</span> <br />
                 Community Today
               </h2>
               
@@ -22,17 +19,10 @@ const RegistrationCTA: React.FC = () => {
               </p>
               
               <ul className="space-y-4">
-                {[
-                  "Access to all puzzle competitions",
-                  "Track your progress and ranking",
-                  "Qualify for exclusive prize draws",
-                  "Connect with fellow puzzle enthusiasts"
-                ].map((item, index) => (
-                  <li key={index} className="flex items-start">
+                {["Access to all puzzle competitions", "Track your progress and ranking", "Qualify for exclusive prize draws", "Connect with fellow puzzle enthusiasts"].map((item, index) => <li key={index} className="flex items-start">
                     <span className="text-puzzle-gold mr-2">✓</span>
                     <span className="text-puzzle-white">{item}</span>
-                  </li>
-                ))}
+                  </li>)}
               </ul>
             </div>
             
@@ -45,8 +35,6 @@ const RegistrationCTA: React.FC = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default RegistrationCTA;
