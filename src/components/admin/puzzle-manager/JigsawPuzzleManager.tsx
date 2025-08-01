@@ -16,7 +16,7 @@ import { useImageLibrary } from '../image-library/hooks/useImageLibrary';
 import { useImageUpload } from '../image-library/hooks/useImageUpload';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { ImageLibrarySelector } from './ImageLibrarySelector';
-import { processStuckImages } from '@/utils/processStuckImages';
+import { fixStuckImages } from '@/utils/fixStuckImages';
 
 interface JigsawPuzzle {
   id: string;
@@ -146,7 +146,7 @@ export const JigsawPuzzleManager: React.FC = () => {
         description: "Starting image processing for stuck images...",
       });
       
-      await processStuckImages();
+      await fixStuckImages();
       
       // Reload images after processing
       await loadImages();
