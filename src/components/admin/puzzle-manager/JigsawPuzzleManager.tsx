@@ -16,6 +16,7 @@ import { useImageLibrary } from '../image-library/hooks/useImageLibrary';
 import { useImageUpload } from '../image-library/hooks/useImageUpload';
 import { useClerkAuth } from '@/hooks/useClerkAuth';
 import { ImageLibrarySelector } from './ImageLibrarySelector';
+import { processStuckImages } from '@/utils/processStuckImages';
 
 interface JigsawPuzzle {
   id: string;
@@ -133,6 +134,32 @@ export const JigsawPuzzleManager: React.FC = () => {
       toast({
         title: "Upload Failed",
         description: "Failed to upload images. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleProcessStuckImages = async () => {
+    try {
+      toast({
+        title: "Processing Images",
+        description: "Starting image processing for stuck images...",
+      });
+      
+      await processStuckImages();
+      
+      // Reload images after processing
+      await loadImages();
+      
+      toast({
+        title: "Processing Complete",
+        description: "All stuck images have been processed successfully",
+      });
+    } catch (error) {
+      console.error('Error processing stuck images:', error);
+      toast({
+        title: "Processing Failed",
+        description: "Failed to process stuck images. Please try again.",
         variant: "destructive"
       });
     }
@@ -733,7 +760,17 @@ export const JigsawPuzzleManager: React.FC = () => {
             <CardContent className="space-y-6">
               {/* Upload Section */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Upload New Images</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Upload New Images</h3>
+                  <Button 
+                    variant="outline"
+                    onClick={handleProcessStuckImages}
+                    className="text-sm"
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Process Stuck Images
+                  </Button>
+                </div>
                 <ImageUpload onUpload={handleImageUpload} disabled={isUploading} />
                 {isUploading && (
                   <div className="mt-2 text-sm text-muted-foreground">

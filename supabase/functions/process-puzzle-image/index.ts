@@ -11,43 +11,36 @@ interface ImageDimensions {
 }
 
 const getImageDimensions = async (imageBlob: Blob): Promise<ImageDimensions> => {
-  const arrayBuffer = await imageBlob.arrayBuffer();
-  const bytes = new Uint8Array(arrayBuffer);
-  
-  // Check for JPEG
-  if (bytes[0] === 0xFF && bytes[1] === 0xD8) {
-    for (let i = 2; i < bytes.length; i++) {
-      if (bytes[i] === 0xFF && (bytes[i + 1] === 0xC0 || bytes[i + 1] === 0xC2)) {
-        const height = (bytes[i + 5] << 8) | bytes[i + 6];
-        const width = (bytes[i + 7] << 8) | bytes[i + 8];
+  try {
+    const arrayBuffer = await imageBlob.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    
+    // Check for JPEG
+    if (bytes[0] === 0xFF && bytes[1] === 0xD8) {
+      for (let i = 2; i < bytes.length - 8; i++) {
+        if (bytes[i] === 0xFF && (bytes[i + 1] === 0xC0 || bytes[i + 1] === 0xC2)) {
+          const height = (bytes[i + 5] << 8) | bytes[i + 6];
+          const width = (bytes[i + 7] << 8) | bytes[i + 8];
+          return { width, height };
+        }
+      }
+    }
+    
+    // Check for PNG
+    if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+      if (bytes.length >= 24) {
+        const width = (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19];
+        const height = (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23];
         return { width, height };
       }
     }
+    
+    console.log('Could not determine image dimensions, using defaults');
+    return { width: 800, height: 600 };
+  } catch (error) {
+    console.error('Error getting image dimensions:', error);
+    return { width: 800, height: 600 };
   }
-  
-  // Check for PNG
-  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
-    const width = (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19];
-    const height = (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23];
-    return { width, height };
-  }
-  
-  // Default fallback
-  return { width: 800, height: 600 };
-};
-
-const resizeImage = async (imageBlob: Blob, targetWidth: number, targetHeight: number): Promise<Blob> => {
-  // For now, return the original image
-  // In a production environment, you'd use a library like ImageMagick or Sharp
-  // This is a placeholder that maintains the original image
-  return imageBlob;
-};
-
-const createThumbnail = async (imageBlob: Blob): Promise<Blob> => {
-  // Create a 200x200 thumbnail
-  // For now, return the original image as thumbnail
-  // In production, you'd resize to 200x200
-  return imageBlob;
 };
 
 Deno.serve(async (req) => {
@@ -62,7 +55,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log('Processing puzzle image...');
+    console.log('Processing puzzle image request...');
     
     const { imageFileId } = await req.json();
     
@@ -80,6 +73,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (imageFileError || !imageFile) {
+      console.error('Failed to get image file:', imageFileError);
       throw new Error(`Failed to get image file: ${imageFileError?.message}`);
     }
 
@@ -91,46 +85,45 @@ Deno.serve(async (req) => {
       .download(imageFile.original_path);
 
     if (downloadError || !imageData) {
+      console.error('Failed to download image:', downloadError);
       throw new Error(`Failed to download image: ${downloadError?.message}`);
     }
 
-    console.log('Image downloaded, processing...');
+    console.log('Image downloaded successfully, size:', imageData.size);
 
     // Get image dimensions
     const dimensions = await getImageDimensions(imageData);
-    console.log('Original dimensions:', dimensions);
+    console.log('Extracted dimensions:', dimensions);
 
-    // Create processed image (puzzle-ready format)
-    // For puzzles, we want standardized sizes: 400x400, 800x800, 1200x1200
+    // For now, we'll use the original image as both processed and thumbnail
+    // In production, you'd resize these properly
     const puzzleSize = dimensions.width > 800 ? 1200 : dimensions.width > 400 ? 800 : 400;
-    const processedImage = await resizeImage(imageData, puzzleSize, puzzleSize);
     
-    // Create thumbnail (200x200)
-    const thumbnailImage = await createThumbnail(imageData);
-
-    // Upload processed image
-    const processedPath = `processed_${Date.now()}_${imageFile.original_path}`;
+    // Upload processed image (for now, same as original)
+    const processedPath = `processed_${Date.now()}_${imageFile.original_path.split('/').pop()}`;
     const { data: processedUpload, error: processedUploadError } = await supabase.storage
       .from('Processed Puzzle Images')
-      .upload(processedPath, processedImage, {
-        contentType: 'image/jpeg',
+      .upload(processedPath, imageData, {
+        contentType: imageData.type || 'image/jpeg',
         upsert: false
       });
 
     if (processedUploadError) {
+      console.error('Failed to upload processed image:', processedUploadError);
       throw new Error(`Failed to upload processed image: ${processedUploadError.message}`);
     }
 
-    // Upload thumbnail
-    const thumbnailPath = `thumb_${Date.now()}_${imageFile.original_path}`;
+    // Upload thumbnail (for now, same as original) 
+    const thumbnailPath = `thumb_${Date.now()}_${imageFile.original_path.split('/').pop()}`;
     const { data: thumbnailUpload, error: thumbnailUploadError } = await supabase.storage
       .from('Image Thumbnails')
-      .upload(thumbnailPath, thumbnailImage, {
-        contentType: 'image/jpeg',
+      .upload(thumbnailPath, imageData, {
+        contentType: imageData.type || 'image/jpeg',
         upsert: false
       });
 
     if (thumbnailUploadError) {
+      console.error('Failed to upload thumbnail:', thumbnailUploadError);
       throw new Error(`Failed to upload thumbnail: ${thumbnailUploadError.message}`);
     }
 
@@ -151,6 +144,7 @@ Deno.serve(async (req) => {
       .eq('id', imageFileId);
 
     if (updateError) {
+      console.error('Failed to update image file record:', updateError);
       throw new Error(`Failed to update image file record: ${updateError.message}`);
     }
 
