@@ -1,9 +1,11 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { ProductImage } from '../types';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { ImageActions } from './ImageActions';
+import { Trash2, Eye, Pause, Play } from 'lucide-react';
 
 interface ImageGridProps {
   images: ProductImage[];
@@ -49,6 +51,46 @@ export const ImageGrid: React.FC<ImageGridProps> = ({ images, onImageDelete, onI
                   onStatusToggle={onImageStatusToggle}
                 />
               </div>
+            </div>
+            
+            {/* Action Buttons Row */}
+            <div className="flex items-center gap-2 mb-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => window.open(image.imageUrl, '_blank')}
+                className="flex-1"
+              >
+                <Eye className="h-3 w-3 mr-1" />
+                View
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onImageStatusToggle(image.id, image.status === 'active' ? 'held' : 'active')}
+                className="flex-1"
+              >
+                {image.status === 'active' ? (
+                  <>
+                    <Pause className="h-3 w-3 mr-1" />
+                    Hold
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-3 w-3 mr-1" />
+                    Release
+                  </>
+                )}
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => onImageDelete(image.id)}
+                className="flex-1"
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Delete
+              </Button>
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className={`text-xs px-2 py-1 rounded-full ${
