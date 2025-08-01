@@ -3457,6 +3457,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      sync_clerk_users: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       terminate_other_sessions: {
         Args: { current_session_id: string }
         Returns: undefined
