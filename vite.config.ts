@@ -37,10 +37,8 @@ export default defineConfig(({ mode }) => ({
           'vendor-ui': ['@radix-ui/react-tabs', '@radix-ui/react-toast'],
           'vendor-utils': ['@tanstack/react-query', 'next-themes', 'tailwind-merge'],
           'puzzle-core': [
-            '@/components/puzzles/hooks/usePuzzleState',
-            '@/components/puzzles/hooks/usePuzzlePieces',
-            '@/components/puzzles/utils/pieceStyleUtils',
-            '@/components/puzzles/utils/pieceRotationUtils'
+            '@/components/puzzles/hooks/useImagePreloader',
+            '@/components/puzzles/hooks/useAudioPreloader'
           ]
         }
       }
