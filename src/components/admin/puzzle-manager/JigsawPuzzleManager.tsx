@@ -183,7 +183,7 @@ export const JigsawPuzzleManager: React.FC = () => {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('id')
-        .limit(1)
+        .eq('id', user.id)
         .single();
 
       if (profileError) {
