@@ -189,6 +189,7 @@ export function CodeCanyonJigsawIntegration() {
             <h2>🧪 Game Tests</h2>
             <button onclick="testBasicJS()">🧪 Test Basic JS</button>
             <button onclick="checkGameLibraries()">🔍 Check Game Libraries</button>
+            <button onclick="debugSpriteLibrary()">🔎 Debug Sprite Library</button>
             <button onclick="initializeGame()">🎮 Initialize Game</button>
             <button onclick="testCreateJS()">🎨 Test CreateJS</button>
             <button onclick="clearLogs()">🧹 Clear Logs</button>
@@ -389,6 +390,59 @@ export function CodeCanyonJigsawIntegration() {
                 log('❌ CreateJS test failed: ' + error.message, 'error');
                 return false;
             }
+        }
+
+        function debugSpriteLibrary() {
+            log('🔍 Debugging sprite library in detail...', 'info');
+            
+            // Check all possible sprite library variable names
+            const possibleNames = [
+                's_oSpriteLibrary', 'spriteLibrary', 'SpriteLibrary', 'SPRITE_LIBRARY',
+                'oSpriteLibrary', '_spriteLibrary', 'sprites', 'SPRITES',
+                's_oAtlas', 'atlas', 'ATLAS', 'textureAtlas', 'gameSprites'
+            ];
+            
+            let foundLibrary = null;
+            possibleNames.forEach(name => {
+                if (typeof window[name] !== 'undefined') {
+                    log(\`✅ Found sprite library: \${name}\`, 'success');
+                    foundLibrary = window[name];
+                    
+                    if (typeof foundLibrary === 'object' && foundLibrary !== null) {
+                        const keys = Object.keys(foundLibrary);
+                        log(\`📊 \${name} contains: \${keys.slice(0, 10).join(', ')}\${keys.length > 10 ? '...' : ''}\`, 'info');
+                        
+                        // Check if it has getSprite method
+                        if (typeof foundLibrary.getSprite === 'function') {
+                            log(\`✅ \${name}.getSprite() method found!\`, 'success');
+                        }
+                    }
+                }
+            });
+            
+            if (!foundLibrary) {
+                log('❌ No sprite library found with any common name', 'error');
+                
+                // List all globals that might be sprite-related
+                const allGlobals = Object.keys(window).filter(k => 
+                    k.toLowerCase().includes('sprite') || 
+                    k.toLowerCase().includes('atlas') ||
+                    k.toLowerCase().includes('texture') ||
+                    k.startsWith('s_o') ||
+                    k.startsWith('_s') ||
+                    typeof window[k] === 'object' && window[k] !== null && 
+                    Object.keys(window[k]).some(key => key.toLowerCase().includes('sprite'))
+                );
+                
+                if (allGlobals.length > 0) {
+                    log('🔍 Sprite-related globals found: ' + allGlobals.join(', '), 'warning');
+                } else {
+                    log('❌ No sprite-related globals found at all', 'error');
+                    log('💡 This means sprite_lib.js either didn\\'t load or failed to initialize', 'warning');
+                }
+            }
+            
+            return foundLibrary;
         }
 
         function initializeGame() {
