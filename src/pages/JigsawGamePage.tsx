@@ -54,6 +54,16 @@ export default function JigsawGamePage() {
     firstImage: puzzle?.images?.[0]
   });
 
+  // CRITICAL DEBUG: Check if we're even on the puzzle page
+  console.log('🚨 DEBUG: Current window location:', window.location.href);
+  console.log('🚨 DEBUG: Puzzle ID from params:', id);
+  console.log('🚨 DEBUG: Is loading?', isLoading);
+  console.log('🚨 DEBUG: Puzzle exists?', !!puzzle);
+  
+  if (!puzzle && !isLoading) {
+    console.error('❌ CRITICAL: No puzzle data found for ID:', id);
+  }
+
   return (
     <PageLayout 
       title={title} 

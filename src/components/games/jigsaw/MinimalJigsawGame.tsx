@@ -33,13 +33,27 @@ export function MinimalJigsawGame({
   }, [imageUrl, pieceCount]);
 
   const initializePuzzle = async () => {
+    console.log('🚀 initializePuzzle called with:', { 
+      hasCanvas: !!canvasRef.current, 
+      imageUrl,
+      pieceCount
+    });
+    
     setIsLoading(true);
     setError(null);
     setIsCompleted(false);
 
     try {
       const canvas = canvasRef.current;
-      if (!canvas) throw new Error('Canvas not found');
+      if (!canvas) {
+        console.error('❌ CRITICAL: Canvas not found');
+        throw new Error('Canvas not found');
+      }
+      
+      if (!imageUrl) {
+        console.error('❌ CRITICAL: No imageUrl provided');
+        throw new Error('No image URL provided');
+      }
 
       // Clear any existing puzzle
       if (puzzleRef.current) {
