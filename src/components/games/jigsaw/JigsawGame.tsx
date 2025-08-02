@@ -109,8 +109,8 @@ export function JigsawGame({
       canvas.height = 600;
       canvas.id = 'puzzle-canvas'; // Ensure canvas has ID
 
-      // Create puzzle canvas
-      const puzzleCanvas = new headbreaker.Canvas('puzzle-canvas', {
+      // Create puzzle canvas - use the actual canvas element
+      const puzzleCanvas = new headbreaker.Canvas(canvas, {
         width: 800,
         height: 600,
         strokeWidth: 2,
