@@ -46,9 +46,15 @@ export function MinimalJigsawGame({
         .select('filename, content')
         .order('filename');
 
-      if (error) throw error;
+      console.log('🔍 Database query result:', { jsFiles, error, hasJsFiles: !!jsFiles, jsFileCount: jsFiles?.length });
+
+      if (error) {
+        console.error('❌ Database error:', error);
+        throw error;
+      }
 
       if (!jsFiles || jsFiles.length === 0) {
+        console.error('❌ No JS files found in database');
         throw new Error('No puzzle JavaScript files found in database');
       }
 
@@ -56,7 +62,10 @@ export function MinimalJigsawGame({
 
       // Load CreateJS first if needed
       if (!window.createjs) {
+        console.log('📦 Loading CreateJS...');
         await loadCreateJS();
+      } else {
+        console.log('✅ CreateJS already loaded');
       }
 
       // Set up global constants needed by the puzzle engine
@@ -78,6 +87,7 @@ export function MinimalJigsawGame({
           const scriptElement = document.createElement('script');
           scriptElement.textContent = file.content;
           document.head.appendChild(scriptElement);
+          console.log(`✅ Successfully loaded ${file.filename}`);
         } catch (scriptError) {
           console.error(`❌ Error loading ${file.filename}:`, scriptError);
         }
@@ -89,6 +99,7 @@ export function MinimalJigsawGame({
     } catch (err) {
       console.error('❌ Error loading puzzle scripts:', err);
       setError(`Failed to load puzzle engine: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setIsLoading(false);
     }
   };
 
@@ -96,17 +107,22 @@ export function MinimalJigsawGame({
   const loadCreateJS = async (): Promise<void> => {
     return new Promise((resolve, reject) => {
       if (window.createjs) {
+        console.log('✅ CreateJS already available');
         resolve();
         return;
       }
 
+      console.log('📦 Loading CreateJS from CDN...');
       const script = document.createElement('script');
       script.src = 'https://code.createjs.com/1.0.0/createjs.min.js';
       script.onload = () => {
-        console.log('✅ CreateJS loaded');
+        console.log('✅ CreateJS loaded successfully');
         resolve();
       };
-      script.onerror = () => reject(new Error('Failed to load CreateJS'));
+      script.onerror = () => {
+        console.error('❌ Failed to load CreateJS');
+        reject(new Error('Failed to load CreateJS'));
+      };
       document.head.appendChild(script);
     });
   };
@@ -132,10 +148,12 @@ export function MinimalJigsawGame({
     try {
       const canvas = canvasRef.current;
       if (!canvas) {
+        console.error('❌ Canvas element not found');
         throw new Error('Canvas not found');
       }
       
       if (!imageUrl) {
+        console.error('❌ No image URL provided:', imageUrl);
         throw new Error('No image URL provided');
       }
 
