@@ -22,7 +22,7 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
   const query = useQuery({
     queryKey: ['admin-all-users'],
     queryFn: async (): Promise<AdminProfilesData> => {
-      if (!isAdmin || !currentUserId || !user?.primaryEmailAddress?.emailAddress) {
+      if (!isAdmin || !currentUserId || !user?.email) {
         console.log('Not authorized to fetch profiles or missing user data');
         return {
           data: [],
@@ -38,7 +38,7 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
       try {
         const { data, error } = await supabase.functions.invoke('get-all-users', {
           headers: {
-            'x-user-email': user.primaryEmailAddress.emailAddress,
+            'x-user-email': user.email,
           },
         });
         
@@ -122,7 +122,7 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
         throw error;
       }
     },
-    enabled: !!currentUserId && isAdmin && !!user?.primaryEmailAddress?.emailAddress,
+    enabled: !!currentUserId && isAdmin && !!user?.email,
     retry: 2,
     retryDelay: 1000,
   });
@@ -130,16 +130,16 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
   // Mutation for updating user roles
   const updateUserRole = useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: UserRole }) => {
-      if (!user?.primaryEmailAddress?.emailAddress) {
+      if (!user?.email) {
         throw new Error('User email not available');
       }
 
-      console.log('Updating user role:', { userId, newRole, userEmail: user.primaryEmailAddress.emailAddress });
+      console.log('Updating user role:', { userId, newRole, userEmail: user.email });
 
       const { data, error } = await supabase.functions.invoke('admin-update-roles', {
         body: { userIds: [userId], newRole },
         headers: {
-          'x-user-email': user.primaryEmailAddress.emailAddress,
+          'x-user-email': user.email,
         },
       });
       
@@ -170,16 +170,16 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
   // Mutation for bulk role updates
   const bulkUpdateRoles = useMutation({
     mutationFn: async ({ userIds, newRole }: { userIds: string[]; newRole: UserRole }) => {
-      if (!user?.primaryEmailAddress?.emailAddress) {
+      if (!user?.email) {
         throw new Error('User email not available');
       }
 
-      console.log('Bulk updating user roles:', { userIds, newRole, userEmail: user.primaryEmailAddress.emailAddress });
+      console.log('Bulk updating user roles:', { userIds, newRole, userEmail: user.email });
 
       const { data, error } = await supabase.functions.invoke('admin-update-roles', {
         body: { userIds, newRole },
         headers: {
-          'x-user-email': user.primaryEmailAddress.emailAddress,
+          'x-user-email': user.email,
         },
       });
       
@@ -210,14 +210,14 @@ export function useAdminProfiles(isAdmin: boolean, currentUserId: string | null)
   // Mutation for sending bulk emails
   const sendBulkEmail = useMutation({
     mutationFn: async ({ userIds, subject, body }: { userIds: string[]; subject: string; body: string }) => {
-      if (!user?.primaryEmailAddress?.emailAddress) {
+      if (!user?.email) {
         throw new Error('User email not available');
       }
 
       const { data, error } = await supabase.functions.invoke('admin-email-users', {
         body: { userIds, subject, body },
         headers: {
-          'x-user-email': user.primaryEmailAddress.emailAddress,
+          'x-user-email': user.email,
         },
       });
       
