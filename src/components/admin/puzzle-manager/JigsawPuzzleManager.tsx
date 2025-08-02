@@ -843,7 +843,14 @@ export const JigsawPuzzleManager: React.FC = () => {
                         <Edit className="h-3 w-3 mr-1" />
                         Edit
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          // Open puzzle in a new tab/window for preview
+                          window.open(`/puzzle/${puzzle.id}`, '_blank');
+                        }}
+                      >
                         <Eye className="h-3 w-3 mr-1" />
                         Preview
                       </Button>
