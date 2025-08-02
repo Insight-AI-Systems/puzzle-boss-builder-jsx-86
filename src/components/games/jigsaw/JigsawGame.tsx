@@ -167,8 +167,60 @@ export function JigsawGame({
       // Clear the container
       gameContainerRef.current.innerHTML = '';
       
-      // Check if the CreateJS game engine is available
-      if (typeof window !== 'undefined' && (window as any).createjs) {
+      // Check if CGame engine is available (our uploaded JS engine)
+      if (typeof window !== 'undefined' && (window as any).CGame) {
+        console.log('🧩 CGame engine detected, initializing professional puzzle...');
+        
+        // Create the game container
+        const gameContainer = document.createElement('div');
+        gameContainer.id = 'puzzle-game-container';
+        gameContainer.style.width = '100%';
+        gameContainer.style.height = '600px';
+        gameContainer.style.position = 'relative';
+        gameContainer.style.backgroundColor = '#1a1a2e';
+        gameContainer.style.borderRadius = '8px';
+        gameContainer.style.overflow = 'hidden';
+        gameContainerRef.current.appendChild(gameContainer);
+        
+        try {
+          // Initialize the professional puzzle engine
+          console.log('🧩 Creating CGame instance with:', {
+            container: gameContainer,
+            image: imageUrl || '/placeholder.svg',
+            pieces: pieceCount,
+            difficulty: difficulty
+          });
+          
+          const gameInstance = new (window as any).CGame({
+            container: gameContainer,
+            image: imageUrl || '/placeholder.svg',
+            pieces: pieceCount,
+            difficulty: difficulty,
+            onComplete: (stats: any) => {
+              console.log('🎉 Puzzle completed!', stats);
+              onComplete({
+                ...stats,
+                moves: moves,
+                time: Date.now() - (stats.startTime || Date.now()),
+                score: calculateScore(stats)
+              });
+            },
+            onPieceMove: () => {
+              const newMoves = moves + 1;
+              setMoves(newMoves);
+              onMoveUpdate(newMoves);
+            }
+          });
+          
+          setGameInstance(gameInstance);
+          console.log('🧩 Professional puzzle engine initialized successfully');
+          
+        } catch (cgameError) {
+          console.error('🧩 CGame initialization failed:', cgameError);
+          throw cgameError;
+        }
+        
+      } else if (typeof window !== 'undefined' && (window as any).createjs) {
         console.log('🧩 CreateJS detected, initializing basic puzzle...');
         
         // Create a canvas element for the game
@@ -181,6 +233,7 @@ export function JigsawGame({
         canvas.style.display = 'block';
         canvas.style.margin = '0 auto';
         canvas.style.border = '2px solid #00bcd4';
+        canvas.style.borderRadius = '8px';
         gameContainerRef.current.appendChild(canvas);
         
         // Initialize CreateJS stage
@@ -198,6 +251,8 @@ export function JigsawGame({
             console.log('🧩 Resetting puzzle...');
             stage.removeAllChildren();
             createSimplePuzzle(stage, canvas, imageUrl || '/placeholder.svg');
+            setMoves(0);
+            onMoveUpdate(0);
           },
           togglePreview: () => {
             console.log('🧩 Toggle preview');
@@ -206,99 +261,53 @@ export function JigsawGame({
         };
         
         setGameInstance(gameInstance);
-        console.log('🧩 Basic jigsaw puzzle initialized successfully');
-        
-      } else if ((window as any).CGame) {
-        console.log('🧩 CGame detected, attempting to use game engine...');
-        
-        // Try to use the actual CGame if available
-        const gameContainer = document.createElement('div');
-        gameContainer.style.width = '100%';
-        gameContainer.style.height = '600px';
-        gameContainer.style.position = 'relative';
-        gameContainerRef.current.appendChild(gameContainer);
-        
-        // Attempt to initialize the actual game
-        try {
-          const gameInstance = new (window as any).CGame({
-            container: gameContainer,
-            image: imageUrl || '/placeholder.svg',
-            pieces: pieceCount,
-            difficulty: difficulty
-          });
-          
-          setGameInstance(gameInstance);
-          console.log('🧩 CGame puzzle initialized successfully');
-        } catch (cgameError) {
-          console.error('🧩 CGame initialization failed:', cgameError);
-          // Fallback to basic implementation
-          const canvas = document.createElement('canvas');
-          canvas.width = 800;
-          canvas.height = 600;
-          gameContainer.appendChild(canvas);
-          
-          if ((window as any).createjs) {
-            const stage = new (window as any).createjs.Stage(canvas);
-            await createSimplePuzzle(stage, canvas, imageUrl || '/placeholder.svg');
-            setGameInstance({ stage, canvas, reset: () => {}, togglePreview: () => {} });
-          }
-        }
+        console.log('🧩 Basic CreateJS puzzle initialized successfully');
         
       } else {
-        console.log('🧩 No game engine detected, creating fallback puzzle...');
+        console.log('🧩 No game engine detected, creating HTML fallback...');
         
         // Create a fallback HTML-based puzzle
         const puzzleContainer = document.createElement('div');
         puzzleContainer.style.width = '100%';
-        puzzleContainer.style.height = '500px';
-        puzzleContainer.style.background = '#1a1a1a';
+        puzzleContainer.style.height = '600px';
+        puzzleContainer.style.backgroundColor = '#1a1a2e';
         puzzleContainer.style.borderRadius = '8px';
         puzzleContainer.style.display = 'flex';
+        puzzleContainer.style.flexDirection = 'column';
         puzzleContainer.style.alignItems = 'center';
         puzzleContainer.style.justifyContent = 'center';
-        puzzleContainer.style.position = 'relative';
-        puzzleContainer.style.border = '2px solid #00bcd4';
+        puzzleContainer.style.color = '#00bcd4';
+        puzzleContainer.style.fontSize = '18px';
+        puzzleContainer.style.textAlign = 'center';
         
-        // Add image
-        const img = document.createElement('img');
-        img.src = imageUrl || '/placeholder.svg';
-        img.style.maxWidth = '400px';
-        img.style.maxHeight = '400px';
-        img.style.objectFit = 'contain';
-        img.style.opacity = '0.7';
+        // Show image if available
+        if (imageUrl) {
+          const img = document.createElement('img');
+          img.src = imageUrl;
+          img.style.maxWidth = '300px';
+          img.style.maxHeight = '300px';
+          img.style.borderRadius = '8px';
+          img.style.marginBottom = '20px';
+          puzzleContainer.appendChild(img);
+        }
         
-        // Add overlay text
-        const overlay = document.createElement('div');
-        overlay.style.position = 'absolute';
-        overlay.style.top = '50%';
-        overlay.style.left = '50%';
-        overlay.style.transform = 'translate(-50%, -50%)';
-        overlay.style.color = '#00bcd4';
-        overlay.style.fontSize = '24px';
-        overlay.style.fontWeight = 'bold';
-        overlay.style.textAlign = 'center';
-        overlay.style.background = 'rgba(0,0,0,0.8)';
-        overlay.style.padding = '20px';
-        overlay.style.borderRadius = '8px';
-        overlay.innerHTML = `
-          <div>🧩 ${pieceCount} Piece Puzzle</div>
-          <div style="font-size: 16px; margin-top: 10px; opacity: 0.8;">
-            Game engine loading...
-          </div>
+        const message = document.createElement('div');
+        message.innerHTML = `
+          <h3>Jigsaw Puzzle: ${pieceCount} pieces</h3>
+          <p>Difficulty: ${difficulty}</p>
+          <p style="margin-top: 20px; color: #ffa726;">JavaScript puzzle engine is loading...</p>
+          <p style="color: #666; font-size: 14px;">Please wait while the puzzle engine initializes.</p>
         `;
+        puzzleContainer.appendChild(message);
         
-        puzzleContainer.appendChild(img);
-        puzzleContainer.appendChild(overlay);
         gameContainerRef.current.appendChild(puzzleContainer);
         
-        setGameInstance({
-          container: puzzleContainer,
-          reset: () => console.log('Reset fallback puzzle'),
-          togglePreview: () => {
-            img.style.opacity = showPreview ? '0.7' : '1';
-            overlay.style.display = showPreview ? 'block' : 'none';
-          }
-        });
+        const gameInstance = {
+          reset: () => console.log('🧩 Reset fallback puzzle'),
+          togglePreview: () => setShowPreview(!showPreview)
+        };
+        
+        setGameInstance(gameInstance);
       }
       
     } catch (err) {
@@ -307,6 +316,14 @@ export function JigsawGame({
       setError(errorMessage);
       onError(errorMessage);
     }
+  };
+
+  // Helper function to calculate score based on game stats
+  const calculateScore = (stats: any) => {
+    const baseScore = 1000;
+    const timePenalty = Math.floor((stats.timeElapsed || 0) / 1000) * 2;
+    const movePenalty = moves * 5;
+    return Math.max(100, baseScore - timePenalty - movePenalty);
   };
 
   // Helper function to create a simple puzzle
