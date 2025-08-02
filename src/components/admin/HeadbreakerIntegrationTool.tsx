@@ -53,6 +53,35 @@ export function HeadbreakerIntegrationTool() {
     setIsProcessing(false);
   };
 
+  const validateJavaScriptFile = (content: string): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    
+    // Check for basic JavaScript syntax indicators
+    if (!content.trim()) {
+      errors.push("File is empty");
+      return { isValid: false, errors };
+    }
+    
+    // Check for headbreaker-specific patterns
+    const hasHeadbreaker = content.includes('headbreaker') || content.includes('Headbreaker');
+    if (!hasHeadbreaker) {
+      errors.push("File doesn't appear to contain headbreaker library code");
+    }
+    
+    // Check for obvious syntax errors
+    const hasUnclosedBraces = (content.match(/\{/g) || []).length !== (content.match(/\}/g) || []).length;
+    if (hasUnclosedBraces) {
+      errors.push("Mismatched braces detected");
+    }
+    
+    const hasUnclosedParens = (content.match(/\(/g) || []).length !== (content.match(/\)/g) || []).length;
+    if (hasUnclosedParens) {
+      errors.push("Mismatched parentheses detected");
+    }
+    
+    return { isValid: errors.length === 0, errors };
+  };
+
   const generateTestHTML = () => {
     const jsFiles = uploadedFiles.filter(f => f.name.endsWith('.js'));
     const cssFiles = uploadedFiles.filter(f => f.name.endsWith('.css'));
@@ -61,9 +90,33 @@ export function HeadbreakerIntegrationTool() {
       `<style>\n${f.content}\n</style>`
     ).join('\n    ');
     
-    const jsContent = jsFiles.map(f => 
-      `<script>\n${f.content}\n</script>`
-    ).join('\n    ');
+    // Enhanced JavaScript validation and error handling
+    let jsContent = '';
+    const jsValidationResults: string[] = [];
+    
+    jsFiles.forEach(f => {
+      const validation = validateJavaScriptFile(f.content);
+      jsValidationResults.push(`File ${f.name}: ${validation.isValid ? '✅ Valid' : '❌ ' + validation.errors.join(', ')}`);
+      
+      if (validation.isValid) {
+        jsContent += `
+    <script>
+    try {
+      console.log('Loading ${f.name}...');
+      ${f.content}
+      console.log('✅ ${f.name} loaded successfully');
+    } catch (error) {
+      console.error('❌ Error loading ${f.name}:', error);
+      document.getElementById('diagnostics').innerHTML += '<div style="color: red;">❌ Error in ${f.name}: ' + error.message + '</div>';
+    }
+    </script>`;
+      } else {
+        jsContent += `
+    <script>
+    document.getElementById('diagnostics').innerHTML += '<div style="color: red;">❌ ${f.name} validation failed: ${validation.errors.join(', ')}</div>';
+    </script>`;
+      }
+    });
     
     return `<!DOCTYPE html>
 <html lang="en">
@@ -94,6 +147,7 @@ export function HeadbreakerIntegrationTool() {
     <div id="current-image-preview"></div>
     
     <div class="controls">
+        <button onclick="testBasicJS()">🧪 Test Basic JS</button>
         <button onclick="diagnosticCheck()">🔍 Check Library Status</button>
         <button onclick="createPuzzle()">Create Puzzle</button>
         <button onclick="shufflePuzzle()">Shuffle</button>
@@ -123,6 +177,30 @@ export function HeadbreakerIntegrationTool() {
             const diagnostics = document.getElementById('diagnostics');
             diagnostics.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
             console.log(message);
+        }
+        
+        function testBasicJS() {
+            const diagnostics = document.getElementById('diagnostics');
+            diagnostics.innerHTML = '<h4>🧪 Basic JavaScript Test:</h4>';
+            
+            try {
+                log('✅ Basic JavaScript is working');
+                log('✅ DOM access is working');
+                log('✅ Console logging is working');
+                log('✅ Try-catch blocks are working');
+                log('Current time: ' + new Date().toLocaleString());
+                log('Math.random(): ' + Math.random());
+                log('Available functions: testBasicJS, diagnosticCheck, createPuzzle');
+                
+                // Test DOM manipulation
+                const testDiv = document.createElement('div');
+                testDiv.textContent = 'Test element created successfully';
+                log('✅ DOM createElement is working');
+                
+            } catch (error) {
+                log('❌ Basic JavaScript test failed: ' + error.message);
+                console.error('Basic JS test error:', error);
+            }
         }
         
         function diagnosticCheck() {
@@ -340,13 +418,34 @@ export function HeadbreakerIntegrationTool() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Uploaded Files:</h3>
               <div className="grid gap-2">
-                {uploadedFiles.map((file, index) => (
-                  <div key={index} className="flex items-center gap-2 p-2 border rounded">
-                    <File className="h-4 w-4" />
-                    <span className="flex-1">{file.name}</span>
-                    {file.saved && <Check className="h-4 w-4 text-green-600" />}
-                  </div>
-                ))}
+                {uploadedFiles.map((file, index) => {
+                  const validation = file.name.endsWith('.js') ? validateJavaScriptFile(file.content) : { isValid: true, errors: [] };
+                  return (
+                    <div key={index} className="border rounded">
+                      <div className="flex items-center gap-2 p-2">
+                        <File className="h-4 w-4" />
+                        <span className="flex-1">{file.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {file.content.length} chars
+                        </span>
+                        {file.saved && <Check className="h-4 w-4 text-green-600" />}
+                        {!validation.isValid && <span className="text-xs text-red-500">❌ Issues</span>}
+                      </div>
+                      {!validation.isValid && (
+                        <div className="px-2 pb-2 text-xs text-red-600">
+                          Issues: {validation.errors.join(', ')}
+                        </div>
+                      )}
+                      <details className="px-2 pb-2">
+                        <summary className="text-xs text-muted-foreground cursor-pointer">Preview content</summary>
+                        <pre className="text-xs bg-muted p-2 mt-1 rounded max-h-32 overflow-y-auto">
+                          {file.content.substring(0, 500)}
+                          {file.content.length > 500 && '...\n[truncated]'}
+                        </pre>
+                      </details>
+                    </div>
+                  );
+                })}
               </div>
               
               <div className="flex gap-4">
