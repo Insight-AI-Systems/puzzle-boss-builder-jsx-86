@@ -27,23 +27,32 @@ export function MinimalJigsawGame({
   // Load all puzzle scripts and let the original engine take over
   const initializePuzzleEngine = async () => {
     try {
-      console.log('🔄 Loading original puzzle engine...');
+      console.log('🚀 DEBUGGING: Starting puzzle engine initialization...');
       
       // Fetch JavaScript files from database
+      console.log('📡 DEBUGGING: Fetching JS files from database...');
       const { data: jsFiles, error } = await supabase
         .from('puzzle_js_files')
         .select('filename, content')
         .order('filename');
 
+      console.log('📊 DEBUGGING: Database query result:', { 
+        filesCount: jsFiles?.length || 0, 
+        error: error?.message || 'none',
+        sampleFile: jsFiles?.[0] ? jsFiles[0].filename : 'none'
+      });
+
       if (error) {
+        console.error('❌ DEBUGGING: Database error:', error);
         throw new Error(`Database error: ${error.message}`);
       }
 
       if (!jsFiles || jsFiles.length === 0) {
-        throw new Error('No puzzle JavaScript files found');
+        console.error('❌ DEBUGGING: No JS files found in database');
+        throw new Error('No puzzle JavaScript files found in database');
       }
 
-      console.log('📁 Loading files:', jsFiles.map(f => f.filename));
+      console.log('📁 DEBUGGING: Files to load:', jsFiles.map(f => f.filename));
 
       // Load CreateJS first
       if (!window.createjs) {
