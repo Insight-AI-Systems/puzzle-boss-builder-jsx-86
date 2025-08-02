@@ -75,16 +75,38 @@ export function HeadbreakerIntegrationTool() {
     <style>
         body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
         #puzzle-container { width: 800px; height: 600px; border: 1px solid #ccc; margin: 20px 0; }
-        .controls { margin: 10px 0; }
+        .controls { margin: 10px 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         button { margin: 5px; padding: 10px 15px; cursor: pointer; }
+        .image-upload { margin: 10px 0; }
+        .image-upload input { margin-right: 10px; }
+        .current-image { max-width: 200px; max-height: 150px; border: 1px solid #ddd; margin: 10px 0; }
     </style>
 </head>
 <body>
     <h1>Headbreaker Puzzle Test</h1>
+    
+    <div class="image-upload">
+        <label for="imageUpload">Select puzzle image:</label>
+        <input type="file" id="imageUpload" accept="image/*">
+        <button onclick="loadSelectedImage()">Load Image</button>
+    </div>
+    
+    <div id="current-image-preview"></div>
+    
     <div class="controls">
         <button onclick="createPuzzle()">Create Puzzle</button>
         <button onclick="shufflePuzzle()">Shuffle</button>
         <button onclick="solvePuzzle()">Solve</button>
+        <label>
+            Pieces: 
+            <select id="pieceCount" onchange="createPuzzle()">
+                <option value="2x2">4 pieces (2x2)</option>
+                <option value="3x3">9 pieces (3x3)</option>
+                <option value="4x3" selected>12 pieces (4x3)</option>
+                <option value="4x4">16 pieces (4x4)</option>
+                <option value="5x4">20 pieces (5x4)</option>
+            </select>
+        </label>
     </div>
     <div id="puzzle-container"></div>
     
@@ -93,17 +115,43 @@ export function HeadbreakerIntegrationTool() {
     <script>
         let puzzle;
         let canvas;
+        let currentImageUrl = 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=800&h=600&fit=crop';
+        
+        function loadSelectedImage() {
+            const fileInput = document.getElementById('imageUpload');
+            const file = fileInput.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentImageUrl = e.target.result;
+                    
+                    // Show preview
+                    const preview = document.getElementById('current-image-preview');
+                    preview.innerHTML = '<h4>Current image:</h4><img src="' + currentImageUrl + '" class="current-image">';
+                    
+                    // Auto-create puzzle with new image
+                    createPuzzle();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
         
         function createPuzzle() {
             const container = document.getElementById('puzzle-container');
             container.innerHTML = '';
+            
+            const pieceSelect = document.getElementById('pieceCount');
+            const pieceConfig = pieceSelect.value.split('x');
+            const horizontalPieces = parseInt(pieceConfig[0]);
+            const verticalPieces = parseInt(pieceConfig[1]);
             
             try {
                 if (typeof headbreaker !== 'undefined') {
                     canvas = new headbreaker.Canvas(container, {
                         width: 800,
                         height: 600,
-                        imageUrl: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=800&h=600&fit=crop',
+                        imageUrl: currentImageUrl,
                         pieceSize: 100,
                         proximity: 20,
                         borderFill: 10,
@@ -112,15 +160,15 @@ export function HeadbreakerIntegrationTool() {
                     });
 
                     puzzle = new headbreaker.Puzzle(canvas, {
-                        horizontalPiecesCount: 4,
-                        verticalPiecesCount: 3
+                        horizontalPiecesCount: horizontalPieces,
+                        verticalPiecesCount: verticalPieces
                     });
 
                     puzzle.autogenerate();
                     puzzle.shuffle(0.8);
                     puzzle.draw();
                     
-                    console.log('Puzzle created successfully!');
+                    console.log('Puzzle created successfully with ' + (horizontalPieces * verticalPieces) + ' pieces!');
                 } else {
                     console.error('Headbreaker library not found');
                     container.innerHTML = '<p>Error: Headbreaker library not loaded</p>';
