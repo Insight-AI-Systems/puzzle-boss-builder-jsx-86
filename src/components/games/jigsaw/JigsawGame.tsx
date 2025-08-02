@@ -60,13 +60,17 @@ export function JigsawGame({
     return () => clearInterval(interval);
   }, [gameStarted, gameCompleted]);
 
-  // Initialize puzzle when active
+  // Initialize puzzle when canvas is ready
   useEffect(() => {
-    if (isActive && canvasRef.current) {
-      initializePuzzle();
-    }
+    // Add a small delay to ensure canvas is properly mounted
+    const timer = setTimeout(() => {
+      if (isActive && canvasRef.current) {
+        initializePuzzle();
+      }
+    }, 100);
     
     return () => {
+      clearTimeout(timer);
       // Cleanup puzzle on unmount
       if (puzzleRef.current) {
         puzzleRef.current.destroy?.();
