@@ -103,7 +103,7 @@ export function HeadbreakerIntegrationTool() {
                     canvas = new headbreaker.Canvas(container, {
                         width: 800,
                         height: 600,
-                        imageUrl: 'https://picsum.photos/800/600',
+                        imageUrl: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=800&h=600&fit=crop',
                         pieceSize: 100,
                         proximity: 20,
                         borderFill: 10,
