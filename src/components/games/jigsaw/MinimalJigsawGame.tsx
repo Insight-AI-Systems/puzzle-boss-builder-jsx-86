@@ -54,6 +54,8 @@ export function MinimalJigsawGame({
 
       console.log('🔍 Headbreaker object:', headbreaker);
       console.log('🔍 Available methods:', Object.keys(headbreaker));
+      console.log('🖼️ Image URL being used:', imageUrl);
+      console.log('🧩 Piece count:', pieceCount);
 
       // Load the image first
       const img = new Image();

@@ -37,7 +37,10 @@ export default function JigsawGamePage() {
 
   const title = puzzle?.title || "Jigsaw Puzzle";
   const subtitle = puzzle?.description || "Solve beautiful jigsaw puzzles with varying difficulty levels";
-  const imageUrl = puzzle?.images?.[0]?.original_image_url;
+  const imageUrl = puzzle?.images?.[0]?.original_image_url || puzzle?.images?.[0]?.large_image_url || puzzle?.images?.[0]?.medium_image_url;
+  console.log('🔍 All image data:', puzzle?.images?.[0]);
+  console.log('🔍 Available image fields:', puzzle?.images?.[0] ? Object.keys(puzzle.images[0]) : 'No images');
+  console.log('🔍 Final imageUrl:', imageUrl);
   const pieceCount = puzzle?.piece_count || 100;
   const difficulty = puzzle?.difficulty_level || 'medium';
 
