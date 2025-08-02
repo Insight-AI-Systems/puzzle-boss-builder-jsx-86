@@ -102,6 +102,7 @@ export default function GamesDashboard() {
             </Badge>
           </div>
           <MinimalJigsawGame
+            key={`${selectedImage.id || 'custom'}-${selectedPieces}`}
             imageUrl={selectedImage.metadata?.imageUrl || selectedImage.original_image_url || selectedImage.image_url}
             pieceCount={selectedPieces as 20 | 100 | 500}
             onComplete={handleGameComplete}
