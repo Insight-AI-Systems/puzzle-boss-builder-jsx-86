@@ -348,18 +348,25 @@ export function CodeCanyonJigsawIntegration() {
                 log('✅ EaselJS found', 'success');
             }
 
-            // Check for Bright library (common in CodeCanyon games)
-            if (typeof Bright !== 'undefined') {
-                log('✅ Bright library found', 'success');
+            // Check for sprite library dynamically
+            const spriteVars = Object.keys(window).filter(k => 
+                k.toLowerCase().includes('sprite') || 
+                k.toLowerCase().includes('atlas') || 
+                k.toLowerCase().includes('texture') ||
+                k.startsWith('s_o') || k.startsWith('_s') || k.startsWith('oSprite') ||
+                k.includes('Sprite') || k.includes('Atlas')
+            );
+            
+            if (spriteVars.length > 0) {
+                log('✅ Sprite library found: ' + spriteVars.join(', '), 'success');
+                spriteVars.forEach(varName => {
+                    const obj = window[varName];
+                    if (obj && typeof obj === 'object' && Object.keys(obj).length > 0) {
+                        log('📋 ' + varName + ' contains: ' + Object.keys(obj).slice(0, 5).join(', ') + (Object.keys(obj).length > 5 ? '...' : ''), 'info');
+                    }
+                });
             } else {
-                log('❌ Bright library not found - this may cause initialization errors', 'warning');
-            }
-
-            // Check for sprite library
-            if (typeof s_oSpriteLibrary !== 'undefined') {
-                log('✅ Sprite library found with sprites: ' + Object.keys(s_oSpriteLibrary).join(', '), 'success');
-            } else {
-                log('❌ Sprite library (s_oSpriteLibrary) not found', 'warning');
+                log('❌ No sprite library found - check console for debugging info', 'warning');
             }
 
             // Check for game classes
