@@ -49,6 +49,8 @@ export function MinimalJigsawGame({
       // Set canvas size
       canvas.width = 800;
       canvas.height = 600;
+      canvas.style.width = '800px';
+      canvas.style.height = '600px';
 
       console.log('🔍 Headbreaker object:', headbreaker);
       console.log('🔍 Available methods:', Object.keys(headbreaker));
