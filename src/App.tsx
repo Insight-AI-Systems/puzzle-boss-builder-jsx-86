@@ -83,6 +83,7 @@ function AppRoutes() {
             <Route path="games/crossword" element={<DailyCrossword />} />
             <Route path="games/mahjong" element={<MahjongGamePage />} />
             <Route path="games/jigsaw" element={<JigsawGamePage />} />
+            <Route path="puzzle/:id" element={<JigsawGamePage />} />
             
             {/* Old puzzle session route removed - using new puzzle system */}
             
