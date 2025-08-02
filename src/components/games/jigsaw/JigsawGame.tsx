@@ -1,523 +1,338 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Puzzle, RotateCcw, Eye } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase } from '@/integrations/supabase/client';
+import { Card } from '@/components/ui/card';
+import { calculatePiecePosition, calculatePieceStyle, formatTime } from '@/utils/puzzleUtils';
 
 interface JigsawGameProps {
-  difficulty: 'easy' | 'medium' | 'hard';
-  pieceCount: 20 | 100 | 500;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  pieceCount?: 20 | 100 | 500;
   imageUrl?: string;
-  gameState: string;
-  isActive: boolean;
-  onComplete: (stats: any) => void;
-  onScoreUpdate: (score: number) => void;
-  onMoveUpdate: (moves: number) => void;
-  onError: (error: string) => void;
+  gameState?: any;
+  isActive?: boolean;
+  onComplete?: (stats: any) => void;
+  onScoreUpdate?: (score: number) => void;
+  onMoveUpdate?: (moves: number) => void;
+  onError?: (error: string) => void;
+}
+
+interface PuzzlePiece {
+  id: string;
+  currentPosition: number;
+  correctPosition: number;
+  isPlaced: boolean;
 }
 
 export function JigsawGame({
-  difficulty,
-  pieceCount,
+  difficulty = 'medium',
+  pieceCount = 100,
   imageUrl,
   gameState,
-  isActive,
+  isActive = true,
   onComplete,
   onScoreUpdate,
   onMoveUpdate,
   onError
 }: JigsawGameProps) {
-  console.log('🧩 JigsawGame component loaded with props:', {
-    difficulty,
-    pieceCount,
-    imageUrl,
-    isActive,
-    gameState
-  });
   const gameContainerRef = useRef<HTMLDivElement>(null);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [gameCompleted, setGameCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [scriptsLoaded, setScriptsLoaded] = useState(false);
-  const [gameInstance, setGameInstance] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [moves, setMoves] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [moveCount, setMoveCount] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
+  const [pieces, setPieces] = useState<PuzzlePiece[]>([]);
+  const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
+  const [draggedPiece, setDraggedPiece] = useState<string | null>(null);
 
-  // Load JavaScript files for the jigsaw game
-  const loadGameScripts = async () => {
-    if (scriptsLoaded) return;
+  // Calculate grid dimensions
+  const gridSize = Math.sqrt(pieceCount);
+  const rows = Math.ceil(gridSize);
+  const columns = Math.ceil(gridSize);
+  
+  // Use a fallback image if none provided
+  const puzzleImage = imageUrl || '/placeholder.svg';
+
+  console.log('🧩 JigsawGame rendered with:', {
+    imageUrl: puzzleImage,
+    pieceCount,
+    difficulty,
+    isActive,
+    gameStarted
+  });
+
+  // Initialize puzzle pieces
+  useEffect(() => {
+    if (isActive && !gameStarted) {
+      initializePuzzle();
+    }
+  }, [isActive, pieceCount]);
+
+  // Timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (gameStarted && !gameCompleted) {
+      interval = setInterval(() => {
+        setElapsedTime(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [gameStarted, gameCompleted]);
+
+  const initializePuzzle = () => {
+    console.log('🧩 Initializing puzzle with', pieceCount, 'pieces');
     
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      console.log('🧩 Loading jigsaw puzzle scripts...');
-      
-      // Get the list of required JavaScript files
-      const { data: files, error: filesError } = await supabase.functions.invoke('admin-puzzle-files', {
-        method: 'GET'
+    // Create puzzle pieces
+    const newPieces: PuzzlePiece[] = [];
+    for (let i = 0; i < pieceCount; i++) {
+      newPieces.push({
+        id: `piece-${i}`,
+        currentPosition: i,
+        correctPosition: i,
+        isPlaced: false
       });
-
-      if (filesError) {
-        throw new Error(`Failed to load game files: ${filesError.message}`);
-      }
-
-      if (!files || !Array.isArray(files)) {
-        throw new Error('No game files found');
-      }
-
-      console.log('🧩 Available files:', files.map(f => f.filename));
-
-      // Load scripts from database files in order of dependency
-      const scriptOrder = [
-        'jquery-3.6.0.min.js',
-        'createjs.min.js', 
-        'howler.min.js',
-        'platform.js',
-        'CGame.js'
-      ];
-
-      for (const scriptName of scriptOrder) {
-        const file = files.find(f => f.filename === scriptName);
-        if (file) {
-          console.log(`🧩 Injecting script: ${scriptName}`);
-          await injectScript(file.content, scriptName);
-          
-          // Debug: Check what globals are available after each script
-          if (scriptName === 'jquery-3.6.0.min.js') {
-            console.log('🧩 jQuery available:', typeof (window as any).$);
-          }
-          if (scriptName === 'createjs.min.js') {
-            console.log('🧩 CreateJS available:', typeof (window as any).createjs);
-            console.log('🧩 CreateJS Stage:', typeof (window as any).createjs?.Stage);
-          }
-          if (scriptName === 'CGame.js') {
-            console.log('🧩 CGame available:', typeof (window as any).CGame);
-            console.log('🧩 Available window keys containing "game":', Object.keys(window).filter(k => k.toLowerCase().includes('game')));
-          }
-        } else {
-          console.warn(`🧩 Script not found: ${scriptName}`);
-        }
-      }
-
-      // Load any remaining scripts
-      for (const file of files) {
-        if (!scriptOrder.includes(file.filename) && file.filename.endsWith('.js')) {
-          console.log(`🧩 Injecting additional script: ${file.filename}`);
-          await injectScript(file.content, file.filename);
-        }
-      }
-
-      setScriptsLoaded(true);
-      console.log('🧩 All jigsaw puzzle scripts loaded successfully');
-      
-      // Debug: Final check of available globals
-      console.log('🧩 Final globals check:');
-      console.log('- jQuery:', typeof (window as any).$);
-      console.log('- CreateJS:', typeof (window as any).createjs);
-      console.log('- CGame:', typeof (window as any).CGame);
-      console.log('- All window keys with "game":', Object.keys(window).filter(k => k.toLowerCase().includes('game')));
-      
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load game';
-      console.error('🧩 Error loading jigsaw scripts:', errorMessage);
-      setError(errorMessage);
-      onError(errorMessage);
-    } finally {
-      setIsLoading(false);
     }
+    
+    // Shuffle pieces
+    const shuffledPieces = [...newPieces];
+    for (let i = shuffledPieces.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = shuffledPieces[i].currentPosition;
+      shuffledPieces[i].currentPosition = shuffledPieces[j].currentPosition;
+      shuffledPieces[j].currentPosition = temp;
+    }
+    
+    setPieces(shuffledPieces);
+    setGameStarted(true);
+    setElapsedTime(0);
+    setMoveCount(0);
+    setGameCompleted(false);
+    console.log('🧩 Puzzle initialized with shuffled pieces');
   };
 
-  // Helper function to inject script content directly
-  const injectScript = (content: string, name: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      // Check if script is already loaded
-      if (document.querySelector(`script[data-name="${name}"]`)) {
-        resolve();
-        return;
-      }
+  const handlePieceClick = (pieceId: string) => {
+    if (gameCompleted) return;
+    
+    setSelectedPiece(pieceId === selectedPiece ? null : pieceId);
+    console.log('🧩 Piece selected:', pieceId);
+  };
 
-      try {
-        const script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.text = content; // Inject content directly
-        script.setAttribute('data-name', name);
-        
-        document.head.appendChild(script);
-        console.log(`🧩 Injected script: ${name}`);
-        resolve();
-      } catch (error) {
-        const errorMessage = `Failed to inject script: ${name}`;
-        console.error(`🧩 ${errorMessage}`, error);
-        reject(new Error(errorMessage));
-      }
+  const handleSlotClick = (slotPosition: number) => {
+    if (!selectedPiece || gameCompleted) return;
+    
+    const pieceIndex = pieces.findIndex(p => p.id === selectedPiece);
+    if (pieceIndex === -1) return;
+    
+    // Check if slot is already occupied
+    const occupiedBy = pieces.find(p => p.currentPosition === slotPosition);
+    
+    if (occupiedBy && occupiedBy.id !== selectedPiece) {
+      // Swap pieces
+      const newPieces = [...pieces];
+      const selectedPieceData = newPieces[pieceIndex];
+      const occupiedPieceIndex = newPieces.findIndex(p => p.id === occupiedBy.id);
+      
+      const tempPosition = selectedPieceData.currentPosition;
+      newPieces[pieceIndex].currentPosition = slotPosition;
+      newPieces[occupiedPieceIndex].currentPosition = tempPosition;
+      
+      setPieces(newPieces);
+    } else {
+      // Move piece to empty slot
+      const newPieces = [...pieces];
+      newPieces[pieceIndex].currentPosition = slotPosition;
+      setPieces(newPieces);
+    }
+    
+    setMoveCount(prev => {
+      const newCount = prev + 1;
+      onMoveUpdate?.(newCount);
+      return newCount;
     });
+    
+    setSelectedPiece(null);
+    
+    // Check for completion
+    checkCompletion();
   };
 
-  // Initialize the game once scripts are loaded
-  useEffect(() => {
-    if (scriptsLoaded && gameContainerRef.current && !gameInstance && isActive) {
-      initializeGame();
-    }
-  }, [scriptsLoaded, isActive, gameInstance]);
-
-  const initializeGame = async () => {
-    if (!gameContainerRef.current) return;
-
-    try {
-      console.log('🧩 Initializing jigsaw puzzle game...');
-      console.log('🧩 imageUrl:', imageUrl);
-      console.log('🧩 pieceCount:', pieceCount);
-      console.log('🧩 difficulty:', difficulty);
-      
-      // Clear the container
-      gameContainerRef.current.innerHTML = '';
-      
-      // Check if CGame engine is available (our uploaded JS engine)
-      if (typeof window !== 'undefined' && (window as any).CGame) {
-        console.log('🧩 CGame engine detected, initializing professional puzzle...');
-        
-        // Create the game container
-        const gameContainer = document.createElement('div');
-        gameContainer.id = 'puzzle-game-container';
-        gameContainer.style.width = '100%';
-        gameContainer.style.height = '600px';
-        gameContainer.style.position = 'relative';
-        gameContainer.style.backgroundColor = '#1a1a2e';
-        gameContainer.style.borderRadius = '8px';
-        gameContainer.style.overflow = 'hidden';
-        gameContainerRef.current.appendChild(gameContainer);
-        
-        try {
-          // Initialize the professional puzzle engine
-          console.log('🧩 Creating CGame instance with:', {
-            container: gameContainer,
-            image: imageUrl || '/placeholder.svg',
-            pieces: pieceCount,
-            difficulty: difficulty
-          });
-          
-          const gameInstance = new (window as any).CGame({
-            container: gameContainer,
-            image: imageUrl || '/placeholder.svg',
-            pieces: pieceCount,
-            difficulty: difficulty,
-            onComplete: (stats: any) => {
-              console.log('🎉 Puzzle completed!', stats);
-              onComplete({
-                ...stats,
-                moves: moves,
-                time: Date.now() - (stats.startTime || Date.now()),
-                score: calculateScore(stats)
-              });
-            },
-            onPieceMove: () => {
-              const newMoves = moves + 1;
-              setMoves(newMoves);
-              onMoveUpdate(newMoves);
-            }
-          });
-          
-          setGameInstance(gameInstance);
-          console.log('🧩 Professional puzzle engine initialized successfully');
-          
-        } catch (cgameError) {
-          console.error('🧩 CGame initialization failed:', cgameError);
-          throw cgameError;
-        }
-        
-      } else if (typeof window !== 'undefined' && (window as any).createjs) {
-        console.log('🧩 CreateJS detected, initializing basic puzzle...');
-        
-        // Create a canvas element for the game
-        const canvas = document.createElement('canvas');
-        canvas.width = 800;
-        canvas.height = 600;
-        canvas.style.width = '100%';
-        canvas.style.height = 'auto';
-        canvas.style.maxWidth = '800px';
-        canvas.style.display = 'block';
-        canvas.style.margin = '0 auto';
-        canvas.style.border = '2px solid #00bcd4';
-        canvas.style.borderRadius = '8px';
-        gameContainerRef.current.appendChild(canvas);
-        
-        // Initialize CreateJS stage
-        const stage = new (window as any).createjs.Stage(canvas);
-        (window as any).createjs.Touch.enable(stage);
-        stage.enableMouseOver(10);
-        
-        // Create a simple puzzle demonstration
-        await createSimplePuzzle(stage, canvas, imageUrl || '/placeholder.svg');
-        
-        const gameInstance = {
-          stage,
-          canvas,
-          reset: () => {
-            console.log('🧩 Resetting puzzle...');
-            stage.removeAllChildren();
-            createSimplePuzzle(stage, canvas, imageUrl || '/placeholder.svg');
-            setMoves(0);
-            onMoveUpdate(0);
-          },
-          togglePreview: () => {
-            console.log('🧩 Toggle preview');
-            setShowPreview(!showPreview);
-          }
-        };
-        
-        setGameInstance(gameInstance);
-        console.log('🧩 Basic CreateJS puzzle initialized successfully');
-        
-      } else {
-        console.log('🧩 No game engine detected, creating HTML fallback...');
-        
-        // Create a fallback HTML-based puzzle
-        const puzzleContainer = document.createElement('div');
-        puzzleContainer.style.width = '100%';
-        puzzleContainer.style.height = '600px';
-        puzzleContainer.style.backgroundColor = '#1a1a2e';
-        puzzleContainer.style.borderRadius = '8px';
-        puzzleContainer.style.display = 'flex';
-        puzzleContainer.style.flexDirection = 'column';
-        puzzleContainer.style.alignItems = 'center';
-        puzzleContainer.style.justifyContent = 'center';
-        puzzleContainer.style.color = '#00bcd4';
-        puzzleContainer.style.fontSize = '18px';
-        puzzleContainer.style.textAlign = 'center';
-        
-        // Show image if available
-        if (imageUrl) {
-          const img = document.createElement('img');
-          img.src = imageUrl;
-          img.style.maxWidth = '300px';
-          img.style.maxHeight = '300px';
-          img.style.borderRadius = '8px';
-          img.style.marginBottom = '20px';
-          puzzleContainer.appendChild(img);
-        }
-        
-        const message = document.createElement('div');
-        message.innerHTML = `
-          <h3>Jigsaw Puzzle: ${pieceCount} pieces</h3>
-          <p>Difficulty: ${difficulty}</p>
-          <p style="margin-top: 20px; color: #ffa726;">JavaScript puzzle engine is loading...</p>
-          <p style="color: #666; font-size: 14px;">Please wait while the puzzle engine initializes.</p>
-        `;
-        puzzleContainer.appendChild(message);
-        
-        gameContainerRef.current.appendChild(puzzleContainer);
-        
-        const gameInstance = {
-          reset: () => console.log('🧩 Reset fallback puzzle'),
-          togglePreview: () => setShowPreview(!showPreview)
-        };
-        
-        setGameInstance(gameInstance);
-      }
-      
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to initialize game';
-      console.error('🧩 Error initializing game:', errorMessage);
-      setError(errorMessage);
-      onError(errorMessage);
+  const checkCompletion = () => {
+    const allPlaced = pieces.every(piece => piece.currentPosition === piece.correctPosition);
+    
+    if (allPlaced) {
+      setGameCompleted(true);
+      const finalScore = calculateScore();
+      onScoreUpdate?.(finalScore);
+      onComplete?.({
+        score: finalScore,
+        time: elapsedTime,
+        moves: moveCount,
+        difficulty,
+        pieceCount
+      });
+      console.log('🧩 Puzzle completed!', { score: finalScore, time: elapsedTime, moves: moveCount });
     }
   };
 
-  // Helper function to calculate score based on game stats
-  const calculateScore = (stats: any) => {
-    const baseScore = 1000;
-    const timePenalty = Math.floor((stats.timeElapsed || 0) / 1000) * 2;
-    const movePenalty = moves * 5;
-    return Math.max(100, baseScore - timePenalty - movePenalty);
+  const calculateScore = (): number => {
+    // Score based on time and moves (lower is better, but we want higher score)
+    const timeBonus = Math.max(0, 10000 - elapsedTime * 10);
+    const moveBonus = Math.max(0, 5000 - moveCount * 5);
+    const difficultyMultiplier = difficulty === 'easy' ? 1 : difficulty === 'medium' ? 1.5 : 2;
+    
+    return Math.round((timeBonus + moveBonus) * difficultyMultiplier);
   };
 
-  // Helper function to create a simple puzzle
-  const createSimplePuzzle = async (stage: any, canvas: HTMLCanvasElement, imageSrc: string) => {
-    try {
-      console.log('🧩 Creating simple puzzle with CreateJS...');
-      
-      // Create background
-      const bg = new (window as any).createjs.Shape();
-      bg.graphics.beginFill("#1a1a1a").drawRect(0, 0, canvas.width, canvas.height);
-      stage.addChild(bg);
-      
-      // Load and display image
-      const bitmap = new (window as any).createjs.Bitmap(imageSrc);
-      bitmap.x = 50;
-      bitmap.y = 50;
-      bitmap.scaleX = 0.5;
-      bitmap.scaleY = 0.5;
-      
-      // Create some simple "puzzle pieces" (rectangles for now)
-      const pieceSize = Math.sqrt((canvas.width * canvas.height) / pieceCount);
-      const cols = Math.ceil(canvas.width / pieceSize);
-      const rows = Math.ceil(canvas.height / pieceSize);
-      
-      for (let row = 0; row < Math.min(rows, 4); row++) {
-        for (let col = 0; col < Math.min(cols, 5); col++) {
-          const piece = new (window as any).createjs.Shape();
-          piece.graphics.beginFill(`hsl(${(row * cols + col) * 20}, 70%, 50%)`);
-          piece.graphics.drawRect(0, 0, pieceSize - 5, pieceSize - 5);
-          piece.x = col * pieceSize + 100;
-          piece.y = row * pieceSize + 100;
-          
-          // Make pieces draggable
-          piece.on("mousedown", function (evt: any) {
-            this.parent.addChild(this);
-            this.offset = { x: this.x - evt.stageX, y: this.y - evt.stageY };
-          });
-          
-          piece.on("pressmove", function (evt: any) {
-            this.x = evt.stageX + this.offset.x;
-            this.y = evt.stageY + this.offset.y;
-            stage.update();
-          });
-          
-          stage.addChild(piece);
-        }
-      }
-      
-      // Add instruction text
-      const text = new (window as any).createjs.Text(
-        `${pieceCount} Piece Puzzle - Drag the colored pieces!`, 
-        "20px Arial", 
-        "#00bcd4"
-      );
-      text.x = 10;
-      text.y = 10;
-      stage.addChild(text);
-      
-      stage.addChild(bitmap);
-      stage.update();
-      
-      console.log('🧩 Simple puzzle created successfully');
-      
-    } catch (error) {
-      console.error('🧩 Error creating simple puzzle:', error);
-    }
-  };
-
-  // Start loading scripts when component mounts
-  useEffect(() => {
-    loadGameScripts();
-  }, []);
-
-  // Handle game reset
   const handleReset = () => {
-    if (gameInstance && gameInstance.reset) {
-      gameInstance.reset();
-      setMoves(0);
-      onMoveUpdate(0);
-    }
+    console.log('🧩 Resetting puzzle');
+    setGameStarted(false);
+    setGameCompleted(false);
+    setSelectedPiece(null);
+    initializePuzzle();
   };
 
-  // Handle preview toggle
   const togglePreview = () => {
     setShowPreview(!showPreview);
-    if (gameInstance && gameInstance.togglePreview) {
-      gameInstance.togglePreview();
-    }
+    console.log('🧩 Toggling preview:', !showPreview);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-lg">Loading puzzle...</div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
-      <Card className="w-full">
-        <CardContent className="p-6">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {error}
-            </AlertDescription>
-          </Alert>
-          <Button 
-            onClick={loadGameScripts} 
-            className="mt-4"
-            disabled={isLoading}
-          >
-            Try Again
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col justify-center items-center min-h-[400px] space-y-4">
+        <div className="text-lg text-red-600">Error: {error}</div>
+        <Button onClick={initializePuzzle}>Try Again</Button>
+      </div>
     );
   }
 
   return (
-    <Card className="w-full">
-      <CardContent className="p-6">
-        {/* Game Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Puzzle className="h-5 w-5 text-puzzle-aqua" />
-            <h3 className="text-lg font-semibold text-puzzle-white">Jigsaw Puzzle</h3>
-            <Badge variant="outline">
-              {pieceCount} pieces
-            </Badge>
-            <Badge variant="secondary">
-              {difficulty}
-            </Badge>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-puzzle-white/70">
-              Moves: {moves}
-            </span>
-          </div>
-        </div>
-
-        {/* Game Controls */}
-        {scriptsLoaded && !isLoading && (
-          <div className="flex gap-2 mb-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReset}
-              disabled={!gameInstance}
-            >
-              <RotateCcw className="h-4 w-4 mr-1" />
-              Reset
+    <div className="w-full max-w-6xl mx-auto p-4">
+      {/* Game Controls */}
+      <Card className="mb-4 p-4">
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex gap-4">
+            <Button onClick={handleReset} variant="outline">
+              Reset Puzzle
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={togglePreview}
-              disabled={!gameInstance}
-            >
-              <Eye className="h-4 w-4 mr-1" />
+            <Button onClick={togglePreview} variant="outline">
               {showPreview ? 'Hide' : 'Show'} Preview
             </Button>
           </div>
+          <div className="flex gap-6 text-sm">
+            <span>Time: {formatTime(elapsedTime)}</span>
+            <span>Moves: {moveCount}</span>
+            <span>Pieces: {pieceCount}</span>
+          </div>
+        </div>
+        
+        {gameCompleted && (
+          <div className="text-center p-4 bg-green-100 rounded-lg">
+            <h3 className="text-lg font-bold text-green-800">Puzzle Completed! 🎉</h3>
+            <p className="text-green-600">
+              Time: {formatTime(elapsedTime)} | Moves: {moveCount} | Score: {calculateScore()}
+            </p>
+          </div>
         )}
+      </Card>
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className="flex items-center justify-center p-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-puzzle-aqua mx-auto mb-2"></div>
-              <p className="text-puzzle-white/70">Loading puzzle game...</p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Puzzle Board */}
+        <Card className="p-4">
+          <h3 className="text-lg font-semibold mb-4">Puzzle Board</h3>
+          <div 
+            className="grid gap-1 bg-gray-200 p-2 rounded"
+            style={{ 
+              gridTemplateColumns: `repeat(${columns}, 1fr)`,
+              aspectRatio: '1'
+            }}
+          >
+            {Array.from({ length: pieceCount }, (_, index) => {
+              const pieceInSlot = pieces.find(p => p.currentPosition === index);
+              return (
+                <div
+                  key={`slot-${index}`}
+                  className={`
+                    aspect-square border-2 border-gray-300 cursor-pointer rounded
+                    ${pieceInSlot?.correctPosition === index ? 'border-green-500 bg-green-100' : 'border-gray-300'}
+                    ${!pieceInSlot ? 'bg-gray-100' : ''}
+                  `}
+                  onClick={() => handleSlotClick(index)}
+                  style={pieceInSlot ? calculatePieceStyle(
+                    pieceInSlot.id,
+                    pieceInSlot.correctPosition,
+                    rows,
+                    columns,
+                    300,
+                    300,
+                    puzzleImage
+                  ) : {}}
+                />
+              );
+            })}
+          </div>
+        </Card>
+
+        {/* Piece Tray */}
+        <Card className="p-4">
+          <h3 className="text-lg font-semibold mb-4">Piece Tray</h3>
+          <div 
+            className="grid gap-2 max-h-96 overflow-y-auto"
+            style={{ gridTemplateColumns: `repeat(${Math.min(columns, 6)}, 1fr)` }}
+          >
+            {pieces.map((piece) => (
+              <div
+                key={piece.id}
+                className={`
+                  aspect-square border-2 cursor-pointer rounded transition-all
+                  ${selectedPiece === piece.id ? 'border-blue-500 shadow-lg' : 'border-gray-300'}
+                  ${piece.currentPosition === piece.correctPosition ? 'opacity-50' : 'hover:border-blue-400'}
+                `}
+                onClick={() => handlePieceClick(piece.id)}
+                style={calculatePieceStyle(
+                  piece.id,
+                  piece.correctPosition,
+                  rows,
+                  columns,
+                  200,
+                  200,
+                  puzzleImage
+                )}
+              />
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* Preview Modal */}
+      {showPreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-lg w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Puzzle Preview</h3>
+              <Button onClick={togglePreview} variant="outline" size="sm">
+                Close
+              </Button>
             </div>
+            <img 
+              src={puzzleImage} 
+              alt="Puzzle preview" 
+              className="w-full h-auto rounded"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/placeholder.svg';
+              }}
+            />
           </div>
-        )}
-
-        {/* Game Container */}
-        <div 
-          ref={gameContainerRef}
-          className="w-full min-h-[500px] bg-puzzle-black/50 rounded-lg border border-puzzle-border"
-          style={{ 
-            opacity: isLoading ? 0.5 : 1,
-            transition: 'opacity 0.3s ease'
-          }}
-        />
-
-        {/* Instructions */}
-        {!isLoading && scriptsLoaded && (
-          <div className="mt-4 text-sm text-puzzle-white/70">
-            <p>Drag and drop puzzle pieces to complete the image. Use the preview button to see the target image.</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+      )}
+    </div>
   );
 }
 
