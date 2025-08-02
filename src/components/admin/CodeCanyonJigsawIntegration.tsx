@@ -246,22 +246,51 @@ export function CodeCanyonJigsawIntegration() {
       console.log('✅ ${file.name} loaded successfully');
       
       // Check if sprite library is loaded after sprite_lib.js
-      if ('${file.name}'.toLowerCase().includes('sprite_lib') && typeof s_oSpriteLibrary !== 'undefined') {
-        console.log('✅ Sprite library initialized:', Object.keys(s_oSpriteLibrary));
-      } else if ('${file.name}'.toLowerCase().includes('sprite_lib')) {
-        console.log('⚠️ sprite_lib.js loaded but s_oSpriteLibrary not found');
+      if ('${file.name}'.toLowerCase().includes('sprite_lib')) {
+        console.log('🎯 sprite_lib.js detected - checking what it created...');
         
-        // Try to find what sprite-related globals were created
-        const spriteVars = Object.keys(window).filter(k => 
-          k.toLowerCase().includes('sprite') || 
-          k.toLowerCase().includes('atlas') || 
-          k.toLowerCase().includes('texture') ||
-          k.startsWith('s_o') || k.startsWith('_s') || k.startsWith('oSprite')
-        );
-        console.log('🔍 Found sprite-related variables:', spriteVars);
+        // Store globals before and after for comparison
+        const globalsBefore = Object.keys(window);
         
-        // List what was actually created by this file
-        console.log('🔍 All new globals after ${file.name}:', Object.keys(window).filter(k => typeof window[k] !== 'undefined').slice(-20));
+        setTimeout(() => {
+          const globalsAfter = Object.keys(window);
+          const newGlobals = globalsAfter.filter(k => !globalsBefore.includes(k));
+          console.log('🆕 New globals created by sprite_lib.js:', newGlobals);
+          
+          // Check all possible sprite library names
+          const spriteVars = Object.keys(window).filter(k => 
+            k.toLowerCase().includes('sprite') || 
+            k.toLowerCase().includes('atlas') || 
+            k.toLowerCase().includes('texture') ||
+            k.startsWith('s_o') || k.startsWith('_s') || k.startsWith('oSprite') ||
+            k.includes('Sprite') || k.includes('Atlas')
+          );
+          console.log('🔍 All sprite-related variables found:', spriteVars);
+          
+          // Check if any objects have getSprite method
+          spriteVars.forEach(varName => {
+            const obj = window[varName];
+            if (obj && typeof obj === 'object') {
+              console.log(\`📋 \${varName} contents:\`, Object.keys(obj));
+              if (typeof obj.getSprite === 'function') {
+                console.log(\`✅ \${varName} has getSprite method!\`);
+              }
+            }
+          });
+          
+          // Also check if sprite_lib.js defined any functions
+          const spriteFunctions = Object.keys(window).filter(k => 
+            k.toLowerCase().includes('sprite') && typeof window[k] === 'function'
+          );
+          console.log('🔧 Sprite-related functions:', spriteFunctions);
+          
+        }, 100);
+        
+        if (typeof s_oSpriteLibrary !== 'undefined') {
+          console.log('✅ s_oSpriteLibrary found:', Object.keys(s_oSpriteLibrary));
+        } else {
+          console.log('❌ s_oSpriteLibrary still undefined after sprite_lib.js');
+        }
       }
       
     } catch (error) {
