@@ -194,19 +194,58 @@ export function CodeCanyonJigsawIntegration() {
         </div>
     </div>
 
-    <!-- Include uploaded JavaScript files in proper order -->
-    ${jsFiles.map(file => `
+    <!-- Load external libraries first -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    
+    <!-- Include uploaded JavaScript files in dependency order -->
+    ${(() => {
+      // Sort files to load in proper order
+      const orderedFiles = [...jsFiles].sort((a, b) => {
+        // Priority order for loading
+        const priority = {
+          'settings': 0,
+          'ctl_utils': 1,
+          'sprite_lib': 2,
+          'main': 3,
+          'game': 4,
+          'interface': 5,
+          'piece': 6,
+          'toggle': 7,
+          'preloader': 8
+        };
+        
+        const getPriority = (filename) => {
+          const name = filename.toLowerCase();
+          for (const [key, value] of Object.entries(priority)) {
+            if (name.includes(key)) return value;
+          }
+          return 99; // Unknown files load last
+        };
+        
+        return getPriority(a.name) - getPriority(b.name);
+      });
+      
+      return orderedFiles.map(file => `
     <!-- ${file.name} -->
     <script>
     try {
       console.log('Loading ${file.name}...');
       ${file.content}
       console.log('✅ ${file.name} loaded successfully');
+      
+      // Check if sprite library is loaded after sprite_lib.js
+      if ('${file.name}'.toLowerCase().includes('sprite_lib') && typeof s_oSpriteLibrary !== 'undefined') {
+        console.log('✅ Sprite library initialized:', Object.keys(s_oSpriteLibrary));
+      }
+      
     } catch (error) {
       console.error('❌ Error loading ${file.name}:', error);
       document.getElementById('test-results').innerHTML += '[ERROR] ${file.name}: ' + error.message + '\\n';
     }
-    </script>`).join('\n    ')}
+    </script>`).join('\n    ');
+    })()}
 
     <script>
         function log(message, type = 'info') {
@@ -315,11 +354,32 @@ export function CodeCanyonJigsawIntegration() {
                 const container = document.getElementById('game-container');
                 const canvas = document.getElementById('canvas');
                 
+                // Check sprite library first
+                if (typeof s_oSpriteLibrary === 'undefined') {
+                    log('❌ Sprite library not initialized! This is likely the cause of getSprite errors.', 'error');
+                    log('💡 Make sure sprite_lib.js is loaded and s_oSpriteLibrary is initialized', 'warning');
+                    return;
+                } else {
+                    log('✅ Sprite library found with sprites: ' + Object.keys(s_oSpriteLibrary).join(', '), 'success');
+                }
+                
+                // Check for stage setup
+                if (typeof createjs !== 'undefined' && canvas) {
+                    const stage = new createjs.Stage(canvas);
+                    window.s_oStage = stage; // Make stage globally available
+                    log('✅ CreateJS stage created and made globally available', 'success');
+                }
+                
                 if (typeof CGame !== 'undefined') {
                     log('✅ CGame class found, attempting initialization...', 'info');
                     
+                    // Set up any required globals first
+                    window.CANVAS_WIDTH = canvas.width;
+                    window.CANVAS_HEIGHT = canvas.height;
+                    window.s_oCanvas = canvas;
+                    
                     // Try to create game instance
-                    const game = new CGame();
+                    const game = new CGame(canvas);
                     log('✅ Game instance created successfully!', 'success');
                     
                     // Try to initialize if method exists
@@ -333,7 +393,11 @@ export function CodeCanyonJigsawIntegration() {
                     
                 } else if (typeof CMain !== 'undefined') {
                     log('✅ CMain class found, attempting initialization...', 'info');
-                    const main = new CMain();
+                    
+                    // Set up canvas for main
+                    window.s_oCanvas = canvas;
+                    
+                    const main = new CMain(canvas);
                     log('✅ Main game object created!', 'success');
                     
                     if (typeof main.init === 'function') {
@@ -349,6 +413,13 @@ export function CodeCanyonJigsawIntegration() {
                 
             } catch (error) {
                 log('❌ Game initialization failed: ' + error.message, 'error');
+                
+                // Provide specific error guidance
+                if (error.message.includes('getSprite')) {
+                    log('🔍 getSprite error detected - this usually means sprite library is not properly initialized', 'warning');
+                    log('💡 Check that sprite_lib.js loaded correctly and s_oSpriteLibrary exists', 'warning');
+                }
+                
                 console.error('Full error:', error);
             }
         }
