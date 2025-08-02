@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ImageLibrarySelector } from '@/components/admin/puzzle-manager/ImageLibrarySelector';
-import { BasicJigsawPuzzle } from '@/components/games/jigsaw/BasicJigsawPuzzle';
+import { SimpleCanvasTest } from '@/components/games/jigsaw/SimpleCanvasTest';
 import { Puzzle, Play, Image, Grid3x3, Grid2x2, Grid } from 'lucide-react';
 
 interface GameOption {
@@ -89,10 +89,7 @@ export default function GamesDashboard() {
   if (isPlaying && selectedImage) {
     return (
       <div className="w-full h-screen bg-gray-100">
-        <BasicJigsawPuzzle
-          imageUrl={selectedImage.metadata?.imageUrl || selectedImage.original_image_url || selectedImage.image_url}
-          pieceCount={selectedPieces}
-        />
+        <SimpleCanvasTest />
       </div>
     );
   }
