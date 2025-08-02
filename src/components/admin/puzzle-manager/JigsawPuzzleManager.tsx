@@ -35,6 +35,10 @@ interface JigsawPuzzle {
   created_at: string;
   updated_at: string;
   images?: JigsawPuzzleImage[];
+  metadata?: {
+    product_value?: number;
+    release_threshold?: number;
+  };
 }
 
 interface JigsawPuzzleImage {
@@ -424,12 +428,33 @@ export const JigsawPuzzleManager: React.FC = () => {
       if (error) throw error;
 
       setPuzzles(puzzles.map(p => p.id === editingPuzzle.id ? data as JigsawPuzzle : p));
-      setEditingPuzzle(null);
-      resetForm();
+      
+      // Update the form data with the latest puzzle data to reflect changes
+      const updatedPuzzle = data as JigsawPuzzle;
+      setFormData({
+        title: updatedPuzzle.title || '',
+        description: updatedPuzzle.description || '',
+        category_id: updatedPuzzle.category_id || '',
+        difficulty_level: updatedPuzzle.difficulty_level || 'medium',
+        piece_count: updatedPuzzle.piece_count || 100,
+        estimated_time_minutes: updatedPuzzle.estimated_time_minutes || 30,
+        price: updatedPuzzle.price || 0,
+        is_free: updatedPuzzle.is_free ?? true,
+        status: updatedPuzzle.status || 'draft',
+        tags: updatedPuzzle.tags || [],
+        image_url: formData.image_url, // Keep current image selections
+        image_name: formData.image_name,
+        selected_image_data: formData.selected_image_data,
+        product_value: updatedPuzzle.metadata?.product_value || 0,
+        release_threshold: updatedPuzzle.metadata?.release_threshold || 0
+      });
+      
+      // Keep the user in edit mode with updated data
+      setEditingPuzzle(updatedPuzzle);
       
       toast({
-        title: "Success",
-        description: "Puzzle updated successfully",
+        title: "Success", 
+        description: "Puzzle updated successfully. You can continue editing or close the form.",
       });
     } catch (error) {
       console.error('Error updating puzzle:', error);
