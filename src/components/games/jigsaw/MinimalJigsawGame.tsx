@@ -59,7 +59,7 @@ export function MinimalJigsawGame({
 
       img.onload = () => {
         try {
-          console.log('📸 Image loaded successfully');
+          console.log('📸 Image loaded successfully, dimensions:', img.width, 'x', img.height);
 
           // Calculate grid based on piece count
           const gridSize = Math.sqrt(pieceCount);
@@ -74,31 +74,45 @@ export function MinimalJigsawGame({
 
           // Clear canvas and set background
           context.clearRect(0, 0, canvas.width, canvas.height);
-          context.fillStyle = '#f8f9fa';
+          context.fillStyle = '#e5e7eb';
           context.fillRect(0, 0, canvas.width, canvas.height);
 
-          // Draw the image directly on canvas as a simple puzzle representation
-          const imageWidth = 400;
-          const imageHeight = 300;
-          const startX = (canvas.width - imageWidth) / 2;
-          const startY = (canvas.height - imageHeight) / 2;
+          // Calculate image display size (maintain aspect ratio)
+          const maxWidth = 600;
+          const maxHeight = 450;
+          const aspectRatio = img.width / img.height;
+          
+          let displayWidth = maxWidth;
+          let displayHeight = maxWidth / aspectRatio;
+          
+          if (displayHeight > maxHeight) {
+            displayHeight = maxHeight;
+            displayWidth = maxHeight * aspectRatio;
+          }
+
+          const startX = (canvas.width - displayWidth) / 2;
+          const startY = (canvas.height - displayHeight) / 2;
+
+          console.log('🎨 Drawing image at:', startX, startY, displayWidth, displayHeight);
 
           // Draw image
-          context.drawImage(img, startX, startY, imageWidth, imageHeight);
+          context.drawImage(img, startX, startY, displayWidth, displayHeight);
 
           // Draw grid lines to show puzzle pieces
-          context.strokeStyle = '#333';
+          context.strokeStyle = '#1f2937';
           context.lineWidth = 2;
           
-          const pieceWidth = imageWidth / cols;
-          const pieceHeight = imageHeight / rows;
+          const pieceWidth = displayWidth / cols;
+          const pieceHeight = displayHeight / rows;
+
+          console.log('📏 Piece dimensions:', pieceWidth, 'x', pieceHeight);
 
           // Draw vertical lines
           for (let i = 1; i < cols; i++) {
             const x = startX + (i * pieceWidth);
             context.beginPath();
             context.moveTo(x, startY);
-            context.lineTo(x, startY + imageHeight);
+            context.lineTo(x, startY + displayHeight);
             context.stroke();
           }
 
@@ -107,24 +121,31 @@ export function MinimalJigsawGame({
             const y = startY + (i * pieceHeight);
             context.beginPath();
             context.moveTo(startX, y);
-            context.lineTo(startX + imageWidth, y);
+            context.lineTo(startX + displayWidth, y);
             context.stroke();
           }
 
           // Draw border
-          context.strokeRect(startX, startY, imageWidth, imageHeight);
+          context.strokeRect(startX, startY, displayWidth, displayHeight);
 
           // Add text overlay
-          context.fillStyle = 'rgba(0, 0, 0, 0.7)';
-          context.fillRect(startX, startY + imageHeight - 40, imageWidth, 40);
+          context.fillStyle = 'rgba(0, 0, 0, 0.8)';
+          context.fillRect(startX, startY + displayHeight - 50, displayWidth, 50);
           
           context.fillStyle = 'white';
-          context.font = '16px Arial';
+          context.font = 'bold 18px Arial';
           context.textAlign = 'center';
           context.fillText(
-            `${pieceCount} Piece Puzzle - Click Reset to Scramble`, 
-            startX + imageWidth / 2, 
-            startY + imageHeight - 15
+            `${pieceCount} Piece Puzzle`, 
+            startX + displayWidth / 2, 
+            startY + displayHeight - 30
+          );
+          
+          context.font = '14px Arial';
+          context.fillText(
+            'Click Reset to Scramble Pieces', 
+            startX + displayWidth / 2, 
+            startY + displayHeight - 10
           );
 
           // Create a simple puzzle object for completion tracking
