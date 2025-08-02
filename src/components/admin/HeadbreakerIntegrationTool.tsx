@@ -138,7 +138,9 @@ export function HeadbreakerIntegrationTool() {
         }
         
         function createPuzzle() {
+            console.log('=== Create Puzzle Function Called ===');
             const container = document.getElementById('puzzle-container');
+            console.log('Container element:', container);
             container.innerHTML = '';
             
             const pieceSelect = document.getElementById('pieceCount');
@@ -146,35 +148,85 @@ export function HeadbreakerIntegrationTool() {
             const horizontalPieces = parseInt(pieceConfig[0]);
             const verticalPieces = parseInt(pieceConfig[1]);
             
+            console.log('Piece configuration:', { horizontalPieces, verticalPieces, currentImageUrl });
+            console.log('Headbreaker available:', typeof headbreaker);
+            console.log('Headbreaker object:', headbreaker);
+            
             try {
                 if (typeof headbreaker !== 'undefined') {
-                    canvas = new headbreaker.Canvas(container, {
-                        width: 800,
-                        height: 600,
-                        imageUrl: currentImageUrl,
-                        pieceSize: 100,
-                        proximity: 20,
-                        borderFill: 10,
-                        strokeWidth: 2,
-                        lineSoftness: 0.18
-                    });
-
-                    puzzle = new headbreaker.Puzzle(canvas, {
-                        horizontalPiecesCount: horizontalPieces,
-                        verticalPiecesCount: verticalPieces
-                    });
-
-                    puzzle.autogenerate();
-                    puzzle.shuffle(0.8);
-                    puzzle.draw();
+                    console.log('Creating headbreaker canvas...');
                     
-                    console.log('Puzzle created successfully with ' + (horizontalPieces * verticalPieces) + ' pieces!');
+                    // Try different headbreaker API patterns
+                    let canvas, puzzle;
+                    
+                    // Pattern 1: headbreaker.Canvas constructor
+                    if (headbreaker.Canvas) {
+                        console.log('Using headbreaker.Canvas constructor');
+                        canvas = new headbreaker.Canvas(container, {
+                            width: 800,
+                            height: 600,
+                            imageUrl: currentImageUrl,
+                            pieceSize: 100,
+                            proximity: 20,
+                            borderFill: 10,
+                            strokeWidth: 2,
+                            lineSoftness: 0.18
+                        });
+                    }
+                    // Pattern 2: headbreaker.canvas function
+                    else if (headbreaker.canvas) {
+                        console.log('Using headbreaker.canvas function');
+                        canvas = headbreaker.canvas(container, 800, 600);
+                    }
+                    // Pattern 3: direct function call
+                    else if (typeof headbreaker === 'function') {
+                        console.log('Using headbreaker as direct function');
+                        canvas = headbreaker(container, 800, 600);
+                    }
+                    
+                    console.log('Canvas created:', canvas);
+
+                    if (canvas) {
+                        // Try different puzzle creation patterns
+                        if (headbreaker.Puzzle) {
+                            console.log('Creating puzzle with headbreaker.Puzzle constructor');
+                            puzzle = new headbreaker.Puzzle(canvas, {
+                                horizontalPiecesCount: horizontalPieces,
+                                verticalPiecesCount: verticalPieces
+                            });
+                        } else if (canvas.puzzle) {
+                            console.log('Creating puzzle with canvas.puzzle method');
+                            puzzle = canvas.puzzle({
+                                horizontalPiecesCount: horizontalPieces,
+                                verticalPiecesCount: verticalPieces,
+                                image: currentImageUrl
+                            });
+                        }
+
+                        console.log('Puzzle created:', puzzle);
+
+                        if (puzzle) {
+                            console.log('Calling puzzle methods...');
+                            if (puzzle.autogenerate) puzzle.autogenerate();
+                            if (puzzle.shuffle) puzzle.shuffle(0.8);
+                            if (puzzle.draw) puzzle.draw();
+                            
+                            console.log('Puzzle created successfully with ' + (horizontalPieces * verticalPieces) + ' pieces!');
+                        } else {
+                            console.error('Failed to create puzzle object');
+                            container.innerHTML = '<p>Error: Failed to create puzzle object</p>';
+                        }
+                    } else {
+                        console.error('Failed to create canvas object');
+                        container.innerHTML = '<p>Error: Failed to create canvas object</p>';
+                    }
                 } else {
                     console.error('Headbreaker library not found');
                     container.innerHTML = '<p>Error: Headbreaker library not loaded</p>';
                 }
             } catch (error) {
                 console.error('Error creating puzzle:', error);
+                console.error('Error details:', error.message, error.stack);
                 container.innerHTML = '<p>Error: ' + error.message + '</p>';
             }
         }
