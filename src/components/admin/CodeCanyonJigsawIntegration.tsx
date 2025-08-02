@@ -56,17 +56,26 @@ export function CodeCanyonJigsawIntegration() {
   const validateJavaScriptFile = (content: string): { isValid: boolean; issues: string[] } => {
     const issues: string[] = [];
     
-    // Check for CodeCanyon jigsaw game files
+    // Check for CodeCanyon jigsaw game files or sprite library files
     const gameIndicators = [
       'cgame', 'cpiece', 'ctoggle', 'cmain', 'createjs', 'easeljs',
-      'jigsaw', 'puzzle', 'canvas', 'stage', 'cinterface', 'howl'
+      'jigsaw', 'puzzle', 'canvas', 'stage', 'cinterface', 'howl',
+      'sprite', 'spritelibrary', 's_ospritelibrary', 'getsprite',
+      'texture', 'atlas', 'bitmap', 'image'
     ];
     
     const hasGameCode = gameIndicators.some(indicator => 
       content.toLowerCase().includes(indicator.toLowerCase())
     );
     
-    if (!hasGameCode && content.length > 1000) {
+    // Special case for sprite_lib.js or similar files
+    const isLibraryFile = content.toLowerCase().includes('sprite') || 
+                         content.toLowerCase().includes('library') ||
+                         content.toLowerCase().includes('s_o') ||
+                         /sprite.*lib/i.test(content) ||
+                         /lib.*sprite/i.test(content);
+    
+    if (!hasGameCode && !isLibraryFile && content.length > 1000) {
       issues.push("File doesn't appear to contain jigsaw game code");
     }
     
