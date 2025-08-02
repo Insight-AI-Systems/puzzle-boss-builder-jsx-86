@@ -42,6 +42,7 @@ import {
 
 // Import jigsaw game
 import JigsawGamePage from '@/pages/JigsawGamePage';
+import GamesDashboard from '@/pages/GamesDashboard';
 
 // No Clerk configuration needed - using Supabase only
 
@@ -75,6 +76,7 @@ function AppRoutes() {
             <Route path="privacy" element={<Privacy />} />
             
             {/* Game routes */}
+            <Route path="games" element={<GamesDashboard />} />
             <Route path="games/memory" element={<MemoryGame />} />
             <Route path="games/word-search" element={<WordSearchGamePage />} />
             <Route path="games/sudoku" element={<SudokuGamePage />} />
