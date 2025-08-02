@@ -200,11 +200,11 @@ export function MinimalJigsawGame({
         )}
       </div>
       
-      <div className="flex justify-center">
+      <div className="flex justify-center bg-gray-50 p-4 rounded-lg">
         <canvas
           ref={canvasRef}
-          className="border border-gray-300 rounded"
-          style={{ maxWidth: '100%', height: 'auto' }}
+          className="border-2 border-gray-300 rounded shadow-lg bg-white"
+          style={{ display: 'block' }}
         />
       </div>
     </div>
