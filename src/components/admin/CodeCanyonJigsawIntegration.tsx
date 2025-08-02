@@ -247,6 +247,20 @@ export function CodeCanyonJigsawIntegration() {
       // Check if sprite library is loaded after sprite_lib.js
       if ('${file.name}'.toLowerCase().includes('sprite_lib') && typeof s_oSpriteLibrary !== 'undefined') {
         console.log('✅ Sprite library initialized:', Object.keys(s_oSpriteLibrary));
+      } else if ('${file.name}'.toLowerCase().includes('sprite_lib')) {
+        console.log('⚠️ sprite_lib.js loaded but s_oSpriteLibrary not found');
+        
+        // Try to find what sprite-related globals were created
+        const spriteVars = Object.keys(window).filter(k => 
+          k.toLowerCase().includes('sprite') || 
+          k.toLowerCase().includes('atlas') || 
+          k.toLowerCase().includes('texture') ||
+          k.startsWith('s_o') || k.startsWith('_s') || k.startsWith('oSprite')
+        );
+        console.log('🔍 Found sprite-related variables:', spriteVars);
+        
+        // List what was actually created by this file
+        console.log('🔍 All new globals after ${file.name}:', Object.keys(window).filter(k => typeof window[k] !== 'undefined').slice(-20));
       }
       
     } catch (error) {
