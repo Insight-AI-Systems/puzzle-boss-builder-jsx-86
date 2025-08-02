@@ -96,15 +96,24 @@ export const useImageManagement = () => {
     setIsUpdatingStatus(true);
     try {
       console.log('🔄 Updating image status:', imageId, 'to', newStatus);
+      console.log('Current user:', await supabase.auth.getUser());
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('product_images')
         .update({ status: newStatus })
-        .eq('id', imageId);
+        .eq('id', imageId)
+        .select();
+
+      console.log('Update result:', { data, error });
 
       if (error) {
         console.error('Error updating image status:', error);
         throw error;
+      }
+
+      if (!data || data.length === 0) {
+        console.error('No rows updated - possible permission issue');
+        throw new Error('No rows were updated. You may not have permission to update this image.');
       }
 
       toast({
