@@ -472,7 +472,21 @@ export const JigsawPuzzleManager: React.FC = () => {
   };
 
   const startEdit = (puzzle: JigsawPuzzle) => {
+    console.log('🔧 Starting edit for puzzle:', puzzle);
     setEditingPuzzle(puzzle);
+    
+    // Get the puzzle's image data
+    const puzzleImage = puzzle.images && puzzle.images.length > 0 ? puzzle.images[0] : null;
+    let imageUrl = '';
+    let imageName = '';
+    
+    if (puzzleImage && puzzleImage.original_image_url) {
+      imageUrl = `https://vcacfysfjgoahledqdwa.supabase.co/storage/v1/object/public/Original Product Images/${puzzleImage.original_image_url}`;
+      imageName = puzzle.title; // Use puzzle title as image name
+    }
+    
+    console.log('🔧 Puzzle image data:', { puzzleImage, imageUrl, imageName });
+    
     setFormData({
       title: puzzle.title,
       description: puzzle.description || '',
@@ -484,12 +498,29 @@ export const JigsawPuzzleManager: React.FC = () => {
       is_free: puzzle.is_free,
       status: puzzle.status,
       tags: puzzle.tags || [],
-      image_url: '',
-      image_name: '',
-      selected_image_data: null,
+      image_url: imageUrl,
+      image_name: imageName,
+      selected_image_data: puzzleImage ? {
+        id: puzzleImage.id,
+        name: imageName,
+        url: imageUrl,
+        image_files: [{
+          original_path: puzzleImage.original_image_url,
+          thumbnail_path: puzzleImage.thumbnail_url,
+          processed_path: puzzleImage.medium_image_url,
+          original_width: puzzleImage.image_width,
+          original_height: puzzleImage.image_height
+        }]
+      } : null,
       product_value: (puzzle as any).metadata?.product_value || 0,
       release_threshold: (puzzle as any).metadata?.release_threshold || 0
     });
+    
+    // Set the selected image ID if we have one
+    if (puzzleImage) {
+      setSelectedImageId(puzzleImage.id);
+    }
+    
     setShowCreateForm(true);
   };
 
