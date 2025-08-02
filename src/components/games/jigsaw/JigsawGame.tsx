@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { formatTime } from '@/utils/puzzleUtils';
-// @ts-ignore
-import { Canvas, Template, Shape, manufacturer } from 'headbreaker';
+// @ts-ignore - headbreaker library doesn't have TypeScript definitions
+import * as headbreaker from 'headbreaker';
 
 interface JigsawGameProps {
   difficulty?: 'easy' | 'medium' | 'hard';
@@ -80,6 +80,11 @@ export function JigsawGame({
     setError(null);
     
     try {
+      // Check if headbreaker is available
+      if (!headbreaker || !headbreaker.Canvas) {
+        throw new Error('Headbreaker library not available');
+      }
+
       if (!canvasRef.current) {
         throw new Error('Canvas not available');
       }
@@ -98,9 +103,10 @@ export function JigsawGame({
       const canvas = canvasRef.current;
       canvas.width = 800;
       canvas.height = 600;
+      canvas.id = 'puzzle-canvas'; // Ensure canvas has ID
 
       // Create puzzle canvas
-      const puzzleCanvas = new Canvas(canvas.id, {
+      const puzzleCanvas = new headbreaker.Canvas('puzzle-canvas', {
         width: 800,
         height: 600,
         strokeWidth: 2,
@@ -121,7 +127,7 @@ export function JigsawGame({
           const pieceHeight = 400 / rows;
           
           // Generate pieces using headbreaker
-          const template = new Template({
+          const template = new headbreaker.Template({
             width: 400,
             height: 400,
             pieceSize: Math.min(pieceWidth, pieceHeight),
@@ -134,7 +140,7 @@ export function JigsawGame({
           template.build(rows, cols);
 
           // Create the puzzle
-          const puzzle = manufacturer
+          const puzzle = headbreaker.manufacturer
             .withTemplate(template)
             .withImage(img)
             .withCanvas(puzzleCanvas)
@@ -199,7 +205,7 @@ export function JigsawGame({
 
         } catch (err) {
           console.error('🧩 Error creating puzzle:', err);
-          setError('Failed to create puzzle');
+          setError('Failed to create puzzle with headbreaker');
           setIsLoading(false);
         }
       };
@@ -214,7 +220,7 @@ export function JigsawGame({
 
     } catch (err) {
       console.error('🧩 Error initializing puzzle:', err);
-      setError('Failed to initialize puzzle');
+      setError(`Failed to initialize puzzle: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setIsLoading(false);
     }
   };
