@@ -295,8 +295,22 @@ export function CodeCanyonJigsawIntegration() {
                 log('✅ EaselJS found', 'success');
             }
 
+            // Check for Bright library (common in CodeCanyon games)
+            if (typeof Bright !== 'undefined') {
+                log('✅ Bright library found', 'success');
+            } else {
+                log('❌ Bright library not found - this may cause initialization errors', 'warning');
+            }
+
+            // Check for sprite library
+            if (typeof s_oSpriteLibrary !== 'undefined') {
+                log('✅ Sprite library found with sprites: ' + Object.keys(s_oSpriteLibrary).join(', '), 'success');
+            } else {
+                log('❌ Sprite library (s_oSpriteLibrary) not found', 'warning');
+            }
+
             // Check for game classes
-            const gameClasses = ['CGame', 'CPiece', 'CMain', 'CInterface', 'CToggle'];
+            const gameClasses = ['CGame', 'CPiece', 'CMain', 'CInterface', 'CToggle', 'CPreloader'];
             gameClasses.forEach(className => {
                 if (typeof window[className] !== 'undefined') {
                     log(\`✅ \${className} class found\`, 'success');
@@ -317,6 +331,13 @@ export function CodeCanyonJigsawIntegration() {
             if (cClasses.length > 0) {
                 log('Available C* classes: ' + cClasses.join(', '), 'info');
             }
+
+            // Check for other common game libraries
+            ['PIXI', 'Phaser', 'Matter', 'Box2D'].forEach(lib => {
+                if (typeof window[lib] !== 'undefined') {
+                    log(\`✅ \${lib} library found\`, 'success');
+                }
+            });
         }
 
         function testCreateJS() {
