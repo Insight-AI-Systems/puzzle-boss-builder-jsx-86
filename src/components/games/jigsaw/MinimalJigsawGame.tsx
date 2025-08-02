@@ -29,12 +29,16 @@ export function MinimalJigsawGame({
   pieceCount = 100,
   onComplete 
 }: MinimalJigsawGameProps) {
+  console.log('🎮 MinimalJigsawGame component rendered with props:', { imageUrl, pieceCount });
+  
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const puzzleRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCompleted, setIsCompleted] = useState(false);
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
+
+  console.log('🎮 Component state:', { isLoading, error, isCompleted, scriptsLoaded });
 
   // Load puzzle JavaScript files from database
   const loadPuzzleScripts = async () => {
@@ -253,16 +257,19 @@ export function MinimalJigsawGame({
   };
 
   useEffect(() => {
+    console.log('🔄 useEffect: loadPuzzleScripts called');
     loadPuzzleScripts();
   }, []);
 
   useEffect(() => {
+    console.log('🔄 useEffect: initializePuzzle check', { scriptsLoaded, hasCanvas: !!canvasRef.current, imageUrl });
     if (scriptsLoaded && canvasRef.current) {
       initializePuzzle();
     }
     
     return () => {
       if (puzzleRef.current) {
+        console.log('🧹 Cleaning up puzzle');
         puzzleRef.current.destroy?.();
       }
     };
