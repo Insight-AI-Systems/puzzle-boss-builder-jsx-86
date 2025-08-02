@@ -354,11 +354,11 @@ export const JigsawPuzzleManager: React.FC = () => {
       if (formData.selected_image_data) {
         const imageData = {
           puzzle_id: data.id,
-          original_image_url: formData.selected_image_data.image_files?.[0]?.original_path || '',
-          thumbnail_url: formData.selected_image_data.image_files?.[0]?.thumbnail_path || null,
-          medium_image_url: formData.selected_image_data.image_files?.[0]?.processed_path || null,
-          image_width: formData.selected_image_data.image_files?.[0]?.original_width || null,
-          image_height: formData.selected_image_data.image_files?.[0]?.original_height || null,
+          original_image_url: formData.selected_image_data.metadata?.imageUrl || '',
+          thumbnail_url: formData.selected_image_data.metadata?.thumbnailUrl || null,
+          medium_image_url: formData.selected_image_data.metadata?.imageUrl || null,
+          image_width: formData.selected_image_data.metadata?.width || null,
+          image_height: formData.selected_image_data.metadata?.height || null,
           is_primary: true,
           processing_status: 'completed'
         };
