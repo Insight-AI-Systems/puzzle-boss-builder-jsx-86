@@ -73,8 +73,14 @@ export function MinimalJigsawGame({
 
           console.log(`🧩 Creating ${rows}x${cols} puzzle (${pieceCount} pieces)`);
 
-          // Create puzzle canvas with minimal options
-          const puzzleCanvas = new headbreaker.Canvas(canvas);
+          // Create puzzle canvas with proper configuration
+          const puzzleCanvas = new headbreaker.Canvas(canvas, {
+            width: 800,
+            height: 600,
+            strokeWidth: 2,
+            strokeColor: '#000000',
+            borderFill: '#ffffff'
+          });
 
           // Create template with basic configuration
           const template = new headbreaker.Template({
