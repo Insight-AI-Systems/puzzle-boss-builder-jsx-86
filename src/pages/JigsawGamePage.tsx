@@ -6,7 +6,9 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function JigsawGamePage() {
+  console.log('🎯 JigsawGamePage component started loading');
   const { id } = useParams();
+  console.log('🎯 Puzzle ID from URL params:', id);
   
   // Fetch puzzle data if ID is provided
   const { data: puzzle, isLoading } = useQuery({
