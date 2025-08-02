@@ -41,6 +41,16 @@ export default function JigsawGamePage() {
   const pieceCount = puzzle?.piece_count || 100;
   const difficulty = puzzle?.difficulty_level || 'medium';
 
+  console.log('🧩 JigsawGamePage puzzle data:', {
+    puzzle,
+    title,
+    imageUrl,
+    pieceCount,
+    difficulty,
+    hasImages: !!puzzle?.images?.length,
+    firstImage: puzzle?.images?.[0]
+  });
+
   return (
     <PageLayout 
       title={title} 

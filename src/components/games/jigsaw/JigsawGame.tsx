@@ -29,6 +29,13 @@ export function JigsawGame({
   onMoveUpdate,
   onError
 }: JigsawGameProps) {
+  console.log('🧩 JigsawGame component loaded with props:', {
+    difficulty,
+    pieceCount,
+    imageUrl,
+    isActive,
+    gameState
+  });
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
