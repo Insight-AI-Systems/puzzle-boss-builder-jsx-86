@@ -479,6 +479,13 @@ export const JigsawPuzzleManager: React.FC = () => {
 
       setPuzzles(puzzles.filter(p => p.id !== id));
       
+      // If we're deleting the puzzle that's currently being edited, reset the form
+      if (editingPuzzle && editingPuzzle.id === id) {
+        setEditingPuzzle(null);
+        setShowCreateForm(false);
+        resetForm();
+      }
+      
       toast({
         title: "Success",
         description: "Puzzle deleted successfully",
