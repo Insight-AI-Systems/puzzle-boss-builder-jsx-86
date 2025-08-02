@@ -50,62 +50,67 @@ export function MinimalJigsawGame({
       canvas.width = 800;
       canvas.height = 600;
 
-      // Create headbreaker canvas - let the library handle everything
-      const puzzleCanvas = new headbreaker.Canvas(canvas, {
-        width: 800,
-        height: 600,
-        strokeWidth: 2,
-        strokeColor: '#000000',
-        borderFill: '#ffffff',
-        preventOffstageDrag: true,
-        fixed: false
-      });
+      console.log('🔍 Headbreaker object:', headbreaker);
+      console.log('🔍 Available methods:', Object.keys(headbreaker));
 
-      // Load the image
+      // Check if headbreaker is properly loaded
+      if (!headbreaker || !headbreaker.Canvas) {
+        throw new Error('Headbreaker library not properly loaded');
+      }
+
+      // Load the image first
       const img = new Image();
       img.crossOrigin = 'anonymous';
 
       img.onload = () => {
         try {
-          // Calculate grid based on piece count - let headbreaker determine optimal layout
+          console.log('📸 Image loaded successfully');
+
+          // Calculate grid based on piece count
           const gridSize = Math.sqrt(pieceCount);
           const cols = Math.ceil(gridSize);
           const rows = Math.ceil(gridSize);
 
-          // Create template with minimal configuration - use headbreaker defaults
+          console.log(`🧩 Creating ${rows}x${cols} puzzle (${pieceCount} pieces)`);
+
+          // Create puzzle canvas with minimal options
+          const puzzleCanvas = new headbreaker.Canvas(canvas);
+
+          // Create template with basic configuration
           const template = new headbreaker.Template({
             width: 400,
             height: 400,
-            pieceSize: 400 / Math.max(cols, rows), // Let headbreaker calculate optimal size
-            proximity: 20 // Default snap distance
+            pieceSize: 40
           });
 
-          // Build the template grid
+          // Build the template
           template.build(rows, cols);
 
-          // Use headbreaker manufacturer as intended - minimal configuration
+          // Create the puzzle using the manufacturer pattern
           const puzzle = headbreaker.manufacturer
             .withTemplate(template)
             .withImage(img)
             .withCanvas(puzzleCanvas)
-            .withPiecesCount({ x: cols, y: rows })
             .build();
 
           puzzleRef.current = puzzle;
 
-          // Let headbreaker handle the shuffling with default parameters
+          // Shuffle the pieces
           puzzle.shuffle();
 
-          // Add completion listener - the only custom logic we need
+          console.log('✅ Puzzle created and shuffled');
+
+          // Add completion listener
           puzzle.onConnect(() => {
+            console.log('🔗 Pieces connected');
             if (puzzle.isValid()) {
+              console.log('🎉 Puzzle completed!');
               setIsCompleted(true);
               onComplete?.();
             }
           });
 
           setIsLoading(false);
-          console.log('✅ Minimal puzzle created successfully');
 
         } catch (err) {
           console.error('❌ Error creating puzzle:', err);
@@ -115,10 +120,12 @@ export function MinimalJigsawGame({
       };
 
       img.onerror = () => {
+        console.error('❌ Failed to load image:', imageUrl);
         setError('Failed to load image');
         setIsLoading(false);
       };
 
+      console.log('📥 Loading image:', imageUrl);
       img.src = imageUrl;
 
     } catch (err) {
