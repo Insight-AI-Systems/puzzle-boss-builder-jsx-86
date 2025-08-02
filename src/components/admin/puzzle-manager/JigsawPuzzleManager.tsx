@@ -397,9 +397,26 @@ export const JigsawPuzzleManager: React.FC = () => {
     if (!editingPuzzle) return;
 
     try {
+      const updateData = {
+        title: formData.title.trim(),
+        description: formData.description?.trim() || null,
+        category_id: formData.category_id || null,
+        difficulty_level: formData.difficulty_level,
+        piece_count: formData.piece_count,
+        estimated_time_minutes: formData.estimated_time_minutes,
+        price: formData.price || 0,
+        is_free: formData.is_free,
+        status: formData.status,
+        tags: formData.tags || [],
+        metadata: {
+          product_value: formData.product_value,
+          release_threshold: formData.release_threshold
+        }
+      };
+
       const { data, error } = await supabase
         .from('jigsaw_puzzles')
-        .update(formData)
+        .update(updateData)
         .eq('id', editingPuzzle.id)
         .select()
         .single();
