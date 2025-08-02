@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ImageLibrarySelector } from '@/components/admin/puzzle-manager/ImageLibrarySelector';
-import { FileUploadTool } from '@/components/admin/FileUploadTool';
+import { HeadbreakerIntegrationTool } from '@/components/admin/HeadbreakerIntegrationTool';
 import { Puzzle, Play, Image, Grid3x3, Grid2x2, Grid } from 'lucide-react';
 
 interface GameOption {
@@ -87,7 +87,7 @@ export default function GamesDashboard() {
   };
 
   if (isPlaying && selectedImage) {
-    return <FileUploadTool />;
+    return <HeadbreakerIntegrationTool />;
   }
 
   if (selectedGame === 'jigsaw') {
