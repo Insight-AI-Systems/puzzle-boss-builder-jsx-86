@@ -1,12 +1,27 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-// @ts-ignore - headbreaker library doesn't have TypeScript definitions
-import * as headbreaker from 'headbreaker';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MinimalJigsawGameProps {
   imageUrl?: string;
   pieceCount?: 20 | 100 | 500;
   onComplete?: () => void;
+}
+
+// Define global variables needed by the puzzle engine
+declare global {
+  var createjs: any;
+  var s_oSpriteLibrary: any;
+  var CANVAS_WIDTH: number;
+  var CANVAS_HEIGHT: number;
+  var PRIMARY_FONT: string;
+  var ON_MOUSE_UP: string;
+  var ON_RELEASE_YES: string;
+  var ON_RELEASE_NO: string;
+  var createBitmap: any;
+  var CTLText: any;
+  var CGfxButton: any;
+  var CMain: any;
 }
 
 export function MinimalJigsawGame({ 
@@ -16,29 +31,100 @@ export function MinimalJigsawGame({
 }: MinimalJigsawGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const puzzleRef = useRef<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [scriptsLoaded, setScriptsLoaded] = useState(false);
 
-  useEffect(() => {
-    if (canvasRef.current) {
-      initializePuzzle();
-    }
-    
-    return () => {
-      if (puzzleRef.current) {
-        puzzleRef.current.destroy?.();
+  // Load puzzle JavaScript files from database
+  const loadPuzzleScripts = async () => {
+    try {
+      console.log('🔄 Loading puzzle scripts from database...');
+      
+      const { data: jsFiles, error } = await supabase
+        .from('puzzle_js_files')
+        .select('filename, content')
+        .order('filename');
+
+      if (error) throw error;
+
+      if (!jsFiles || jsFiles.length === 0) {
+        throw new Error('No puzzle JavaScript files found in database');
       }
-    };
-  }, [imageUrl, pieceCount]);
 
+      console.log('📁 Found JS files:', jsFiles.map(f => f.filename));
+
+      // Load CreateJS first if needed
+      if (!window.createjs) {
+        await loadCreateJS();
+      }
+
+      // Set up global constants needed by the puzzle engine
+      window.CANVAS_WIDTH = 800;
+      window.CANVAS_HEIGHT = 600;
+      window.PRIMARY_FONT = 'Arial';
+      window.ON_MOUSE_UP = 'mouseup';
+      window.ON_RELEASE_YES = 'release_yes';
+      window.ON_RELEASE_NO = 'release_no';
+
+      // Helper functions
+      window.createBitmap = (sprite: any) => new window.createjs.Bitmap(sprite);
+      
+      // Execute each JavaScript file
+      for (const file of jsFiles) {
+        try {
+          console.log(`🔧 Loading ${file.filename}...`);
+          // Create a script element and execute the content
+          const scriptElement = document.createElement('script');
+          scriptElement.textContent = file.content;
+          document.head.appendChild(scriptElement);
+        } catch (scriptError) {
+          console.error(`❌ Error loading ${file.filename}:`, scriptError);
+        }
+      }
+
+      setScriptsLoaded(true);
+      console.log('✅ All puzzle scripts loaded successfully');
+
+    } catch (err) {
+      console.error('❌ Error loading puzzle scripts:', err);
+      setError(`Failed to load puzzle engine: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
+  // Load CreateJS library
+  const loadCreateJS = async (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (window.createjs) {
+        resolve();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://code.createjs.com/1.0.0/createjs.min.js';
+      script.onload = () => {
+        console.log('✅ CreateJS loaded');
+        resolve();
+      };
+      script.onerror = () => reject(new Error('Failed to load CreateJS'));
+      document.head.appendChild(script);
+    });
+  };
+
+  // Initialize the puzzle engine
   const initializePuzzle = async () => {
     console.log('🚀 initializePuzzle called with:', { 
       hasCanvas: !!canvasRef.current, 
       imageUrl,
-      pieceCount
+      pieceCount,
+      scriptsLoaded
     });
     
+    if (!scriptsLoaded) {
+      console.log('⏳ Scripts not loaded yet, waiting...');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     setIsCompleted(false);
@@ -46,12 +132,10 @@ export function MinimalJigsawGame({
     try {
       const canvas = canvasRef.current;
       if (!canvas) {
-        console.error('❌ CRITICAL: Canvas not found');
         throw new Error('Canvas not found');
       }
       
       if (!imageUrl) {
-        console.error('❌ CRITICAL: No imageUrl provided');
         throw new Error('No image URL provided');
       }
 
@@ -61,115 +145,61 @@ export function MinimalJigsawGame({
       }
 
       // Set canvas size
-      canvas.width = 800;
-      canvas.height = 600;
-      canvas.style.width = '800px';
-      canvas.style.height = '600px';
+      canvas.width = window.CANVAS_WIDTH;
+      canvas.height = window.CANVAS_HEIGHT;
 
-      console.log('🔍 Headbreaker object:', headbreaker);
-      console.log('🔍 Available methods:', Object.keys(headbreaker));
-      console.log('🖼️ Image URL being used:', imageUrl);
-      console.log('🧩 Piece count:', pieceCount);
+      console.log('🎮 Initializing CreateJS stage...');
+      
+      // Initialize CreateJS stage
+      const stage = new window.createjs.Stage(canvas);
+      window.createjs.Touch.enable(stage);
+      stage.enableMouseOver(10);
+      
+      // Create basic sprite library if it doesn't exist
+      if (!window.s_oSpriteLibrary) {
+        window.s_oSpriteLibrary = {
+          getSprite: (name: string) => {
+            // Return a basic rectangle for missing sprites
+            const graphics = new window.createjs.Graphics();
+            graphics.beginFill("#cccccc").drawRect(0, 0, 100, 40);
+            const shape = new window.createjs.Shape(graphics);
+            return shape;
+          }
+        };
+      }
 
-      // Load the image first
+      // Load the puzzle image
       const img = new Image();
       img.crossOrigin = 'anonymous';
 
       img.onload = () => {
         try {
-          console.log('📸 Image loaded successfully, dimensions:', img.width, 'x', img.height);
-
-          // Calculate grid based on piece count
-          const gridSize = Math.sqrt(pieceCount);
-          const cols = Math.ceil(gridSize);
-          const rows = Math.ceil(gridSize);
-
-          console.log(`🧩 Creating ${rows}x${cols} puzzle (${pieceCount} pieces)`);
-
-          // Get canvas context for manual rendering
-          const context = canvas.getContext('2d');
-          if (!context) throw new Error('Could not get canvas context');
-
-          // Clear canvas and set background
-          context.clearRect(0, 0, canvas.width, canvas.height);
-          context.fillStyle = '#e5e7eb';
-          context.fillRect(0, 0, canvas.width, canvas.height);
-
-          // Calculate image display size (maintain aspect ratio)
-          const maxWidth = 600;
-          const maxHeight = 450;
-          const aspectRatio = img.width / img.height;
+          console.log('📸 Image loaded, creating puzzle...');
           
-          let displayWidth = maxWidth;
-          let displayHeight = maxWidth / aspectRatio;
+          // Create a simple puzzle display for now
+          const bitmap = new window.createjs.Bitmap(img);
           
-          if (displayHeight > maxHeight) {
-            displayHeight = maxHeight;
-            displayWidth = maxHeight * aspectRatio;
-          }
-
-          const startX = (canvas.width - displayWidth) / 2;
-          const startY = (canvas.height - displayHeight) / 2;
-
-          console.log('🎨 Drawing image at:', startX, startY, displayWidth, displayHeight);
-
-          // Draw image
-          context.drawImage(img, startX, startY, displayWidth, displayHeight);
-
-          // Draw grid lines to show puzzle pieces
-          context.strokeStyle = '#1f2937';
-          context.lineWidth = 2;
+          // Scale image to fit canvas
+          const scaleX = (window.CANVAS_WIDTH - 100) / img.width;
+          const scaleY = (window.CANVAS_HEIGHT - 100) / img.height;
+          const scale = Math.min(scaleX, scaleY);
           
-          const pieceWidth = displayWidth / cols;
-          const pieceHeight = displayHeight / rows;
-
-          console.log('📏 Piece dimensions:', pieceWidth, 'x', pieceHeight);
-
-          // Draw vertical lines
-          for (let i = 1; i < cols; i++) {
-            const x = startX + (i * pieceWidth);
-            context.beginPath();
-            context.moveTo(x, startY);
-            context.lineTo(x, startY + displayHeight);
-            context.stroke();
-          }
-
-          // Draw horizontal lines  
-          for (let i = 1; i < rows; i++) {
-            const y = startY + (i * pieceHeight);
-            context.beginPath();
-            context.moveTo(startX, y);
-            context.lineTo(startX + displayWidth, y);
-            context.stroke();
-          }
-
-          // Draw border
-          context.strokeRect(startX, startY, displayWidth, displayHeight);
-
-          // Add text overlay
-          context.fillStyle = 'rgba(0, 0, 0, 0.8)';
-          context.fillRect(startX, startY + displayHeight - 50, displayWidth, 50);
+          bitmap.scaleX = bitmap.scaleY = scale;
+          bitmap.x = (window.CANVAS_WIDTH - img.width * scale) / 2;
+          bitmap.y = (window.CANVAS_HEIGHT - img.height * scale) / 2;
           
-          context.fillStyle = 'white';
-          context.font = 'bold 18px Arial';
-          context.textAlign = 'center';
-          context.fillText(
-            `${pieceCount} Piece Puzzle`, 
-            startX + displayWidth / 2, 
-            startY + displayHeight - 30
-          );
-          
-          context.font = '14px Arial';
-          context.fillText(
-            'Click Reset to Scramble Pieces', 
-            startX + displayWidth / 2, 
-            startY + displayHeight - 10
-          );
+          stage.addChild(bitmap);
+          stage.update();
 
           // Create a simple puzzle object for completion tracking
           const simplePuzzle = {
+            stage: stage,
             pieces: Array.from({ length: pieceCount }, (_, i) => ({ id: i, placed: false })),
             isComplete: false,
+            destroy: () => {
+              stage.removeAllChildren();
+              stage.update();
+            },
             complete: function() {
               this.isComplete = true;
               setIsCompleted(true);
@@ -178,12 +208,11 @@ export function MinimalJigsawGame({
           };
 
           puzzleRef.current = simplePuzzle;
-
           setIsLoading(false);
-          console.log('✅ Simple puzzle display created');
+          console.log('✅ Puzzle initialized with CreateJS');
 
         } catch (err) {
-          console.error('❌ Error creating puzzle display:', err);
+          console.error('❌ Error creating puzzle:', err);
           setError(`Failed to create puzzle: ${err instanceof Error ? err.message : 'Unknown error'}`);
           setIsLoading(false);
         }
@@ -204,6 +233,22 @@ export function MinimalJigsawGame({
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadPuzzleScripts();
+  }, []);
+
+  useEffect(() => {
+    if (scriptsLoaded && canvasRef.current) {
+      initializePuzzle();
+    }
+    
+    return () => {
+      if (puzzleRef.current) {
+        puzzleRef.current.destroy?.();
+      }
+    };
+  }, [imageUrl, pieceCount, scriptsLoaded]);
 
   const handleReset = () => {
     initializePuzzle();
