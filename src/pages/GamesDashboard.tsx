@@ -102,7 +102,7 @@ export default function GamesDashboard() {
             </Badge>
           </div>
           <MinimalJigsawGame
-            imageUrl={selectedImage.original_image_url || selectedImage.image_url}
+            imageUrl={selectedImage.metadata?.imageUrl || selectedImage.original_image_url || selectedImage.image_url}
             pieceCount={selectedPieces as 20 | 100 | 500}
             onComplete={handleGameComplete}
           />
@@ -139,7 +139,7 @@ export default function GamesDashboard() {
                   <div className="space-y-4">
                     <div className="relative">
                       <img
-                        src={selectedImage.original_image_url || selectedImage.image_url}
+                        src={selectedImage.metadata?.imageUrl || selectedImage.original_image_url || selectedImage.image_url}
                         alt={selectedImage.name || 'Selected image'}
                         className="w-full h-48 object-cover rounded-lg"
                       />
