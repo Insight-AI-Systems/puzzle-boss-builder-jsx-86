@@ -154,15 +154,40 @@ export function JigsawGame({
           // Set puzzle reference
           puzzleRef.current = puzzle;
 
+          console.log('🧩 Puzzle created, pieces count:', puzzle.pieces.length);
+
           // Shuffle pieces
           puzzle.shuffle(0.8);
 
-          // Position pieces in the tray area
+          // Position pieces in the tray area (right side of canvas)
           puzzle.pieces.forEach((piece: any, index: number) => {
-            const trayX = 450 + (index % 6) * 60;
-            const trayY = 50 + Math.floor(index / 6) * 60;
+            const trayX = 450 + (index % 6) * 55;
+            const trayY = 50 + Math.floor(index / 6) * 55;
             piece.relocate(trayX, trayY);
+            console.log(`🧩 Positioned piece ${index} at (${trayX}, ${trayY})`);
           });
+
+          console.log('🧩 All pieces positioned in tray area');
+
+          // Draw a visual separator for the tray
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(420, 0);
+            ctx.lineTo(420, 600);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Add text labels
+            ctx.fillStyle = '#666';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Puzzle Area', 200, 30);
+            ctx.fillText('Piece Tray', 600, 30);
+          }
 
           // Add event listeners
           puzzle.onConnect((piece: any, target: any) => {
