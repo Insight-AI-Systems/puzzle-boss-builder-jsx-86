@@ -38,54 +38,32 @@ export function HeadbreakerIntegrationTool() {
     setIsProcessing(true);
     
     try {
-      // Save each file to public directory
-      for (const file of uploadedFiles) {
-        if (!file.saved) {
-          await fetch('/api/save-file', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              filename: file.name,
-              content: file.content,
-              directory: 'public/headbreaker'
-            })
-          });
-          
-          setUploadedFiles(prev => 
-            prev.map(f => f.name === file.name ? { ...f, saved: true } : f)
-          );
-        }
-      }
+      // Mark files as ready (no actual saving needed for blob approach)
+      setUploadedFiles(prev => 
+        prev.map(f => ({ ...f, saved: true }))
+      );
 
-      // Create HTML test page
-      const htmlContent = generateTestHTML(uploadedFiles);
-      await fetch('/api/save-file', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          filename: 'headbreaker-test.html',
-          content: htmlContent,
-          directory: 'public'
-        })
-      });
-
-      toast.success('Files integrated successfully!');
+      toast.success('Files ready for testing!');
       
     } catch (error) {
-      console.error('Error saving files:', error);
-      toast.error('Failed to save files. Check console for details.');
+      console.error('Error processing files:', error);
+      toast.error('Error processing files. Please try again.');
     }
     
     setIsProcessing(false);
   };
 
-  const generateTestHTML = (files: UploadedFile[]) => {
-    const jsFiles = files.filter(f => f.name.endsWith('.js'));
-    const cssFiles = files.filter(f => f.name.endsWith('.css'));
+  const generateTestHTML = () => {
+    const jsFiles = uploadedFiles.filter(f => f.name.endsWith('.js'));
+    const cssFiles = uploadedFiles.filter(f => f.name.endsWith('.css'));
+    
+    const cssContent = cssFiles.map(f => 
+      `<style>\n${f.content}\n</style>`
+    ).join('\n    ');
+    
+    const jsContent = jsFiles.map(f => 
+      `<script>\n${f.content}\n</script>`
+    ).join('\n    ');
     
     return `<!DOCTYPE html>
 <html lang="en">
@@ -93,7 +71,7 @@ export function HeadbreakerIntegrationTool() {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Headbreaker Test</title>
-    ${cssFiles.map(f => `<link rel="stylesheet" href="./headbreaker/${f.name}">`).join('\n    ')}
+    ${cssContent}
     <style>
         body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
         #puzzle-container { width: 800px; height: 600px; border: 1px solid #ccc; margin: 20px 0; }
@@ -110,7 +88,7 @@ export function HeadbreakerIntegrationTool() {
     </div>
     <div id="puzzle-container"></div>
     
-    ${jsFiles.map(f => `<script src="./headbreaker/${f.name}"></script>`).join('\n    ')}
+    ${jsContent}
     
     <script>
         let puzzle;
@@ -242,7 +220,12 @@ export function HeadbreakerIntegrationTool() {
                 {uploadedFiles.some(f => f.saved) && (
                   <Button 
                     variant="outline"
-                    onClick={() => window.open('/headbreaker-test.html', '_blank')}
+                    onClick={() => {
+                      const htmlContent = generateTestHTML();
+                      const blob = new Blob([htmlContent], { type: 'text/html' });
+                      const url = URL.createObjectURL(blob);
+                      window.open(url, '_blank');
+                    }}
                     className="flex items-center gap-2"
                   >
                     <ExternalLink className="h-4 w-4" />
