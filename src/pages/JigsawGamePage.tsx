@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import PageLayout from '@/components/layouts/PageLayout';
-import { JigsawGameWrapper } from '@/components/games/jigsaw/JigsawGameWrapper';
+import { MinimalJigsawGame } from '@/components/games/jigsaw/MinimalJigsawGame';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -56,10 +56,10 @@ export default function JigsawGamePage() {
       title={title} 
       subtitle={subtitle}
     >
-      <JigsawGameWrapper 
-        difficulty={difficulty as 'easy' | 'medium' | 'hard'}
+      <MinimalJigsawGame 
         pieceCount={pieceCount as 20 | 100 | 500}
         imageUrl={imageUrl}
+        onComplete={() => console.log('Puzzle completed!')}
       />
     </PageLayout>
   );
