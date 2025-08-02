@@ -44,21 +44,29 @@ export function MinimalJigsawGame({
   const loadPuzzleScripts = async () => {
     try {
       console.log('🔄 Loading puzzle scripts from database...');
+      console.log('🔑 Supabase client available:', !!supabase);
       
       const { data: jsFiles, error } = await supabase
         .from('puzzle_js_files')
         .select('filename, content')
         .order('filename');
 
-      console.log('🔍 Database query result:', { jsFiles, error, hasJsFiles: !!jsFiles, jsFileCount: jsFiles?.length });
+      console.log('🔍 Database query result:', { 
+        jsFiles, 
+        error, 
+        hasJsFiles: !!jsFiles, 
+        jsFileCount: jsFiles?.length,
+        errorMessage: error?.message,
+        errorCode: error?.code 
+      });
 
       if (error) {
         console.error('❌ Database error:', error);
-        throw error;
+        throw new Error(`Database error: ${error.message}`);
       }
 
       if (!jsFiles || jsFiles.length === 0) {
-        console.error('❌ No JS files found in database');
+        console.error('❌ No JS files found in database - files data:', jsFiles);
         throw new Error('No puzzle JavaScript files found in database');
       }
 
