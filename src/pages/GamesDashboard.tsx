@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ImageLibrarySelector } from '@/components/admin/puzzle-manager/ImageLibrarySelector';
-import { MinimalJigsawGame } from '@/components/games/jigsaw/MinimalJigsawGame';
+import { BasicJigsawPuzzle } from '@/components/games/jigsaw/BasicJigsawPuzzle';
 import { Puzzle, Play, Image, Grid3x3, Grid2x2, Grid } from 'lucide-react';
 
 interface GameOption {
@@ -88,27 +88,12 @@ export default function GamesDashboard() {
 
   if (isPlaying && selectedImage) {
     return (
-      <PageLayout 
-        title="Playing Jigsaw Puzzle" 
-        subtitle={`${selectedPieces} pieces - ${selectedImage.name || 'Custom Image'}`}
-      >
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <Button onClick={handleBackToSelection} variant="outline">
-              Back to Games
-            </Button>
-            <Badge variant="secondary">
-              {selectedPieces} pieces
-            </Badge>
-          </div>
-          <MinimalJigsawGame
-            key={`${selectedImage.id || 'custom'}-${selectedPieces}`}
-            imageUrl={selectedImage.metadata?.imageUrl || selectedImage.original_image_url || selectedImage.image_url}
-            pieceCount={selectedPieces as 20 | 100 | 500}
-            onComplete={handleGameComplete}
-          />
-        </div>
-      </PageLayout>
+      <div className="w-full h-screen bg-gray-100">
+        <BasicJigsawPuzzle
+          imageUrl={selectedImage.metadata?.imageUrl || selectedImage.original_image_url || selectedImage.image_url}
+          pieceCount={selectedPieces}
+        />
+      </div>
     );
   }
 
