@@ -30,7 +30,7 @@ export function BasicJigsawPuzzle({ imageUrl, pieceCount = 20 }: BasicJigsawPuzz
         const rows = Math.ceil(gridSize);
         
         // Create the puzzle canvas
-        const canvas = headbreaker.Canvas(containerRef.current, {
+        const canvas = new headbreaker.Canvas(containerRef.current, {
           width: 800,
           height: 600,
           imageUrl: imageUrl,
@@ -42,7 +42,7 @@ export function BasicJigsawPuzzle({ imageUrl, pieceCount = 20 }: BasicJigsawPuzz
         });
 
         // Create puzzle with the specified grid
-        const puzzle = headbreaker.Puzzle(canvas, {
+        const puzzle = new headbreaker.Puzzle(canvas, {
           horizontalPiecesCount: cols,
           verticalPiecesCount: rows
         });
