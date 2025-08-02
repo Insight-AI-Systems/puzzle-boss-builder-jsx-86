@@ -384,14 +384,66 @@ export function CodeCanyonJigsawIntegration() {
                 const container = document.getElementById('game-container');
                 const canvas = document.getElementById('canvas');
                 
-                // Check sprite library first
+                // First, try to manually initialize sprite library if it exists but isn't initialized
+                log('🔍 Checking sprite library status...', 'info');
+                
                 if (typeof s_oSpriteLibrary === 'undefined') {
-                    log('❌ Sprite library not initialized! This is likely the cause of getSprite errors.', 'error');
-                    log('💡 Make sure sprite_lib.js is loaded and s_oSpriteLibrary is initialized', 'warning');
-                    return;
+                    log('❌ s_oSpriteLibrary is undefined', 'error');
+                    
+                    // Try to find sprite-related globals
+                    const spriteGlobals = Object.keys(window).filter(k => 
+                        k.toLowerCase().includes('sprite') || 
+                        k.toLowerCase().includes('atlas') ||
+                        k.toLowerCase().includes('texture')
+                    );
+                    
+                    if (spriteGlobals.length > 0) {
+                        log('🔍 Found sprite-related globals: ' + spriteGlobals.join(', '), 'info');
+                    }
+                    
+                    // Try to manually initialize if we can find initialization function
+                    if (typeof initSpriteLibrary === 'function') {
+                        log('🔧 Found initSpriteLibrary function, attempting manual initialization...', 'info');
+                        initSpriteLibrary();
+                    } else if (typeof InitSpriteLib === 'function') {
+                        log('🔧 Found InitSpriteLib function, attempting manual initialization...', 'info');
+                        InitSpriteLib();
+                    } else {
+                        log('💡 Try uploading all files and make sure sprite_lib.js loads first', 'warning');
+                        return;
+                    }
                 } else {
-                    log('✅ Sprite library found with sprites: ' + Object.keys(s_oSpriteLibrary).join(', '), 'success');
+                    log('✅ s_oSpriteLibrary exists', 'success');
+                    log('📊 Sprite library contents: ' + Object.keys(s_oSpriteLibrary).join(', '), 'info');
                 }
+                
+                // Wait a moment for sprite library to initialize
+                setTimeout(() => {
+                    continueGameInitialization(canvas);
+                }, 100);
+                
+            } catch (error) {
+                log('❌ Game initialization failed: ' + error.message, 'error');
+                
+                // Provide specific error guidance
+                if (error.message.includes('getSprite')) {
+                    log('🔍 getSprite error detected - sprite library initialization failed', 'warning');
+                    log('💡 Make sure sprite_lib.js is the first game file loaded', 'warning');
+                }
+                
+                console.error('Full error:', error);
+            }
+        }
+        
+        function continueGameInitialization(canvas) {
+            try {
+                // Double-check sprite library after delay
+                if (typeof s_oSpriteLibrary === 'undefined') {
+                    log('❌ Sprite library still not initialized after delay', 'error');
+                    return;
+                }
+                
+                log('✅ Sprite library confirmed initialized', 'success');
                 
                 // Check for stage setup
                 if (typeof createjs !== 'undefined' && canvas) {
@@ -442,14 +494,7 @@ export function CodeCanyonJigsawIntegration() {
                 }
                 
             } catch (error) {
-                log('❌ Game initialization failed: ' + error.message, 'error');
-                
-                // Provide specific error guidance
-                if (error.message.includes('getSprite')) {
-                    log('🔍 getSprite error detected - this usually means sprite library is not properly initialized', 'warning');
-                    log('💡 Check that sprite_lib.js loaded correctly and s_oSpriteLibrary exists', 'warning');
-                }
-                
+                log('❌ Game initialization failed in second phase: ' + error.message, 'error');
                 console.error('Full error:', error);
             }
         }
