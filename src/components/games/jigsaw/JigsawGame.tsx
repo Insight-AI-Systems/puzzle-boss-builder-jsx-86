@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { calculatePiecePosition, calculatePieceStyle, formatTime } from '@/utils/puzzleUtils';
+import { formatTime } from '@/utils/puzzleUtils';
+// @ts-ignore
+import { Canvas, Template, Shape, manufacturer } from 'headbreaker';
 
 interface JigsawGameProps {
   difficulty?: 'easy' | 'medium' | 'hard';
@@ -15,13 +17,6 @@ interface JigsawGameProps {
   onError?: (error: string) => void;
 }
 
-interface PuzzlePiece {
-  id: string;
-  currentPosition: number;
-  correctPosition: number;
-  isPlaced: boolean;
-}
-
 export function JigsawGame({
   difficulty = 'medium',
   pieceCount = 100,
@@ -33,7 +28,8 @@ export function JigsawGame({
   onMoveUpdate,
   onError
 }: JigsawGameProps) {
-  const gameContainerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const puzzleRef = useRef<any>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,15 +37,7 @@ export function JigsawGame({
   const [elapsedTime, setElapsedTime] = useState(0);
   const [moveCount, setMoveCount] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
-  const [pieces, setPieces] = useState<PuzzlePiece[]>([]);
-  const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
-  const [draggedPiece, setDraggedPiece] = useState<string | null>(null);
 
-  // Calculate grid dimensions
-  const gridSize = Math.sqrt(pieceCount);
-  const rows = Math.ceil(gridSize);
-  const columns = Math.ceil(gridSize);
-  
   // Use a fallback image if none provided
   const puzzleImage = imageUrl || '/placeholder.svg';
 
@@ -60,13 +48,6 @@ export function JigsawGame({
     isActive,
     gameStarted
   });
-
-  // Initialize puzzle pieces
-  useEffect(() => {
-    if (isActive && !gameStarted) {
-      initializePuzzle();
-    }
-  }, [isActive, pieceCount]);
 
   // Timer effect
   useEffect(() => {
@@ -79,98 +60,162 @@ export function JigsawGame({
     return () => clearInterval(interval);
   }, [gameStarted, gameCompleted]);
 
-  const initializePuzzle = () => {
-    console.log('🧩 Initializing puzzle with', pieceCount, 'pieces');
+  // Initialize puzzle when active
+  useEffect(() => {
+    if (isActive && canvasRef.current) {
+      initializePuzzle();
+    }
     
-    // Create puzzle pieces
-    const newPieces: PuzzlePiece[] = [];
-    for (let i = 0; i < pieceCount; i++) {
-      newPieces.push({
-        id: `piece-${i}`,
-        currentPosition: i,
-        correctPosition: i,
-        isPlaced: false
+    return () => {
+      // Cleanup puzzle on unmount
+      if (puzzleRef.current) {
+        puzzleRef.current.destroy?.();
+      }
+    };
+  }, [isActive, pieceCount, puzzleImage]);
+
+  const initializePuzzle = async () => {
+    console.log('🧩 Initializing headbreaker puzzle with', pieceCount, 'pieces');
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      if (!canvasRef.current) {
+        throw new Error('Canvas not available');
+      }
+
+      // Clear any existing puzzle
+      if (puzzleRef.current) {
+        puzzleRef.current.destroy?.();
+      }
+
+      // Calculate grid size based on piece count
+      const gridSize = Math.sqrt(pieceCount);
+      const rows = Math.ceil(gridSize);
+      const cols = Math.ceil(gridSize);
+
+      // Set canvas size
+      const canvas = canvasRef.current;
+      canvas.width = 800;
+      canvas.height = 600;
+
+      // Create puzzle canvas
+      const puzzleCanvas = new Canvas(canvas.id, {
+        width: 800,
+        height: 600,
+        strokeWidth: 2,
+        strokeColor: '#000000',
+        borderFill: '#ffffff',
+        preventOffstageDrag: true,
+        fixed: false
       });
-    }
-    
-    // Shuffle pieces
-    const shuffledPieces = [...newPieces];
-    for (let i = shuffledPieces.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      const temp = shuffledPieces[i].currentPosition;
-      shuffledPieces[i].currentPosition = shuffledPieces[j].currentPosition;
-      shuffledPieces[j].currentPosition = temp;
-    }
-    
-    setPieces(shuffledPieces);
-    setGameStarted(true);
-    setElapsedTime(0);
-    setMoveCount(0);
-    setGameCompleted(false);
-    console.log('🧩 Puzzle initialized with shuffled pieces');
-  };
 
-  const handlePieceClick = (pieceId: string) => {
-    if (gameCompleted) return;
-    
-    setSelectedPiece(pieceId === selectedPiece ? null : pieceId);
-    console.log('🧩 Piece selected:', pieceId);
-  };
-
-  const handleSlotClick = (slotPosition: number) => {
-    if (!selectedPiece || gameCompleted) return;
-    
-    const pieceIndex = pieces.findIndex(p => p.id === selectedPiece);
-    if (pieceIndex === -1) return;
-    
-    // Check if slot is already occupied
-    const occupiedBy = pieces.find(p => p.currentPosition === slotPosition);
-    
-    if (occupiedBy && occupiedBy.id !== selectedPiece) {
-      // Swap pieces
-      const newPieces = [...pieces];
-      const selectedPieceData = newPieces[pieceIndex];
-      const occupiedPieceIndex = newPieces.findIndex(p => p.id === occupiedBy.id);
+      // Load image and create puzzle
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
       
-      const tempPosition = selectedPieceData.currentPosition;
-      newPieces[pieceIndex].currentPosition = slotPosition;
-      newPieces[occupiedPieceIndex].currentPosition = tempPosition;
-      
-      setPieces(newPieces);
-    } else {
-      // Move piece to empty slot
-      const newPieces = [...pieces];
-      newPieces[pieceIndex].currentPosition = slotPosition;
-      setPieces(newPieces);
-    }
-    
-    setMoveCount(prev => {
-      const newCount = prev + 1;
-      onMoveUpdate?.(newCount);
-      return newCount;
-    });
-    
-    setSelectedPiece(null);
-    
-    // Check for completion
-    checkCompletion();
-  };
+      img.onload = () => {
+        try {
+          // Create puzzle template
+          const pieceWidth = 400 / cols;
+          const pieceHeight = 400 / rows;
+          
+          // Generate pieces using headbreaker
+          const template = new Template({
+            width: 400,
+            height: 400,
+            pieceSize: Math.min(pieceWidth, pieceHeight),
+            proximity: 20,
+            borderFill: '#ffffff',
+            strokeWidth: 2,
+            lineSoftness: 0.18
+          });
 
-  const checkCompletion = () => {
-    const allPlaced = pieces.every(piece => piece.currentPosition === piece.correctPosition);
-    
-    if (allPlaced) {
-      setGameCompleted(true);
-      const finalScore = calculateScore();
-      onScoreUpdate?.(finalScore);
-      onComplete?.({
-        score: finalScore,
-        time: elapsedTime,
-        moves: moveCount,
-        difficulty,
-        pieceCount
-      });
-      console.log('🧩 Puzzle completed!', { score: finalScore, time: elapsedTime, moves: moveCount });
+          template.build(rows, cols);
+
+          // Create the puzzle
+          const puzzle = manufacturer
+            .withTemplate(template)
+            .withImage(img)
+            .withCanvas(puzzleCanvas)
+            .withPiecesCount({ x: cols, y: rows })
+            .build();
+
+          // Set puzzle reference
+          puzzleRef.current = puzzle;
+
+          // Shuffle pieces
+          puzzle.shuffle(0.8);
+
+          // Position pieces in the tray area
+          puzzle.pieces.forEach((piece: any, index: number) => {
+            const trayX = 450 + (index % 6) * 60;
+            const trayY = 50 + Math.floor(index / 6) * 60;
+            piece.relocate(trayX, trayY);
+          });
+
+          // Add event listeners
+          puzzle.onConnect((piece: any, target: any) => {
+            console.log('🧩 Piece connected');
+            setMoveCount(prev => {
+              const newCount = prev + 1;
+              onMoveUpdate?.(newCount);
+              return newCount;
+            });
+            
+            // Check completion
+            if (puzzle.isValid()) {
+              setGameCompleted(true);
+              const finalScore = calculateScore();
+              onScoreUpdate?.(finalScore);
+              onComplete?.({
+                score: finalScore,
+                time: elapsedTime,
+                moves: moveCount + 1,
+                difficulty,
+                pieceCount
+              });
+              console.log('🧩 Puzzle completed!');
+            }
+          });
+
+          puzzle.onDisconnect(() => {
+            console.log('🧩 Piece disconnected');
+            setMoveCount(prev => {
+              const newCount = prev + 1;
+              onMoveUpdate?.(newCount);
+              return newCount;
+            });
+          });
+
+          // Start the game
+          setGameStarted(true);
+          setElapsedTime(0);
+          setMoveCount(0);
+          setGameCompleted(false);
+          setIsLoading(false);
+          
+          console.log('🧩 Headbreaker puzzle initialized successfully');
+
+        } catch (err) {
+          console.error('🧩 Error creating puzzle:', err);
+          setError('Failed to create puzzle');
+          setIsLoading(false);
+        }
+      };
+
+      img.onerror = () => {
+        console.error('🧩 Failed to load image:', puzzleImage);
+        setError('Failed to load puzzle image');
+        setIsLoading(false);
+      };
+
+      img.src = puzzleImage;
+
+    } catch (err) {
+      console.error('🧩 Error initializing puzzle:', err);
+      setError('Failed to initialize puzzle');
+      setIsLoading(false);
     }
   };
 
@@ -187,7 +232,6 @@ export function JigsawGame({
     console.log('🧩 Resetting puzzle');
     setGameStarted(false);
     setGameCompleted(false);
-    setSelectedPiece(null);
     initializePuzzle();
   };
 
@@ -243,73 +287,22 @@ export function JigsawGame({
         )}
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Puzzle Board */}
-        <Card className="p-4">
-          <h3 className="text-lg font-semibold mb-4">Puzzle Board</h3>
-          <div 
-            className="grid gap-1 bg-gray-200 p-2 rounded"
-            style={{ 
-              gridTemplateColumns: `repeat(${columns}, 1fr)`,
-              aspectRatio: '1'
-            }}
-          >
-            {Array.from({ length: pieceCount }, (_, index) => {
-              const pieceInSlot = pieces.find(p => p.currentPosition === index);
-              return (
-                <div
-                  key={`slot-${index}`}
-                  className={`
-                    aspect-square border-2 border-gray-300 cursor-pointer rounded
-                    ${pieceInSlot?.correctPosition === index ? 'border-green-500 bg-green-100' : 'border-gray-300'}
-                    ${!pieceInSlot ? 'bg-gray-100' : ''}
-                  `}
-                  onClick={() => handleSlotClick(index)}
-                  style={pieceInSlot ? calculatePieceStyle(
-                    pieceInSlot.id,
-                    pieceInSlot.correctPosition,
-                    rows,
-                    columns,
-                    300,
-                    300,
-                    puzzleImage
-                  ) : {}}
-                />
-              );
-            })}
-          </div>
-        </Card>
-
-        {/* Piece Tray */}
-        <Card className="p-4">
-          <h3 className="text-lg font-semibold mb-4">Piece Tray</h3>
-          <div 
-            className="grid gap-2 max-h-96 overflow-y-auto"
-            style={{ gridTemplateColumns: `repeat(${Math.min(columns, 6)}, 1fr)` }}
-          >
-            {pieces.map((piece) => (
-              <div
-                key={piece.id}
-                className={`
-                  aspect-square border-2 cursor-pointer rounded transition-all
-                  ${selectedPiece === piece.id ? 'border-blue-500 shadow-lg' : 'border-gray-300'}
-                  ${piece.currentPosition === piece.correctPosition ? 'opacity-50' : 'hover:border-blue-400'}
-                `}
-                onClick={() => handlePieceClick(piece.id)}
-                style={calculatePieceStyle(
-                  piece.id,
-                  piece.correctPosition,
-                  rows,
-                  columns,
-                  200,
-                  200,
-                  puzzleImage
-                )}
-              />
-            ))}
-          </div>
-        </Card>
-      </div>
+      {/* Puzzle Canvas */}
+      <Card className="p-4">
+        <h3 className="text-lg font-semibold mb-4">Jigsaw Puzzle</h3>
+        <div className="flex justify-center">
+          <canvas
+            ref={canvasRef}
+            id="puzzle-canvas"
+            className="border border-gray-300 rounded shadow-lg"
+            style={{ maxWidth: '100%', height: 'auto' }}
+          />
+        </div>
+        <div className="mt-4 text-sm text-gray-600 text-center">
+          <p>Drag pieces from the tray (right side) to the puzzle area (left side)</p>
+          <p>Pieces will snap together when correctly aligned</p>
+        </div>
+      </Card>
 
       {/* Preview Modal */}
       {showPreview && (
