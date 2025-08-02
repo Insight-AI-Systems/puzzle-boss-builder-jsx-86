@@ -94,6 +94,7 @@ export function HeadbreakerIntegrationTool() {
     <div id="current-image-preview"></div>
     
     <div class="controls">
+        <button onclick="diagnosticCheck()">🔍 Check Library Status</button>
         <button onclick="createPuzzle()">Create Puzzle</button>
         <button onclick="shufflePuzzle()">Shuffle</button>
         <button onclick="solvePuzzle()">Solve</button>
@@ -109,6 +110,7 @@ export function HeadbreakerIntegrationTool() {
         </label>
     </div>
     <div id="puzzle-container"></div>
+    <div id="diagnostics" style="background: #f5f5f5; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px;"></div>
     
     ${jsContent}
     
@@ -116,6 +118,45 @@ export function HeadbreakerIntegrationTool() {
         let puzzle;
         let canvas;
         let currentImageUrl = 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=800&h=600&fit=crop';
+        
+        function log(message) {
+            const diagnostics = document.getElementById('diagnostics');
+            diagnostics.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+            console.log(message);
+        }
+        
+        function diagnosticCheck() {
+            const diagnostics = document.getElementById('diagnostics');
+            diagnostics.innerHTML = '<h4>🔍 Library Diagnostic Check:</h4>';
+            
+            log('Checking global window object...');
+            log('Available global variables: ' + Object.keys(window).filter(k => k.toLowerCase().includes('head')).join(', '));
+            
+            log('Checking for headbreaker...');
+            log('typeof headbreaker: ' + typeof headbreaker);
+            
+            if (typeof headbreaker !== 'undefined') {
+                log('✅ headbreaker is available!');
+                log('headbreaker keys: ' + Object.keys(headbreaker).join(', '));
+                
+                if (headbreaker.Canvas) log('✅ headbreaker.Canvas found');
+                if (headbreaker.Puzzle) log('✅ headbreaker.Puzzle found');
+                if (headbreaker.canvas) log('✅ headbreaker.canvas function found');
+                
+            } else {
+                log('❌ headbreaker is NOT available');
+                log('Checking window.headbreaker: ' + typeof window.headbreaker);
+                log('Checking window.Headbreaker: ' + typeof window.Headbreaker);
+                log('Checking window.HEADBREAKER: ' + typeof window.HEADBREAKER);
+            }
+            
+            log('All available global variables: ');
+            Object.keys(window).forEach(key => {
+                if (key.length > 3 && !key.startsWith('webkit') && !key.startsWith('chrome')) {
+                    log('  - ' + key + ': ' + typeof window[key]);
+                }
+            });
+        }
         
         function loadSelectedImage() {
             const fileInput = document.getElementById('imageUpload');
