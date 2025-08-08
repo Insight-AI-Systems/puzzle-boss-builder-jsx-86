@@ -73,8 +73,7 @@ export class FinanceService {
         .from('site_income')
         .select(`
           *,
-          categories:category_id (name),
-          profiles:user_id (username)
+          categories:category_id (name)
         `)
         .gte('date', startDate)
         .lte('date', endDate);
@@ -199,8 +198,10 @@ export class FinanceService {
             .single();
             
           if (profileData) {
-            managerName = profileData.username || 'Unknown';
-            managerEmail = profileData.email || 'unknown@example.com';
+            const u = (profileData as any).username;
+            const e = (profileData as any).email;
+            managerName = typeof u === 'string' && u.trim().length > 0 ? u : 'Unknown';
+            managerEmail = typeof e === 'string' && e.trim().length > 0 ? e : 'unknown@example.com';
           }
         }
           
@@ -258,8 +259,10 @@ export class FinanceService {
             .single();
             
           if (profileData) {
-            username = profileData.username || 'Unknown';
-            email = profileData.email || 'unknown@example.com';
+            const u = (profileData as any).username;
+            const e = (profileData as any).email;
+            username = typeof u === 'string' && u.trim().length > 0 ? u : 'Unknown';
+            email = typeof e === 'string' && e.trim().length > 0 ? e : 'unknown@example.com';
           }
         }
         
