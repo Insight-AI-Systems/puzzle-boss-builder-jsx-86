@@ -64,20 +64,48 @@ export function MinimalJigsawGame({
     <div id="game"><canvas id="canvas" width="960" height="540"></canvas></div>
   </div>
   <script>
+    // Provide common globals many CodeCanyon engines expect
+    try {
+      var canvas = document.getElementById('canvas');
+      window.CANVAS_WIDTH = canvas ? canvas.width : 960;
+      window.CANVAS_HEIGHT = canvas ? canvas.height : 540;
+      window.s_oCanvas = canvas;
+      window.PUZZLE_CONFIG = {
+        imageUrl: ${JSON.stringify(imageUrl || '')},
+        pieceCount: ${pieceCount ?? 'null'}
+      };
+      window.addEventListener('error', function(e){ var s=document.getElementById('status'); if(s){ s.textContent = 'Runtime error: ' + (e.message||e); }});
+      window.addEventListener('unhandledrejection', function(e){ var s=document.getElementById('status'); if(s){ s.textContent = 'Promise rejection: ' + (e.reason && e.reason.message ? e.reason.message : e.reason); }});
+      console.log('[Sandbox] Globals set', { CANVAS_WIDTH: window.CANVAS_WIDTH, CANVAS_HEIGHT: window.CANVAS_HEIGHT, PUZZLE_CONFIG: window.PUZZLE_CONFIG });
+    } catch(e) { console.warn('[Sandbox] Global setup failed', e); }
     try { console.log('[Sandbox] createjs', typeof createjs); } catch(e) {}
   </script>
   ${jsFiles
-    .map((f) => `<!-- ${f.filename} -->\n<script>\ntry {\nconsole.log('Loading ${f.filename}...');\n${f.content}\nconsole.log('✅ ${f.filename} loaded');\n} catch(e) {\nconsole.error('❌ Error in ${f.filename}:', e);\nvar s=document.getElementById('status'); if(s){ s.textContent='Error in ${f.filename}: '+e.message; }\n}\n</script>`) 
+    .map((f) => `<!-- ${f.filename} -->\n<script>\ntry {\nconsole.log('Loading ${f.filename}...');\n${f.content}\nconsole.log('✅ ${f.filename} loaded');\n} catch(e) {\nconsole.error('❌ Error in ${f.filename}:', e);\nvar s=document.getElementById('status'); if(s){ s.textContent='Error in ${f.filename}: '+e.message; }\n}\n<\/script>`) 
     .join('\n')}
   <script>
     // Try common init patterns
     setTimeout(function(){
+      var s=document.getElementById('status');
       try {
-        var s=document.getElementById('status');
-        if (window.CMain && typeof window.CMain.init === 'function') { s && (s.textContent='Starting engine...'); window.CMain.init(); }
-        else if (window.CMain) { s && (s.textContent='Starting engine (ctor)...'); new window.CMain(); }
-        else { s && (s.textContent='CMain not found. Check console.'); }
-      } catch(e){ console.error('Engine start error', e); }
+        var canvas = document.getElementById('canvas');
+        window.CANVAS_WIDTH = canvas ? canvas.width : 960;
+        window.CANVAS_HEIGHT = canvas ? canvas.height : 540;
+        window.s_oCanvas = canvas;
+
+        if (window.CMain) {
+          s && (s.textContent='Starting engine...');
+          var main = null;
+          try { main = new window.CMain(canvas); console.log('[Sandbox] CMain(canvas) constructed'); } catch(e) { console.warn('[Sandbox] CMain(canvas) failed', e); }
+          if (!main) {
+            try { main = new window.CMain(); console.log('[Sandbox] CMain() constructed'); } catch(e) { console.warn('[Sandbox] CMain() failed', e); }
+          }
+          if (main && typeof main.init === 'function') { try { main.init(); console.log('[Sandbox] main.init() called'); } catch(e){ console.warn('[Sandbox] main.init() failed', e); } }
+          s && (s.textContent='Engine started (watch console for preload)');
+        } else {
+          s && (s.textContent='CMain not found. Check console.');
+        }
+      } catch(e){ console.error('Engine start error', e); s && (s.textContent='Engine start error: '+e.message); }
     }, 100);
   </script>
 </body>
