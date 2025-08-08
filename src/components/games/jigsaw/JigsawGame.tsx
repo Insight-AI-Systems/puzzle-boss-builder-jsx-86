@@ -28,7 +28,7 @@ export function JigsawGame({
   onMoveUpdate,
   onError
 }: JigsawGameProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const puzzleRef = useRef<any>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
@@ -119,11 +119,8 @@ export function JigsawGame({
       const rows = Math.ceil(gridSize);
       const cols = Math.ceil(gridSize);
 
-      // Set canvas size
-      const canvas = canvasRef.current;
-      canvas.width = 800;
-      canvas.height = 600;
-      canvas.id = 'puzzle-canvas'; // Ensure canvas has ID
+      // Container element id for headbreaker canvas
+      const containerId = 'puzzle-canvas';
 
       // Load image and then create canvas and puzzle
       const img = new Image();
@@ -132,7 +129,7 @@ export function JigsawGame({
       img.onload = () => {
         try {
           // Create puzzle canvas with Konva painter (required)
-          const puzzleCanvas = new headbreaker.Canvas(canvas, {
+          const puzzleCanvas = new headbreaker.Canvas('puzzle-canvas', {
             width: 800,
             height: 600,
             pieceSize: Math.floor(400 / Math.max(cols, rows)),
@@ -140,7 +137,7 @@ export function JigsawGame({
             borderFill: 10,
             strokeWidth: 2,
             lineSoftness: 0.18,
-            painter: new headbreaker.painters.Konva(),
+            
             image: img
           });
 
@@ -297,11 +294,11 @@ export function JigsawGame({
       <Card className="p-4">
         <h3 className="text-lg font-semibold mb-4">Jigsaw Puzzle</h3>
         <div className="flex justify-center">
-          <canvas
+          <div
             ref={canvasRef}
             id="puzzle-canvas"
             className="border border-gray-300 rounded shadow-lg"
-            style={{ maxWidth: '100%', height: 'auto' }}
+            style={{ width: 800, height: 600, maxWidth: '100%' }}
           />
         </div>
         <div className="mt-4 text-sm text-gray-600 text-center">
