@@ -39,7 +39,7 @@ export function JigsawGame({
   const [showPreview, setShowPreview] = useState(false);
 
   // Use a fallback image if none provided
-  const puzzleImage = imageUrl || '/placeholder.svg';
+  const puzzleImage = imageUrl || 'https://placekitten.com/800/600';
 
   console.log('🧩 JigsawGame rendered with:', {
     imageUrl: puzzleImage,
@@ -133,7 +133,7 @@ export function JigsawGame({
           const canvas = new headbreaker.Canvas(canvasRef.current, {
             width: 800,
             height: 600,
-            imageUrl: puzzleImage,
+            image: img,
             pieceSize: Math.floor(400 / Math.max(cols, rows)),
             proximity: 20,
             borderFill: 10,
