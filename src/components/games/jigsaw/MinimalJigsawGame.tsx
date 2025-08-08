@@ -138,8 +138,16 @@ export function MinimalJigsawGame({
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div>Loading original puzzle engine...</div>
+      <div className="w-full max-w-6xl mx-auto p-4">
+        <div className="flex justify-center">
+          <iframe
+            ref={iframeRef}
+            sandbox="allow-scripts"
+            className="border rounded shadow-lg w-full min-h-[540px]"
+            title="Jigsaw Engine Sandbox"
+          />
+        </div>
+        <div className="text-center text-sm text-muted-foreground mt-3">Loading original puzzle engine...</div>
       </div>
     );
   }
