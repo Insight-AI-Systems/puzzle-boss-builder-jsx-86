@@ -176,6 +176,11 @@ export function MinimalJigsawGame({
           />
         </div>
         <div className="text-center text-sm text-muted-foreground mt-3">Loading original puzzle engine...</div>
+        <div className="flex justify-center mt-2">
+          <button onClick={openStandalone} className="px-3 py-1.5 bg-gray-600 text-white rounded">
+            Open Standalone
+          </button>
+        </div>
       </div>
     );
   }
@@ -206,6 +211,11 @@ export function MinimalJigsawGame({
           className="border rounded shadow-lg w-full min-h-[540px]"
           title="Jigsaw Engine Sandbox"
         />
+      </div>
+      <div className="flex justify-end mt-2">
+        <button onClick={openStandalone} className="px-3 py-1.5 bg-gray-600 text-white rounded">
+          Open Standalone
+        </button>
       </div>
     </div>
   );
