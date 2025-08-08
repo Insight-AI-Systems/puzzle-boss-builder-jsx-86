@@ -134,60 +134,60 @@ export function JigsawGame({
             width: 800,
             height: 600,
             image: img,
-            pieceSize: Math.floor(400 / Math.max(cols, rows)),
+            pieceSize: Math.floor(Math.min(800 / cols, 600 / rows)),
             proximity: 20,
             borderFill: 10,
             strokeWidth: 2,
             lineSoftness: 0.18
           });
 
-          // Create puzzle and generate pieces
-          const puzzle = new headbreaker.Puzzle(canvas, {
+          // Generate pieces on the canvas directly (per official API)
+          canvas.adjustImagesToPuzzleHeight();
+          canvas.autogenerate({
             horizontalPiecesCount: cols,
             verticalPiecesCount: rows
           });
+          canvas.shuffle(0.8);
+          canvas.draw();
 
-          puzzle.autogenerate();
-          puzzle.shuffle(0.8);
-          puzzle.draw();
+          // Keep reference for events/cleanup
+          puzzleRef.current = canvas;
 
-          // Keep reference to the puzzle for events/cleanup
-          puzzleRef.current = puzzle;
+          console.log('🧩 Canvas created and puzzle generated');
 
-          console.log('🧩 Puzzle created, pieces count:', puzzle.pieces.length);
-
-          // Add event listeners
-          puzzle.onConnect((piece: any, target: any) => {
+          // Add event listeners on the canvas
+          canvas.onConnect((_piece: any, _figure: any, _target: any, _targetFigure: any) => {
             console.log('🧩 Piece connected');
             setMoveCount(prev => {
               const newCount = prev + 1;
               onMoveUpdate?.(newCount);
               return newCount;
             });
-            
-            // Check completion
-            if (puzzle.isValid()) {
-              setGameCompleted(true);
-              const finalScore = calculateScore();
-              onScoreUpdate?.(finalScore);
-              onComplete?.({
-                score: finalScore,
-                time: elapsedTime,
-                moves: moveCount + 1,
-                difficulty,
-                pieceCount
-              });
-              console.log('🧩 Puzzle completed!');
-            }
           });
 
-          puzzle.onDisconnect(() => {
+          canvas.onDisconnect(() => {
             console.log('🧩 Piece disconnected');
             setMoveCount(prev => {
               const newCount = prev + 1;
               onMoveUpdate?.(newCount);
               return newCount;
             });
+          });
+
+          // Completion detection
+          canvas.attachSolvedValidator();
+          canvas.onValid(() => {
+            setGameCompleted(true);
+            const finalScore = calculateScore();
+            onScoreUpdate?.(finalScore);
+            onComplete?.({
+              score: finalScore,
+              time: elapsedTime,
+              moves: moveCount,
+              difficulty,
+              pieceCount
+            });
+            console.log('🧩 Puzzle completed!');
           });
 
           // Start the game
