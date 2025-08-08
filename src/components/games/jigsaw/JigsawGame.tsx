@@ -28,7 +28,7 @@ export function JigsawGame({
   onMoveUpdate,
   onError
 }: JigsawGameProps) {
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const puzzleRef = useRef<any>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
@@ -119,8 +119,7 @@ export function JigsawGame({
       const rows = Math.ceil(gridSize);
       const cols = Math.ceil(gridSize);
 
-      // Container element id for headbreaker canvas
-      const containerId = 'puzzle-canvas';
+      // Using canvas element directly
 
       // Load image and then create canvas and puzzle
       const img = new Image();
@@ -129,7 +128,7 @@ export function JigsawGame({
       img.onload = () => {
         try {
           // Create puzzle canvas with Konva painter (required)
-          const puzzleCanvas = new headbreaker.Canvas('puzzle-canvas', {
+          const puzzleCanvas = new headbreaker.Canvas(canvasRef.current, {
             width: 800,
             height: 600,
             pieceSize: Math.floor(400 / Math.max(cols, rows)),
@@ -294,11 +293,13 @@ export function JigsawGame({
       <Card className="p-4">
         <h3 className="text-lg font-semibold mb-4">Jigsaw Puzzle</h3>
         <div className="flex justify-center">
-          <div
+          <canvas
             ref={canvasRef}
             id="puzzle-canvas"
+            width={800}
+            height={600}
             className="border border-gray-300 rounded shadow-lg"
-            style={{ width: 800, height: 600, maxWidth: '100%' }}
+            style={{ maxWidth: '100%', height: 'auto' }}
           />
         </div>
         <div className="mt-4 text-sm text-gray-600 text-center">
