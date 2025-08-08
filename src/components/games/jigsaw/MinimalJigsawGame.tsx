@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { JigsawGame } from './JigsawGame';
 
 interface MinimalJigsawGameProps {
   imageUrl?: string;
@@ -23,6 +24,8 @@ export function MinimalJigsawGame({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fallbackActive, setFallbackActive] = useState(false);
+  const [sandboxStatus, setSandboxStatus] = useState<string>('init');
 
   // Load all puzzle scripts into a sandboxed iframe and let the original engine take over
   const [lastSrcDoc, setLastSrcDoc] = useState<string | null>(null);
@@ -74,11 +77,16 @@ export function MinimalJigsawGame({
         imageUrl: ${JSON.stringify(imageUrl || '/placeholder.svg')},
         pieceCount: ${pieceCount ?? 'null'}
       };
-      window.addEventListener('error', function(e){ var s=document.getElementById('status'); if(s){ s.textContent = 'Runtime error: ' + (e.message||e); }});
-      window.addEventListener('unhandledrejection', function(e){ var s=document.getElementById('status'); if(s){ s.textContent = 'Promise rejection: ' + (e.reason && e.reason.message ? e.reason.message : e.reason); }});
+      window.addEventListener('error', function(e){ var s=document.getElementById('status'); if(s){ s.textContent = 'Runtime error: ' + (e.message||e); } try { parent && parent.postMessage({ source: 'jigsaw-sandbox', type: 'engine-error', payload: { message: e.message } }, '*'); } catch(_){} });
+      window.addEventListener('unhandledrejection', function(e){ var s=document.getElementById('status'); if(s){ s.textContent = 'Promise rejection: ' + (e.reason && e.reason.message ? e.reason.message : e.reason); } try { parent && parent.postMessage({ source: 'jigsaw-sandbox', type: 'engine-error', payload: { message: e.reason && e.reason.message ? e.reason.message : String(e.reason) } }, '*'); } catch(_){} });
       console.log('[Sandbox] Globals set', { CANVAS_WIDTH: window.CANVAS_WIDTH, CANVAS_HEIGHT: window.CANVAS_HEIGHT, PUZZLE_CONFIG: window.PUZZLE_CONFIG });
     } catch(e) { console.warn('[Sandbox] Global setup failed', e); }
     try { console.log('[Sandbox] createjs', typeof createjs); } catch(e) {}
+
+    // Helper to notify host
+    function postToHost(type, payload){
+      try { parent && parent.postMessage({ source: 'jigsaw-sandbox', type: type, payload: payload }, '*'); } catch(_){/* noop */}
+    }
 
     // Instrument PreloadJS to surface stuck preload reasons
     try {
@@ -87,11 +95,11 @@ export function MinimalJigsawGame({
         createjs.LoadQueue = function(useXHR, basePath, crossOrigin){
           var q = new OriginalLoadQueue(useXHR, basePath, crossOrigin);
           var s = document.getElementById('status');
-          q.addEventListener('error', function(e){ console.error('[PreloadJS] error', e); if(s){ s.textContent = 'Preload error: ' + (e && (e.data && e.data.src || e.message || e.type || 'unknown')); }});
-          q.addEventListener('fileerror', function(e){ console.error('[PreloadJS] fileerror', e); if(s){ s.textContent = 'File error: ' + (e && (e.data && e.data.src || e.item && e.item.src || 'unknown')); }});
-          q.addEventListener('fileload', function(e){ console.log('[PreloadJS] fileload', e && e.item && e.item.src); });
-          q.addEventListener('progress', function(e){ if(s){ s.textContent = 'Loading assets... ' + Math.round(((e && e.progress) || 0) * 100) + '%'; }});
-          q.addEventListener('complete', function(){ if(s){ s.textContent = 'Assets loaded. Starting...'; }});
+          q.addEventListener('error', function(e){ console.error('[PreloadJS] error', e); if(s){ s.textContent = 'Preload error: ' + (e && (e.data && e.data.src || e.message || e.type || 'unknown')); } postToHost('preload-error', { error: e && (e.data && e.data.src || e.message || e.type || 'unknown') }); });
+          q.addEventListener('fileerror', function(e){ console.error('[PreloadJS] fileerror', e); if(s){ s.textContent = 'File error: ' + (e && (e.data && e.data.src || e.item && e.item.src || 'unknown')); } postToHost('preload-error', { file: e && (e.data && e.data.src || e.item && e.item.src || 'unknown') }); });
+          q.addEventListener('fileload', function(e){ console.log('[PreloadJS] fileload', e && e.item && e.item.src); postToHost('preload-fileload', { src: e && e.item && e.item.src }); });
+          q.addEventListener('progress', function(e){ var p = Math.round(((e && e.progress) || 0) * 100); if(s){ s.textContent = 'Loading assets... ' + p + '%'; } postToHost('preload-progress', { progress: p }); });
+          q.addEventListener('complete', function(){ if(s){ s.textContent = 'Assets loaded. Starting...'; } postToHost('preload-complete'); });
           return q;
         };
         createjs.LoadQueue.prototype = OriginalLoadQueue.prototype;
@@ -185,6 +193,52 @@ export function MinimalJigsawGame({
     console.log('🎮 Iframe ready, initializing puzzle engine...');
     initializePuzzleEngine();
   }, []);
+
+  // Listen to messages from sandbox to decide on fallback
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      const data = (e as any).data;
+      if (!data || data.source !== 'jigsaw-sandbox') return;
+      console.log('[Host] Sandbox message:', data);
+      setSandboxStatus(data.type || 'unknown');
+      if (data.type === 'preload-complete') {
+        // Engine assets loaded; keep iframe
+        setFallbackActive(false);
+      } else if (data.type === 'preload-error' || data.type === 'engine-error') {
+        // Critical error; switch to fallback
+        setFallbackActive(true);
+      }
+    };
+    window.addEventListener('message', onMessage as any);
+    return () => window.removeEventListener('message', onMessage as any);
+  }, []);
+
+  // If sandbox stalls too long, activate fallback engine
+  useEffect(() => {
+    if (fallbackActive) return;
+    if (sandboxStatus === 'preload-complete') return;
+    const timer = setTimeout(() => {
+      if (!fallbackActive && sandboxStatus !== 'preload-complete') {
+        console.warn('🧩 Activating fallback engine due to sandbox stall');
+        setFallbackActive(true);
+      }
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [sandboxStatus, fallbackActive]);
+
+  // Fallback: use internal headbreaker-based engine if sandboxed engine fails or stalls
+  if (fallbackActive) {
+    return (
+      <div className="w-full max-w-6xl mx-auto p-4">
+        <div className="text-sm mb-3">Running fallback engine (headbreaker) due to sandbox issue: {sandboxStatus}</div>
+        <JigsawGame
+          imageUrl={imageUrl || '/placeholder.svg'}
+          pieceCount={pieceCount || 20}
+          onComplete={() => onComplete?.()}
+        />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
