@@ -1,7 +1,8 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import PageLayout from '@/components/layouts/PageLayout';
-import { MinimalJigsawGame } from '@/components/games/jigsaw/MinimalJigsawGame';
+import { PuzzleComponent } from '@/components/games/jigsaw/PuzzleComponent';
+import { JigsawLeaderboard } from '@/components/games/jigsaw/JigsawLeaderboard';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -46,6 +47,15 @@ export default function JigsawGamePage() {
   const pieceCount = puzzle?.piece_count || 100;
   const difficulty = puzzle?.difficulty_level || 'medium';
 
+  // Map piece count to a grid as close to square as possible
+  const computeGrid = (pieces: number) => {
+    if (pieces <= 20) return { rows: 4, columns: 5 };
+    if (pieces <= 100) return { rows: 10, columns: 10 };
+    return { rows: 20, columns: 25 };
+  };
+  const { rows, columns } = computeGrid(pieceCount);
+  const puzzleSlug = (puzzle?.id || id || 'puzzle') as string;
+
   console.log('🧩 JigsawGamePage puzzle data:', {
     puzzle,
     title,
@@ -71,11 +81,15 @@ export default function JigsawGamePage() {
       title={title} 
       subtitle={subtitle}
     >
-      <MinimalJigsawGame 
-        pieceCount={pieceCount as 20 | 100 | 500}
+      <PuzzleComponent
         imageUrl={imageUrl}
-        onComplete={() => console.log('Puzzle completed!')}
+        rows={rows}
+        columns={columns}
+        puzzleSlug={puzzleSlug}
       />
+      <div className="mt-6">
+        <JigsawLeaderboard puzzleSlug={puzzleSlug} />
+      </div>
     </PageLayout>
   );
 }
