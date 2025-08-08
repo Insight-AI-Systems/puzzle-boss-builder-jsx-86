@@ -28,7 +28,7 @@ export function JigsawGame({
   onMoveUpdate,
   onError
 }: JigsawGameProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const puzzleRef = useRef<any>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
@@ -113,6 +113,8 @@ export function JigsawGame({
       if (puzzleRef.current) {
         puzzleRef.current.destroy?.();
       }
+      // Clear container content to avoid duplicate canvases
+      canvasRef.current.innerHTML = '';
 
       // Calculate grid size based on piece count
       const gridSize = Math.sqrt(pieceCount);
@@ -127,32 +129,30 @@ export function JigsawGame({
       
       img.onload = () => {
         try {
-          // Create puzzle canvas with Konva painter (required)
-          const puzzleCanvas = new headbreaker.Canvas(canvasRef.current, {
+          // Create the puzzle canvas inside the container div
+          const canvas = new headbreaker.Canvas(canvasRef.current, {
             width: 800,
             height: 600,
+            imageUrl: puzzleImage,
             pieceSize: Math.floor(400 / Math.max(cols, rows)),
             proximity: 20,
             borderFill: 10,
             strokeWidth: 2,
-            lineSoftness: 0.18,
-            
-            image: img
+            lineSoftness: 0.18
           });
 
-          // Autogenerate grid pieces and draw
-          puzzleCanvas.autogenerate({
+          // Create puzzle and generate pieces
+          const puzzle = new headbreaker.Puzzle(canvas, {
             horizontalPiecesCount: cols,
             verticalPiecesCount: rows
           });
 
-          // Reference to underlying puzzle model
-          const puzzle = puzzleCanvas.puzzle;
-          puzzleRef.current = puzzle;
+          puzzle.autogenerate();
+          puzzle.shuffle(0.8);
+          puzzle.draw();
 
-          // Shuffle pieces and render
-          puzzleCanvas.shuffle(0.8);
-          puzzleCanvas.draw();
+          // Keep reference to the puzzle for events/cleanup
+          puzzleRef.current = puzzle;
 
           console.log('🧩 Puzzle created, pieces count:', puzzle.pieces.length);
 
@@ -293,13 +293,11 @@ export function JigsawGame({
       <Card className="p-4">
         <h3 className="text-lg font-semibold mb-4">Jigsaw Puzzle</h3>
         <div className="flex justify-center">
-          <canvas
+          <div
             ref={canvasRef}
             id="puzzle-canvas"
-            width={800}
-            height={600}
             className="border border-gray-300 rounded shadow-lg"
-            style={{ maxWidth: '100%', height: 'auto' }}
+            style={{ width: 800, height: 600, maxWidth: '100%' }}
           />
         </div>
         <div className="mt-4 text-sm text-gray-600 text-center">
