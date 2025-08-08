@@ -1177,6 +1177,41 @@ export type Database = {
           },
         ]
       }
+      leaderboard: {
+        Row: {
+          completion_time_seconds: number
+          created_at: string
+          id: string
+          moves: number | null
+          puzzle_slug: string
+          user_id: string
+        }
+        Insert: {
+          completion_time_seconds: number
+          created_at?: string
+          id?: string
+          moves?: number | null
+          puzzle_slug: string
+          user_id: string
+        }
+        Update: {
+          completion_time_seconds?: number
+          created_at?: string
+          id?: string
+          moves?: number | null
+          puzzle_slug?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_user_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memberships: {
         Row: {
           amount: number
