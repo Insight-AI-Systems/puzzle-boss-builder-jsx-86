@@ -71,7 +71,7 @@ export function MinimalJigsawGame({
       window.CANVAS_HEIGHT = canvas ? canvas.height : 540;
       window.s_oCanvas = canvas;
       window.PUZZLE_CONFIG = {
-        imageUrl: ${JSON.stringify(imageUrl || '')},
+        imageUrl: ${JSON.stringify(imageUrl || '/placeholder.svg')},
         pieceCount: ${pieceCount ?? 'null'}
       };
       window.addEventListener('error', function(e){ var s=document.getElementById('status'); if(s){ s.textContent = 'Runtime error: ' + (e.message||e); }});
@@ -79,6 +79,28 @@ export function MinimalJigsawGame({
       console.log('[Sandbox] Globals set', { CANVAS_WIDTH: window.CANVAS_WIDTH, CANVAS_HEIGHT: window.CANVAS_HEIGHT, PUZZLE_CONFIG: window.PUZZLE_CONFIG });
     } catch(e) { console.warn('[Sandbox] Global setup failed', e); }
     try { console.log('[Sandbox] createjs', typeof createjs); } catch(e) {}
+
+    // Instrument PreloadJS to surface stuck preload reasons
+    try {
+      if (window.createjs && createjs.LoadQueue) {
+        var OriginalLoadQueue = createjs.LoadQueue;
+        createjs.LoadQueue = function(useXHR, basePath, crossOrigin){
+          var q = new OriginalLoadQueue(useXHR, basePath, crossOrigin);
+          var s = document.getElementById('status');
+          q.addEventListener('error', function(e){ console.error('[PreloadJS] error', e); if(s){ s.textContent = 'Preload error: ' + (e && (e.data && e.data.src || e.message || e.type || 'unknown')); }});
+          q.addEventListener('fileerror', function(e){ console.error('[PreloadJS] fileerror', e); if(s){ s.textContent = 'File error: ' + (e && (e.data && e.data.src || e.item && e.item.src || 'unknown')); }});
+          q.addEventListener('fileload', function(e){ console.log('[PreloadJS] fileload', e && e.item && e.item.src); });
+          q.addEventListener('progress', function(e){ if(s){ s.textContent = 'Loading assets... ' + Math.round(((e && e.progress) || 0) * 100) + '%'; }});
+          q.addEventListener('complete', function(){ if(s){ s.textContent = 'Assets loaded. Starting...'; }});
+          return q;
+        };
+        createjs.LoadQueue.prototype = OriginalLoadQueue.prototype;
+        createjs.LoadQueue.prototype.constructor = createjs.LoadQueue;
+        console.log('[Sandbox] PreloadJS instrumentation active');
+      } else {
+        console.log('[Sandbox] PreloadJS not available yet');
+      }
+    } catch(e) { console.warn('[Sandbox] PreloadJS instrumentation failed', e); }
   </script>
   ${jsFiles
     .map((f) => `<!-- ${f.filename} -->\n<script>\ntry {\nconsole.log('Loading ${f.filename}...');\n${f.content}\nconsole.log('✅ ${f.filename} loaded');\n} catch(e) {\nconsole.error('❌ Error in ${f.filename}:', e);\nvar s=document.getElementById('status'); if(s){ s.textContent='Error in ${f.filename}: '+e.message; }\n}\n<\/script>`) 
