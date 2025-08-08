@@ -20,74 +20,97 @@ export function MinimalJigsawGame({
   pieceCount,
   onComplete 
 }: MinimalJigsawGameProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load all puzzle scripts and let the original engine take over
+  // Load all puzzle scripts into a sandboxed iframe and let the original engine take over
+  const [lastSrcDoc, setLastSrcDoc] = useState<string | null>(null);
   const initializePuzzleEngine = async () => {
     try {
-      console.log('🚀 DEBUGGING: Starting puzzle engine initialization...');
-      
+      setError(null);
+      setIsLoading(true);
+      console.log('🚀 DEBUGGING: Starting puzzle engine initialization (iframe sandbox)...');
+
       // Fetch JavaScript files from database
       console.log('📡 DEBUGGING: Fetching JS files from database...');
-      const { data: jsFiles, error } = await supabase
+      const { data: jsFiles, error: dbError } = await supabase
         .from('puzzle_js_files')
         .select('filename, content')
         .order('filename');
 
-      console.log('📊 DEBUGGING: Database query result:', { 
-        filesCount: jsFiles?.length || 0, 
-        error: error?.message || 'none',
+      console.log('📊 DEBUGGING: Database query result:', {
+        filesCount: jsFiles?.length || 0,
+        error: dbError?.message || 'none',
         sampleFile: jsFiles?.[0] ? jsFiles[0].filename : 'none'
       });
 
-      if (error) {
-        console.error('❌ DEBUGGING: Database error:', error);
-        throw new Error(`Database error: ${error.message}`);
-      }
+      if (dbError) throw new Error(`Database error: ${dbError.message}`);
+      if (!jsFiles || jsFiles.length === 0) throw new Error('No puzzle JavaScript files found in database');
 
-      if (!jsFiles || jsFiles.length === 0) {
-        console.error('❌ DEBUGGING: No JS files found in database');
-        throw new Error('No puzzle JavaScript files found in database');
-      }
+      // Build srcdoc for sandboxed iframe
+      const srcDoc = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Jigsaw Engine Sandbox</title>
+  <style>html,body{margin:0;padding:0;background:#111;color:#ddd;font:14px/1.4 system-ui,sans-serif}#wrap{padding:8px}#status{font-size:12px;color:#8aa}#game{display:flex;justify-content:center;padding:8px}</style>
+  <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
+</head>
+<body>
+  <div id="wrap">
+    <div id="status">Loading engine scripts...</div>
+    <div id="game"><canvas id="canvas" width="960" height="540"></canvas></div>
+  </div>
+  <script>
+    try { console.log('[Sandbox] createjs', typeof createjs); } catch(e) {}
+  </script>
+  ${jsFiles
+    .map((f) => `<!-- ${f.filename} -->\n<script>\ntry {\nconsole.log('Loading ${f.filename}...');\n${f.content}\nconsole.log('✅ ${f.filename} loaded');\n} catch(e) {\nconsole.error('❌ Error in ${f.filename}:', e);\nvar s=document.getElementById('status'); if(s){ s.textContent='Error in ${f.filename}: '+e.message; }\n}\n</script>`) 
+    .join('\n')}
+  <script>
+    // Try common init patterns
+    setTimeout(function(){
+      try {
+        var s=document.getElementById('status');
+        if (window.CMain && typeof window.CMain.init === 'function') { s && (s.textContent='Starting engine...'); window.CMain.init(); }
+        else if (window.CMain) { s && (s.textContent='Starting engine (ctor)...'); new window.CMain(); }
+        else { s && (s.textContent='CMain not found. Check console.'); }
+      } catch(e){ console.error('Engine start error', e); }
+    }, 100);
+  </script>
+</body>
+</html>`;
 
-      console.log('📁 DEBUGGING: Files to load:', jsFiles.map(f => f.filename));
+      setLastSrcDoc(srcDoc);
 
-      // Load CreateJS first
-      if (!window.createjs) {
-        console.log('📦 Loading CreateJS...');
-        await loadCreateJS();
-      }
+      // Write to iframe via srcdoc
+      const iframe = iframeRef.current;
+      if (!iframe) throw new Error('Iframe not ready');
 
-      // Execute all JavaScript files in order
-      for (const file of jsFiles) {
-        console.log(`🔧 Loading ${file.filename}...`);
-        const script = document.createElement('script');
-        script.textContent = file.content;
-        document.head.appendChild(script);
-      }
-
-      // Give the engine a moment to initialize
-      setTimeout(() => {
-        console.log('🚀 Starting original puzzle engine...');
-        
-        // Check if CMain exists and initialize it
-        if (window.CMain && typeof window.CMain.init === 'function') {
-          console.log('✅ CMain found, initializing...');
-          window.CMain.init();
-        } else if (window.CMain) {
-          console.log('✅ CMain found, calling constructor...');
-          new window.CMain();
-        } else {
-          console.log('⚠️ CMain not found, looking for other initialization methods...');
-          console.log('Available globals:', Object.keys(window).filter(k => k.startsWith('C')));
-        }
-        
+      const onLoad = () => {
+        console.log('✅ Iframe content loaded');
         setIsLoading(false);
-        console.log('✅ Puzzle engine initialization complete');
-      }, 100);
+        iframe.removeEventListener('load', onLoad);
+      };
+      iframe.addEventListener('load', onLoad);
+      // 10s fail-safe
+      const timeout = setTimeout(() => {
+        if (isLoading) {
+          console.warn('⏱️ Engine load timeout');
+          setError('Engine load timeout');
+          setIsLoading(false);
+          iframe.removeEventListener('load', onLoad);
+        }
+      }, 10000);
 
+      // Assign srcdoc triggers load
+      iframe.srcdoc = srcDoc;
+
+      // Clear timeout when load completes
+      const cleanupOnLoad = () => clearTimeout(timeout);
+      iframe.addEventListener('load', cleanupOnLoad, { once: true });
     } catch (err) {
       console.error('❌ Error loading puzzle engine:', err);
       setError(`Failed to load puzzle: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -95,34 +118,22 @@ export function MinimalJigsawGame({
     }
   };
 
-  // Load CreateJS
-  const loadCreateJS = async (): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      if (window.createjs) {
-        resolve();
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = 'https://code.createjs.com/1.0.0/createjs.min.js';
-      script.onload = () => {
-        console.log('✅ CreateJS loaded');
-        resolve();
-      };
-      script.onerror = () => reject(new Error('Failed to load CreateJS'));
-      document.head.appendChild(script);
-    });
+  // Open the same sandbox in a standalone window (for debugging)
+  const openStandalone = () => {
+    if (!lastSrcDoc) return;
+    const w = window.open('', '_blank');
+    if (w) {
+      w.document.open();
+      w.document.write(lastSrcDoc);
+      w.document.close();
+    } else {
+      alert('Popup blocked');
+    }
   };
 
   useEffect(() => {
-    if (canvasRef.current) {
-      console.log('🎮 Canvas ready, initializing puzzle engine...');
-      
-      // Set canvas ID that the original engine expects
-      canvasRef.current.id = 'canvas';
-      
-      initializePuzzleEngine();
-    }
+    console.log('🎮 Iframe ready, initializing puzzle engine...');
+    initializePuzzleEngine();
   }, []);
 
   if (isLoading) {
@@ -137,9 +148,14 @@ export function MinimalJigsawGame({
     return (
       <div className="flex flex-col justify-center items-center min-h-[400px] space-y-4">
         <div className="text-red-600">Error: {error}</div>
-        <button onClick={initializePuzzleEngine} className="px-4 py-2 bg-blue-500 text-white rounded">
-          Try Again
-        </button>
+        <div className="flex gap-3">
+          <button onClick={initializePuzzleEngine} className="px-4 py-2 bg-blue-500 text-white rounded">
+            Try Again
+          </button>
+          <button onClick={openStandalone} className="px-4 py-2 bg-gray-600 text-white rounded">
+            Open Standalone
+          </button>
+        </div>
       </div>
     );
   }
@@ -148,10 +164,11 @@ export function MinimalJigsawGame({
   return (
     <div className="w-full max-w-6xl mx-auto p-4">
       <div className="flex justify-center">
-        <canvas
-          ref={canvasRef}
-          id="canvas"
-          className="border rounded shadow-lg"
+        <iframe
+          ref={iframeRef}
+          sandbox="allow-scripts"
+          className="border rounded shadow-lg w-full min-h-[540px]"
+          title="Jigsaw Engine Sandbox"
         />
       </div>
     </div>
