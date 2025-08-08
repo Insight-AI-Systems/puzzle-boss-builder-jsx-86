@@ -90,7 +90,23 @@ export function JigsawGame({
       }
 
       if (!canvasRef.current) {
-        throw new Error('Canvas not available');
+        console.warn('🧩 Canvas ref not ready yet. Retrying initialization...');
+        setIsLoading(true);
+        let attempts = 0;
+        const retry = () => {
+          attempts++;
+          if (canvasRef.current) {
+            initializePuzzle();
+          } else if (attempts < 20) {
+            setTimeout(retry, 100);
+          } else {
+            console.error('🧩 Canvas still not available after retries');
+            setError('Failed to initialize puzzle: Canvas not available');
+            setIsLoading(false);
+          }
+        };
+        setTimeout(retry, 100);
+        return;
       }
 
       // Clear any existing puzzle
@@ -242,7 +258,7 @@ export function JigsawGame({
     return (
       <div className="flex flex-col justify-center items-center min-h-[400px] space-y-4">
         <div className="text-lg text-red-600">Error: {error}</div>
-        <Button onClick={initializePuzzle}>Try Again</Button>
+        <Button onClick={() => { setError(null); setTimeout(() => initializePuzzle(), 100); }}>Try Again</Button>
       </div>
     );
   }
