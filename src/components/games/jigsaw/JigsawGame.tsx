@@ -109,85 +109,40 @@ export function JigsawGame({
       canvas.height = 600;
       canvas.id = 'puzzle-canvas'; // Ensure canvas has ID
 
-      // Create puzzle canvas - use the actual canvas element
-      const puzzleCanvas = new headbreaker.Canvas(canvas, {
-        width: 800,
-        height: 600,
-        strokeWidth: 2,
-        strokeColor: '#000000',
-        borderFill: '#ffffff',
-        preventOffstageDrag: true,
-        fixed: false
-      });
-
-      // Load image and create puzzle
+      // Load image and then create canvas and puzzle
       const img = new Image();
       img.crossOrigin = 'anonymous';
       
       img.onload = () => {
         try {
-          // Create puzzle template
-          const pieceWidth = 400 / cols;
-          const pieceHeight = 400 / rows;
-          
-          // Generate pieces using headbreaker
-          const template = new headbreaker.Template({
-            width: 400,
-            height: 400,
-            pieceSize: Math.min(pieceWidth, pieceHeight),
+          // Create puzzle canvas with Konva painter (required)
+          const puzzleCanvas = new headbreaker.Canvas(canvas, {
+            width: 800,
+            height: 600,
+            pieceSize: Math.floor(400 / Math.max(cols, rows)),
             proximity: 20,
-            borderFill: '#ffffff',
+            borderFill: 10,
             strokeWidth: 2,
-            lineSoftness: 0.18
+            lineSoftness: 0.18,
+            painter: new headbreaker.painters.Konva(),
+            image: img
           });
 
-          template.build(rows, cols);
+          // Autogenerate grid pieces and draw
+          puzzleCanvas.autogenerate({
+            horizontalPiecesCount: cols,
+            verticalPiecesCount: rows
+          });
 
-          // Create the puzzle
-          const puzzle = headbreaker.manufacturer
-            .withTemplate(template)
-            .withImage(img)
-            .withCanvas(puzzleCanvas)
-            .withPiecesCount({ x: cols, y: rows })
-            .build();
-
-          // Set puzzle reference
+          // Reference to underlying puzzle model
+          const puzzle = puzzleCanvas.puzzle;
           puzzleRef.current = puzzle;
 
+          // Shuffle pieces and render
+          puzzleCanvas.shuffle(0.8);
+          puzzleCanvas.draw();
+
           console.log('🧩 Puzzle created, pieces count:', puzzle.pieces.length);
-
-          // Shuffle pieces
-          puzzle.shuffle(0.8);
-
-          // Position pieces in the tray area (right side of canvas)
-          puzzle.pieces.forEach((piece: any, index: number) => {
-            const trayX = 450 + (index % 6) * 55;
-            const trayY = 50 + Math.floor(index / 6) * 55;
-            piece.relocate(trayX, trayY);
-            console.log(`🧩 Positioned piece ${index} at (${trayX}, ${trayY})`);
-          });
-
-          console.log('🧩 All pieces positioned in tray area');
-
-          // Draw a visual separator for the tray
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.strokeStyle = '#ccc';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            ctx.beginPath();
-            ctx.moveTo(420, 0);
-            ctx.lineTo(420, 600);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            
-            // Add text labels
-            ctx.fillStyle = '#666';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('Puzzle Area', 200, 30);
-            ctx.fillText('Piece Tray', 600, 30);
-          }
 
           // Add event listeners
           puzzle.onConnect((piece: any, target: any) => {
