@@ -7,32 +7,67 @@ import { toast } from 'sonner';
 
 interface UploadedFile {
   name: string;
-  content: string;
   saved: boolean;
+  kind: 'js' | 'css' | 'html' | 'image' | 'audio' | 'other';
+  content?: string;
+  blob?: Blob;
+  objectUrl?: string;
+  mime?: string;
 }
-
 export function CodeCanyonJigsawIntegration() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    acceptedFiles.forEach((file) => {
+const onDrop = useCallback((acceptedFiles: File[]) => {
+  acceptedFiles.forEach((file) => {
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const isText = /^(js|css|html|json|txt)$/.test(ext) || file.type.startsWith('text/');
+    const isImage = file.type.startsWith('image/') || /^(png|jpg|jpeg|gif|webp|bmp|svg)$/.test(ext);
+    const isAudio = file.type.startsWith('audio/') || /^(mp3|ogg|wav|m4a|aac|flac)$/.test(ext);
+
+    if (isImage || isAudio) {
+      const objectUrl = URL.createObjectURL(file);
+      setUploadedFiles(prev => [...prev, {
+        name: file.name,
+        saved: false,
+        kind: isImage ? 'image' : 'audio',
+        blob: file,
+        objectUrl,
+        mime: file.type || (isImage ? `image/${ext}` : `audio/${ext}`)
+      }]);
+      console.log('📦 Asset ready (blob):', file.name, objectUrl);
+      return;
+    }
+
+    if (isText) {
       const reader = new FileReader();
-      
       reader.onload = () => {
         const content = reader.result as string;
         setUploadedFiles(prev => [...prev, {
           name: file.name,
           content,
-          saved: false
+          saved: false,
+          kind: ext === 'js' ? 'js' : ext === 'css' ? 'css' : ext === 'html' ? 'html' : 'other',
+          mime: file.type || 'text/plain'
         }]);
-        
         console.log('📁 CodeCanyon game file ready:', file.name);
       };
-      
       reader.readAsText(file);
-    });
-  }, []);
+      return;
+    }
+
+    // Fallback: treat as binary asset
+    const objectUrl = URL.createObjectURL(file);
+    setUploadedFiles(prev => [...prev, {
+      name: file.name,
+      saved: false,
+      kind: 'other',
+      blob: file,
+      objectUrl,
+      mime: file.type || 'application/octet-stream'
+    }]);
+  });
+}, []);
 
   const saveFilesToProject = async () => {
     setIsProcessing(true);
@@ -181,7 +216,7 @@ export function CodeCanyonJigsawIntegration() {
             <h2>📁 Loaded Files</h2>
             ${uploadedFiles.map(file => `
             <div class="file-info">
-                <strong>${file.name}</strong> (${file.content.length} chars)
+                <strong>${file.name}</strong> (${file.content ? (file.content.length + ' chars') : (file.blob ? (file.blob.size + ' bytes') : 'unknown size')})
             </div>`).join('')}
         </div>
 
@@ -208,6 +243,67 @@ export function CodeCanyonJigsawIntegration() {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    
+    <!-- Asset mapping and loader shims -->
+    <script>
+      const ASSET_MAP = {
+        ${uploadedFiles.filter(f => f.objectUrl).map(f => `"${f.name.split('/').pop().toLowerCase()}": "${f.objectUrl}"`).join(',\n        ')}
+      };
+      function filenameOf(u){ try { const s = (u || '').split('?')[0]; const parts = s.split('/'); return (parts[parts.length-1]||'').toLowerCase(); } catch(e){ return (u||'').toLowerCase(); } }
+      function resolveAsset(u){ const name = filenameOf(u); return ASSET_MAP[name] || u; }
+      (function installShims(){
+        try {
+          const originalFetch = window.fetch ? window.fetch.bind(window) : null;
+          if (originalFetch) {
+            window.fetch = (input, init) => {
+              const url = typeof input === 'string' ? input : (input && input.url) || '';
+              const mapped = resolveAsset(url);
+              if (mapped !== url) return originalFetch(mapped, init);
+              return originalFetch(input, init);
+            };
+          }
+          const originalOpen = XMLHttpRequest.prototype.open;
+          XMLHttpRequest.prototype.open = function(method, url, async, ...rest) {
+            const mapped = resolveAsset(url);
+            return originalOpen.call(this, method, mapped, async, ...rest);
+          };
+          const imgDesc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+          if (imgDesc && imgDesc.set) {
+            Object.defineProperty(HTMLImageElement.prototype, 'src', {
+              set(value) { imgDesc.set.call(this, resolveAsset(value)); },
+              get() { return imgDesc.get ? imgDesc.get.call(this) : ''; }
+            });
+          }
+          const audioDesc = Object.getOwnPropertyDescriptor(HTMLAudioElement.prototype, 'src');
+          if (audioDesc && audioDesc.set) {
+            Object.defineProperty(HTMLAudioElement.prototype, 'src', {
+              set(value) { audioDesc.set.call(this, resolveAsset(value)); },
+              get() { return audioDesc.get ? audioDesc.get.call(this) : ''; }
+            });
+          }
+          if (window.Howl) {
+            const OrigHowl = window.Howl;
+            window.Howl = function(opts) {
+              if (opts && opts.src) {
+                const arr = Array.isArray(opts.src) ? opts.src : [opts.src];
+                opts.src = arr.map((s) => resolveAsset(s));
+              }
+              return new OrigHowl(opts);
+            };
+            window.Howl.prototype = OrigHowl.prototype;
+          }
+          if (window.createjs && createjs.Sound && createjs.Sound.registerSound) {
+            const _reg = createjs.Sound.registerSound;
+            createjs.Sound.registerSound = function(src, id, data) {
+              return _reg.call(this, resolveAsset(src), id, data);
+            };
+          }
+          console.log('[Tester] Asset shims installed', ASSET_MAP);
+        } catch (e) {
+          console.warn('[Tester] Failed to install shims', e);
+        }
+      })();
+    </script>
     
     <!-- Include uploaded JavaScript files in dependency order -->
     ${(() => {
@@ -661,12 +757,14 @@ export function CodeCanyonJigsawIntegration() {
     }
   };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
       'text/javascript': ['.js'],
       'text/css': ['.css'],
-      'text/html': ['.html']
+      'text/html': ['.html'],
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.svg'],
+      'audio/*': ['.mp3', '.ogg', '.wav', '.m4a', '.aac', '.flac']
     }
   });
 
@@ -723,7 +821,7 @@ export function CodeCanyonJigsawIntegration() {
                         <File className="h-4 w-4" />
                         <span className="flex-1">{file.name}</span>
                         <span className="text-xs text-muted-foreground">
-                          {file.content.length} chars
+                          {file.content ? `${file.content.length} chars` : (file.blob ? `${file.blob.size} bytes` : '')}
                         </span>
                         {file.saved && <Check className="h-4 w-4 text-green-600" />}
                       </div>
