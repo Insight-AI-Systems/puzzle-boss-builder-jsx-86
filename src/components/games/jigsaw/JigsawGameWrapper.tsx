@@ -1,7 +1,7 @@
 import React from 'react';
 import { BaseGameWrapper } from '../BaseGameWrapper';
 import { ResponsiveGameContainer } from '../ResponsiveGameContainer';
-import { JigsawGame } from './JigsawGame';
+import { FixedHeadbreaker } from './FixedHeadbreaker';
 import { GameConfig, GameHooks } from '../types/GameTypes';
 
 interface JigsawGameWrapperProps {
@@ -38,19 +38,13 @@ export function JigsawGameWrapper({
     <ResponsiveGameContainer maxWidth="full" aspectRatio="auto">
       <BaseGameWrapper config={gameConfig} hooks={gameHooks}>
         {(gameProps) => (
-          <JigsawGame
+          <FixedHeadbreaker
             difficulty={difficulty}
-            pieceCount={pieceCount}
             imageUrl={imageUrl}
-            gameState={gameProps.gameState}
-            isActive={gameProps.isActive}
             onComplete={(stats) => {
               gameProps.onComplete(stats);
               gameProps.onScoreUpdate(stats.score || 0);
             }}
-            onScoreUpdate={gameProps.onScoreUpdate}
-            onMoveUpdate={gameProps.onMoveUpdate}
-            onError={gameProps.onError}
           />
         )}
       </BaseGameWrapper>

@@ -1,0 +1,9 @@
+export { JigsawGame } from './JigsawGame';
+export { KonvaJigsawGame } from './KonvaJigsawGame';
+export { MinimalJigsawGame } from './MinimalJigsawGame';
+export { EnhancedJigsawWrapper } from './EnhancedJigsawWrapper';
+export { JigsawGameWrapper } from './JigsawGameWrapper';
+export { BasicJigsawPuzzle } from './BasicJigsawPuzzle';
+export { PuzzleComponent } from './PuzzleComponent';
+export { SimpleCanvasTest } from './SimpleCanvasTest';
+export { JigsawLeaderboard } from './JigsawLeaderboard';

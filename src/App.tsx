@@ -16,6 +16,14 @@ import { SupabaseProtectedRoute } from '@/components/auth/SupabaseProtectedRoute
 import HomePage from '@/pages/HomePage';
 import About from '@/pages/About';
 import Contact from '@/pages/Contact';
+import TestLogin from '@/pages/TestLogin';
+import SimpleLogin from '@/pages/SimpleLogin';
+import QuickSetup from '@/pages/QuickSetup';
+import DirectAccess from '@/pages/DirectAccess';
+import DevLogin from '@/pages/DevLogin';
+import BypassLogin from '@/pages/BypassLogin';
+import NoAuthAdmin from '@/pages/NoAuthAdmin';
+import DirectPuzzle from '@/pages/DirectPuzzle';
 // Puzzles page removed - CodeCanyon system will be added
 // PuzzlePlay removed - using new puzzle system
 import Leaderboard from '@/pages/Leaderboard';
@@ -42,7 +50,9 @@ import {
 
 // Import jigsaw game
 import JigsawGamePage from '@/pages/JigsawGamePage';
+import EnhancedJigsawGamePage from '@/pages/EnhancedJigsawGamePage';
 import GamesDashboard from '@/pages/GamesDashboard';
+import TestHeadbreaker from '@/pages/TestHeadbreaker';
 
 // No Clerk configuration needed - using Supabase only
 
@@ -74,6 +84,15 @@ function AppRoutes() {
             <Route path="categories" element={<Categories />} />
             <Route path="terms" element={<Terms />} />
             <Route path="privacy" element={<Privacy />} />
+            <Route path="test-login" element={<TestLogin />} />
+            <Route path="login" element={<SimpleLogin />} />
+            <Route path="setup" element={<QuickSetup />} />
+            <Route path="access" element={<DirectAccess />} />
+            <Route path="dev" element={<DevLogin />} />
+            <Route path="bypass" element={<BypassLogin />} />
+            <Route path="admin-noauth" element={<NoAuthAdmin />} />
+            <Route path="puzzle-direct" element={<DirectPuzzle />} />
+            <Route path="test-headbreaker" element={<TestHeadbreaker />} />
             
             {/* Game routes */}
             <Route path="games" element={<GamesDashboard />} />
@@ -84,8 +103,9 @@ function AppRoutes() {
             <Route path="games/block-puzzle" element={<BlockPuzzlePro />} />
             <Route path="games/crossword" element={<DailyCrossword />} />
             <Route path="games/mahjong" element={<MahjongGamePage />} />
-            <Route path="games/jigsaw" element={<JigsawGamePage />} />
-            <Route path="puzzle/:id" element={<JigsawGamePage />} />
+            <Route path="games/jigsaw" element={<EnhancedJigsawGamePage />} />
+            <Route path="games/jigsaw-classic" element={<JigsawGamePage />} />
+            <Route path="puzzle/:id" element={<EnhancedJigsawGamePage />} />
             
             {/* Old puzzle session route removed - using new puzzle system */}
             
