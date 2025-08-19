@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Headbreaker Test - Direct HTML</title>
+    <style>
+        body {
+            background: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        #puzzle-container {
+            border: 2px solid #8b5cf6;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        button {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #7c3aed;
+        }
+        #status {
+            margin: 10px 0;
+            padding: 10px;
+            background: #333;
+            border-radius: 4px;
+            min-height: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Headbreaker Direct Test</h1>
+    <div id="status">Ready to start...</div>
+    <div>
+        <button onclick="initPuzzle()">Initialize Puzzle</button>
+        <button onclick="shufflePuzzle()">Shuffle</button>
+        <button onclick="clearPuzzle()">Clear</button>
+    </div>
+    <div id="puzzle-container"></div>
+
+    <script src="https://unpkg.com/headbreaker@3.0.0/dist/headbreaker.js"></script>
+    <script>
+        let puzzle = null;
+        const status = document.getElementById('status');
+        
+        // Base64 SVG image to avoid CORS
+        const testImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICAgIDxkZWZzPgogICAgICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZDEiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICAgICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojNDMzOWY2O3N0b3Atb3BhY2l0eToxIiAvPgogICAgICAgICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM4YjVjZjY7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICAgICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDwvZGVmcz4KICAgIDxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI2dyYWQxKSIvPgogICAgPGNpcmNsZSBjeD0iMTAwIiBjeT0iNzUiIHI9IjQwIiBmaWxsPSIjZmZmIiBvcGFjaXR5PSIwLjQiLz4KICAgIDxjaXJjbGUgY3g9IjMwMCIgY3k9IjIyNSIgcj0iNjAiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuMyIvPgogICAgPHJlY3QgeD0iMTc1IiB5PSIxMjUiIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iMC4zNSIgdHJhbnNmb3JtPSJyb3RhdGUoNDUgMjAwIDE1MCkiLz4KICAgIDx0ZXh0IHg9IjIwMCIgeT0iMTUwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMzIiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlRFU1Q8L3RleHQ+Cjwvc3ZnPg==';
+
+        function updateStatus(message, isError = false) {
+            status.textContent = message;
+            status.style.background = isError ? '#553333' : '#333';
+            console.log(message);
+        }
+
+        async function initPuzzle() {
+            updateStatus('Initializing puzzle...');
+            
+            try {
+                // Clear container
+                const container = document.getElementById('puzzle-container');
+                container.innerHTML = '';
+                
+                // Create canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = 400;
+                canvas.height = 300;
+                canvas.style.background = '#2a2a2a';
+                container.appendChild(canvas);
+                
+                // Load image
+                const img = new Image();
+                img.src = testImage;
+                
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                });
+                
+                updateStatus('Image loaded, creating puzzle...');
+                
+                // Create puzzle
+                puzzle = new headbreaker.Canvas(canvas, {
+                    width: 400,
+                    height: 300,
+                    pieceSize: 60,
+                    image: img,
+                    proximity: 15,
+                    borderFill: 8,
+                    strokeWidth: 1.5,
+                    lineSoftness: 0.1
+                });
+                
+                // Generate pieces
+                puzzle.autogenerate({
+                    horizontalPiecesCount: 4,
+                    verticalPiecesCount: 3
+                });
+                
+                // Shuffle
+                puzzle.shuffle(0.6);
+                
+                // Draw
+                puzzle.draw();
+                
+                // Add listeners
+                let connects = 0;
+                puzzle.onConnect(() => {
+                    connects++;
+                    updateStatus(`Piece connected! Total: ${connects}`);
+                });
+                
+                puzzle.attachSolvedValidator();
+                puzzle.onValid(() => {
+                    updateStatus('🎉 Puzzle Complete!');
+                });
+                
+                updateStatus('Puzzle ready! Drag pieces to connect them.');
+                
+            } catch (error) {
+                updateStatus('Error: ' + error.message, true);
+                console.error(error);
+            }
+        }
+
+        function shufflePuzzle() {
+            if (puzzle) {
+                puzzle.shuffle(0.6);
+                puzzle.draw();
+                updateStatus('Pieces shuffled!');
+            } else {
+                updateStatus('Please initialize puzzle first', true);
+            }
+        }
+
+        function clearPuzzle() {
+            const container = document.getElementById('puzzle-container');
+            container.innerHTML = '';
+            puzzle = null;
+            updateStatus('Puzzle cleared');
+        }
+    </script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { FixedHeadbreaker } from '@/components/games/jigsaw/FixedHeadbreaker';
+import { SimpleHeadbreaker } from '@/components/games/jigsaw/SimpleHeadbreaker';
 import { Card } from '@/components/ui/card';
 
 export default function TestHeadbreaker() {
@@ -26,6 +27,11 @@ export default function TestHeadbreaker() {
         </Card>
 
         <div className="grid grid-cols-1 gap-6">
+          <Card className="p-6 bg-black/20 backdrop-blur-lg border-purple-500/20">
+            <h2 className="text-xl font-semibold text-white mb-4">Simple Canvas Test</h2>
+            <SimpleHeadbreaker difficulty="easy" />
+          </Card>
+
           <Card className="p-6 bg-black/20 backdrop-blur-lg border-purple-500/20">
             <h2 className="text-xl font-semibold text-white mb-4">Easy Mode (3x3)</h2>
             <FixedHeadbreaker 
