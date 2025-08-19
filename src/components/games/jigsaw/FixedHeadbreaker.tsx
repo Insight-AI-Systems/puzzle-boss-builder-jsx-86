@@ -26,8 +26,9 @@ export function FixedHeadbreaker({
 
   // Use local images that don't have CORS issues
   const defaultImages = [
-    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICAgIDxkZWZzPgogICAgICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgICAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM2NjdlZWE7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICAgICAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6Izc2NGJhMjtzdG9wLW9wYWNpdHk6MSIgLz4KICAgICAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPC9kZWZzPgogICAgPHJlY3Qgd2lkdGg9IjgwMCIgaGVpZ2h0PSI2MDAiIGZpbGw9InVybCgjZ3JhZCkiLz4KICAgIDxjaXJjbGUgY3g9IjIwMCIgY3k9IjE1MCIgcj0iODAiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuMyIvPgogICAgPGNpcmNsZSBjeD0iNjAwIiBjeT0iNDUwIiByPSIxMjAiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuMiIvPgogICAgPHJlY3QgeD0iMzUwIiB5PSIyNTAiIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjZmZmIiBvcGFjaXR5PSIwLjI1IiB0cmFuc2Zvcm09InJvdGF0ZSg0NSA0MDAgMzAwKSIvPgogICAgPHBhdGggZD0iTTEwMCA0MDBMMjAwIDMwMEwzMDAgNDAwTDI1MCA1MDBMMTUwIDUwMFoiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuMiIvPgogICAgPHRleHQgeD0iNDAwIiB5PSIzMDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSI0OCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UHV6emxlIFRlc3Q8L3RleHQ+Cjwvc3ZnPg==',
-    '/api/placeholder/800/600'
+    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICAgIDxkZWZzPgogICAgICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgICAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM2NjdlZWE7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICAgICAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6Ijc2NGJhMjtzdG9wLW9wYWNpdHk6MSIgLz4KICAgICAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPC9kZWZzPgogICAgPHJlY3Qgd2lkdGg9IjgwMCIgaGVpZ2h0PSI2MDAiIGZpbGw9InVybCgjZ3JhZCkiLz4KICAgIDxjaXJjbGUgY3g9IjIwMCIgY3k9IjE1MCIgcj0iODAiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuMyIvPgogICAgPGNpcmNsZSBjeD0iNjAwIiBjeT0iNDUwIiByPSIxMjAiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuMiIvPgogICAgPHJlY3QgeD0iMzUwIiB5PSIyNTAiIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjZmZmIiBvcGFjaXR5PSIwLjI1IiB0cmFuc2Zvcm09InJvdGF0ZSg0NSA0MDAgMzAwKSIvPgogICAgPHBhdGggZD0iTTEwMCA0MDBMMjAwIDMwMEwzMDAgNDAwTDI1MCA1MDBMMTUwIDUwMFoiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuMiIvPgogICAgPHRleHQgeD0iNDAwIiB5PSIzMDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSI0OCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UHV6emxlIFRlc3Q8L3RleHQ+Cjwvc3ZnPg==',
+    'https://picsum.photos/800/600',
+    'https://source.unsplash.com/800x600/?nature,landscape'
   ];
 
   const puzzleImageUrl = imageUrl || defaultImages[0];
@@ -78,14 +79,28 @@ export function FixedHeadbreaker({
       }
 
       await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = () => {
-          console.warn('Failed to load image, using fallback');
-          // Use fallback SVG image
-          img.src = defaultImages[0];
-          img.onload = resolve;
-          img.onerror = reject;
+        let attempts = 0;
+        const maxAttempts = defaultImages.length;
+        
+        const tryLoadImage = () => {
+          img.onload = () => {
+            console.log('✅ Image loaded successfully');
+            resolve(img);
+          };
+          
+          img.onerror = () => {
+            attempts++;
+            if (attempts < maxAttempts) {
+              console.warn(`Failed to load image (attempt ${attempts}), trying fallback...`);
+              img.src = defaultImages[attempts - 1];
+            } else {
+              console.error('All image loading attempts failed');
+              reject(new Error('Failed to load any puzzle image'));
+            }
+          };
         };
+        
+        tryLoadImage();
       });
 
       const { rows, cols } = getGridSize();
@@ -220,11 +235,13 @@ export function FixedHeadbreaker({
         </div>
       </Card>
 
-      <Card className="p-4">
-        <div ref={canvasContainerRef} className="flex justify-center">
+      <Card className="p-4 bg-black/50 backdrop-blur">
+        <div ref={canvasContainerRef} className="flex justify-center items-center min-h-[600px]">
           {isLoading && (
-            <div className="flex items-center justify-center h-[600px]">
-              <div className="text-lg">Loading puzzle...</div>
+            <div className="flex flex-col items-center justify-center gap-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+              <div className="text-lg text-gray-300">Creating puzzle pieces...</div>
+              <div className="text-sm text-gray-500">Please wait while we prepare your puzzle</div>
             </div>
           )}
         </div>
