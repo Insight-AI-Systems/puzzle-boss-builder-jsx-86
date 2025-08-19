@@ -104,6 +104,14 @@ export function FixedHeadbreaker({
       });
 
       const { rows, cols } = getGridSize();
+      
+      console.log('🧩 Creating Headbreaker puzzle with:', {
+        rows,
+        cols,
+        imageWidth: img.width,
+        imageHeight: img.height,
+        imageSrc: img.src.substring(0, 50) + '...'
+      });
 
       // Create Headbreaker puzzle
       const puzzle = new headbreaker.Canvas(canvas, {
@@ -116,18 +124,25 @@ export function FixedHeadbreaker({
         strokeWidth: 2,
         lineSoftness: 0.12
       });
+      
+      console.log('🧩 Puzzle instance created:', puzzle);
 
       // Generate puzzle
+      console.log('🧩 Generating puzzle pieces...');
       puzzle.autogenerate({
         horizontalPiecesCount: cols,
         verticalPiecesCount: rows
       });
+      console.log('🧩 Puzzle pieces generated:', puzzle.pieces?.length || 0);
 
       // Shuffle pieces
+      console.log('🧩 Shuffling pieces...');
       puzzle.shuffle(0.7);
       
       // Draw puzzle
+      console.log('🧩 Drawing puzzle...');
       puzzle.draw();
+      console.log('🧩 Puzzle drawn successfully!');
 
       // Store reference
       puzzleRef.current = puzzle;
