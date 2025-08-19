@@ -23,10 +23,11 @@ export function FixedHeadbreaker({
   const [gameStarted, setGameStarted] = useState(false);
   const [moveCount, setMoveCount] = useState(0);
   const [startTime, setStartTime] = useState<number | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Use local images that don't have CORS issues
   const defaultImages = [
-    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICAgIDxkZWZzPgogICAgICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgICAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM2NjdlZWE7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICAgICAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6Ijc2NGJhMjtzdG9wLW9wYWNpdHk6MSIgLz4KICAgICAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPC9kZWZzPgogICAgPHJlY3Qgd2lkdGg9IjgwMCIgaGVpZ2h0PSI2MDAiIGZpbGw9InVybCgjZ3JhZCkiLz4KICAgIDxjaXJjbGUgY3g9IjIwMCIgY3k9IjE1MCIgcj0iODAiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuMyIvPgogICAgPGNpcmNsZSBjeD0iNjAwIiBjeT0iNDUwIiByPSIxMjAiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuMiIvPgogICAgPHJlY3QgeD0iMzUwIiB5PSIyNTAiIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjZmZmIiBvcGFjaXR5PSIwLjI1IiB0cmFuc2Zvcm09InJvdGF0ZSg0NSA0MDAgMzAwKSIvPgogICAgPHBhdGggZD0iTTEwMCA0MDBMMjAwIDMwMEwzMDAgNDAwTDI1MCA1MDBMMTUwIDUwMFoiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuMiIvPgogICAgPHRleHQgeD0iNDAwIiB5PSIzMDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSI0OCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UHV6emxlIFRlc3Q8L3RleHQ+Cjwvc3ZnPg==',
+    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICAgIDxkZWZzPgogICAgICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgICAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM2NjdlZWE7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICAgICAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6Izc2NGJhMjtzdG9wLW9wYWNpdHk6MSIgLz4KICAgICAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPC9kZWZzPgogICAgPHJlY3Qgd2lkdGg9IjgwMCIgaGVpZ2h0PSI2MDAiIGZpbGw9InVybCgjZ3JhZCkiLz4KICAgIDxjaXJjbGUgY3g9IjIwMCIgY3k9IjE1MCIgcj0iODAiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuMyIvPgogICAgPGNpcmNsZSBjeD0iNjAwIiBjeT0iNDUwIiByPSIxMjAiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuMiIvPgogICAgPHJlY3QgeD0iMzUwIiB5PSIyNTAiIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjZmZmIiBvcGFjaXR5PSIwLjI1IiB0cmFuc2Zvcm09InJvdGF0ZSg0NSA0MDAgMzAwKSIvPgogICAgPHBhdGggZD0iTTEwMCA0MDBMMjAwIDMwMEwzMDAgNDAwTDI1MCA1MDBMMTUwIDUwMFoiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuMiIvPgogICAgPHRleHQgeD0iNDAwIiB5PSIzMDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSI0OCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UHV6emxlIFRlc3Q8L3RleHQ+Cjwvc3ZnPg==',
     'https://picsum.photos/800/600',
     'https://source.unsplash.com/800x600/?nature,landscape'
   ];
@@ -42,8 +43,13 @@ export function FixedHeadbreaker({
   };
 
   const initializePuzzle = async () => {
+    console.log('🧩 Starting puzzle initialization...');
+    
+    // Check if container is available
     if (!canvasContainerRef.current) {
-      setError('Canvas container not ready');
+      console.error('Canvas container ref is not available');
+      setError('Unable to initialize puzzle. Please refresh and try again.');
+      setIsLoading(false);
       return;
     }
 
@@ -52,9 +58,7 @@ export function FixedHeadbreaker({
 
     try {
       // Clear any existing content
-      if (canvasContainerRef.current) {
-        canvasContainerRef.current.innerHTML = '';
-      }
+      canvasContainerRef.current.innerHTML = '';
 
       // Create a canvas element
       const canvas = document.createElement('canvas');
@@ -63,8 +67,12 @@ export function FixedHeadbreaker({
       canvas.style.border = '2px solid #8b5cf6';
       canvas.style.borderRadius = '8px';
       canvas.style.background = '#1a1a1a';
+      canvas.style.maxWidth = '100%';
+      canvas.style.height = 'auto';
       canvasContainerRef.current.appendChild(canvas);
       canvasRef.current = canvas;
+
+      console.log('🧩 Canvas created and appended');
 
       // Create image
       const img = new Image();
@@ -174,9 +182,9 @@ export function FixedHeadbreaker({
         alert(`🎉 Puzzle Complete!\nTime: ${timeTaken}s\nMoves: ${moveCount}`);
       });
 
-      setGameStarted(true);
       setStartTime(Date.now());
       setIsLoading(false);
+      setIsInitialized(true);
 
     } catch (err) {
       console.error('Error initializing puzzle:', err);
@@ -186,7 +194,11 @@ export function FixedHeadbreaker({
   };
 
   const handleStart = () => {
-    initializePuzzle();
+    setGameStarted(true);
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      initializePuzzle();
+    });
   };
 
   const handleReset = () => {
@@ -195,6 +207,25 @@ export function FixedHeadbreaker({
       puzzleRef.current.draw();
       setMoveCount(0);
       setStartTime(Date.now());
+    }
+  };
+
+  const handleNewGame = () => {
+    setGameStarted(false);
+    setIsInitialized(false);
+    setMoveCount(0);
+    setStartTime(null);
+    setError(null);
+    if (canvasContainerRef.current) {
+      canvasContainerRef.current.innerHTML = '';
+    }
+    if (puzzleRef.current) {
+      try {
+        puzzleRef.current.destroy?.();
+      } catch (e) {
+        console.log('Cleanup error:', e);
+      }
+      puzzleRef.current = null;
     }
   };
 
@@ -216,7 +247,7 @@ export function FixedHeadbreaker({
       <Card className="p-6">
         <div className="text-center">
           <p className="text-red-500 mb-4">{error}</p>
-          <Button onClick={handleStart}>Try Again</Button>
+          <Button onClick={handleNewGame}>Try Again</Button>
         </div>
       </Card>
     );
@@ -243,10 +274,18 @@ export function FixedHeadbreaker({
           <div className="flex gap-4">
             <span>Moves: <strong>{moveCount}</strong></span>
             <span>Difficulty: <strong>{difficulty}</strong></span>
+            {isInitialized && <span className="text-green-500">✓ Ready</span>}
           </div>
-          <Button onClick={handleReset} variant="outline" size="sm">
-            Shuffle Again
-          </Button>
+          <div className="flex gap-2">
+            {isInitialized && (
+              <Button onClick={handleReset} variant="outline" size="sm">
+                Shuffle Again
+              </Button>
+            )}
+            <Button onClick={handleNewGame} variant="outline" size="sm">
+              New Game
+            </Button>
+          </div>
         </div>
       </Card>
 
