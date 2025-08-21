@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from "@/components/ui/button"; // ✅ Import Button
 import { SignInView } from './views/SignInView';
 import { useAuth as useAuthForm } from '@/hooks/auth/useAuth.tsx';
 
@@ -21,8 +21,11 @@ export const AuthForm: React.FC = () => {
   }, [searchParams]);
 
   const handleForgotPassword = () => {
-    // TODO: Implement forgot password flow
     console.log('Forgot password clicked');
+  };
+
+  const handleAdminPanelRedirect = () => {
+    window.open("https://admin.thepuzzleboss.com/", "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -54,6 +57,18 @@ export const AuthForm: React.FC = () => {
           currentView={currentView}
           setCurrentView={setCurrentView}
         />
+
+        {/* ✅ Admin Panel Button */}
+        <div className="flex justify-center pt-2">
+          <Button
+            variant="outline"
+            className="w-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+            onClick={handleAdminPanelRedirect}
+          >
+            {/* You can add an icon like Google button if needed */}
+            Admin Panel
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
